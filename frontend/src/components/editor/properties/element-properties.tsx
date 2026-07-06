@@ -81,7 +81,12 @@ export function ElementProperties({
     const worker = globalBgWorker;
 
     worker.onmessage = (event) => {
-      const { type, key, current, total, blob, error } = event.data;
+      const { type, key, current, total, blob, error, elementId } = event.data;
+
+      // تجاهل الرسائل الواردة لعناصر أخرى منعاً لتداخل العمليات في الخلفية
+      if (elementId && elementId !== element.id) {
+        return;
+      }
 
       if (type === "progress") {
         const percent = Math.round((current / total) * 100);
@@ -132,7 +137,7 @@ export function ElementProperties({
       setBgProgress(0);
     };
 
-    worker.postMessage({ imageSrc: element.imageSrc });
+    worker.postMessage({ type: "remove_bg", imageSrc: element.imageSrc, elementId: element.id });
   };
 
   const hasAdjustTab = element.type === "image";

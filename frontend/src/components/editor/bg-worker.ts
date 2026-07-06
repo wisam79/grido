@@ -16,8 +16,8 @@ let processor: any = null;
 
 const MODEL_ID = "briaai/RMBG-1.4";
 
-function notifyProgress(key: string, current: number, total: number) {
-  self.postMessage({ type: "progress", key, current, total });
+function notifyProgress(key: string, current: number, total: number, elementId?: string) {
+  self.postMessage({ type: "progress", key, current, total, elementId });
 }
 
 async function loadModel() {
@@ -81,11 +81,11 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-async function removeBg(imageSrc: string): Promise<Blob> {
+async function removeBg(imageSrc: string, elementId?: string): Promise<Blob> {
   await loadModel();
 
   // ── 1. Load image: handle base64 data URLs without fetch() ──────────────
-  notifyProgress("compute:decode", 10, 100);
+  notifyProgress("compute:decode", 10, 100, elementId);
   let image: RawImage;
   if (imageSrc.startsWith("data:")) {
     const blob = dataUrlToBlob(imageSrc);
@@ -98,20 +98,20 @@ async function removeBg(imageSrc: string): Promise<Blob> {
   } else {
     image = await RawImage.fromURL(imageSrc);
   }
-  notifyProgress("compute:decode", 30, 100);
+  notifyProgress("compute:decode", 30, 100, elementId);
 
   // ── 2. Preprocess ────────────────────────────────────────────────────────
   const { pixel_values } = await processor(image);
-  notifyProgress("compute:preprocess", 50, 100);
+  notifyProgress("compute:preprocess", 50, 100, elementId);
 
   // ── 3. Model inference ───────────────────────────────────────────────────
   const { output } = await model({ input: pixel_values });
-  notifyProgress("compute:inference", 75, 100);
+  notifyProgress("compute:inference", 75, 100, elementId);
 
   // ── 4. Resize mask to original image dimensions ──────────────────────────
   const mask = await RawImage.fromTensor(output[0].mul(255).to("uint8"))
     .resize(image.width, image.height);
-  notifyProgress("compute:mask", 85, 100);
+  notifyProgress("compute:mask", 85, 100, elementId);
 
   // ── 5. Draw original image on OffscreenCanvas ─────────────────────────────
   //    Using createImageBitmap from the original blob avoids RGB/RGBA issues
@@ -133,7 +133,7 @@ async function removeBg(imageSrc: string): Promise<Blob> {
     imgData.data[i * 4 + 3] = maskData[i];
   }
   ctx.putImageData(imgData, 0, 0);
-  notifyProgress("compute:mask", 100, 100);
+  notifyProgress("compute:mask", 100, 100, elementId);
 
   // ── 7. Export transparent PNG ─────────────────────────────────────────────
   return await canvas.convertToBlob({ type: "image/png" });
@@ -141,7 +141,7 @@ async function removeBg(imageSrc: string): Promise<Blob> {
 
 // Handle warmup requests (preload model silently)
 self.onmessage = async (e: MessageEvent) => {
-  const { type: msgType, imageSrc } = e.data;
+  const { type: msgType, imageSrc, elementId } = e.data;
 
   if (msgType === "warmup") {
     try {
@@ -154,8 +154,8 @@ self.onmessage = async (e: MessageEvent) => {
   }
 
   try {
-    const blob = await removeBg(imageSrc);
-    self.postMessage({ type: "success", blob });
+    const blob = await removeBg(imageSrc, elementId);
+    self.postMessage({ type: "success", blob, elementId });
   } catch (error: any) {
     let errorMessage = error?.message || String(error);
 
@@ -167,6 +167,6 @@ self.onmessage = async (e: MessageEvent) => {
       errorMessage = "تنسيق الصورة غير متوافق. جرب تحويلها إلى JPEG أو PNG.";
     }
 
-    self.postMessage({ type: "error", error: errorMessage });
+    self.postMessage({ type: "error", error: errorMessage, elementId });
   }
 };

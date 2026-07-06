@@ -29,13 +29,23 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
   const [image] = useImage(element.imageSrc || "");
 
   useEffect(() => {
-    if (elementRef.current && image) {
+    const node = elementRef.current;
+    if (node && image) {
       try {
-        elementRef.current.cache();
+        node.cache();
       } catch (e) {
         console.warn("Failed to cache Konva image", e);
       }
     }
+    return () => {
+      if (node) {
+        try {
+          node.clearCache();
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
   }, [image, element.filter, element.brightness, element.contrast, element.saturation, element.blur, elementRef]);
 
   // حساب القيم الكلية بدمج مرشحات الصور الجاهزة والتعديلات اليدوية
