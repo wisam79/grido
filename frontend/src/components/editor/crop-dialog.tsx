@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,14 @@ export function CropDialog({ open, onOpenChange, imageSrc, onCropSave }: CropDia
       setAspect(templateAspect);
     }
   }
+
+  // تحديث نسبة أبعاد المربع يدوياً في كروبرجي إس عند تغير الخيار في واجهة React
+  useEffect(() => {
+    const cropper = cropperRef.current?.cropper;
+    if (cropper) {
+      cropper.setAspectRatio(aspect === undefined ? NaN : aspect);
+    }
+  }, [aspect]);
 
   const handleCrop = () => {
     const cropper = cropperRef.current?.cropper;

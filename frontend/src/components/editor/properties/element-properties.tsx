@@ -166,30 +166,43 @@ export function ElementProperties({
         <TabsContent value="style" className="mt-3.5 space-y-3.5">
           {element.type === "image" && (
             <div className="space-y-3.5 animate-in fade-in duration-200">
-              <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2">
+              <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2.5">
                 <Label className="text-[11px] font-bold text-foreground/80 block">تحرير الصورة</Label>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="grid grid-cols-2 gap-2">
+                  {/* زر القص والتدوير */}
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="h-9 w-9 p-0 rounded-lg border-border/60 hover:border-primary/45 hover:bg-accent/50 text-muted-foreground hover:text-foreground transition-all cursor-pointer flex items-center justify-center"
+                    className="flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border-border/60 hover:border-primary/45 hover:bg-accent/40 text-muted-foreground hover:text-foreground cursor-pointer shadow-xs active:scale-[0.97] transition-all duration-200 group"
                     onClick={() => setCropOpen(true)}
                     title="قص وتدوير الصورة"
                   >
-                    <Scissors className="w-4 h-4 text-primary" />
+                    <Scissors className="w-4 h-4 text-primary group-hover:scale-110 group-hover:-rotate-3 transition-transform" />
+                    <span className="text-[10px] font-bold">قص وتدوير</span>
                   </Button>
+                  
+                  {/* زر عزل الخلفية بالذكاء الاصطناعي */}
                   <Button
                     variant="default"
-                    size="sm"
-                    className="bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 hover:from-violet-500 hover:via-indigo-500 hover:to-blue-500 text-white font-bold border-0 shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:scale-[1.01] transition-all duration-200 h-9 w-9 p-0 rounded-lg cursor-pointer flex items-center justify-center"
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border-0 shadow-md transition-all duration-200 cursor-pointer active:scale-[0.97] group text-white",
+                      isRemovingBg 
+                        ? "bg-muted cursor-not-allowed" 
+                        : "bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 hover:from-violet-500 hover:via-indigo-500 hover:to-blue-500 shadow-indigo-500/10 hover:shadow-indigo-500/20"
+                    )}
                     onClick={handleRemoveBg}
                     disabled={isRemovingBg}
                     title="إزالة الخلفية بالذكاء الاصطناعي"
                   >
                     {isRemovingBg ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span className="text-[9px] font-bold animate-pulse text-white/90">جاري المعالجة...</span>
+                      </>
                     ) : (
-                      <Sparkles className="w-4 h-4 text-white" />
+                      <>
+                        <Sparkles className="w-4 h-4 text-white group-hover:scale-115 group-hover:rotate-6 transition-all duration-300" />
+                        <span className="text-[10px] font-bold">عزل الخلفية</span>
+                      </>
                     )}
                   </Button>
                 </div>
