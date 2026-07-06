@@ -162,20 +162,7 @@ export function GeneralSettings() {
 
         {/* اختيار حجم قياسي جاهز */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-[10px] text-muted-foreground font-semibold">أحجام قياسية جاهزة</Label>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSwapDimensions}
-              className="h-6 px-2 text-[10px] flex items-center gap-1 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors rounded-md cursor-pointer"
-              title="تبديل العرض والارتفاع (أفقي/عمودي)"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span>تبديل الاتجاه</span>
-            </Button>
-          </div>
-          
+          <Label className="text-[10px] text-muted-foreground font-semibold">أحجام قياسية جاهزة</Label>
           <div className="grid grid-cols-2 gap-2">
             {PAPER_SIZES.map((p) => {
               const dpi = dpiVal;
@@ -186,6 +173,10 @@ export function GeneralSettings() {
               const nameParts = p.name.split(" (");
               const mainName = nameParts[0];
               const isLandscape = p.widthMM > p.heightMM;
+
+              // حساب البكسل المقابل ديناميكياً للبطاقة الجاهزة
+              const wPx = Math.round((p.widthMM * dpiVal) / 25.4);
+              const hPx = Math.round((p.heightMM * dpiVal) / 25.4);
 
               return (
                 <button
@@ -211,7 +202,10 @@ export function GeneralSettings() {
                   <div className="flex flex-col min-w-0">
                     <span className="text-[10px] font-bold leading-tight truncate">{mainName}</span>
                     <span className="text-[8px] font-medium opacity-70 mt-0.5 truncate font-mono">
-                      {p.widthMM}×{p.heightMM} مم
+                      {unit === "px" ? `${wPx}×${hPx} بكسل` : `${p.widthMM}×${p.heightMM} مم`}
+                    </span>
+                    <span className="text-[7px] text-muted-foreground/50 font-mono truncate leading-none mt-0.5">
+                      {unit === "px" ? `${p.widthMM}×${p.heightMM} مم` : `${wPx}×${hPx} px`}
                     </span>
                   </div>
                 </button>
@@ -220,10 +214,10 @@ export function GeneralSettings() {
           </div>
         </div>
 
-        {/* حقول الأبعاد المدمجة بأسلوب Figma */}
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground font-bold block pr-0.5">العرض</Label>
+        {/* حقول الأبعاد المدمجة أفقياً بأسلوب البرامج الاحترافية مع زر التبديل */}
+        <div className="flex items-end gap-2 text-xs">
+          <div className="flex-1 space-y-1">
+            <Label className="text-[10px] text-muted-foreground font-bold pr-0.5">العرض</Label>
             <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/40 focus-within:border-primary rounded-lg px-2.5 h-9 transition-all shadow-xs" dir="ltr">
               <input
                 type="number"
@@ -235,9 +229,20 @@ export function GeneralSettings() {
               <span className="text-[10px] text-muted-foreground/60 select-none shrink-0 font-bold">{unit === "px" ? "px" : "mm"}</span>
             </div>
           </div>
-          
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground font-bold block pr-0.5">الارتفاع</Label>
+
+          {/* زر تبديل الاتجاه في المنتصف عمودياً */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSwapDimensions}
+            className="h-9 w-9 shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg cursor-pointer transition-colors shadow-xs border border-border/40"
+            title="تبديل الاتجاه (أفقي/عمودي)"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </Button>
+
+          <div className="flex-1 space-y-1">
+            <Label className="text-[10px] text-muted-foreground font-bold pr-0.5">الارتفاع</Label>
             <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/40 focus-within:border-primary rounded-lg px-2.5 h-9 transition-all shadow-xs" dir="ltr">
               <input
                 type="number"
@@ -268,19 +273,24 @@ export function GeneralSettings() {
           </div>
         )}
 
-        {/* عرض القيمة المكافئة للوحدة الأخرى */}
-        <div className="text-[10px] text-muted-foreground/80 bg-muted/30 dark:bg-muted/10 p-2 rounded border border-border/20 flex justify-between items-center">
-          <span>الحجم الحالي:</span>
-          <span className="font-mono text-foreground/90">
-            {unit === "px" ? (
-              <>
+        {/* عرض تفاصيل القياس الحالي بجودة عالية ودقة تامة */}
+        <div className="space-y-1.5 bg-muted/40 dark:bg-muted/15 p-3 rounded-xl border border-border/30">
+          <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
+            <span>مساحة العمل الحالية</span>
+            <span className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded-md text-[9px] font-bold">{dpiVal} DPI</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 border-t border-border/20 pt-2 text-xs">
+            <div className="flex flex-col">
+              <span className="text-[9px] text-muted-foreground/80 leading-none">الحجم الرقمي</span>
+              <span className="font-mono font-bold text-foreground mt-1.5">{canvasWidth} × {canvasHeight} px</span>
+            </div>
+            <div className="flex flex-col border-r border-border/20 pr-2">
+              <span className="text-[9px] text-muted-foreground/80 leading-none">حجم الطباعة الفعلي</span>
+              <span className="font-mono font-bold text-foreground mt-1.5">
                 {Math.round((canvasWidth / dpiVal) * 25.4)} × {Math.round((canvasHeight / dpiVal) * 25.4)} مم
-                <span className="text-[9px] text-muted-foreground/60 mr-1">({dpiVal} DPI)</span>
-              </>
-            ) : (
-              <>{canvasWidth} × {canvasHeight} بكسل</>
-            )}
-          </span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
