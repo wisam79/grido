@@ -5,6 +5,9 @@ import { resolve } from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  worker: {
+    format: 'es'
+  },
   define: {
     'process.env': {},
     global: 'globalThis'
@@ -23,9 +26,6 @@ export default defineConfig({
     }
   },
   server: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
-    }
+    // Headers removed to allow local asset fetching in Wails WebView without CORP errors
   }
 })

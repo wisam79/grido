@@ -1,3 +1,31 @@
 build/bin
 node_modules
 frontend/dist
+
+# AI Models (Downloaded via postinstall)
+frontend/public/models/
+frontend/public/onnxruntime-web/
+frontend/public/onnxruntime-web-v2/
+
+# Test Reports and results
+frontend/playwright-report/
+frontend/test-results/
+frontend/scripts/package/
+
+# Large Executables & Packages
+*.exe
+*.tgz
+*.tar.gz
+
+# Local SQLite Databases and temp autosaves
+*.db
+*.db-journal
+*.db-wal
+autosave.json
+window.json
+webview_cache/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+*.log

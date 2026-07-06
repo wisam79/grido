@@ -413,10 +413,10 @@ export const IMAGE_FILTERS: ImageFilter[] = [
 export const BACKGROUND_COLORS: { name: string; value: string }[] = [
   { name: "أبيض", value: "#FFFFFF" },
   { name: "أزرق فاتح", value: "#E8F0FE" },
-  { name: "رمادي فاتح", value: "#F2F2F2" },
-  { name: "أحمر", value: "#D32F2F" },
-  { name: "أزرق", value: "#1976D2" },
-  { name: "أخضر", value: "#388E3C" },
-  { name: "بيج", value: "#F5F0E1" },
-  { name: "أسود", value: "#000000" },
+  { name: "أحمر", value: "#E53E3E" },
+  { name: "سماوي", value: "#00B5D8" },
+  { name: "أخضر", value: "#38A169" },
+  { name: "قرمزي", value: "#D53F8C" },
+  { name: "أزرق", value: "#3182CE" },
+  { name: "برتقالي", value: "#DD6B20" },
 ];

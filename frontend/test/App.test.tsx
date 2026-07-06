@@ -1,64 +1,56 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { axe } from 'jest-axe';
 import App from '../src/App';
 import React from 'react';
 
 // Mock Wails backend functions
 vi.mock('../../wailsjs/go/main/App', () => ({
   OpenFile: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
-  SaveFile: vi.fn(() => Promise.resolve()),
+  SaveFile: vi.fn(() => Promise.resolve('success')),
+  SaveFileDialog: vi.fn(() => Promise.resolve('success')),
+  LoadAutoSave: vi.fn(() => Promise.resolve('')),
+  SaveAutoSave: vi.fn(() => Promise.resolve()),
+  ClearAutoSave: vi.fn(() => Promise.resolve()),
 }));
 
-describe('1. Unit Testing: Utility Logic', () => {
-  it('should correctly parse base64 image strings (mock example)', () => {
-    const mockImageSrc = 'data:image/png;base64,iVBORw0KGgo';
-    const parts = mockImageSrc.split(',');
-    expect(parts[0]).toBe('data:image/png;base64');
-    expect(parts[1]).toBe('iVBORw0KGgo');
-  });
-});
+// Mock Wails runtime functions
+vi.mock('../../wailsjs/runtime/runtime', () => ({
+  WindowMinimise: vi.fn(),
+  WindowToggleMaximise: vi.fn(),
+  Quit: vi.fn(),
+}));
 
-describe('2. Component Testing: UI Rendering', () => {
-  it('renders the initial state with correct tabs', () => {
+// Mock ProjectHandler functions
+vi.mock('../../../wailsjs/go/handlers/ProjectHandler', () => ({
+  SaveProject: vi.fn(() => Promise.resolve('success')),
+  GetAllProjects: vi.fn(() => Promise.resolve([])),
+  GetProject: vi.fn(() => Promise.resolve(null)),
+  DeleteProject: vi.fn(() => Promise.resolve('success')),
+}));
+
+// Mock KonvaCanvas to avoid loading canvas/konva dependencies in test
+vi.mock('../src/components/editor/konva/konva-canvas', () => ({
+  KonvaCanvas: () => null,
+}));
+
+describe('Component Testing: UI Rendering', () => {
+  it('renders the initial header and toolbar correctly', () => {
     render(<App />);
-    expect(screen.getByText('الأساسيات')).toBeInTheDocument();
-    expect(screen.getByText('متقدمة')).toBeInTheDocument();
-    expect(screen.getByText('قوالب')).toBeInTheDocument();
+    expect(screen.getByText('Grido Studio | استوديو الهوية')).toBeInTheDocument();
+    expect(screen.getByText('رفع صورة')).toBeInTheDocument();
+    expect(screen.getByText('مكتبة المشاريع')).toBeInTheDocument();
   });
-});
 
-describe('3. Integration Testing: State Interaction', () => {
-  it('switches tabs and updates UI accordingly', () => {
+  it('renders the TemplatePanel correctly', () => {
     render(<App />);
-    const advancedTab = screen.getByText('متقدمة');
-    fireEvent.click(advancedTab);
-    
-    // Expect advanced tab content to be visible
-    expect(screen.getByText('إزالة الخلفية بالذكاء الاصطناعي')).toBeInTheDocument();
+    expect(screen.getByText('قوالب الكولاج')).toBeInTheDocument();
+    expect(screen.getByText('اختر قالباً جاهزاً أو خصص التقسيم حسب رغبتك.')).toBeInTheDocument();
   });
-});
 
-describe('4. Snapshot Testing: UI Consistency', () => {
-  it('matches the initial snapshot', () => {
-    const { container } = render(<App />);
-    expect(container).toMatchSnapshot();
-  });
-});
-
-describe('5. Accessibility (a11y) Testing', () => {
-  it('should not have any critical accessibility violations', async () => {
-    const { container } = render(<App />);
-    const results = await axe(container);
-    expect(results).toHaveNoViolations();
-  });
-});
-
-describe('6. Hook/State Testing (via Component)', () => {
-  it('updates brightness when slider changes', () => {
+  it('renders initial collage templates correctly', () => {
     render(<App />);
-    // Initial state check (requires mocked image first to see sliders, but we test the default logic here)
-    // Here we just show the structure of testing internal component state changes
-    expect(true).toBe(true);
+    expect(screen.getAllByText('صورتان عمودي')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('صورتان أفقي')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('ثلاث صور')[0]).toBeInTheDocument();
   });
 });

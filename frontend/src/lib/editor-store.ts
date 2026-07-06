@@ -1,7 +1,6 @@
-"use client";
-
 import { create } from "zustand";
-import { PhotoTemplate, CollageTemplate } from "./templates";
+import { PhotoTemplate, CollageTemplate, COLLAGE_TEMPLATES, PHOTO_TEMPLATES } from "./templates";
+import { uid } from "./utils";
 
 // === أنواع العناصر على الكانفس ===
 export type ElementType = "image" | "text" | "shape";
@@ -16,6 +15,8 @@ export interface CanvasElement {
   rotation: number;
   opacity: number;
   zIndex: number;
+  locked?: boolean;
+  visible?: boolean;
   // خصائص الصورة
   imageSrc?: string;
   filter?: string; // معرف الفلتر
@@ -30,6 +31,9 @@ export interface CanvasElement {
   color?: string;
   fontFamily?: string;
   textAlign?: "right" | "center" | "left";
+  textBgColor?: string;
+  lineHeight?: number;
+  letterSpacing?: number;
   // خصائص الشكل
   shape?: "rect" | "ellipse" | "line" | "star";
   fill?: string;
@@ -67,6 +71,7 @@ export interface PrintSettings {
 }
 
 interface EditorState {
+  projectId: string | null;
   mode: EditorMode;
   template: PhotoTemplate | null;
   collageTemplate: CollageTemplate | null;
@@ -81,12 +86,28 @@ interface EditorState {
   history: { elements: CanvasElement[]; slots: CanvasSlot[] }[];
   historyIndex: number;
 
+  // تخصيصات الكولاج
+  collageGap: number;
+  collageMargin: number;
+  collageRadius: number;
+  collageShowCutLines: boolean;
+  collageStrokeWidth: number;
+  collageStrokeColor: string;
+
   setMode: (mode: EditorMode) => void;
   setTemplate: (template: PhotoTemplate | null) => void;
   setCollageTemplate: (template: CollageTemplate | null) => void;
   setLastEditedImage: (src: string | null) => void;
   setCanvasSize: (w: number, h: number) => void;
   setBackgroundColor: (c: string) => void;
+
+  // دوال تعديل تخصيصات الكولاج
+  setCollageGap: (gap: number) => void;
+  setCollageMargin: (margin: number) => void;
+  setCollageRadius: (radius: number) => void;
+  setCollageShowCutLines: (show: boolean) => void;
+  setCollageStrokeWidth: (width: number) => void;
+  setCollageStrokeColor: (color: string) => void;
 
   addImageElement: (src: string) => void;
   addTextElement: (text?: string) => void;
@@ -105,13 +126,73 @@ interface EditorState {
 
   setPrintSettings: (patch: Partial<PrintSettings>) => void;
 
+
+
+  // مرجع Konva Stage للتصدير بدقة عالية
+  stageRef: any;
+  setStageRef: (ref: any) => void;
+
   pushHistory: () => void;
   undo: () => void;
   redo: () => void;
   reset: () => void;
+  loadProject: (project: any, projectId?: string | null) => void;
 }
 
-const uid = () => Math.random().toString(36).slice(2, 11);
+
+interface CacheEntry {
+  base64: string;
+  lastAccessed: number;
+}
+// كاش لتخزين صور Base64 لتفادي استهلاك الذاكرة في الـ History مع آلية LRU للتنظيف
+const imagesCache: Record<string, CacheEntry> = {};
+const MAX_CACHE_SIZE = 30;
+
+function cacheImage(base64: string | undefined): string | undefined {
+  if (!base64 || !base64.startsWith("data:image")) return base64;
+  
+  for (const [key, val] of Object.entries(imagesCache)) {
+    if (val.base64 === base64) {
+      val.lastAccessed = Date.now();
+      return key;
+    }
+  }
+  
+  const keys = Object.keys(imagesCache);
+  if (keys.length >= MAX_CACHE_SIZE) {
+    let lruKey: string | null = null;
+    let oldest = Infinity;
+    for (const [key, val] of Object.entries(imagesCache)) {
+      if (val.lastAccessed < oldest) {
+        oldest = val.lastAccessed;
+        lruKey = key;
+      }
+    }
+    if (lruKey) {
+      delete imagesCache[lruKey];
+    }
+  }
+  
+  const id = "img_" + uid();
+  imagesCache[id] = { base64, lastAccessed: Date.now() };
+  return id;
+}
+
+function restoreImage(idOrBase64: string | undefined): string | undefined {
+  if (!idOrBase64) return undefined;
+  const entry = imagesCache[idOrBase64];
+  if (entry) {
+    entry.lastAccessed = Date.now();
+    return entry.base64;
+  }
+  return idOrBase64;
+}
+
+export function clearImageCache() {
+  for (const key of Object.keys(imagesCache)) {
+    delete imagesCache[key];
+  }
+}
 
 const defaultPrint: PrintSettings = {
   paperId: "a4",
@@ -125,20 +206,48 @@ const defaultPrint: PrintSettings = {
   orientation: "portrait",
 };
 
+const initialCollage = COLLAGE_TEMPLATES[0];
+const initialSlots: CanvasSlot[] = initialCollage.cells.map((c, i) => ({
+  id: "slot_" + i + "_" + Math.random().toString(36).slice(2, 9),
+  cellIndex: i,
+  x: c.x,
+  y: c.y,
+  w: c.w,
+  h: c.h,
+  filter: "none",
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+}));
+
 export const useEditorStore = create<EditorState>((set, get) => ({
-  mode: "single",
+  projectId: null,
+  mode: "collage",
   template: null,
-  collageTemplate: null,
+  collageTemplate: initialCollage,
   elements: [],
-  slots: [],
+  slots: initialSlots,
   selectedId: null,
-  canvasWidth: 413,
-  canvasHeight: 531,
+  canvasWidth: 1200,
+  canvasHeight: 1200,
   backgroundColor: "#FFFFFF",
   printSettings: defaultPrint,
   lastEditedImage: null,
-  history: [{ elements: [], slots: [] }],
+  history: [{ elements: [], slots: initialSlots }],
   historyIndex: 0,
+
+
+
+  stageRef: null,
+  setStageRef: (ref) => set({ stageRef: ref }),
+
+  // تخصيصات الكولاج
+  collageGap: 0,
+  collageMargin: 0,
+  collageRadius: 0,
+  collageShowCutLines: false,
+  collageStrokeWidth: 0,
+  collageStrokeColor: "#000000",
 
   setMode: (mode) => set({ mode, selectedId: null }),
 
@@ -223,6 +332,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setCanvasSize: (w, h) => set({ canvasWidth: w, canvasHeight: h }),
   setBackgroundColor: (c) => set({ backgroundColor: c }),
 
+  setCollageGap: (gap) => set({ collageGap: gap }),
+  setCollageMargin: (margin) => set({ collageMargin: margin }),
+  setCollageRadius: (radius) => set({ collageRadius: radius }),
+  setCollageShowCutLines: (show) => set({ collageShowCutLines: show }),
+  setCollageStrokeWidth: (width) => set({ collageStrokeWidth: width }),
+  setCollageStrokeColor: (color) => set({ collageStrokeColor: color }),
+
   addImageElement: (src) => {
     const id = uid();
     const newEl: CanvasElement = {
@@ -262,8 +378,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       fontSize: 32,
       fontWeight: 700,
       color: "#1a1a2e",
-      fontFamily: "var(--font-cairo)",
+      fontFamily: "'IBM Plex Sans Arabic', Cairo, Tajawal, sans-serif",
       textAlign: "center",
+      textBgColor: "transparent",
+      lineHeight: 1.2,
+      letterSpacing: 0,
     };
     get().pushHistory();
     set((s) => ({ elements: [...s.elements, newEl], selectedId: id }));
@@ -393,10 +512,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   pushHistory: () => {
     const { elements, slots, history, historyIndex } = get();
+    
+    // تحويل الصور إلى معرفات (IDs) قبل التخزين في السجل
+    const cachedElements = elements.map(el => {
+      if (el.type === "image" && el.imageSrc) {
+         return { ...el, imageSrc: cacheImage(el.imageSrc) };
+      }
+      return el;
+    });
+
+    const cachedSlots = slots.map(sl => {
+      if (sl.imageSrc) {
+         return { ...sl, imageSrc: cacheImage(sl.imageSrc) };
+      }
+      return sl;
+    });
+
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push({
-      elements: JSON.parse(JSON.stringify(elements)),
-      slots: JSON.parse(JSON.stringify(slots)),
+      elements: structuredClone(cachedElements),
+      slots: structuredClone(cachedSlots),
     });
     // حد 50 خطوة
     if (newHistory.length > 50) newHistory.shift();
@@ -407,9 +542,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { history, historyIndex } = get();
     if (historyIndex <= 0) return;
     const prev = history[historyIndex - 1];
+    
+    const restoredElements = prev.elements.map(el => ({
+      ...el,
+      imageSrc: restoreImage(el.imageSrc)
+    }));
+    const restoredSlots = prev.slots.map(sl => ({
+      ...sl,
+      imageSrc: restoreImage(sl.imageSrc)
+    }));
+
     set({
-      elements: JSON.parse(JSON.stringify(prev.elements)),
-      slots: JSON.parse(JSON.stringify(prev.slots)),
+      elements: restoredElements,
+      slots: restoredSlots,
       historyIndex: historyIndex - 1,
       selectedId: null,
     });
@@ -419,20 +564,68 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { history, historyIndex } = get();
     if (historyIndex >= history.length - 1) return;
     const next = history[historyIndex + 1];
+    
+    const restoredElements = next.elements.map(el => ({
+      ...el,
+      imageSrc: restoreImage(el.imageSrc)
+    }));
+    const restoredSlots = next.slots.map(sl => ({
+      ...sl,
+      imageSrc: restoreImage(sl.imageSrc)
+    }));
+
     set({
-      elements: JSON.parse(JSON.stringify(next.elements)),
-      slots: JSON.parse(JSON.stringify(next.slots)),
+      elements: restoredElements,
+      slots: restoredSlots,
       historyIndex: historyIndex + 1,
       selectedId: null,
     });
   },
 
-  reset: () =>
+  reset: () => {
+    clearImageCache();
     set({
+      projectId: null,
+      mode: "collage",
+      template: null,
+      collageTemplate: initialCollage,
       elements: [],
-      slots: [],
+      slots: initialSlots,
       selectedId: null,
-      history: [{ elements: [], slots: [] }],
+      canvasWidth: 1200,
+      canvasHeight: 1200,
+      backgroundColor: "#FFFFFF",
+      history: [{ elements: [], slots: initialSlots }],
       historyIndex: 0,
-    }),
+      stageRef: null,
+    });
+  },
+
+  loadProject: (project, projectId = null) => {
+    clearImageCache();
+    
+    // استعادة الأيقونات والمكونات الأصلية للقوالب المطابقة من قاعدة البيانات
+    const restoredTemplate = project.template
+      ? PHOTO_TEMPLATES.find((t) => t.id === project.template.id) || project.template
+      : null;
+    const restoredCollageTemplate = project.collageTemplate
+      ? COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate.id) || project.collageTemplate
+      : null;
+
+    set({
+      projectId,
+      mode: project.mode || "single",
+      canvasWidth: project.canvasWidth,
+      canvasHeight: project.canvasHeight,
+      backgroundColor: project.backgroundColor || "#FFFFFF",
+      elements: project.elements || [],
+      slots: project.slots || [],
+      template: restoredTemplate,
+      collageTemplate: restoredCollageTemplate,
+      printSettings: project.printSettings ? { ...defaultPrint, ...project.printSettings } : defaultPrint,
+      selectedId: null,
+      history: [{ elements: project.elements || [], slots: project.slots || [] }],
+      historyIndex: 0,
+    });
+  },
 }));

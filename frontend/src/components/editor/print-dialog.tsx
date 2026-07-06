@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useMemo } from "react";
 import {
   Dialog,
@@ -11,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -21,9 +18,12 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { useEditorStore } from "@/lib/editor-store";
-import { PAPER_SIZES, IMAGE_FILTERS } from "@/lib/templates";
-import { Printer, ZoomIn, ZoomOut, FileText, File } from "lucide-react";
+import { useEditorStore, CanvasElement } from "@/lib/editor-store";
+import { PAPER_SIZES } from "@/lib/templates";
+import { cn } from "@/lib/utils";
+import { Printer, ZoomIn, ZoomOut, RectangleVertical, RectangleHorizontal, Scissors, Move, Copy, Columns } from "lucide-react";
+import { SheetPreview } from "./print/print-preview";
+import { toast } from "sonner";
 
 interface PrintDialogProps {
   open: boolean;
@@ -45,8 +45,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [zoom, setZoom] = useState(1);
 
   // حساب أبعاد الصورة على الورق بالمليمتر
-  const imageWidthMM = template ? template.widthMM : 50;
-  const imageHeightMM = template ? template.heightMM : 70;
+  const dpi = template ? template.dpi : printSettings.dpi;
+  const imageWidthMM = template ? template.widthMM : Math.round((canvasWidth / dpi) * 25.4);
+  const imageHeightMM = template ? template.heightMM : Math.round((canvasHeight / dpi) * 25.4);
 
   // المساحة المتاحة للطباعة
   const availableWidthMM =
@@ -69,23 +70,87 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
   const actualCopies = Math.min(printSettings.copiesPerSheet, autoCount);
 
-  // أبعاد الصورة على الورق في البكسل للعرض
-  const pxPerMM = printSettings.dpi / 25.4;
-  const sheetW =
-    (printSettings.orientation === "portrait"
-      ? printSettings.paperWidthMM
-      : printSettings.paperHeightMM) * pxPerMM;
-  const sheetH =
-    (printSettings.orientation === "portrait"
-      ? printSettings.paperHeightMM
-      : printSettings.paperWidthMM) * pxPerMM;
-
   const cols = Math.floor(availableWidthMM / (imageWidthMM + gapMM));
   const rows = Math.ceil(actualCopies / Math.max(1, cols));
 
-  const handlePrint = () => {
-    onOpenChange(false);
-    setTimeout(() => window.print(), 100);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handlePrint = async () => {
+    setIsExporting(true);
+    try {
+      const cutLines = [];
+      if (printSettings.showCutLines) {
+        for (let i = 0; i <= cols; i++) {
+          const x = printSettings.marginMM + i * (imageWidthMM + gapMM) - gapMM / 2;
+          cutLines.push({ x1: x, y1: printSettings.marginMM, x2: x, y2: printSettings.marginMM + availableHeightMM });
+        }
+        for (let i = 0; i <= rows; i++) {
+          const y = printSettings.marginMM + i * (imageHeightMM + gapMM) - gapMM / 2;
+          cutLines.push({ x1: printSettings.marginMM, y1: y, x2: printSettings.marginMM + availableWidthMM, y2: y });
+        }
+      }
+
+      const items = [];
+      if (mode === "collage") {
+        for (const slot of slots) {
+          if (slot.imageSrc) {
+            items.push({
+              imageSrc: slot.imageSrc,
+              x: printSettings.marginMM + slot.x * availableWidthMM + gapMM / 2,
+              y: printSettings.marginMM + slot.y * availableHeightMM + gapMM / 2,
+              w: slot.w * availableWidthMM - gapMM,
+              h: slot.h * availableHeightMM - gapMM,
+              filter: slot.filter || "",
+              brightness: slot.brightness || 100,
+              contrast: slot.contrast || 100,
+              saturation: slot.saturation || 100,
+            });
+          }
+        }
+      } else {
+        const firstImage = elements.find((e: CanvasElement) => e.type === "image");
+        if (firstImage && firstImage.imageSrc) {
+          for (let i = 0; i < actualCopies; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            items.push({
+              imageSrc: firstImage.imageSrc,
+              x: printSettings.marginMM + col * (imageWidthMM + gapMM),
+              y: printSettings.marginMM + row * (imageHeightMM + gapMM),
+              w: imageWidthMM,
+              h: imageHeightMM,
+              filter: firstImage.filter || "",
+              brightness: firstImage.brightness || 100,
+              contrast: firstImage.contrast || 100,
+              saturation: firstImage.saturation || 100,
+            });
+          }
+        }
+      }
+
+      const req = {
+        paperWidthMM: printSettings.orientation === "portrait" ? printSettings.paperWidthMM : printSettings.paperHeightMM,
+        paperHeightMM: printSettings.orientation === "portrait" ? printSettings.paperHeightMM : printSettings.paperWidthMM,
+        dpi: dpi,
+        backgroundColor: backgroundColor || "#ffffff",
+        showCutLines: printSettings.showCutLines,
+        cutLines: cutLines,
+        items: items,
+      };
+
+      // Call the Go backend endpoint
+      const res = await (window as any).go.handlers.PrintHandler.ExportPrintSheet(req);
+      if (res.success) {
+        onOpenChange(false);
+        toast.success("تم تصدير ملف الطباعة بنجاح");
+      } else {
+        toast.error("فشل في التصدير: " + res.error);
+      }
+    } catch (err: any) {
+      toast.error("حدث خطأ أثناء الاتصال بالخادم: " + String(err));
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -131,26 +196,31 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               </Select>
             </div>
 
+            {/* الاتجاه */}
             <div>
               <Label className="text-xs mb-1.5 block">الاتجاه</Label>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-2 gap-1.5">
                 {(["portrait", "landscape"] as const).map((o) => (
                   <button
                     key={o}
                     onClick={() => setPrintSettings({ orientation: o })}
-                    className={`py-2 text-xs rounded-md border transition-all flex items-center justify-center gap-1.5 ${
+                    className={cn(
+                      "py-2 h-9 rounded-md border transition-all flex items-center justify-center gap-1.5 text-xs font-semibold",
                       printSettings.orientation === o
-                        ? "border-primary bg-primary/10 font-semibold"
-                        : "border-border hover:border-primary/50"
-                    }`}
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border/60 bg-card hover:bg-accent text-muted-foreground hover:text-foreground"
+                    )}
+                    title={o === "portrait" ? "عمودي" : "أفقي"}
                   >
                     {o === "portrait" ? (
                       <>
-                        <FileText className="w-3.5 h-3.5" /> عمودي
+                        <RectangleVertical className="w-4 h-4" />
+                        <span>عمودي</span>
                       </>
                     ) : (
                       <>
-                        <File className="w-3.5 h-3.5" /> أفقي
+                        <RectangleHorizontal className="w-4 h-4" />
+                        <span>أفقي</span>
                       </>
                     )}
                   </button>
@@ -158,12 +228,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               </div>
             </div>
 
-            <div>
-              <div className="flex justify-between mb-1.5">
-                <Label className="text-xs">الهامش (مم)</Label>
-                <span className="text-[11px] text-muted-foreground font-mono">
-                  {printSettings.marginMM} مم
-                </span>
+            {/* الهامش */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-[10.5px]">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Move className="w-3.5 h-3.5 text-muted-foreground/70" />
+                  <span className="font-medium">الهامش</span>
+                </div>
+                <span className="font-mono font-semibold text-foreground/80">{printSettings.marginMM} مم</span>
               </div>
               <Slider
                 value={[printSettings.marginMM]}
@@ -174,10 +246,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               />
             </div>
 
-            <div>
-              <div className="flex justify-between mb-1.5">
-                <Label className="text-xs">المسافة بين الصور (مم)</Label>
-                <span className="text-[11px] text-muted-foreground font-mono">
+            {/* المسافة بين الصور */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-[10.5px]">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Columns className="w-3.5 h-3.5 text-muted-foreground/70" />
+                  <span className="font-medium">المسافة بين الصور</span>
+                </div>
+                <span className="font-mono font-semibold text-foreground/80">
                   {printSettings.gapMM !== undefined ? printSettings.gapMM : 2} مم
                 </span>
               </div>
@@ -190,13 +266,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               />
             </div>
 
+            {/* الدقة */}
             <div>
               <Label className="text-xs mb-1.5 block">الدقة (DPI)</Label>
               <Select
                 value={String(printSettings.dpi)}
                 onValueChange={(v) => setPrintSettings({ dpi: Number(v) })}
               >
-                <SelectTrigger className="h-9 text-xs">
+                <SelectTrigger className="h-9 text-xs bg-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -209,12 +286,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               </Select>
             </div>
 
-            <div>
-              <div className="flex justify-between mb-1.5">
-                <Label className="text-xs">عدد النسخ بالورقة</Label>
-                <span className="text-[11px] text-muted-foreground font-mono">
-                  {actualCopies}
-                </span>
+            {/* عدد النسخ */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-[10.5px]">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Copy className="w-3.5 h-3.5 text-muted-foreground/70" />
+                  <span className="font-medium">النسخ بالورقة</span>
+                </div>
+                <span className="font-mono font-semibold text-foreground/80">{actualCopies}</span>
               </div>
               <Slider
                 value={[printSettings.copiesPerSheet]}
@@ -223,13 +302,17 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 step={1}
                 onValueChange={(v) => setPrintSettings({ copiesPerSheet: v[0] })}
               />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                الحد الأقصى المتاح: {autoCount} نسخة
+              <p className="text-[9px] text-muted-foreground/60">
+                الحد الأقصى المتاح للتعبئة: {autoCount} نسخة
               </p>
             </div>
 
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">خطوط القص</Label>
+            {/* خطوط القص */}
+            <div className="flex items-center justify-between bg-muted/20 dark:bg-muted/10 p-2.5 rounded-lg border border-border/30">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Scissors className="w-3.5 h-3.5 text-muted-foreground/75" />
+                <span className="text-xs font-semibold">خطوط القص والمحاذاة</span>
+              </div>
               <Switch
                 checked={printSettings.showCutLines}
                 onCheckedChange={(c) => setPrintSettings({ showCutLines: c })}
@@ -326,181 +409,15 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isExporting}>
             إلغاء
           </Button>
-          <Button onClick={handlePrint} className="gap-2">
-            <Printer className="w-4 h-4" /> طباعة الآن
+          <Button onClick={handlePrint} className="gap-2" disabled={isExporting}>
+            <Printer className="w-4 h-4" /> 
+            {isExporting ? "جاري التصدير والمعالجة..." : "حفظ وطباعة عالية الدقة"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
-
-// معاينة الورقة - تعرض مصغّراً للصور المرتبة
-function SheetPreview({
-  cols,
-  rows,
-  count,
-  imageWidthMM,
-  imageHeightMM,
-  gapMM,
-  zoom,
-  showCutLines,
-  elements,
-  slots,
-  mode,
-  canvasWidth,
-  canvasHeight,
-  backgroundColor,
-}: any) {
-  if (mode === "collage") {
-    const gap = gapMM;
-    return (
-      <div className="relative w-full h-full">
-        {slots.map((slot: any) => (
-          <div
-            key={slot.id}
-            className="absolute overflow-hidden"
-            style={{
-              left: `${slot.x * 100}%`,
-              top: `${slot.y * 100}%`,
-              width: `${slot.w * 100}%`,
-              height: `${slot.h * 100}%`,
-              padding: `${(gap / 2) * 2 * zoom}px`,
-              boxSizing: "border-box",
-              border: showCutLines ? "0.5px dashed #f87171" : "none",
-            }}
-          >
-            {slot.imageSrc ? (
-              <img
-                src={slot.imageSrc}
-                alt=""
-                className="w-full h-full object-cover"
-                style={{
-                  filter: buildFilter(slot),
-                }}
-              />
-            ) : (
-              <div className="w-full h-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[9px] text-muted-foreground">
-                خلية فارغة
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  const items = [];
-  for (let i = 0; i < count; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = col * (imageWidthMM + gapMM) * 2 * zoom;
-    const y = row * (imageHeightMM + gapMM) * 2 * zoom;
-    const w = imageWidthMM * 2 * zoom;
-    const h = imageHeightMM * 2 * zoom;
-
-    items.push(
-      <div
-        key={i}
-        className="absolute overflow-hidden"
-        style={{
-          left: x,
-          top: y,
-          width: w,
-          height: h,
-          backgroundColor,
-          boxShadow: showCutLines ? "0 0 0 0.5px #94a3b8" : "none",
-        }}
-      >
-        <CanvasThumbnail
-          elements={elements}
-          slots={slots}
-          mode={mode}
-          canvasWidth={canvasWidth}
-          canvasHeight={canvasHeight}
-          backgroundColor={backgroundColor}
-        />
-      </div>
-    );
-  }
-
-  // خطوط القص
-  const cutLines = [];
-  if (showCutLines) {
-    for (let i = 0; i <= cols; i++) {
-      const x = i * (imageWidthMM + gapMM) * 2 * zoom - gapMM * zoom;
-      cutLines.push(
-        <div
-          key={`v-${i}`}
-          className="absolute border-l border-dashed border-red-400"
-          style={{ left: x, top: 0, bottom: 0 }}
-        />
-      );
-    }
-    for (let i = 0; i <= rows; i++) {
-      const y = i * (imageHeightMM + gapMM) * 2 * zoom - gapMM * zoom;
-      cutLines.push(
-        <div
-          key={`h-${i}`}
-          className="absolute border-t border-dashed border-red-400"
-          style={{ top: y, left: 0, right: 0 }}
-        />
-      );
-    }
-  }
-
-  return (
-    <div className="relative w-full h-full">
-      {items}
-      {cutLines}
-    </div>
-  );
-}
-
-// مصغّر للكانفس (يعرض العنصر الأول أو الخلية الأولى)
-function CanvasThumbnail({
-  elements,
-  slots,
-  mode,
-  canvasWidth,
-  canvasHeight,
-  backgroundColor,
-}: any) {
-  // محاولة عرض مصغّر بسيط للصورة الأولى
-  const firstImage =
-    mode === "single"
-      ? elements.find((e: any) => e.type === "image")
-      : slots.find((s: any) => s.imageSrc);
-
-  if (firstImage) {
-    const src = firstImage.imageSrc;
-    return (
-      <img
-        src={src}
-        alt=""
-        className="w-full h-full object-cover"
-        style={{
-          filter: buildFilter(firstImage),
-        }}
-      />
-    );
-  }
-  return (
-    <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground">
-      معاينة
-    </div>
-  );
-}
-
-function buildFilter(el: any): string {
-  const parts: string[] = [];
-  const filterDef = IMAGE_FILTERS.find((f) => f.id === el?.filter);
-  if (filterDef && filterDef.css) parts.push(filterDef.css);
-  if (el?.brightness && el.brightness !== 100) parts.push(`brightness(${el.brightness}%)`);
-  if (el?.contrast && el.contrast !== 100) parts.push(`contrast(${el.contrast}%)`);
-  if (el?.saturation && el.saturation !== 100) parts.push(`saturate(${el.saturation}%)`);
-  return parts.join(" ");
 }

@@ -1,8 +1,7 @@
-"use client";
-
 import { useEditorStore } from "@/lib/editor-store";
 import { IMAGE_FILTERS } from "@/lib/templates";
 import { toast } from "sonner";
+import { FilterableObject } from "@/lib/utils";
 
 // تصدير الكانفس الحالي كصورة PNG/JPG
 export async function exportCanvas(
@@ -33,25 +32,136 @@ export async function exportCanvas(
 
   // === وضع الكولاج ===
   if (mode === "collage") {
-    for (const slot of slots) {
-      if (!slot.imageSrc) continue;
-      const img = await loadImage(slot.imageSrc);
-      const x = slot.x * canvasWidth;
-      const y = slot.y * canvasHeight;
-      const w = slot.w * canvasWidth;
-      const h = slot.h * canvasHeight;
+    const state = useEditorStore.getState();
+    const {
+      collageGap = 0,
+      collageMargin = 0,
+      collageRadius = 0,
+      collageShowCutLines = false,
+      collageStrokeWidth = 0,
+      collageStrokeColor = "#000000",
+    } = state;
+
+    const margin = collageMargin;
+    const gap = collageGap;
+    const radius = collageRadius;
+    const borderW = collageStrokeWidth;
+
+    const availW = canvasWidth - 2 * margin;
+    const availH = canvasHeight - 2 * margin;
+
+    // 1. رسم خطوط القص أولاً خلف الصور لتكون واضحة ومستمرة في الفراغات
+    if (collageShowCutLines) {
       ctx.save();
-      ctx.beginPath();
-      ctx.rect(x, y, w, h);
-      ctx.clip();
-      drawImageCover(ctx, img, x, y, w, h);
+      ctx.strokeStyle = "#a0aec0"; // لون رمادي ناعم
+      ctx.lineWidth = Math.max(1, 2 * (canvasWidth / 1200)); // يتناسب مع الدقة
+      ctx.setLineDash([8, 8]);
+      for (const slot of slots) {
+        const left = margin + slot.x * availW + gap / 2;
+        const top = margin + slot.y * availH + gap / 2;
+        const width = slot.w * availW - gap;
+        const height = slot.h * availH - gap;
+
+        ctx.strokeRect(left - gap / 2, top - gap / 2, width + gap, height + gap);
+      }
       ctx.restore();
-      // طبقة الفلتر (تطبيق بسيط عبر canvas filter)
-      applyCanvasFilter(ctx, slot, x, y, w, h, img, canvasWidth, canvasHeight);
+    }
+
+    // تحميل جميع صور الخلايا بالتوازي
+    const slotImageMap: Record<string, HTMLImageElement> = {};
+    const slotLoadPromises = slots
+      .filter((slot) => slot.imageSrc)
+      .map(async (slot) => {
+        try {
+          const img = await loadImage(slot.imageSrc!);
+          slotImageMap[slot.id] = img;
+        } catch (e) {
+          console.error("Failed to pre-load slot image:", slot.imageSrc, e);
+        }
+      });
+    await Promise.all(slotLoadPromises);
+
+    // 2. رسم الصور والحدود
+    for (const slot of slots) {
+      const left = margin + slot.x * availW + gap / 2;
+      const top = margin + slot.y * availH + gap / 2;
+      const width = slot.w * availW - gap;
+      const height = slot.h * availH - gap;
+
+      if (slot.imageSrc && slotImageMap[slot.id]) {
+        const img = slotImageMap[slot.id];
+        ctx.save();
+
+        // تطبيق الفلتر على مستوى السياق إن وجد
+        const filterStr = buildCanvasFilterString(slot);
+        if (filterStr && filterStr !== "none") {
+          ctx.filter = filterStr;
+        }
+
+        // قص الزوايا المستديرة (Clipping)
+        ctx.beginPath();
+        if (radius > 0) {
+          drawRoundRect(ctx, left, top, width, height, radius);
+        } else {
+          ctx.rect(left, top, width, height);
+        }
+        ctx.clip();
+
+        drawImageCover(ctx, img, left, top, width, height);
+        ctx.restore();
+      }
+
+      // رسم حدود خلايا الكولاج (Stroke)
+      if (borderW > 0) {
+        ctx.save();
+        ctx.strokeStyle = collageStrokeColor;
+        ctx.lineWidth = borderW;
+        ctx.beginPath();
+        if (radius > 0) {
+          drawRoundRect(ctx, left, top, width, height, radius);
+        } else {
+          ctx.rect(left, top, width, height);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
     }
   } else {
-    // === وضع الصورة الواحدة ===
-    const sorted = [...elements].sort((a, b) => a.zIndex - b.zIndex);
+    // === وضع الصورة الواحدة (React-Konva) ===
+    const stage = useEditorStore.getState().stageRef;
+    if (stage) {
+      try {
+        const dataUrl = stage.toDataURL({
+          pixelRatio: canvasWidth / stage.width(), // تصدير بالدقة الأصلية للكانفس
+          mimeType: format === "png" ? "image/png" : "image/jpeg",
+          quality: quality
+        });
+        const res = await fetch(dataUrl);
+        return await res.blob();
+      } catch (e) {
+        console.error("Failed to export via Konva Stage, falling back to 2d canvas context:", e);
+      }
+    }
+
+    // Fallback if stage is not initialized (e.g., in unit tests)
+    const sorted = [...elements]
+      .filter((el) => el.visible !== false)
+      .sort((a, b) => a.zIndex - b.zIndex);
+
+    // تحميل جميع صور العناصر بالتوازي
+    const elImageMap: Record<string, HTMLImageElement> = {};
+    const elLoadPromises = sorted
+      .filter((el) => el.type === "image" && el.imageSrc)
+      .map(async (el) => {
+        try {
+          const img = await loadImage(el.imageSrc!);
+          elImageMap[el.id] = img;
+        } catch (e) {
+          console.error("Failed to pre-load element image:", el.imageSrc, e);
+        }
+      });
+    await Promise.all(elLoadPromises);
+
     for (const el of sorted) {
       ctx.save();
       ctx.globalAlpha = el.opacity;
@@ -66,8 +176,8 @@ export async function exportCanvas(
       ctx.rotate((el.rotation * Math.PI) / 180);
       ctx.translate(-w / 2, -h / 2);
 
-      if (el.type === "image" && el.imageSrc) {
-        const img = await loadImage(el.imageSrc);
+      if (el.type === "image" && el.imageSrc && elImageMap[el.id]) {
+        const img = elImageMap[el.id];
         ctx.filter = buildCanvasFilterString(el);
         drawImageCover(ctx, img, 0, 0, w, h);
         ctx.filter = "none";
@@ -137,7 +247,7 @@ function blobToDataURL(blob: Blob): Promise<string> {
 }
 
 // تنزيل صورة من Blob عبر Wails
-export async function downloadBlob(blob: Blob, filename: string) {
+export async function downloadBlob(blob: Blob, filename: string): Promise<string> {
   try {
     let data: string;
     let displayName = "Image File";
@@ -158,9 +268,10 @@ export async function downloadBlob(blob: Blob, filename: string) {
       }
     }
     
-    await SaveFileDialog(data, filename, displayName, pattern);
+    return await SaveFileDialog(data, filename, displayName, pattern);
   } catch (err) {
     console.error("Save failed:", err);
+    return "error";
   }
 }
 
@@ -200,7 +311,7 @@ function drawImageCover(
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
 
-function buildCanvasFilterString(el: any): string {
+function buildCanvasFilterString(el: FilterableObject): string {
   const parts: string[] = [];
   const filterDef = IMAGE_FILTERS.find((f) => f.id === el.filter);
   if (filterDef && filterDef.css) {
@@ -216,21 +327,6 @@ function buildCanvasFilterString(el: any): string {
     parts.push(`saturate(${el.saturation}%)`);
   if (el.blur && el.blur > 0) parts.push(`blur(${el.blur}px)`);
   return parts.join(" ") || "none";
-}
-
-function applyCanvasFilter(
-  ctx: CanvasRenderingContext2D,
-  slot: any,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  img: HTMLImageElement,
-  canvasWidth: number,
-  canvasHeight: number
-) {
-  // للخلايا - الفلاتر يتم تطبيقها أثناء الرسم
-  // تم دمجها في drawImageCover أعلاه عبر ctx.filter
 }
 
 function drawRoundRect(
@@ -283,7 +379,7 @@ function drawStar(
 }
 
 // حفظ المشروع كملف JSON
-export function saveProjectAsJSON() {
+export async function saveProjectAsJSON() {
   const state = useEditorStore.getState();
   const project = {
     version: "1.0",
@@ -301,16 +397,20 @@ export function saveProjectAsJSON() {
   const blob = new Blob([JSON.stringify(project, null, 2)], {
     type: "application/json",
   });
-  downloadBlob(blob, `identity-studio-${Date.now()}.json`);
-  toast.success("تم حفظ المشروع");
+  const res = await downloadBlob(blob, `identity-studio-${Date.now()}.json`);
+  if (res === "success") {
+    toast.success("تم حفظ المشروع");
+  }
 }
 
 // تصدير سريع بصيغة PNG
 export async function quickExportPNG() {
   const blob = await exportCanvas("png");
   if (blob) {
-    downloadBlob(blob, `photo-${Date.now()}.png`);
-    toast.success("تم تصدير الصورة بنجاح");
+    const res = await downloadBlob(blob, `photo-${Date.now()}.png`);
+    if (res === "success") {
+      toast.success("تم تصدير الصورة بنجاح");
+    }
   } else {
     toast.error("تعذر تصدير الصورة");
   }

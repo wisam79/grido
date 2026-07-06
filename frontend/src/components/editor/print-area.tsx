@@ -1,7 +1,5 @@
-"use client";
-
-import { useEditorStore } from "@/lib/editor-store";
-import { IMAGE_FILTERS } from "@/lib/templates";
+import { useEditorStore, CanvasElement, CanvasSlot } from "@/lib/editor-store";
+import { buildCSSFilter } from "@/lib/utils";
 
 // منطقة الطباعة - تُعرض فقط عند الطباعة عبر CSS print media
 export function PrintArea() {
@@ -16,10 +14,16 @@ export function PrintArea() {
     printSettings,
   } = useEditorStore();
 
-  if (!template && mode !== "collage") return null;
+  const firstImage =
+    mode === "single"
+      ? elements.find((e) => e.type === "image")
+      : slots.find((s) => s.imageSrc);
 
-  const imageWidthMM = template ? template.widthMM : 100;
-  const imageHeightMM = template ? template.heightMM : 100;
+  if (!firstImage && elements.length === 0) return null;
+
+  const dpi = template ? template.dpi : printSettings.dpi;
+  const imageWidthMM = template ? template.widthMM : Math.round((canvasWidth / dpi) * 25.4);
+  const imageHeightMM = template ? template.heightMM : Math.round((canvasHeight / dpi) * 25.4);
 
   const availableWidthMM =
     printSettings.orientation === "portrait"
@@ -94,6 +98,15 @@ export function PrintArea() {
   );
 }
 
+interface PrintableCanvasProps {
+  elements: CanvasElement[];
+  slots: CanvasSlot[];
+  mode: "single" | "collage";
+  canvasWidth: number;
+  canvasHeight: number;
+  backgroundColor: string;
+}
+
 // نسخة طباعة من الكانفس - تعرض العناصر بدقة كاملة
 function PrintableCanvas({
   elements,
@@ -102,7 +115,7 @@ function PrintableCanvas({
   canvasWidth,
   canvasHeight,
   backgroundColor,
-}: any) {
+}: PrintableCanvasProps) {
   const { printSettings } = useEditorStore();
   const paperW =
     printSettings.orientation === "portrait"
@@ -152,7 +165,7 @@ function PrintableCanvas({
                     width: "100%",
                     height: "100%",
                     objectFit: "cover",
-                    filter: buildFilter(slot),
+                    filter: buildCSSFilter(slot),
                   }}
                 />
               )}
@@ -194,7 +207,7 @@ function PrintableCanvas({
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                filter: buildFilter(el),
+                filter: buildCSSFilter(el),
               }}
             />
           )}
@@ -277,15 +290,4 @@ function PrintableCanvas({
       ))}
     </div>
   );
-}
-
-function buildFilter(el: any): string {
-  const parts: string[] = [];
-  const filterDef = IMAGE_FILTERS.find((f) => f.id === el?.filter);
-  if (filterDef && filterDef.css) parts.push(filterDef.css);
-  if (el?.brightness && el.brightness !== 100) parts.push(`brightness(${el.brightness}%)`);
-  if (el?.contrast && el.contrast !== 100) parts.push(`contrast(${el.contrast}%)`);
-  if (el?.saturation && el.saturation !== 100) parts.push(`saturate(${el.saturation}%)`);
-  if (el?.blur && el.blur > 0) parts.push(`blur(${el.blur}px)`);
-  return parts.join(" ");
 }

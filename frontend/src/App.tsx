@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useEffect } from "react";
 import { Toolbar } from "@/components/editor/toolbar";
@@ -10,9 +9,9 @@ import { ExportDialog } from "@/components/editor/export-dialog";
 import { PrintArea } from "@/components/editor/print-area";
 import { useEditorStore } from "@/lib/editor-store";
 import { saveProjectAsJSON } from "@/components/editor/export-utils";
+import { ProjectSchema } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import {
   Palette,
@@ -27,73 +26,109 @@ import {
   Minimize2,
   X,
 } from "lucide-react";
-import { WindowMinimise, WindowToggleMaximise, Quit as WindowClose } from "../wailsjs/runtime/runtime";
+import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from "../wailsjs/go/main/App";
+import { toast } from "sonner";
+import { useTheme } from "@/hooks/use-theme";
+import { useWindowControls } from "@/hooks/use-window-controls";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 export default function App() {
   const [printOpen, setPrintOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [mobileTemplatesOpen, setMobileTemplatesOpen] = useState(false);
   const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [isMaximized, setIsMaximized] = useState(false);
-  const [isFocused, setIsFocused] = useState(true);
 
+  const { theme, toggleTheme } = useTheme();
+  const {
+    isMaximized,
+    isFocused,
+    handleMinimize,
+    handleMaximize,
+    handleClose,
+  } = useWindowControls();
+
+  useKeyboardShortcuts();
+
+  // 1. استرجاع مسودة المشروع التلقائية عند تشغيل التطبيق
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const isDark = document.documentElement.classList.contains("dark");
-      setTheme(isDark ? "dark" : "light");
-
-      const handleResize = () => {
-        const isMax =
-          window.outerWidth >= window.screen.availWidth &&
-          window.outerHeight >= window.screen.availHeight;
-        setIsMaximized(isMax);
-      };
-      window.addEventListener("resize", handleResize);
-      handleResize();
-
-      const handleFocus = () => setIsFocused(true);
-      const handleBlur = () => setIsFocused(false);
-      window.addEventListener("focus", handleFocus);
-      window.addEventListener("blur", handleBlur);
-
-      const handleContextMenu = (e: MouseEvent) => {
-        if (
-          (e.target as HTMLElement).tagName !== "INPUT" &&
-          (e.target as HTMLElement).tagName !== "TEXTAREA"
-        ) {
-          e.preventDefault();
+    const initAutoSave = async () => {
+      try {
+        const saved = await LoadAutoSave();
+        if (saved) {
+          try {
+            const rawProject = JSON.parse(saved);
+            const parsed = ProjectSchema.safeParse(rawProject);
+            if (parsed.success) {
+              const project = parsed.data;
+              
+              useEditorStore.getState().loadProject(project);
+              toast.info("تم استعادة مسودة العمل السابقة تلقائياً", {
+                action: {
+                  label: "بدء من جديد",
+                  onClick: () => {
+                    useEditorStore.setState({ elements: [], slots: [], selectedId: null });
+                    ClearAutoSave();
+                    toast.success("تم بدء مشروع جديد");
+                  }
+                }
+              });
+            } else {
+              console.error("Invalid autosave data", parsed.error);
+            }
+          } catch (e) {
+            console.error("Failed to parse autosave JSON:", e);
+          }
         }
-      };
-      window.addEventListener("contextmenu", handleContextMenu);
-
-      return () => {
-        window.removeEventListener("resize", handleResize);
-        window.removeEventListener("focus", handleFocus);
-        window.removeEventListener("blur", handleBlur);
-        window.removeEventListener("contextmenu", handleContextMenu);
-      };
-    }
+      } catch (err) {
+        console.error("Failed to load autosave:", err);
+      }
+    };
+    initAutoSave();
   }, []);
 
-  const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    if (nextTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
+  // 2. المراقبة والحفظ التلقائي في الخلفية بعد ثانيتين من توقف التعديل (مع التخطي إذا كانت الخصائص الأساسية لم تتغير)
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+    let lastSavedString = "";
 
-  const handleMinimize = () => WindowMinimise();
-  const handleMaximize = () => {
-    WindowToggleMaximise();
-    setIsMaximized((prev) => !prev);
-  };
-  const handleClose = () => WindowClose();
+    const unsubscribe = useEditorStore.subscribe((state) => {
+      const projectData = {
+        mode: state.mode,
+        canvasWidth: state.canvasWidth,
+        canvasHeight: state.canvasHeight,
+        backgroundColor: state.backgroundColor,
+        elements: state.elements,
+        slots: state.slots,
+        template: state.template,
+        collageTemplate: state.collageTemplate,
+        printSettings: state.printSettings,
+      };
+      
+      const currentString = JSON.stringify(projectData);
+      if (currentString === lastSavedString) {
+        return; // تخطي إذا لم يحدث تغيير حقيقي في مساحة العمل
+      }
 
-  const { template, collageTemplate } = useEditorStore();
+      clearTimeout(timeout);
+      timeout = setTimeout(async () => {
+        try {
+          await SaveAutoSave(currentString);
+          lastSavedString = currentString;
+        } catch (err) {
+          console.error("Failed to save draft:", err);
+        }
+      }, 2000); // حفظ تلقائي بعد ثانيتين من توقف التعديل تماماً
+    });
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, []);
+
+
+
+  const { template, collageTemplate, canvasWidth, canvasHeight, printSettings } = useEditorStore();
 
   return (
     <div className="h-screen flex flex-col bg-background/80 backdrop-blur-xl overflow-hidden font-cairo" dir="rtl">
@@ -104,52 +139,41 @@ export default function App() {
         }`}
         onDoubleClick={handleMaximize}
       >
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold text-lg shadow-md">
-              ID
-            </div>
-            <div>
-              <h1 className="text-base font-bold leading-tight">
-                استوديو الهوية (Grido Studio)
-              </h1>
-              <p className="text-[11px] text-muted-foreground leading-tight">
-                تعديل صور الهوية والجواز والكولاج · طباعة احترافية
-              </p>
-            </div>
+        <div className="flex items-center justify-between px-4 py-1.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary/80 shrink-0" />
+            <h1 className="text-xs font-bold text-foreground/80">
+              Grido Studio | استوديو الهوية
+            </h1>
           </div>
           <div className="flex items-center gap-2 title-bar-controls">
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleTheme}
-              className="gap-1.5"
+              className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
               title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
             >
-              {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden gap-1.5"
+              className="lg:hidden gap-1.5 h-7 px-2"
               onClick={() => setMobileTemplatesOpen(true)}
             >
-              <PanelsTopLeft className="w-4 h-4" />
+              <PanelsTopLeft className="w-3.5 h-3.5" />
               <span className="text-xs">القوالب</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden gap-1.5"
+              className="lg:hidden gap-1.5 h-7 px-2"
               onClick={() => setMobilePropsOpen(true)}
             >
-              <Settings2 className="w-4 h-4" />
+              <Settings2 className="w-3.5 h-3.5" />
               <span className="text-xs">خصائص</span>
             </Button>
-            <div className="hidden md:flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted/60 px-2 py-1 rounded-md">
-              <Sparkles className="w-3 h-3" />
-              <span>تعديل فوري · طباعة دقيقة</span>
-            </div>
 
             {/* Separator */}
             <div className="w-px h-5 bg-border mx-1" />
@@ -196,7 +220,7 @@ export default function App() {
       {/* المحتوى الرئيسي */}
       <main className="flex-1 flex overflow-hidden">
         {/* اللوحة اليسرى - القوالب (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex w-72 border-l bg-card flex-col no-print">
+        <aside className="hidden lg:flex w-80 border-l bg-card flex-col no-print">
           <TemplatePanel />
         </aside>
 
@@ -225,8 +249,11 @@ export default function App() {
                   </>
                 ) : (
                   <>
-                    <Palette className="w-3.5 h-3.5" />
-                    <span>وضع فارغ</span>
+                    <Palette className="w-3.5 h-3.5 text-primary" />
+                    <span>مساحة عمل مخصصة</span>
+                    <span className="text-muted-foreground">
+                      · {canvasWidth}×{canvasHeight} بكسل ({Math.round((canvasWidth / printSettings.dpi) * 25.4)}×{Math.round((canvasHeight / printSettings.dpi) * 25.4)} مم)
+                    </span>
                   </>
                 )}
               </div>
@@ -285,11 +312,10 @@ export default function App() {
       <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
 
       {/* منطقة الطباعة - مخفية عن الشاشة */}
-      <div className="hidden print:block">
+      <div id="print-container" className="hidden print:block">
         <PrintArea />
       </div>
 
-      <Toaster />
       <SonnerToaster position="top-center" richColors />
     </div>
   );

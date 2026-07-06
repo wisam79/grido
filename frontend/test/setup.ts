@@ -14,3 +14,12 @@ mockIntersectionObserver.mockReturnValue({
   disconnect: () => null
 });
 window.IntersectionObserver = mockIntersectionObserver;
+
+// Mock ResizeObserver
+class MockResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.ResizeObserver = MockResizeObserver;
+

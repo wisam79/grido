@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import {
   Dialog,
@@ -33,7 +31,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const [format, setFormat] = useState<"png" | "jpg">("png");
   const [quality, setQuality] = useState(95);
   const [loading, setLoading] = useState(false);
-  const { template, canvasWidth, canvasHeight, mode } = useEditorStore();
+  const { template, canvasWidth, canvasHeight, mode, printSettings } = useEditorStore();
 
   const handleExport = async () => {
     setLoading(true);
@@ -46,9 +44,11 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           : mode === "collage"
           ? `collage-${Date.now()}.${ext}`
           : `photo-${Date.now()}.${ext}`;
-        downloadBlob(blob, name);
-        toast.success("تم تصدير الصورة بنجاح");
-        onOpenChange(false);
+        const res = await downloadBlob(blob, name);
+        if (res === "success") {
+          toast.success("تم تصدير الصورة بنجاح");
+          onOpenChange(false);
+        }
       } else {
         toast.error("تعذر إنشاء الصورة");
       }
@@ -128,7 +128,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               <span className="text-muted-foreground">الأبعاد:</span>
               <span className="font-mono">{canvasWidth}×{canvasHeight}px</span>
             </div>
-            {template && (
+            {template ? (
               <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الحجم الفعلي:</span>
@@ -137,6 +137,17 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الدقة:</span>
                   <span>{template.dpi} DPI</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">الحجم الفعلي:</span>
+                  <span>{Math.round((canvasWidth / printSettings.dpi) * 25.4)}×{Math.round((canvasHeight / printSettings.dpi) * 25.4)} مم</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">الدقة:</span>
+                  <span>{printSettings.dpi} DPI</span>
                 </div>
               </>
             )}
