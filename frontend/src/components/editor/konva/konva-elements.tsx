@@ -36,11 +36,46 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
         console.warn("Failed to cache Konva image", e);
       }
     }
-  }, [image, element.brightness, element.contrast, element.saturation, element.blur, elementRef]);
+  }, [image, element.filter, element.brightness, element.contrast, element.saturation, element.blur, elementRef]);
+
+  // حساب القيم الكلية بدمج مرشحات الصور الجاهزة والتعديلات اليدوية
+  let totalBrightness = element.brightness ?? 100;
+  let totalContrast = element.contrast ?? 100;
+  let totalSaturation = element.saturation ?? 100;
+  let totalHue = 0;
+  let useSepia = false;
+  let useGrayscale = false;
+
+  if (element.filter === "grayscale") {
+    useGrayscale = true;
+  } else if (element.filter === "sepia") {
+    useSepia = true;
+  } else if (element.filter === "vivid") {
+    totalContrast = (totalContrast / 100) * 110;
+    totalSaturation = (totalSaturation / 100) * 140;
+  } else if (element.filter === "cool") {
+    totalHue = 180;
+    totalSaturation = (totalSaturation / 100) * 120;
+  } else if (element.filter === "warm") {
+    useSepia = true;
+    totalHue = -10;
+    totalSaturation = (totalSaturation / 100) * 130;
+  } else if (element.filter === "soft") {
+    totalBrightness = (totalBrightness / 100) * 110;
+    totalContrast = (totalContrast / 100) * 90;
+    totalSaturation = (totalSaturation / 100) * 90;
+  } else if (element.filter === "professional") {
+    totalContrast = (totalContrast / 100) * 115;
+    totalSaturation = (totalSaturation / 100) * 110;
+    totalBrightness = (totalBrightness / 100) * 102;
+  }
 
   const filters: any[] = [];
-  if (element.brightness !== undefined && element.brightness !== 100) filters.push(Konva.Filters.Brighten);
-  if (element.contrast !== undefined && element.contrast !== 100) filters.push(Konva.Filters.Contrast);
+  if (useGrayscale) filters.push(Konva.Filters.Grayscale);
+  if (useSepia) filters.push(Konva.Filters.Sepia);
+  if (totalBrightness !== 100) filters.push(Konva.Filters.Brighten);
+  if (totalContrast !== 100) filters.push(Konva.Filters.Contrast);
+  if (totalSaturation !== 100 || totalHue !== 0) filters.push(Konva.Filters.HSL);
   if (element.blur && element.blur > 0) filters.push(Konva.Filters.Blur);
 
   return (
@@ -58,10 +93,15 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
       onClick={onSelect}
       onTap={onSelect}
       filters={filters}
-      brightness={element.brightness !== undefined ? (element.brightness - 100) / 100 : 0}
-      contrast={element.contrast !== undefined ? element.contrast - 100 : 0}
+      brightness={totalBrightness !== 100 ? (totalBrightness - 100) / 100 : 0}
+      contrast={totalContrast !== 100 ? totalContrast - 100 : 0}
       blurRadius={element.blur || 0}
+      {...({
+        hue: totalHue,
+        saturation: totalSaturation !== 100 ? Math.log2(Math.max(1, totalSaturation) / 100) : 0
+      } as any)}
       draggable={!element.locked && isSelected}
+
       onDragMove={(e) => {
         if (e.evt.altKey) {
           setActiveGuides([]);
