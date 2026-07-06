@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Toolbar } from "@/components/editor/toolbar";
 import { TemplatePanel } from "@/components/editor/template-panel";
 import { PropertiesPanel } from "@/components/editor/properties-panel";
@@ -7,18 +7,13 @@ import { EditorCanvas } from "@/components/editor/editor-canvas";
 import { PrintDialog } from "@/components/editor/print-dialog";
 import { ExportDialog } from "@/components/editor/export-dialog";
 import { PrintArea } from "@/components/editor/print-area";
-import { useEditorStore } from "@/lib/editor-store";
 import { saveProjectAsJSON } from "@/components/editor/export-utils";
-import { ProjectSchema } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import {
-  Palette,
   Settings2,
   PanelsTopLeft,
-  Sparkles,
-  Images,
   Sun,
   Moon,
   Minus,
@@ -26,11 +21,10 @@ import {
   Minimize2,
   X,
 } from "lucide-react";
-import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from "../wailsjs/go/main/App";
-import { toast } from "sonner";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useAutoSave } from "@/hooks/use-autosave";
 
 export default function App() {
   const [printOpen, setPrintOpen] = useState(false);
@@ -48,87 +42,7 @@ export default function App() {
   } = useWindowControls();
 
   useKeyboardShortcuts();
-
-  // 1. استرجاع مسودة المشروع التلقائية عند تشغيل التطبيق
-  useEffect(() => {
-    const initAutoSave = async () => {
-      try {
-        const saved = await LoadAutoSave();
-        if (saved) {
-          try {
-            const rawProject = JSON.parse(saved);
-            const parsed = ProjectSchema.safeParse(rawProject);
-            if (parsed.success) {
-              const project = parsed.data;
-              
-              useEditorStore.getState().loadProject(project);
-              toast.info("تم استعادة مسودة العمل السابقة تلقائياً", {
-                action: {
-                  label: "بدء من جديد",
-                  onClick: () => {
-                    useEditorStore.setState({ elements: [], slots: [], selectedId: null });
-                    ClearAutoSave();
-                    toast.success("تم بدء مشروع جديد");
-                  }
-                }
-              });
-            } else {
-              console.error("Invalid autosave data", parsed.error);
-            }
-          } catch (e) {
-            console.error("Failed to parse autosave JSON:", e);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load autosave:", err);
-      }
-    };
-    initAutoSave();
-  }, []);
-
-  // 2. المراقبة والحفظ التلقائي في الخلفية بعد ثانيتين من توقف التعديل (مع التخطي إذا كانت الخصائص الأساسية لم تتغير)
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-    let lastSavedString = "";
-
-    const unsubscribe = useEditorStore.subscribe((state) => {
-      const projectData = {
-        mode: state.mode,
-        canvasWidth: state.canvasWidth,
-        canvasHeight: state.canvasHeight,
-        backgroundColor: state.backgroundColor,
-        elements: state.elements,
-        slots: state.slots,
-        template: state.template,
-        collageTemplate: state.collageTemplate,
-        printSettings: state.printSettings,
-      };
-      
-      const currentString = JSON.stringify(projectData);
-      if (currentString === lastSavedString) {
-        return; // تخطي إذا لم يحدث تغيير حقيقي في مساحة العمل
-      }
-
-      clearTimeout(timeout);
-      timeout = setTimeout(async () => {
-        try {
-          await SaveAutoSave(currentString);
-          lastSavedString = currentString;
-        } catch (err) {
-          console.error("Failed to save draft:", err);
-        }
-      }, 2000); // حفظ تلقائي بعد ثانيتين من توقف التعديل تماماً
-    });
-
-    return () => {
-      unsubscribe();
-      clearTimeout(timeout);
-    };
-  }, []);
-
-
-
-  const { template, collageTemplate, canvasWidth, canvasHeight, printSettings } = useEditorStore();
+  useAutoSave();
 
   return (
     <div className="h-screen flex flex-col bg-background/80 backdrop-blur-xl overflow-hidden font-cairo" dir="rtl">
@@ -228,36 +142,6 @@ export default function App() {
         <section className="flex-1 flex flex-col min-w-0 bg-muted/20">
           <div className="flex-1 relative">
             <EditorCanvas />
-            {/* شارة وضع التحرير */}
-            <div className="absolute top-3 right-3 no-print">
-              <div className="bg-card/90 backdrop-blur border rounded-full px-3 py-1.5 text-[11px] font-medium shadow-sm flex items-center gap-2">
-                {template ? (
-                  <>
-                    {(() => {
-                      const Icon = template.icon;
-                      return <Icon className="w-3.5 h-3.5 text-primary" />;
-                    })()}
-                    <span>{template.name}</span>
-                    <span className="text-muted-foreground">
-                      · {template.widthMM}×{template.heightMM} مم
-                    </span>
-                  </>
-                ) : collageTemplate ? (
-                  <>
-                    <Images className="w-3.5 h-3.5 text-primary" />
-                    <span>{collageTemplate.name}</span>
-                  </>
-                ) : (
-                  <>
-                    <Palette className="w-3.5 h-3.5 text-primary" />
-                    <span>مساحة عمل مخصصة</span>
-                    <span className="text-muted-foreground">
-                      · {canvasWidth}×{canvasHeight} بكسل ({Math.round((canvasWidth / printSettings.dpi) * 25.4)}×{Math.round((canvasHeight / printSettings.dpi) * 25.4)} مم)
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* شريط الحالة السفلي */}

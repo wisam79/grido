@@ -4,6 +4,8 @@ import { SliderControl } from "./shared-controls";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 
+import { useShallow } from "zustand/react/shallow";
+
 export function CollageSettings() {
   const {
     collageGap,
@@ -18,7 +20,20 @@ export function CollageSettings() {
     setCollageShowCutLines,
     setCollageStrokeWidth,
     setCollageStrokeColor,
-  } = useEditorStore();
+  } = useEditorStore(useShallow((state) => ({
+    collageGap: state.collageGap,
+    collageMargin: state.collageMargin,
+    collageRadius: state.collageRadius,
+    collageShowCutLines: state.collageShowCutLines,
+    collageStrokeWidth: state.collageStrokeWidth,
+    collageStrokeColor: state.collageStrokeColor,
+    setCollageGap: state.setCollageGap,
+    setCollageMargin: state.setCollageMargin,
+    setCollageRadius: state.setCollageRadius,
+    setCollageShowCutLines: state.setCollageShowCutLines,
+    setCollageStrokeWidth: state.setCollageStrokeWidth,
+    setCollageStrokeColor: state.setCollageStrokeColor,
+  })));
 
   return (
     <div className="rounded-lg border bg-muted/30 p-3 space-y-4">

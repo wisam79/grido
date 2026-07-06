@@ -7,6 +7,8 @@ import { SlotProperties } from "./properties/slot-properties";
 import { CollageSettings } from "./properties/collage-settings";
 import { LayersList } from "./properties/layers-list";
 
+import { useShallow } from "zustand/react/shallow";
+
 export function PropertiesPanel() {
   const {
     mode,
@@ -15,9 +17,14 @@ export function PropertiesPanel() {
     selectedId,
     updateElement,
     updateSlot,
-    backgroundColor,
-    setBackgroundColor,
-  } = useEditorStore();
+  } = useEditorStore(useShallow((state) => ({
+    mode: state.mode,
+    elements: state.elements,
+    slots: state.slots,
+    selectedId: state.selectedId,
+    updateElement: state.updateElement,
+    updateSlot: state.updateSlot,
+  })));
 
   const selectedElement = elements.find((e) => e.id === selectedId);
   const selectedSlot = slots.find((s) => s.id === selectedId);
@@ -36,7 +43,7 @@ export function PropertiesPanel() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-3 space-y-4">
+        <div className="p-3 pb-8 space-y-4">
           {/* خصائص العنصر المحدد */}
           {selectedElement && (
             <ElementProperties element={selectedElement} onUpdate={updateElement} />
@@ -50,10 +57,7 @@ export function PropertiesPanel() {
           {/* إعدادات عامة */}
           {!selectedElement && !selectedSlot && (
             <>
-              <GeneralSettings
-                backgroundColor={backgroundColor}
-                setBackgroundColor={setBackgroundColor}
-              />
+              <GeneralSettings />
               {mode === "collage" && (
                 <CollageSettings />
               )}

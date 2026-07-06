@@ -1,6 +1,20 @@
 import { create } from "zustand";
+import Konva from "konva";
 import { PhotoTemplate, CollageTemplate, COLLAGE_TEMPLATES, PHOTO_TEMPLATES } from "./templates";
 import { uid } from "./utils";
+import { cacheImage, restoreImage, clearImageCache } from "./image-cache";
+
+export interface ProjectStateData {
+  mode: EditorMode;
+  canvasWidth: number;
+  canvasHeight: number;
+  backgroundColor: string;
+  elements?: CanvasElement[];
+  slots?: CanvasSlot[];
+  template?: PhotoTemplate | null;
+  collageTemplate?: CollageTemplate | null;
+  printSettings?: PrintSettings;
+}
 
 // === أنواع العناصر على الكانفس ===
 export type ElementType = "image" | "text" | "shape";
@@ -63,7 +77,7 @@ export interface PrintSettings {
   paperWidthMM: number;
   paperHeightMM: number;
   marginMM: number;
-  gapMM: number; // المسافة بين الصور بالمليمتر
+  gapMM?: number; // المسافة بين الصور بالمليمتر
   dpi: number;
   copiesPerSheet: number; // عدد النسخ في الورقة الواحدة
   showCutLines: boolean;
@@ -129,70 +143,18 @@ interface EditorState {
 
 
   // مرجع Konva Stage للتصدير بدقة عالية
-  stageRef: any;
-  setStageRef: (ref: any) => void;
+  stageRef: Konva.Stage | null;
+  setStageRef: (ref: Konva.Stage | null) => void;
 
   pushHistory: () => void;
   undo: () => void;
   redo: () => void;
   reset: () => void;
-  loadProject: (project: any, projectId?: string | null) => void;
+  loadProject: (project: ProjectStateData, projectId?: string | null) => void;
 }
 
 
-interface CacheEntry {
-  base64: string;
-  lastAccessed: number;
-}
-// كاش لتخزين صور Base64 لتفادي استهلاك الذاكرة في الـ History مع آلية LRU للتنظيف
-const imagesCache: Record<string, CacheEntry> = {};
-const MAX_CACHE_SIZE = 30;
 
-function cacheImage(base64: string | undefined): string | undefined {
-  if (!base64 || !base64.startsWith("data:image")) return base64;
-  
-  for (const [key, val] of Object.entries(imagesCache)) {
-    if (val.base64 === base64) {
-      val.lastAccessed = Date.now();
-      return key;
-    }
-  }
-  
-  const keys = Object.keys(imagesCache);
-  if (keys.length >= MAX_CACHE_SIZE) {
-    let lruKey: string | null = null;
-    let oldest = Infinity;
-    for (const [key, val] of Object.entries(imagesCache)) {
-      if (val.lastAccessed < oldest) {
-        oldest = val.lastAccessed;
-        lruKey = key;
-      }
-    }
-    if (lruKey) {
-      delete imagesCache[lruKey];
-    }
-  }
-  
-  const id = "img_" + uid();
-  imagesCache[id] = { base64, lastAccessed: Date.now() };
-  return id;
-}
-
-function restoreImage(idOrBase64: string | undefined): string | undefined {
-  if (!idOrBase64) return undefined;
-  const entry = imagesCache[idOrBase64];
-  if (entry) {
-    entry.lastAccessed = Date.now();
-    return entry.base64;
-  }
-  return idOrBase64;
-}
-
-export function clearImageCache() {
-  for (const key of Object.keys(imagesCache)) {
-    delete imagesCache[key];
-  }
-}
 
 const defaultPrint: PrintSettings = {
   paperId: "a4",
@@ -601,15 +563,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     });
   },
 
-  loadProject: (project, projectId = null) => {
+  loadProject: (project: ProjectStateData, projectId: string | null = null) => {
     clearImageCache();
     
     // استعادة الأيقونات والمكونات الأصلية للقوالب المطابقة من قاعدة البيانات
     const restoredTemplate = project.template
-      ? PHOTO_TEMPLATES.find((t) => t.id === project.template.id) || project.template
+      ? PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) || project.template
       : null;
     const restoredCollageTemplate = project.collageTemplate
-      ? COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate.id) || project.collageTemplate
+      ? COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate?.id) || project.collageTemplate
       : null;
 
     set({

@@ -1,6 +1,9 @@
 package service
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"image"
 	"image/color"
@@ -24,16 +27,29 @@ func NewPrintService() *PrintService {
 }
 
 func parseColor(hex string) color.Color {
-	hex = strings.TrimPrefix(hex, "#")
+	hex = strings.TrimSpace(strings.TrimPrefix(hex, "#"))
+	if strings.ToLower(hex) == "transparent" {
+		return color.Transparent
+	}
 	if len(hex) == 3 {
 		var r, g, b uint8
 		fmt.Sscanf(hex, "%1x%1x%1x", &r, &g, &b)
 		return color.RGBA{R: r * 17, G: g * 17, B: b * 17, A: 255}
 	}
+	if len(hex) == 4 {
+		var r, g, b, a uint8
+		fmt.Sscanf(hex, "%1x%1x%1x%1x", &r, &g, &b, &a)
+		return color.RGBA{R: r * 17, G: g * 17, B: b * 17, A: a * 17}
+	}
 	if len(hex) == 6 {
 		var r, g, b uint8
 		fmt.Sscanf(hex, "%02x%02x%02x", &r, &g, &b)
 		return color.RGBA{R: r, G: g, B: b, A: 255}
+	}
+	if len(hex) == 8 {
+		var r, g, b, a uint8
+		fmt.Sscanf(hex, "%02x%02x%02x%02x", &r, &g, &b, &a)
+		return color.RGBA{R: r, G: g, B: b, A: a}
 	}
 	return color.White
 }
@@ -99,8 +115,13 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, erro
 		targetW := int(math.Round(mmToPx(item.W, req.DPI)))
 		targetH := int(math.Round(mmToPx(item.H, req.DPI)))
 
+		cacheKey := filePath
+		if strings.HasPrefix(filePath, "data:image/") {
+			cacheKey = fmt.Sprintf("b64_%x", sha256.Sum256([]byte(filePath)))
+		}
+
 		pKey := processedKey{
-			filePath:   filePath,
+			filePath:   cacheKey,
 			brightness: item.Brightness,
 			contrast:   item.Contrast,
 			saturation: item.Saturation,
@@ -114,20 +135,37 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, erro
 		} else {
 			var img image.Image
 			var err error
-			if cachedRaw, ok := imageCache[filePath]; ok {
+			if cachedRaw, ok := imageCache[cacheKey]; ok {
 				img = cachedRaw
 			} else {
-				img, err = imaging.Open(filePath)
-				if err != nil {
-					return "", fmt.Errorf("failed to open image %s: %w", filepath.Base(filePath), err)
+				if strings.HasPrefix(filePath, "data:image/") {
+					commaIdx := strings.Index(filePath, ",")
+					if commaIdx == -1 {
+						return "", fmt.Errorf("invalid base64 image format")
+					}
+					b64Data := filePath[commaIdx+1:]
+					data, err := base64.StdEncoding.DecodeString(b64Data)
+					if err != nil {
+						return "", fmt.Errorf("failed to decode base64 image: %w", err)
+					}
+					img, err = imaging.Decode(bytes.NewReader(data))
+					if err != nil {
+						return "", fmt.Errorf("failed to decode image from base64 data: %w", err)
+					}
+				} else {
+					img, err = imaging.Open(filePath)
+					if err != nil {
+						return "", fmt.Errorf("failed to open image %s: %w", filepath.Base(filePath), err)
+					}
 				}
+
 				if len(imageCache) >= 8 {
 					for k := range imageCache {
 						delete(imageCache, k)
 						break
 					}
 				}
-				imageCache[filePath] = img
+				imageCache[cacheKey] = img
 			}
 
 			// Adjust colors

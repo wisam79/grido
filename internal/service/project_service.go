@@ -22,6 +22,16 @@ func (s *ProjectService) SaveProject(project *domain.Project) error {
 		project.Name = "مشروع بدون عنوان"
 	}
 	project.UpdatedAt = time.Now()
+
+	// Preserve CreatedAt on update, set it on insert
+	if existing, err := s.repo.FindByID(project.ID); err == nil && existing != nil {
+		project.CreatedAt = existing.CreatedAt
+	} else {
+		if project.CreatedAt.IsZero() {
+			project.CreatedAt = project.UpdatedAt
+		}
+	}
+
 	return s.repo.Save(project)
 }
 

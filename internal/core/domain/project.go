@@ -27,4 +27,5 @@ type ProjectRepository interface {
 	FindByID(id string) (*Project, error)
 	FindAll() ([]Project, error)
 	Delete(id string) error
+	ImportProjects(projects []Project, overwrite bool) error
 }

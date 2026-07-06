@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
 
 export function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -54,6 +53,11 @@ export function SliderControl({
   );
 }
 
+import { HexColorPicker } from "react-colorful";
+import { BACKGROUND_COLORS } from "@/lib/templates";
+import { PaintBucket } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 export function ColorWheelPicker({
   color,
   onChange,
@@ -61,185 +65,168 @@ export function ColorWheelPicker({
   color: string;
   onChange: (hex: string) => void;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [hsl, setHsl] = useState({ h: 0, s: 0, l: 50 });
+  const isTransparent = color === "transparent";
+  const [inputValue, setInputValue] = useState(color);
+  const [prevColor, setPrevColor] = useState(color);
 
-  // Sync HSL when color prop changes
-  useEffect(() => {
-    if (/^#[0-9A-F]{6}$/i.test(color)) {
-      setHsl(hexToHsl(color));
+  // تحديث القيمة المحلية عند تغير القيمة الخارجية من الستور
+  if (color !== prevColor) {
+    setPrevColor(color);
+    setInputValue(color);
+  }
+
+  // استخدام requestAnimationFrame لجدولة تحديثات الستور ومنع حدوث تقطّع (throttling)
+  const throttledOnChange = useRef<((hex: string) => void) | null>(null);
+  if (!throttledOnChange.current) {
+    let lastColor = color;
+    let ticking = false;
+    throttledOnChange.current = (hex: string) => {
+      lastColor = hex;
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          onChange(lastColor);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+  }
+
+  const handleHexInput = (val: string) => {
+    setInputValue(val);
+    
+    // تنظيف المدخلات وتدقيقها
+    let cleanVal = val.trim();
+    if (cleanVal === "transparent") {
+      onChange("transparent");
+      return;
     }
-  }, [color]);
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    handlePointerMove(e);
+    if (!cleanVal.startsWith("#")) {
+      cleanVal = "#" + cleanVal;
+    }
+
+    // التحقق من صحة كود HEX (3 أو 6 خانات)
+    const isValidHex = /^#([0-9A-F]{3}){1,2}$/i.test(cleanVal);
+    if (isValidHex) {
+      throttledOnChange.current!(cleanVal.toUpperCase());
+    }
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const radius = rect.width / 2;
-    const cx = rect.left + radius;
-    const cy = rect.top + radius;
-    
-    // Relative coordinates from center
-    const dx = e.clientX - cx;
-    const dy = e.clientY - cy;
-    
-    let distance = Math.sqrt(dx * dx + dy * dy);
-    distance = Math.min(distance, radius); // Clamp distance
-    
-    let angle = Math.atan2(dy, dx);
-    if (angle < 0) angle += 2 * Math.PI;
-    
-    const h = Math.round((angle * 180) / Math.PI);
-    const s = Math.round((distance / radius) * 100);
-    
-    const newHex = hslToHex(h, s, hsl.l);
-    setHsl({ h, s, l: hsl.l });
-    onChange(newHex);
-  };
-
-  // Convert HSL coordinates for handle positioning
-  const radius = 52; // w-26 is 104px, so radius is 52px
-  const angleRad = (hsl.h * Math.PI) / 180;
-  const dist = (hsl.s * radius) / 100;
-  
-  // Center is radius, so coordinates are offset by radius
-  const handleX = radius + dist * Math.cos(angleRad);
-  const handleY = radius + dist * Math.sin(angleRad);
+  const displayColor = isTransparent ? "#FFFFFF" : color;
 
   return (
-    <div className="p-3 bg-muted/30 dark:bg-muted/10 rounded-xl border border-border/40 mt-3 flex items-center gap-4 w-full">
-      {/* Left: The Circular Color Wheel */}
-      <div className="relative w-26 h-26 shrink-0 shadow-sm rounded-full">
-        <div
-          ref={containerRef}
-          onPointerDown={handlePointerDown}
-          onPointerMove={(e) => {
-            if (e.buttons === 1) handlePointerMove(e);
-          }}
-          className="w-full h-full rounded-full cursor-crosshair relative shadow-inner border border-border/30 overflow-hidden"
-          style={{
-            background: `radial-gradient(circle, #ffffff 0%, transparent 100%), conic-gradient(from 0deg, red, yellow, lime, aqua, blue, magenta, red)`
-          }}
-        />
-        {/* Pointer Handle - Styled to stand out on any background */}
-        <div
-          className="absolute w-3.5 h-3.5 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.3),_0_2px_4px_rgba(0,0,0,0.35)] pointer-events-none transition-all duration-75"
-          style={{
-            left: `${handleX}px`,
-            top: `${handleY}px`,
-            transform: "translate(-50%, -50%)",
-            backgroundColor: color
+    <div className="p-3 bg-card rounded-2xl border border-border/60 mt-2 flex flex-col gap-3.5 w-full shadow-sm animate-in fade-in duration-200">
+      {/* منتقي الألوان الاحترافي */}
+      <div className="custom-color-picker w-full">
+        <HexColorPicker
+          color={isTransparent ? "#ffffff" : color}
+          onChange={(newColor) => {
+            const upperColor = newColor.toUpperCase();
+            setInputValue(upperColor);
+            throttledOnChange.current!(upperColor);
           }}
         />
       </div>
 
-      {/* Right: Controls (Hex Input & Lightness Slider) */}
-      <div className="flex-1 flex flex-col justify-between gap-3 min-w-0">
-        {/* Hex input & Active preview circle */}
-        <div className="space-y-1">
-          <span className="text-[9px] text-muted-foreground block font-medium">اللون المخصص</span>
-          <div className="flex items-center gap-1.5">
-            <div 
-              className="w-5.5 h-5.5 rounded-md border border-border/50 shadow-xs shrink-0" 
-              style={{ backgroundColor: color }} 
-            />
-            <Input
-              value={color}
-              onChange={(e) => onChange(e.target.value)}
-              className="h-7 text-[10.5px] font-mono px-1.5 text-center font-bold"
-              placeholder="#HEX"
-            />
+      {/* حقل الإدخال وزر الشفافية */}
+      <div className="flex items-center gap-2">
+        {/* زر الشفافية */}
+        <button
+          onClick={() => {
+            setInputValue("transparent");
+            onChange("transparent");
+          }}
+          className={cn(
+            "w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-xs cursor-pointer transition-all active:scale-95",
+            isTransparent
+              ? "border-primary bg-primary/10 text-primary font-bold"
+              : "border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+          title="خلفية شفافة"
+        >
+          <PaintBucket className="w-4 h-4" />
+        </button>
+
+        {/* حقل إدخال كود HEX */}
+        <div className="flex-1 flex items-center gap-2 bg-background border border-border/60 rounded-lg px-2.5 h-8 shadow-inner focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
+          <span className="text-[10px] font-bold text-muted-foreground/60 select-none">HEX:</span>
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => handleHexInput(e.target.value)}
+            className="w-full bg-transparent border-0 p-0 text-[10.5px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+            placeholder="#HEX"
+          />
+          <div
+            className="w-4 h-4 rounded-md border border-border shadow-xs shrink-0 relative overflow-hidden"
+            style={{
+              backgroundColor: displayColor,
+            }}
+          >
+            {isTransparent && (
+              <div 
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+                  backgroundSize: "6px 6px"
+                }}
+              />
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Lightness Slider */}
-        <div className="space-y-1">
-          <div className="flex justify-between items-center text-[9px] text-muted-foreground">
-            <span>السطوع</span>
-            <span className="font-mono text-[9px] font-semibold">{hsl.l}%</span>
-          </div>
-          <div className="relative w-full h-3 rounded-lg border border-border/30 overflow-hidden shadow-inner">
-            <div
-              className="absolute inset-0"
+      {/* قائمة الألوان السريعة */}
+      <div className="space-y-1.5 pt-2 border-t border-border/20">
+        <span className="text-[9.5px] font-bold text-muted-foreground block">ألوان سريعة</span>
+        <div className="grid grid-cols-9 gap-1">
+          {/* خيار شفاف مسبق */}
+          <button
+            onClick={() => {
+              setInputValue("transparent");
+              onChange("transparent");
+            }}
+            className={cn(
+              "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer relative overflow-hidden active:scale-90",
+              isTransparent 
+                ? "ring-2 ring-primary ring-offset-1 border-primary scale-95" 
+                : "border-border/40 hover:scale-105"
+            )}
+            title="شفاف"
+          >
+            <div 
+              className="absolute inset-0 bg-white"
               style={{
-                background: `linear-gradient(to right, #000000, ${hslToHex(hsl.h, hsl.s, 50)}, #ffffff)`
+                backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+                backgroundSize: "6px 6px"
               }}
             />
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={hsl.l}
-              onChange={(e) => {
-                const l = Number(e.target.value);
-                const newHex = hslToHex(hsl.h, hsl.s, l);
-                setHsl({ ...hsl, l });
-                onChange(newHex);
-              }}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-            {/* Slider thumb representation */}
-            <div
-              className="absolute top-0 bottom-0 w-2.5 bg-white border border-black/35 shadow-xs pointer-events-none rounded-[2.5px]"
-              style={{
-                left: `calc(${hsl.l}% - 5px)`
-              }}
-            />
-          </div>
+          </button>
+
+          {/* الألوان الجاهزة */}
+          {BACKGROUND_COLORS.map((bg) => {
+            const isActive = color.toUpperCase() === bg.value.toUpperCase();
+            return (
+              <button
+                key={bg.value}
+                onClick={() => {
+                  setInputValue(bg.value);
+                  onChange(bg.value);
+                }}
+                className={cn(
+                  "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer active:scale-90",
+                  isActive 
+                    ? "ring-2 ring-primary ring-offset-1 border-primary scale-95" 
+                    : "border-border/40 hover:scale-105"
+                )}
+                style={{ backgroundColor: bg.value }}
+                title={bg.name}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
   );
-}
-
-// Helper: HSL to HEX
-export function hslToHex(h: number, s: number, l: number): string {
-  l /= 100;
-  const a = (s * Math.min(l, 1 - l)) / 100;
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color).toString(16).padStart(2, '0');
-  };
-  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
-}
-
-// Helper: HEX to HSL
-export function hexToHsl(hex: string): { h: number; s: number; l: number } {
-  hex = hex.replace(/^#/, "");
-  if (hex.length === 3) {
-    hex = hex.split("").map((c) => c + c).join("");
-  }
-  if (hex.length !== 6) return { h: 0, s: 0, l: 100 };
-  
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-
-  return {
-    h: Math.round(h * 360),
-    s: Math.round(s * 100),
-    l: Math.round(l * 100),
-  };
 }

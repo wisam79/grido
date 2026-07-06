@@ -35,6 +35,19 @@ func InitDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	// ⚡ Enable WAL (Write-Ahead Logging) mode, busy timeout and foreign keys
+	_, _ = sqlDB.Exec("PRAGMA journal_mode=WAL;")
+	_, _ = sqlDB.Exec("PRAGMA busy_timeout=5000;")
+	_, _ = sqlDB.Exec("PRAGMA foreign_keys=ON;")
+
+	// SQLite only supports one concurrent writer. Limit connections to 1 to avoid locking
+	sqlDB.SetMaxOpenConns(1)
+
 	// الهجرة التلقائية لجداول قاعدة البيانات
 	err = db.AutoMigrate(&domain.Project{})
 	if err != nil {
@@ -102,6 +115,24 @@ func (r *projectRepositoryImpl) Delete(id string) error {
 	return r.db.Delete(&domain.Project{}, "id = ?", id).Error
 }
 
+func (r *projectRepositoryImpl) ImportProjects(projects []domain.Project, overwrite bool) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if overwrite {
+			// Delete all existing projects
+			if err := tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&domain.Project{}).Error; err != nil {
+				return err
+			}
+		}
+
+		for _, p := range projects {
+			if err := tx.Save(&p).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // CleanupUnusedMedia يقوم بمسح جميع الصور غير المستخدمة في أي مشروع لتوفير مساحة القرص
 func CleanupUnusedMedia() {
 	// تأخير بدء التنظيف لتفادي تعارض الملفات أو مسح ملفات مرفوعة حديثاً قبل حفظ مسودتها
@@ -135,6 +166,14 @@ func CleanupUnusedMedia() {
 		if f.IsDir() {
 			continue
 		}
+
+		// 🔒 Skip files modified in the last 15 minutes to avoid deleting newly uploaded files before save
+		if info, err := f.Info(); err == nil {
+			if time.Since(info.ModTime()) < 15*time.Minute {
+				continue
+			}
+		}
+
 		filename := f.Name()
 		
 		// Create strict match strings to avoid substring issues inside JSON

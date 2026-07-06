@@ -36,8 +36,9 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
     await page.goto('/');
 
     // 2. Verify app loads successfully
-    const basicTab = page.locator('text=صورة واحدة');
+    const basicTab = page.locator('text=حر (مفرد)');
     await expect(basicTab).toBeVisible();
+    await basicTab.click();
 
     // 3. Select a category and apply a template
     await page.click('text=جواز السفر');

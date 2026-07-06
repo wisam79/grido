@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" class="dark">
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -13,6 +13,14 @@
       if (typeof window !== 'undefined') {
         window.process = { env: {} };
       }
+      try {
+        const savedTheme = localStorage.getItem("grido-theme") || "dark";
+        if (savedTheme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      } catch (e) {}
     </script>
 </head>
 <body>

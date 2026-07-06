@@ -3,15 +3,24 @@ import { Stage, Layer, Transformer } from "react-konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { URLImage, KonvaTextElement, KonvaShapeElement } from "./konva-elements";
 
+import { SnapGuide } from "@/lib/snap-utils";
+import { useShallow } from "zustand/react/shallow";
+
 interface KonvaCanvasProps {
   displayW: number;
   displayH: number;
   sortedElements: CanvasElement[];
   handleDoubleClick: (el: CanvasElement) => void;
+  setActiveGuides: (guides: SnapGuide[]) => void;
 }
 
-export function KonvaCanvas({ displayW, displayH, sortedElements, handleDoubleClick }: KonvaCanvasProps) {
-  const { selectedId, selectElement, updateElement, pushHistory } = useEditorStore();
+export function KonvaCanvas({ displayW, displayH, sortedElements, handleDoubleClick, setActiveGuides }: KonvaCanvasProps) {
+  const { selectedId, selectElement, updateElement, pushHistory } = useEditorStore(useShallow((state) => ({
+    selectedId: state.selectedId,
+    selectElement: state.selectElement,
+    updateElement: state.updateElement,
+    pushHistory: state.pushHistory,
+  })));
   
   const trRef = useRef<any>(null);
   const elementsRefs = useRef<Record<string, any>>({});
@@ -62,6 +71,8 @@ export function KonvaCanvas({ displayW, displayH, sortedElements, handleDoubleCl
             onChange: (patch: Partial<CanvasElement>) => handleElementChange(el.id, patch),
             displayW,
             displayH,
+            allElements: sortedElements,
+            setActiveGuides,
             elementRef: {
               get current() {
                 return elementsRefs.current[el.id];

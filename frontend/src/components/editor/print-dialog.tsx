@@ -25,6 +25,8 @@ import { Printer, ZoomIn, ZoomOut, RectangleVertical, RectangleHorizontal, Sciss
 import { SheetPreview } from "./print/print-preview";
 import { toast } from "sonner";
 
+import { useShallow } from "zustand/react/shallow";
+
 interface PrintDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -41,7 +43,17 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     slots,
     mode,
     backgroundColor,
-  } = useEditorStore();
+  } = useEditorStore(useShallow((state) => ({
+    template: state.template,
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
+    printSettings: state.printSettings,
+    setPrintSettings: state.setPrintSettings,
+    elements: state.elements,
+    slots: state.slots,
+    mode: state.mode,
+    backgroundColor: state.backgroundColor,
+  })));
   const [zoom, setZoom] = useState(1);
 
   // حساب أبعاد الصورة على الورق بالمليمتر

@@ -147,3 +147,56 @@ func TestProjectService_Delete(t *testing.T) {
 		t.Error("expected error looking up deleted project, got nil")
 	}
 }
+
+func TestProjectService_SaveUpdateCreatedAt(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewProjectRepository(db)
+	svc := NewProjectService(repo)
+
+	p := &domain.Project{
+		ID:   "update-created-at-test",
+		Name: "Initial Project",
+	}
+
+	// 1. First save
+	err := svc.SaveProject(p)
+	if err != nil {
+		t.Fatalf("failed to save initial project: %v", err)
+	}
+
+	retrieved1, err := svc.GetProject("update-created-at-test")
+	if err != nil {
+		t.Fatalf("failed to retrieve project: %v", err)
+	}
+	createdTime1 := retrieved1.CreatedAtStr
+	if createdTime1 == "" {
+		t.Fatal("expected CreatedAtStr to be populated")
+	}
+
+	// 2. Simulating updating a project from the frontend (which sends zero CreatedAt because it is ignored by JSON tags)
+	pUpdate := &domain.Project{
+		ID:   "update-created-at-test",
+		Name: "Updated Project Name",
+	}
+
+	err = svc.SaveProject(pUpdate)
+	if err != nil {
+		t.Fatalf("failed to save updated project: %v", err)
+	}
+
+	retrieved2, err := svc.GetProject("update-created-at-test")
+	if err != nil {
+		t.Fatalf("failed to retrieve updated project: %v", err)
+	}
+
+	if retrieved2.Name != "Updated Project Name" {
+		t.Errorf("expected name to be updated to 'Updated Project Name', got '%s'", retrieved2.Name)
+	}
+
+	if retrieved2.CreatedAtStr != createdTime1 {
+		t.Errorf("expected CreatedAtStr to remain '%s', but it changed/cleared to '%s'", createdTime1, retrieved2.CreatedAtStr)
+	}
+}
+

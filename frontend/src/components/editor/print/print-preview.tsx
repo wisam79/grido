@@ -124,9 +124,6 @@ export function CanvasThumbnail({
   elements,
   slots,
   mode,
-  canvasWidth,
-  canvasHeight,
-  backgroundColor,
 }: any) {
   const firstImage =
     mode === "single"
@@ -153,7 +150,7 @@ export function CanvasThumbnail({
   );
 }
 
-export function buildFilter(el: any): string {
+function buildFilter(el: any): string {
   const parts: string[] = [];
   const filterDef = IMAGE_FILTERS.find((f) => f.id === el?.filter);
   if (filterDef && filterDef.css) parts.push(filterDef.css);

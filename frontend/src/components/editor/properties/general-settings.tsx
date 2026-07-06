@@ -1,20 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { RefreshCw } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
-import { BACKGROUND_COLORS, PAPER_SIZES } from "@/lib/templates";
+import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
-import { ColorWheelPicker } from "./shared-controls";
 
-export function GeneralSettings({
-  backgroundColor,
-  setBackgroundColor,
-}: {
-  backgroundColor: string;
-  setBackgroundColor: (c: string) => void;
-}) {
+import { useShallow } from "zustand/react/shallow";
+
+export function GeneralSettings() {
   const {
     canvasWidth,
     canvasHeight,
@@ -23,25 +17,41 @@ export function GeneralSettings({
     setTemplate,
     printSettings,
     setPrintSettings,
-  } = useEditorStore();
+  } = useEditorStore(useShallow((state) => ({
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
+    setCanvasSize: state.setCanvasSize,
+    template: state.template,
+    setTemplate: state.setTemplate,
+    printSettings: state.printSettings,
+    setPrintSettings: state.setPrintSettings,
+  })));
 
   const [unit, setUnit] = useState<"px" | "mm">("px");
   const [widthVal, setWidthVal] = useState(canvasWidth.toString());
   const [heightVal, setHeightVal] = useState(canvasHeight.toString());
   const [dpiVal, setDpiVal] = useState(template?.dpi || printSettings.dpi || 300);
 
-  // Sync inputs with store
-  useEffect(() => {
-    const dpi = template?.dpi || printSettings.dpi || 300;
-    if (unit === "px") {
-      setWidthVal(canvasWidth.toString());
-      setHeightVal(canvasHeight.toString());
-    } else {
-      setWidthVal(Math.round((canvasWidth / dpi) * 25.4).toString());
-      setHeightVal(Math.round((canvasHeight / dpi) * 25.4).toString());
-    }
-    setDpiVal(dpi);
-  }, [canvasWidth, canvasHeight, unit, template, printSettings.dpi]);
+  const [prevSyncKey, setPrevSyncKey] = useState({ canvasWidth, canvasHeight, unit, templateId: template?.id, dpi: printSettings.dpi });
+
+  const currentDpi = template?.dpi || printSettings.dpi || 300;
+
+  if (canvasWidth !== prevSyncKey.canvasWidth ||
+      canvasHeight !== prevSyncKey.canvasHeight ||
+      unit !== prevSyncKey.unit ||
+      template?.id !== prevSyncKey.templateId ||
+      printSettings.dpi !== prevSyncKey.dpi) {
+      
+      setPrevSyncKey({ canvasWidth, canvasHeight, unit, templateId: template?.id, dpi: printSettings.dpi });
+      if (unit === "px") {
+        setWidthVal(canvasWidth.toString());
+        setHeightVal(canvasHeight.toString());
+      } else {
+        setWidthVal(Math.round((canvasWidth / currentDpi) * 25.4).toString());
+        setHeightVal(Math.round((canvasHeight / currentDpi) * 25.4).toString());
+      }
+      setDpiVal(currentDpi);
+  }
 
   const handleWidthChange = (val: string) => {
     setWidthVal(val);
@@ -118,45 +128,17 @@ export function GeneralSettings({
 
   return (
     <div className="space-y-4">
-      {/* لون الخلفية */}
-      <div>
-        <Label className="text-xs font-semibold mb-2 block text-foreground/90">لون الخلفية</Label>
-        <div className="grid grid-cols-8 gap-1">
-          {BACKGROUND_COLORS.map((c) => (
-            <button
-              key={c.value}
-              onClick={() => setBackgroundColor(c.value)}
-              className={cn(
-                "aspect-square rounded-md border-[1.5px] transition-all",
-                backgroundColor === c.value
-                  ? "border-primary ring-2 ring-primary/20 dark:ring-primary/40"
-                  : "border-border hover:border-primary/40"
-              )}
-              style={{ backgroundColor: c.value }}
-              title={c.name}
-            />
-          ))}
-        </div>
-        {/* Custom Color Wheel Widget */}
-        <ColorWheelPicker
-          color={backgroundColor}
-          onChange={setBackgroundColor}
-        />
-      </div>
-
-      <Separator className="bg-border/40" />
-
       {/* أبعاد الكانفس */}
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-semibold text-foreground/90">أبعاد مساحة العمل</Label>
           
           {/* وحدة القياس */}
-          <div className="flex rounded-md bg-muted/60 p-0.5 border border-border/30">
+          <div className="flex rounded-lg bg-muted/60 p-0.5 border border-border/30">
             <button
               onClick={() => setUnit("px")}
               className={cn(
-                "px-2 py-0.5 text-[10px] font-medium rounded-sm transition-all",
+                "px-2.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer",
                 unit === "px"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -167,7 +149,7 @@ export function GeneralSettings({
             <button
               onClick={() => setUnit("mm")}
               className={cn(
-                "px-2 py-0.5 text-[10px] font-medium rounded-sm transition-all",
+                "px-2.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer",
                 unit === "mm"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -179,14 +161,14 @@ export function GeneralSettings({
         </div>
 
         {/* اختيار حجم قياسي جاهز */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-[10px] text-muted-foreground font-semibold">أحجام قياسية جاهزة</Label>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleSwapDimensions}
-              className="h-6 px-1.5 text-[10px] flex items-center gap-1 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              className="h-6 px-2 text-[10px] flex items-center gap-1 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors rounded-md cursor-pointer"
               title="تبديل العرض والارتفاع (أفقي/عمودي)"
             >
               <RefreshCw className="w-3 h-3" />
@@ -194,26 +176,35 @@ export function GeneralSettings({
             </Button>
           </div>
           
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 gap-2">
             {PAPER_SIZES.map((p) => {
               const dpi = dpiVal;
               const isMatch = 
                 (Math.round((canvasWidth / dpi) * 25.4) === p.widthMM && Math.round((canvasHeight / dpi) * 25.4) === p.heightMM) ||
                 (Math.round((canvasWidth / dpi) * 25.4) === p.heightMM && Math.round((canvasHeight / dpi) * 25.4) === p.widthMM);
                 
+              const nameParts = p.name.split(" (");
+              const mainName = nameParts[0];
+              const subName = nameParts[1] ? nameParts[1].replace(")", "") : "";
+
               return (
                 <button
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
                   className={cn(
-                    "px-1.5 py-1.5 text-[11px] rounded-lg border text-center transition-all duration-300 font-bold truncate",
+                    "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all duration-200 cursor-pointer active:scale-95",
                     isMatch
-                      ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/5 dark:bg-primary/20"
-                      : "border-border/60 bg-card hover:bg-accent text-muted-foreground hover:text-foreground"
+                      ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
+                      : "border-border/60 bg-card hover:border-border-hover hover:bg-accent text-muted-foreground hover:text-foreground"
                   )}
                   title={p.name}
                 >
-                  {p.name.split(" (")[0]}
+                  <span className="text-[11px] font-bold leading-tight">{mainName}</span>
+                  {subName && (
+                    <span className="text-[9px] font-medium opacity-80 mt-0.5 truncate max-w-full px-0.5">
+                      {subName}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -222,8 +213,8 @@ export function GeneralSettings({
 
         {/* حقول الأبعاد المدمجة بأسلوب Figma */}
         <div className="grid grid-cols-2 gap-2 text-[10.5px]">
-          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-lg px-2 h-8.5 shadow-xs" title="عرض مساحة العمل">
-            <span className="text-muted-foreground/60 font-bold select-none text-[9px] truncate">العرض:</span>
+          <div className="flex items-center gap-1.5 bg-background border border-border/65 rounded-lg px-2 h-8.5 shadow-xs" title="عرض مساحة العمل">
+            <span className="text-muted-foreground/75 font-bold select-none text-[9px] shrink-0">العرض:</span>
             <input
               type="number"
               value={widthVal}
@@ -233,8 +224,8 @@ export function GeneralSettings({
             />
             <span className="text-[9px] text-muted-foreground/50 select-none shrink-0">{unit === "px" ? "px" : "مم"}</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-lg px-2 h-8.5 shadow-xs" title="ارتفاع مساحة العمل">
-            <span className="text-muted-foreground/60 font-bold select-none text-[9px] truncate">الارتفاع:</span>
+          <div className="flex items-center gap-1.5 bg-background border border-border/65 rounded-lg px-2 h-8.5 shadow-xs" title="ارتفاع مساحة العمل">
+            <span className="text-muted-foreground/75 font-bold select-none text-[9px] shrink-0">الارتفاع:</span>
             <input
               type="number"
               value={heightVal}

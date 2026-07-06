@@ -1,35 +1,16 @@
-import React, { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import { IMAGE_FILTERS } from "@/lib/templates";
 import { X, RefreshCw } from "lucide-react";
 import { OpenFile } from "../../../wailsjs/go/main/App";
 import { buildCSSFilter } from "@/lib/utils";
-import { getSnapPositions, SnapGuide } from "@/lib/snap-utils";
+import { SnapGuide } from "@/lib/snap-utils";
 import { KonvaCanvas } from "./konva/konva-canvas";
 
 
 
-type DragState =
-  | null
-  | {
-      kind: "move";
-      id: string;
-      startX: number;
-      startY: number;
-      origX: number;
-      origY: number;
-    }
-  | {
-      kind: "resize";
-      id: string;
-      handle: string;
-      startX: number;
-      startY: number;
-      origX: number;
-      origY: number;
-      origW: number;
-      origH: number;
-    };
+import { useShallow } from "zustand/react/shallow";
+
+
 
 export const EditorCanvas = React.forwardRef<
   HTMLDivElement,
@@ -37,10 +18,8 @@ export const EditorCanvas = React.forwardRef<
 >(function EditorCanvas({ printMode = false }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const [drag, setDrag] = useState<DragState>(null);
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
-  const requestRef = useRef<number | null>(null);
 
   const {
     mode,
@@ -62,7 +41,27 @@ export const EditorCanvas = React.forwardRef<
     collageShowCutLines,
     collageStrokeWidth,
     collageStrokeColor,
-  } = useEditorStore();
+  } = useEditorStore(useShallow((state) => ({
+    mode: state.mode,
+    elements: state.elements,
+    slots: state.slots,
+    selectedId: state.selectedId,
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
+    backgroundColor: state.backgroundColor,
+    selectElement: state.selectElement,
+    updateElement: state.updateElement,
+    pushHistory: state.pushHistory,
+    addImageElement: state.addImageElement,
+    setSlotImage: state.setSlotImage,
+    updateSlot: state.updateSlot,
+    collageGap: state.collageGap,
+    collageMargin: state.collageMargin,
+    collageRadius: state.collageRadius,
+    collageShowCutLines: state.collageShowCutLines,
+    collageStrokeWidth: state.collageStrokeWidth,
+    collageStrokeColor: state.collageStrokeColor,
+  })));
 
   // قياس حجم الحاوية لتحجيم الكانفس (مع throttle)
   useEffect(() => {
@@ -84,12 +83,6 @@ export const EditorCanvas = React.forwardRef<
     };
   }, []);
 
-  // تنظيف requestAnimationFrame عند إلغاء التحميل
-  useEffect(() => {
-    return () => {
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-    };
-  }, []);
 
   // حساب حجم الكانفس المعروض
   const aspect = canvasWidth / canvasHeight;
@@ -104,148 +97,7 @@ export const EditorCanvas = React.forwardRef<
   displayW = Math.max(100, displayW);
   displayH = Math.max(100, displayH);
 
-  // تحويل الإحداثيات
-  const toRel = useCallback(
-    (clientX: number, clientY: number) => {
-      if (!innerRef.current) return { x: 0, y: 0 };
-      const rect = innerRef.current.getBoundingClientRect();
-      const x = (clientX - rect.left) / rect.width;
-      const y = (clientY - rect.top) / rect.height;
-      return { x, y };
-    },
-    []
-  );
 
-  const handlePointerDown = (e: React.PointerEvent, el: CanvasElement) => {
-    if (printMode) return;
-    e.stopPropagation();
-    selectElement(el.id);
-    if (el.locked) return; // Block dragging if locked
-    setDrag({
-      kind: "move",
-      id: el.id,
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: el.x,
-      origY: el.y,
-    });
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handleResizeStart = (
-    e: React.PointerEvent,
-    el: CanvasElement,
-    handle: string
-  ) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (el.locked) return; // Block resizing if locked
-    setDrag({
-      kind: "resize",
-      id: el.id,
-      handle,
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: el.x,
-      origY: el.y,
-      origW: el.width,
-      origH: el.height,
-    });
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!drag) return;
-
-    const clientX = e.clientX;
-    const clientY = e.clientY;
-    const altKey = e.altKey;
-
-    if (requestRef.current) {
-      cancelAnimationFrame(requestRef.current);
-    }
-
-    requestRef.current = requestAnimationFrame(() => {
-      requestRef.current = null;
-      const dx = (clientX - drag.startX) / displayW;
-      const dy = (clientY - drag.startY) / displayH;
-      const bypassSnap = altKey;
-
-      if (drag.kind === "move") {
-        let newX = Math.max(-0.5, Math.min(1, drag.origX + dx));
-        let newY = Math.max(-0.5, Math.min(1, drag.origY + dy));
-
-        let guides: SnapGuide[] = [];
-        if (!bypassSnap) {
-          const thresholdX = 8 / displayW; // 8px snap threshold
-          const thresholdY = 8 / displayH;
-          const dragEl = elements.find((el) => el.id === drag.id);
-          if (dragEl) {
-            const snapResult = getSnapPositions(
-              drag.id,
-              newX,
-              newY,
-              dragEl.width,
-              dragEl.height,
-              elements,
-              thresholdX,
-              thresholdY
-            );
-            newX = snapResult.x;
-            newY = snapResult.y;
-            guides = snapResult.guides;
-          }
-        }
-        setActiveGuides(guides);
-        updateElement(drag.id, { x: newX, y: newY });
-      } else if (drag.kind === "resize") {
-        let { origX: x, origY: y, origW: w, origH: h } = drag;
-        const h_direction = drag.handle.includes("e") ? 1 : drag.handle.includes("w") ? -1 : 0;
-        const v_direction = drag.handle.includes("s") ? 1 : drag.handle.includes("n") ? -1 : 0;
-        if (h_direction !== 0) w = Math.max(0.05, drag.origW + h_direction * dx);
-        if (v_direction !== 0) h = Math.max(0.05, drag.origH + v_direction * dy);
-        // للحفاظ على الموضع عند التمدد لليسار/الأعلى
-        if (h_direction === -1) x = drag.origX + (drag.origW - w);
-        if (v_direction === -1) y = drag.origY + (drag.origH - h);
-
-        let guides: SnapGuide[] = [];
-        if (!bypassSnap) {
-          const thresholdX = 8 / displayW;
-          const thresholdY = 8 / displayH;
-          const snapResult = getSnapPositions(
-            drag.id,
-            x,
-            y,
-            w,
-            h,
-            elements,
-            thresholdX,
-            thresholdY,
-            drag.handle
-          );
-          x = snapResult.x;
-          y = snapResult.y;
-          w = snapResult.w;
-          h = snapResult.h;
-          guides = snapResult.guides;
-        }
-        setActiveGuides(guides);
-        updateElement(drag.id, { x, y, width: w, height: h });
-      }
-    });
-  };
-
-  const handlePointerUp = () => {
-    if (requestRef.current) {
-      cancelAnimationFrame(requestRef.current);
-      requestRef.current = null;
-    }
-    if (drag) {
-      pushHistory();
-      setDrag(null);
-      setActiveGuides([]);
-    }
-  };
 
   // النقر المزدوج لاستبدال الصورة
   const handleDoubleClick = async (el: CanvasElement) => {
@@ -324,9 +176,6 @@ export const EditorCanvas = React.forwardRef<
         else if (ref) (ref as any).current = node;
       }}
       className="relative flex items-center justify-center w-full h-full overflow-hidden p-4 workspace-grid bg-muted/40"
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
       onClick={(e) => {
         if (e.target === e.currentTarget) selectElement(null);
       }}
@@ -343,8 +192,10 @@ export const EditorCanvas = React.forwardRef<
           backgroundColor,
           backgroundImage:
             backgroundColor === "transparent"
-              ? undefined
+              ? "linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%)"
               : undefined,
+          backgroundSize: backgroundColor === "transparent" ? "20px 20px" : undefined,
+          backgroundPosition: backgroundColor === "transparent" ? "0 0, 0 10px, 10px -10px, -10px 0px" : undefined,
         }}
         onClick={(e) => {
           if (e.target === e.currentTarget) selectElement(null);
@@ -461,13 +312,13 @@ export const EditorCanvas = React.forwardRef<
           </>
         )}
 
-        {/* العناصر: صور ونصوص وأشكال باستخدام Konva */}
         {mode === "single" && elements.length > 0 && (
           <KonvaCanvas
             displayW={displayW}
             displayH={displayH}
             sortedElements={sortedElements}
             handleDoubleClick={handleDoubleClick}
+            setActiveGuides={setActiveGuides}
           />
         )}
 

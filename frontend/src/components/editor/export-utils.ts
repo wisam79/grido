@@ -1,7 +1,6 @@
 import { useEditorStore } from "@/lib/editor-store";
-import { IMAGE_FILTERS } from "@/lib/templates";
 import { toast } from "sonner";
-import { FilterableObject } from "@/lib/utils";
+import { buildCSSFilter } from "@/lib/utils";
 
 // تصدير الكانفس الحالي كصورة PNG/JPG
 export async function exportCanvas(
@@ -15,7 +14,6 @@ export async function exportCanvas(
     backgroundColor,
     elements,
     slots,
-    template,
   } = useEditorStore.getState();
 
   const canvas = document.createElement("canvas");
@@ -93,7 +91,7 @@ export async function exportCanvas(
         ctx.save();
 
         // تطبيق الفلتر على مستوى السياق إن وجد
-        const filterStr = buildCanvasFilterString(slot);
+        const filterStr = buildCSSFilter(slot);
         if (filterStr && filterStr !== "none") {
           ctx.filter = filterStr;
         }
@@ -178,7 +176,7 @@ export async function exportCanvas(
 
       if (el.type === "image" && el.imageSrc && elImageMap[el.id]) {
         const img = elImageMap[el.id];
-        ctx.filter = buildCanvasFilterString(el);
+        ctx.filter = buildCSSFilter(el);
         drawImageCover(ctx, img, 0, 0, w, h);
         ctx.filter = "none";
       } else if (el.type === "text") {
@@ -311,23 +309,7 @@ function drawImageCover(
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
 
-function buildCanvasFilterString(el: FilterableObject): string {
-  const parts: string[] = [];
-  const filterDef = IMAGE_FILTERS.find((f) => f.id === el.filter);
-  if (filterDef && filterDef.css) {
-    // تحويل CSS filter إلى canvas filter
-    const css = filterDef.css;
-    parts.push(css);
-  }
-  if (el.brightness !== undefined && el.brightness !== 100)
-    parts.push(`brightness(${el.brightness}%)`);
-  if (el.contrast !== undefined && el.contrast !== 100)
-    parts.push(`contrast(${el.contrast}%)`);
-  if (el.saturation !== undefined && el.saturation !== 100)
-    parts.push(`saturate(${el.saturation}%)`);
-  if (el.blur && el.blur > 0) parts.push(`blur(${el.blur}px)`);
-  return parts.join(" ") || "none";
-}
+
 
 function drawRoundRect(
   ctx: CanvasRenderingContext2D,
@@ -338,15 +320,7 @@ function drawRoundRect(
   r: number
 ) {
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.roundRect(x, y, w, h, r);
   ctx.closePath();
 }
 

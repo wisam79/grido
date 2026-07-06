@@ -64,6 +64,9 @@ func main() {
 	printSvc := service.NewPrintService()
 	printHandler := handlers.NewPrintHandler(printSvc)
 
+	backupSvc := service.NewBackupService(projectRepo)
+	backupHandler := handlers.NewBackupHandler(backupSvc)
+
 	// استعادة أبعاد وموقع النافذة من الجلسة السابقة
 	initialWidth := 1280
 	initialHeight := 820
@@ -190,6 +193,7 @@ func main() {
 			app,
 			projectHandler, // ربط طبقة التحكم مع Wails
 			printHandler,
+			backupHandler,
 		},
 		Frameless:         true,
 		Windows: &windows.Options{

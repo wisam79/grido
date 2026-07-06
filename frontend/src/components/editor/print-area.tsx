@@ -1,6 +1,8 @@
 import { useEditorStore, CanvasElement, CanvasSlot } from "@/lib/editor-store";
 import { buildCSSFilter } from "@/lib/utils";
 
+import { useShallow } from "zustand/react/shallow";
+
 // منطقة الطباعة - تُعرض فقط عند الطباعة عبر CSS print media
 export function PrintArea() {
   const {
@@ -12,7 +14,16 @@ export function PrintArea() {
     mode,
     backgroundColor,
     printSettings,
-  } = useEditorStore();
+  } = useEditorStore(useShallow((state) => ({
+    template: state.template,
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
+    elements: state.elements,
+    slots: state.slots,
+    mode: state.mode,
+    backgroundColor: state.backgroundColor,
+    printSettings: state.printSettings,
+  })));
 
   const firstImage =
     mode === "single"
@@ -36,7 +47,6 @@ export function PrintArea() {
 
   const gapMM = printSettings.gapMM || 2;
   const cols = Math.max(1, Math.floor(availableWidthMM / (imageWidthMM + gapMM)));
-  const rows = Math.ceil(printSettings.copiesPerSheet / cols);
   const actualCount = Math.min(
     printSettings.copiesPerSheet,
     cols * Math.floor(availableHeightMM / (imageHeightMM + gapMM))
@@ -88,8 +98,6 @@ export function PrintArea() {
             elements={elements}
             slots={slots}
             mode={mode}
-            canvasWidth={canvasWidth}
-            canvasHeight={canvasHeight}
             backgroundColor={backgroundColor}
           />
         </div>
@@ -102,8 +110,6 @@ interface PrintableCanvasProps {
   elements: CanvasElement[];
   slots: CanvasSlot[];
   mode: "single" | "collage";
-  canvasWidth: number;
-  canvasHeight: number;
   backgroundColor: string;
 }
 
@@ -112,8 +118,6 @@ function PrintableCanvas({
   elements,
   slots,
   mode,
-  canvasWidth,
-  canvasHeight,
   backgroundColor,
 }: PrintableCanvasProps) {
   const { printSettings } = useEditorStore();

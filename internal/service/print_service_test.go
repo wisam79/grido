@@ -89,6 +89,31 @@ func TestPrintService_GeneratePrintSheet(t *testing.T) {
 	}
 }
 
+func TestPrintService_ParseColor(t *testing.T) {
+	tests := []struct {
+		hex      string
+		expected color.RGBA
+	}{
+		{"#fff", color.RGBA{255, 255, 255, 255}},
+		{"#000", color.RGBA{0, 0, 0, 255}},
+		{"#f00f", color.RGBA{255, 0, 0, 255}},
+		{"#0000", color.RGBA{0, 0, 0, 0}},
+		{"#FF0000", color.RGBA{255, 0, 0, 255}},
+		{"#00FF0080", color.RGBA{0, 255, 0, 128}},
+		{"transparent", color.RGBA{0, 0, 0, 0}},
+		{"invalid", color.RGBA{255, 255, 255, 255}}, // Fallback to white
+	}
+
+	for _, tc := range tests {
+		result := parseColor(tc.hex)
+		r, g, b, a := result.RGBA()
+		got := color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
+		if got != tc.expected {
+			t.Errorf("parseColor(%q): expected %+v, got %+v", tc.hex, tc.expected, got)
+		}
+	}
+}
+
 func mathAbs(n int) int {
 	if n < 0 {
 		return -n

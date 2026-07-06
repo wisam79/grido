@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { IMAGE_FILTERS } from "./templates"
-import { v4 as uuidv4 } from "uuid"
+
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -30,4 +30,4 @@ export function buildCSSFilter(el: FilterableObject | undefined): string {
   return parts.join(" ") || "none";
 }
 
-export const uid = () => uuidv4();
+export const uid = () => crypto.randomUUID();

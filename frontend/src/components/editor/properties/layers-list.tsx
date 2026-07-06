@@ -14,8 +14,17 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { useShallow } from "zustand/react/shallow";
+
 export function LayersList() {
-  const { elements, selectedId, selectElement, updateElement, removeElement, pushHistory } = useEditorStore();
+  const { elements, selectedId, selectElement, updateElement, removeElement, pushHistory } = useEditorStore(useShallow((state) => ({
+    elements: state.elements,
+    selectedId: state.selectedId,
+    selectElement: state.selectElement,
+    updateElement: state.updateElement,
+    removeElement: state.removeElement,
+    pushHistory: state.pushHistory,
+  })));
 
   if (elements.length === 0) {
     return (

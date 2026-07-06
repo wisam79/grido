@@ -10,17 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
 import { Download, FileJson, FileImage, Loader2 } from "lucide-react";
 import { exportCanvas, downloadBlob, saveProjectAsJSON } from "./export-utils";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
+
+import { useShallow } from "zustand/react/shallow";
 
 interface ExportDialogProps {
   open: boolean;
@@ -31,7 +26,13 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const [format, setFormat] = useState<"png" | "jpg">("png");
   const [quality, setQuality] = useState(95);
   const [loading, setLoading] = useState(false);
-  const { template, canvasWidth, canvasHeight, mode, printSettings } = useEditorStore();
+  const { template, canvasWidth, canvasHeight, mode, printSettings } = useEditorStore(useShallow((state) => ({
+    template: state.template,
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
+    mode: state.mode,
+    printSettings: state.printSettings,
+  })));
 
   const handleExport = async () => {
     setLoading(true);

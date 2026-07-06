@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useEffect } from "react";
 import { 
   Image as KonvaImage, 
   Text as KonvaText, 
@@ -10,6 +10,7 @@ import {
 import useImage from "use-image";
 import Konva from "konva";
 import { CanvasElement } from "@/lib/editor-store";
+import { getSnapPositions } from "@/lib/snap-utils";
 
 interface ElementProps {
   element: CanvasElement;
@@ -18,11 +19,13 @@ interface ElementProps {
   onChange: (patch: Partial<CanvasElement>) => void;
   displayW: number;
   displayH: number;
+  allElements: CanvasElement[];
+  setActiveGuides: (guides: any[]) => void;
   elementRef: React.MutableRefObject<any>;
   onDblClick?: () => void;
 }
 
-export function URLImage({ element, isSelected, onSelect, onChange, displayW, displayH, elementRef }: ElementProps) {
+export function URLImage({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef }: ElementProps) {
   const [image] = useImage(element.imageSrc || "");
 
   useEffect(() => {
@@ -59,7 +62,22 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
       contrast={element.contrast !== undefined ? element.contrast - 100 : 0}
       blurRadius={element.blur || 0}
       draggable={!element.locked && isSelected}
+      onDragMove={(e) => {
+        if (e.evt.altKey) {
+          setActiveGuides([]);
+          return;
+        }
+        const thresholdX = 8 / displayW;
+        const thresholdY = 8 / displayH;
+        const x = e.target.x() / displayW;
+        const y = e.target.y() / displayH;
+        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+        e.target.x(snapResult.x * displayW);
+        e.target.y(snapResult.y * displayH);
+        setActiveGuides(snapResult.guides);
+      }}
       onDragEnd={(e) => {
+        setActiveGuides([]);
         onChange({
           x: e.target.x() / displayW,
           y: e.target.y() / displayH,
@@ -83,7 +101,7 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
   );
 }
 
-export function KonvaTextElement({ element, isSelected, onSelect, onChange, displayW, displayH, elementRef, onDblClick }: ElementProps) {
+export function KonvaTextElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, onDblClick }: ElementProps) {
   return (
     <KonvaText
       ref={elementRef}
@@ -107,7 +125,22 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
       align={element.textAlign || "center"}
       lineHeight={element.lineHeight ?? 1.2}
       draggable={!element.locked && isSelected}
+      onDragMove={(e) => {
+        if (e.evt.altKey) {
+          setActiveGuides([]);
+          return;
+        }
+        const thresholdX = 8 / displayW;
+        const thresholdY = 8 / displayH;
+        const x = e.target.x() / displayW;
+        const y = e.target.y() / displayH;
+        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+        e.target.x(snapResult.x * displayW);
+        e.target.y(snapResult.y * displayH);
+        setActiveGuides(snapResult.guides);
+      }}
       onDragEnd={(e) => {
+        setActiveGuides([]);
         onChange({
           x: e.target.x() / displayW,
           y: e.target.y() / displayH,
@@ -119,11 +152,14 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
         const scaleY = node.scaleY();
         node.scaleX(1);
         node.scaleY(1);
+        const currentFontSize = element.fontSize || 16;
+        const newFontSize = Math.round(currentFontSize * scaleY);
         onChange({
           x: node.x() / displayW,
           y: node.y() / displayH,
           width: (node.width() * scaleX) / displayW,
           height: (node.height() * scaleY) / displayH,
+          fontSize: newFontSize,
           rotation: node.rotation(),
         });
       }}
@@ -131,7 +167,7 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
   );
 }
 
-export function KonvaShapeElement({ element, isSelected, onSelect, onChange, displayW, displayH, elementRef }: ElementProps) {
+export function KonvaShapeElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef }: ElementProps) {
   const w = element.width * displayW;
   const h = element.height * displayH;
 
@@ -151,7 +187,22 @@ export function KonvaShapeElement({ element, isSelected, onSelect, onChange, dis
     stroke: element.strokeWidth && element.strokeWidth > 0 ? element.stroke || "#000000" : undefined,
     strokeWidth: element.strokeWidth || 0,
     draggable: !element.locked && isSelected,
+    onDragMove: (e: any) => {
+      if (e.evt.altKey) {
+        setActiveGuides([]);
+        return;
+      }
+      const thresholdX = 8 / displayW;
+      const thresholdY = 8 / displayH;
+      const x = e.target.x() / displayW;
+      const y = e.target.y() / displayH;
+      const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+      e.target.x(snapResult.x * displayW);
+      e.target.y(snapResult.y * displayH);
+      setActiveGuides(snapResult.guides);
+    },
     onDragEnd: (e: any) => {
+      setActiveGuides([]);
       onChange({
         x: e.target.x() / displayW,
         y: e.target.y() / displayH,

@@ -1,7 +1,6 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { ProjectSchema } from "@/lib/schema";
-import { PHOTO_TEMPLATES, COLLAGE_TEMPLATES } from "@/lib/templates";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -52,7 +51,8 @@ import {
 import { OpenFile, ClearAutoSave } from "../../../wailsjs/go/main/App";
 import { ProjectsDialog } from "./projects-dialog";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+
+import { useShallow } from "zustand/react/shallow";
 
 interface ToolbarProps {
   onPrint: () => void;
@@ -83,7 +83,28 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     template,
     canvasWidth,
     canvasHeight,
-  } = useEditorStore();
+  } = useEditorStore(useShallow((state) => ({
+    mode: state.mode,
+    setMode: state.setMode,
+    elements: state.elements,
+    updateElement: state.updateElement,
+    pushHistory: state.pushHistory,
+    addImageElement: state.addImageElement,
+    addTextElement: state.addTextElement,
+    addShapeElement: state.addShapeElement,
+    selectedId: state.selectedId,
+    removeElement: state.removeElement,
+    duplicateElement: state.duplicateElement,
+    bringToFront: state.bringToFront,
+    sendToBack: state.sendToBack,
+    undo: state.undo,
+    redo: state.redo,
+    history: state.history,
+    historyIndex: state.historyIndex,
+    template: state.template,
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
+  })));
 
   const handleOpenFile = async () => {
     try {
@@ -97,9 +118,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     }
   };
 
-  const handleSave = () => {
-    onSave();
-  };
+
 
   const alignElement = (type: "left" | "center" | "right" | "top" | "middle" | "bottom") => {
     if (!selectedId) return;
@@ -168,7 +187,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           toast.error("ملف المشروع غير صالح أو معطوب");
           console.error("Zod Validation Error:", parsed.error);
         }
-      } catch (err) {
+      } catch {
         toast.error("ملف المشروع غير صالح أو معطوب");
       }
     };
@@ -198,45 +217,11 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
         variant="default"
         size="sm"
         onClick={handleOpenFile}
-        className="gap-1.5"
+        title="رفع صورة جديدة"
+        className="px-2.5"
       >
         <ImagePlus className="w-4 h-4" />
-        <span className="hidden sm:inline">رفع صورة</span>
       </Button>
-
-      <Separator orientation="vertical" className="h-5 mx-0.5" />
-
-      {/* مفتاح تبديل وضع التحرير: كولاج / حر */}
-      <div className="flex items-center bg-muted/65 dark:bg-muted/30 p-0.5 rounded-lg border border-border/30 gap-0.5">
-        <Button
-          variant={mode === "collage" ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => setMode("collage")}
-          className={cn(
-            "h-7 px-2.5 text-xs font-semibold rounded-md transition-all gap-1.5",
-            mode === "collage" 
-              ? "bg-background shadow-xs text-foreground font-bold" 
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Images className="w-3.5 h-3.5" />
-          <span>كولاج</span>
-        </Button>
-        <Button
-          variant={mode === "single" ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => setMode("single")}
-          className={cn(
-            "h-7 px-2.5 text-xs font-semibold rounded-md transition-all gap-1.5",
-            mode === "single" 
-              ? "bg-background shadow-xs text-foreground font-bold" 
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <LayoutGrid className="w-3.5 h-3.5" />
-          <span>حر (مفرد)</span>
-        </Button>
-      </div>
 
       <Separator orientation="vertical" className="h-5 mx-0.5" />
 
@@ -245,11 +230,10 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
         variant="ghost"
         size="sm"
         onClick={handleClearCanvas}
-        title="مسح مساحة العمل"
-        className="text-destructive/80 hover:text-destructive hover:bg-destructive/5 gap-1.5"
+        title="جديد (مسح مساحة العمل)"
+        className="text-destructive/80 hover:text-destructive hover:bg-destructive/5 px-2.5"
       >
         <Eraser className="w-4 h-4" />
-        <span className="hidden md:inline text-[11px]">جديد</span>
       </Button>
 
       {/* مكتبة المشاريع المحلية (قاعدة البيانات SQLite) */}
@@ -258,60 +242,86 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           <Button
             variant="ghost"
             size="sm"
-            title="مكتبة المشاريع المحلية المحفوظة في قاعدة البيانات"
-            className="gap-1.5 text-muted-foreground hover:text-primary"
+            title="مكتبة المشاريع المحلية"
+            className="px-2.5 text-muted-foreground hover:text-primary"
           >
             <Database className="w-4 h-4" />
-            <span className="hidden md:inline">مكتبة المشاريع</span>
           </Button>
         }
       />
 
       {/* استيراد ملف مشروع */}
-      <label className="cursor-pointer">
+      <label className="cursor-pointer" title="فتح مشروع (.json)">
         <input
           type="file"
           accept=".json"
           onChange={handleLoadProject}
           className="hidden"
         />
-        <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 px-2 py-1.5 gap-1.5 text-[11px] text-muted-foreground hover:text-primary">
+        <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 px-2.5 text-[11px] text-muted-foreground hover:text-primary">
           <FolderOpen className="w-4 h-4" />
-          <span className="hidden md:inline">فتح مشروع</span>
         </div>
       </label>
 
+      {/* تصدير ملف مشروع */}
       {/* تصدير ملف مشروع */}
       <Button
         variant="ghost"
         size="sm"
         onClick={handleSaveProject}
-        title="تصدير ملف مشروع قابل للتعديل لاحقاً"
-        className="gap-1.5 text-muted-foreground hover:text-primary"
+        title="تصدير ملف مشروع (.json)"
+        className="px-2.5 text-muted-foreground hover:text-primary"
       >
         <FileJson className="w-4 h-4" />
-        <span className="hidden md:inline">تصدير مشروع</span>
       </Button>
 
 
+      {/* زر التبديل بين وضع الكولاج والتعديل الحر */}
+      <div className="flex items-center gap-0.5 bg-muted/40 rounded-lg p-0.5 border border-border/40">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setMode("collage")}
+          title="وضع الكولاج"
+          className={`h-7 px-2 rounded-md transition-all ${
+            mode === "collage"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          }`}
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setMode("single")}
+          title="وضع التعديل الحر"
+          className={`h-7 px-2 rounded-md transition-all ${
+            mode === "single"
+              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          }`}
+        >
+          <Images className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
       <Separator orientation="vertical" className="h-5 mx-0.5" />
 
-      {/* إضافة عناصر - فقط في وضع الصورة الواحدة */}
-      {mode === "single" && (
-        <>
+      {/* إضافة عناصر والتعديل عليها */}
+      <>
           {/* نص */}
-          <Button variant="ghost" size="sm" onClick={() => addTextElement()} title="نص" className="gap-1 px-2 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" onClick={() => addTextElement()} title="إضافة نص" className="px-2.5 text-muted-foreground hover:text-foreground">
             <Type className="w-4 h-4" />
-            <span className="hidden md:inline text-xs">نص</span>
           </Button>
+
 
           {/* أشكال */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1 px-2 text-muted-foreground hover:text-foreground" title="إضافة شكل">
+              <Button variant="ghost" size="sm" className="px-2 text-muted-foreground hover:text-foreground" title="إضافة شكل">
                 <Square className="w-4 h-4" />
-                <span className="hidden md:inline text-xs">أشكال</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
+                <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-36">
@@ -389,12 +399,11 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
                 variant="ghost" 
                 size="sm" 
                 disabled={!hasSelection}
-                className="gap-1 px-2 text-muted-foreground hover:text-foreground" 
+                className="px-2 text-muted-foreground hover:text-foreground" 
                 title="محاذاة العنصر المحدد"
               >
                 <AlignLeft className="w-4 h-4" />
-                <span className="hidden md:inline text-xs">محاذاة</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
+                <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-44">
@@ -430,7 +439,6 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
           <Separator orientation="vertical" className="h-5 mx-0.5" />
         </>
-      )}
 
       {/* تراجع/إعادة */}
       <Button
@@ -470,17 +478,14 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
       <Separator orientation="vertical" className="h-5 mx-0.5" />
 
-      <Button variant="outline" size="sm" onClick={onSave} className="gap-1.5">
+      <Button variant="outline" size="sm" onClick={onSave} title="حفظ المشروع محلياً" className="px-2.5">
         <Save className="w-4 h-4" />
-        <span className="hidden sm:inline">حفظ</span>
       </Button>
-      <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5">
+      <Button variant="outline" size="sm" onClick={onExport} title="تصدير كصورة" className="px-2.5">
         <Download className="w-4 h-4" />
-        <span className="hidden sm:inline">تصدير</span>
       </Button>
-      <Button variant="default" size="sm" onClick={onPrint} className="gap-1.5">
+      <Button variant="default" size="sm" onClick={onPrint} title="طباعة" className="px-2.5">
         <Printer className="w-4 h-4" />
-        <span className="hidden sm:inline">طباعة</span>
       </Button>
       <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
         <AlertDialogContent dir="rtl">
