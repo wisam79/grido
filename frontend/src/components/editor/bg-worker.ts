@@ -25,6 +25,11 @@ async function loadModel() {
 
   env.allowLocalModels = false;
   env.useBrowserCache = true;
+  
+  // خنق عدد خيوط المعالجة لـ WASM لمنع تجمد الواجهة واستهلاك كامل طاقة المعالج (CPU Starvation)
+  if (env.backends && env.backends.onnx && env.backends.onnx.wasm) {
+    env.backends.onnx.wasm.numThreads = 2;
+  }
 
   notifyProgress("fetch:model", 0, 100);
 

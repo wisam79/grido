@@ -12,7 +12,7 @@ export function cacheImage(base64: string | undefined): string | undefined {
   if (!base64 || !base64.startsWith("data:image")) return base64;
   
   for (const [key, val] of Object.entries(imagesCache)) {
-    if (val.base64 === base64) {
+    if (val.base64.length === base64.length && val.base64 === base64) {
       val.lastAccessed = Date.now();
       return key;
     }
