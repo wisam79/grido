@@ -211,82 +211,84 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   const hasSelection = !!selectedId;
 
   return (
-    <div className="flex items-center gap-1 p-1 px-3 border-b bg-card/50 backdrop-blur flex-nowrap overflow-x-auto select-none no-print h-10.5 shrink-0 scrollbar-none">
-      {/* رفع صورة عبر Wails */}
-      <Button
-        variant="default"
-        size="sm"
-        onClick={handleOpenFile}
-        title="رفع صورة جديدة"
-        className="px-2.5"
-      >
-        <ImagePlus className="w-4 h-4" />
-      </Button>
+    <div className="flex items-center gap-2 p-1 px-3 border-b bg-card/65 backdrop-blur-md flex-nowrap overflow-x-auto select-none no-print h-12.5 shrink-0 scrollbar-none shadow-xs">
+      
+      {/* المجموعة 1: إدارة الملفات والمستندات */}
+      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+        {/* رفع صورة */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleOpenFile}
+          title="رفع صورة جديدة"
+          className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
+        >
+          <ImagePlus className="w-3.5 h-3.5" />
+        </Button>
 
-      <Separator orientation="vertical" className="h-5 mx-0.5" />
+        <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
-      {/* إدارة المشروع والمستندات */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleClearCanvas}
-        title="جديد (مسح مساحة العمل)"
-        className="text-destructive/80 hover:text-destructive hover:bg-destructive/5 px-2.5"
-      >
-        <Eraser className="w-4 h-4" />
-      </Button>
+        {/* مسح الكانفاس */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleClearCanvas}
+          title="جديد (مسح مساحة العمل)"
+          className="h-7 px-2 text-destructive/80 hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
+        >
+          <Eraser className="w-3.5 h-3.5" />
+        </Button>
 
-      {/* مكتبة المشاريع المحلية (قاعدة البيانات SQLite) */}
-      <ProjectsDialog
-        trigger={
-          <Button
-            variant="ghost"
-            size="sm"
-            title="مكتبة المشاريع المحلية"
-            className="px-2.5 text-muted-foreground hover:text-primary"
-          >
-            <Database className="w-4 h-4" />
-          </Button>
-        }
-      />
-
-      {/* استيراد ملف مشروع */}
-      <label className="cursor-pointer" title="فتح مشروع (.json)">
-        <input
-          type="file"
-          accept=".json"
-          onChange={handleLoadProject}
-          className="hidden"
+        {/* المكتبة المحلية */}
+        <ProjectsDialog
+          trigger={
+            <Button
+              variant="ghost"
+              size="sm"
+              title="مكتبة المشاريع المحلية"
+              className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
+            >
+              <Database className="w-3.5 h-3.5" />
+            </Button>
+          }
         />
-        <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 px-2.5 text-[11px] text-muted-foreground hover:text-primary">
-          <FolderOpen className="w-4 h-4" />
-        </div>
-      </label>
 
-      {/* تصدير ملف مشروع */}
-      {/* تصدير ملف مشروع */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleSaveProject}
-        title="تصدير ملف مشروع (.json)"
-        className="px-2.5 text-muted-foreground hover:text-primary"
-      >
-        <FileJson className="w-4 h-4" />
-      </Button>
+        {/* استيراد JSON */}
+        <label className="cursor-pointer" title="فتح مشروع (.json)">
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleLoadProject}
+            className="hidden"
+          />
+          <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-background/80 h-7 px-2 text-muted-foreground hover:text-primary cursor-pointer">
+            <FolderOpen className="w-3.5 h-3.5" />
+          </div>
+        </label>
 
+        {/* تصدير JSON */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSaveProject}
+          title="تصدير ملف مشروع (.json)"
+          className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
+        >
+          <FileJson className="w-3.5 h-3.5" />
+        </Button>
+      </div>
 
-      {/* زر التبديل بين وضع الكولاج والتعديل الحر */}
-      <div className="flex items-center gap-0.5 bg-muted/40 rounded-lg p-0.5 border border-border/40">
+      {/* المجموعة 2: وضع العمل */}
+      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setMode("collage")}
           title="وضع الكولاج"
-          className={`h-7 px-2 rounded-md transition-all ${
+          className={`h-7 px-2.5 rounded-md transition-all cursor-pointer ${
             mode === "collage"
-              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              ? "bg-primary text-primary-foreground shadow-xs font-bold"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/80"
           }`}
         >
           <LayoutGrid className="w-3.5 h-3.5" />
@@ -296,88 +298,146 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           size="sm"
           onClick={() => setMode("single")}
           title="وضع التعديل الحر"
-          className={`h-7 px-2 rounded-md transition-all ${
+          className={`h-7 px-2.5 rounded-md transition-all cursor-pointer ${
             mode === "single"
-              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              ? "bg-primary text-primary-foreground shadow-xs font-bold"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/80"
           }`}
         >
           <Images className="w-3.5 h-3.5" />
         </Button>
       </div>
 
-      <Separator orientation="vertical" className="h-5 mx-0.5" />
+      {/* المجموعة 3: إضافة عناصر */}
+      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+        {/* نص */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => addTextElement()} 
+          title="إضافة نص" 
+          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+        >
+          <Type className="w-3.5 h-3.5" />
+        </Button>
 
-      {/* إضافة عناصر والتعديل عليها */}
-      <>
-          {/* نص */}
-          <Button variant="ghost" size="sm" onClick={() => addTextElement()} title="إضافة نص" className="px-2.5 text-muted-foreground hover:text-foreground">
-            <Type className="w-4 h-4" />
+        {/* أشكال */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
+              title="إضافة شكل"
+            >
+              <Square className="w-3.5 h-3.5" />
+              <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-36">
+            <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-[11px] cursor-pointer">
+              <Square className="w-4 h-4 text-muted-foreground" />
+              <span>مستطيل</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2 text-[11px] cursor-pointer">
+              <Circle className="w-4 h-4 text-muted-foreground" />
+              <span>دائرة</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2 text-[11px] cursor-pointer">
+              <Star className="w-4 h-4 text-muted-foreground" />
+              <span>نجمة</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2 text-[11px] cursor-pointer">
+              <Minus className="w-4 h-4 text-muted-foreground" />
+              <span>خط مستقيم</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* المجموعة 4: تعديل وترتيب ومحاذاة العنصر المحدد */}
+      {hasSelection && (
+        <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs animate-in fade-in zoom-in-95 duration-200">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => selectedId && bringToFront(selectedId)}
+            title="إحضار للأمام"
+            className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          >
+            <ArrowUp className="w-3.5 h-3.5" />
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => selectedId && sendToBack(selectedId)}
+            title="إرسال للخلف"
+            className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          >
+            <ArrowDown className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => selectedId && duplicateElement(selectedId)}
+            title="تكرار"
+            className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </Button>
+          
+          <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
-
-          {/* أشكال */}
+          {/* محاذاة */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="px-2 text-muted-foreground hover:text-foreground" title="إضافة شكل">
-                <Square className="w-4 h-4" />
-                <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
+                title="محاذاة العنصر المحدد"
+              >
+                <AlignLeft className="w-3.5 h-3.5" />
+                <ChevronDown className="w-2.5 h-2.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-36">
-              <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-[11px]">
-                <Square className="w-4 h-4 text-muted-foreground" />
-                <span>مستطيل</span>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-[11px] cursor-pointer">
+                <AlignLeft className="w-4 h-4 text-muted-foreground" />
+                <span>محاذاة ليسار الكانفس</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2 text-[11px]">
-                <Circle className="w-4 h-4 text-muted-foreground" />
-                <span>دائرة</span>
+              <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-[11px] cursor-pointer">
+                <AlignCenter className="w-4 h-4 text-muted-foreground" />
+                <span>توسيط أفقي</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2 text-[11px]">
-                <Star className="w-4 h-4 text-muted-foreground" />
-                <span>نجمة</span>
+              <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-[11px] cursor-pointer">
+                <AlignRight className="w-4 h-4 text-muted-foreground" />
+                <span>محاذاة ليمين الكانفس</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2 text-[11px]">
-                <Minus className="w-4 h-4 text-muted-foreground" />
-                <span>خط مستقيم</span>
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuItem onClick={() => alignElement("top")} className="gap-2 text-[11px] cursor-pointer">
+                <AlignLeft className="w-4 h-4 text-muted-foreground rotate-90" />
+                <span>محاذاة لأعلى الكانفس</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => alignElement("middle")} className="gap-2 text-[11px] cursor-pointer">
+                <AlignCenter className="w-4 h-4 text-muted-foreground rotate-90" />
+                <span>توسيط عمودي</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => alignElement("bottom")} className="gap-2 text-[11px] cursor-pointer">
+                <AlignRight className="w-4 h-4 text-muted-foreground rotate-90" />
+                <span>محاذاة لأسفل الكانفس</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Separator orientation="vertical" className="h-5 mx-0.5" />
+          <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
-          {/* ترتيب العناصر */}
+          {/* حذف */}
           <Button
             variant="ghost"
             size="sm"
-            disabled={!hasSelection}
-            onClick={() => selectedId && bringToFront(selectedId)}
-            title="إحضار للأمام"
-          >
-            <ArrowUp className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={!hasSelection}
-            onClick={() => selectedId && sendToBack(selectedId)}
-            title="إرسال للخلف"
-          >
-            <ArrowDown className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={!hasSelection}
-            onClick={() => selectedId && duplicateElement(selectedId)}
-            title="تكرار"
-          >
-            <Copy className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={!hasSelection}
             onClick={() => {
               if (selectedId) {
                 removeElement(selectedId);
@@ -385,108 +445,88 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               }
             }}
             title="حذف"
-            className="text-destructive hover:text-destructive"
+            className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </Button>
+        </div>
+      )}
 
-          <Separator orientation="vertical" className="h-5 mx-0.5" />
-
-          {/* محاذاة العناصر */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild disabled={!hasSelection}>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                disabled={!hasSelection}
-                className="px-2 text-muted-foreground hover:text-foreground" 
-                title="محاذاة العنصر المحدد"
-              >
-                <AlignLeft className="w-4 h-4" />
-                <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-44">
-              <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-[11px]">
-                <AlignLeft className="w-4 h-4 text-muted-foreground" />
-                <span>محاذاة لليسار</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-[11px]">
-                <AlignCenter className="w-4 h-4 text-muted-foreground" />
-                <span>محاذاة للوسط أفقياً</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-[11px]">
-                <AlignRight className="w-4 h-4 text-muted-foreground" />
-                <span>محاذاة لليمين</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuItem onClick={() => alignElement("top")} className="gap-2 text-[11px]">
-                <AlignLeft className="w-4 h-4 text-muted-foreground rotate-90" />
-                <span>محاذاة للأعلى</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alignElement("middle")} className="gap-2 text-[11px]">
-                <AlignCenter className="w-4 h-4 text-muted-foreground rotate-90" />
-                <span>محاذاة للوسط عمودياً</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alignElement("bottom")} className="gap-2 text-[11px]">
-                <AlignRight className="w-4 h-4 text-muted-foreground rotate-90" />
-                <span>محاذاة للأسفل</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Separator orientation="vertical" className="h-5 mx-0.5" />
-        </>
-
-      {/* تراجع/إعادة */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={undo}
-        disabled={historyIndex <= 0}
-        title="تراجع"
-      >
-        <Undo2 className="w-4 h-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={redo}
-        disabled={historyIndex >= history.length - 1}
-        title="إعادة"
-      >
-        <Redo2 className="w-4 h-4" />
-      </Button>
+      {/* المجموعة 5: التراجع والإعادة */}
+      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={undo}
+          disabled={historyIndex <= 0}
+          title="تراجع"
+          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+        >
+          <Undo2 className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={redo}
+          disabled={historyIndex >= history.length - 1}
+          title="إعادة"
+          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+        >
+          <Redo2 className="w-3.5 h-3.5" />
+        </Button>
+      </div>
 
       <div className="flex-1" />
 
       {/* معلومات القالب */}
       {template && (
-        <div className="text-xs text-muted-foreground px-2 hidden lg:flex items-center gap-2">
+        <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/10 rounded-lg px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium">
           {(() => {
             const Icon = template.icon;
             return <Icon className="w-3.5 h-3.5 text-primary" />;
           })()}
-          <span>{template.name}</span>
-          <span className="text-muted-foreground/70">
-            · {canvasWidth}×{canvasHeight}px
-          </span>
+          <span className="font-bold">{template.name}</span>
+          <span className="text-muted-foreground/60">·</span>
+          <span className="font-mono text-muted-foreground/75">{canvasWidth}×{canvasHeight}px</span>
         </div>
       )}
 
       <Separator orientation="vertical" className="h-5 mx-0.5" />
 
-      <Button variant="outline" size="sm" onClick={onSave} title="حفظ المشروع محلياً" className="px-2.5">
-        <Save className="w-4 h-4" />
-      </Button>
-      <Button variant="outline" size="sm" onClick={onExport} title="تصدير كصورة" className="px-2.5">
-        <Download className="w-4 h-4" />
-      </Button>
-      <Button variant="default" size="sm" onClick={onPrint} title="طباعة" className="px-2.5">
-        <Printer className="w-4 h-4" />
-      </Button>
+      {/* المجموعة 6: الحفظ والتصدير والطباعة */}
+      <div className="flex items-center gap-1.5">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onSave} 
+          title="حفظ المشروع محلياً" 
+          className="h-8 px-3 border-border/60 hover:bg-accent/40 rounded-lg cursor-pointer transition-all gap-1.5 text-xs"
+        >
+          <Save className="w-3.5 h-3.5" />
+          <span className="font-bold hidden md:inline">حفظ</span>
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onExport} 
+          title="تصدير كصورة" 
+          className="h-8 px-3 border-border/60 hover:bg-accent/40 rounded-lg cursor-pointer transition-all gap-1.5 text-xs"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span className="font-bold hidden md:inline">تصدير</span>
+        </Button>
+        <Button 
+          variant="default" 
+          size="sm" 
+          onClick={onPrint} 
+          title="طباعة" 
+          className="h-8 px-3 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-indigo-500/10 text-white rounded-lg cursor-pointer transition-all gap-1.5 text-xs shadow-xs border-0"
+        >
+          <Printer className="w-3.5 h-3.5 text-white" />
+          <span className="font-bold">طباعة</span>
+        </Button>
+      </div>
+
       <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>

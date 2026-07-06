@@ -28,9 +28,14 @@ export function LayersList() {
 
   if (elements.length === 0) {
     return (
-      <div className="bg-muted/10 border rounded-xl p-4 text-center text-xs text-muted-foreground select-none">
-        <Layers className="w-8 h-8 mx-auto mb-1.5 opacity-40 text-muted-foreground" />
-        لا توجد طبقات حالياً
+      <div className="bg-muted/10 border border-dashed border-border/40 rounded-xl p-5 text-center select-none flex flex-col items-center justify-center space-y-2 animate-in fade-in duration-300">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-xs">
+          <Layers className="w-4.5 h-4.5 opacity-80" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-[11px] font-bold text-foreground/80">لوحة الطبقات فارغة</p>
+          <p className="text-[9px] text-muted-foreground max-w-[150px] leading-normal mx-auto">أضف صوراً أو نصوصاً أو أشكالاً للتحكم بترتيبها من هنا.</p>
+        </div>
       </div>
     );
   }

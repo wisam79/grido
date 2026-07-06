@@ -185,26 +185,35 @@ export function GeneralSettings() {
                 
               const nameParts = p.name.split(" (");
               const mainName = nameParts[0];
-              const subName = nameParts[1] ? nameParts[1].replace(")", "") : "";
+              const isLandscape = p.widthMM > p.heightMM;
 
               return (
                 <button
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
                   className={cn(
-                    "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all duration-200 cursor-pointer active:scale-95",
+                    "flex flex-row items-center gap-2 p-2 rounded-xl border text-right transition-all duration-200 cursor-pointer active:scale-95",
                     isMatch
                       ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
-                      : "border-border/60 bg-card hover:border-border-hover hover:bg-accent text-muted-foreground hover:text-foreground"
+                      : "border-border/60 bg-card hover:border-primary/30 hover:bg-accent/40 text-muted-foreground hover:text-foreground"
                   )}
                   title={p.name}
                 >
-                  <span className="text-[11px] font-bold leading-tight">{mainName}</span>
-                  {subName && (
-                    <span className="text-[9px] font-medium opacity-80 mt-0.5 truncate max-w-full px-0.5">
-                      {subName}
+                  {/* أيقونة مصغرة للورقة توضح المقاس والاتجاه */}
+                  <div className={cn(
+                    "shrink-0 rounded-xs border flex items-center justify-center bg-muted/20",
+                    isMatch ? "border-primary/70 bg-primary/5" : "border-muted-foreground/30",
+                    isLandscape ? "w-6 h-4" : "w-4 h-6"
+                  )}>
+                    <span className="text-[7px] font-mono opacity-65 scale-80">{mainName}</span>
+                  </div>
+                  
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold leading-tight truncate">{mainName}</span>
+                    <span className="text-[8px] font-medium opacity-70 mt-0.5 truncate font-mono">
+                      {p.widthMM}×{p.heightMM} مم
                     </span>
-                  )}
+                  </div>
                 </button>
               );
             })}

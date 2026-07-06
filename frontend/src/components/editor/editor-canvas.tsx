@@ -185,7 +185,7 @@ export const EditorCanvas = React.forwardRef<
       <div
         ref={innerRef}
         id="canvas-area"
-        className="relative shadow-2xl ring-1 ring-black/10 overflow-hidden"
+        className="relative rounded-sm overflow-hidden border border-white/5 transition-all duration-300 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.55)] hover:shadow-[0_30px_70px_-10px_rgba(0,0,0,0.7)]"
         style={{
           width: displayW,
           height: displayH,
