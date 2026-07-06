@@ -15,6 +15,7 @@ import { SliderControl } from "./shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 
 let globalBgWorker: Worker | null = null;
 let isWorkerBusy = false;
@@ -110,12 +111,21 @@ export function ElementProperties({
         isModelCached = true;
         setBgProgressText("تجهيز الصورة...");
         const reader = new FileReader();
-        reader.onloadend = () => {
-          onUpdate(element.id, { imageSrc: reader.result as string });
-          setIsRemovingBg(false);
-          isWorkerBusy = false;
-          setBgProgressText("");
-          setBgProgress(0);
+        reader.onloadend = async () => {
+          try {
+            const base64Data = reader.result as string;
+            // حفظ الصورة في مجلد الميديا محلياً لتفادي تضخم حجم ملف الحفظ والذاكرة
+            const localPath = await SaveImageFromBase64(base64Data);
+            onUpdate(element.id, { imageSrc: localPath });
+          } catch (err) {
+            console.error("Failed to save background-removed image:", err);
+            toast.error("فشل حفظ الصورة المعالجة محلياً");
+          } finally {
+            setIsRemovingBg(false);
+            isWorkerBusy = false;
+            setBgProgressText("");
+            setBgProgress(0);
+          }
         };
         reader.readAsDataURL(blob);
       } else if (type === "error") {
@@ -233,7 +243,16 @@ export function ElementProperties({
                   open={cropOpen}
                   onOpenChange={setCropOpen}
                   imageSrc={element.imageSrc}
-                  onCropSave={(cropped) => onUpdate(element.id, { imageSrc: cropped })}
+                  onCropSave={async (cropped) => {
+                    try {
+                      // حفظ الصورة المقصوصة محلياً بدلاً من تخزين Base64 في الذاكرة
+                      const localPath = await SaveImageFromBase64(cropped);
+                      onUpdate(element.id, { imageSrc: localPath });
+                    } catch (err) {
+                      console.error("Failed to save cropped image:", err);
+                      toast.error("فشل حفظ الصورة المقصوصة محلياً");
+                    }
+                  }}
                 />
               )}
 

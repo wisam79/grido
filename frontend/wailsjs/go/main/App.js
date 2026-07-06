@@ -25,3 +25,7 @@ export function SaveFile(arg1) {
 export function SaveFileDialog(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['SaveFileDialog'](arg1, arg2, arg3, arg4);
 }
+
+export function SaveImageFromBase64(arg1) {
+  return window['go']['main']['App']['SaveImageFromBase64'](arg1);
+}

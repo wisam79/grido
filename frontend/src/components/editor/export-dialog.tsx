@@ -36,29 +36,32 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
   const handleExport = async () => {
     setLoading(true);
-    try {
-      const blob = await exportCanvas(format, quality / 100);
-      if (blob) {
-        const ext = format === "png" ? "png" : "jpg";
-        const name = template
-          ? `${template.widthMM}x${template.heightMM}mm-${Date.now()}.${ext}`
-          : mode === "collage"
-          ? `collage-${Date.now()}.${ext}`
-          : `photo-${Date.now()}.${ext}`;
-        const res = await downloadBlob(blob, name);
-        if (res === "success") {
-          toast.success("تم تصدير الصورة بنجاح");
-          onOpenChange(false);
+    // نمنح المتصفح فرصة لرسم مؤشر التحميل أولاً (Paint Cycle) قبل حظر الخيط الرئيسي بالمعالجة
+    setTimeout(async () => {
+      try {
+        const blob = await exportCanvas(format, quality / 100);
+        if (blob) {
+          const ext = format === "png" ? "png" : "jpg";
+          const name = template
+            ? `${template.widthMM}x${template.heightMM}mm-${Date.now()}.${ext}`
+            : mode === "collage"
+            ? `collage-${Date.now()}.${ext}`
+            : `photo-${Date.now()}.${ext}`;
+          const res = await downloadBlob(blob, name);
+          if (res === "success") {
+            toast.success("تم تصدير الصورة بنجاح");
+            onOpenChange(false);
+          }
+        } else {
+          toast.error("تعذر إنشاء الصورة");
         }
-      } else {
-        toast.error("تعذر إنشاء الصورة");
+      } catch (e) {
+        console.error(e);
+        toast.error("حدث خطأ أثناء التصدير");
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error(e);
-      toast.error("حدث خطأ أثناء التصدير");
-    } finally {
-      setLoading(false);
-    }
+    }, 50);
   };
 
   return (

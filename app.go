@@ -159,6 +159,28 @@ func (a *App) SaveFile(base64Data string) (string, error) {
 	return "success", nil
 }
 
+func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
+	decoded, mimeType, err := decodeBase64Image(base64Data)
+	if err != nil {
+		return "", err
+	}
+
+	mediaDir := getMediaDir()
+	ext := ".jpg"
+	if mimeType == "image/png" {
+		ext = ".png"
+	}
+	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
+	newPath := filepath.Join(mediaDir, newName)
+
+	if err := os.WriteFile(newPath, decoded, 0644); err != nil {
+		return "", fmt.Errorf("write file: %w", err)
+	}
+
+	return "/local-image/" + newName, nil
+}
+
+
 func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayName string, pattern string) (string, error) {
 	var decoded []byte
 	var err error

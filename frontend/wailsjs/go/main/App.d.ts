@@ -12,3 +12,5 @@ export function SaveAutoSave(arg1:string):Promise<void>;
 export function SaveFile(arg1:string):Promise<string>;
 
 export function SaveFileDialog(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
+
+export function SaveImageFromBase64(arg1:string):Promise<string>;
