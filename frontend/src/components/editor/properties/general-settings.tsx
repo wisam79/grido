@@ -221,28 +221,33 @@ export function GeneralSettings() {
         </div>
 
         {/* حقول الأبعاد المدمجة بأسلوب Figma */}
-        <div className="grid grid-cols-2 gap-2 text-[10.5px]">
-          <div className="flex items-center gap-1.5 bg-background border border-border/65 rounded-lg px-2 h-8.5 shadow-xs" title="عرض مساحة العمل">
-            <span className="text-muted-foreground/75 font-bold select-none text-[9px] shrink-0">العرض:</span>
-            <input
-              type="number"
-              value={widthVal}
-              onChange={(e) => handleWidthChange(e.target.value)}
-              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
-              min={1}
-            />
-            <span className="text-[9px] text-muted-foreground/50 select-none shrink-0">{unit === "px" ? "px" : "مم"}</span>
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground font-bold block pr-0.5">العرض</Label>
+            <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/40 focus-within:border-primary rounded-lg px-2.5 h-9 transition-all shadow-xs" dir="ltr">
+              <input
+                type="number"
+                value={widthVal}
+                onChange={(e) => handleWidthChange(e.target.value)}
+                className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+                min={1}
+              />
+              <span className="text-[10px] text-muted-foreground/60 select-none shrink-0 font-bold">{unit === "px" ? "px" : "mm"}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 bg-background border border-border/65 rounded-lg px-2 h-8.5 shadow-xs" title="ارتفاع مساحة العمل">
-            <span className="text-muted-foreground/75 font-bold select-none text-[9px] shrink-0">الارتفاع:</span>
-            <input
-              type="number"
-              value={heightVal}
-              onChange={(e) => handleHeightChange(e.target.value)}
-              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
-              min={1}
-            />
-            <span className="text-[9px] text-muted-foreground/50 select-none shrink-0">{unit === "px" ? "px" : "مم"}</span>
+          
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground font-bold block pr-0.5">الارتفاع</Label>
+            <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/40 focus-within:border-primary rounded-lg px-2.5 h-9 transition-all shadow-xs" dir="ltr">
+              <input
+                type="number"
+                value={heightVal}
+                onChange={(e) => handleHeightChange(e.target.value)}
+                className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+                min={1}
+              />
+              <span className="text-[10px] text-muted-foreground/60 select-none shrink-0 font-bold">{unit === "px" ? "px" : "mm"}</span>
+            </div>
           </div>
         </div>
 
