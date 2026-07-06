@@ -258,19 +258,31 @@ export function ElementProperties({
 
               <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2.5">
                 <Label className="text-[11px] font-bold text-foreground/80 block">المرشحات الجاهزة</Label>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5" dir="rtl">
                   {IMAGE_FILTERS.map((f) => (
                     <button
                       key={f.id}
                       onClick={() => onUpdate(element.id, { filter: f.id })}
                       className={cn(
-                        "px-2.5 py-1.5 text-[10.5px] rounded-lg border transition-all text-center font-medium",
+                        "flex items-center gap-2 px-2.5 py-2 text-[10.5px] rounded-lg border transition-all text-right font-medium cursor-pointer active:scale-95",
                         element.filter === f.id
                           ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
-                          : "border-border/60 bg-card hover:bg-accent/80 hover:text-foreground text-muted-foreground"
+                          : "border-border/60 bg-card hover:bg-accent hover:text-foreground text-muted-foreground"
                       )}
                     >
-                      {f.name}
+                      {/* دائرة ملونة ممثلة للتأثير */}
+                      <div className={cn(
+                        "w-3.5 h-3.5 rounded-full shadow-2xs shrink-0 border border-black/10 dark:border-white/10",
+                        f.id === "original" ? "bg-radial from-neutral-200 to-neutral-400 dark:from-neutral-700 dark:to-neutral-900" :
+                        f.id === "grayscale" ? "bg-gradient-to-br from-neutral-300 via-neutral-500 to-neutral-800" :
+                        f.id === "vibrant" ? "bg-gradient-to-br from-amber-400 via-red-500 to-pink-600" :
+                        f.id === "sepia" ? "bg-gradient-to-br from-amber-800 via-yellow-700 to-amber-950" :
+                        f.id === "warm" ? "bg-gradient-to-br from-amber-300 via-orange-400 to-red-500" :
+                        f.id === "cold" ? "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600" :
+                        f.id === "professional" ? "bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-700" :
+                        f.id === "soft" ? "bg-gradient-to-br from-pink-300 via-purple-300 to-indigo-200" : "bg-neutral-400"
+                      )} />
+                      <span className="truncate">{f.name}</span>
                     </button>
                   ))}
                 </div>
