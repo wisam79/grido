@@ -183,28 +183,27 @@ export function GeneralSettings() {
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
                   className={cn(
-                    "flex flex-row items-center gap-2 p-2 rounded-xl border text-right transition-all duration-200 cursor-pointer active:scale-95",
+                    "flex flex-row items-center gap-2.5 p-2 rounded-xl border transition-all duration-200 cursor-pointer active:scale-95",
                     isMatch
                       ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
                       : "border-border/60 bg-card hover:border-primary/30 hover:bg-accent/40 text-muted-foreground hover:text-foreground"
                   )}
                   title={p.name}
+                  dir="rtl"
                 >
-                  {/* أيقونة مصغرة للورقة توضح المقاس والاتجاه */}
+                  {/* أيقونة مصغرة للورقة توضح المقاس والاتجاه بصرياً فقط بدون أي نصوص داخلها لتجنب تشوه المظهر */}
                   <div className={cn(
-                    "shrink-0 rounded-xs border flex items-center justify-center bg-muted/20",
-                    isMatch ? "border-primary/70 bg-primary/5" : "border-muted-foreground/30",
-                    isLandscape ? "w-6 h-4" : "w-4 h-6"
-                  )}>
-                    <span className="text-[7px] font-mono opacity-65 scale-80">{mainName}</span>
-                  </div>
+                    "shrink-0 rounded-xs border flex items-center justify-center bg-muted/20 shadow-2xs",
+                    isMatch ? "border-primary/70 bg-primary/10 text-primary" : "border-muted-foreground/30 text-muted-foreground",
+                    isLandscape ? "w-7 h-5" : "w-5 h-7"
+                  )} />
                   
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] font-bold leading-tight truncate">{mainName}</span>
-                    <span className="text-[8px] font-medium opacity-70 mt-0.5 truncate font-mono">
+                  <div className="flex flex-col min-w-0 items-start text-right">
+                    <span className="text-[11px] font-bold leading-tight text-foreground truncate">{mainName}</span>
+                    <span className="text-[8.5px] font-medium opacity-80 mt-0.5 truncate font-mono text-muted-foreground">
                       {unit === "px" ? `${wPx}×${hPx} بكسل` : `${p.widthMM}×${p.heightMM} مم`}
                     </span>
-                    <span className="text-[7px] text-muted-foreground/50 font-mono truncate leading-none mt-0.5">
+                    <span className="text-[7.5px] font-mono text-muted-foreground/50 truncate leading-none mt-0.5">
                       {unit === "px" ? `${p.widthMM}×${p.heightMM} مم` : `${wPx}×${hPx} px`}
                     </span>
                   </div>
