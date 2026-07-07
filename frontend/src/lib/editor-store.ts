@@ -2,7 +2,6 @@ import { create } from "zustand";
 import Konva from "konva";
 import { PhotoTemplate, CollageTemplate, COLLAGE_TEMPLATES, PHOTO_TEMPLATES } from "./templates";
 import { uid } from "./utils";
-import { cacheImage, restoreImage, clearImageCache } from "./image-cache";
 
 export interface ProjectStateData {
   mode: EditorMode;
@@ -474,26 +473,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   pushHistory: () => {
     const { elements, slots, history, historyIndex } = get();
-    
-    // تحويل الصور إلى معرفات (IDs) قبل التخزين في السجل
-    const cachedElements = elements.map(el => {
-      if (el.type === "image" && el.imageSrc) {
-         return { ...el, imageSrc: cacheImage(el.imageSrc) };
-      }
-      return el;
-    });
-
-    const cachedSlots = slots.map(sl => {
-      if (sl.imageSrc) {
-         return { ...sl, imageSrc: cacheImage(sl.imageSrc) };
-      }
-      return sl;
-    });
-
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push({
-      elements: structuredClone(cachedElements),
-      slots: structuredClone(cachedSlots),
+      elements: structuredClone(elements),
+      slots: structuredClone(slots),
     });
     // حد 50 خطوة
     if (newHistory.length > 50) newHistory.shift();
@@ -504,19 +487,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { history, historyIndex } = get();
     if (historyIndex <= 0) return;
     const prev = history[historyIndex - 1];
-    
-    const restoredElements = prev.elements.map(el => ({
-      ...el,
-      imageSrc: restoreImage(el.imageSrc)
-    }));
-    const restoredSlots = prev.slots.map(sl => ({
-      ...sl,
-      imageSrc: restoreImage(sl.imageSrc)
-    }));
-
     set({
-      elements: restoredElements,
-      slots: restoredSlots,
+      elements: structuredClone(prev.elements),
+      slots: structuredClone(prev.slots),
       historyIndex: historyIndex - 1,
       selectedId: null,
     });
@@ -526,26 +499,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { history, historyIndex } = get();
     if (historyIndex >= history.length - 1) return;
     const next = history[historyIndex + 1];
-    
-    const restoredElements = next.elements.map(el => ({
-      ...el,
-      imageSrc: restoreImage(el.imageSrc)
-    }));
-    const restoredSlots = next.slots.map(sl => ({
-      ...sl,
-      imageSrc: restoreImage(sl.imageSrc)
-    }));
-
     set({
-      elements: restoredElements,
-      slots: restoredSlots,
+      elements: structuredClone(next.elements),
+      slots: structuredClone(next.slots),
       historyIndex: historyIndex + 1,
       selectedId: null,
     });
   },
 
   reset: () => {
-    clearImageCache();
     set({
       projectId: null,
       mode: "collage",
@@ -564,8 +526,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   loadProject: (project: ProjectStateData, projectId: string | null = null) => {
-    clearImageCache();
-    
     // استعادة الأيقونات والمكونات الأصلية للقوالب المطابقة من قاعدة البيانات
     const restoredTemplate = project.template
       ? PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) || project.template
