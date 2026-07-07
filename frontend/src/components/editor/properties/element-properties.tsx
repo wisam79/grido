@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CanvasElement } from "@/lib/editor-store";
+import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { IMAGE_FILTERS } from "@/lib/templates";
 import { CropDialog } from "../crop-dialog";
-import { SliderControl } from "./shared-controls";
+import { SliderControl, PopoverColorPicker } from "./shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -110,12 +110,11 @@ export function ElementProperties({
       } else if (type === "success") {
         isModelCached = true;
         setBgProgressText("تجهيز الصورة...");
-        const reader = new FileReader();
-        reader.onloadend = async () => {
+        (async () => {
           try {
-            const base64Data = reader.result as string;
+            const dataUrl = `data:${event.data.mimeType};base64,${event.data.base64}`;
             // حفظ الصورة في مجلد الميديا محلياً لتفادي تضخم حجم ملف الحفظ والذاكرة
-            const localPath = await SaveImageFromBase64(base64Data);
+            const localPath = await SaveImageFromBase64(dataUrl);
             onUpdate(element.id, { imageSrc: localPath });
           } catch (err) {
             console.error("Failed to save background-removed image:", err);
@@ -126,8 +125,7 @@ export function ElementProperties({
             setBgProgressText("");
             setBgProgress(0);
           }
-        };
-        reader.readAsDataURL(blob);
+        })();
       } else if (type === "error") {
         console.error("Background removal failed", error);
         toast.error(String(error));
@@ -163,7 +161,7 @@ export function ElementProperties({
       <Tabs defaultValue="style" className="w-full">
         <TabsList className={cn(
           "grid w-full h-9 p-[3px] bg-muted rounded-lg border",
-          hasAdjustTab ? "grid-cols-3" : "grid-cols-2"
+          hasAdjustTab ? "grid-cols-4" : "grid-cols-3"
         )}>
           <TabsTrigger value="style" title="التنسيق والمظهر" className="rounded-md py-1 cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
             <Paintbrush className="w-3.5 h-3.5" />
@@ -173,6 +171,9 @@ export function ElementProperties({
               <Sliders className="w-3.5 h-3.5" />
             </TabsTrigger>
           )}
+          <TabsTrigger value="effects" title="التأثيرات (ظلال، زوايا، دمج)" className="rounded-md py-1 cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
+            <Sparkles className="w-3.5 h-3.5" />
+          </TabsTrigger>
           <TabsTrigger value="arrange" title="الموضع والترتيب" className="rounded-md py-1 cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
             <Move className="w-3.5 h-3.5" />
           </TabsTrigger>
@@ -297,6 +298,7 @@ export function ElementProperties({
                 <Textarea
                   value={element.text || ""}
                   onChange={(e) => onUpdate(element.id, { text: e.target.value })}
+                  onBlur={() => useEditorStore.getState().pushHistory()}
                   className="text-xs min-h-[60px] resize-none bg-background animate-none"
                   placeholder="اكتب النص هنا..."
                 />
@@ -309,7 +311,10 @@ export function ElementProperties({
                   <Label className="text-[10px] text-muted-foreground">نوع الخط</Label>
                   <select
                     value={element.fontFamily || "var(--font-cairo)"}
-                    onChange={(e) => onUpdate(element.id, { fontFamily: e.target.value })}
+                    onChange={(e) => {
+                      onUpdate(element.id, { fontFamily: e.target.value });
+                      useEditorStore.getState().pushHistory();
+                    }}
                     className="w-full bg-background border border-border/60 rounded-md p-1.5 text-xs text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
                   >
                     <option value="var(--font-cairo)">افتراضي (Cairo)</option>
@@ -339,7 +344,10 @@ export function ElementProperties({
                       {[300, 400, 600, 800].map((w) => (
                         <button
                           key={w}
-                          onClick={() => onUpdate(element.id, { fontWeight: w })}
+                          onClick={() => {
+                            onUpdate(element.id, { fontWeight: w });
+                            useEditorStore.getState().pushHistory();
+                          }}
                           className={cn(
                             "h-8 text-xs rounded-md border transition-all text-center font-bold",
                             element.fontWeight === w
@@ -361,7 +369,10 @@ export function ElementProperties({
                       {(["right", "center", "left"] as const).map((a) => (
                         <button
                           key={a}
-                          onClick={() => onUpdate(element.id, { textAlign: a })}
+                          onClick={() => {
+                            onUpdate(element.id, { textAlign: a });
+                            useEditorStore.getState().pushHistory();
+                          }}
                           className={cn(
                             "h-8 rounded-md border transition-all text-center flex items-center justify-center",
                             element.textAlign === a
@@ -381,49 +392,46 @@ export function ElementProperties({
               </div>
 
               <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3">
-                <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">اللون والخلفية</Label>
+                <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-2">اللون والخلفية</Label>
                 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-lg px-2 h-9 shadow-xs" title="لون النص">
-                    <Type className="w-4 h-4 text-muted-foreground/60 select-none shrink-0" />
-                    <input
-                      type="color"
-                      value={element.color || "#000000"}
-                      onChange={(e) => onUpdate(element.id, { color: e.target.value })}
-                      className="w-4 h-4 rounded-md cursor-pointer border border-border/40 p-0 shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={element.color || "#000000"}
-                      onChange={(e) => onUpdate(element.id, { color: e.target.value })}
-                      className="w-full bg-transparent border-0 p-0 text-[10px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
+                      <Type className="w-3.5 h-3.5 text-primary/70" />
+                      <span>لون النص</span>
+                    </span>
+                    <PopoverColorPicker
+                      color={element.color || "#000000"}
+                      onChange={(val) => onUpdate(element.id, { color: val })}
+                      className="w-32 h-8"
                     />
                   </div>
 
-                  <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-lg px-2 h-9 shadow-xs" title="لون خلفية النص">
-                    <button
-                      onClick={() => onUpdate(element.id, { 
-                        textBgColor: element.textBgColor === "transparent" ? "#ffffff" : "transparent" 
-                      })}
-                      className="focus:outline-hidden shrink-0"
-                      title={element.textBgColor === "transparent" ? "تفعيل لون الخلفية" : "إلغاء الخلفية"}
-                    >
-                      <PaintBucket className={cn("w-4 h-4 transition-all", element.textBgColor !== "transparent" ? "text-primary" : "text-muted-foreground/60")} />
-                    </button>
-                    <input
-                      type="color"
-                      value={element.textBgColor && element.textBgColor !== "transparent" ? element.textBgColor : "#ffffff"}
-                      onChange={(e) => onUpdate(element.id, { textBgColor: e.target.value })}
-                      className="w-4 h-4 rounded-md cursor-pointer border border-border/40 p-0 shrink-0"
-                      disabled={element.textBgColor === "transparent"}
-                    />
-                    <input
-                      type="text"
-                      value={element.textBgColor || "transparent"}
-                      onChange={(e) => onUpdate(element.id, { textBgColor: e.target.value })}
-                      className="w-full bg-transparent border-0 p-0 text-[10px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
-                      disabled={element.textBgColor === "transparent"}
-                    />
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
+                      <PaintBucket className="w-3.5 h-3.5 text-primary/70" />
+                      <span>خلفية النص</span>
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => onUpdate(element.id, { 
+                          textBgColor: element.textBgColor === "transparent" ? "#ffffff" : "transparent" 
+                        })}
+                        className={cn(
+                          "w-8 h-8 flex items-center justify-center rounded-lg border transition-all shrink-0 cursor-pointer",
+                          element.textBgColor === "transparent" ? "border-border/60 bg-background text-muted-foreground hover:bg-muted" : "border-primary/50 bg-primary/10 text-primary"
+                        )}
+                        title={element.textBgColor === "transparent" ? "تفعيل لون الخلفية" : "إلغاء الخلفية"}
+                      >
+                        <PaintBucket className="w-3.5 h-3.5" />
+                      </button>
+                      <PopoverColorPicker
+                        color={element.textBgColor && element.textBgColor !== "transparent" ? element.textBgColor : "#ffffff"}
+                        onChange={(val) => onUpdate(element.id, { textBgColor: val })}
+                        disabled={element.textBgColor === "transparent"}
+                        className="w-32 h-8"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -433,38 +441,30 @@ export function ElementProperties({
           {element.type === "shape" && (
             <div className="space-y-3.5 animate-in fade-in duration-200">
               <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3">
-                <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">المظهر واللون</Label>
+                <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-2">المظهر واللون</Label>
                 
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-lg px-2 h-9 shadow-xs" title="لون التعبئة">
-                    <PaintBucket className="w-4 h-4 text-muted-foreground/60 select-none shrink-0" />
-                    <input
-                      type="color"
-                      value={element.fill || "#6366f1"}
-                      onChange={(e) => onUpdate(element.id, { fill: e.target.value })}
-                      className="w-4 h-4 rounded-md cursor-pointer border border-border/40 p-0 shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={element.fill || "#6366f1"}
-                      onChange={(e) => onUpdate(element.id, { fill: e.target.value })}
-                      className="w-full bg-transparent border-0 p-0 text-[10px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
+                      <PaintBucket className="w-3.5 h-3.5 text-primary/70" />
+                      <span>لون التعبئة</span>
+                    </span>
+                    <PopoverColorPicker
+                      color={element.fill || "#6366f1"}
+                      onChange={(val) => onUpdate(element.id, { fill: val })}
+                      className="w-32 h-8"
                     />
                   </div>
 
-                  <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-lg px-2 h-9 shadow-xs" title="لون الحد">
-                    <div className="w-4 h-4 rounded-sm border border-muted-foreground/60 select-none shrink-0" style={{ borderWidth: "2.5px" }} />
-                    <input
-                      type="color"
-                      value={element.stroke || "#000000"}
-                      onChange={(e) => onUpdate(element.id, { stroke: e.target.value })}
-                      className="w-4 h-4 rounded-md cursor-pointer border border-border/40 p-0 shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={element.stroke || "#000000"}
-                      onChange={(e) => onUpdate(element.id, { stroke: e.target.value })}
-                      className="w-full bg-transparent border-0 p-0 text-[10px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-[3px] border-2 border-primary/70" />
+                      <span>لون الحدود</span>
+                    </span>
+                    <PopoverColorPicker
+                      color={element.stroke || "#000000"}
+                      onChange={(val) => onUpdate(element.id, { stroke: val })}
+                      className="w-32 h-8"
                     />
                   </div>
                 </div>
@@ -591,7 +591,10 @@ export function ElementProperties({
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => onUpdate(element.id, { rotation: (element.rotation + 90) % 360 })}
+                onClick={() => {
+                  onUpdate(element.id, { rotation: (element.rotation + 90) % 360 });
+                  useEditorStore.getState().pushHistory();
+                }}
                 title="تدوير 90 درجة"
                 className="h-8 w-8 border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center"
               >
@@ -600,7 +603,10 @@ export function ElementProperties({
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => onUpdate(element.id, { width: -element.width })}
+                onClick={() => {
+                  onUpdate(element.id, { width: -element.width });
+                  useEditorStore.getState().pushHistory();
+                }}
                 title="قلب أفقي"
                 className="h-8 w-8 border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center"
               >
@@ -615,6 +621,7 @@ export function ElementProperties({
                   type="number"
                   value={Math.round(element.x * 100)}
                   onChange={(e) => onUpdate(element.id, { x: Number(e.target.value) / 100 })}
+                  onBlur={() => useEditorStore.getState().pushHistory()}
                   className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                 />
               </div>
@@ -624,6 +631,7 @@ export function ElementProperties({
                   type="number"
                   value={Math.round(element.y * 100)}
                   onChange={(e) => onUpdate(element.id, { y: Number(e.target.value) / 100 })}
+                  onBlur={() => useEditorStore.getState().pushHistory()}
                   className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                 />
               </div>
@@ -633,6 +641,7 @@ export function ElementProperties({
                   type="number"
                   value={Math.round(element.width * 100)}
                   onChange={(e) => onUpdate(element.id, { width: Math.max(0.05, Number(e.target.value) / 100) })}
+                  onBlur={() => useEditorStore.getState().pushHistory()}
                   className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                 />
               </div>
@@ -642,9 +651,117 @@ export function ElementProperties({
                   type="number"
                   value={Math.round(element.height * 100)}
                   onChange={(e) => onUpdate(element.id, { height: Math.max(0.05, Number(e.target.value) / 100) })}
+                  onBlur={() => useEditorStore.getState().pushHistory()}
                   className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                 />
               </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="effects" className="mt-3.5 space-y-3.5">
+          <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3.5 animate-in fade-in duration-200">
+            <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">الظلال (Drop Shadow)</Label>
+            
+            <div className="flex items-center justify-between gap-4" title="لون الظل">
+              <span className="text-[11px] font-bold text-muted-foreground">لون الظل الأساسي:</span>
+              <PopoverColorPicker
+                color={element.shadowColor || "#000000"}
+                onChange={(val) => onUpdate(element.id, { shadowColor: val })}
+                className="w-32 h-8"
+              />
+            </div>
+
+            <SliderControl
+              label="شفافية الظل"
+              icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" />}
+              value={Math.round((element.shadowOpacity ?? 0) * 100)}
+              min={0}
+              max={100}
+              step={1}
+              unit="%"
+              onChange={(v) => onUpdate(element.id, { shadowOpacity: v / 100 })}
+            />
+            
+            <SliderControl
+              label="تمويه الظل (Blur)"
+              icon={<Droplet className="w-3.5 h-3.5 text-muted-foreground/75" />}
+              value={element.shadowBlur || 0}
+              min={0}
+              max={50}
+              step={1}
+              unit="px"
+              onChange={(v) => onUpdate(element.id, { shadowBlur: v })}
+            />
+
+            <SliderControl
+              label="إزاحة الظل (X)"
+              icon={<Move className="w-3.5 h-3.5 text-muted-foreground/75" />}
+              value={element.shadowOffsetX || 0}
+              min={-50}
+              max={50}
+              step={1}
+              unit="px"
+              onChange={(v) => onUpdate(element.id, { shadowOffsetX: v })}
+            />
+
+            <SliderControl
+              label="إزاحة الظل (Y)"
+              icon={<Move className="w-3.5 h-3.5 text-muted-foreground/75" />}
+              value={element.shadowOffsetY || 0}
+              min={-50}
+              max={50}
+              step={1}
+              unit="px"
+              onChange={(v) => onUpdate(element.id, { shadowOffsetY: v })}
+            />
+          </div>
+
+          {(element.type === "image" || element.type === "shape") && (
+            <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3.5 animate-in fade-in duration-200">
+              <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">تدوير الزوايا</Label>
+              <SliderControl
+                label="قطر الزاوية (Radius)"
+                icon={<Square className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                value={element.cornerRadius || 0}
+                min={0}
+                max={200}
+                step={1}
+                unit="px"
+                onChange={(v) => onUpdate(element.id, { cornerRadius: v })}
+              />
+            </div>
+          )}
+
+          <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3.5 animate-in fade-in duration-200">
+            <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">طريقة الدمج (Blend Mode)</Label>
+            <div className="relative">
+              <select
+                value={element.globalCompositeOperation || "source-over"}
+                onChange={(e) => {
+                  onUpdate(element.id, { globalCompositeOperation: e.target.value });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className="w-full h-9 px-3 text-xs rounded-lg border border-border bg-background focus:ring-1 focus:ring-primary appearance-none cursor-pointer"
+                dir="ltr"
+              >
+                <option value="source-over">عادي (Normal)</option>
+                <option value="multiply">مضاعفة (Multiply)</option>
+                <option value="screen">تفتيح (Screen)</option>
+                <option value="overlay">تراكب (Overlay)</option>
+                <option value="darken">تغميق (Darken)</option>
+                <option value="lighten">تفتيح (Lighten)</option>
+                <option value="color-dodge">حرق اللون (Color Dodge)</option>
+                <option value="color-burn">حرق اللون (Color Burn)</option>
+                <option value="hard-light">ضوء قاسي (Hard Light)</option>
+                <option value="soft-light">ضوء ناعم (Soft Light)</option>
+                <option value="difference">الفرق (Difference)</option>
+                <option value="exclusion">استبعاد (Exclusion)</option>
+                <option value="hue">صبغة (Hue)</option>
+                <option value="saturation">تشبع (Saturation)</option>
+                <option value="color">لون (Color)</option>
+                <option value="luminosity">إضاءة (Luminosity)</option>
+              </select>
             </div>
           </div>
         </TabsContent>

@@ -23,3 +23,21 @@ class MockResizeObserver {
 }
 window.ResizeObserver = MockResizeObserver;
 
+// Mock Wails bindings
+Object.defineProperty(window, 'go', {
+  value: {
+    main: {
+      App: {
+        LoadAutoSave: () => Promise.resolve(""),
+        SaveAutoSave: () => Promise.resolve(),
+        ClearAutoSave: () => Promise.resolve(),
+        SaveImageFromBase64: () => Promise.resolve(""),
+        OpenFile: () => Promise.resolve(""),
+        SaveFile: () => Promise.resolve(),
+        SaveFileDialog: () => Promise.resolve("")
+      }
+    }
+  },
+  writable: true
+});
+
