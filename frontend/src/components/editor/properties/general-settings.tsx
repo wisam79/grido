@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Grid3x3 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,17 @@ export function GeneralSettings() {
     setTemplate,
     printSettings,
     setPrintSettings,
+    mode,
+    showGrid,
+    setShowGrid,
+    gridSize,
+    setGridSize,
+    gridColor,
+    setGridColor,
+    gridType,
+    setGridType,
+    snapToGrid,
+    setSnapToGrid,
   } = useEditorStore(useShallow((state) => ({
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
@@ -25,6 +36,17 @@ export function GeneralSettings() {
     setTemplate: state.setTemplate,
     printSettings: state.printSettings,
     setPrintSettings: state.setPrintSettings,
+    mode: state.mode,
+    showGrid: state.showGrid,
+    setShowGrid: state.setShowGrid,
+    gridSize: state.gridSize,
+    setGridSize: state.setGridSize,
+    gridColor: state.gridColor,
+    setGridColor: state.setGridColor,
+    gridType: state.gridType,
+    setGridType: state.setGridType,
+    snapToGrid: state.snapToGrid,
+    setSnapToGrid: state.setSnapToGrid,
   })));
 
   const [unit, setUnit] = useState<"px" | "mm">("px");
@@ -291,6 +313,94 @@ export function GeneralSettings() {
             </div>
           </div>
         </div>
+
+        {/* قسم إعدادات شبكة الإرشاد (فقط في وضع التعديل الحر) */}
+        {mode === "single" && (
+          <div className="space-y-3.5 bg-muted/20 dark:bg-muted/5 p-3 rounded-xl border border-border/20">
+            <div className="flex items-center justify-between pb-1.5 border-b border-border/10">
+              <Label className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+                <Grid3x3 className="w-3.5 h-3.5 text-primary" /> شبكة الإرشاد والمحاذاة
+              </Label>
+            </div>
+
+            {/* تفعيل الشبكة والمحاذاة */}
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex items-center justify-between p-2 rounded-lg bg-background border border-border/60 hover:bg-accent/40 cursor-pointer transition-colors">
+                <span className="text-[10px] font-semibold text-muted-foreground select-none">إظهار الشبكة</span>
+                <input
+                  type="checkbox"
+                  checked={showGrid}
+                  onChange={(e) => setShowGrid(e.target.checked)}
+                  className="rounded border-border text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-2 rounded-lg bg-background border border-border/60 hover:bg-accent/40 cursor-pointer transition-colors">
+                <span className="text-[10px] font-semibold text-muted-foreground select-none">محاذاة مغناطيسية</span>
+                <input
+                  type="checkbox"
+                  checked={snapToGrid}
+                  onChange={(e) => setSnapToGrid(e.target.checked)}
+                  className="rounded border-border text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+                />
+              </label>
+            </div>
+
+            {showGrid && (
+              <div className="space-y-3 pt-1 animate-in fade-in duration-200">
+                {/* حجم الشبكة */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
+                    <span>حجم المربعات</span>
+                    <span className="font-mono bg-muted px-1 py-0.5 rounded-sm text-[10px]">{gridSize} بكسل</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min={10}
+                      max={100}
+                      step={5}
+                      value={gridSize}
+                      onChange={(e) => setGridSize(Number(e.target.value))}
+                      className="w-full accent-primary h-1.5 bg-muted rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* نوع الشبكة ولونها */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* نوع الشبكة */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-muted-foreground font-semibold">نمط الرسم</span>
+                    <select
+                      value={gridType}
+                      onChange={(e) => setGridType(e.target.value as any)}
+                      className="w-full bg-background border border-border/60 rounded-md p-1 py-1.5 text-[10px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
+                    >
+                      <option value="lines">خطوط متصلة</option>
+                      <option value="dots">نقاط إرشادية</option>
+                    </select>
+                  </div>
+
+                  {/* لون الشبكة */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-muted-foreground font-semibold">اللون</span>
+                    <select
+                      value={gridColor}
+                      onChange={(e) => setGridColor(e.target.value)}
+                      className="w-full bg-background border border-border/60 rounded-md p-1 py-1.5 text-[10px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer font-mono"
+                    >
+                      <option value="rgba(0, 0, 0, 0.08)">رمادي خفيف</option>
+                      <option value="rgba(0, 0, 0, 0.16)">رمادي متوسط</option>
+                      <option value="rgba(59, 130, 246, 0.25)">أزرق خفيف</option>
+                      <option value="rgba(236, 72, 153, 0.25)">زهري خفيف</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

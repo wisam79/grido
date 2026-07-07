@@ -4,6 +4,32 @@ import { ProjectSchema } from "@/lib/schema";
 import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from "../../wailsjs/go/main/App";
 import { toast } from "sonner";
 
+// دالة تأخير قياسية مغلقة لتفادي تسريب الوقت (Timer leaks)
+function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      fn(...args);
+      timeout = null;
+    }, delay);
+  };
+}
+
+// دالة خنق القياسات لحماية المعالجة أثناء السحب المستمر
+function throttle<T extends (...args: any[]) => any>(fn: T, limit: number): (...args: Parameters<T>) => void {
+  let inThrottle = false;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      fn(...args);
+      inThrottle = true;
+      setTimeout(() => {
+        inThrottle = false;
+      }, limit);
+    }
+  };
+}
+
 export function useAutoSave() {
   // 1. استرجاع مسودة المشروع التلقائية عند تشغيل التطبيق
   useEffect(() => {
@@ -16,8 +42,7 @@ export function useAutoSave() {
             const parsed = ProjectSchema.safeParse(rawProject);
             if (parsed.success) {
               const project = parsed.data;
-              
-              useEditorStore.getState().loadProject(project);
+              useEditorStore.getState().loadProject(project as any);
               toast.info("تم استعادة مسودة العمل السابقة تلقائياً", {
                 action: {
                   label: "بدء من جديد",
@@ -42,11 +67,22 @@ export function useAutoSave() {
     initAutoSave();
   }, []);
 
-  // 2. المراقبة والحفظ التلقائي في الخلفية بعد ثانيتين من توقف التعديل (مع خنق الفحص لمنع البطء أثناء السحب والتعديل)
+  // 2. المراقبة والحفظ التلقائي المنظم في الخلفية (مرة كل ثانيتين بعد التوقف)
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-    let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
     let lastSavedString = "";
+
+    // دالة الحفظ الفعلي للمسودة
+    const saveDraft = async (stateString: string) => {
+      try {
+        await SaveAutoSave(stateString);
+        lastSavedString = stateString;
+      } catch (err) {
+        console.error("Failed to save draft:", err);
+      }
+    };
+
+    // خنق عملية الحفظ الكلية وتأخيرها لثانيتين بعد توقف الحركة بالكامل
+    const debouncedSave = debounce(saveDraft, 2000);
 
     const handleStateChange = (state: any) => {
       const projectData = {
@@ -59,38 +95,31 @@ export function useAutoSave() {
         template: state.template,
         collageTemplate: state.collageTemplate,
         printSettings: state.printSettings,
+        // إعدادات الشبكة المدمجة حديثاً
+        showGrid: state.showGrid,
+        gridSize: state.gridSize,
+        gridColor: state.gridColor,
+        gridType: state.gridType,
+        snapToGrid: state.snapToGrid,
       };
-      
+
       const currentString = JSON.stringify(projectData);
       if (currentString === lastSavedString) {
-        return; // تخطي إذا لم يحدث تغيير حقيقي في مساحة العمل
+        return; // تخطي إذا لم تتغير مساحة العمل فعلياً
       }
 
-      clearTimeout(timeout);
-      timeout = setTimeout(async () => {
-        try {
-          await SaveAutoSave(currentString);
-          lastSavedString = currentString;
-        } catch (err) {
-          console.error("Failed to save draft:", err);
-        }
-      }, 2000); // حفظ تلقائي بعد ثانيتين من توقف التعديل تماماً
+      debouncedSave(currentString);
     };
 
-    const unsubscribe = useEditorStore.subscribe((state) => {
-      // خنق عملية المقارنة والتحويل لـ JSON لتشغيلها على الأكثر مرة كل 300 مللي ثانية أثناء السحب
-      if (throttleTimeout) return;
+    // خنق عملية الفحص الكلية كل 300 مللي ثانية أثناء السحب المستمر
+    const throttledStateChange = throttle(handleStateChange, 300);
 
-      throttleTimeout = setTimeout(() => {
-        throttleTimeout = null;
-        handleStateChange(useEditorStore.getState());
-      }, 300);
+    const unsubscribe = useEditorStore.subscribe((state) => {
+      throttledStateChange(state);
     });
 
     return () => {
       unsubscribe();
-      clearTimeout(timeout);
-      if (throttleTimeout) clearTimeout(throttleTimeout);
     };
   }, []);
 }

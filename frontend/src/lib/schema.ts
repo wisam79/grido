@@ -73,6 +73,13 @@ export const ProjectSchema = z.object({
   template: z.any().nullable().catch(null),
   collageTemplate: z.any().nullable().catch(null),
   printSettings: PrintSettingsSchema.optional(),
+  
+  // إعدادات شبكة الإرشاد
+  showGrid: z.boolean().optional(),
+  gridSize: z.number().optional(),
+  gridColor: z.string().optional(),
+  gridType: z.enum(["lines", "dots"]).optional(),
+  snapToGrid: z.boolean().optional(),
 });
 
 export type ProjectData = z.infer<typeof ProjectSchema>;

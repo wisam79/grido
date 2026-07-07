@@ -22,10 +22,12 @@ interface ElementProps {
   allElements: CanvasElement[];
   setActiveGuides: (guides: any[]) => void;
   elementRef: React.MutableRefObject<any>;
+  snapToGrid?: boolean;
+  gridSize?: number;
   onDblClick?: () => void;
 }
 
-export function URLImage({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef }: ElementProps) {
+export function URLImage({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize }: ElementProps) {
   const [image] = useImage(element.imageSrc || "");
 
   useEffect(() => {
@@ -119,12 +121,23 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
         }
         const thresholdX = 8 / displayW;
         const thresholdY = 8 / displayH;
-        const x = e.target.x() / displayW;
-        const y = e.target.y() / displayH;
-        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
-        e.target.x(snapResult.x * displayW);
-        e.target.y(snapResult.y * displayH);
-        setActiveGuides(snapResult.guides);
+        let x = e.target.x() / displayW;
+        let y = e.target.y() / displayH;
+        
+        if (snapToGrid && gridSize && gridSize > 0) {
+          const gridW = gridSize / displayW;
+          const gridH = gridSize / displayH;
+          x = Math.round(x / gridW) * gridW;
+          y = Math.round(y / gridH) * gridH;
+          e.target.x(x * displayW);
+          e.target.y(y * displayH);
+          setActiveGuides([]);
+        } else {
+          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+          e.target.x(snapResult.x * displayW);
+          e.target.y(snapResult.y * displayH);
+          setActiveGuides(snapResult.guides);
+        }
       }}
       onDragEnd={(e) => {
         setActiveGuides([]);
@@ -151,7 +164,7 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
   );
 }
 
-export function KonvaTextElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, onDblClick }: ElementProps) {
+export function KonvaTextElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize, onDblClick }: ElementProps) {
   return (
     <KonvaText
       ref={elementRef}
@@ -182,12 +195,23 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
         }
         const thresholdX = 8 / displayW;
         const thresholdY = 8 / displayH;
-        const x = e.target.x() / displayW;
-        const y = e.target.y() / displayH;
-        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
-        e.target.x(snapResult.x * displayW);
-        e.target.y(snapResult.y * displayH);
-        setActiveGuides(snapResult.guides);
+        let x = e.target.x() / displayW;
+        let y = e.target.y() / displayH;
+        
+        if (snapToGrid && gridSize && gridSize > 0) {
+          const gridW = gridSize / displayW;
+          const gridH = gridSize / displayH;
+          x = Math.round(x / gridW) * gridW;
+          y = Math.round(y / gridH) * gridH;
+          e.target.x(x * displayW);
+          e.target.y(y * displayH);
+          setActiveGuides([]);
+        } else {
+          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+          e.target.x(snapResult.x * displayW);
+          e.target.y(snapResult.y * displayH);
+          setActiveGuides(snapResult.guides);
+        }
       }}
       onDragEnd={(e) => {
         setActiveGuides([]);
@@ -217,7 +241,7 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
   );
 }
 
-export function KonvaShapeElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef }: ElementProps) {
+export function KonvaShapeElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize }: ElementProps) {
   const w = element.width * displayW;
   const h = element.height * displayH;
 
@@ -244,12 +268,23 @@ export function KonvaShapeElement({ element, isSelected, onSelect, onChange, dis
       }
       const thresholdX = 8 / displayW;
       const thresholdY = 8 / displayH;
-      const x = e.target.x() / displayW;
-      const y = e.target.y() / displayH;
-      const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
-      e.target.x(snapResult.x * displayW);
-      e.target.y(snapResult.y * displayH);
-      setActiveGuides(snapResult.guides);
+      let x = e.target.x() / displayW;
+      let y = e.target.y() / displayH;
+      
+      if (snapToGrid && gridSize && gridSize > 0) {
+        const gridW = gridSize / displayW;
+        const gridH = gridSize / displayH;
+        x = Math.round(x / gridW) * gridW;
+        y = Math.round(y / gridH) * gridH;
+        e.target.x(x * displayW);
+        e.target.y(y * displayH);
+        setActiveGuides([]);
+      } else {
+        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+        e.target.x(snapResult.x * displayW);
+        e.target.y(snapResult.y * displayH);
+        setActiveGuides(snapResult.guides);
+      }
     },
     onDragEnd: (e: any) => {
       setActiveGuides([]);

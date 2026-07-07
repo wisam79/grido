@@ -107,6 +107,13 @@ interface EditorState {
   collageStrokeWidth: number;
   collageStrokeColor: string;
 
+  // إعدادات الشبكة والمحاذاة
+  showGrid: boolean;
+  gridSize: number;
+  gridColor: string;
+  gridType: "lines" | "dots";
+  snapToGrid: boolean;
+
   setMode: (mode: EditorMode) => void;
   setTemplate: (template: PhotoTemplate | null) => void;
   setCollageTemplate: (template: CollageTemplate | null) => void;
@@ -121,6 +128,13 @@ interface EditorState {
   setCollageShowCutLines: (show: boolean) => void;
   setCollageStrokeWidth: (width: number) => void;
   setCollageStrokeColor: (color: string) => void;
+
+  // دوال إعدادات الشبكة والمحاذاة
+  setShowGrid: (show: boolean) => void;
+  setGridSize: (size: number) => void;
+  setGridColor: (color: string) => void;
+  setGridType: (type: "lines" | "dots") => void;
+  setSnapToGrid: (snap: boolean) => void;
 
   addImageElement: (src: string) => void;
   addTextElement: (text?: string) => void;
@@ -210,7 +224,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   collageStrokeWidth: 0,
   collageStrokeColor: "#000000",
 
+  // قيم الشبكة والمحاذاة الافتراضية
+  showGrid: false,
+  gridSize: 50,
+  gridColor: "rgba(0, 0, 0, 0.08)",
+  gridType: "lines",
+  snapToGrid: false,
+
   setMode: (mode) => set({ mode, selectedId: null }),
+
+  setShowGrid: (showGrid) => set({ showGrid }),
+  setGridSize: (gridSize) => set({ gridSize }),
+  setGridColor: (gridColor) => set({ gridColor }),
+  setGridType: (gridType) => set({ gridType }),
+  setSnapToGrid: (snapToGrid) => set({ snapToGrid }),
 
   setTemplate: (template) => {
     if (template) {
@@ -522,6 +549,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       history: [{ elements: [], slots: initialSlots }],
       historyIndex: 0,
       stageRef: null,
+      showGrid: false,
+      gridSize: 50,
+      gridColor: "rgba(0, 0, 0, 0.08)",
+      gridType: "lines",
+      snapToGrid: false,
     });
   },
 
@@ -548,6 +580,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedId: null,
       history: [{ elements: project.elements || [], slots: project.slots || [] }],
       historyIndex: 0,
+      showGrid: (project as any).showGrid ?? false,
+      gridSize: (project as any).gridSize ?? 50,
+      gridColor: (project as any).gridColor ?? "rgba(0, 0, 0, 0.08)",
+      gridType: (project as any).gridType ?? "lines",
+      snapToGrid: (project as any).snapToGrid ?? false,
     });
   },
 }));
