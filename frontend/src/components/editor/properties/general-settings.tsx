@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Grid3x3 } from "lucide-react";
+import { RefreshCw, Grid3x3, Monitor, FileText, Printer, Eye, EyeOff, Magnet } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -148,10 +148,19 @@ export function GeneralSettings() {
     setHeightVal(temp);
   };
 
+  const activePreset = PAPER_SIZES.find((p) => {
+    const dpi = dpiVal;
+    return (
+      (Math.round((canvasWidth / dpi) * 25.4) === p.widthMM && Math.round((canvasHeight / dpi) * 25.4) === p.heightMM) ||
+      (Math.round((canvasWidth / dpi) * 25.4) === p.heightMM && Math.round((canvasHeight / dpi) * 25.4) === p.widthMM)
+    );
+  });
+  const activePresetId = activePreset ? activePreset.id : "custom";
+
   return (
     <div className="space-y-3">
-      {/* أبعاد الكانفس */}
-      <div className="space-y-2.5">
+      {/* أبعاد مساحة العمل */}
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-semibold text-foreground/90">أبعاد مساحة العمل</Label>
           
@@ -182,58 +191,32 @@ export function GeneralSettings() {
           </div>
         </div>
 
-        {/* اختيار حجم قياسي جاهز */}
-        <div className="space-y-1.5">
-          <Label className="text-[9.5px] text-muted-foreground/80 font-bold">أحجام قياسية جاهزة</Label>
-          <div className="grid grid-cols-3 gap-1">
+        {/* الحجم القياسي (Figma Style dropdown select) */}
+        <div className="space-y-1">
+          <Label className="text-[9.5px] text-muted-foreground/80 font-bold pr-0.5">الحجم القياسي</Label>
+          <select
+            value={activePresetId}
+            onChange={(e) => {
+              if (e.target.value !== "custom") {
+                handlePresetChange(e.target.value);
+              }
+            }}
+            className="w-full bg-background border border-border/60 hover:border-primary/40 focus:border-primary rounded-lg p-2 text-xs text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
+          >
+            <option value="custom">📐 مقاس مخصص (Custom Size)</option>
             {PAPER_SIZES.map((p) => {
-              const dpi = dpiVal;
-              const isMatch = 
-                (Math.round((canvasWidth / dpi) * 25.4) === p.widthMM && Math.round((canvasHeight / dpi) * 25.4) === p.heightMM) ||
-                (Math.round((canvasWidth / dpi) * 25.4) === p.heightMM && Math.round((canvasHeight / dpi) * 25.4) === p.widthMM);
-                
               const nameParts = p.name.split(" (");
-              const mainName = nameParts[0];
-              const isLandscape = p.widthMM > p.heightMM;
-
-              // تنظيف الاسم من الكلمات الطويلة واستخدام رمز البوصة الاحترافي للاختصار
-              const cleanName = mainName.replace(" بوصة", "″");
-
-              // حساب البكسل المقابل ديناميكياً للبطاقة الجاهزة
-              const wPx = Math.round((p.widthMM * dpiVal) / 25.4);
-              const hPx = Math.round((p.heightMM * dpiVal) / 25.4);
-
+              const mainName = nameParts[0].replace(" بوصة", "″");
               return (
-                <button
-                  key={p.id}
-                  onClick={() => handlePresetChange(p.id)}
-                  className={cn(
-                    "flex flex-col items-center justify-center text-center gap-1 p-1 rounded-lg border transition-all duration-200 cursor-pointer active:scale-95 min-w-0",
-                    isMatch
-                      ? "border-primary bg-primary/10 text-primary shadow-2xs font-bold"
-                      : "border-border/60 bg-card hover:border-primary/30 hover:bg-accent/40 text-muted-foreground hover:text-foreground"
-                  )}
-                  title={p.name}
-                  dir="rtl"
-                >
-                  {/* أيقونة مصغرة للورقة توضح المقاس والاتجاه بصرياً */}
-                  <div className={cn(
-                    "shrink-0 rounded-xs border flex items-center justify-center bg-muted/15 shadow-2xs mb-0.5",
-                    isMatch ? "border-primary/60 bg-primary/5 text-primary" : "border-muted-foreground/20 text-muted-foreground",
-                    isLandscape ? "w-5.5 h-4" : "w-4 h-5.5"
-                  )} />
-                  
-                  <span className="text-[9.5px] font-bold leading-none text-foreground truncate w-full">{cleanName}</span>
-                  <span className="text-[7.5px] font-mono text-muted-foreground mt-0.5 truncate w-full">
-                    {unit === "px" ? `${wPx}×${hPx}` : `${p.widthMM}×${p.heightMM}`}
-                  </span>
-                </button>
+                <option key={p.id} value={p.id}>
+                  {mainName} ({unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})
+                </option>
               );
             })}
-          </div>
+          </select>
         </div>
 
-        {/* حقول الأبعاد المدمجة أفقياً بأسلوب البرامج الاحترافية مع زر التبديل */}
+        {/* حقول الأبعاد المدمجة أفقياً مع زر التبديل */}
         <div className="flex items-end gap-1.5 text-xs">
           <div className="flex-1 space-y-1">
             <Label className="text-[9.5px] text-muted-foreground/80 font-bold pr-0.5">العرض</Label>
@@ -249,7 +232,6 @@ export function GeneralSettings() {
             </div>
           </div>
 
-          {/* زر تبديل الاتجاه في المنتصف عمودياً */}
           <Button
             variant="ghost"
             size="sm"
@@ -275,7 +257,7 @@ export function GeneralSettings() {
           </div>
         </div>
 
-        {/* إذا كانت الوحدة بالملم، يظهر خيار الدقة DPI المنسق */}
+        {/* خيار الدقة DPI */}
         {unit === "mm" && (
           <div className="space-y-1">
             <Label className="text-[9.5px] text-muted-foreground/80 font-bold">دقة الطباعة (DPI)</Label>
@@ -292,53 +274,75 @@ export function GeneralSettings() {
           </div>
         )}
 
-        {/* عرض تفاصيل القياس الحالي بشكل مدمج للغاية */}
-        <div className="flex items-center justify-between bg-muted/30 dark:bg-muted/10 px-2.5 py-1.5 rounded-lg border border-border/20 text-[9px] text-muted-foreground font-mono leading-none">
-          <span className="font-sans font-semibold">المساحة الفعلية:</span>
-          <span>
-            {canvasWidth}×{canvasHeight}px ({Math.round((canvasWidth / dpiVal) * 25.4)}×{Math.round((canvasHeight / dpiVal) * 25.4)}مم) @ {dpiVal}DPI
-          </span>
+        {/* صف شارات تفاصيل مساحة العمل (Metadata Badges) بدقة فائقة وبدون مشاكل التفاف النصوص */}
+        <div className="grid grid-cols-3 gap-1 pt-1" dir="rtl">
+          {/* شارة البكسل */}
+          <div className="flex items-center gap-1 bg-muted/30 dark:bg-muted/10 border border-border/10 rounded-md py-1 px-1.5 text-[8.5px] font-mono text-muted-foreground justify-center" title="الحجم الرقمي بالبكسل">
+            <Monitor className="w-2.5 h-2.5 shrink-0" />
+            <span dir="ltr">{canvasWidth}×{canvasHeight}px</span>
+          </div>
+          {/* شارة المليمتر */}
+          <div className="flex items-center gap-1 bg-muted/30 dark:bg-muted/10 border border-border/10 rounded-md py-1 px-1.5 text-[8.5px] font-mono text-muted-foreground justify-center" title="حجم الطباعة الفعلي بالمليمتر">
+            <FileText className="w-2.5 h-2.5 shrink-0" />
+            <span dir="ltr">{Math.round((canvasWidth / dpiVal) * 25.4)}×{Math.round((canvasHeight / dpiVal) * 25.4)}mm</span>
+          </div>
+          {/* شارة الدقة */}
+          <div className="flex items-center gap-1 bg-muted/30 dark:bg-muted/10 border border-border/10 rounded-md py-1 px-1.5 text-[8.5px] font-mono text-muted-foreground justify-center" title="دقة الطباعة">
+            <Printer className="w-2.5 h-2.5 shrink-0" />
+            <span dir="ltr">{dpiVal} DPI</span>
+          </div>
         </div>
 
-        {/* قسم إعدادات شبكة الإرشاد (فقط في وضع التعديل الحر) */}
+        {/* قسم إعدادات شبكة الإرشاد (Figma Layout Grid Style) */}
         {mode === "single" && (
-          <div className="space-y-2.5 bg-muted/20 dark:bg-muted/5 p-2.5 rounded-xl border border-border/20">
-            <div className="flex items-center justify-between pb-1 border-b border-border/10">
+          <div className="space-y-2 bg-muted/20 dark:bg-muted/5 p-2 rounded-lg border border-border/10">
+            <div className="flex items-center justify-between">
               <Label className="text-[10px] font-bold text-foreground/90 flex items-center gap-1">
-                <Grid3x3 className="w-3 h-3 text-primary" /> شبكة الإرشاد والمحاذاة
+                <Grid3x3 className="w-3 h-3 text-primary" /> شبكة العمل
               </Label>
-            </div>
+              
+              <div className="flex items-center gap-1">
+                {/* زر إظهار/إخفاء الشبكة بالأيقونة */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowGrid(!showGrid)}
+                  className={cn(
+                    "h-6 w-6 rounded-md transition-colors cursor-pointer",
+                    showGrid 
+                      ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                  title={showGrid ? "إخفاء الشبكة" : "إظهار الشبكة"}
+                >
+                  {showGrid ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                </Button>
 
-            {/* تفعيل الشبكة والمحاذاة بشكل خطي مضغوط */}
-            <div className="flex items-center gap-4 px-1 py-0.5">
-              <label className="flex items-center gap-1.5 cursor-pointer text-[9.5px] font-bold text-muted-foreground select-none hover:text-foreground transition-colors">
-                <input
-                  type="checkbox"
-                  checked={showGrid}
-                  onChange={(e) => setShowGrid(e.target.checked)}
-                  className="rounded border-border text-primary focus:ring-primary w-3.2 h-3.2 cursor-pointer"
-                />
-                <span>إظهار الشبكة</span>
-              </label>
-
-              <label className="flex items-center gap-1.5 cursor-pointer text-[9.5px] font-bold text-muted-foreground select-none hover:text-foreground transition-colors">
-                <input
-                  type="checkbox"
-                  checked={snapToGrid}
-                  onChange={(e) => setSnapToGrid(e.target.checked)}
-                  className="rounded border-border text-primary focus:ring-primary w-3.2 h-3.2 cursor-pointer"
-                />
-                <span>محاذاة مغناطيسية</span>
-              </label>
+                {/* زر المحاذاة المغناطيسية للشبكة بالأيقونة */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSnapToGrid(!snapToGrid)}
+                  className={cn(
+                    "h-6 w-6 rounded-md transition-colors cursor-pointer",
+                    snapToGrid 
+                      ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                  title="محاذاة مغناطيسية للشبكة"
+                >
+                  <Magnet className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             </div>
 
             {showGrid && (
-              <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+              <div className="space-y-2 pt-1 border-t border-border/10 animate-in fade-in duration-200">
                 {/* حجم الشبكة */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-[9px] text-muted-foreground font-semibold">
                     <span>حجم المربعات</span>
-                    <span className="font-mono bg-muted px-1 py-0.5 rounded-xs text-[9px]">{gridSize} بكسل</span>
+                    <span className="font-mono bg-muted px-1 py-0.5 rounded-xs text-[9px]">{gridSize}px</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
@@ -354,7 +358,7 @@ export function GeneralSettings() {
                 </div>
 
                 {/* نوع الشبكة ولونها */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   {/* نوع الشبكة */}
                   <div className="space-y-0.5">
                     <span className="text-[9px] text-muted-foreground font-semibold">نمط الرسم</span>
