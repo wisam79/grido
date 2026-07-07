@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 
 export function Row({ label, value }: { label: string; value: string }) {
@@ -53,10 +53,69 @@ export function SliderControl({
   );
 }
 
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
 import { BACKGROUND_COLORS } from "@/lib/templates";
 import { PaintBucket } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+import { useEditorStore } from "@/lib/editor-store";
+
+export function PopoverColorPicker({
+  color,
+  onChange,
+  className,
+  disabled,
+  label
+}: {
+  color: string;
+  onChange: (hex: string) => void;
+  className?: string;
+  disabled?: boolean;
+  label?: React.ReactNode;
+}) {
+  return (
+    <Popover onOpenChange={(open) => {
+      if (!open) {
+        useEditorStore.getState().pushHistory();
+      }
+    }}>
+      <PopoverTrigger asChild>
+        <button
+          disabled={disabled}
+          className={cn(
+            "flex items-center gap-2 px-2 py-1.5 rounded-lg border border-border/60 bg-background hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+            className
+          )}
+        >
+          {label && <div className="text-[10.5px] font-bold text-muted-foreground shrink-0">{label}</div>}
+          
+          <div className="flex-1 flex items-center justify-end gap-1.5 font-mono text-[10px] font-bold text-foreground/80" dir="ltr">
+            {color.toUpperCase()}
+          </div>
+          
+          <div
+            className="w-5 h-5 rounded-md border border-border/80 shrink-0 relative overflow-hidden"
+            style={{ backgroundColor: color === "transparent" ? "#ffffff" : color }}
+          >
+            {color === "transparent" && (
+              <div 
+                className="w-full h-full"
+                style={{
+                  backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+                  backgroundSize: "4px 4px"
+                }}
+              />
+            )}
+          </div>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-0 border-0 bg-transparent shadow-none" sideOffset={8} align="end">
+        <ColorWheelPicker color={color} onChange={onChange} />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function ColorWheelPicker({
   color,
@@ -67,30 +126,13 @@ export function ColorWheelPicker({
 }) {
   const isTransparent = color === "transparent";
   const [inputValue, setInputValue] = useState(color);
-  const [prevColor, setPrevColor] = useState(color);
 
-  // تحديث القيمة المحلية عند تغير القيمة الخارجية من الستور
-  if (color !== prevColor) {
-    setPrevColor(color);
-    setInputValue(color);
-  }
-
-  // استخدام requestAnimationFrame لجدولة تحديثات الستور ومنع حدوث تقطّع (throttling)
-  const throttledOnChange = useRef<((hex: string) => void) | null>(null);
-  if (!throttledOnChange.current) {
-    let lastColor = color;
-    let ticking = false;
-    throttledOnChange.current = (hex: string) => {
-      lastColor = hex;
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          onChange(lastColor);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-  }
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      setInputValue(color);
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [color]);
 
   const handleHexInput = (val: string) => {
     setInputValue(val);
@@ -109,7 +151,7 @@ export function ColorWheelPicker({
     // التحقق من صحة كود HEX (3 أو 6 خانات)
     const isValidHex = /^#([0-9A-F]{3}){1,2}$/i.test(cleanVal);
     if (isValidHex) {
-      throttledOnChange.current!(cleanVal.toUpperCase());
+      onChange(cleanVal.toUpperCase());
     }
   };
 
@@ -124,7 +166,7 @@ export function ColorWheelPicker({
           onChange={(newColor) => {
             const upperColor = newColor.toUpperCase();
             setInputValue(upperColor);
-            throttledOnChange.current!(upperColor);
+            onChange(upperColor);
           }}
         />
       </div>

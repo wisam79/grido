@@ -1,19 +1,49 @@
-# README
+# Grido Studio (استوديو قريدو)
 
-## About
+استوديو ذكي لتصميم الصور وتجميعها (Collage) مدمج بأدوات ذكاء اصطناعي وأدوات طباعة عالية الدقة وتعديل متطور للمظهر والشبكات الإرشادية.
 
-This is the official Wails React-TS template.
+---
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+## 🚀 लाइव विकास (Live Development)
 
-## Live Development
+لتشغيل التطبيق في وضع التطوير النشط وتحديثات الواجهة الفورية (Hot Reload):
+```bash
+wails dev
+```
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+---
 
-## Building
+## 🛠️ بناء التطبيق (Building)
 
-To build a redistributable, production mode package, use `wails build`.
+لإنتاج حزمة التطبيق النهائية القابلة للتوزيع لنظام تشغيل Windows:
+```bash
+wails build
+```
+
+---
+
+## 🧠 استراتيجية الذكاء الاصطناعي لعزل الخلفية (AI Background Removal Strategy)
+
+يستخدم التطبيق نموذج الذكاء الاصطناعي المتميز **RMBG-1.4** من HuggingFace عبر حزمة `@huggingface/transformers` في خيط معالجة منفصل (Web Worker).
+
+### آلية العمل والتحميل:
+- **تحميل عند أول استخدام (Online-first on-demand):** نظراً لأن حجم النموذج يقارب الـ 45 ميغابايت، فإن التطبيق لا يقوم بدمجه محلياً داخل ملف الـ EXE لتجنب تضخيم حجم تحميل التطبيق. بدلاً من ذلك، يتم تحميله تلقائياً من الإنترنت عند أول استخدام للميزة.
+- **تخزين محلي مؤقت (Local Caching):** يتم تخزين النموذج تلقائياً في ذاكرة التخزين للمتصفح (Browser Cache Storage). بعد اكتمال التحميل للمرة الأولى، سيعمل عزل الخلفية بشكل **أوفلاين كامل (Offline)** وبسرعة فائقة دون الحاجة للإنترنت.
+- **حماية الذاكرة (Memory Protection):** للحد من استهلاك الذاكرة وتفادي تجمد الواجهة، يقوم التطبيق بتصغير الصور الضخمة تلقائياً قبل تمريرها للنموذج (بحد أقصى 2048 بكسل)، ومن ثم تكبير القناع (mask) الناتج مجدداً للأبعاد الأصلية، مما يحافظ على كامل دقة وجودة الصورة المخرجة.
+
+---
+
+## 🧪 الاختبارات (Testing)
+
+### اختبارات الـ Go backend:
+```bash
+go test -v ./internal/...
+```
+
+### اختبارات الـ Frontend:
+```bash
+cd frontend
+npm run test     # اختبارات الوحدة (Vitest)
+npm run typecheck # فحص توافق الأنواع
+npm run lint     # تشغيل الفحص البرمجي (ESLint)
+```

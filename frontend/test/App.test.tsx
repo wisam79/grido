@@ -33,22 +33,32 @@ vi.mock('../src/components/editor/konva/konva-canvas', () => ({
   KonvaCanvas: () => null,
 }));
 
+// Mock ProjectsDialog to render trigger synchronously under lazy evaluation
+vi.mock('../src/components/editor/projects-dialog', () => ({
+  ProjectsDialog: ({ trigger }: any) => trigger || null,
+}));
+
 describe('Component Testing: UI Rendering', () => {
-  it('renders the initial header and toolbar correctly', () => {
+  it('renders the initial header and toolbar correctly', async () => {
     render(<App />);
     expect(screen.getByText('Grido Studio | استوديو الهوية')).toBeInTheDocument();
-    expect(screen.getByText('رفع صورة')).toBeInTheDocument();
-    expect(screen.getByText('مكتبة المشاريع')).toBeInTheDocument();
+    expect(screen.getByTitle('رفع صورة جديدة')).toBeInTheDocument();
+    expect(await screen.findByTitle('مكتبة المشاريع المحلية')).toBeInTheDocument();
   });
 
   it('renders the TemplatePanel correctly', () => {
     render(<App />);
-    expect(screen.getByText('قوالب الكولاج')).toBeInTheDocument();
-    expect(screen.getByText('اختر قالباً جاهزاً أو خصص التقسيم حسب رغبتك.')).toBeInTheDocument();
+    expect(screen.getByText('تخطيط الكولاج واللون')).toBeInTheDocument();
+    expect(screen.getByText('لون خلفية مساحة العمل')).toBeInTheDocument();
   });
 
   it('renders initial collage templates correctly', () => {
     render(<App />);
+    
+    // Open the templates dialog
+    const openBtn = screen.getByText('قوالب كولاج جاهزة...');
+    fireEvent.click(openBtn);
+
     expect(screen.getAllByText('صورتان عمودي')[0]).toBeInTheDocument();
     expect(screen.getAllByText('صورتان أفقي')[0]).toBeInTheDocument();
     expect(screen.getAllByText('ثلاث صور')[0]).toBeInTheDocument();

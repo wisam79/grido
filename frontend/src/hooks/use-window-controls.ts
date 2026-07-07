@@ -22,9 +22,12 @@ export function useWindowControls() {
       window.addEventListener("blur", handleBlur);
 
       const handleContextMenu = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
         if (
-          (e.target as HTMLElement).tagName !== "INPUT" &&
-          (e.target as HTMLElement).tagName !== "TEXTAREA"
+          target.tagName !== "INPUT" &&
+          target.tagName !== "TEXTAREA" &&
+          !target.isContentEditable &&
+          !target.closest("[contenteditable='true']")
         ) {
           e.preventDefault();
         }

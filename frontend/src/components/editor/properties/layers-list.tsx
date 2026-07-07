@@ -1,20 +1,93 @@
+import React from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
 import {
-  Layers,
-  Eye,
-  EyeOff,
-  Lock,
-  Unlock,
-  ChevronUp,
-  ChevronDown,
-  Type,
-  Square,
-  Image as ImageIcon,
-  Trash2,
+  Layers, Eye, EyeOff, Lock, Unlock, Type, Square, Image as ImageIcon, Trash2, GripVertical
 } from "lucide-react";
-
 import { useShallow } from "zustand/react/shallow";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent
+} from "@dnd-kit/core";
+import {
+  SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement }: any) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: el.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 100 : "auto",
+    opacity: isDragging ? 0.9 : 1,
+  };
+
+  const isVisible = el.visible !== false;
+  const isLocked = !!el.locked;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      onClick={() => selectElement(el.id)}
+      className={`flex items-center justify-between p-1.5 rounded-lg border text-right cursor-pointer transition-colors duration-200 ${
+        isSelected
+          ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
+          : "border-transparent bg-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+      } ${isDragging ? "shadow-md bg-background ring-1 ring-primary/30" : ""}`}
+    >
+      <div className="flex items-center gap-1.5 min-w-0">
+        <div 
+          {...attributes} 
+          {...listeners} 
+          className="cursor-grab active:cursor-grabbing hover:bg-muted/50 p-1 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+        </div>
+        <span className="shrink-0 text-muted-foreground/80">
+          {el.type === "image" && <ImageIcon className="w-3.5 h-3.5" />}
+          {el.type === "text" && <Type className="w-3.5 h-3.5" />}
+          {el.type === "shape" && <Square className="w-3.5 h-3.5" />}
+        </span>
+        <span className="text-[11px] font-medium truncate max-w-[100px]">
+          {el.type === "image" ? "صورة" : el.type === "text" ? el.text || "نص" : `شكل (${el.shape})`}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`w-5 h-5 rounded-md hover:bg-muted ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
+          onClick={(e) => toggleLock(el, e)}
+          title={isLocked ? "إلغاء القفل" : "قفل الطبقة"}
+        >
+          {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`w-5 h-5 rounded-md hover:bg-muted ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
+          onClick={(e) => toggleVisibility(el, e)}
+          title={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}
+        >
+          {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-5 h-5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
+          onClick={(e) => deleteLayer(el.id, e)}
+          title="حذف"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function LayersList() {
   const { elements, selectedId, selectElement, updateElement, removeElement, pushHistory } = useEditorStore(useShallow((state) => ({
@@ -25,6 +98,15 @@ export function LayersList() {
     removeElement: state.removeElement,
     pushHistory: state.pushHistory,
   })));
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   if (elements.length === 0) {
     return (
@@ -40,7 +122,7 @@ export function LayersList() {
     );
   }
 
-  // Sort by zIndex descending (topmost element first in the layers list list UI)
+  // ترتيب من الأكبر إلى الأصغر Z-Index (العنصر الأعلى يظهر أولاً)
   const sorted = [...elements].sort((a, b) => b.zIndex - a.zIndex);
 
   const toggleVisibility = (el: CanvasElement, e: React.MouseEvent) => {
@@ -60,29 +142,30 @@ export function LayersList() {
     removeElement(id);
   };
 
-  const moveLayer = (id: string, direction: "up" | "down", e: React.MouseEvent) => {
-    e.stopPropagation();
-    const sortedAsc = [...elements].sort((a, b) => a.zIndex - b.zIndex);
-    const idx = sortedAsc.findIndex((el) => el.id === id);
-    if (idx === -1) return;
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    if (direction === "up" && idx < sortedAsc.length - 1) {
-      const nextEl = sortedAsc[idx + 1];
-      const tempZ = sortedAsc[idx].zIndex;
-      
-      // Swap zIndex
-      updateElement(id, { zIndex: nextEl.zIndex });
-      updateElement(nextEl.id, { zIndex: tempZ });
-      pushHistory();
-    } else if (direction === "down" && idx > 0) {
-      const prevEl = sortedAsc[idx - 1];
-      const tempZ = sortedAsc[idx].zIndex;
-      
-      // Swap zIndex
-      updateElement(id, { zIndex: prevEl.zIndex });
-      updateElement(prevEl.id, { zIndex: tempZ });
-      pushHistory();
-    }
+    const oldIndex = sorted.findIndex((el) => el.id === active.id);
+    const newIndex = sorted.findIndex((el) => el.id === over.id);
+
+    // إنشاء مصفوفة جديدة وإعادة ترتيبها
+    const newSorted = [...sorted];
+    const [movedItem] = newSorted.splice(oldIndex, 1);
+    newSorted.splice(newIndex, 0, movedItem);
+
+    // تحديث Z-Index بناءً على الترتيب الجديد (العنصر الأول يأخذ أعلى رقم)
+    const baseZ = 10;
+    const len = newSorted.length;
+    
+    // منع تحديث العناصر التي لم تتغير لتقليل الـ Renders
+    newSorted.forEach((el, index) => {
+      const targetZ = (len - index) * baseZ;
+      if (el.zIndex !== targetZ) {
+        updateElement(el.id, { zIndex: targetZ });
+      }
+    });
+    pushHistory();
   };
 
   return (
@@ -93,99 +176,23 @@ export function LayersList() {
         </span>
       </div>
 
-      <div className="space-y-1 max-h-[220px] overflow-y-auto pr-0.5">
-        {sorted.map((el, index) => {
-          const isSelected = selectedId === el.id;
-          const isVisible = el.visible !== false;
-          const isLocked = !!el.locked;
-
-          return (
-            <div
-              key={el.id}
-              onClick={() => selectElement(el.id)}
-              className={`flex items-center justify-between p-1.5 rounded-lg border text-right cursor-pointer transition-all duration-200 ${
-                isSelected
-                  ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
-                  : "border-transparent bg-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {/* Layer Title & Icon */}
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="shrink-0 text-muted-foreground/80">
-                  {el.type === "image" && <ImageIcon className="w-3.5 h-3.5" />}
-                  {el.type === "text" && <Type className="w-3.5 h-3.5" />}
-                  {el.type === "shape" && <Square className="w-3.5 h-3.5" />}
-                </span>
-                <span className="text-[11px] font-medium truncate max-w-[100px]">
-                  {el.type === "image" ? "صورة" : el.type === "text" ? el.text || "نص" : `شكل (${el.shape})`}
-                </span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1 shrink-0">
-                {/* Order buttons */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-5 h-5 rounded-md text-muted-foreground/75 hover:bg-muted hover:text-foreground"
-                  disabled={index === 0} // Topmost element in descending list can't move up
-                  onClick={(e) => moveLayer(el.id, "up", e)}
-                  title="نقل للأعلى"
-                >
-                  <ChevronUp className="w-3.5 h-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-5 h-5 rounded-md text-muted-foreground/75 hover:bg-muted hover:text-foreground"
-                  disabled={index === sorted.length - 1} // Bottommost element can't move down
-                  onClick={(e) => moveLayer(el.id, "down", e)}
-                  title="نقل للأسفل"
-                >
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </Button>
-
-                {/* Lock button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`w-5 h-5 rounded-md hover:bg-muted ${
-                    isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"
-                  }`}
-                  onClick={(e) => toggleLock(el, e)}
-                  title={isLocked ? "إلغاء القفل" : "قفل الطبقة"}
-                >
-                  {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                </Button>
-
-                {/* Visibility button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`w-5 h-5 rounded-md hover:bg-muted ${
-                    !isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"
-                  }`}
-                  onClick={(e) => toggleVisibility(el, e)}
-                  title={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}
-                >
-                  {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                </Button>
-
-                {/* Delete button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-5 h-5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
-                  onClick={(e) => deleteLayer(el.id, e)}
-                  title="حذف"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={sorted.map(el => el.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-1 max-h-[220px] overflow-y-auto pr-0.5">
+            {sorted.map((el) => (
+              <SortableLayerItem
+                key={el.id}
+                el={el}
+                isSelected={selectedId === el.id}
+                toggleVisibility={toggleVisibility}
+                toggleLock={toggleLock}
+                deleteLayer={deleteLayer}
+                selectElement={selectElement}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 }

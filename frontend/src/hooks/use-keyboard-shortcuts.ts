@@ -4,6 +4,8 @@ import { saveProjectAsJSON } from "@/components/editor/export-utils";
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
+    let nudgeTimeout: any = null;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       // تجاهل الاختصارات داخل حقول الإدخال
@@ -54,6 +56,13 @@ export function useKeyboardShortcuts() {
             x: Math.max(-0.5, Math.min(1, el.x + dx)),
             y: Math.max(-0.5, Math.min(1, el.y + dy)),
           });
+
+          // تجميع سجل التراجع أثناء الضغط المستمر (Debouncing pushHistory)
+          if (nudgeTimeout) clearTimeout(nudgeTimeout);
+          nudgeTimeout = setTimeout(() => {
+            useEditorStore.getState().pushHistory();
+            nudgeTimeout = null;
+          }, 400);
         }
       }
     };
@@ -64,7 +73,12 @@ export function useKeyboardShortcuts() {
 
       const { selectedId, pushHistory } = useEditorStore.getState();
       if (selectedId && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-        pushHistory();
+        // عند إفلات الزر، نقوم بحفظ الحالة فوراً وإلغاء المؤقت المؤجل لتفادي تكرار السجلات
+        if (nudgeTimeout) {
+          clearTimeout(nudgeTimeout);
+          nudgeTimeout = null;
+          pushHistory();
+        }
       }
     };
 
@@ -73,6 +87,7 @@ export function useKeyboardShortcuts() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      if (nudgeTimeout) clearTimeout(nudgeTimeout);
     };
   }, []);
 }

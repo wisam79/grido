@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Grid3x3, Monitor, FileText, Printer, Eye, EyeOff, Magnet } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { useShallow } from "zustand/react/shallow";
 
@@ -54,26 +61,26 @@ export function GeneralSettings() {
   const [heightVal, setHeightVal] = useState(canvasHeight.toString());
   const [dpiVal, setDpiVal] = useState(template?.dpi || printSettings.dpi || 300);
 
-  const [prevSyncKey, setPrevSyncKey] = useState({ canvasWidth, canvasHeight, unit, templateId: template?.id, dpi: printSettings.dpi });
-
   const currentDpi = template?.dpi || printSettings.dpi || 300;
 
-  if (canvasWidth !== prevSyncKey.canvasWidth ||
-      canvasHeight !== prevSyncKey.canvasHeight ||
-      unit !== prevSyncKey.unit ||
-      template?.id !== prevSyncKey.templateId ||
-      printSettings.dpi !== prevSyncKey.dpi) {
-      
-      setPrevSyncKey({ canvasWidth, canvasHeight, unit, templateId: template?.id, dpi: printSettings.dpi });
-      if (unit === "px") {
-        setWidthVal(canvasWidth.toString());
-        setHeightVal(canvasHeight.toString());
-      } else {
-        setWidthVal(Math.round((canvasWidth / currentDpi) * 25.4).toString());
-        setHeightVal(Math.round((canvasHeight / currentDpi) * 25.4).toString());
-      }
+  useEffect(() => {
+    const nextWidthVal =
+      unit === "px"
+        ? canvasWidth.toString()
+        : Math.round((canvasWidth / currentDpi) * 25.4).toString();
+    const nextHeightVal =
+      unit === "px"
+        ? canvasHeight.toString()
+        : Math.round((canvasHeight / currentDpi) * 25.4).toString();
+
+    const rafId = requestAnimationFrame(() => {
+      setWidthVal(nextWidthVal);
+      setHeightVal(nextHeightVal);
       setDpiVal(currentDpi);
-  }
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  }, [canvasWidth, canvasHeight, unit, currentDpi]);
 
   const handleWidthChange = (val: string) => {
     setWidthVal(val);
@@ -194,26 +201,31 @@ export function GeneralSettings() {
         {/* الحجم القياسي (Figma Style dropdown select) */}
         <div className="space-y-1">
           <Label className="text-[9.5px] text-muted-foreground/80 font-bold pr-0.5">الحجم القياسي</Label>
-          <select
+          <Select
             value={activePresetId}
-            onChange={(e) => {
-              if (e.target.value !== "custom") {
-                handlePresetChange(e.target.value);
+            onValueChange={(val) => {
+              if (val !== "custom") {
+                handlePresetChange(val);
               }
             }}
-            className="w-full bg-background border border-border/60 hover:border-primary/40 focus:border-primary rounded-lg p-2 text-xs text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
           >
-            <option value="custom">📐 مقاس مخصص (Custom Size)</option>
-            {PAPER_SIZES.map((p) => {
-              const nameParts = p.name.split(" (");
-              const mainName = nameParts[0].replace(" بوصة", "″");
-              return (
-                <option key={p.id} value={p.id}>
-                  {mainName} ({unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})
-                </option>
-              );
-            })}
-          </select>
+            <SelectTrigger className="w-full h-8.5 text-xs bg-background border border-border/60 hover:border-primary/40">
+              <SelectValue placeholder="اختر حجم الورق" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="custom">📐 مقاس مخصص (Custom Size)</SelectItem>
+              {PAPER_SIZES.map((p) => {
+                const nameParts = p.name.split(" (");
+                const mainName = nameParts[0].replace(" بوصة", "″");
+                const label = `${mainName} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                return (
+                  <SelectItem key={p.id} value={p.id}>
+                    {label}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* حقول الأبعاد المدمجة أفقياً مع زر التبديل */}
@@ -261,16 +273,20 @@ export function GeneralSettings() {
         {unit === "mm" && (
           <div className="space-y-1">
             <Label className="text-[9.5px] text-muted-foreground/80 font-bold">دقة الطباعة (DPI)</Label>
-            <select
-              value={dpiVal}
-              onChange={(e) => handleDpiChange(Number(e.target.value))}
-              className="w-full bg-background border border-border/60 rounded-md p-1 px-1.5 text-[10.5px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
+            <Select
+              value={String(dpiVal)}
+              onValueChange={(val) => handleDpiChange(Number(val))}
             >
-              <option value={150}>150 DPI (منخفض)</option>
-              <option value={200}>200 DPI (متوسط)</option>
-              <option value={300}>300 DPI (عالي - موصى به)</option>
-              <option value={600}>600 DPI (فائق الدقة)</option>
-            </select>
+              <SelectTrigger className="w-full h-8.5 text-xs bg-background border border-border/60">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="150">150 DPI (منخفض)</SelectItem>
+                <SelectItem value="200">200 DPI (متوسط)</SelectItem>
+                <SelectItem value="300">300 DPI (عالي - موصى به)</SelectItem>
+                <SelectItem value="600">600 DPI (فائق الدقة)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )}
 
@@ -362,29 +378,37 @@ export function GeneralSettings() {
                   {/* نوع الشبكة */}
                   <div className="space-y-0.5">
                     <span className="text-[9px] text-muted-foreground font-semibold">نمط الرسم</span>
-                    <select
+                    <Select
                       value={gridType}
-                      onChange={(e) => setGridType(e.target.value as any)}
-                      className="w-full bg-background border border-border/60 rounded-md p-1 text-[9px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
+                      onValueChange={(val: any) => setGridType(val)}
                     >
-                      <option value="lines">خطوط متصلة</option>
-                      <option value="dots">نقاط إرشادية</option>
-                    </select>
+                      <SelectTrigger className="w-full h-8 text-[10px] bg-background border border-border/60">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lines">خطوط متصلة</SelectItem>
+                        <SelectItem value="dots">نقاط إرشادية</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* لون الشبكة */}
                   <div className="space-y-0.5">
                     <span className="text-[9px] text-muted-foreground font-semibold">اللون</span>
-                    <select
+                    <Select
                       value={gridColor}
-                      onChange={(e) => setGridColor(e.target.value)}
-                      className="w-full bg-background border border-border/60 rounded-md p-1 text-[9px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer font-mono"
+                      onValueChange={(val) => setGridColor(val)}
                     >
-                      <option value="rgba(0, 0, 0, 0.08)">رمادي خفيف</option>
-                      <option value="rgba(0, 0, 0, 0.16)">رمادي متوسط</option>
-                      <option value="rgba(59, 130, 246, 0.25)">أزرق خفيف</option>
-                      <option value="rgba(236, 72, 153, 0.25)">زهري خفيف</option>
-                    </select>
+                      <SelectTrigger className="w-full h-8 text-[10px] font-mono bg-background border border-border/60">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rgba(0, 0, 0, 0.08)">رمادي خفيف</SelectItem>
+                        <SelectItem value="rgba(0, 0, 0, 0.16)">رمادي متوسط</SelectItem>
+                        <SelectItem value="rgba(59, 130, 246, 0.25)">أزرق خفيف</SelectItem>
+                        <SelectItem value="rgba(236, 72, 153, 0.25)">زهري خفيف</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>

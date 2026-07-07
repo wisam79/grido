@@ -65,11 +65,9 @@ describe('useEditorStore - Canvas Store Tests', () => {
     
     // إضافة عنصر نصي
     store.addTextElement('العنصر 1');
-    store.pushHistory();
     
     // إضافة عنصر آخر
     store.addTextElement('العنصر 2');
-    store.pushHistory();
     
     let state = useEditorStore.getState();
     expect(state.elements.length).toBe(2);
@@ -84,5 +82,26 @@ describe('useEditorStore - Canvas Store Tests', () => {
     store.redo();
     state = useEditorStore.getState();
     expect(state.elements.length).toBe(2);
+  });
+
+  it('should automatically push history when elements are added, duplicated or removed', () => {
+    const store = useEditorStore.getState();
+    expect(store.history.length).toBe(1); // Initial state
+
+    // Adding element automatically pushes history
+    store.addTextElement('نص جديد');
+    expect(useEditorStore.getState().history.length).toBe(2);
+    expect(useEditorStore.getState().historyIndex).toBe(1);
+
+    // Duplicating element automatically pushes history
+    const elemId = useEditorStore.getState().elements[0].id;
+    store.duplicateElement(elemId);
+    expect(useEditorStore.getState().history.length).toBe(3);
+    expect(useEditorStore.getState().historyIndex).toBe(2);
+
+    // Removing element automatically pushes history
+    store.removeElement(elemId);
+    expect(useEditorStore.getState().history.length).toBe(4);
+    expect(useEditorStore.getState().historyIndex).toBe(3);
   });
 });

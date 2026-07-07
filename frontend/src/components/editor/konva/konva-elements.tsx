@@ -9,7 +9,7 @@ import {
 } from "react-konva";
 import useImage from "use-image";
 import Konva from "konva";
-import { CanvasElement } from "@/lib/editor-store";
+import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { getSnapPositions } from "@/lib/snap-utils";
 
 interface ElementProps {
@@ -24,10 +24,11 @@ interface ElementProps {
   elementRef: React.MutableRefObject<any>;
   snapToGrid?: boolean;
   gridSize?: number;
+  altPressedRef: React.RefObject<boolean>;
   onDblClick?: () => void;
 }
 
-export function URLImage({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize }: ElementProps) {
+export function URLImage({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef }: ElementProps) {
   const [image] = useImage(element.imageSrc || "");
 
   useEffect(() => {
@@ -35,16 +36,16 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
     if (node && image) {
       try {
         node.cache();
-      } catch (e) {
-        console.warn("Failed to cache Konva image", e);
+      } catch (err) {
+        console.warn("Failed to cache Konva image", err);
       }
     }
     return () => {
       if (node) {
         try {
           node.clearCache();
-        } catch (e) {
-          // ignore
+        } catch (err) {
+          console.warn("Failed to clear Konva image cache", err);
         }
       }
     };
@@ -90,18 +91,28 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
   if (totalSaturation !== 100 || totalHue !== 0) filters.push(Konva.Filters.HSL);
   if (element.blur && element.blur > 0) filters.push(Konva.Filters.Blur);
 
+  const flipped = element.flipX === true;
+
   return (
     <KonvaImage
       ref={elementRef}
       image={image}
-      x={element.x * displayW}
+      x={flipped ? (element.x + element.width) * displayW : element.x * displayW}
       y={element.y * displayH}
       width={element.width * displayW}
       height={element.height * displayH}
+      scaleX={flipped ? -1 : 1}
       rotation={element.rotation}
       opacity={element.opacity}
       visible={element.visible !== false}
       id={element.id}
+      globalCompositeOperation={element.globalCompositeOperation as any || "source-over"}
+      shadowColor={element.shadowColor}
+      shadowBlur={element.shadowBlur || 0}
+      shadowOffsetX={element.shadowOffsetX || 0}
+      shadowOffsetY={element.shadowOffsetY || 0}
+      shadowOpacity={element.shadowOpacity ?? 0}
+      cornerRadius={element.cornerRadius || 0}
       onClick={onSelect}
       onTap={onSelect}
       filters={filters}
@@ -114,69 +125,114 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
       } as any)}
       draggable={!element.locked && isSelected}
 
+      dragBoundFunc={(pos) => {
+        if (altPressedRef.current) return pos;
+        let xAbs = pos.x;
+        let yAbs = pos.y;
+
+        if (snapToGrid && gridSize && gridSize > 0) {
+          xAbs = Math.round(xAbs / gridSize) * gridSize;
+          yAbs = Math.round(yAbs / gridSize) * gridSize;
+        } else {
+          const x = xAbs / displayW;
+          const y = yAbs / displayH;
+          const thresholdX = 5 / displayW;
+          const thresholdY = 5 / displayH;
+          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+          xAbs = snapResult.x * displayW;
+          yAbs = snapResult.y * displayH;
+        }
+        return { x: xAbs, y: yAbs };
+      }}
+
       onDragMove={(e) => {
-        if (e.evt.altKey) {
+        if (altPressedRef.current) {
           setActiveGuides([]);
           return;
         }
-        const thresholdX = 8 / displayW;
-        const thresholdY = 8 / displayH;
-        let x = e.target.x() / displayW;
-        let y = e.target.y() / displayH;
-        
-        if (snapToGrid && gridSize && gridSize > 0) {
-          const gridW = gridSize / displayW;
-          const gridH = gridSize / displayH;
-          x = Math.round(x / gridW) * gridW;
-          y = Math.round(y / gridH) * gridH;
-          e.target.x(x * displayW);
-          e.target.y(y * displayH);
+        if (snapToGrid) {
           setActiveGuides([]);
         } else {
+          const x = e.target.x() / displayW;
+          const y = e.target.y() / displayH;
+          const thresholdX = 5 / displayW;
+          const thresholdY = 5 / displayH;
           const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
-          e.target.x(snapResult.x * displayW);
-          e.target.y(snapResult.y * displayH);
           setActiveGuides(snapResult.guides);
         }
       }}
       onDragEnd={(e) => {
         setActiveGuides([]);
+        const rawX = e.target.x() / displayW;
         onChange({
-          x: e.target.x() / displayW,
+          x: flipped ? rawX - element.width : rawX,
           y: e.target.y() / displayH,
         });
+        useEditorStore.getState().pushHistory();
       }}
       onTransformEnd={(e) => {
         const node = e.target;
-        const scaleX = node.scaleX();
-        const scaleY = node.scaleY();
-        node.scaleX(1);
+        const sx = node.scaleX();
+        const sy = node.scaleY();
+        // Preserve flipX direction and reset scale to base flip value
+        const isNowFlipped = sx < 0;
+        const absScaleX = Math.abs(sx);
+        node.scaleX(isNowFlipped ? -1 : 1);
         node.scaleY(1);
+        const newWidth = (node.width() * absScaleX) / displayW;
+        const rawX = node.x() / displayW;
         onChange({
-          x: node.x() / displayW,
+          x: isNowFlipped ? rawX - newWidth : rawX,
           y: node.y() / displayH,
-          width: (node.width() * scaleX) / displayW,
-          height: (node.height() * scaleY) / displayH,
+          width: newWidth,
+          height: (node.height() * Math.abs(sy)) / displayH,
           rotation: node.rotation(),
+          flipX: isNowFlipped,
         });
+        useEditorStore.getState().pushHistory();
       }}
     />
   );
 }
 
-export function KonvaTextElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize, onDblClick }: ElementProps) {
+export function KonvaTextElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef, onDblClick }: ElementProps) {
+  const editingTextId = useEditorStore((state) => state.editingTextId);
+  
+  // Sync auto height back to store so bounding boxes and overlays stay perfect
+  useEffect(() => {
+    const node = elementRef.current;
+    if (node) {
+      const actualHeight = node.height() / displayH;
+      if (Math.abs(actualHeight - element.height) > 0.005) {
+        // Use a timeout to avoid dispatching action during render cycle
+        const timer = setTimeout(() => {
+          onChange({ height: actualHeight });
+        }, 10);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [element.text, element.fontSize, element.width, element.height, displayH, elementRef, onChange]);
+
+  const flipped = element.flipX === true;
+
   return (
     <KonvaText
       ref={elementRef}
       text={element.text || ""}
-      x={element.x * displayW}
+      x={flipped ? (element.x + element.width) * displayW : element.x * displayW}
       y={element.y * displayH}
       width={element.width * displayW}
-      height={element.height * displayH}
+      scaleX={flipped ? -1 : 1}
       rotation={element.rotation}
-      opacity={element.opacity}
+      opacity={editingTextId === element.id ? 0 : element.opacity}
       visible={element.visible !== false}
       id={element.id}
+      globalCompositeOperation={element.globalCompositeOperation as any || "source-over"}
+      shadowColor={element.shadowColor}
+      shadowBlur={element.shadowBlur || 0}
+      shadowOffsetX={element.shadowOffsetX || 0}
+      shadowOffsetY={element.shadowOffsetY || 0}
+      shadowOpacity={element.shadowOpacity ?? 0}
       onClick={onSelect}
       onTap={onSelect}
       onDblClick={onDblClick}
@@ -188,124 +244,180 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
       align={element.textAlign || "center"}
       lineHeight={element.lineHeight ?? 1.2}
       draggable={!element.locked && isSelected}
+      dragBoundFunc={(pos) => {
+        if (altPressedRef.current) return pos;
+        let xAbs = pos.x;
+        let yAbs = pos.y;
+
+        if (snapToGrid && gridSize && gridSize > 0) {
+          xAbs = Math.round(xAbs / gridSize) * gridSize;
+          yAbs = Math.round(yAbs / gridSize) * gridSize;
+        } else {
+          const x = xAbs / displayW;
+          const y = yAbs / displayH;
+          const thresholdX = 5 / displayW;
+          const thresholdY = 5 / displayH;
+          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+          xAbs = snapResult.x * displayW;
+          yAbs = snapResult.y * displayH;
+        }
+        return { x: xAbs, y: yAbs };
+      }}
       onDragMove={(e) => {
-        if (e.evt.altKey) {
+        if (altPressedRef.current) {
           setActiveGuides([]);
           return;
         }
-        const thresholdX = 8 / displayW;
-        const thresholdY = 8 / displayH;
-        let x = e.target.x() / displayW;
-        let y = e.target.y() / displayH;
-        
-        if (snapToGrid && gridSize && gridSize > 0) {
-          const gridW = gridSize / displayW;
-          const gridH = gridSize / displayH;
-          x = Math.round(x / gridW) * gridW;
-          y = Math.round(y / gridH) * gridH;
-          e.target.x(x * displayW);
-          e.target.y(y * displayH);
+        if (snapToGrid) {
           setActiveGuides([]);
         } else {
+          const x = e.target.x() / displayW;
+          const y = e.target.y() / displayH;
+          const thresholdX = 5 / displayW;
+          const thresholdY = 5 / displayH;
           const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
-          e.target.x(snapResult.x * displayW);
-          e.target.y(snapResult.y * displayH);
           setActiveGuides(snapResult.guides);
         }
       }}
       onDragEnd={(e) => {
         setActiveGuides([]);
+        const rawX = e.target.x() / displayW;
         onChange({
-          x: e.target.x() / displayW,
+          x: flipped ? rawX - element.width : rawX,
           y: e.target.y() / displayH,
+        });
+        useEditorStore.getState().pushHistory();
+      }}
+      onTransform={(e) => {
+        const node = e.target as any;
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+        const isFlipped = scaleX < 0;
+        
+        node.setAttrs({
+          width: Math.max(node.width() * Math.abs(scaleX), 20),
+          fontSize: Math.max(Math.round((node.fontSize() || 16) * scaleY), 6),
+          scaleX: isFlipped ? -1 : 1,
+          scaleY: 1,
         });
       }}
       onTransformEnd={(e) => {
-        const node = e.target;
-        const scaleX = node.scaleX();
-        const scaleY = node.scaleY();
-        node.scaleX(1);
+        const node = e.target as any;
+        const sx = node.scaleX();
+        const sy = node.scaleY();
+        const isNowFlipped = sx < 0;
+        const absScaleX = Math.abs(sx);
+        node.scaleX(isNowFlipped ? -1 : 1);
         node.scaleY(1);
-        const currentFontSize = element.fontSize || 16;
-        const newFontSize = Math.round(currentFontSize * scaleY);
+        const newWidth = (node.width() * absScaleX) / displayW;
+        const rawX = node.x() / displayW;
         onChange({
-          x: node.x() / displayW,
+          x: isNowFlipped ? rawX - newWidth : rawX,
           y: node.y() / displayH,
-          width: (node.width() * scaleX) / displayW,
-          height: (node.height() * scaleY) / displayH,
-          fontSize: newFontSize,
+          width: newWidth,
+          height: node.height() / displayH,
+          fontSize: Math.round(node.fontSize() / (displayW / 600)),
           rotation: node.rotation(),
+          flipX: isNowFlipped,
         });
+        useEditorStore.getState().pushHistory();
       }}
     />
   );
 }
 
-export function KonvaShapeElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize }: ElementProps) {
+export function KonvaShapeElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef }: ElementProps) {
   const w = element.width * displayW;
   const h = element.height * displayH;
+  const flipped = element.flipX === true;
 
   const shapeProps = {
     ref: elementRef,
-    x: element.x * displayW,
+    x: flipped ? (element.x + element.width) * displayW : element.x * displayW,
     y: element.y * displayH,
     width: w,
     height: h,
+    scaleX: flipped ? -1 : 1,
     rotation: element.rotation,
     opacity: element.opacity,
     visible: element.visible !== false,
     id: element.id,
+    globalCompositeOperation: element.globalCompositeOperation as any || "source-over",
+    shadowColor: element.shadowColor,
+    shadowBlur: element.shadowBlur || 0,
+    shadowOffsetX: element.shadowOffsetX || 0,
+    shadowOffsetY: element.shadowOffsetY || 0,
+    shadowOpacity: element.shadowOpacity ?? 0,
+    cornerRadius: element.cornerRadius || 0,
     onClick: onSelect,
     onTap: onSelect,
     fill: element.fill || "transparent",
     stroke: element.strokeWidth && element.strokeWidth > 0 ? element.stroke || "#000000" : undefined,
     strokeWidth: element.strokeWidth || 0,
     draggable: !element.locked && isSelected,
+    dragBoundFunc: (pos: any) => {
+      if (altPressedRef.current) return pos;
+      let xAbs = pos.x;
+      let yAbs = pos.y;
+
+      if (snapToGrid && gridSize && gridSize > 0) {
+        xAbs = Math.round(xAbs / gridSize) * gridSize;
+        yAbs = Math.round(yAbs / gridSize) * gridSize;
+      } else {
+        const x = xAbs / displayW;
+        const y = yAbs / displayH;
+        const thresholdX = 5 / displayW;
+        const thresholdY = 5 / displayH;
+        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+        xAbs = snapResult.x * displayW;
+        yAbs = snapResult.y * displayH;
+      }
+      return { x: xAbs, y: yAbs };
+    },
     onDragMove: (e: any) => {
-      if (e.evt.altKey) {
+      if (altPressedRef.current) {
         setActiveGuides([]);
         return;
       }
-      const thresholdX = 8 / displayW;
-      const thresholdY = 8 / displayH;
-      let x = e.target.x() / displayW;
-      let y = e.target.y() / displayH;
-      
-      if (snapToGrid && gridSize && gridSize > 0) {
-        const gridW = gridSize / displayW;
-        const gridH = gridSize / displayH;
-        x = Math.round(x / gridW) * gridW;
-        y = Math.round(y / gridH) * gridH;
-        e.target.x(x * displayW);
-        e.target.y(y * displayH);
+      if (snapToGrid) {
         setActiveGuides([]);
       } else {
+        const x = e.target.x() / displayW;
+        const y = e.target.y() / displayH;
+        const thresholdX = 5 / displayW;
+        const thresholdY = 5 / displayH;
         const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
-        e.target.x(snapResult.x * displayW);
-        e.target.y(snapResult.y * displayH);
         setActiveGuides(snapResult.guides);
       }
     },
     onDragEnd: (e: any) => {
       setActiveGuides([]);
+      const rawX = e.target.x() / displayW;
       onChange({
-        x: e.target.x() / displayW,
+        x: flipped ? rawX - element.width : rawX,
         y: e.target.y() / displayH,
       });
+      useEditorStore.getState().pushHistory();
     },
     onTransformEnd: (e: any) => {
       const node = e.target;
-      const scaleX = node.scaleX();
-      const scaleY = node.scaleY();
-      node.scaleX(1);
+      const sx = node.scaleX();
+      const sy = node.scaleY();
+      const isNowFlipped = sx < 0;
+      const absScaleX = Math.abs(sx);
+      node.scaleX(isNowFlipped ? -1 : 1);
       node.scaleY(1);
+      const newWidth = (node.width() * absScaleX) / displayW;
+      const rawX = node.x() / displayW;
       onChange({
-        x: node.x() / displayW,
+        x: isNowFlipped ? rawX - newWidth : rawX,
         y: node.y() / displayH,
-        width: (node.width() * scaleX) / displayW,
-        height: (node.height() * scaleY) / displayH,
+        width: newWidth,
+        height: (node.height() * Math.abs(sy)) / displayH,
         rotation: node.rotation(),
+        flipX: isNowFlipped,
       });
+      useEditorStore.getState().pushHistory();
     }
   };
 
@@ -313,10 +425,10 @@ export function KonvaShapeElement({ element, isSelected, onSelect, onChange, dis
     return (
       <KonvaEllipse
         {...shapeProps}
-        x={element.x * displayW + w / 2}
-        y={element.y * displayH + h / 2}
         radiusX={w / 2}
         radiusY={h / 2}
+        offsetX={-w / 2}
+        offsetY={-h / 2}
       />
     );
   }
@@ -334,11 +446,11 @@ export function KonvaShapeElement({ element, isSelected, onSelect, onChange, dis
     return (
       <KonvaStar
         {...shapeProps}
-        x={element.x * displayW + w / 2}
-        y={element.y * displayH + h / 2}
         numPoints={5}
         innerRadius={Math.min(w, h) / 4}
         outerRadius={Math.min(w, h) / 2}
+        offsetX={-w / 2}
+        offsetY={-h / 2}
       />
     );
   }

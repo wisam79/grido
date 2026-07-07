@@ -13,7 +13,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { LayoutGrid, Plus, Minus, Image as ImageIcon, Paintbrush, Rows, Columns } from "lucide-react";
+import { LayoutGrid, Plus, Minus, Image as ImageIcon, Paintbrush, Rows, Columns, IdCard, User, Contact, Scaling } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { ColorWheelPicker } from "./properties/shared-controls";
 
@@ -190,21 +190,84 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   onSelect: (t: CollageTemplate) => void;
   activeTemplateId: string | undefined;
 }) {
+  const { canvasWidth, canvasHeight } = useEditorStore(useShallow((state) => ({
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
+  })));
+
   const [rows, setRows] = useState(2);
   const [cols, setCols] = useState(2);
+  const [photoType, setPhotoType] = useState<"stretch" | "passport" | "id" | "visa">("stretch");
 
-  const applyCustomCollage = (r: number, c: number) => {
+  const calculateCells = (r: number, c: number, type: string) => {
+    const W = canvasWidth || 1200;
+    const H = canvasHeight || 1200;
+
+    if (type === "stretch") {
+      const cells = [];
+      for (let i = 0; i < r; i++) {
+        for (let j = 0; j < c; j++) {
+          cells.push({
+            x: j / c,
+            y: i / r,
+            w: 1 / c,
+            h: 1 / r,
+          });
+        }
+      }
+      return cells;
+    }
+
+    let photoRatio = 0.7778; // Passport 3.5x4.5
+    if (type === "id") {
+      photoRatio = 0.6667; // ID 4x6
+    } else if (type === "visa") {
+      photoRatio = 1.0; // Visa 5x5
+    }
+
+    const gap = Math.max(8, Math.round(W * 0.012));
+    const marginX = Math.max(16, Math.round(W * 0.025));
+    const marginY = Math.max(16, Math.round(H * 0.025));
+
+    const availW = W - 2 * marginX - (c - 1) * gap;
+    const availH = H - 2 * marginY - (r - 1) * gap;
+
+    if (availW <= 0 || availH <= 0) {
+      return calculateCells(r, c, "stretch");
+    }
+
+    const maxCellW = availW / c;
+    const maxCellH = availH / r;
+
+    let cellW = maxCellW;
+    let cellH = cellW / photoRatio;
+
+    if (cellH * r > availH) {
+      cellH = maxCellH;
+      cellW = cellH * photoRatio;
+    }
+
+    const gridW = c * cellW + (c - 1) * gap;
+    const gridH = r * cellH + (r - 1) * gap;
+    const startX = (W - gridW) / 2;
+    const startY = (H - gridH) / 2;
+
     const cells = [];
     for (let i = 0; i < r; i++) {
       for (let j = 0; j < c; j++) {
         cells.push({
-          x: j / c,
-          y: i / r,
-          w: 1 / c,
-          h: 1 / r,
+          x: (startX + j * (cellW + gap)) / W,
+          y: (startY + i * (cellH + gap)) / H,
+          w: cellW / W,
+          h: cellH / H,
         });
       }
     }
+    return cells;
+  };
+
+  const applyCustomCollage = (r: number, c: number, type = photoType) => {
+    const cells = calculateCells(r, c, type);
     const tpl: CollageTemplate = {
       id: "collage-custom",
       name: `كولاج مخصص (${r}×${c})`,
@@ -216,6 +279,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   };
 
   const isCurrentActive = activeTemplateId === "collage-custom";
+  const previewCells = calculateCells(rows, cols, photoType);
 
   return (
     <div
@@ -228,25 +292,27 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     >
       {/* Visual representation of custom grid */}
       <div className="w-28 h-28 mx-auto bg-muted/40 dark:bg-muted/15 rounded-xl p-1.5 border border-border/40 relative flex flex-col justify-between overflow-hidden shrink-0 shadow-inner">
-        <div className="w-full h-full relative overflow-hidden rounded-lg bg-background dark:bg-background shadow-inner border border-border/20 flex flex-col gap-[2px] p-[2px]">
-          {Array.from({ length: rows }).map((_, r) => (
-            <div key={r} className="flex-1 flex gap-[2px]">
-              {Array.from({ length: cols }).map((_, c) => (
-                <div
-                  key={c}
-                  className={cn(
-                    "flex-1 border rounded-md flex items-center justify-center overflow-hidden transition-all duration-300",
-                    isCurrentActive
-                      ? "bg-primary/10 border-primary/30"
-                      : "bg-muted/60 dark:bg-muted/20 border-border group-hover:bg-accent/40"
-                  )}
-                >
-                  <ImageIcon className={cn(
-                    "w-2.5 h-2.5 shrink-0",
-                    isCurrentActive ? "text-primary/60" : "text-muted-foreground/35"
-                  )} />
-                </div>
-              ))}
+        <div className="w-full h-full relative overflow-hidden rounded-lg bg-background dark:bg-background shadow-inner border border-border/20">
+          {previewCells.map((c, i) => (
+            <div
+              key={i}
+              className={cn(
+                "absolute border rounded-md flex items-center justify-center overflow-hidden transition-all duration-300",
+                isCurrentActive
+                  ? "bg-primary/10 border-primary/30"
+                  : "bg-muted/60 dark:bg-muted/20 border-border group-hover:bg-accent/40"
+              )}
+              style={{
+                left: `${c.x * 100}%`,
+                top: `${c.y * 100}%`,
+                width: `${c.w * 100}%`,
+                height: `${c.h * 100}%`,
+              }}
+            >
+              <ImageIcon className={cn(
+                "w-2.5 h-2.5 shrink-0",
+                isCurrentActive ? "text-primary/60" : "text-muted-foreground/35"
+              )} />
             </div>
           ))}
         </div>
@@ -259,6 +325,77 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           isCurrentActive ? "text-primary" : "text-foreground group-hover:text-primary"
         )}>
           تخصيص حر (أعمدة × صفوف)
+        </div>
+
+        {/* Photo Type Selector */}
+        <div className="flex flex-col gap-1">
+          <span className="text-[9px] font-bold text-muted-foreground">نسبة وحجم الصورة:</span>
+          <div className="grid grid-cols-4 gap-1 bg-muted/40 dark:bg-muted/25 p-0.5 rounded-lg border border-border/40">
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoType("stretch");
+                applyCustomCollage(rows, cols, "stretch");
+              }}
+              title="ملء الورقة (تمدد)"
+              className={cn(
+                "h-6 px-1 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                photoType === "stretch"
+                  ? "bg-background text-primary shadow-xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/30"
+              )}
+            >
+              <Scaling className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoType("passport");
+                applyCustomCollage(rows, cols, "passport");
+              }}
+              title="جواز سفر (3.5×4.5)"
+              className={cn(
+                "h-6 px-1 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                photoType === "passport"
+                  ? "bg-background text-primary shadow-xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/30"
+              )}
+            >
+              <Contact className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoType("id");
+                applyCustomCollage(rows, cols, "id");
+              }}
+              title="هوية (4×6)"
+              className={cn(
+                "h-6 px-1 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                photoType === "id"
+                  ? "bg-background text-primary shadow-xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/30"
+              )}
+            >
+              <IdCard className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoType("visa");
+                applyCustomCollage(rows, cols, "visa");
+              }}
+              title="تأشيرة (5×5)"
+              className={cn(
+                "h-6 px-1 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                photoType === "visa"
+                  ? "bg-background text-primary shadow-xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/30"
+              )}
+            >
+              <User className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
         
         {/* Row & Column Stepper Controls */}

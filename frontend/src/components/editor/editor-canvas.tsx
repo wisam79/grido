@@ -1,8 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { X, RefreshCw } from "lucide-react";
-import { OpenFile } from "../../../wailsjs/go/main/App";
-import { buildCSSFilter } from "@/lib/utils";
+import { OpenFile, SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 import { SnapGuide } from "@/lib/snap-utils";
 import { KonvaCanvas } from "./konva/konva-canvas";
 
@@ -26,10 +25,12 @@ export const EditorCanvas = React.forwardRef<
     elements,
     slots,
     selectedId,
+    editingTextId,
     canvasWidth,
     canvasHeight,
     backgroundColor,
     selectElement,
+    setEditingTextId,
     updateElement,
     pushHistory,
     addImageElement,
@@ -37,19 +38,17 @@ export const EditorCanvas = React.forwardRef<
     updateSlot,
     collageGap,
     collageMargin,
-    collageRadius,
-    collageShowCutLines,
-    collageStrokeWidth,
-    collageStrokeColor,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
     elements: state.elements,
     slots: state.slots,
     selectedId: state.selectedId,
+    editingTextId: state.editingTextId,
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
     backgroundColor: state.backgroundColor,
     selectElement: state.selectElement,
+    setEditingTextId: state.setEditingTextId,
     updateElement: state.updateElement,
     pushHistory: state.pushHistory,
     addImageElement: state.addImageElement,
@@ -57,10 +56,6 @@ export const EditorCanvas = React.forwardRef<
     updateSlot: state.updateSlot,
     collageGap: state.collageGap,
     collageMargin: state.collageMargin,
-    collageRadius: state.collageRadius,
-    collageShowCutLines: state.collageShowCutLines,
-    collageStrokeWidth: state.collageStrokeWidth,
-    collageStrokeColor: state.collageStrokeColor,
   })));
 
   // قياس حجم الحاوية لتحجيم الكانفس (مع throttle)
@@ -99,7 +94,7 @@ export const EditorCanvas = React.forwardRef<
 
 
 
-  // النقر المزدوج لاستبدال الصورة
+  // النقر المزدوج لاستبدال الصورة أو تعديل النص
   const handleDoubleClick = async (el: CanvasElement) => {
     if (printMode) return;
     if (el.type === "image") {
@@ -112,6 +107,8 @@ export const EditorCanvas = React.forwardRef<
       } catch (err) {
         console.error("Open file error:", err);
       }
+    } else if (el.type === "text") {
+      setEditingTextId(el.id);
     }
   };
 
@@ -139,10 +136,22 @@ export const EditorCanvas = React.forwardRef<
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
-    // استخدام Wails OpenFile بدلاً من FileReader لتوحيد مصدر الصور (مسارات محلية)
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
     try {
-      const src = await OpenFile();
+      // قراءة الملف المسحوب وتحويله إلى Base64
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+
+      // حفظ الصورة محلياً في مجلد Media (نفس آلية OpenFile)
+      const src = await SaveImageFromBase64(dataUrl);
       if (!src) return;
+
       if (mode === "collage") {
         const slotId = (e.target as HTMLElement).closest("[data-slot-id]")?.getAttribute("data-slot-id");
         if (slotId) {
@@ -156,10 +165,19 @@ export const EditorCanvas = React.forwardRef<
           }
         }
       } else {
-        addImageElement(src);
+        const img = new Image();
+        img.onload = () => {
+          const aspect = img.width / img.height;
+          addImageElement(src, aspect);
+        };
+        img.onerror = () => {
+          console.warn("Failed to load dropped image for aspect ratio, using default 1:1");
+          addImageElement(src, 1);
+        };
+        img.src = src;
       }
     } catch (err) {
-      console.error("Drop open file error:", err);
+      console.error("Drop file error:", err);
     }
   };
 
@@ -201,126 +219,75 @@ export const EditorCanvas = React.forwardRef<
           if (e.target === e.currentTarget) selectElement(null);
         }}
       >
-        {/* وضع الكولاج: عرض الخلايا */}
-        {mode === "collage" && (
-          <>
-            {slots.map((slot) => {
-              // حساب إحداثيات الخلايا بالبكسل مع الهوامش والمسافات والحدود والزوايا
-              const scale = displayW / 1200;
-              const margin = collageMargin * scale;
-              const gap = collageGap * scale;
-              const radius = collageRadius * scale;
-              const borderW = collageStrokeWidth * scale;
-
-              const availW = displayW - 2 * margin;
-              const availH = displayH - 2 * margin;
-
-              const left = margin + slot.x * availW + gap / 2;
-              const top = margin + slot.y * availH + gap / 2;
-              const width = slot.w * availW - gap;
-              const height = slot.h * availH - gap;
-
-              return (
-                <React.Fragment key={slot.id}>
-                  {/* خطوط القص بين الصور */}
-                  {collageShowCutLines && (
-                    <div
-                      className="absolute border border-dashed border-muted-foreground/35 pointer-events-none z-5"
-                      style={{
-                        left: `${left - gap / 2}px`,
-                        top: `${top - gap / 2}px`,
-                        width: `${width + gap}px`,
-                        height: `${height + gap}px`,
-                      }}
-                    />
-                  )}
-                  <div
-                    data-slot-id={slot.id}
-                    className={`absolute overflow-hidden cursor-pointer transition-all ${
-                      selectedId === slot.id
-                        ? "ring-2 ring-primary z-20"
-                        : "ring-1 ring-black/10 z-10"
-                    }`}
-                    style={{
-                      left: `${left}px`,
-                      top: `${top}px`,
-                      width: `${width}px`,
-                      height: `${height}px`,
-                      borderRadius: `${radius}px`,
-                      border: borderW > 0 ? `${borderW}px solid ${collageStrokeColor}` : undefined,
-                      backgroundColor: slot.imageSrc ? undefined : "var(--muted)",
-                    }}
-                    onClick={() => handleSlotClick(slot.id)}
-                  >
-                    {slot.imageSrc ? (
-                      <>
-                        <img
-                          src={slot.imageSrc}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          style={{ filter: buildCSSFilter(slot) }}
-                          draggable={false}
-                        />
-                        {!printMode && (
-                          <button
-                            className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateSlot(slot.id, { imageSrc: undefined });
-                            }}
-                            title="إزالة"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {!printMode && (
-                          <button
-                            className="absolute top-1 left-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const src = await OpenFile();
-                                if (src) {
-                                  setSlotImage(slot.id, src);
-                                }
-                              } catch (err) {
-                                console.error("Replace image error:", err);
-                              }
-                            }}
-                            title="استبدال"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
-                        <svg className="w-8 h-8 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M3 7h18M3 12h18M3 17h18" />
-                        </svg>
-                        <span className="text-xs">انقر للإضافة</span>
-                      </div>
-                    )}
-                  </div>
-                </React.Fragment>
-              );
-            })}
-            {/* إطار الكانفس المخطط */}
-            {!printMode && (
-              <div className="absolute inset-0 pointer-events-none border-2 border-dashed border-primary/30" />
-            )}
-          </>
-        )}
-
-        {mode === "single" && elements.length > 0 && (
+        {/* Render KonvaCanvas for collage or single modes */}
+        {(mode === "collage" || (mode === "single" && elements.length > 0)) && (
           <KonvaCanvas
             displayW={displayW}
             displayH={displayH}
             sortedElements={sortedElements}
             handleDoubleClick={handleDoubleClick}
             setActiveGuides={setActiveGuides}
+            handleSlotClick={handleSlotClick}
           />
         )}
+
+        {/* Overlay buttons for Selected Slot in Collage mode */}
+        {mode === "collage" && !printMode && (() => {
+          const selectedSlot = slots.find((s) => s.id === selectedId);
+          if (!selectedSlot || !selectedSlot.imageSrc) return null;
+
+          const scale = displayW / 1200;
+          const margin = collageMargin * scale;
+          const gap = collageGap * scale;
+
+          const availW = displayW - 2 * margin;
+          const availH = displayH - 2 * margin;
+
+          const left = margin + selectedSlot.x * availW + gap / 2;
+          const top = margin + selectedSlot.y * availH + gap / 2;
+          const width = selectedSlot.w * availW - gap;
+          const height = selectedSlot.h * availH - gap;
+
+          return (
+            <div
+              className="absolute pointer-events-none z-30"
+              style={{
+                left: `${left}px`,
+                top: `${top}px`,
+                width: `${width}px`,
+                height: `${height}px`,
+              }}
+            >
+              <button
+                className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateSlot(selectedSlot.id, { imageSrc: undefined });
+                }}
+                title="إزالة"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+              <button
+                className="absolute top-1 left-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const src = await OpenFile();
+                    if (src) {
+                      setSlotImage(selectedSlot.id, src);
+                    }
+                  } catch (err) {
+                    console.error("Replace image error:", err);
+                  }
+                }}
+                title="استبدال"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+        })()}
 
         {/* وضع فارغ: رسالة ترحيب */}
         {mode === "single" && elements.length === 0 && !printMode && (
@@ -350,6 +317,58 @@ export const EditorCanvas = React.forwardRef<
             }}
           />
         ))}
+
+        {/* التعديل المباشر للنصوص (In-place Text Editing) */}
+        {!printMode && editingTextId && (() => {
+          const textEl = elements.find(e => e.id === editingTextId);
+          if (!textEl || textEl.type !== "text") return null;
+
+          return (
+            <textarea
+              autoFocus
+              className="absolute z-50 bg-transparent resize-none outline-none border-2 border-primary ring-0 m-0 p-0"
+              style={{
+                left: `${textEl.x * displayW}px`,
+                top: `${textEl.y * displayH}px`,
+                width: `${textEl.width * displayW}px`,
+                height: `${textEl.height * displayH}px`,
+                transform: `rotate(${textEl.rotation || 0}deg)`,
+                transformOrigin: "top left",
+                fontSize: `${(textEl.fontSize || 20) * Math.min(displayW / canvasWidth, displayH / canvasHeight)}px`,
+                fontFamily: textEl.fontFamily || "Arial",
+                fontWeight: textEl.fontWeight || 400,
+                color: textEl.color || "#000000",
+                textAlign: textEl.textAlign || "center",
+                lineHeight: textEl.lineHeight || 1.2,
+                letterSpacing: `${textEl.letterSpacing || 0}px`,
+                padding: "2px", // للتعويض البصري البسيط عن حدود Canvas
+              }}
+              defaultValue={textEl.text}
+              onFocus={(e) => {
+                e.target.select();
+              }}
+              onBlur={(e) => {
+                updateElement(textEl.id, { text: e.target.value });
+                pushHistory();
+                setEditingTextId(null);
+              }}
+              onKeyDown={(e) => {
+                // حفظ عند ضغط Enter (بدون Shift)
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  updateElement(textEl.id, { text: e.currentTarget.value });
+                  pushHistory();
+                  setEditingTextId(null);
+                }
+                // الخروج بدون حفظ عند ضغط Escape
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setEditingTextId(null);
+                }
+              }}
+            />
+          );
+        })()}
       </div>
     </div>
   );

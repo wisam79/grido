@@ -44,14 +44,27 @@ func (h *PrintHandler) ExportPrintSheet(req domain.PrintRequest) domain.PrintRes
 func (h *PrintHandler) openFile(path string) {
 	path = filepath.Clean(path)
 
-	// 🔒 التحقق الأمني: التأكد من وجود الملف وأنه ينتهي بامتداد آمن لمنع تشغيل ملفات ضارة
-	if _, err := os.Stat(path); err != nil {
-		slog.Warn("File validation failed (does not exist)", "path", path)
+	// تحويل المسار لمسار مطلق
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		slog.Warn("Failed to get absolute path", "path", path)
 		return
 	}
-	ext := strings.ToLower(filepath.Ext(path))
+
+	// 🔒 التحقق الأمني الصارم: منع أي محاولة لحشو الأوامر (Command Injection)
+	if strings.ContainsAny(absPath, `"<>&|%^`) {
+		slog.Warn("File path contains suspicious characters", "path", absPath)
+		return
+	}
+
+	// التأكد من وجود الملف وأنه ينتهي بامتداد آمن لمنع تشغيل ملفات ضارة
+	if _, err := os.Stat(absPath); err != nil {
+		slog.Warn("File validation failed (does not exist)", "path", absPath)
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(absPath))
 	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
-		slog.Warn("File validation failed (invalid extension)", "path", path)
+		slog.Warn("File validation failed (invalid extension)", "path", absPath)
 		return
 	}
 
@@ -59,13 +72,13 @@ func (h *PrintHandler) openFile(path string) {
 	switch runtime.GOOS {
 	case "windows":
 		// استخدام rundll32 لتفادي تشغيل موجه الأوامر cmd.exe ومنع ثغرات Command Injection
-		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", path)
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", absPath)
 	case "darwin":
-		cmd = exec.Command("open", "--", path)
+		cmd = exec.Command("open", "--", absPath)
 	default: // linux
-		cmd = exec.Command("xdg-open", path)
+		cmd = exec.Command("xdg-open", absPath)
 	}
 	if err := cmd.Start(); err != nil {
-		slog.Error("Failed to open file in default viewer", "path", path, "error", err.Error())
+		slog.Error("Failed to open file in default viewer", "path", absPath, "error", err.Error())
 	}
 }

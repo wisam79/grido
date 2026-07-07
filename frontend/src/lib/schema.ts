@@ -35,6 +35,16 @@ export const CanvasElementSchema = z.object({
   stroke: z.string().optional(),
   strokeWidth: z.number().optional(),
   radius: z.number().optional(),
+  
+  // خصائص متقدمة
+  shadowColor: z.string().optional(),
+  shadowBlur: z.number().optional(),
+  shadowOffsetX: z.number().optional(),
+  shadowOffsetY: z.number().optional(),
+  shadowOpacity: z.number().optional(),
+  cornerRadius: z.number().optional(),
+  globalCompositeOperation: z.string().optional(),
+  flipX: z.boolean().optional(),
 });
 
 export const CanvasSlotSchema = z.object({
@@ -64,22 +74,39 @@ export const PrintSettingsSchema = z.object({
 });
 
 export const ProjectSchema = z.object({
-  mode: z.enum(["single", "collage"]).catch("single"),
-  canvasWidth: z.number().catch(413),
-  canvasHeight: z.number().catch(531),
-  backgroundColor: z.string().catch("#FFFFFF"),
-  elements: z.array(CanvasElementSchema).catch([]),
-  slots: z.array(CanvasSlotSchema).catch([]),
-  template: z.any().nullable().catch(null),
-  collageTemplate: z.any().nullable().catch(null),
+  mode: z.enum(["single", "collage"]).default("single"),
+  canvasWidth: z.number().default(413),
+  canvasHeight: z.number().default(531),
+  backgroundColor: z.string().default("#FFFFFF"),
+  elements: z.array(CanvasElementSchema).default([]),
+  slots: z.array(CanvasSlotSchema).default([]),
+  template: z.any().nullable().default(null),
+  collageTemplate: z.any().nullable().default(null),
   printSettings: PrintSettingsSchema.optional(),
   
   // إعدادات شبكة الإرشاد
-  showGrid: z.boolean().optional(),
-  gridSize: z.number().optional(),
-  gridColor: z.string().optional(),
-  gridType: z.enum(["lines", "dots"]).optional(),
-  snapToGrid: z.boolean().optional(),
+  showGrid: z.boolean().optional().default(false),
+  gridSize: z.number().optional().default(50),
+  gridColor: z.string().optional().default("#000000"),
+  gridOpacity: z.number().optional().default(0.15),
+  gridSubdivisions: z.number().optional().default(5),
+  gridType: z.enum(["lines", "dots"]).optional().default("lines"),
+  snapToGrid: z.boolean().optional().default(false),
+  
+  // إعدادات أعمدة التخطيط
+  showColumns: z.boolean().optional().default(false),
+  columnsCount: z.number().optional().default(12),
+  columnsColor: z.string().optional().default("rgba(239, 68, 68, 0.08)"),
+  columnsMargin: z.number().optional().default(20),
+  columnsGutter: z.number().optional().default(12),
+  
+  // تخصيصات الكولاج
+  collageGap: z.number().optional().default(0),
+  collageMargin: z.number().optional().default(0),
+  collageRadius: z.number().optional().default(0),
+  collageShowCutLines: z.boolean().optional().default(false),
+  collageStrokeWidth: z.number().optional().default(0),
+  collageStrokeColor: z.string().optional().default("#000000"),
 });
 
 export type ProjectData = z.infer<typeof ProjectSchema>;

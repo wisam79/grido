@@ -116,6 +116,17 @@ export namespace domain {
 	    template: string;
 	    collageTemplate: string;
 	    printSettings: string;
+	    showGrid: boolean;
+	    gridSize: number;
+	    gridColor: string;
+	    gridType: string;
+	    snapToGrid: boolean;
+	    collageGap: number;
+	    collageMargin: number;
+	    collageRadius: number;
+	    collageShowCutLines: boolean;
+	    collageStrokeWidth: number;
+	    collageStrokeColor: string;
 	    createdAt: string;
 	    updatedAt: string;
 	
@@ -136,6 +147,17 @@ export namespace domain {
 	        this.template = source["template"];
 	        this.collageTemplate = source["collageTemplate"];
 	        this.printSettings = source["printSettings"];
+	        this.showGrid = source["showGrid"];
+	        this.gridSize = source["gridSize"];
+	        this.gridColor = source["gridColor"];
+	        this.gridType = source["gridType"];
+	        this.snapToGrid = source["snapToGrid"];
+	        this.collageGap = source["collageGap"];
+	        this.collageMargin = source["collageMargin"];
+	        this.collageRadius = source["collageRadius"];
+	        this.collageShowCutLines = source["collageShowCutLines"];
+	        this.collageStrokeWidth = source["collageStrokeWidth"];
+	        this.collageStrokeColor = source["collageStrokeColor"];
 	        this.createdAt = source["createdAt"];
 	        this.updatedAt = source["updatedAt"];
 	    }

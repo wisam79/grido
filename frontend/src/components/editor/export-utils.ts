@@ -1,6 +1,7 @@
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { buildCSSFilter } from "@/lib/utils";
+import { serializeEditorState } from "@/lib/project-serializer";
 
 // تصدير الكانفس الحالي كصورة PNG/JPG
 export async function exportCanvas(
@@ -14,21 +15,36 @@ export async function exportCanvas(
     backgroundColor,
     elements,
     slots,
+    stageRef,
   } = useEditorStore.getState();
 
+  // محاولة التصدير مباشرة من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
+  if (stageRef) {
+    try {
+      const dataUrl = stageRef.toDataURL({
+        pixelRatio: canvasWidth / stageRef.width(), // تصدير بالدقة الأصلية الكاملة للكانفس
+        mimeType: format === "png" ? "image/png" : "image/jpeg",
+        quality: quality
+      });
+      const res = await fetch(dataUrl);
+      return await res.blob();
+    } catch (e) {
+      console.error("Failed to export via Konva Stage, falling back to manual canvas:", e);
+    }
+  }
+
+  // Fallback البديل في حال عدم وجود المكون الرسومي نشطاً (للاختبارات مثلاً)
   const canvas = document.createElement("canvas");
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  // الخلفية
   if (format === "jpg" || backgroundColor !== "transparent") {
     ctx.fillStyle = backgroundColor === "transparent" ? "#FFFFFF" : backgroundColor;
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   }
 
-  // === وضع الكولاج ===
   if (mode === "collage") {
     const state = useEditorStore.getState();
     const {
@@ -48,24 +64,21 @@ export async function exportCanvas(
     const availW = canvasWidth - 2 * margin;
     const availH = canvasHeight - 2 * margin;
 
-    // 1. رسم خطوط القص أولاً خلف الصور لتكون واضحة ومستمرة في الفراغات
     if (collageShowCutLines) {
       ctx.save();
-      ctx.strokeStyle = "#a0aec0"; // لون رمادي ناعم
-      ctx.lineWidth = Math.max(1, 2 * (canvasWidth / 1200)); // يتناسب مع الدقة
+      ctx.strokeStyle = "#a0aec0";
+      ctx.lineWidth = Math.max(1, 2 * (canvasWidth / 1200));
       ctx.setLineDash([8, 8]);
       for (const slot of slots) {
         const left = margin + slot.x * availW + gap / 2;
         const top = margin + slot.y * availH + gap / 2;
         const width = slot.w * availW - gap;
         const height = slot.h * availH - gap;
-
         ctx.strokeRect(left - gap / 2, top - gap / 2, width + gap, height + gap);
       }
       ctx.restore();
     }
 
-    // تحميل جميع صور الخلايا بالتوازي
     const slotImageMap: Record<string, HTMLImageElement> = {};
     const slotLoadPromises = slots
       .filter((slot) => slot.imageSrc)
@@ -79,7 +92,6 @@ export async function exportCanvas(
       });
     await Promise.all(slotLoadPromises);
 
-    // 2. رسم الصور والحدود
     for (const slot of slots) {
       const left = margin + slot.x * availW + gap / 2;
       const top = margin + slot.y * availH + gap / 2;
@@ -89,14 +101,10 @@ export async function exportCanvas(
       if (slot.imageSrc && slotImageMap[slot.id]) {
         const img = slotImageMap[slot.id];
         ctx.save();
-
-        // تطبيق الفلتر على مستوى السياق إن وجد
         const filterStr = buildCSSFilter(slot);
         if (filterStr && filterStr !== "none") {
           ctx.filter = filterStr;
         }
-
-        // قص الزوايا المستديرة (Clipping)
         ctx.beginPath();
         if (radius > 0) {
           drawRoundRect(ctx, left, top, width, height, radius);
@@ -104,12 +112,10 @@ export async function exportCanvas(
           ctx.rect(left, top, width, height);
         }
         ctx.clip();
-
         drawImageCover(ctx, img, left, top, width, height);
         ctx.restore();
       }
 
-      // رسم حدود خلايا الكولاج (Stroke)
       if (borderW > 0) {
         ctx.save();
         ctx.strokeStyle = collageStrokeColor;
@@ -125,28 +131,10 @@ export async function exportCanvas(
       }
     }
   } else {
-    // === وضع الصورة الواحدة (React-Konva) ===
-    const stage = useEditorStore.getState().stageRef;
-    if (stage) {
-      try {
-        const dataUrl = stage.toDataURL({
-          pixelRatio: canvasWidth / stage.width(), // تصدير بالدقة الأصلية للكانفس
-          mimeType: format === "png" ? "image/png" : "image/jpeg",
-          quality: quality
-        });
-        const res = await fetch(dataUrl);
-        return await res.blob();
-      } catch (e) {
-        console.error("Failed to export via Konva Stage, falling back to 2d canvas context:", e);
-      }
-    }
-
-    // Fallback if stage is not initialized (e.g., in unit tests)
     const sorted = [...elements]
       .filter((el) => el.visible !== false)
       .sort((a, b) => a.zIndex - b.zIndex);
 
-    // تحميل جميع صور العناصر بالتوازي
     const elImageMap: Record<string, HTMLImageElement> = {};
     const elLoadPromises = sorted
       .filter((el) => el.type === "image" && el.imageSrc)
@@ -169,9 +157,9 @@ export async function exportCanvas(
       const w = el.width * canvasWidth;
       const h = el.height * canvasHeight;
 
-      // التدوير حول المركز
       ctx.translate(x + w / 2, y + h / 2);
       ctx.rotate((el.rotation * Math.PI) / 180);
+      if (el.flipX) ctx.scale(-1, 1);
       ctx.translate(-w / 2, -h / 2);
 
       if (el.type === "image" && el.imageSrc && elImageMap[el.id]) {
@@ -355,19 +343,7 @@ function drawStar(
 // حفظ المشروع كملف JSON
 export async function saveProjectAsJSON() {
   const state = useEditorStore.getState();
-  const project = {
-    version: "1.0",
-    mode: state.mode,
-    template: state.template,
-    collageTemplate: state.collageTemplate,
-    elements: state.elements,
-    slots: state.slots,
-    canvasWidth: state.canvasWidth,
-    canvasHeight: state.canvasHeight,
-    backgroundColor: state.backgroundColor,
-    printSettings: state.printSettings,
-    savedAt: new Date().toISOString(),
-  };
+  const project = serializeEditorState(state);
   const blob = new Blob([JSON.stringify(project, null, 2)], {
     type: "application/json",
   });

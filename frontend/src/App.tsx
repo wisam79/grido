@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Toolbar } from "@/components/editor/toolbar";
 import { TemplatePanel } from "@/components/editor/template-panel";
 import { PropertiesPanel } from "@/components/editor/properties-panel";
 import { EditorCanvas } from "@/components/editor/editor-canvas";
-import { PrintDialog } from "@/components/editor/print-dialog";
-import { ExportDialog } from "@/components/editor/export-dialog";
+
+const PrintDialog = lazy(() => import("@/components/editor/print-dialog").then(module => ({ default: module.PrintDialog })));
+const ExportDialog = lazy(() => import("@/components/editor/export-dialog").then(module => ({ default: module.ExportDialog })));
 import { PrintArea } from "@/components/editor/print-area";
 import { saveProjectAsJSON } from "@/components/editor/export-utils";
 import { Button } from "@/components/ui/button";
@@ -134,7 +135,7 @@ export default function App() {
       {/* المحتوى الرئيسي */}
       <main className="flex-1 flex overflow-hidden">
         {/* اللوحة اليسرى - القوالب (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex w-80 border-l bg-card flex-col no-print">
+        <aside className="hidden lg:flex w-[22%] min-w-[240px] max-w-[320px] border-l bg-card flex-col no-print">
           <TemplatePanel />
         </aside>
 
@@ -163,7 +164,7 @@ export default function App() {
         </section>
 
         {/* اللوحة اليمنى - الخصائص (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex w-80 border-r bg-card flex-col no-print">
+        <aside className="hidden lg:flex w-[22%] min-w-[240px] max-w-[320px] border-r bg-card flex-col no-print">
           <PropertiesPanel />
         </aside>
       </main>
@@ -192,15 +193,17 @@ export default function App() {
       </Sheet>
 
       {/* نوافذ الطباعة والتصدير */}
-      <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
-      <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
+      <Suspense fallback={null}>
+        <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
+        <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
+      </Suspense>
 
       {/* منطقة الطباعة - مخفية عن الشاشة */}
       <div id="print-container" className="hidden print:block">
         <PrintArea />
       </div>
 
-      <SonnerToaster position="top-center" richColors />
+      <SonnerToaster position="top-center" duration={2500} richColors />
     </div>
   );
 }

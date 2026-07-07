@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEditorStore, EditorMode } from "@/lib/editor-store";
+import { useEditorStore } from "@/lib/editor-store";
+import { serializeEditorState, projectFileToDomainProject, domainProjectToProjectFile } from "@/lib/project-serializer";
 import { SaveProject, GetAllProjects, DeleteProject } from "../../../wailsjs/go/handlers/ProjectHandler";
 import { ExportBackup, ImportBackup, ResetLibrary } from "../../../wailsjs/go/handlers/BackupHandler";
 import { SaveFileDialog } from "../../../wailsjs/go/main/App";
@@ -98,19 +99,8 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
     setIsLoading(true);
     try {
       const currentId = state.projectId || uid();
-      const projectData = new domain.Project({
-        id: currentId,
-        name: projectName,
-        mode: state.mode,
-        canvasWidth: state.canvasWidth,
-        canvasHeight: state.canvasHeight,
-        backgroundColor: state.backgroundColor,
-        elements: JSON.stringify(state.elements),
-        slots: JSON.stringify(state.slots),
-        template: state.template ? JSON.stringify(state.template) : "",
-        collageTemplate: state.collageTemplate ? JSON.stringify(state.collageTemplate) : "",
-        printSettings: JSON.stringify(state.printSettings),
-      });
+      const projectFile = serializeEditorState(state);
+      const projectData = projectFileToDomainProject(projectFile, currentId, projectName);
 
       await SaveProject(projectData);
       toast.success(state.projectId ? "تم تحديث المشروع بنجاح" : "تم حفظ المشروع بنجاح في قاعدة البيانات المحلية");
@@ -129,24 +119,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
 
   const handleLoad = (project: domain.Project) => {
     try {
-      const parsedElements = project.elements ? JSON.parse(project.elements) : [];
-      const parsedSlots = project.slots ? JSON.parse(project.slots) : [];
-      
-      const parsedTemplate = project.template ? JSON.parse(project.template) : null;
-      const parsedCollageTemplate = project.collageTemplate ? JSON.parse(project.collageTemplate) : null;
-      const parsedPrintSettings = project.printSettings ? JSON.parse(project.printSettings) : undefined;
-
-      const projectData = {
-        mode: project.mode as EditorMode,
-        canvasWidth: project.canvasWidth,
-        canvasHeight: project.canvasHeight,
-        backgroundColor: project.backgroundColor,
-        elements: parsedElements,
-        slots: parsedSlots,
-        template: parsedTemplate,
-        collageTemplate: parsedCollageTemplate,
-        printSettings: parsedPrintSettings,
-      };
+      const projectData = domainProjectToProjectFile(project);
 
       useEditorStore.getState().loadProject(projectData, project.id);
 

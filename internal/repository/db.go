@@ -1,9 +1,9 @@
 package repository
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -133,11 +133,33 @@ func (r *projectRepositoryImpl) ImportProjects(projects []domain.Project, overwr
 	})
 }
 
-// CleanupUnusedMedia يقوم بمسح جميع الصور غير المستخدمة في أي مشروع لتوفير مساحة القرص
+// CleanupUnusedMedia يقوم بمسح جميع الصور غير المستخدمة في أي مشروع لتوفير مساحة القرص بشكل دوري
 func CleanupUnusedMedia() {
 	// تأخير بدء التنظيف لتفادي تعارض الملفات أو مسح ملفات مرفوعة حديثاً قبل حفظ مسودتها
 	time.Sleep(15 * time.Second)
 
+	// التنظيف الأول عند بدء التشغيل
+	runCleanupMedia()
+
+	// إطلاق مؤقت دوري كل 1 ساعة لتنظيف الخلفية بدون تجميد
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			runCleanupMedia()
+		}
+	}()
+}
+
+type elementJSONStruct struct {
+	ImageSrc string `json:"imageSrc"`
+}
+
+type slotJSONStruct struct {
+	ImageSrc string `json:"imageSrc"`
+}
+
+func runCleanupMedia() {
 	dbMu.RLock()
 	db := dbInstance
 	dbMu.RUnlock()
@@ -158,16 +180,65 @@ func CleanupUnusedMedia() {
 		return
 	}
 
-	autosavePath := filepath.Join(appDir, "autosave.json")
-	autosaveBytes, _ := os.ReadFile(autosavePath)
-	autosaveContent := string(autosaveBytes)
+	// تجميع مسارات كافة الصور المستخدمة في المشاريع الحالية والمسودات
+	referencedImages := make(map[string]bool)
 
+	// 1. فحص مسارات الصور في المشاريع المحفوظة بقاعدة البيانات
+	for _, p := range projects {
+		var elems []elementJSONStruct
+		if err := json.Unmarshal([]byte(p.Elements), &elems); err == nil {
+			for _, el := range elems {
+				if el.ImageSrc != "" {
+					filename := filepath.Base(filepath.Clean(el.ImageSrc))
+					referencedImages[filename] = true
+				}
+			}
+		}
+		var slots []slotJSONStruct
+		if err := json.Unmarshal([]byte(p.Slots), &slots); err == nil {
+			for _, slot := range slots {
+				if slot.ImageSrc != "" {
+					filename := filepath.Base(filepath.Clean(slot.ImageSrc))
+					referencedImages[filename] = true
+				}
+			}
+		}
+	}
+
+	// 2. فحص مسار الصورة في مسودة التخزين التلقائي autosave.json
+	autosavePath := filepath.Join(appDir, "autosave.json")
+	if autosaveBytes, err := os.ReadFile(autosavePath); err == nil {
+		var autosaveData struct {
+			Elements []elementJSONStruct `json:"elements"`
+			Slots    []slotJSONStruct    `json:"slots"`
+		}
+		if err := json.Unmarshal(autosaveBytes, &autosaveData); err == nil {
+			for _, el := range autosaveData.Elements {
+				if el.ImageSrc != "" {
+					filename := filepath.Base(filepath.Clean(el.ImageSrc))
+					referencedImages[filename] = true
+				}
+			}
+			for _, slot := range autosaveData.Slots {
+				if slot.ImageSrc != "" {
+					filename := filepath.Base(filepath.Clean(slot.ImageSrc))
+					referencedImages[filename] = true
+				}
+			}
+		}
+	}
+
+	// 3. إنشاء مجلد الحجر الصحي إذا لم يكن موجوداً
+	trashDir := filepath.Join(appDir, "MediaTrash")
+	_ = os.MkdirAll(trashDir, 0755)
+
+	// 4. نقل الملفات غير المشار إليها إلى الحجر الصحي (MediaTrash)
 	for _, f := range files {
 		if f.IsDir() {
 			continue
 		}
 
-		// 🔒 Skip files modified in the last 15 minutes to avoid deleting newly uploaded files before save
+		// تخطي الملفات المعدلة في آخر 15 دقيقة لتجنب النقل الخاطئ للملفات التي لم تحفظ بعد
 		if info, err := f.Info(); err == nil {
 			if time.Since(info.ModTime()) < 15*time.Minute {
 				continue
@@ -175,30 +246,26 @@ func CleanupUnusedMedia() {
 		}
 
 		filename := f.Name()
-		
-		// Create strict match strings to avoid substring issues inside JSON
-		q1 := `"` + filename + `"`
-		q2 := `\"` + filename + `\"`
+		if !referencedImages[filename] {
+			filePath := filepath.Join(mediaDir, filename)
+			trashPath := filepath.Join(trashDir, filename)
+			_ = os.Rename(filePath, trashPath)
+		}
+	}
 
-		isReferenced := false
-		
-		// 1. Check in autosave.json
-		if strings.Contains(autosaveContent, q1) || strings.Contains(autosaveContent, q2) {
-			isReferenced = true
-		} else {
-			// 2. Check in saved projects
-			for _, p := range projects {
-				if strings.Contains(p.Elements, q1) || strings.Contains(p.Elements, q2) || 
-				   strings.Contains(p.Slots, q1) || strings.Contains(p.Slots, q2) {
-					isReferenced = true
-					break
+	// 5. مسح الملفات الموجودة في الحجر الصحي منذ أكثر من 24 ساعة
+	trashFiles, err := os.ReadDir(trashDir)
+	if err == nil {
+		for _, f := range trashFiles {
+			if f.IsDir() {
+				continue
+			}
+			if info, err := f.Info(); err == nil {
+				// إذا مر 24 ساعة على آخر تعديل للصورة (والذي يمثل غالباً وقت إضافتها)
+				if time.Since(info.ModTime()) > 24*time.Hour {
+					_ = os.Remove(filepath.Join(trashDir, f.Name()))
 				}
 			}
-		}
-
-		if !isReferenced {
-			filePath := filepath.Join(mediaDir, filename)
-			_ = os.Remove(filePath)
 		}
 	}
 }

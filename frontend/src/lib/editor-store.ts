@@ -2,6 +2,7 @@ import { create } from "zustand";
 import Konva from "konva";
 import { PhotoTemplate, CollageTemplate, COLLAGE_TEMPLATES, PHOTO_TEMPLATES } from "./templates";
 import { uid } from "./utils";
+import { ProjectFileV1 } from "./project-serializer";
 
 export interface ProjectStateData {
   mode: EditorMode;
@@ -53,6 +54,16 @@ export interface CanvasElement {
   stroke?: string;
   strokeWidth?: number;
   radius?: number;
+  
+  // خصائص متقدمة (Advanced)
+  shadowColor?: string;
+  shadowBlur?: number;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  shadowOpacity?: number;
+  cornerRadius?: number;
+  globalCompositeOperation?: string;
+  flipX?: boolean;
 }
 
 export interface CanvasSlot {
@@ -91,6 +102,7 @@ interface EditorState {
   elements: CanvasElement[];
   slots: CanvasSlot[];
   selectedId: string | null;
+  editingTextId: string | null;
   canvasWidth: number; // بكسل (العرض)
   canvasHeight: number; // بكسل
   backgroundColor: string;
@@ -111,8 +123,17 @@ interface EditorState {
   showGrid: boolean;
   gridSize: number;
   gridColor: string;
+  gridOpacity: number;
+  gridSubdivisions: number;
   gridType: "lines" | "dots";
   snapToGrid: boolean;
+
+  // إعدادات أعمدة التخطيط
+  showColumns: boolean;
+  columnsCount: number;
+  columnsColor: string;
+  columnsMargin: number;
+  columnsGutter: number;
 
   setMode: (mode: EditorMode) => void;
   setTemplate: (template: PhotoTemplate | null) => void;
@@ -133,10 +154,19 @@ interface EditorState {
   setShowGrid: (show: boolean) => void;
   setGridSize: (size: number) => void;
   setGridColor: (color: string) => void;
+  setGridOpacity: (opacity: number) => void;
+  setGridSubdivisions: (subdivisions: number) => void;
   setGridType: (type: "lines" | "dots") => void;
   setSnapToGrid: (snap: boolean) => void;
 
-  addImageElement: (src: string) => void;
+  // دوال إعدادات أعمدة التخطيط
+  setShowColumns: (show: boolean) => void;
+  setColumnsCount: (count: number) => void;
+  setColumnsColor: (color: string) => void;
+  setColumnsMargin: (margin: number) => void;
+  setColumnsGutter: (gutter: number) => void;
+
+  addImageElement: (src: string, imageAspectRatio?: number) => void;
   addTextElement: (text?: string) => void;
   addShapeElement: (shape: CanvasElement["shape"]) => void;
   updateElement: (id: string, patch: Partial<CanvasElement>) => void;
@@ -145,6 +175,7 @@ interface EditorState {
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   selectElement: (id: string | null) => void;
+  setEditingTextId: (id: string | null) => void;
 
   setSlotImage: (slotId: string, src: string) => void;
   updateSlot: (slotId: string, patch: Partial<CanvasSlot>) => void;
@@ -163,7 +194,7 @@ interface EditorState {
   undo: () => void;
   redo: () => void;
   reset: () => void;
-  loadProject: (project: ProjectStateData, projectId?: string | null) => void;
+  loadProject: (project: ProjectFileV1, projectId?: string | null) => void;
 }
 
 
@@ -203,6 +234,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   elements: [],
   slots: initialSlots,
   selectedId: null,
+  editingTextId: null,
   canvasWidth: 1200,
   canvasHeight: 1200,
   backgroundColor: "#FFFFFF",
@@ -227,17 +259,34 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // قيم الشبكة والمحاذاة الافتراضية
   showGrid: false,
   gridSize: 50,
-  gridColor: "rgba(0, 0, 0, 0.08)",
+  gridColor: "#000000",
+  gridOpacity: 0.15,
+  gridSubdivisions: 5,
   gridType: "lines",
   snapToGrid: false,
+
+  // قيم أعمدة التخطيط الافتراضية
+  showColumns: false,
+  columnsCount: 12,
+  columnsColor: "rgba(239, 68, 68, 0.08)",
+  columnsMargin: 20,
+  columnsGutter: 12,
 
   setMode: (mode) => set({ mode, selectedId: null }),
 
   setShowGrid: (showGrid) => set({ showGrid }),
   setGridSize: (gridSize) => set({ gridSize }),
   setGridColor: (gridColor) => set({ gridColor }),
+  setGridOpacity: (gridOpacity) => set({ gridOpacity }),
+  setGridSubdivisions: (gridSubdivisions) => set({ gridSubdivisions }),
   setGridType: (gridType) => set({ gridType }),
   setSnapToGrid: (snapToGrid) => set({ snapToGrid }),
+
+  setShowColumns: (showColumns) => set({ showColumns }),
+  setColumnsCount: (columnsCount) => set({ columnsCount }),
+  setColumnsColor: (columnsColor) => set({ columnsColor }),
+  setColumnsMargin: (columnsMargin) => set({ columnsMargin }),
+  setColumnsGutter: (columnsGutter) => set({ columnsGutter }),
 
   setTemplate: (template) => {
     if (template) {
@@ -284,6 +333,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (template) {
       const firstImageEl = get().elements.find((e) => e.type === "image");
       const lastEditedImage = firstImageEl?.imageSrc || get().lastEditedImage;
+      const currentWidth = get().canvasWidth || 1200;
+      const currentHeight = get().canvasHeight || 1200;
 
       const slots: CanvasSlot[] = template.cells.map((c, i) => ({
         id: uid(),
@@ -304,8 +355,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         slots,
         elements: [],
         selectedId: null,
-        canvasWidth: 1200,
-        canvasHeight: 1200,
+        canvasWidth: currentWidth,
+        canvasHeight: currentHeight,
         history: [{ elements: [], slots }],
         historyIndex: 0,
         ...(lastEditedImage ? { lastEditedImage } : {}),
@@ -327,18 +378,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setCollageStrokeWidth: (width) => set({ collageStrokeWidth: width }),
   setCollageStrokeColor: (color) => set({ collageStrokeColor: color }),
 
-  addImageElement: (src) => {
+  addImageElement: (src, imageAspectRatio = 1) => {
     const id = uid();
+    const state = get();
+    
+    let hPercent = 0.5;
+    let wPercent = hPercent * (state.canvasHeight / state.canvasWidth) * imageAspectRatio;
+    
+    if (wPercent > 0.8) {
+       wPercent = 0.8;
+       hPercent = wPercent * (state.canvasWidth / state.canvasHeight) / imageAspectRatio;
+    }
+
     const newEl: CanvasElement = {
       id,
       type: "image",
-      x: 0.15,
-      y: 0.15,
-      width: 0.7,
-      height: 0.7,
+      x: 0.5 - wPercent / 2,
+      y: 0.5 - hPercent / 2,
+      width: wPercent,
+      height: hPercent,
       rotation: 0,
       opacity: 1,
-      zIndex: (get().elements.length + 1) * 10,
+      zIndex: (state.elements.length + 1) * 10,
       imageSrc: src,
       filter: "none",
       brightness: 100,
@@ -346,8 +407,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       saturation: 100,
       blur: 0,
     };
-    get().pushHistory();
     set((s) => ({ elements: [...s.elements, newEl], selectedId: id, lastEditedImage: src }));
+    get().pushHistory();
   },
 
   addTextElement: (text = "نص جديد") => {
@@ -355,10 +416,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const newEl: CanvasElement = {
       id,
       type: "text",
-      x: 0.25,
-      y: 0.4,
-      width: 0.5,
-      height: 0.1,
+      x: 0.35,
+      y: 0.45,
+      width: 0.3,
+      height: 0.05,
       rotation: 0,
       opacity: 1,
       zIndex: (get().elements.length + 1) * 10,
@@ -372,30 +433,35 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       lineHeight: 1.2,
       letterSpacing: 0,
     };
-    get().pushHistory();
     set((s) => ({ elements: [...s.elements, newEl], selectedId: id }));
+    get().pushHistory();
   },
 
   addShapeElement: (shape) => {
     const id = uid();
+    const state = get();
+    
+    const hPercent = 0.3;
+    const wPercent = hPercent * (state.canvasHeight / state.canvasWidth);
+
     const newEl: CanvasElement = {
       id,
       type: "shape",
-      x: 0.3,
-      y: 0.3,
-      width: 0.4,
-      height: 0.4,
+      x: 0.5 - wPercent / 2,
+      y: 0.5 - hPercent / 2,
+      width: wPercent,
+      height: hPercent,
       rotation: 0,
       opacity: 1,
-      zIndex: (get().elements.length + 1) * 10,
+      zIndex: (state.elements.length + 1) * 10,
       shape,
       fill: "#6366f1",
       stroke: "#000000",
       strokeWidth: 0,
       radius: 8,
     };
-    get().pushHistory();
     set((s) => ({ elements: [...s.elements, newEl], selectedId: id }));
+    get().pushHistory();
   },
 
   updateElement: (id, patch) => {
@@ -413,11 +479,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   removeElement: (id) => {
-    get().pushHistory();
     set((s) => ({
       elements: s.elements.filter((el) => el.id !== id),
       selectedId: s.selectedId === id ? null : s.selectedId,
     }));
+    get().pushHistory();
   },
 
   duplicateElement: (id) => {
@@ -431,24 +497,27 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       y: Math.min(el.y + 0.05, 0.9),
       zIndex: (get().elements.length + 1) * 10,
     };
-    get().pushHistory();
     set((s) => ({ elements: [...s.elements, copy], selectedId: newId }));
+    get().pushHistory();
   },
 
   bringToFront: (id) => {
     const maxZ = Math.max(0, ...get().elements.map((e) => e.zIndex));
     get().updateElement(id, { zIndex: maxZ + 10 });
+    get().pushHistory();
   },
 
   sendToBack: (id) => {
     const minZ = Math.min(0, ...get().elements.map((e) => e.zIndex));
     get().updateElement(id, { zIndex: minZ - 10 });
+    get().pushHistory();
   },
 
   selectElement: (id) => set({ selectedId: id }),
+  
+  setEditingTextId: (id) => set({ editingTextId: id }),
 
   setSlotImage: (slotId, src) => {
-    get().pushHistory();
     set((s) => ({
       slots: s.slots.map((sl) =>
         sl.id === slotId
@@ -464,6 +533,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ),
       lastEditedImage: src,
     }));
+    get().pushHistory();
   },
 
   updateSlot: (slotId, patch) => {
@@ -475,14 +545,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   clearSlots: () => {
-    get().pushHistory();
     set((s) => ({
       slots: s.slots.map((sl) => ({ ...sl, imageSrc: undefined })),
     }));
+    get().pushHistory();
   },
 
   fillAllSlots: (src) => {
-    get().pushHistory();
     set((s) => ({
       slots: s.slots.map((sl) => ({
         ...sl,
@@ -493,6 +562,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         saturation: 100,
       })),
     }));
+    get().pushHistory();
   },
 
   setPrintSettings: (patch) =>
@@ -519,6 +589,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       slots: structuredClone(prev.slots),
       historyIndex: historyIndex - 1,
       selectedId: null,
+      editingTextId: null,
     });
   },
 
@@ -531,6 +602,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       slots: structuredClone(next.slots),
       historyIndex: historyIndex + 1,
       selectedId: null,
+      editingTextId: null,
     });
   },
 
@@ -543,6 +615,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       elements: [],
       slots: initialSlots,
       selectedId: null,
+      editingTextId: null,
       canvasWidth: 1200,
       canvasHeight: 1200,
       backgroundColor: "#FFFFFF",
@@ -551,13 +624,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       stageRef: null,
       showGrid: false,
       gridSize: 50,
-      gridColor: "rgba(0, 0, 0, 0.08)",
+      gridColor: "#000000",
+      gridOpacity: 0.15,
+      gridSubdivisions: 5,
       gridType: "lines",
       snapToGrid: false,
+      showColumns: false,
+      columnsCount: 12,
+      columnsColor: "rgba(239, 68, 68, 0.08)",
+      columnsMargin: 20,
+      columnsGutter: 12,
     });
   },
 
-  loadProject: (project: ProjectStateData, projectId: string | null = null) => {
+  loadProject: (project: ProjectFileV1, projectId: string | null = null) => {
     // استعادة الأيقونات والمكونات الأصلية للقوالب المطابقة من قاعدة البيانات
     const restoredTemplate = project.template
       ? PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) || project.template
@@ -573,18 +653,32 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       canvasHeight: project.canvasHeight,
       backgroundColor: project.backgroundColor || "#FFFFFF",
       elements: project.elements || [],
-      slots: project.slots || [],
+      slots: project.slots || initialSlots,
       template: restoredTemplate,
       collageTemplate: restoredCollageTemplate,
       printSettings: project.printSettings ? { ...defaultPrint, ...project.printSettings } : defaultPrint,
       selectedId: null,
-      history: [{ elements: project.elements || [], slots: project.slots || [] }],
+      editingTextId: null,
+      history: [{ elements: project.elements || [], slots: project.slots || initialSlots }],
       historyIndex: 0,
-      showGrid: (project as any).showGrid ?? false,
-      gridSize: (project as any).gridSize ?? 50,
-      gridColor: (project as any).gridColor ?? "rgba(0, 0, 0, 0.08)",
-      gridType: (project as any).gridType ?? "lines",
-      snapToGrid: (project as any).snapToGrid ?? false,
+      showGrid: project.showGrid ?? false,
+      gridSize: project.gridSize ?? 50,
+      gridColor: project.gridColor ?? "#000000",
+      gridOpacity: project.gridOpacity ?? 0.15,
+      gridSubdivisions: project.gridSubdivisions ?? 5,
+      gridType: project.gridType ?? "lines",
+      snapToGrid: project.snapToGrid ?? false,
+      showColumns: project.showColumns ?? false,
+      columnsCount: project.columnsCount ?? 12,
+      columnsColor: project.columnsColor ?? "rgba(239, 68, 68, 0.08)",
+      columnsMargin: project.columnsMargin ?? 20,
+      columnsGutter: project.columnsGutter ?? 12,
+      collageGap: project.collageGap ?? 0,
+      collageMargin: project.collageMargin ?? 0,
+      collageRadius: project.collageRadius ?? 0,
+      collageShowCutLines: project.collageShowCutLines ?? false,
+      collageStrokeWidth: project.collageStrokeWidth ?? 0,
+      collageStrokeColor: project.collageStrokeColor ?? "#000000",
     });
   },
 }));

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useEditorStore } from "@/lib/editor-store";
-import { ProjectSchema } from "@/lib/schema";
+import { deserializeProjectFile } from "@/lib/project-serializer";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { OpenFile, ClearAutoSave } from "../../../wailsjs/go/main/App";
-import { ProjectsDialog } from "./projects-dialog";
+const ProjectsDialog = lazy(() => import("./projects-dialog").then(module => ({ default: module.ProjectsDialog })));
 import { toast } from "sonner";
 
 import { useShallow } from "zustand/react/shallow";
@@ -81,6 +81,8 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     history,
     historyIndex,
     template,
+    slots,
+    setSlotImage,
     canvasWidth,
     canvasHeight,
   } = useEditorStore(useShallow((state) => ({
@@ -102,6 +104,8 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     history: state.history,
     historyIndex: state.historyIndex,
     template: state.template,
+    slots: state.slots,
+    setSlotImage: state.setSlotImage,
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
   })));
@@ -110,7 +114,34 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     try {
       const b64 = await OpenFile();
       if (b64) {
-        addImageElement(b64);
+        if (mode === "collage") {
+          if (selectedId && slots.some(s => s.id === selectedId)) {
+            setSlotImage(selectedId, b64);
+            toast.success("تم إدراج الصورة في الخانة المحددة");
+          } else {
+            const emptySlot = slots.find((s) => !s.imageSrc);
+            if (emptySlot) {
+              setSlotImage(emptySlot.id, b64);
+              toast.success("تم إدراج الصورة في خانة فارغة");
+            } else if (slots[0]) {
+              setSlotImage(slots[0].id, b64);
+              toast.success("تم تحديث صورة الخانة الأولى");
+            } else {
+              toast.warning("يرجى اختيار تخطيط كولاج أولاً");
+            }
+          }
+        } else {
+          const img = new Image();
+          img.onload = () => {
+            const aspect = img.width / img.height;
+            addImageElement(b64, aspect);
+          };
+          img.onerror = () => {
+            console.warn("Failed to load image for aspect ratio, using default 1:1");
+            addImageElement(b64, 1);
+          };
+          img.src = b64;
+        }
       }
     } catch (err) {
       console.error(err);
@@ -177,18 +208,12 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     reader.onload = (event) => {
       try {
         const rawProject = JSON.parse(event.target?.result as string);
-        const parsed = ProjectSchema.safeParse(rawProject);
-        if (parsed.success) {
-          const project = parsed.data;
-          
-          useEditorStore.getState().loadProject(project);
-          toast.success("تم تحميل ملف المشروع بنجاح");
-        } else {
-          toast.error("ملف المشروع غير صالح أو معطوب");
-          console.error("Zod Validation Error:", parsed.error);
-        }
-      } catch {
+        const parsed = deserializeProjectFile(rawProject);
+        useEditorStore.getState().loadProject(parsed);
+        toast.success("تم تحميل ملف المشروع بنجاح");
+      } catch (err) {
         toast.error("ملف المشروع غير صالح أو معطوب");
+        console.error("Project Load Error:", err);
       }
     };
     reader.readAsText(file);
@@ -220,6 +245,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           variant="ghost"
           size="sm"
           onClick={handleOpenFile}
+          aria-label="رفع صورة جديدة"
           title="رفع صورة جديدة"
           className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
@@ -233,6 +259,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           variant="ghost"
           size="sm"
           onClick={handleClearCanvas}
+          aria-label="جديد (مسح مساحة العمل)"
           title="جديد (مسح مساحة العمل)"
           className="h-7 px-2 text-destructive/80 hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
         >
@@ -240,21 +267,24 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
         </Button>
 
         {/* المكتبة المحلية */}
-        <ProjectsDialog
-          trigger={
-            <Button
-              variant="ghost"
-              size="sm"
-              title="مكتبة المشاريع المحلية"
-              className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
-            >
-              <Database className="w-3.5 h-3.5" />
-            </Button>
-          }
-        />
+        <Suspense fallback={null}>
+          <ProjectsDialog
+            trigger={
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="مكتبة المشاريع المحلية"
+                title="مكتبة المشاريع المحلية"
+                className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
+              >
+                <Database className="w-3.5 h-3.5" />
+              </Button>
+            }
+          />
+        </Suspense>
 
         {/* استيراد JSON */}
-        <label className="cursor-pointer" title="فتح مشروع (.json)">
+        <label className="cursor-pointer" aria-label="فتح مشروع (.json)" title="فتح مشروع (.json)">
           <input
             type="file"
             accept=".json"
@@ -271,6 +301,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           variant="ghost"
           size="sm"
           onClick={handleSaveProject}
+          aria-label="تصدير ملف مشروع (.json)"
           title="تصدير ملف مشروع (.json)"
           className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
@@ -284,6 +315,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           variant="ghost"
           size="sm"
           onClick={() => setMode("collage")}
+          aria-label="وضع الكولاج"
           title="وضع الكولاج"
           className={`h-7 px-2.5 rounded-md transition-all cursor-pointer ${
             mode === "collage"
@@ -297,6 +329,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           variant="ghost"
           size="sm"
           onClick={() => setMode("single")}
+          aria-label="وضع التعديل الحر"
           title="وضع التعديل الحر"
           className={`h-7 px-2.5 rounded-md transition-all cursor-pointer ${
             mode === "single"
@@ -315,6 +348,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           variant="ghost" 
           size="sm" 
           onClick={() => addTextElement()} 
+          aria-label="إضافة نص"
           title="إضافة نص" 
           className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
@@ -328,6 +362,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               variant="ghost" 
               size="sm" 
               className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
+              aria-label="إضافة شكل"
               title="إضافة شكل"
             >
               <Square className="w-3.5 h-3.5" />
@@ -362,6 +397,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
             variant="ghost"
             size="sm"
             onClick={() => selectedId && bringToFront(selectedId)}
+            aria-label="إحضار للأمام"
             title="إحضار للأمام"
             className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
           >
@@ -371,6 +407,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
             variant="ghost"
             size="sm"
             onClick={() => selectedId && sendToBack(selectedId)}
+            aria-label="إرسال للخلف"
             title="إرسال للخلف"
             className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
           >
@@ -380,6 +417,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
             variant="ghost"
             size="sm"
             onClick={() => selectedId && duplicateElement(selectedId)}
+            aria-label="تكرار"
             title="تكرار"
             className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
           >
@@ -395,6 +433,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
                 variant="ghost" 
                 size="sm" 
                 className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
+                aria-label="محاذاة العنصر المحدد"
                 title="محاذاة العنصر المحدد"
               >
                 <AlignLeft className="w-3.5 h-3.5" />
@@ -444,6 +483,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
                 toast.success("تم حذف العنصر");
               }
             }}
+            aria-label="حذف"
             title="حذف"
             className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
           >
@@ -459,6 +499,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           size="sm"
           onClick={undo}
           disabled={historyIndex <= 0}
+          aria-label="تراجع"
           title="تراجع"
           className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
@@ -469,6 +510,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           size="sm"
           onClick={redo}
           disabled={historyIndex >= history.length - 1}
+          aria-label="إعادة"
           title="إعادة"
           className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
@@ -499,6 +541,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           variant="outline" 
           size="sm" 
           onClick={onSave} 
+          aria-label="حفظ المشروع محلياً"
           title="حفظ المشروع محلياً" 
           className="h-8 px-3 border-border/60 hover:bg-accent/40 rounded-lg cursor-pointer transition-all gap-1.5 text-xs"
         >
@@ -509,6 +552,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           variant="outline" 
           size="sm" 
           onClick={onExport} 
+          aria-label="تصدير كصورة"
           title="تصدير كصورة" 
           className="h-8 px-3 border-border/60 hover:bg-accent/40 rounded-lg cursor-pointer transition-all gap-1.5 text-xs"
         >
@@ -519,6 +563,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           variant="default" 
           size="sm" 
           onClick={onPrint} 
+          aria-label="طباعة"
           title="طباعة" 
           className="h-8 px-3 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-indigo-500/10 text-white rounded-lg cursor-pointer transition-all gap-1.5 text-xs shadow-xs border-0"
         >

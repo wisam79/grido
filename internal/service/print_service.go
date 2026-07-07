@@ -81,9 +81,41 @@ func applyColorAdjustments(img image.Image, brightness, contrast, saturation flo
 }
 
 func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, error) {
+	// 1. التحقق من صحة المعطيات (Validation)
+	if req.DPI < 50 || req.DPI > 600 {
+		return "", fmt.Errorf("invalid DPI: %d (must be between 50 and 600)", req.DPI)
+	}
+	if req.PaperWidthMM <= 10 || req.PaperWidthMM > 1000 {
+		return "", fmt.Errorf("invalid PaperWidthMM: %.2f (must be between 10mm and 1000mm)", req.PaperWidthMM)
+	}
+	if req.PaperHeightMM <= 10 || req.PaperHeightMM > 1000 {
+		return "", fmt.Errorf("invalid PaperHeightMM: %.2f (must be between 10mm and 1000mm)", req.PaperHeightMM)
+	}
+	if len(req.Items) > 1000 {
+		return "", fmt.Errorf("too many items: %d (max limit is 1000)", len(req.Items))
+	}
+
 	// Calculate canvas dimensions in pixels
 	widthPx := int(math.Round(mmToPx(req.PaperWidthMM, req.DPI)))
 	heightPx := int(math.Round(mmToPx(req.PaperHeightMM, req.DPI)))
+
+	// فحص إجمالي عدد البكسلات لمنع نفاذ الذاكرة (OOM)
+	if int64(widthPx)*int64(heightPx) > 144000000 { // حد أقصى 144 ميغابكسل
+		return "", fmt.Errorf("requested print size is too large (total pixels exceed 144 megapixels)")
+	}
+
+	// التحقق من وجود جميع ملفات الصور المطلوبة على القرص قبل البدء في المعالجة
+	for _, item := range req.Items {
+		if item.ImageSrc == "" {
+			continue
+		}
+		filePath := resolveLocalPath(item.ImageSrc)
+		if !strings.HasPrefix(filePath, "data:image/") {
+			if _, err := os.Stat(filePath); err != nil {
+				return "", fmt.Errorf("image file does not exist: %s", filepath.Base(filePath))
+			}
+		}
+	}
 
 	dc := gg.NewContext(widthPx, heightPx)
 

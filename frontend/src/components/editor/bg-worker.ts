@@ -16,8 +16,17 @@ let processor: any = null;
 
 const MODEL_ID = "briaai/RMBG-1.4";
 
+let lastProgressTime = 0;
+let lastProgressKey = "";
+
 function notifyProgress(key: string, current: number, total: number, elementId?: string) {
-  self.postMessage({ type: "progress", key, current, total, elementId });
+  const now = Date.now();
+  // إرسال التحديث فوراً إذا اكتمل التقدم، أو تغيرت المرحلة، أو مضى 100 مللي ثانية لمنع إغراق الواجهة بالرسائل
+  if (current === total || key !== lastProgressKey || now - lastProgressTime > 100) {
+    lastProgressTime = now;
+    lastProgressKey = key;
+    self.postMessage({ type: "progress", key, current, total, elementId });
+  }
 }
 
 async function loadModel() {
@@ -28,7 +37,7 @@ async function loadModel() {
   
   // خنق عدد خيوط المعالجة لـ WASM لمنع تجمد الواجهة واستهلاك كامل طاقة المعالج (CPU Starvation)
   if (env.backends && env.backends.onnx && env.backends.onnx.wasm) {
-    env.backends.onnx.wasm.numThreads = 2;
+    env.backends.onnx.wasm.numThreads = 1;
   }
 
   notifyProgress("fetch:model", 0, 100);
@@ -98,6 +107,25 @@ async function removeBg(imageSrc: string, elementId?: string): Promise<Blob> {
   } else {
     image = await RawImage.fromURL(imageSrc);
   }
+  notifyProgress("compute:decode", 25, 100, elementId);
+
+  // حفظ الأبعاد الأصلية للصورة
+  const originalW = image.width;
+  const originalH = image.height;
+
+  // تصغير الصورة تلقائياً إذا كانت ضخمة لحماية الذاكرة وتسريع المعالجة
+  const MAX_DIM = 2048;
+  if (image.width > MAX_DIM || image.height > MAX_DIM) {
+    let newW, newH;
+    if (image.width > image.height) {
+      newW = MAX_DIM;
+      newH = Math.round((image.height * MAX_DIM) / image.width);
+    } else {
+      newH = MAX_DIM;
+      newW = Math.round((image.width * MAX_DIM) / image.height);
+    }
+    image = await image.resize(newW, newH);
+  }
   notifyProgress("compute:decode", 30, 100, elementId);
 
   // ── 2. Preprocess ────────────────────────────────────────────────────────
@@ -110,12 +138,12 @@ async function removeBg(imageSrc: string, elementId?: string): Promise<Blob> {
 
   // ── 4. Resize mask to original image dimensions ──────────────────────────
   const mask = await RawImage.fromTensor(output[0].mul(255).to("uint8"))
-    .resize(image.width, image.height);
+    .resize(originalW, originalH);
   notifyProgress("compute:mask", 85, 100, elementId);
 
   // ── 5. Draw original image on OffscreenCanvas ─────────────────────────────
   //    Using createImageBitmap from the original blob avoids RGB/RGBA issues
-  const canvas = new OffscreenCanvas(image.width, image.height);
+  const canvas = new OffscreenCanvas(originalW, originalH);
   const ctx = canvas.getContext("2d")!;
 
   const sourceBlob = imageSrc.startsWith("data:")
@@ -123,11 +151,11 @@ async function removeBg(imageSrc: string, elementId?: string): Promise<Blob> {
     : await (await fetch(imageSrc)).blob();
 
   const bitmap = await createImageBitmap(sourceBlob);
-  ctx.drawImage(bitmap, 0, 0, image.width, image.height);
+  ctx.drawImage(bitmap, 0, 0, originalW, originalH);
   bitmap.close();
 
   // ── 6. Apply alpha mask channel ────────────────────────────────────────────
-  const imgData = ctx.getImageData(0, 0, image.width, image.height);
+  const imgData = ctx.getImageData(0, 0, originalW, originalH);
   const maskData = mask.data as Uint8Array;
   for (let i = 0; i < maskData.length; i++) {
     imgData.data[i * 4 + 3] = maskData[i];
@@ -137,6 +165,17 @@ async function removeBg(imageSrc: string, elementId?: string): Promise<Blob> {
 
   // ── 7. Export transparent PNG ─────────────────────────────────────────────
   return await canvas.convertToBlob({ type: "image/png" });
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  const chunk = 8192;
+  for (let i = 0; i < len; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk) as any);
+  }
+  return self.btoa(binary);
 }
 
 // Handle warmup requests (preload model silently)
@@ -155,7 +194,9 @@ self.onmessage = async (e: MessageEvent) => {
 
   try {
     const blob = await removeBg(imageSrc, elementId);
-    self.postMessage({ type: "success", blob, elementId });
+    const arrayBuffer = await blob.arrayBuffer();
+    const base64 = arrayBufferToBase64(arrayBuffer);
+    self.postMessage({ type: "success", base64, mimeType: "image/png", elementId });
   } catch (error: any) {
     let errorMessage = error?.message || String(error);
 

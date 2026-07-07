@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ImageIcon, ImagePlus, Copy, Scissors, Paintbrush, Sliders } from "lucide-react";
-import { OpenFile } from "../../../../wailsjs/go/main/App";
+import { OpenFile, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
+import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { IMAGE_FILTERS } from "@/lib/templates";
 import { CropDialog } from "../crop-dialog";
@@ -133,7 +134,15 @@ export function SlotProperties({
               open={cropOpen}
               onOpenChange={setCropOpen}
               imageSrc={slot.imageSrc}
-              onCropSave={(cropped) => onUpdate(slot.id, { imageSrc: cropped })}
+              onCropSave={async (cropped) => {
+                try {
+                  const localPath = await SaveImageFromBase64(cropped);
+                  onUpdate(slot.id, { imageSrc: localPath });
+                } catch (err) {
+                  console.error("Failed to save cropped slot image:", err);
+                  toast.error("فشل حفظ الصورة المقصوصة محلياً");
+                }
+              }}
             />
           )}
 

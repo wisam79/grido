@@ -18,12 +18,13 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { useEditorStore, CanvasElement } from "@/lib/editor-store";
+import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { Printer, ZoomIn, ZoomOut, RectangleVertical, RectangleHorizontal, Scissors, Move, Copy, Columns } from "lucide-react";
 import { SheetPreview } from "./print/print-preview";
 import { toast } from "sonner";
+import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 
 import { useShallow } from "zustand/react/shallow";
 
@@ -102,41 +103,54 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         }
       }
 
+      const state = useEditorStore.getState();
+      const stageRef = state.stageRef;
+      if (!stageRef) {
+        throw new Error("تعذر الوصول إلى مساحة العمل (Stage) للتصدير");
+      }
+
+      // تصدير الكانفس بالدقة الكاملة الأصلية
+      const pixelRatio = canvasWidth / stageRef.width();
+      const dataUrl = stageRef.toDataURL({
+        pixelRatio: pixelRatio,
+        mimeType: "image/png",
+        quality: 1.0,
+      });
+
+      // حفظ الصورة مؤقتاً في الخلفية وتجنب إرسال Payload ضخم
+      const localImageSrc = await SaveImageFromBase64(dataUrl);
+      if (!localImageSrc) {
+        throw new Error("فشل حفظ لقطة الكانفس محلياً");
+      }
+
       const items = [];
       if (mode === "collage") {
-        for (const slot of slots) {
-          if (slot.imageSrc) {
-            items.push({
-              imageSrc: slot.imageSrc,
-              x: printSettings.marginMM + slot.x * availableWidthMM + gapMM / 2,
-              y: printSettings.marginMM + slot.y * availableHeightMM + gapMM / 2,
-              w: slot.w * availableWidthMM - gapMM,
-              h: slot.h * availableHeightMM - gapMM,
-              filter: slot.filter || "",
-              brightness: slot.brightness || 100,
-              contrast: slot.contrast || 100,
-              saturation: slot.saturation || 100,
-            });
-          }
-        }
+        items.push({
+          imageSrc: localImageSrc,
+          x: printSettings.marginMM,
+          y: printSettings.marginMM,
+          w: availableWidthMM,
+          h: availableHeightMM,
+          filter: "",
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+        });
       } else {
-        const firstImage = elements.find((e: CanvasElement) => e.type === "image");
-        if (firstImage && firstImage.imageSrc) {
-          for (let i = 0; i < actualCopies; i++) {
-            const col = i % cols;
-            const row = Math.floor(i / cols);
-            items.push({
-              imageSrc: firstImage.imageSrc,
-              x: printSettings.marginMM + col * (imageWidthMM + gapMM),
-              y: printSettings.marginMM + row * (imageHeightMM + gapMM),
-              w: imageWidthMM,
-              h: imageHeightMM,
-              filter: firstImage.filter || "",
-              brightness: firstImage.brightness || 100,
-              contrast: firstImage.contrast || 100,
-              saturation: firstImage.saturation || 100,
-            });
-          }
+        for (let i = 0; i < actualCopies; i++) {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          items.push({
+            imageSrc: localImageSrc,
+            x: printSettings.marginMM + col * (imageWidthMM + gapMM),
+            y: printSettings.marginMM + row * (imageHeightMM + gapMM),
+            w: imageWidthMM,
+            h: imageHeightMM,
+            filter: "",
+            brightness: 100,
+            contrast: 100,
+            saturation: 100,
+          });
         }
       }
 

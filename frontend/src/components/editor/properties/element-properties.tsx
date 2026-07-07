@@ -4,10 +4,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  ImageIcon, Type, Palette, Sparkles, Loader2, RefreshCw, 
+  ImageIcon, Type, Palette, Sparkles, RefreshCw, 
   AlignLeft, AlignCenter, AlignRight, Sun, Contrast, Droplet, 
   EyeOff, Eye, RotateCw, FlipHorizontal, Square, Maximize2, 
-  Scissors, PaintBucket, Paintbrush, Sliders, Move
+  Scissors, PaintBucket, Paintbrush, Sliders, Move, X, Lock
 } from "lucide-react";
 import { IMAGE_FILTERS } from "@/lib/templates";
 import { CropDialog } from "../crop-dialog";
@@ -21,26 +21,6 @@ let globalBgWorker: Worker | null = null;
 let isWorkerBusy = false;
 let isModelCached = false;
 
-// تحميل النموذج مسبقاً في الخلفية بعد 8 ثوانٍ من فتح التطبيق
-setTimeout(() => {
-  try {
-    if (!globalBgWorker) {
-      globalBgWorker = new Worker(
-        new URL("../bg-worker.ts", import.meta.url),
-        { type: "module" }
-      );
-      globalBgWorker.onmessage = (e) => {
-        if (e.data?.type === "warmup_done") {
-          isModelCached = true;
-        }
-      };
-    }
-    globalBgWorker.postMessage({ type: "warmup" });
-  } catch {
-    // الإخفاق الصامت — سيُعاد المحاولة عند الاستخدام الفعلي
-  }
-}, 8000);
-
 export function ElementProperties({
   element,
   onUpdate,
@@ -52,6 +32,18 @@ export function ElementProperties({
   const [bgProgress, setBgProgress] = useState(0);
   const [bgProgressText, setBgProgressText] = useState("");
   const [cropOpen, setCropOpen] = useState(false);
+
+  const handleCancelBgRemoval = () => {
+    if (globalBgWorker) {
+      globalBgWorker.terminate();
+      globalBgWorker = null;
+    }
+    setIsRemovingBg(false);
+    isWorkerBusy = false;
+    setBgProgress(0);
+    setBgProgressText("");
+    toast.info("تم إلغاء عملية عزل الخلفية.");
+  };
 
   const handleRemoveBg = () => {
     if (!element.imageSrc) return;
@@ -82,7 +74,7 @@ export function ElementProperties({
     const worker = globalBgWorker;
 
     worker.onmessage = (event) => {
-      const { type, key, current, total, blob, error, elementId } = event.data;
+      const { type, key, current, total, error, elementId } = event.data;
 
       // تجاهل الرسائل الواردة لعناصر أخرى منعاً لتداخل العمليات في الخلفية
       if (elementId && elementId !== element.id) {
@@ -158,7 +150,28 @@ export function ElementProperties({
         {element.type === "shape" && (<><Palette className="w-3.5 h-3.5" /> خصائص الشكل</>)}
       </div>
 
-      <Tabs defaultValue="style" className="w-full">
+      {element.locked && (
+        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 shrink-0" />
+            <span>هذا العنصر مقفل. إلغاء القفل للتعديل.</span>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              onUpdate(element.id, { locked: false });
+              useEditorStore.getState().pushHistory();
+            }}
+            className="h-6 px-2 text-[10px] bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/20 rounded-md transition-colors cursor-pointer text-amber-700 dark:text-amber-300 font-bold"
+          >
+            إلغاء القفل
+          </Button>
+        </div>
+      )}
+
+      <div className={cn(element.locked && "pointer-events-none opacity-50 select-none")}>
+        <Tabs defaultValue="style" className="w-full">
         <TabsList className={cn(
           "grid w-full h-9 p-[3px] bg-muted rounded-lg border",
           hasAdjustTab ? "grid-cols-4" : "grid-cols-3"
@@ -198,21 +211,20 @@ export function ElementProperties({
                   
                   {/* زر عزل الخلفية بالذكاء الاصطناعي */}
                   <Button
-                    variant="default"
+                    variant={isRemovingBg ? "destructive" : "default"}
                     className={cn(
                       "flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border-0 shadow-md transition-all duration-200 cursor-pointer active:scale-[0.97] group text-white",
                       isRemovingBg 
-                        ? "bg-muted cursor-not-allowed" 
+                        ? "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800" 
                         : "bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 hover:from-violet-500 hover:via-indigo-500 hover:to-blue-500 shadow-indigo-500/10 hover:shadow-indigo-500/20"
                     )}
-                    onClick={handleRemoveBg}
-                    disabled={isRemovingBg}
-                    title="إزالة الخلفية بالذكاء الاصطناعي"
+                    onClick={isRemovingBg ? handleCancelBgRemoval : handleRemoveBg}
+                    title={isRemovingBg ? "إلغاء عملية عزل الخلفية" : "إزالة الخلفية بالذكاء الاصطناعي"}
                   >
                     {isRemovingBg ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-white" />
-                        <span className="text-[9px] font-bold animate-pulse text-white/90">جاري المعالجة...</span>
+                        <X className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold">إلغاء العملية</span>
                       </>
                     ) : (
                       <>
@@ -604,7 +616,7 @@ export function ElementProperties({
                 variant="outline"
                 size="icon"
                 onClick={() => {
-                  onUpdate(element.id, { width: -element.width });
+                  onUpdate(element.id, { flipX: !element.flipX });
                   useEditorStore.getState().pushHistory();
                 }}
                 title="قلب أفقي"
@@ -766,6 +778,7 @@ export function ElementProperties({
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

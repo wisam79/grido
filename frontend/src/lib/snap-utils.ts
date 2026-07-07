@@ -29,15 +29,11 @@ export function getSnapPositions(
 ): SnapResult {
   // Collect vertical targets (X-axis lines to snap to)
   const vTargets = [
-    { value: 0, origin: "canvas" },
-    { value: 0.5, origin: "canvas" },
-    { value: 1, origin: "canvas" }
+    { value: 0.5, origin: "canvas" }
   ];
   // Collect horizontal targets (Y-axis lines to snap to)
   const hTargets = [
-    { value: 0, origin: "canvas" },
-    { value: 0.5, origin: "canvas" },
-    { value: 1, origin: "canvas" }
+    { value: 0.5, origin: "canvas" }
   ];
 
   for (const el of elements) {

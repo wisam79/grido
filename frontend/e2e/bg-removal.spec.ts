@@ -1,18 +1,44 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Background Removal Assets E2E Test', () => {
+test.describe('Background Removal Smoke Test', () => {
 
-  test('Verify ONNXRuntime Web assets are served correctly on Vite port 5173 (v2)', async ({ request }) => {
-    const response = await request.get('http://localhost:5173/onnxruntime-web-v2/ort-wasm-simd-threaded.mjs');
-    
-    expect(response.ok()).toBe(true);
-    const text = await response.text();
-    
-    expect(text.startsWith('<!DOCTYPE') || text.startsWith('<html')).toBe(false);
-    expect(text).toContain('ortWasmThreaded');
-    expect(text.length).toBeGreaterThan(20000);
-    
-    console.log(`\n✅ Vite Port (5173): Verified asset size in v2 folder is ${text.length} bytes.`);
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as any).go = {
+        main: {
+          App: {
+            OpenFile: async () => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            LoadAutoSave: async () => '',
+            SaveAutoSave: async () => {},
+            ClearAutoSave: async () => {},
+            SaveFileDialog: async () => 'success',
+          }
+        },
+        handlers: {
+          ProjectHandler: {
+            SaveProject: async () => 'success',
+            GetAllProjects: async () => [],
+            GetProject: async () => null,
+            DeleteProject: async () => 'success',
+          }
+        }
+      };
+      (window as any).runtime = {
+        WindowMinimise: () => {},
+        WindowToggleMaximise: () => {},
+        Quit: () => {},
+      };
+    });
+  });
+
+  test('Upload image and expose background removal controls', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    await page.getByTitle('وضع التعديل الحر').click();
+    await page.getByTitle('رفع صورة جديدة').click();
+
+    await expect(page.getByText('خصائص الصورة')).toBeVisible();
+    await expect(page.getByText('عزل الخلفية')).toBeVisible();
   });
 
 });
