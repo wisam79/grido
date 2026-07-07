@@ -185,7 +185,7 @@ export function GeneralSettings() {
         {/* اختيار حجم قياسي جاهز */}
         <div className="space-y-1.5">
           <Label className="text-[9.5px] text-muted-foreground/80 font-bold">أحجام قياسية جاهزة</Label>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-3 gap-1">
             {PAPER_SIZES.map((p) => {
               const dpi = dpiVal;
               const isMatch = 
@@ -196,6 +196,9 @@ export function GeneralSettings() {
               const mainName = nameParts[0];
               const isLandscape = p.widthMM > p.heightMM;
 
+              // تنظيف الاسم من الكلمات الطويلة واستخدام رمز البوصة الاحترافي للاختصار
+              const cleanName = mainName.replace(" بوصة", "″");
+
               // حساب البكسل المقابل ديناميكياً للبطاقة الجاهزة
               const wPx = Math.round((p.widthMM * dpiVal) / 25.4);
               const hPx = Math.round((p.heightMM * dpiVal) / 25.4);
@@ -205,27 +208,25 @@ export function GeneralSettings() {
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
                   className={cn(
-                    "flex flex-row items-center gap-1.5 p-1.5 rounded-lg border transition-all duration-200 cursor-pointer active:scale-95",
+                    "flex flex-col items-center justify-center text-center gap-1 p-1 rounded-lg border transition-all duration-200 cursor-pointer active:scale-95 min-w-0",
                     isMatch
-                      ? "border-primary bg-primary/10 text-primary shadow-xs font-bold"
+                      ? "border-primary bg-primary/10 text-primary shadow-2xs font-bold"
                       : "border-border/60 bg-card hover:border-primary/30 hover:bg-accent/40 text-muted-foreground hover:text-foreground"
                   )}
                   title={p.name}
                   dir="rtl"
                 >
-                  {/* أيقونة مصغرة للورقة توضح المقاس والاتجاه بصرياً فقط بدون أي نصوص داخلها لتجنب تشوه المظهر */}
+                  {/* أيقونة مصغرة للورقة توضح المقاس والاتجاه بصرياً */}
                   <div className={cn(
-                    "shrink-0 rounded-xs border flex items-center justify-center bg-muted/20 shadow-2xs",
-                    isMatch ? "border-primary/70 bg-primary/10 text-primary" : "border-muted-foreground/30 text-muted-foreground",
-                    isLandscape ? "w-6 h-4" : "w-4 h-6"
+                    "shrink-0 rounded-xs border flex items-center justify-center bg-muted/15 shadow-2xs mb-0.5",
+                    isMatch ? "border-primary/60 bg-primary/5 text-primary" : "border-muted-foreground/20 text-muted-foreground",
+                    isLandscape ? "w-5.5 h-4" : "w-4 h-5.5"
                   )} />
                   
-                  <div className="flex flex-col min-w-0 items-start text-right">
-                    <span className="text-[10px] font-bold leading-none text-foreground truncate">{mainName}</span>
-                    <span className="text-[8px] font-mono text-muted-foreground mt-1 truncate">
-                      {unit === "px" ? `${wPx}×${hPx} بكسل` : `${p.widthMM}×${p.heightMM} مم`}
-                    </span>
-                  </div>
+                  <span className="text-[9.5px] font-bold leading-none text-foreground truncate w-full">{cleanName}</span>
+                  <span className="text-[7.5px] font-mono text-muted-foreground mt-0.5 truncate w-full">
+                    {unit === "px" ? `${wPx}×${hPx}` : `${p.widthMM}×${p.heightMM}`}
+                  </span>
                 </button>
               );
             })}
