@@ -13,7 +13,7 @@ export function PrintArea() {
     mode,
     backgroundColor,
     printSettings,
-    stageRef,
+    printImageSrc,
   } = useEditorStore(useShallow((state) => ({
     template: state.template,
     canvasWidth: state.canvasWidth,
@@ -23,43 +23,8 @@ export function PrintArea() {
     mode: state.mode,
     backgroundColor: state.backgroundColor,
     printSettings: state.printSettings,
-    stageRef: state.stageRef,
+    printImageSrc: state.printImageSrc,
   })));
-
-  const [printImageSrc, setPrintImageSrc] = useState<string>("");
-
-  useEffect(() => {
-    let cancelled = false;
-    const rafId = requestAnimationFrame(() => {
-      if (!stageRef) {
-        if (!cancelled) {
-          setPrintImageSrc("");
-        }
-        return;
-      }
-
-      try {
-        // تصدير الكانفاس بدقة عالية للطباعة (3x الـ display ratio)
-        const dataUrl = stageRef.toDataURL({
-          pixelRatio: 3,
-          mimeType: "image/png"
-        });
-        if (!cancelled) {
-          setPrintImageSrc(dataUrl);
-        }
-      } catch (err) {
-        console.error("Failed to generate print image from stageRef:", err);
-        if (!cancelled) {
-          setPrintImageSrc("");
-        }
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(rafId);
-    };
-  }, [stageRef, elements, slots, backgroundColor, mode]);
 
   const firstImage =
     mode === "single"
@@ -69,8 +34,8 @@ export function PrintArea() {
   if (!firstImage && elements.length === 0) return null;
 
   const dpi = template ? template.dpi : printSettings.dpi;
-  const imageWidthMM = template ? template.widthMM : Math.round((canvasWidth / dpi) * 25.4);
-  const imageHeightMM = template ? template.heightMM : Math.round((canvasHeight / dpi) * 25.4);
+  const originalImageWidthMM = template ? template.widthMM : Math.round((canvasWidth / dpi) * 25.4);
+  const originalImageHeightMM = template ? template.heightMM : Math.round((canvasHeight / dpi) * 25.4);
 
   const availableWidthMM =
     printSettings.orientation === "portrait"
@@ -82,6 +47,22 @@ export function PrintArea() {
       : printSettings.paperWidthMM - 2 * printSettings.marginMM;
 
   const gapMM = printSettings.gapMM || 2;
+
+  // حساب الأبعاد بعد تطبيق الملاءمة إذا كانت مفعلة وكان عدد النسخ 1 في الوضع الحر
+  const fitToPage = printSettings.fitToPage !== false;
+  const shouldFit = fitToPage && mode === "single" && printSettings.copiesPerSheet === 1;
+
+  let imageWidthMM = originalImageWidthMM;
+  let imageHeightMM = originalImageHeightMM;
+
+  if (shouldFit) {
+    const scaleX = availableWidthMM / originalImageWidthMM;
+    const scaleY = availableHeightMM / originalImageHeightMM;
+    const scale = Math.min(scaleX, scaleY);
+    imageWidthMM = Math.round(originalImageWidthMM * scale);
+    imageHeightMM = Math.round(originalImageHeightMM * scale);
+  }
+
   const cols = Math.max(1, Math.floor(availableWidthMM / (imageWidthMM + gapMM)));
   const actualCount = Math.min(
     printSettings.copiesPerSheet,
@@ -96,6 +77,49 @@ export function PrintArea() {
     printSettings.orientation === "portrait"
       ? printSettings.paperHeightMM
       : printSettings.paperWidthMM;
+
+  if (mode === "collage") {
+    return (
+      <div
+        id="print-area"
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          width: `${paperW}mm`,
+          height: `${paperH}mm`,
+          padding: `${printSettings.marginMM}mm`,
+          backgroundColor: "white",
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          style={{
+            width: `${availableWidthMM}mm`,
+            height: `${availableHeightMM}mm`,
+            position: "relative",
+            backgroundColor: "white",
+            overflow: "hidden",
+            boxSizing: "border-box",
+          }}
+        >
+          {printImageSrc ? (
+            <img
+              src={printImageSrc}
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "fill",
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-slate-100 animate-pulse" />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -137,7 +161,7 @@ export function PrintArea() {
               style={{
                 width: "100%",
                 height: "100%",
-                objectFit: "contain",
+                objectFit: "fill",
               }}
             />
           ) : (

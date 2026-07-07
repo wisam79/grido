@@ -151,8 +151,15 @@ export function KonvaCanvas({
     showGrid,
     gridSize,
     gridColor,
+    gridOpacity,
+    gridSubdivisions,
     gridType,
     snapToGrid,
+    showColumns,
+    columnsCount,
+    columnsColor,
+    columnsMargin,
+    columnsGutter,
     setStageRef,
     collageGap,
     collageMargin,
@@ -171,8 +178,15 @@ export function KonvaCanvas({
     showGrid: state.showGrid,
     gridSize: state.gridSize,
     gridColor: state.gridColor,
+    gridOpacity: state.gridOpacity,
+    gridSubdivisions: state.gridSubdivisions,
     gridType: state.gridType,
     snapToGrid: state.snapToGrid,
+    showColumns: state.showColumns,
+    columnsCount: state.columnsCount,
+    columnsColor: state.columnsColor,
+    columnsMargin: state.columnsMargin,
+    columnsGutter: state.columnsGutter,
     setStageRef: state.setStageRef,
     collageGap: state.collageGap,
     collageMargin: state.collageMargin,
@@ -259,41 +273,76 @@ export function KonvaCanvas({
 
             if (gridType === "lines") {
               for (let i = 0; i <= numH; i++) {
+                const isMajor = gridSubdivisions > 0 && i % gridSubdivisions === 0;
                 lines.push(
                   <Line
                     key={`grid-h-${i}`}
                     points={[0, i * gridSize, displayW, i * gridSize]}
                     stroke={gridColor}
-                    strokeWidth={0.5}
+                    opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
+                    strokeWidth={isMajor ? 0.8 : 0.4}
                   />
                 );
               }
               for (let j = 0; j <= numW; j++) {
+                const isMajor = gridSubdivisions > 0 && j % gridSubdivisions === 0;
                 lines.push(
                   <Line
                     key={`grid-v-${j}`}
                     points={[j * gridSize, 0, j * gridSize, displayH]}
                     stroke={gridColor}
-                    strokeWidth={0.5}
+                    opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
+                    strokeWidth={isMajor ? 0.8 : 0.4}
                   />
                 );
               }
             } else {
               for (let i = 0; i <= numH; i++) {
                 for (let j = 0; j <= numW; j++) {
+                  const isMajor = gridSubdivisions > 0 && (i % gridSubdivisions === 0 || j % gridSubdivisions === 0);
                   lines.push(
                     <Circle
                       key={`grid-dot-${i}-${j}`}
                       x={j * gridSize}
                       y={i * gridSize}
-                      radius={1}
+                      radius={isMajor ? 1.5 : 0.8}
                       fill={gridColor}
+                      opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
                     />
                   );
                 }
               }
             }
             return lines;
+          })()}
+        </Layer>
+      )}
+
+      {/* Columns Layout Layer */}
+      {showColumns && mode === "single" && (
+        <Layer listening={false}>
+          {(() => {
+            const cols = [];
+            const margin = columnsMargin;
+            const gutter = columnsGutter;
+            const count = columnsCount;
+            const availW = displayW - 2 * margin;
+            const colW = (availW - (count - 1) * gutter) / count;
+            
+            for (let i = 0; i < count; i++) {
+              const xPos = margin + i * (colW + gutter);
+              cols.push(
+                <Rect
+                  key={`col-${i}`}
+                  x={xPos}
+                  y={0}
+                  width={colW}
+                  height={displayH}
+                  fill={columnsColor}
+                />
+              );
+            }
+            return cols;
           })()}
         </Layer>
       )}

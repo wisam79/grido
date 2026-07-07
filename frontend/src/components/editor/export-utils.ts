@@ -21,11 +21,21 @@ export async function exportCanvas(
   // محاولة التصدير مباشرة من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
   if (stageRef) {
     try {
+      // إخفاء مقابض التحكم (Transformer) مؤقتاً قبل التصدير
+      const transformers = stageRef.find('Transformer');
+      transformers.forEach((tr: any) => tr.hide());
+      stageRef.batchDraw();
+
       const dataUrl = stageRef.toDataURL({
         pixelRatio: canvasWidth / stageRef.width(), // تصدير بالدقة الأصلية الكاملة للكانفس
         mimeType: format === "png" ? "image/png" : "image/jpeg",
         quality: quality
       });
+
+      // استعادة مقابض التحكم بعد التصدير
+      transformers.forEach((tr: any) => tr.show());
+      stageRef.batchDraw();
+
       const res = await fetch(dataUrl);
       return await res.blob();
     } catch (e) {

@@ -31,27 +31,27 @@ function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, delet
       ref={setNodeRef}
       style={style}
       onClick={() => selectElement(el.id)}
-      className={`flex items-center justify-between p-1.5 rounded-lg border text-right cursor-pointer transition-colors duration-200 ${
+      className={`flex items-center justify-between p-2.5 rounded-lg border text-right cursor-pointer transition-colors duration-200 ${
         isSelected
           ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
           : "border-transparent bg-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
       } ${isDragging ? "shadow-md bg-background ring-1 ring-primary/30" : ""}`}
     >
-      <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
         <div 
           {...attributes} 
           {...listeners} 
-          className="cursor-grab active:cursor-grabbing hover:bg-muted/50 p-1 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
+          className="cursor-grab active:cursor-grabbing hover:bg-muted/50 p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
-          <GripVertical className="w-3.5 h-3.5" />
+          <GripVertical className="w-4 h-4" />
         </div>
         <span className="shrink-0 text-muted-foreground/80">
-          {el.type === "image" && <ImageIcon className="w-3.5 h-3.5" />}
-          {el.type === "text" && <Type className="w-3.5 h-3.5" />}
-          {el.type === "shape" && <Square className="w-3.5 h-3.5" />}
+          {el.type === "image" && <ImageIcon className="w-4 h-4" />}
+          {el.type === "text" && <Type className="w-4 h-4" />}
+          {el.type === "shape" && <Square className="w-4 h-4" />}
         </span>
-        <span className="text-[11px] font-medium truncate max-w-[100px]">
+        <span className="text-xs font-semibold truncate max-w-[120px]">
           {el.type === "image" ? "صورة" : el.type === "text" ? el.text || "نص" : `شكل (${el.shape})`}
         </span>
       </div>
@@ -60,7 +60,7 @@ function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, delet
         <Button
           variant="ghost"
           size="icon"
-          className={`w-5 h-5 rounded-md hover:bg-muted ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
+          className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
           onClick={(e) => toggleLock(el, e)}
           title={isLocked ? "إلغاء القفل" : "قفل الطبقة"}
         >
@@ -69,7 +69,7 @@ function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, delet
         <Button
           variant="ghost"
           size="icon"
-          className={`w-5 h-5 rounded-md hover:bg-muted ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
+          className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
           onClick={(e) => toggleVisibility(el, e)}
           title={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}
         >
@@ -78,7 +78,7 @@ function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, delet
         <Button
           variant="ghost"
           size="icon"
-          className="w-5 h-5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
+          className="w-7.5 h-7.5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
           onClick={(e) => deleteLayer(el.id, e)}
           title="حذف"
         >

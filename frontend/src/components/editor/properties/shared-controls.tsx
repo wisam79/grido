@@ -3,7 +3,7 @@ import { Slider } from "@/components/ui/slider";
 
 export function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center py-1.5 border-b border-border/10 last:border-b-0 text-[11px]">
+    <div className="flex justify-between items-center py-2 border-b border-border/10 last:border-b-0 text-xs">
       <span className="text-muted-foreground font-semibold">{label}</span>
       <span className="font-mono font-bold text-foreground/85 text-left" dir="auto">{value}</span>
     </div>
@@ -30,13 +30,13 @@ export function SliderControl({
   onChange: (v: number) => void;
 }) {
   return (
-    <div>
-      <div className="flex justify-between items-center mb-1">
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-center">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           {icon}
-          <span className="text-[10.5px] font-medium">{label}</span>
+          <span className="text-xs font-semibold">{label}</span>
         </div>
-        <span className="text-[10.5px] text-foreground/80 font-mono font-semibold">
+        <span className="text-xs text-foreground/80 font-mono font-semibold">
           {value}
           {unit}
         </span>
@@ -47,7 +47,7 @@ export function SliderControl({
         max={max}
         step={step}
         onValueChange={(v) => onChange(v[0])}
-        className="mt-1"
+        className="py-1"
       />
     </div>
   );
@@ -84,13 +84,13 @@ export function PopoverColorPicker({
         <button
           disabled={disabled}
           className={cn(
-            "flex items-center gap-2 px-2 py-1.5 rounded-lg border border-border/60 bg-background hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+            "flex items-center justify-between gap-2 px-3 h-10 rounded-lg border border-border/60 bg-background hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
             className
           )}
         >
-          {label && <div className="text-[10.5px] font-bold text-muted-foreground shrink-0">{label}</div>}
+          {label && <div className="text-xs font-bold text-muted-foreground shrink-0">{label}</div>}
           
-          <div className="flex-1 flex items-center justify-end gap-1.5 font-mono text-[10px] font-bold text-foreground/80" dir="ltr">
+          <div className="flex-1 flex items-center justify-end gap-1.5 font-mono text-xs font-bold text-foreground/80" dir="ltr">
             {color.toUpperCase()}
           </div>
           
@@ -158,7 +158,7 @@ export function ColorWheelPicker({
   const displayColor = isTransparent ? "#FFFFFF" : color;
 
   return (
-    <div className="p-3 bg-card rounded-2xl border border-border/60 mt-2 flex flex-col gap-3.5 w-full shadow-sm animate-in fade-in duration-200">
+    <div className="p-3.5 bg-card rounded-2xl border border-border/60 mt-2 flex flex-col gap-3.5 w-full shadow-sm animate-in fade-in duration-200">
       {/* منتقي الألوان الاحترافي */}
       <div className="custom-color-picker w-full">
         <HexColorPicker
@@ -180,7 +180,7 @@ export function ColorWheelPicker({
             onChange("transparent");
           }}
           className={cn(
-            "w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-xs cursor-pointer transition-all active:scale-95",
+            "w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 shadow-xs cursor-pointer transition-all active:scale-95",
             isTransparent
               ? "border-primary bg-primary/10 text-primary font-bold"
               : "border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -191,17 +191,17 @@ export function ColorWheelPicker({
         </button>
 
         {/* حقل إدخال كود HEX */}
-        <div className="flex-1 flex items-center gap-2 bg-background border border-border/60 rounded-lg px-2.5 h-8 shadow-inner focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
-          <span className="text-[10px] font-bold text-muted-foreground/60 select-none">HEX:</span>
+        <div className="flex-1 flex items-center gap-2 bg-background border border-border/60 rounded-lg px-2.5 h-9 shadow-inner focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
+          <span className="text-xs font-bold text-muted-foreground/60 select-none">HEX:</span>
           <input
             type="text"
             value={inputValue}
             onChange={(e) => handleHexInput(e.target.value)}
-            className="w-full bg-transparent border-0 p-0 text-[10.5px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+            className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
             placeholder="#HEX"
           />
           <div
-            className="w-4 h-4 rounded-md border border-border shadow-xs shrink-0 relative overflow-hidden"
+            className="w-4.5 h-4.5 rounded-md border border-border shadow-xs shrink-0 relative overflow-hidden"
             style={{
               backgroundColor: displayColor,
             }}
@@ -220,9 +220,9 @@ export function ColorWheelPicker({
       </div>
 
       {/* قائمة الألوان السريعة */}
-      <div className="space-y-1.5 pt-2 border-t border-border/20">
-        <span className="text-[9.5px] font-bold text-muted-foreground block">ألوان سريعة</span>
-        <div className="grid grid-cols-9 gap-1">
+      <div className="space-y-2 pt-2 border-t border-border/20">
+        <span className="text-xs font-bold text-muted-foreground block">ألوان سريعة</span>
+        <div className="grid grid-cols-9 gap-1.5">
           {/* خيار شفاف مسبق */}
           <button
             onClick={() => {

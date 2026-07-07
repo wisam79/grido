@@ -72,7 +72,7 @@ export function TemplatePanel() {
                   <span>قوالب كولاج جاهزة...</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-xl max-h-[85vh] overflow-hidden flex flex-col rounded-2xl border border-border/60 bg-card p-5" dir="rtl">
+              <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-hidden flex flex-col rounded-2xl border border-border/60 bg-card p-5" dir="rtl">
                 <DialogHeader className="pb-3 border-b border-border/30">
                   <DialogTitle className="text-base font-bold flex items-center gap-2 text-foreground">
                     <LayoutGrid className="w-4.5 h-4.5 text-primary" />
@@ -328,8 +328,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         </div>
 
         {/* Photo Type Selector */}
-        <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-bold text-muted-foreground">نسبة وحجم الصورة:</span>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-bold text-muted-foreground">نسبة وحجم الصورة:</span>
           <div className="grid grid-cols-4 gap-1 bg-muted/40 dark:bg-muted/25 p-0.5 rounded-lg border border-border/40">
             <button
               type="button"
@@ -339,13 +339,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               }}
               title="ملء الورقة (تمدد)"
               className={cn(
-                "h-6 px-1 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                "h-8 px-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
                 photoType === "stretch"
                   ? "bg-background text-primary shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/30"
               )}
             >
-              <Scaling className="w-3.5 h-3.5" />
+              <Scaling className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -355,13 +355,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               }}
               title="جواز سفر (3.5×4.5)"
               className={cn(
-                "h-6 px-1 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                "h-8 px-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
                 photoType === "passport"
                   ? "bg-background text-primary shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/30"
               )}
             >
-              <Contact className="w-3.5 h-3.5" />
+              <Contact className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -371,13 +371,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               }}
               title="هوية (4×6)"
               className={cn(
-                "h-6 px-1 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                "h-8 px-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
                 photoType === "id"
                   ? "bg-background text-primary shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/30"
               )}
             >
-              <IdCard className="w-3.5 h-3.5" />
+              <IdCard className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -387,25 +387,26 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               }}
               title="تأشيرة (5×5)"
               className={cn(
-                "h-6 px-1 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                "h-8 px-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
                 photoType === "visa"
                   ? "bg-background text-primary shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/30"
               )}
             >
-              <User className="w-3.5 h-3.5" />
+              <User className="w-4 h-4" />
             </button>
           </div>
         </div>
         
         {/* Row & Column Stepper Controls */}
-        <div className="flex flex-col gap-2 mt-0.5">
+        <div className="flex flex-col gap-2.5 mt-0.5">
           {/* Rows Stepper */}
-          <div className="flex items-center justify-between bg-muted/40 dark:bg-muted/20 border border-border/60 rounded-lg px-2.5 py-1.5">
-            <span className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground" title="الصفوف">
-              <Rows className="w-3.5 h-3.5" />
+          <div className="flex items-center justify-between bg-muted/40 dark:bg-muted/20 border border-border/60 rounded-lg px-3 py-2">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground" title="الصفوف">
+              <Rows className="w-4 h-4" />
+              <span>الصفوف</span>
             </span>
-            <div className="flex items-center gap-2" dir="ltr">
+            <div className="flex items-center gap-2.5" dir="ltr">
               <button
                 type="button"
                 onClick={() => {
@@ -413,11 +414,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                   setRows(r);
                   applyCustomCollage(r, cols);
                 }}
-                className="w-7 h-7 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
+                className="w-8 h-8 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
               >
-                <Minus className="w-3.5 h-3.5" />
+                <Minus className="w-4 h-4" />
               </button>
-              <span className="font-mono text-xs font-bold w-5 text-center text-foreground">{rows}</span>
+              <span className="font-mono text-sm font-bold w-6 text-center text-foreground">{rows}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -425,19 +426,20 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                   setRows(r);
                   applyCustomCollage(r, cols);
                 }}
-                className="w-7 h-7 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
+                className="w-8 h-8 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Columns Stepper */}
-          <div className="flex items-center justify-between bg-muted/40 dark:bg-muted/20 border border-border/60 rounded-lg px-2.5 py-1.5">
-            <span className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground" title="الأعمدة">
-              <Columns className="w-3.5 h-3.5" />
+          <div className="flex items-center justify-between bg-muted/40 dark:bg-muted/20 border border-border/60 rounded-lg px-3 py-2">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground" title="الأعمدة">
+              <Columns className="w-4 h-4" />
+              <span>الأعمدة</span>
             </span>
-            <div className="flex items-center gap-2" dir="ltr">
+            <div className="flex items-center gap-2.5" dir="ltr">
               <button
                 type="button"
                 onClick={() => {
@@ -445,11 +447,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                   setCols(c);
                   applyCustomCollage(rows, c);
                 }}
-                className="w-7 h-7 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
+                className="w-8 h-8 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
               >
-                <Minus className="w-3.5 h-3.5" />
+                <Minus className="w-4 h-4" />
               </button>
-              <span className="font-mono text-xs font-bold w-5 text-center text-foreground">{cols}</span>
+              <span className="font-mono text-sm font-bold w-6 text-center text-foreground">{cols}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -457,9 +459,9 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                   setCols(c);
                   applyCustomCollage(rows, c);
                 }}
-                className="w-7 h-7 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
+                className="w-8 h-8 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -468,7 +470,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         <button
           onClick={() => applyCustomCollage(rows, cols)}
           className={cn(
-            "w-full py-2.5 text-xs font-bold rounded-xl mt-1 transition-all border active:scale-[0.96] cursor-pointer",
+            "w-full py-3 text-xs font-bold rounded-xl mt-1.5 transition-all border active:scale-[0.96] cursor-pointer",
             isCurrentActive
               ? "bg-primary text-primary-foreground border-primary hover:bg-primary/95 shadow-sm shadow-primary/25"
               : "bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-700 border border-border/80"

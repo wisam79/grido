@@ -92,6 +92,7 @@ export interface PrintSettings {
   copiesPerSheet: number; // عدد النسخ في الورقة الواحدة
   showCutLines: boolean;
   orientation: "portrait" | "landscape";
+  fitToPage?: boolean;
 }
 
 interface EditorState {
@@ -107,7 +108,10 @@ interface EditorState {
   canvasHeight: number; // بكسل
   backgroundColor: string;
   printSettings: PrintSettings;
+  printImageSrc: string | null;
+  setPrintImageSrc: (src: string | null) => void;
   lastEditedImage: string | null; // آخر صورة تم تعديلها أو تحميلها
+  lastEditedImageAspect: number | null; // نسبة أبعاد آخر صورة تم تحميلها أو تعديلها
   history: { elements: CanvasElement[]; slots: CanvasSlot[] }[];
   historyIndex: number;
 
@@ -139,6 +143,7 @@ interface EditorState {
   setTemplate: (template: PhotoTemplate | null) => void;
   setCollageTemplate: (template: CollageTemplate | null) => void;
   setLastEditedImage: (src: string | null) => void;
+  setLastEditedImageAspect: (aspect: number | null) => void;
   setCanvasSize: (w: number, h: number) => void;
   setBackgroundColor: (c: string) => void;
 
@@ -210,6 +215,7 @@ const defaultPrint: PrintSettings = {
   copiesPerSheet: 1,
   showCutLines: true,
   orientation: "portrait",
+  fitToPage: true,
 };
 
 const initialCollage = COLLAGE_TEMPLATES[0];
@@ -239,7 +245,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   canvasHeight: 1200,
   backgroundColor: "#FFFFFF",
   printSettings: defaultPrint,
+  printImageSrc: null,
+  setPrintImageSrc: (src) => set({ printImageSrc: src }),
   lastEditedImage: null,
+  lastEditedImageAspect: null,
   history: [{ elements: [], slots: initialSlots }],
   historyIndex: 0,
 
@@ -291,16 +300,25 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setTemplate: (template) => {
     if (template) {
       const lastImg = get().lastEditedImage;
+      const lastAspect = get().lastEditedImageAspect || 1;
       const elements: CanvasElement[] = [];
       if (lastImg) {
         const id = uid();
+        let hPercent = 0.6;
+        let wPercent = hPercent * (template.height / template.width) * lastAspect;
+        
+        if (wPercent > 0.8) {
+           wPercent = 0.8;
+           hPercent = wPercent * (template.width / template.height) / lastAspect;
+        }
+
         elements.push({
           id,
           type: "image",
-          x: 0.15,
-          y: 0.15,
-          width: 0.7,
-          height: 0.7,
+          x: 0.5 - wPercent / 2,
+          y: 0.5 - hPercent / 2,
+          width: wPercent,
+          height: hPercent,
           rotation: 0,
           opacity: 1,
           zIndex: 10,
@@ -367,6 +385,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   setLastEditedImage: (src) => set({ lastEditedImage: src }),
+  setLastEditedImageAspect: (aspect) => set({ lastEditedImageAspect: aspect }),
 
   setCanvasSize: (w, h) => set({ canvasWidth: w, canvasHeight: h }),
   setBackgroundColor: (c) => set({ backgroundColor: c }),
@@ -407,7 +426,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       saturation: 100,
       blur: 0,
     };
-    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, lastEditedImage: src }));
+    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, lastEditedImage: src, lastEditedImageAspect: imageAspectRatio }));
     get().pushHistory();
   },
 

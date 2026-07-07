@@ -53,6 +53,7 @@ const ProjectsDialog = lazy(() => import("./projects-dialog").then(module => ({ 
 import { toast } from "sonner";
 
 import { useShallow } from "zustand/react/shallow";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 interface ToolbarProps {
   onPrint: () => void;
@@ -60,8 +61,31 @@ interface ToolbarProps {
   onSave: () => void;
 }
 
+interface TooltipBtnProps {
+  content: string;
+  children: React.ReactElement;
+}
+
+function TooltipBtn({ content, children }: TooltipBtnProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {children}
+      </TooltipTrigger>
+      <TooltipContent 
+        side="bottom" 
+        className="font-cairo text-[11px] py-1.5 px-3 bg-primary text-primary-foreground border-0 shadow-md rounded-md font-medium"
+      >
+        {content}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
+  const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+  
   const {
     mode,
     setMode,
@@ -149,8 +173,6 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     }
   };
 
-
-
   const alignElement = (type: "left" | "center" | "right" | "top" | "middle" | "bottom") => {
     if (!selectedId) return;
     const el = elements.find((e) => e.id === selectedId);
@@ -236,358 +258,374 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   const hasSelection = !!selectedId;
 
   return (
-    <div className="flex items-center gap-2 p-1 px-3 border-b bg-card/65 backdrop-blur-md flex-nowrap overflow-x-auto select-none no-print h-12.5 shrink-0 scrollbar-none shadow-xs">
-      
-      {/* المجموعة 1: إدارة الملفات والمستندات */}
-      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
-        {/* رفع صورة */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleOpenFile}
-          aria-label="رفع صورة جديدة"
-          title="رفع صورة جديدة"
-          className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
-        >
-          <ImagePlus className="w-3.5 h-3.5" />
-        </Button>
+    <TooltipProvider delayDuration={150}>
+      <div className="relative flex items-center gap-2 p-1 px-3 border-b bg-card/65 backdrop-blur-md flex-nowrap overflow-x-auto select-none no-print h-12.5 shrink-0 scrollbar-none shadow-xs">
+        
+        {/* المجموعة 1: إدارة الملفات والمستندات */}
+        <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+          {/* رفع صورة */}
+          <TooltipBtn content="إدراج صورة جديدة (سحب وإفلات أو نقر)">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleOpenFile}
+              aria-label="رفع صورة جديدة"
+              className="h-7 px-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-md shadow-xs hover:shadow-md hover:shadow-teal-500/20 active:scale-95 transition-all cursor-pointer border-0 gap-1 flex items-center justify-center font-cairo"
+            >
+              <ImagePlus className="w-3.5 h-3.5 text-white" />
+              <span className="text-[10px] font-bold text-white leading-none">صورة</span>
+            </Button>
+          </TooltipBtn>
 
-        <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
+          <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
-        {/* مسح الكانفاس */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleClearCanvas}
-          aria-label="جديد (مسح مساحة العمل)"
-          title="جديد (مسح مساحة العمل)"
-          className="h-7 px-2 text-destructive/80 hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
-        >
-          <Eraser className="w-3.5 h-3.5" />
-        </Button>
+          {/* مسح الكانفاس */}
+          <TooltipBtn content="جديد (مسح مساحة العمل بالكامل)">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearCanvas}
+              aria-label="جديد (مسح مساحة العمل)"
+              className="h-7 px-2 text-destructive/80 hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
+            >
+              <Eraser className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipBtn>
 
-        {/* المكتبة المحلية */}
-        <Suspense fallback={null}>
-          <ProjectsDialog
-            trigger={
+          {/* المكتبة المحلية */}
+          <Suspense fallback={null}>
+            <TooltipBtn content="مكتبة المشاريع المحفوظة">
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => setIsProjectsOpen(true)}
                 aria-label="مكتبة المشاريع المحلية"
-                title="مكتبة المشاريع المحلية"
                 className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
               >
                 <Database className="w-3.5 h-3.5" />
               </Button>
-            }
-          />
-        </Suspense>
+            </TooltipBtn>
+            <ProjectsDialog
+              open={isProjectsOpen}
+              onOpenChange={setIsProjectsOpen}
+            />
+          </Suspense>
 
-        {/* استيراد JSON */}
-        <label className="cursor-pointer" aria-label="فتح مشروع (.json)" title="فتح مشروع (.json)">
-          <input
-            type="file"
-            accept=".json"
-            onChange={handleLoadProject}
-            className="hidden"
-          />
-          <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-background/80 h-7 px-2 text-muted-foreground hover:text-primary cursor-pointer">
-            <FolderOpen className="w-3.5 h-3.5" />
-          </div>
-        </label>
+          {/* استيراد JSON */}
+          <TooltipBtn content="فتح مشروع (.json)">
+            <label className="cursor-pointer" aria-label="فتح مشروع (.json)">
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleLoadProject}
+                className="hidden"
+              />
+              <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-background/80 h-7 px-2 text-muted-foreground hover:text-primary cursor-pointer">
+                <FolderOpen className="w-3.5 h-3.5" />
+              </div>
+            </label>
+          </TooltipBtn>
 
-        {/* تصدير JSON */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSaveProject}
-          aria-label="تصدير ملف مشروع (.json)"
-          title="تصدير ملف مشروع (.json)"
-          className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
-        >
-          <FileJson className="w-3.5 h-3.5" />
-        </Button>
-      </div>
+          {/* تصدير JSON */}
+          <TooltipBtn content="تصدير ملف مشروع (.json)">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSaveProject}
+              aria-label="تصدير ملف مشروع (.json)"
+              className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
+            >
+              <FileJson className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipBtn>
+        </div>
 
-      {/* المجموعة 2: وضع العمل */}
-      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setMode("collage")}
-          aria-label="وضع الكولاج"
-          title="وضع الكولاج"
-          className={`h-7 px-2.5 rounded-md transition-all cursor-pointer ${
-            mode === "collage"
-              ? "bg-primary text-primary-foreground shadow-xs font-bold"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/80"
-          }`}
-        >
-          <LayoutGrid className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setMode("single")}
-          aria-label="وضع التعديل الحر"
-          title="وضع التعديل الحر"
-          className={`h-7 px-2.5 rounded-md transition-all cursor-pointer ${
-            mode === "single"
-              ? "bg-primary text-primary-foreground shadow-xs font-bold"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/80"
-          }`}
-        >
-          <Images className="w-3.5 h-3.5" />
-        </Button>
-      </div>
 
-      {/* المجموعة 3: إضافة عناصر */}
-      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
-        {/* نص */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => addTextElement()} 
-          aria-label="إضافة نص"
-          title="إضافة نص" 
-          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
-        >
-          <Type className="w-3.5 h-3.5" />
-        </Button>
-
-        {/* أشكال */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        {/* المجموعة 3: إضافة عناصر */}
+        <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+          {/* نص */}
+          <TooltipBtn content="إضافة نص جديد">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
-              aria-label="إضافة شكل"
-              title="إضافة شكل"
+              onClick={() => addTextElement()} 
+              aria-label="إضافة نص"
+              className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
             >
-              <Square className="w-3.5 h-3.5" />
-              <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+              <Type className="w-3.5 h-3.5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-36">
-            <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-[11px] cursor-pointer">
-              <Square className="w-4 h-4 text-muted-foreground" />
-              <span>مستطيل</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2 text-[11px] cursor-pointer">
-              <Circle className="w-4 h-4 text-muted-foreground" />
-              <span>دائرة</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2 text-[11px] cursor-pointer">
-              <Star className="w-4 h-4 text-muted-foreground" />
-              <span>نجمة</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2 text-[11px] cursor-pointer">
-              <Minus className="w-4 h-4 text-muted-foreground" />
-              <span>خط مستقيم</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          </TooltipBtn>
 
-      {/* المجموعة 4: تعديل وترتيب ومحاذاة العنصر المحدد */}
-      {hasSelection && (
-        <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs animate-in fade-in zoom-in-95 duration-200">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => selectedId && bringToFront(selectedId)}
-            aria-label="إحضار للأمام"
-            title="إحضار للأمام"
-            className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
-          >
-            <ArrowUp className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => selectedId && sendToBack(selectedId)}
-            aria-label="إرسال للخلف"
-            title="إرسال للخلف"
-            className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
-          >
-            <ArrowDown className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => selectedId && duplicateElement(selectedId)}
-            aria-label="تكرار"
-            title="تكرار"
-            className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
-          >
-            <Copy className="w-3.5 h-3.5" />
-          </Button>
-          
-          <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
-
-          {/* محاذاة */}
+          {/* أشكال */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
-                aria-label="محاذاة العنصر المحدد"
-                title="محاذاة العنصر المحدد"
+                aria-label="إضافة شكل"
               >
-                <AlignLeft className="w-3.5 h-3.5" />
+                <Square className="w-3.5 h-3.5" />
                 <ChevronDown className="w-2.5 h-2.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-44">
-              <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-[11px] cursor-pointer">
-                <AlignLeft className="w-4 h-4 text-muted-foreground" />
-                <span>محاذاة ليسار الكانفس</span>
+            <DropdownMenuContent align="start" className="w-36 font-cairo">
+              <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-[11px] cursor-pointer">
+                <Square className="w-4 h-4 text-muted-foreground" />
+                <span>مستطيل</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-[11px] cursor-pointer">
-                <AlignCenter className="w-4 h-4 text-muted-foreground" />
-                <span>توسيط أفقي</span>
+              <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2 text-[11px] cursor-pointer">
+                <Circle className="w-4 h-4 text-muted-foreground" />
+                <span>دائرة</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-[11px] cursor-pointer">
-                <AlignRight className="w-4 h-4 text-muted-foreground" />
-                <span>محاذاة ليمين الكانفس</span>
+              <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2 text-[11px] cursor-pointer">
+                <Star className="w-4 h-4 text-muted-foreground" />
+                <span>نجمة</span>
               </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuItem onClick={() => alignElement("top")} className="gap-2 text-[11px] cursor-pointer">
-                <AlignLeft className="w-4 h-4 text-muted-foreground rotate-90" />
-                <span>محاذاة لأعلى الكانفس</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alignElement("middle")} className="gap-2 text-[11px] cursor-pointer">
-                <AlignCenter className="w-4 h-4 text-muted-foreground rotate-90" />
-                <span>توسيط عمودي</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alignElement("bottom")} className="gap-2 text-[11px] cursor-pointer">
-                <AlignRight className="w-4 h-4 text-muted-foreground rotate-90" />
-                <span>محاذاة لأسفل الكانفس</span>
+              <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2 text-[11px] cursor-pointer">
+                <Minus className="w-4 h-4 text-muted-foreground" />
+                <span>خط مستقيم</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        </div>
 
-          <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
+        {/* المجموعة 4: تعديل وترتيب ومحاذاة العنصر المحدد */}
+        {hasSelection && (
+          <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs animate-in fade-in zoom-in-95 duration-200">
+            <TooltipBtn content="ترتيب: إحضار للأمام">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => selectedId && bringToFront(selectedId)}
+                aria-label="إحضار للأمام"
+                className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+              >
+                <ArrowUp className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipBtn>
+            <TooltipBtn content="ترتيب: إرسال للخلف">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => selectedId && sendToBack(selectedId)}
+                aria-label="إرسال للخلف"
+                className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+              >
+                <ArrowDown className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipBtn>
+            <TooltipBtn content="تكرار العنصر المحدد">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => selectedId && duplicateElement(selectedId)}
+                aria-label="تكرار"
+                className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipBtn>
+            
+            <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
-          {/* حذف */}
+            {/* محاذاة */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
+                  aria-label="محاذاة العنصر المحدد"
+                >
+                  <AlignLeft className="w-3.5 h-3.5" />
+                  <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-44 font-cairo">
+                <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-[11px] cursor-pointer">
+                  <AlignLeft className="w-4 h-4 text-muted-foreground" />
+                  <span>محاذاة ليسار الكانفس</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-[11px] cursor-pointer">
+                  <AlignCenter className="w-4 h-4 text-muted-foreground" />
+                  <span>توسيط أفقي</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-[11px] cursor-pointer">
+                  <AlignRight className="w-4 h-4 text-muted-foreground" />
+                  <span>محاذاة ليمين الكانفس</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem onClick={() => alignElement("top")} className="gap-2 text-[11px] cursor-pointer">
+                  <AlignLeft className="w-4 h-4 text-muted-foreground rotate-90" />
+                  <span>محاذاة لأعلى الكانفس</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignElement("middle")} className="gap-2 text-[11px] cursor-pointer">
+                  <AlignCenter className="w-4 h-4 text-muted-foreground rotate-90" />
+                  <span>توسيط عمودي</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignElement("bottom")} className="gap-2 text-[11px] cursor-pointer">
+                  <AlignRight className="w-4 h-4 text-muted-foreground rotate-90" />
+                  <span>محاذاة لأسفل الكانفس</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
+
+            {/* حذف */}
+            <TooltipBtn content="حذف العنصر المحدد">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (selectedId) {
+                    removeElement(selectedId);
+                    toast.success("تم حذف العنصر");
+                  }
+                }}
+                aria-label="حذف"
+                className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipBtn>
+          </div>
+        )}
+
+        {/* المجموعة 5: التراجع والإعادة */}
+        <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+          <TooltipBtn content="تراجع (Ctrl+Z)">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={undo}
+              disabled={historyIndex <= 0}
+              aria-label="تراجع"
+              className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipBtn>
+          <TooltipBtn content="إعادة (Ctrl+Y)">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={redo}
+              disabled={historyIndex >= history.length - 1}
+              aria-label="إعادة"
+              className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+            >
+              <Redo2 className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipBtn>
+        </div>
+
+        <div className="flex-1" />
+
+        {/* المجموعة 2: وضع العمل */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-900/60 p-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-800/50 shadow-inner z-10 backdrop-blur-xs">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              if (selectedId) {
-                removeElement(selectedId);
-                toast.success("تم حذف العنصر");
-              }
-            }}
-            aria-label="حذف"
-            title="حذف"
-            className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
+            onClick={() => setMode("collage")}
+            aria-label="وضع الكولاج"
+            className={`h-7 px-3.5 rounded-full transition-all duration-300 cursor-pointer gap-1.5 flex items-center justify-center font-cairo ${
+              mode === "collage"
+                ? "bg-white dark:bg-zinc-800 text-primary dark:text-blue-400 shadow-sm border border-zinc-200/40 dark:border-zinc-700/40 font-bold scale-[1.03]"
+                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50"
+            }`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-bold leading-none">كولاج</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setMode("single")}
+            aria-label="وضع التعديل الحر"
+            className={`h-7 px-3.5 rounded-full transition-all duration-300 cursor-pointer gap-1.5 flex items-center justify-center font-cairo ${
+              mode === "single"
+                ? "bg-white dark:bg-zinc-800 text-primary dark:text-blue-400 shadow-sm border border-zinc-200/40 dark:border-zinc-700/40 font-bold scale-[1.03]"
+                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50"
+            }`}
+          >
+            <Images className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-bold leading-none">تعديل حر</span>
           </Button>
         </div>
-      )}
 
-      {/* المجموعة 5: التراجع والإعادة */}
-      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={undo}
-          disabled={historyIndex <= 0}
-          aria-label="تراجع"
-          title="تراجع"
-          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
-        >
-          <Undo2 className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={redo}
-          disabled={historyIndex >= history.length - 1}
-          aria-label="إعادة"
-          title="إعادة"
-          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
-        >
-          <Redo2 className="w-3.5 h-3.5" />
-        </Button>
-      </div>
+        {/* معلومات القالب */}
+        {template && (
+          <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/10 rounded-lg px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium">
+            {(() => {
+              const Icon = template.icon;
+              return <Icon className="w-3.5 h-3.5 text-primary" />;
+            })()}
+            <span className="font-bold">{template.name}</span>
+            <span className="text-muted-foreground/60">·</span>
+            <span className="font-mono text-muted-foreground/75">{canvasWidth}×{canvasHeight}px</span>
+          </div>
+        )}
 
-      <div className="flex-1" />
+        <Separator orientation="vertical" className="h-5 mx-0.5" />
 
-      {/* معلومات القالب */}
-      {template && (
-        <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/10 rounded-lg px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium">
-          {(() => {
-            const Icon = template.icon;
-            return <Icon className="w-3.5 h-3.5 text-primary" />;
-          })()}
-          <span className="font-bold">{template.name}</span>
-          <span className="text-muted-foreground/60">·</span>
-          <span className="font-mono text-muted-foreground/75">{canvasWidth}×{canvasHeight}px</span>
+        {/* المجموعة 6: الحفظ والتصدير والطباعة */}
+        <div className="flex items-center gap-1.5">
+          <TooltipBtn content="حفظ المشروع محلياً">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={onSave} 
+              aria-label="حفظ المشروع محلياً"
+              className="h-8 w-8 border-border/60 hover:bg-accent/40 rounded-lg cursor-pointer transition-all text-muted-foreground hover:text-foreground"
+            >
+              <Save className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipBtn>
+          <TooltipBtn content="تصدير كصورة عالية الجودة">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={onExport} 
+              aria-label="تصدير كصورة"
+              className="h-8 w-8 border-border/60 hover:bg-accent/40 rounded-lg cursor-pointer transition-all text-muted-foreground hover:text-foreground"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipBtn>
+          <TooltipBtn content="بدء عملية الطباعة">
+            <Button 
+              variant="default" 
+              size="icon" 
+              onClick={onPrint} 
+              aria-label="طباعة"
+              className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg cursor-pointer transition-all shadow-xs border-0 hover:shadow-md hover:shadow-indigo-500/10 active:scale-95 flex items-center justify-center"
+            >
+              <Printer className="w-3.5 h-3.5 text-white" />
+            </Button>
+          </TooltipBtn>
         </div>
-      )}
 
-      <Separator orientation="vertical" className="h-5 mx-0.5" />
-
-      {/* المجموعة 6: الحفظ والتصدير والطباعة */}
-      <div className="flex items-center gap-1.5">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onSave} 
-          aria-label="حفظ المشروع محلياً"
-          title="حفظ المشروع محلياً" 
-          className="h-8 px-3 border-border/60 hover:bg-accent/40 rounded-lg cursor-pointer transition-all gap-1.5 text-xs"
-        >
-          <Save className="w-3.5 h-3.5" />
-          <span className="font-bold hidden md:inline">حفظ</span>
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onExport} 
-          aria-label="تصدير كصورة"
-          title="تصدير كصورة" 
-          className="h-8 px-3 border-border/60 hover:bg-accent/40 rounded-lg cursor-pointer transition-all gap-1.5 text-xs"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span className="font-bold hidden md:inline">تصدير</span>
-        </Button>
-        <Button 
-          variant="default" 
-          size="sm" 
-          onClick={onPrint} 
-          aria-label="طباعة"
-          title="طباعة" 
-          className="h-8 px-3 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-indigo-500/10 text-white rounded-lg cursor-pointer transition-all gap-1.5 text-xs shadow-xs border-0"
-        >
-          <Printer className="w-3.5 h-3.5 text-white" />
-          <span className="font-bold">طباعة</span>
-        </Button>
+        <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
+          <AlertDialogContent dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-cairo text-right">مسح مساحة العمل</AlertDialogTitle>
+              <AlertDialogDescription className="font-cairo text-right">
+                هل أنت متأكد من مسح جميع العناصر والبدء من جديد؟ لا يمكن التراجع عن هذا الإجراء.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex flex-row-reverse gap-2 sm:justify-start">
+              <AlertDialogCancel className="font-cairo">إلغاء</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmClearCanvas} className="bg-destructive hover:bg-destructive/90 text-white font-cairo">
+                مسح بالكامل
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-cairo text-right">مسح مساحة العمل</AlertDialogTitle>
-            <AlertDialogDescription className="font-cairo text-right">
-              هل أنت متأكد من مسح جميع العناصر والبدء من جديد؟ لا يمكن التراجع عن هذا الإجراء.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row-reverse gap-2 sm:justify-start">
-            <AlertDialogCancel className="font-cairo">إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmClearCanvas} className="bg-destructive hover:bg-destructive/90 text-white font-cairo">
-              مسح بالكامل
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    </TooltipProvider>
   );
 }

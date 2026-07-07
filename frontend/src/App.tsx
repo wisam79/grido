@@ -26,6 +26,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useAutoSave } from "@/hooks/use-autosave";
+import { cn } from "@/lib/utils";
 
 export default function App() {
   const [printOpen, setPrintOpen] = useState(false);
@@ -45,8 +46,18 @@ export default function App() {
   useKeyboardShortcuts();
   useAutoSave();
 
+  const isModalOpen = printOpen || exportOpen || mobileTemplatesOpen || mobilePropsOpen;
+
   return (
-    <div className="h-screen flex flex-col bg-background/80 backdrop-blur-xl overflow-hidden font-cairo" dir="rtl">
+    <div 
+      className={cn(
+        "h-screen flex flex-col overflow-hidden font-cairo transition-colors duration-200",
+        isModalOpen 
+          ? "bg-background" // خلفية صلبة عند فتح النوافذ المنبثقة لمنع بطء الرسوميات (GPU Compositing Overdraw)
+          : "bg-background/80 backdrop-blur-xl" // مظهر زجاجي شفاف فاخر في الصفحة الرئيسية
+      )}
+      dir="rtl"
+    >
       {/* الرأس */}
       <header
         className={`border-b bg-card/90 backdrop-blur-md no-print title-bar-draggable select-none transition-opacity duration-200 ${
@@ -135,7 +146,7 @@ export default function App() {
       {/* المحتوى الرئيسي */}
       <main className="flex-1 flex overflow-hidden">
         {/* اللوحة اليسرى - القوالب (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex w-[22%] min-w-[240px] max-w-[320px] border-l bg-card flex-col no-print">
+        <aside className="hidden lg:flex w-[28%] min-w-[320px] max-w-[420px] border-l bg-card flex-col no-print">
           <TemplatePanel />
         </aside>
 
@@ -164,7 +175,7 @@ export default function App() {
         </section>
 
         {/* اللوحة اليمنى - الخصائص (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex w-[22%] min-w-[240px] max-w-[320px] border-r bg-card flex-col no-print">
+        <aside className="hidden lg:flex w-[28%] min-w-[320px] max-w-[420px] border-r bg-card flex-col no-print">
           <PropertiesPanel />
         </aside>
       </main>
@@ -198,8 +209,8 @@ export default function App() {
         <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
       </Suspense>
 
-      {/* منطقة الطباعة - مخفية عن الشاشة */}
-      <div id="print-container" className="hidden print:block">
+      {/* منطقة الطباعة - مخفية عن الشاشة ولكن تبقى نشطة ليقوم المتصفح بتحميل وفك تشفير الصور مسبقاً */}
+      <div id="print-container" className="absolute left-[-9999px] top-[-9999px] w-0 h-0 overflow-hidden print:block">
         <PrintArea />
       </div>
 

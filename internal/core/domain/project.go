@@ -19,8 +19,15 @@ type Project struct {
 	ShowGrid            bool      `json:"showGrid"`
 	GridSize            int       `json:"gridSize"`
 	GridColor           string    `json:"gridColor"`
+	GridOpacity         float64   `json:"gridOpacity"`
+	GridSubdivisions    int       `json:"gridSubdivisions"`
 	GridType            string    `json:"gridType"`
 	SnapToGrid          bool      `json:"snapToGrid"`
+	ShowColumns         bool      `json:"showColumns"`
+	ColumnsCount        int       `json:"columnsCount"`
+	ColumnsColor        string    `json:"columnsColor"`
+	ColumnsMargin       int       `json:"columnsMargin"`
+	ColumnsGutter       int       `json:"columnsGutter"`
 	CollageGap          int       `json:"collageGap"`
 	CollageMargin       int       `json:"collageMargin"`
 	CollageRadius       int       `json:"collageRadius"`

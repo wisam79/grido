@@ -78,7 +78,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, onCropSave }: CropDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border/60 bg-card p-5" dir="rtl">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border/60 bg-card p-5" dir="rtl">
         <DialogHeader className="pb-3 border-b border-border/30">
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
             <Scissors className="w-4.5 h-4.5 text-primary" /> 
@@ -135,20 +135,36 @@ export function CropDialog({ open, onOpenChange, imageSrc, onCropSave }: CropDia
                     1:1 (مربع)
                   </Button>
                   <Button
-                    variant={aspect === 4/3 ? "default" : "outline"}
-                    size="sm"
-                    className="text-[10.5px] h-8 rounded-lg cursor-pointer"
-                    onClick={() => setAspect(4/3)}
-                  >
-                    4:3
-                  </Button>
-                  <Button
                     variant={aspect === 16/9 ? "default" : "outline"}
                     size="sm"
                     className="text-[10.5px] h-8 rounded-lg cursor-pointer"
                     onClick={() => setAspect(16/9)}
                   >
-                    16:9
+                    16:9 (عرضي)
+                  </Button>
+                  <Button
+                    variant={aspect === 9/16 ? "default" : "outline"}
+                    size="sm"
+                    className="text-[10.5px] h-8 rounded-lg cursor-pointer"
+                    onClick={() => setAspect(9/16)}
+                  >
+                    9:16 (طولي)
+                  </Button>
+                  <Button
+                    variant={aspect === 4/3 ? "default" : "outline"}
+                    size="sm"
+                    className="text-[10.5px] h-8 rounded-lg cursor-pointer"
+                    onClick={() => setAspect(4/3)}
+                  >
+                    4:3 (عرضي)
+                  </Button>
+                  <Button
+                    variant={aspect === 3/4 ? "default" : "outline"}
+                    size="sm"
+                    className="text-[10.5px] h-8 rounded-lg cursor-pointer"
+                    onClick={() => setAspect(3/4)}
+                  >
+                    3:4 (طولي)
                   </Button>
                   {templateAspect && (
                     <Button

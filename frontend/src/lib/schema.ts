@@ -71,6 +71,7 @@ export const PrintSettingsSchema = z.object({
   copiesPerSheet: z.number(),
   showCutLines: z.boolean(),
   orientation: z.enum(["portrait", "landscape"]),
+  fitToPage: z.boolean().optional(),
 });
 
 export const ProjectSchema = z.object({

@@ -260,7 +260,22 @@ export function ElementProperties({
                     try {
                       // حفظ الصورة المقصوصة محلياً بدلاً من تخزين Base64 في الذاكرة
                       const localPath = await SaveImageFromBase64(cropped);
-                      onUpdate(element.id, { imageSrc: localPath });
+                      
+                      const img = new Image();
+                      img.onload = () => {
+                        const croppedAspect = img.width / img.height;
+                        const state = useEditorStore.getState();
+                        const canvasRatio = state.canvasWidth / state.canvasHeight;
+                        const newHeight = element.width * canvasRatio / croppedAspect;
+                        
+                        onUpdate(element.id, { 
+                          imageSrc: localPath,
+                          height: newHeight
+                        });
+                        
+                        state.setLastEditedImageAspect(croppedAspect);
+                      };
+                      img.src = cropped;
                     } catch (err) {
                       console.error("Failed to save cropped image:", err);
                       toast.error("فشل حفظ الصورة المقصوصة محلياً");
