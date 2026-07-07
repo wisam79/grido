@@ -149,9 +149,9 @@ export function GeneralSettings() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* أبعاد الكانفس */}
-      <div className="space-y-3.5">
+      <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-semibold text-foreground/90">أبعاد مساحة العمل</Label>
           
@@ -160,7 +160,7 @@ export function GeneralSettings() {
             <button
               onClick={() => setUnit("px")}
               className={cn(
-                "px-2.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer",
+                "px-2 py-0.5 text-[9.5px] font-bold rounded-md transition-all cursor-pointer",
                 unit === "px"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -171,7 +171,7 @@ export function GeneralSettings() {
             <button
               onClick={() => setUnit("mm")}
               className={cn(
-                "px-2.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer",
+                "px-2 py-0.5 text-[9.5px] font-bold rounded-md transition-all cursor-pointer",
                 unit === "mm"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -183,9 +183,9 @@ export function GeneralSettings() {
         </div>
 
         {/* اختيار حجم قياسي جاهز */}
-        <div className="space-y-2">
-          <Label className="text-[10px] text-muted-foreground font-semibold">أحجام قياسية جاهزة</Label>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1.5">
+          <Label className="text-[9.5px] text-muted-foreground/80 font-bold">أحجام قياسية جاهزة</Label>
+          <div className="grid grid-cols-2 gap-1.5">
             {PAPER_SIZES.map((p) => {
               const dpi = dpiVal;
               const isMatch = 
@@ -205,9 +205,9 @@ export function GeneralSettings() {
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
                   className={cn(
-                    "flex flex-row items-center gap-2.5 p-2 rounded-xl border transition-all duration-200 cursor-pointer active:scale-95",
+                    "flex flex-row items-center gap-1.5 p-1.5 rounded-lg border transition-all duration-200 cursor-pointer active:scale-95",
                     isMatch
-                      ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
+                      ? "border-primary bg-primary/10 text-primary shadow-xs font-bold"
                       : "border-border/60 bg-card hover:border-primary/30 hover:bg-accent/40 text-muted-foreground hover:text-foreground"
                   )}
                   title={p.name}
@@ -217,16 +217,13 @@ export function GeneralSettings() {
                   <div className={cn(
                     "shrink-0 rounded-xs border flex items-center justify-center bg-muted/20 shadow-2xs",
                     isMatch ? "border-primary/70 bg-primary/10 text-primary" : "border-muted-foreground/30 text-muted-foreground",
-                    isLandscape ? "w-7 h-5" : "w-5 h-7"
+                    isLandscape ? "w-6 h-4" : "w-4 h-6"
                   )} />
                   
                   <div className="flex flex-col min-w-0 items-start text-right">
-                    <span className="text-[11px] font-bold leading-tight text-foreground truncate">{mainName}</span>
-                    <span className="text-[8.5px] font-medium opacity-80 mt-0.5 truncate font-mono text-muted-foreground">
+                    <span className="text-[10px] font-bold leading-none text-foreground truncate">{mainName}</span>
+                    <span className="text-[8px] font-mono text-muted-foreground mt-1 truncate">
                       {unit === "px" ? `${wPx}×${hPx} بكسل` : `${p.widthMM}×${p.heightMM} مم`}
-                    </span>
-                    <span className="text-[7.5px] font-mono text-muted-foreground/50 truncate leading-none mt-0.5">
-                      {unit === "px" ? `${p.widthMM}×${p.heightMM} مم` : `${wPx}×${hPx} px`}
                     </span>
                   </div>
                 </button>
@@ -236,18 +233,18 @@ export function GeneralSettings() {
         </div>
 
         {/* حقول الأبعاد المدمجة أفقياً بأسلوب البرامج الاحترافية مع زر التبديل */}
-        <div className="flex items-end gap-2 text-xs">
+        <div className="flex items-end gap-1.5 text-xs">
           <div className="flex-1 space-y-1">
-            <Label className="text-[10px] text-muted-foreground font-bold pr-0.5">العرض</Label>
-            <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/40 focus-within:border-primary rounded-lg px-2.5 h-9 transition-all shadow-xs" dir="ltr">
+            <Label className="text-[9.5px] text-muted-foreground/80 font-bold pr-0.5">العرض</Label>
+            <div className="flex items-center gap-1 bg-background border border-border/60 hover:border-primary/40 focus-within:border-primary rounded-lg px-2 h-8.5 transition-all shadow-2xs" dir="ltr">
               <input
                 type="number"
                 value={widthVal}
                 onChange={(e) => handleWidthChange(e.target.value)}
-                className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+                className="w-full bg-transparent border-0 p-0 text-[11px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                 min={1}
               />
-              <span className="text-[10px] text-muted-foreground/60 select-none shrink-0 font-bold">{unit === "px" ? "px" : "mm"}</span>
+              <span className="text-[9px] text-muted-foreground/60 select-none shrink-0 font-bold">{unit === "px" ? "px" : "mm"}</span>
             </div>
           </div>
 
@@ -256,23 +253,23 @@ export function GeneralSettings() {
             variant="ghost"
             size="sm"
             onClick={handleSwapDimensions}
-            className="h-9 w-9 shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg cursor-pointer transition-colors shadow-xs border border-border/40"
+            className="h-8.5 w-8.5 shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg cursor-pointer transition-colors shadow-2xs border border-border/40"
             title="تبديل الاتجاه (أفقي/عمودي)"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3 h-3" />
           </Button>
 
           <div className="flex-1 space-y-1">
-            <Label className="text-[10px] text-muted-foreground font-bold pr-0.5">الارتفاع</Label>
-            <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/40 focus-within:border-primary rounded-lg px-2.5 h-9 transition-all shadow-xs" dir="ltr">
+            <Label className="text-[9.5px] text-muted-foreground/80 font-bold pr-0.5">الارتفاع</Label>
+            <div className="flex items-center gap-1 bg-background border border-border/60 hover:border-primary/40 focus-within:border-primary rounded-lg px-2 h-8.5 transition-all shadow-2xs" dir="ltr">
               <input
                 type="number"
                 value={heightVal}
                 onChange={(e) => handleHeightChange(e.target.value)}
-                className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+                className="w-full bg-transparent border-0 p-0 text-[11px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                 min={1}
               />
-              <span className="text-[10px] text-muted-foreground/60 select-none shrink-0 font-bold">{unit === "px" ? "px" : "mm"}</span>
+              <span className="text-[9px] text-muted-foreground/60 select-none shrink-0 font-bold">{unit === "px" ? "px" : "mm"}</span>
             </div>
           </div>
         </div>
@@ -280,11 +277,11 @@ export function GeneralSettings() {
         {/* إذا كانت الوحدة بالملم، يظهر خيار الدقة DPI المنسق */}
         {unit === "mm" && (
           <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground font-semibold">دقة الطباعة (DPI)</Label>
+            <Label className="text-[9.5px] text-muted-foreground/80 font-bold">دقة الطباعة (DPI)</Label>
             <select
               value={dpiVal}
               onChange={(e) => handleDpiChange(Number(e.target.value))}
-              className="w-full bg-background border border-border/60 rounded-md p-1.5 text-xs text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
+              className="w-full bg-background border border-border/60 rounded-md p-1 px-1.5 text-[10.5px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
             >
               <option value={150}>150 DPI (منخفض)</option>
               <option value={200}>200 DPI (متوسط)</option>
@@ -294,65 +291,53 @@ export function GeneralSettings() {
           </div>
         )}
 
-        {/* عرض تفاصيل القياس الحالي بجودة عالية ودقة تامة */}
-        <div className="space-y-1.5 bg-muted/40 dark:bg-muted/15 p-3 rounded-xl border border-border/30">
-          <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
-            <span>مساحة العمل الحالية</span>
-            <span className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded-md text-[9px] font-bold">{dpiVal} DPI</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 border-t border-border/20 pt-2 text-xs">
-            <div className="flex flex-col">
-              <span className="text-[9px] text-muted-foreground/80 leading-none">الحجم الرقمي</span>
-              <span className="font-mono font-bold text-foreground mt-1.5">{canvasWidth} × {canvasHeight} px</span>
-            </div>
-            <div className="flex flex-col border-r border-border/20 pr-2">
-              <span className="text-[9px] text-muted-foreground/80 leading-none">حجم الطباعة الفعلي</span>
-              <span className="font-mono font-bold text-foreground mt-1.5">
-                {Math.round((canvasWidth / dpiVal) * 25.4)} × {Math.round((canvasHeight / dpiVal) * 25.4)} مم
-              </span>
-            </div>
-          </div>
+        {/* عرض تفاصيل القياس الحالي بشكل مدمج للغاية */}
+        <div className="flex items-center justify-between bg-muted/30 dark:bg-muted/10 px-2.5 py-1.5 rounded-lg border border-border/20 text-[9px] text-muted-foreground font-mono leading-none">
+          <span className="font-sans font-semibold">المساحة الفعلية:</span>
+          <span>
+            {canvasWidth}×{canvasHeight}px ({Math.round((canvasWidth / dpiVal) * 25.4)}×{Math.round((canvasHeight / dpiVal) * 25.4)}مم) @ {dpiVal}DPI
+          </span>
         </div>
 
         {/* قسم إعدادات شبكة الإرشاد (فقط في وضع التعديل الحر) */}
         {mode === "single" && (
-          <div className="space-y-3.5 bg-muted/20 dark:bg-muted/5 p-3 rounded-xl border border-border/20">
-            <div className="flex items-center justify-between pb-1.5 border-b border-border/10">
-              <Label className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Grid3x3 className="w-3.5 h-3.5 text-primary" /> شبكة الإرشاد والمحاذاة
+          <div className="space-y-2.5 bg-muted/20 dark:bg-muted/5 p-2.5 rounded-xl border border-border/20">
+            <div className="flex items-center justify-between pb-1 border-b border-border/10">
+              <Label className="text-[10px] font-bold text-foreground/90 flex items-center gap-1">
+                <Grid3x3 className="w-3 h-3 text-primary" /> شبكة الإرشاد والمحاذاة
               </Label>
             </div>
 
-            {/* تفعيل الشبكة والمحاذاة */}
-            <div className="grid grid-cols-2 gap-2">
-              <label className="flex items-center justify-between p-2 rounded-lg bg-background border border-border/60 hover:bg-accent/40 cursor-pointer transition-colors">
-                <span className="text-[10px] font-semibold text-muted-foreground select-none">إظهار الشبكة</span>
+            {/* تفعيل الشبكة والمحاذاة بشكل خطي مضغوط */}
+            <div className="flex items-center gap-4 px-1 py-0.5">
+              <label className="flex items-center gap-1.5 cursor-pointer text-[9.5px] font-bold text-muted-foreground select-none hover:text-foreground transition-colors">
                 <input
                   type="checkbox"
                   checked={showGrid}
                   onChange={(e) => setShowGrid(e.target.checked)}
-                  className="rounded border-border text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+                  className="rounded border-border text-primary focus:ring-primary w-3.2 h-3.2 cursor-pointer"
                 />
+                <span>إظهار الشبكة</span>
               </label>
 
-              <label className="flex items-center justify-between p-2 rounded-lg bg-background border border-border/60 hover:bg-accent/40 cursor-pointer transition-colors">
-                <span className="text-[10px] font-semibold text-muted-foreground select-none">محاذاة مغناطيسية</span>
+              <label className="flex items-center gap-1.5 cursor-pointer text-[9.5px] font-bold text-muted-foreground select-none hover:text-foreground transition-colors">
                 <input
                   type="checkbox"
                   checked={snapToGrid}
                   onChange={(e) => setSnapToGrid(e.target.checked)}
-                  className="rounded border-border text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+                  className="rounded border-border text-primary focus:ring-primary w-3.2 h-3.2 cursor-pointer"
                 />
+                <span>محاذاة مغناطيسية</span>
               </label>
             </div>
 
             {showGrid && (
-              <div className="space-y-3 pt-1 animate-in fade-in duration-200">
+              <div className="space-y-2 pt-1 animate-in fade-in duration-200">
                 {/* حجم الشبكة */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[9px] text-muted-foreground font-semibold">
                     <span>حجم المربعات</span>
-                    <span className="font-mono bg-muted px-1 py-0.5 rounded-sm text-[10px]">{gridSize} بكسل</span>
+                    <span className="font-mono bg-muted px-1 py-0.5 rounded-xs text-[9px]">{gridSize} بكسل</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
@@ -362,7 +347,7 @@ export function GeneralSettings() {
                       step={5}
                       value={gridSize}
                       onChange={(e) => setGridSize(Number(e.target.value))}
-                      className="w-full accent-primary h-1.5 bg-muted rounded-lg appearance-none cursor-pointer"
+                      className="w-full accent-primary h-1 bg-muted rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
                 </div>
@@ -370,12 +355,12 @@ export function GeneralSettings() {
                 {/* نوع الشبكة ولونها */}
                 <div className="grid grid-cols-2 gap-2">
                   {/* نوع الشبكة */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] text-muted-foreground font-semibold">نمط الرسم</span>
+                  <div className="space-y-0.5">
+                    <span className="text-[9px] text-muted-foreground font-semibold">نمط الرسم</span>
                     <select
                       value={gridType}
                       onChange={(e) => setGridType(e.target.value as any)}
-                      className="w-full bg-background border border-border/60 rounded-md p-1 py-1.5 text-[10px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
+                      className="w-full bg-background border border-border/60 rounded-md p-1 text-[9px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer"
                     >
                       <option value="lines">خطوط متصلة</option>
                       <option value="dots">نقاط إرشادية</option>
@@ -383,12 +368,12 @@ export function GeneralSettings() {
                   </div>
 
                   {/* لون الشبكة */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] text-muted-foreground font-semibold">اللون</span>
+                  <div className="space-y-0.5">
+                    <span className="text-[9px] text-muted-foreground font-semibold">اللون</span>
                     <select
                       value={gridColor}
                       onChange={(e) => setGridColor(e.target.value)}
-                      className="w-full bg-background border border-border/60 rounded-md p-1 py-1.5 text-[10px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer font-mono"
+                      className="w-full bg-background border border-border/60 rounded-md p-1 text-[9px] text-foreground font-medium focus:ring-1 focus:ring-primary focus:outline-hidden cursor-pointer font-mono"
                     >
                       <option value="rgba(0, 0, 0, 0.08)">رمادي خفيف</option>
                       <option value="rgba(0, 0, 0, 0.16)">رمادي متوسط</option>
