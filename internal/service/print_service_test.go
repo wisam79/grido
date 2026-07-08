@@ -174,3 +174,52 @@ func mathAbs(n int) int {
 	}
 	return n
 }
+
+func BenchmarkPrintService_GeneratePrintSheet(b *testing.B) {
+	tempDir, err := os.MkdirTemp("", "print_service_bench")
+	if err != nil {
+		b.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	dummyImgPath := filepath.Join(tempDir, "dummy_bench.png")
+	dummyImg := image.NewRGBA(image.Rect(0, 0, 800, 800))
+	for x := 0; x < 800; x++ {
+		for y := 0; y < 800; y++ {
+			dummyImg.Set(x, y, color.RGBA{0, 255, 0, 255})
+		}
+	}
+	err = imaging.Save(dummyImg, dummyImgPath)
+	if err != nil {
+		b.Fatalf("failed to save dummy image: %v", err)
+	}
+
+	svc := NewPrintService()
+	req := domain.PrintRequest{
+		PaperWidthMM:    210.0, // A4
+		PaperHeightMM:   297.0,
+		DPI:             300,
+		BackgroundColor: "#FFFFFF",
+		ShowCutLines:    true,
+		CutLines: []domain.CutLine{
+			{X1: 10, Y1: 10, X2: 200, Y2: 10},
+		},
+		Items: []domain.PrintItem{
+			{ImageSrc: dummyImgPath, X: 15, Y: 15, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgPath, X: 65, Y: 15, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgPath, X: 115, Y: 15, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgPath, X: 15, Y: 65, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgPath, X: 65, Y: 65, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgPath, X: 115, Y: 65, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+		},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		out, err := svc.GeneratePrintSheet(req)
+		if err != nil {
+			b.Fatalf("GeneratePrintSheet failed: %v", err)
+		}
+		_ = os.Remove(out)
+	}
+}

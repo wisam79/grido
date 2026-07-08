@@ -1,14 +1,13 @@
-
-import { useState, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { Toolbar } from "@/components/editor/toolbar";
 import { TemplatePanel } from "@/components/editor/template-panel";
 import { PropertiesPanel } from "@/components/editor/properties-panel";
 import { EditorCanvas } from "@/components/editor/editor-canvas";
 
-const PrintDialog = lazy(() => import("@/components/editor/print-dialog").then(module => ({ default: module.PrintDialog })));
 const ExportDialog = lazy(() => import("@/components/editor/export-dialog").then(module => ({ default: module.ExportDialog })));
-import { PrintArea } from "@/components/editor/print-area";
+const PrintDialog = lazy(() => import("@/components/editor/print-dialog").then(module => ({ default: module.PrintDialog })));
 import { saveProjectAsJSON } from "@/components/editor/export-utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -33,12 +32,36 @@ import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 
 export default function App() {
-  const [printOpen, setPrintOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [printOpen, setPrintOpen] = useState(false);
   const [mobileTemplatesOpen, setMobileTemplatesOpen] = useState(false);
   const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
 
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && typeof Worker !== "undefined") {
+      const timer = setTimeout(() => {
+        try {
+          const worker = new Worker(
+            new URL("./components/editor/bg-worker.ts", import.meta.url),
+            { type: "module" }
+          );
+          worker.postMessage({ type: "warmup" });
+          worker.onmessage = (e) => {
+            if (e.data.type === "warmup_done") {
+              (window as any).isModelCached = true;
+            }
+          };
+          (window as any).globalBgWorker = worker;
+        } catch (err) {
+          console.warn("Failed to pre-warm background worker:", err);
+        }
+      }, 5000); // تأخير 5 ثوانٍ لتفادي إشغال المعالج عند التحميل الأولي
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
   const {
     isMaximized,
     isFocused,
@@ -53,7 +76,7 @@ export default function App() {
   const mode = useEditorStore((state) => state.mode);
   const setMode = useEditorStore((state) => state.setMode);
 
-  const isModalOpen = printOpen || exportOpen || mobileTemplatesOpen || mobilePropsOpen;
+  const isModalOpen = exportOpen || printOpen || mobileTemplatesOpen || mobilePropsOpen;
 
   return (
     <div 
@@ -259,16 +282,15 @@ export default function App() {
         </SheetContent>
       </Sheet>
 
-      {/* نوافذ الطباعة والتصدير */}
+      {/* نافذة التصدير */}
       <Suspense fallback={null}>
-        <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
         <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
       </Suspense>
 
-      {/* منطقة الطباعة - مخفية عن الشاشة ولكن تبقى نشطة ليقوم المتصفح بتحميل وفك تشفير الصور مسبقاً */}
-      <div id="print-container" className="absolute left-[-9999px] top-[-9999px] w-0 h-0 overflow-hidden print:block">
-        <PrintArea />
-      </div>
+      {/* نافذة إعدادات الطباعة */}
+      <Suspense fallback={null}>
+        <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
+      </Suspense>
 
       <SonnerToaster position="top-center" duration={2500} richColors />
     </div>

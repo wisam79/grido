@@ -77,14 +77,20 @@ export function useAutoSave() {
     };
 
     const handleStateChange = (state: any) => {
-      const projectData = serializeEditorState(state);
+      const runSave = () => {
+        const projectData = serializeEditorState(state);
+        const currentString = JSON.stringify(projectData);
+        if (currentString === lastSavedString) {
+          return; // تخطي إذا لم تتغير مساحة العمل فعلياً
+        }
+        saveDraft(currentString);
+      };
 
-      const currentString = JSON.stringify(projectData);
-      if (currentString === lastSavedString) {
-        return; // تخطي إذا لم تتغير مساحة العمل فعلياً
+      if (typeof window !== "undefined" && (window as any).requestIdleCallback) {
+        (window as any).requestIdleCallback(() => runSave(), { timeout: 1000 });
+      } else {
+        setTimeout(runSave, 0);
       }
-
-      saveDraft(currentString);
     };
 
     // تأخير فحص وحفظ البيانات بالكامل لثانيتين بعد توقف حركة السحب/التعديل

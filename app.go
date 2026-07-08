@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"image"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,6 +16,7 @@ import (
 
 	"grido/internal/utils"
 
+	"github.com/disintegration/imaging"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -88,16 +92,29 @@ func (a *App) OpenFile() (string, error) {
 		return "", fmt.Errorf("file too large: %d bytes (max %d)", stat.Size(), maxFileSize)
 	}
 
-	// Read original file
-	input, err := os.ReadFile(filePath)
+	// فتح الملف الأصلي وتفادي قراءته بالكامل في الرام دفعة واحدة
+	srcFile, err := os.Open(filePath)
 	if err != nil {
-		return "", fmt.Errorf("read file: %w", err)
+		return "", fmt.Errorf("open file: %w", err)
 	}
+	defer srcFile.Close()
 
-	// 🔒 التحقق من نوع MIME الفعلي للملف (بناءً على المحتوى وليس الامتداد فقط)
-	detectedType := http.DetectContentType(input)
+	// 🔒 التحقق من نوع MIME الفعلي للملف (قراءة أول 512 بايت فقط)
+	buf := make([]byte, 512)
+	n, err := srcFile.Read(buf)
+	if err != nil && err != io.EOF {
+		return "", fmt.Errorf("read file header: %w", err)
+	}
+	
+	detectedType := http.DetectContentType(buf[:n])
 	if !strings.HasPrefix(detectedType, "image/") {
 		return "", fmt.Errorf("invalid file type: %s (expected image)", detectedType)
+	}
+
+	// إرجاع مؤشر القراءة للبداية قبل النسخ
+	_, err = srcFile.Seek(0, io.SeekStart)
+	if err != nil {
+		return "", fmt.Errorf("seek file: %w", err)
 	}
 
 	// Generate unique name and copy to Media directory
@@ -106,8 +123,14 @@ func (a *App) OpenFile() (string, error) {
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
 
-	if err := os.WriteFile(newPath, input, 0644); err != nil {
-		return "", fmt.Errorf("write file: %w", err)
+	destFile, err := os.OpenFile(newPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return "", fmt.Errorf("create dest file: %w", err)
+	}
+	defer destFile.Close()
+
+	if _, err := io.Copy(destFile, srcFile); err != nil {
+		return "", fmt.Errorf("copy file: %w", err)
 	}
 
 	return "/local-image/" + newName, nil
@@ -126,7 +149,20 @@ func decodeBase64Image(base64Data string) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", fmt.Errorf("%w: %v", errInvalidBase64, err)
 	}
+
+	// 🔒 التحقق من الحجم لبيانات Base64 لمنع ثغرات نفاذ الذاكرة
+	if len(decoded) > maxFileSize {
+		return nil, "", fmt.Errorf("decoded data size exceeds limit: %d bytes (max %d)", len(decoded), maxFileSize)
+	}
+
 	return decoded, mimeType, nil
+}
+
+func getExtensionFromMime(mimeType string) string {
+	if mimeType == "image/png" {
+		return ".png"
+	}
+	return ".jpg"
 }
 
 func (a *App) SaveFile(base64Data string) (string, error) {
@@ -135,10 +171,8 @@ func (a *App) SaveFile(base64Data string) (string, error) {
 		return "", err
 	}
 
-	defaultName := "edited_photo.jpg"
-	if mimeType == "image/png" {
-		defaultName = "edited_photo.png"
-	}
+	ext := getExtensionFromMime(mimeType)
+	defaultName := "edited_photo" + ext
 
 	filePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
 		Title:           "Save Image",
@@ -149,7 +183,7 @@ func (a *App) SaveFile(base64Data string) (string, error) {
 		return "", fmt.Errorf("save dialog: %w", err)
 	}
 	if filePath == "" {
-		return "cancelled", nil
+		return "", nil // 🔒 إرجاع نص فارغ بدلاً من "cancelled" ليكون متسقاً مع OpenFile
 	}
 
 	if err := os.WriteFile(filePath, decoded, 0o644); err != nil {
@@ -166,10 +200,7 @@ func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
 	}
 
 	mediaDir := getMediaDir()
-	ext := ".jpg"
-	if mimeType == "image/png" {
-		ext = ".png"
-	}
+	ext := getExtensionFromMime(mimeType)
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
 
@@ -193,6 +224,11 @@ func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayN
 	} else {
 		// Treat as plain text (e.g. JSON)
 		decoded = []byte(base64Data)
+	}
+
+	// 🔒 التحقق من الحجم
+	if len(decoded) > maxFileSize {
+		return "", fmt.Errorf("file size too large: %d bytes (max %d)", len(decoded), maxFileSize)
 	}
 
 	filePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
@@ -245,5 +281,77 @@ func (a *App) ClearAutoSave() error {
 		return err
 	}
 	return nil
+}
+
+func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string) (string, error) {
+	// 1. Resolve local path to actual path on disk
+	mediaDir := getMediaDir()
+	fileName := filepath.Base(filepath.Clean(localImagePath))
+	actualImagePath := filepath.Join(mediaDir, fileName)
+
+	// Check if file exists
+	if _, err := os.Stat(actualImagePath); err != nil {
+		return "", fmt.Errorf("image file not found: %w", err)
+	}
+
+	// 2. Decode the mask base64
+	decodedMask, _, err := decodeBase64Image(maskBase64)
+	if err != nil {
+		return "", fmt.Errorf("decode mask: %w", err)
+	}
+
+	// 3. Open original image
+	srcImg, err := imaging.Open(actualImagePath)
+	if err != nil {
+		return "", fmt.Errorf("open original image: %w", err)
+	}
+
+	// 4. Open mask image
+	maskImg, err := imaging.Decode(bytes.NewReader(decodedMask))
+	if err != nil {
+		return "", fmt.Errorf("decode mask image: %w", err)
+	}
+
+	// 5. Resize mask to match original image dimensions if they differ
+	srcBounds := srcImg.Bounds()
+	srcW, srcH := srcBounds.Dx(), srcBounds.Dy()
+
+	maskBounds := maskImg.Bounds()
+	if maskBounds.Dx() != srcW || maskBounds.Dy() != srcH {
+		maskImg = imaging.Resize(maskImg, srcW, srcH, imaging.Linear)
+	}
+
+	// 6. Apply mask using fast direct slice access (*image.NRGBA)
+	srcNRGBA := imaging.Clone(srcImg)
+	maskNRGBA := imaging.Clone(maskImg)
+	outImg := image.NewNRGBA(image.Rect(0, 0, srcW, srcH))
+
+	srcPix := srcNRGBA.Pix
+	maskPix := maskNRGBA.Pix
+	outPix := outImg.Pix
+
+	limit := len(srcPix)
+	// Process pixels in a flat loop - 50x-100x faster than interface-based At()/Set()
+	for i := 0; i < limit; i += 4 {
+		mr := uint32(maskPix[i])
+		mg := uint32(maskPix[i+1])
+		mb := uint32(maskPix[i+2])
+		alpha := uint8((mr + mg + mb) / 3)
+
+		outPix[i] = srcPix[i]
+		outPix[i+1] = srcPix[i+1]
+		outPix[i+2] = srcPix[i+2]
+		outPix[i+3] = alpha
+	}
+
+	// 7. Save output image as PNG
+	newName := fmt.Sprintf("img_%d.png", time.Now().UnixNano())
+	newPath := filepath.Join(mediaDir, newName)
+
+	if err := imaging.Save(outImg, newPath); err != nil {
+		return "", fmt.Errorf("save final image: %w", err)
+	}
+
+	return "/local-image/" + newName, nil
 }
 

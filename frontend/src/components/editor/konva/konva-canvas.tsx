@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
-import { Stage, Layer, Transformer, Line, Circle, Group, Rect, Text } from "react-konva";
-import useImage from "use-image";
+import { Stage, Layer, Transformer, Line, Circle, Group, Rect, Text, FastLayer } from "react-konva";
+import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { URLImage, KonvaTextElement, KonvaShapeElement } from "./konva-elements";
@@ -36,7 +36,7 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
   saturation?: number;
   onClick: () => void;
 }) {
-  const [image] = useImage(imageSrc);
+  const [image] = useAsyncImage(imageSrc);
   const imageRef = useRef<any>(null);
 
   useEffect(() => {
@@ -148,6 +148,125 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
          prev.brightness === next.brightness &&
          prev.contrast === next.contrast &&
          prev.saturation === next.saturation;
+});
+
+const GridLayer = React.memo(function GridLayer({
+  showGrid,
+  gridSize,
+  gridColor,
+  gridOpacity,
+  gridSubdivisions,
+  gridType,
+  displayW,
+  displayH
+}: {
+  showGrid: boolean;
+  gridSize: number;
+  gridColor: string;
+  gridOpacity: number;
+  gridSubdivisions: number;
+  gridType: "lines" | "dots";
+  displayW: number;
+  displayH: number;
+}) {
+  if (!showGrid || gridSize <= 0) return null;
+
+  const numH = Math.ceil(displayH / gridSize);
+  const numW = Math.ceil(displayW / gridSize);
+  const elements = [];
+
+  if (gridType === "lines") {
+    for (let i = 0; i <= numH; i++) {
+      const isMajor = gridSubdivisions > 0 && i % gridSubdivisions === 0;
+      elements.push(
+        <Line
+          key={`grid-h-${i}`}
+          points={[0, i * gridSize, displayW, i * gridSize]}
+          stroke={gridColor}
+          opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
+          strokeWidth={isMajor ? 0.8 : 0.4}
+        />
+      );
+    }
+    for (let j = 0; j <= numW; j++) {
+      const isMajor = gridSubdivisions > 0 && j % gridSubdivisions === 0;
+      elements.push(
+        <Line
+          key={`grid-v-${j}`}
+          points={[j * gridSize, 0, j * gridSize, displayH]}
+          stroke={gridColor}
+          opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
+          strokeWidth={isMajor ? 0.8 : 0.4}
+        />
+      );
+    }
+  } else {
+    for (let i = 0; i <= numH; i++) {
+      for (let j = 0; j <= numW; j++) {
+        const isMajor = gridSubdivisions > 0 && (i % gridSubdivisions === 0 || j % gridSubdivisions === 0);
+        elements.push(
+          <Circle
+            key={`grid-dot-${i}-${j}`}
+            x={j * gridSize}
+            y={i * gridSize}
+            radius={isMajor ? 1.5 : 0.8}
+            fill={gridColor}
+            opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
+          />
+        );
+      }
+    }
+  }
+
+  return (
+    <FastLayer listening={false} name="grid-layer">
+      {elements}
+    </FastLayer>
+  );
+});
+
+const ColumnsLayer = React.memo(function ColumnsLayer({
+  showColumns,
+  columnsMargin,
+  columnsGutter,
+  columnsCount,
+  columnsColor,
+  displayW,
+  displayH
+}: {
+  showColumns: boolean;
+  columnsMargin: number;
+  columnsGutter: number;
+  columnsCount: number;
+  columnsColor: string;
+  displayW: number;
+  displayH: number;
+}) {
+  if (!showColumns) return null;
+
+  const cols = [];
+  const availW = displayW - 2 * columnsMargin;
+  const colW = (availW - (columnsCount - 1) * columnsGutter) / columnsCount;
+
+  for (let i = 0; i < columnsCount; i++) {
+    const xPos = columnsMargin + i * (colW + columnsGutter);
+    cols.push(
+      <Rect
+        key={`col-${i}`}
+        x={xPos}
+        y={0}
+        width={colW}
+        height={displayH}
+        fill={columnsColor}
+      />
+    );
+  }
+
+  return (
+    <FastLayer listening={false} name="columns-layer">
+      {cols}
+    </FastLayer>
+  );
 });
 
 export function KonvaCanvas({
@@ -285,87 +404,30 @@ export function KonvaCanvas({
       </Layer>
 
       {/* Grid Layer */}
-      {showGrid && gridSize > 0 && mode === "single" && (
-        <Layer listening={false} name="grid-layer">
-          {(() => {
-            const lines = [];
-            const numH = Math.ceil(displayH / gridSize);
-            const numW = Math.ceil(displayW / gridSize);
-
-            if (gridType === "lines") {
-              for (let i = 0; i <= numH; i++) {
-                const isMajor = gridSubdivisions > 0 && i % gridSubdivisions === 0;
-                lines.push(
-                  <Line
-                    key={`grid-h-${i}`}
-                    points={[0, i * gridSize, displayW, i * gridSize]}
-                    stroke={gridColor}
-                    opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
-                    strokeWidth={isMajor ? 0.8 : 0.4}
-                  />
-                );
-              }
-              for (let j = 0; j <= numW; j++) {
-                const isMajor = gridSubdivisions > 0 && j % gridSubdivisions === 0;
-                lines.push(
-                  <Line
-                    key={`grid-v-${j}`}
-                    points={[j * gridSize, 0, j * gridSize, displayH]}
-                    stroke={gridColor}
-                    opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
-                    strokeWidth={isMajor ? 0.8 : 0.4}
-                  />
-                );
-              }
-            } else {
-              for (let i = 0; i <= numH; i++) {
-                for (let j = 0; j <= numW; j++) {
-                  const isMajor = gridSubdivisions > 0 && (i % gridSubdivisions === 0 || j % gridSubdivisions === 0);
-                  lines.push(
-                    <Circle
-                      key={`grid-dot-${i}-${j}`}
-                      x={j * gridSize}
-                      y={i * gridSize}
-                      radius={isMajor ? 1.5 : 0.8}
-                      fill={gridColor}
-                      opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
-                    />
-                  );
-                }
-              }
-            }
-            return lines;
-          })()}
-        </Layer>
+      {mode === "single" && (
+        <GridLayer
+          showGrid={showGrid}
+          gridSize={gridSize}
+          gridColor={gridColor}
+          gridOpacity={gridOpacity}
+          gridSubdivisions={gridSubdivisions}
+          gridType={gridType}
+          displayW={displayW}
+          displayH={displayH}
+        />
       )}
 
       {/* Columns Layout Layer */}
-      {showColumns && mode === "single" && (
-        <Layer listening={false} name="columns-layer">
-          {(() => {
-            const cols = [];
-            const margin = columnsMargin;
-            const gutter = columnsGutter;
-            const count = columnsCount;
-            const availW = displayW - 2 * margin;
-            const colW = (availW - (count - 1) * gutter) / count;
-            
-            for (let i = 0; i < count; i++) {
-              const xPos = margin + i * (colW + gutter);
-              cols.push(
-                <Rect
-                  key={`col-${i}`}
-                  x={xPos}
-                  y={0}
-                  width={colW}
-                  height={displayH}
-                  fill={columnsColor}
-                />
-              );
-            }
-            return cols;
-          })()}
-        </Layer>
+      {mode === "single" && (
+        <ColumnsLayer
+          showColumns={showColumns}
+          columnsMargin={columnsMargin}
+          columnsGutter={columnsGutter}
+          columnsCount={columnsCount}
+          columnsColor={columnsColor}
+          displayW={displayW}
+          displayH={displayH}
+        />
       )}
 
       {/* Collage Mode Layer */}
@@ -508,6 +570,16 @@ export function KonvaCanvas({
         <Layer>
           {sortedElements.map((el) => {
             if (el.visible === false) return null;
+
+            // Off-screen elements culling to speed up Konva rendering
+            if (
+              el.x > 1.1 ||
+              el.y > 1.1 ||
+              el.x + el.width < -0.1 ||
+              el.y + el.height < -0.1
+            ) {
+              return null;
+            }
 
             const elementProps = {
               key: el.id,

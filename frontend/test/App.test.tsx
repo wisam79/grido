@@ -48,7 +48,6 @@ describe('Component Testing: UI Rendering', () => {
 
   it('renders the TemplatePanel correctly', () => {
     render(<App />);
-    expect(screen.getByText('تخطيط الكولاج واللون')).toBeInTheDocument();
     expect(screen.getByText('لون خلفية مساحة العمل')).toBeInTheDocument();
   });
 

@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useEditorStore } from "@/lib/editor-store";
+import { usePrintLayout } from "@/hooks/use-print-layout";
+
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import {
@@ -27,10 +29,12 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import { Printer, ZoomIn, ZoomOut, RectangleVertical, RectangleHorizontal, Scissors, Move, Copy, Columns, AlertTriangle, Info, FileSpreadsheet, Layout, Settings, FileText, CheckCircle2, Maximize2 } from "lucide-react";
+import { Printer, ZoomIn, ZoomOut, RectangleVertical, RectangleHorizontal, Scissors, AlertTriangle, Info, FileSpreadsheet, Layout, CheckCircle2, Maximize2, Loader2 } from "lucide-react";
 import { SheetPreview } from "./print/print-preview";
 import { toast } from "sonner";
+import { ExportPrintSheet } from "../../../wailsjs/go/handlers/PrintHandler";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
+import { domain } from "../../../wailsjs/go/models";
 
 import { useShallow } from "zustand/react/shallow";
 
@@ -76,15 +80,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   useEffect(() => {
     if (open && stageRef) {
       const timer = setTimeout(() => {
+        const transformers = stageRef.find('Transformer');
+        const gridLayers = stageRef.find('.grid-layer');
+        const columnsLayers = stageRef.find('.columns-layer');
         try {
           const targetWidth = 400;
           const pRatio = Math.min(1, targetWidth / stageRef.width());
-          
-          // إخفاء الشبكة والأعمدة ومقابض التحكم مؤقتاً قبل التقاط المعاينة والطباعة لكي لا تظهر في المخرج المطبوع
-          const transformers = stageRef.find('Transformer');
-          const gridLayers = stageRef.find('.grid-layer');
-          const columnsLayers = stageRef.find('.columns-layer');
 
+          // إخفاء الشبكة والأعمدة ومقابض التحكم مؤقتاً قبل التقاط المعاينة والطباعة لكي لا تظهر في المخرج المطبوع
           transformers.forEach((tr: any) => tr.hide());
           gridLayers.forEach((gl: any) => gl.hide());
           columnsLayers.forEach((cl: any) => cl.hide());
@@ -97,20 +100,20 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           });
 
           const printUrl = stageRef.toDataURL({
-            pixelRatio: 3,
+            pixelRatio: canvasWidth / stageRef.width(),
             mimeType: "image/png"
           });
-
-          // استعادة الشبكة والأعمدة ومقابض التحكم بعد الالتقاط لتستمر بالظهور للمستخدم في المحرر
-          transformers.forEach((tr: any) => tr.show());
-          gridLayers.forEach((gl: any) => gl.show());
-          columnsLayers.forEach((cl: any) => cl.show());
-          stageRef.batchDraw();
 
           setPreviewImageSrc(previewUrl);
           useEditorStore.getState().setPrintImageSrc(printUrl);
         } catch (err) {
           console.error("Failed to generate print preview image:", err);
+        } finally {
+          // استعادة الشبكة والأعمدة ومقابض التحكم في جميع الأحوال لضمان عدم اختفائها من المحرر
+          transformers.forEach((tr: any) => tr.show());
+          gridLayers.forEach((gl: any) => gl.show());
+          columnsLayers.forEach((cl: any) => cl.show());
+          stageRef.batchDraw();
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -124,67 +127,134 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     }
   }, [open, stageRef, elements, slots, backgroundColor, mode]);
 
-  // حساب أبعاد الصورة على الورق بالمليمتر
-  const dpi = template ? template.dpi : printSettings.dpi;
-  const originalImageWidthMM = template ? template.widthMM : Math.round((canvasWidth / dpi) * 25.4);
-  const originalImageHeightMM = template ? template.heightMM : Math.round((canvasHeight / dpi) * 25.4);
-
-  // المساحة المتاحة للطباعة
-  const availableWidthMM =
-    printSettings.orientation === "portrait"
-      ? printSettings.paperWidthMM - 2 * printSettings.marginMM
-      : printSettings.paperHeightMM - 2 * printSettings.marginMM;
-  const availableHeightMM =
-    printSettings.orientation === "portrait"
-      ? printSettings.paperHeightMM - 2 * printSettings.marginMM
-      : printSettings.paperWidthMM - 2 * printSettings.marginMM;
-
-  const gapMM = printSettings.gapMM !== undefined ? printSettings.gapMM : 2;
-
-  // حساب الأبعاد بعد تطبيق الملاءمة إذا كانت مفعلة وكان عدد النسخ 1 في الوضع الحر
-  const fitToPage = printSettings.fitToPage !== false;
-  const shouldFit = fitToPage && mode === "single" && printSettings.copiesPerSheet === 1;
-
-  let imageWidthMM = originalImageWidthMM;
-  let imageHeightMM = originalImageHeightMM;
-
-  if (shouldFit) {
-    const scaleX = availableWidthMM / originalImageWidthMM;
-    const scaleY = availableHeightMM / originalImageHeightMM;
-    const scale = Math.min(scaleX, scaleY);
-    imageWidthMM = Math.round(originalImageWidthMM * scale);
-    imageHeightMM = Math.round(originalImageHeightMM * scale);
-  }
-
-  // عدد الصور المناسب تلقائياً
-  const autoCount = useMemo(() => {
-    const tempCols = Math.floor(availableWidthMM / (imageWidthMM + gapMM));
-    const tempRows = Math.floor(availableHeightMM / (imageHeightMM + gapMM));
-    return Math.max(1, tempCols * tempRows);
-  }, [availableWidthMM, availableHeightMM, imageWidthMM, imageHeightMM, gapMM]);
-
-  const actualCopies = Math.min(printSettings.copiesPerSheet, autoCount);
-
-  // حماية من القسمة على صفر
-  const cols = Math.max(1, Math.floor(availableWidthMM / (imageWidthMM + gapMM)));
-  const rows = Math.ceil(actualCopies / Math.max(1, cols));
+  const {
+    imageWidthMM,
+    imageHeightMM,
+    gapMM,
+    actualCopies,
+    cols,
+    rows,
+    availableWidthMM,
+    availableHeightMM,
+    dpi,
+    autoCount,
+  } = usePrintLayout({
+    template,
+    printSettings,
+    canvasWidth,
+    canvasHeight,
+    mode,
+  });
 
   const [isExporting, setIsExporting] = useState(false);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    // التقاط الكانفاس فقط من stageRef بدقة عالية — لا window.print() ولا التقاط لواجهة التطبيق
+    if (!stageRef) {
+      toast.error("تعذر الوصول إلى محتوى الكانفاس");
+      return;
+    }
+
     setIsExporting(true);
+    const transformers = stageRef.find('Transformer');
+    const gridLayers = stageRef.find('.grid-layer');
+    const columnsLayers = stageRef.find('.columns-layer');
+    let canvasDataUrl: string | null = null;
+
     try {
-      // استدعاء نافذة طباعة النظام مباشرة
-      window.print();
-      
-      // تأخير إغلاق نافذة الإعدادات لضمان بقاء الصور في الـ DOM أثناء بدء معالجة الطباعة في WebView2/Wails
-      setTimeout(() => {
-        onOpenChange(false);
+      // إخفاء طبقات الشبكة والأعمدة ومقابض التحكم قبل الالتقاط
+      transformers.forEach((tr: any) => tr.hide());
+      gridLayers.forEach((gl: any) => gl.hide());
+      columnsLayers.forEach((cl: any) => cl.hide());
+      stageRef.batchDraw();
+
+      // التقاط الكانفاس بدقة عالية (pixelRatio = الدقة الكاملة للكانفس لضمان جودة طباعة ممتازة)
+      canvasDataUrl = stageRef.toDataURL({
+        pixelRatio: canvasWidth / stageRef.width(),
+        mimeType: "image/png",
+      });
+    } finally {
+      // استعادة جميع الطبقات في جميع الأحوال
+      transformers.forEach((tr: any) => tr.show());
+      gridLayers.forEach((gl: any) => gl.show());
+      columnsLayers.forEach((cl: any) => cl.show());
+      stageRef.batchDraw();
+    }
+
+    if (!canvasDataUrl) {
+      toast.error("تعذر التقاط الكانفاس");
+      setIsExporting(false);
+      return;
+    }
+
+    try {
+      // حفظ صورة الكانفاس مؤقتاً في مجلد Media للحصول على مسار محلي
+      const localPath = await SaveImageFromBase64(canvasDataUrl);
+      if (!localPath || !localPath.startsWith("/local-image/")) {
+        toast.error("تعذر حفظ الصورة مؤقتاً");
         setIsExporting(false);
-        toast.success("تم فتح نافذة الطباعة الخاصة بالنظام");
-      }, 500);
+        return;
+      }
+
+      // حساب أبعاد الورقة حسب الاتجاه
+      const paperW = printSettings.orientation === "portrait" ? printSettings.paperWidthMM : printSettings.paperHeightMM;
+      const paperH = printSettings.orientation === "portrait" ? printSettings.paperHeightMM : printSettings.paperWidthMM;
+      const mMM = printSettings.marginMM;
+
+      // توزيع الصور على الورقة
+      const items = [];
+      for (let i = 0; i < actualCopies; i++) {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const xMM = mMM + col * (imageWidthMM + gapMM);
+        const yMM = mMM + row * (imageHeightMM + gapMM);
+        items.push({
+          imageSrc: localPath,
+          x: xMM,
+          y: yMM,
+          w: imageWidthMM,
+          h: imageHeightMM,
+          filter: "",
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+        });
+      }
+
+      // توليد خطوط القص إن كانت مفعلة
+      const cutLines = [];
+      if (printSettings.showCutLines && actualCopies > 1) {
+        for (let c = 1; c < cols; c++) {
+          const x = mMM + c * (imageWidthMM + gapMM) - gapMM / 2;
+          cutLines.push({ x1: x, y1: mMM, x2: x, y2: paperH - mMM });
+        }
+        const actualRows = Math.ceil(actualCopies / cols);
+        for (let r = 1; r < actualRows; r++) {
+          const y = mMM + r * (imageHeightMM + gapMM) - gapMM / 2;
+          cutLines.push({ x1: mMM, y1: y, x2: paperW - mMM, y2: y });
+        }
+      }
+
+      // استدعاء Backend لتوليد ورقة الطباعة بدقة عالية وحفظها وفتحها في عارض الصور الافتراضي
+      const result = await ExportPrintSheet(domain.PrintRequest.createFrom({
+        paperWidthMM: paperW,
+        paperHeightMM: paperH,
+        dpi: printSettings.dpi,
+        backgroundColor: backgroundColor || "#FFFFFF",
+        showCutLines: printSettings.showCutLines && actualCopies > 1,
+        cutLines,
+        items,
+      }));
+
+      if (result.success) {
+        toast.success("تم توليد ورقة الطباعة بنجاح — تم فتحها في عارض الصور");
+        onOpenChange(false);
+      } else {
+        toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
+      }
     } catch (err: any) {
-      toast.error("حدث خطأ أثناء محاولة تشغيل الطباعة: " + String(err));
+      toast.error("حدث خطأ أثناء توليد ورقة الطباعة: " + String(err));
+    } finally {
       setIsExporting(false);
     }
   };
@@ -405,11 +475,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                         </Tooltip>
                       </Label>
                       <span className="font-mono font-bold text-foreground/80">
-                        {printSettings.gapMM !== undefined ? printSettings.gapMM : 2} مم
+                        {printSettings.gapMM ?? 2} مم
                       </span>
                     </div>
                     <Slider
-                      value={[printSettings.gapMM !== undefined ? printSettings.gapMM : 2]}
+                      value={[printSettings.gapMM ?? 2]}
                       min={0}
                       max={20}
                       step={0.5}
@@ -598,10 +668,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           <Button 
             onClick={handlePrint} 
             className="gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold transition-all duration-300 shadow-md shadow-indigo-500/10 active:scale-98 cursor-pointer" 
-            disabled={isExporting}
+            disabled={isExporting || !previewImageSrc}
           >
-            <Printer className="w-4 h-4" /> 
-            {isExporting ? "جاري فتح نافذة الطباعة..." : "بدء الطباعة"}
+            {isExporting ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> جاري التصدير...</>
+            ) : (
+              <><Printer className="w-4 h-4" /> تصدير وعرض</>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -42,10 +42,23 @@ async function loadModel() {
 
   notifyProgress("fetch:model", 0, 100);
 
+  const fileProgress: Record<string, { loaded: number; total: number }> = {};
+
   const progressCb = (p: any) => {
-    if (p.status === "progress" && p.total) {
-      const pct = Math.round((p.loaded / p.total) * 80);
-      notifyProgress("fetch:model", pct, 100);
+    if (p.status === "progress" && p.file && p.total) {
+      fileProgress[p.file] = { loaded: p.loaded, total: p.total };
+
+      let totalLoaded = 0;
+      let totalSize = 0;
+      for (const file in fileProgress) {
+        totalLoaded += fileProgress[file].loaded;
+        totalSize += fileProgress[file].total;
+      }
+
+      if (totalSize > 0) {
+        const pct = Math.round((totalLoaded / totalSize) * 98);
+        notifyProgress("fetch:model", pct, 100);
+      }
     }
   };
 
@@ -61,15 +74,8 @@ async function loadModel() {
     });
   }
 
-  notifyProgress("fetch:model", 85, 100);
-
   processor = await AutoProcessor.from_pretrained(MODEL_ID, {
-    progress_callback: (p: any) => {
-      if (p.status === "progress" && p.total) {
-        const pct = 85 + Math.round((p.loaded / p.total) * 12);
-        notifyProgress("fetch:processor", pct, 100);
-      }
-    },
+    progress_callback: progressCb,
   });
 
   notifyProgress("fetch:model", 100, 100);
@@ -109,61 +115,37 @@ async function removeBg(imageSrc: string, elementId?: string): Promise<Blob> {
   }
   notifyProgress("compute:decode", 25, 100, elementId);
 
-  // حفظ الأبعاد الأصلية للصورة
-  const originalW = image.width;
-  const originalH = image.height;
-
-  // تصغير الصورة تلقائياً إذا كانت ضخمة لحماية الذاكرة وتسريع المعالجة
-  const MAX_DIM = 2048;
-  if (image.width > MAX_DIM || image.height > MAX_DIM) {
-    let newW, newH;
-    if (image.width > image.height) {
-      newW = MAX_DIM;
-      newH = Math.round((image.height * MAX_DIM) / image.width);
-    } else {
-      newH = MAX_DIM;
-      newW = Math.round((image.width * MAX_DIM) / image.height);
-    }
-    image = await image.resize(newW, newH);
-  }
-  notifyProgress("compute:decode", 30, 100, elementId);
-
-  // ── 2. Preprocess ────────────────────────────────────────────────────────
-  const { pixel_values } = await processor(image);
+  // ── 2. Preprocess: Resize image to 1024x1024 for speed and memory efficiency
+  const maskInputImage = await image.resize(1024, 1024);
+  const { pixel_values } = await processor(maskInputImage);
   notifyProgress("compute:preprocess", 50, 100, elementId);
 
   // ── 3. Model inference ───────────────────────────────────────────────────
   const { output } = await model({ input: pixel_values });
   notifyProgress("compute:inference", 75, 100, elementId);
 
-  // ── 4. Resize mask to original image dimensions ──────────────────────────
-  const mask = await RawImage.fromTensor(output[0].mul(255).to("uint8"))
-    .resize(originalW, originalH);
+  // ── 4. Create Grayscale Mask ─────────────────────────────────────────────
+  const mask = await RawImage.fromTensor(output[0].mul(255).to("uint8"));
   notifyProgress("compute:mask", 85, 100, elementId);
 
-  // ── 5. Draw original image on OffscreenCanvas ─────────────────────────────
-  //    Using createImageBitmap from the original blob avoids RGB/RGBA issues
-  const canvas = new OffscreenCanvas(originalW, originalH);
+  // Draw the mask on a canvas of the mask's dimensions
+  const canvas = new OffscreenCanvas(mask.width, mask.height);
   const ctx = canvas.getContext("2d")!;
-
-  const sourceBlob = imageSrc.startsWith("data:")
-    ? dataUrlToBlob(imageSrc)
-    : await (await fetch(imageSrc)).blob();
-
-  const bitmap = await createImageBitmap(sourceBlob);
-  ctx.drawImage(bitmap, 0, 0, originalW, originalH);
-  bitmap.close();
-
-  // ── 6. Apply alpha mask channel ────────────────────────────────────────────
-  const imgData = ctx.getImageData(0, 0, originalW, originalH);
+  const imgData = ctx.createImageData(mask.width, mask.height);
   const maskData = mask.data as Uint8Array;
+  
   for (let i = 0; i < maskData.length; i++) {
-    imgData.data[i * 4 + 3] = maskData[i];
+    const val = maskData[i];
+    const offset = i * 4;
+    imgData.data[offset] = val;
+    imgData.data[offset + 1] = val;
+    imgData.data[offset + 2] = val;
+    imgData.data[offset + 3] = 255;
   }
   ctx.putImageData(imgData, 0, 0);
   notifyProgress("compute:mask", 100, 100, elementId);
 
-  // ── 7. Export transparent PNG ─────────────────────────────────────────────
+  // Export the mask as a tiny PNG
   return await canvas.convertToBlob({ type: "image/png" });
 }
 

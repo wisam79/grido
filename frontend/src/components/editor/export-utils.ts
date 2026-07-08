@@ -20,26 +20,35 @@ export async function exportCanvas(
 
   // محاولة التصدير مباشرة من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
   if (stageRef) {
+    let dataUrl: string | null = null;
+    const transformers = stageRef.find('Transformer');
+    const gridLayers = stageRef.find('.grid-layer');
+    const columnsLayers = stageRef.find('.columns-layer');
     try {
-      // إخفاء مقابض التحكم (Transformer) مؤقتاً قبل التصدير
-      const transformers = stageRef.find('Transformer');
+      // إخفاء مقابض التحكم وطبقات الشبكة والأعمدة مؤقتاً قبل التصدير لمنع ظهورها في الصورة النهائية
       transformers.forEach((tr: any) => tr.hide());
+      gridLayers.forEach((gl: any) => gl.hide());
+      columnsLayers.forEach((cl: any) => cl.hide());
       stageRef.batchDraw();
 
-      const dataUrl = stageRef.toDataURL({
+      dataUrl = stageRef.toDataURL({
         pixelRatio: canvasWidth / stageRef.width(), // تصدير بالدقة الأصلية الكاملة للكانفس
         mimeType: format === "png" ? "image/png" : "image/jpeg",
         quality: quality
       });
-
-      // استعادة مقابض التحكم بعد التصدير
-      transformers.forEach((tr: any) => tr.show());
-      stageRef.batchDraw();
-
-      const res = await fetch(dataUrl);
-      return await res.blob();
     } catch (e) {
       console.error("Failed to export via Konva Stage, falling back to manual canvas:", e);
+    } finally {
+      // ضمان استعادة جميع الطبقات حتى عند حدوث خطأ غير متوقع
+      transformers.forEach((tr: any) => tr.show());
+      gridLayers.forEach((gl: any) => gl.show());
+      columnsLayers.forEach((cl: any) => cl.show());
+      stageRef.batchDraw();
+    }
+
+    if (dataUrl) {
+      const res = await fetch(dataUrl);
+      return await res.blob();
     }
   }
 

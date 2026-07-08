@@ -5,6 +5,7 @@ import React from 'react';
 // Mock dependencies
 vi.mock('../wailsjs/go/main/App', () => ({
   SaveImageFromBase64: vi.fn().mockResolvedValue('/local-image/saved-bg.png'),
+  ApplyMaskToImage: vi.fn().mockResolvedValue('/local-image/saved-bg.png'),
 }));
 
 vi.mock('sonner', () => ({
@@ -24,6 +25,10 @@ describe('ElementProperties - Background Removal Worker Contract', () => {
     // Reset module registry to clear state variables (like globalBgWorker and isWorkerBusy)
     vi.resetModules();
     vi.clearAllMocks();
+    if (typeof window !== 'undefined') {
+      delete (window as any).globalBgWorker;
+      delete (window as any).isModelCached;
+    }
     
     // Mock the global Worker class
     mockWorkerInstance = {
@@ -123,7 +128,7 @@ describe('ElementProperties - Background Removal Worker Contract', () => {
     });
   });
 
-  it('should handle cancel button click, terminating worker and resetting UI', () => {
+  it('should handle cancel button click and resetting UI', () => {
     const onUpdateMock = vi.fn();
     render(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />);
     
@@ -136,7 +141,6 @@ describe('ElementProperties - Background Removal Worker Contract', () => {
     const cancelBtn = screen.getByTitle('إلغاء عملية عزل الخلفية');
     fireEvent.click(cancelBtn);
 
-    expect(mockWorkerInstance.terminate).toHaveBeenCalled();
     expect(screen.queryByTitle('إلغاء عملية عزل الخلفية')).not.toBeInTheDocument();
     expect(screen.getByTitle('إزالة الخلفية بالذكاء الاصطناعي')).toBeInTheDocument();
   });

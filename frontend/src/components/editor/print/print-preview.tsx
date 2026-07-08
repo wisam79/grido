@@ -1,3 +1,20 @@
+interface SheetPreviewProps {
+  cols: number;
+  rows: number;
+  count: number;
+  imageWidthMM: number;
+  imageHeightMM: number;
+  gapMM: number;
+  zoom: number;
+  showCutLines: boolean;
+  mode: "single" | "collage";
+  backgroundColor: string;
+  previewImageSrc: string;
+  marginMM?: number;
+  paperWidthMM?: number;
+  paperHeightMM?: number;
+}
+
 export function SheetPreview({
   cols,
   rows,
@@ -13,7 +30,7 @@ export function SheetPreview({
   marginMM = 0,
   paperWidthMM = 210,
   paperHeightMM = 297,
-}: any) {
+}: SheetPreviewProps) {
   if (mode === "collage") {
     return (
       <div 

@@ -3,9 +3,7 @@ package handlers
 import (
 	"log/slog"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"grido/internal/core/domain"
@@ -68,17 +66,8 @@ func (h *PrintHandler) openFile(path string) {
 		return
 	}
 
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "windows":
-		// استخدام rundll32 لتفادي تشغيل موجه الأوامر cmd.exe ومنع ثغرات Command Injection
-		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", absPath)
-	case "darwin":
-		cmd = exec.Command("open", "--", absPath)
-	default: // linux
-		cmd = exec.Command("xdg-open", absPath)
-	}
-	if err := cmd.Start(); err != nil {
-		slog.Error("Failed to open file in default viewer", "path", absPath, "error", err.Error())
+	// تشغيل الأمر المخصص لنوع نظام التشغيل
+	if err := printFileOS(absPath); err != nil {
+		slog.Error("Failed to print/open file", "path", absPath, "error", err.Error())
 	}
 }

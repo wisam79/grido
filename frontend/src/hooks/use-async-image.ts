@@ -1,0 +1,60 @@
+import { useState, useEffect } from "react";
+
+export function useAsyncImage(src: string, crossOrigin?: string) {
+  const [image, setImage] = useState<HTMLImageElement | undefined>(undefined);
+  const [status, setStatus] = useState<"loading" | "loaded" | "failed">("loading");
+
+  useEffect(() => {
+    if (!src) {
+      setImage(undefined);
+      setStatus("failed");
+      return;
+    }
+
+    const img = new Image();
+    if (crossOrigin) {
+      img.crossOrigin = crossOrigin;
+    }
+    
+    let isCurrent = true;
+    setStatus("loading");
+
+    // Set src after setting onload to capture cached images correctly
+    img.onload = () => {
+      if (!isCurrent) return;
+      
+      // Use asynchronous decoding to prevent main thread blocking during Konva draw
+      if (typeof img.decode === "function") {
+        img.decode()
+          .then(() => {
+            if (!isCurrent) return;
+            setImage(img);
+            setStatus("loaded");
+          })
+          .catch((err) => {
+            console.warn("Async image decode failed, falling back to sync draw:", err);
+            if (!isCurrent) return;
+            setImage(img);
+            setStatus("loaded");
+          });
+      } else {
+        setImage(img);
+        setStatus("loaded");
+      }
+    };
+
+    img.onerror = () => {
+      if (!isCurrent) return;
+      setImage(undefined);
+      setStatus("failed");
+    };
+
+    img.src = src;
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [src, crossOrigin]);
+
+  return [image, status] as const;
+}

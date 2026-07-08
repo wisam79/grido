@@ -238,39 +238,26 @@
 }
 
 @media print {
-  /* إخفاء واجهة التطبيق بالكامل وكل العناصر غير المخصصة للطباعة */
-  #root > div > :not(#print-container),
-  .no-print,
+  /* إخفاء شجرة التطبيق بالكامل وكل المكونات العائمة لتجنب الصفحات البيضاء */
+  #root,
   .toaster,
   [role="status"],
   [role="presentation"] {
     display: none !important;
   }
 
-  /* تهيئة الصفحة وجسم المستند للطباعة لمنع قطع الصفحات أو المشاكل الهيكلية */
-  html, body, #root, #root > div {
-    height: auto !important;
-    overflow: visible !important;
-    background: white !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* تهيئة حاوية الطباعة لتملأ الصفحة بالكامل وإلغاء إزاحتها خارج الشاشة */
+  /* تهيئة حاوية الطباعة لتكون العنصر الوحيد المعروض بملء الصفحة */
   #print-container {
     display: block !important;
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
-    height: auto !important;
-    overflow: visible !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: white !important;
-  }
-
-  #print-container, #print-container * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+    overflow: visible !important;
   }
 }
 

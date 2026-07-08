@@ -153,6 +153,10 @@ interface EditorState {
   columnsMargin: number;
   columnsGutter: number;
 
+  // إعدادات المسطرة
+  showRuler: boolean;
+  setShowRuler: (show: boolean) => void;
+
   setMode: (mode: EditorMode) => void;
   setTemplate: (template: PhotoTemplate | null) => void;
   setCollageTemplate: (template: CollageTemplate | null) => void;
@@ -298,6 +302,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   columnsColor: "rgba(239, 68, 68, 0.08)",
   columnsMargin: 20,
   columnsGutter: 12,
+
+  // قيم المسطرة الافتراضية
+  showRuler: true,
+  setShowRuler: (showRuler) => set({ showRuler }),
 
   setMode: (mode) => set({ mode, selectedId: null }),
 
@@ -714,12 +722,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   pushHistory: () => {
     const { elements, slots, history, historyIndex } = get();
     const newHistory = history.slice(0, historyIndex + 1);
+    
+    // منع تكرار نفس الحالة في السجل لتوفير الذاكرة ومنع التراجع المكرر غير المفيد
+    const lastState = newHistory[newHistory.length - 1];
+    if (lastState) {
+      const currentStr = JSON.stringify({ elements, slots });
+      const lastStr = JSON.stringify({ elements: lastState.elements, slots: lastState.slots });
+      if (currentStr === lastStr) {
+        return;
+      }
+    }
+
     newHistory.push({
-      elements: structuredClone(elements),
-      slots: structuredClone(slots),
+      elements: JSON.parse(JSON.stringify(elements)),
+      slots: JSON.parse(JSON.stringify(slots)),
     });
-    // حد 50 خطوة
-    if (newHistory.length > 50) newHistory.shift();
+    // حد 15 خطوة لتفادي تسرب الذاكرة
+    if (newHistory.length > 15) newHistory.shift();
     set({ history: newHistory, historyIndex: newHistory.length - 1 });
   },
 
@@ -728,8 +747,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (historyIndex <= 0) return;
     const prev = history[historyIndex - 1];
     set({
-      elements: structuredClone(prev.elements),
-      slots: structuredClone(prev.slots),
+      elements: JSON.parse(JSON.stringify(prev.elements)),
+      slots: JSON.parse(JSON.stringify(prev.slots)),
       historyIndex: historyIndex - 1,
       selectedId: null,
       selectedIds: [],
@@ -742,8 +761,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (historyIndex >= history.length - 1) return;
     const next = history[historyIndex + 1];
     set({
-      elements: structuredClone(next.elements),
-      slots: structuredClone(next.slots),
+      elements: JSON.parse(JSON.stringify(next.elements)),
+      slots: JSON.parse(JSON.stringify(next.slots)),
       historyIndex: historyIndex + 1,
       selectedId: null,
       selectedIds: [],
@@ -780,6 +799,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       columnsColor: "rgba(239, 68, 68, 0.08)",
       columnsMargin: 20,
       columnsGutter: 12,
+      showRuler: true,
     });
   },
 

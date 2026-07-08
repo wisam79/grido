@@ -36,6 +36,10 @@ func (s *BackupService) ImportBackup(jsonData string, mode string) error {
 		return fmt.Errorf("failed to parse backup JSON data: %w", err)
 	}
 
+	if mode != "merge" && mode != "overwrite" {
+		return fmt.Errorf("invalid backup import mode: %q (expected %q or %q)", mode, "merge", "overwrite")
+	}
+
 	overwrite := (mode == "overwrite")
 
 	if err := s.repo.ImportProjects(projects, overwrite); err != nil {

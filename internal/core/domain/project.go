@@ -11,11 +11,11 @@ type Project struct {
 	CanvasWidth         int       `json:"canvasWidth"`
 	CanvasHeight        int       `json:"canvasHeight"`
 	BackgroundColor     string    `json:"backgroundColor"`
-	Elements            string    `gorm:"type:text" json:"elements"` // JSON string representation of elements
-	Slots               string    `gorm:"type:text" json:"slots"`    // JSON string representation of slots
-	Template            string    `gorm:"type:text" json:"template"` // JSON string
-	CollageTemplate     string    `gorm:"type:text" json:"collageTemplate"`
-	PrintSettings       string    `gorm:"type:text" json:"printSettings"`
+	Elements            JSONText  `gorm:"type:text" json:"elements"` // JSON string representation of elements
+	Slots               JSONText  `gorm:"type:text" json:"slots"`    // JSON string representation of slots
+	Template            JSONText  `gorm:"type:text" json:"template"` // JSON string
+	CollageTemplate     JSONText  `gorm:"type:text" json:"collageTemplate"`
+	PrintSettings       JSONText  `gorm:"type:text" json:"printSettings"`
 	ShowGrid            bool      `json:"showGrid"`
 	GridSize            int       `json:"gridSize"`
 	GridColor           string    `json:"gridColor"`

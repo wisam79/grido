@@ -8,10 +8,10 @@ import {
   Star as KonvaStar,
   Path as KonvaPath
 } from "react-konva";
-import useImage from "use-image";
+import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { getSnapPositions } from "@/lib/snap-utils";
+import { getSnapPositions, getSnapPositionsWithTargets, SnapTarget } from "@/lib/snap-utils";
 import "@/lib/custom-filters";
 
 function getFillProps(element: CanvasElement, w: number, h: number) {
@@ -68,8 +68,12 @@ const propsAreEqual = (prev: ElementProps, next: ElementProps) => {
 };
 
 export const URLImage = React.memo(function URLImage({ element, isSelected, onSelect, onChange, displayW, displayH, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef }: ElementProps) {
-  const [image] = useImage(element.imageSrc || "");
+  const [image] = useAsyncImage(element.imageSrc || "");
   const hasAnimatedRef = React.useRef(false);
+  const snapTargetsRef = React.useRef<{
+    vTargets: SnapTarget[];
+    hTargets: SnapTarget[];
+  } | null>(null);
 
   useEffect(() => {
     const node = elementRef.current;
@@ -190,6 +194,22 @@ export const URLImage = React.memo(function URLImage({ element, isSelected, onSe
       } as any)}
       draggable={!element.locked && isSelected}
 
+      onDragStart={() => {
+        const currentElements = useEditorStore.getState().elements;
+        const vTargets = [{ value: 0.5, origin: "canvas" }];
+        const hTargets = [{ value: 0.5, origin: "canvas" }];
+        for (const el of currentElements) {
+          if (el.id === element.id) continue;
+          vTargets.push({ value: el.x, origin: "element" });
+          vTargets.push({ value: el.x + el.width / 2, origin: "element" });
+          vTargets.push({ value: el.x + el.width, origin: "element" });
+          hTargets.push({ value: el.y, origin: "element" });
+          hTargets.push({ value: el.y + el.height / 2, origin: "element" });
+          hTargets.push({ value: el.y + el.height, origin: "element" });
+        }
+        snapTargetsRef.current = { vTargets, hTargets };
+      }}
+
       dragBoundFunc={(pos) => {
         if (altPressedRef.current) return pos;
         let xAbs = pos.x;
@@ -203,8 +223,11 @@ export const URLImage = React.memo(function URLImage({ element, isSelected, onSe
           const y = yAbs / displayH;
           const thresholdX = 5 / displayW;
           const thresholdY = 5 / displayH;
-          const currentElements = useEditorStore.getState().elements;
-          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
+          const targets = snapTargetsRef.current || {
+            vTargets: [{ value: 0.5, origin: "canvas" }],
+            hTargets: [{ value: 0.5, origin: "canvas" }]
+          };
+          const snapResult = getSnapPositionsWithTargets(x, y, element.width, element.height, targets.vTargets, targets.hTargets, thresholdX, thresholdY);
           xAbs = snapResult.x * displayW;
           yAbs = snapResult.y * displayH;
         }
@@ -223,12 +246,16 @@ export const URLImage = React.memo(function URLImage({ element, isSelected, onSe
           const y = e.target.y() / displayH;
           const thresholdX = 5 / displayW;
           const thresholdY = 5 / displayH;
-          const currentElements = useEditorStore.getState().elements;
-          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
+          const targets = snapTargetsRef.current || {
+            vTargets: [{ value: 0.5, origin: "canvas" }],
+            hTargets: [{ value: 0.5, origin: "canvas" }]
+          };
+          const snapResult = getSnapPositionsWithTargets(x, y, element.width, element.height, targets.vTargets, targets.hTargets, thresholdX, thresholdY);
           setActiveGuides(snapResult.guides);
         }
       }}
       onDragEnd={(e) => {
+        snapTargetsRef.current = null;
         setActiveGuides([]);
         const rawX = e.target.x() / displayW;
         onChange({
@@ -265,6 +292,10 @@ export const URLImage = React.memo(function URLImage({ element, isSelected, onSe
 export const KonvaTextElement = React.memo(function KonvaTextElement({ element, isSelected, onSelect, onChange, displayW, displayH, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef, onDblClick }: ElementProps) {
   const editingTextId = useEditorStore((state) => state.editingTextId);
   const hasAnimatedRef = React.useRef(false);
+  const snapTargetsRef = React.useRef<{
+    vTargets: SnapTarget[];
+    hTargets: SnapTarget[];
+  } | null>(null);
 
   useEffect(() => {
     const node = elementRef.current;
@@ -331,6 +362,21 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({ element, 
       align={element.textAlign || "center"}
       lineHeight={element.lineHeight ?? 1.2}
       draggable={!element.locked && isSelected}
+      onDragStart={() => {
+        const currentElements = useEditorStore.getState().elements;
+        const vTargets = [{ value: 0.5, origin: "canvas" }];
+        const hTargets = [{ value: 0.5, origin: "canvas" }];
+        for (const el of currentElements) {
+          if (el.id === element.id) continue;
+          vTargets.push({ value: el.x, origin: "element" });
+          vTargets.push({ value: el.x + el.width / 2, origin: "element" });
+          vTargets.push({ value: el.x + el.width, origin: "element" });
+          hTargets.push({ value: el.y, origin: "element" });
+          hTargets.push({ value: el.y + el.height / 2, origin: "element" });
+          hTargets.push({ value: el.y + el.height, origin: "element" });
+        }
+        snapTargetsRef.current = { vTargets, hTargets };
+      }}
       dragBoundFunc={(pos) => {
         if (altPressedRef.current) return pos;
         let xAbs = pos.x;
@@ -344,8 +390,11 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({ element, 
           const y = yAbs / displayH;
           const thresholdX = 5 / displayW;
           const thresholdY = 5 / displayH;
-          const currentElements = useEditorStore.getState().elements;
-          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
+          const targets = snapTargetsRef.current || {
+            vTargets: [{ value: 0.5, origin: "canvas" }],
+            hTargets: [{ value: 0.5, origin: "canvas" }]
+          };
+          const snapResult = getSnapPositionsWithTargets(x, y, element.width, element.height, targets.vTargets, targets.hTargets, thresholdX, thresholdY);
           xAbs = snapResult.x * displayW;
           yAbs = snapResult.y * displayH;
         }
@@ -363,12 +412,16 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({ element, 
           const y = e.target.y() / displayH;
           const thresholdX = 5 / displayW;
           const thresholdY = 5 / displayH;
-          const currentElements = useEditorStore.getState().elements;
-          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
+          const targets = snapTargetsRef.current || {
+            vTargets: [{ value: 0.5, origin: "canvas" }],
+            hTargets: [{ value: 0.5, origin: "canvas" }]
+          };
+          const snapResult = getSnapPositionsWithTargets(x, y, element.width, element.height, targets.vTargets, targets.hTargets, thresholdX, thresholdY);
           setActiveGuides(snapResult.guides);
         }
       }}
       onDragEnd={(e) => {
+        snapTargetsRef.current = null;
         setActiveGuides([]);
         const rawX = e.target.x() / displayW;
         onChange({
@@ -420,6 +473,10 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({ element
   const h = element.height * displayH;
   const flipped = element.flipX === true;
   const hasAnimatedRef = React.useRef(false);
+  const snapTargetsRef = React.useRef<{
+    vTargets: SnapTarget[];
+    hTargets: SnapTarget[];
+  } | null>(null);
 
   useEffect(() => {
     const node = elementRef.current;
@@ -462,6 +519,21 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({ element
     stroke: element.strokeWidth && element.strokeWidth > 0 ? element.stroke || "#000000" : undefined,
     strokeWidth: element.strokeWidth || 0,
     draggable: !element.locked && isSelected,
+    onDragStart: () => {
+      const currentElements = useEditorStore.getState().elements;
+      const vTargets = [{ value: 0.5, origin: "canvas" }];
+      const hTargets = [{ value: 0.5, origin: "canvas" }];
+      for (const el of currentElements) {
+        if (el.id === element.id) continue;
+        vTargets.push({ value: el.x, origin: "element" });
+        vTargets.push({ value: el.x + el.width / 2, origin: "element" });
+        vTargets.push({ value: el.x + el.width, origin: "element" });
+        hTargets.push({ value: el.y, origin: "element" });
+        hTargets.push({ value: el.y + el.height / 2, origin: "element" });
+        hTargets.push({ value: el.y + el.height, origin: "element" });
+      }
+      snapTargetsRef.current = { vTargets, hTargets };
+    },
     dragBoundFunc: (pos: any) => {
       if (altPressedRef.current) return pos;
       let xAbs = pos.x;
@@ -475,8 +547,11 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({ element
         const y = yAbs / displayH;
         const thresholdX = 5 / displayW;
         const thresholdY = 5 / displayH;
-        const currentElements = useEditorStore.getState().elements;
-        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
+        const targets = snapTargetsRef.current || {
+          vTargets: [{ value: 0.5, origin: "canvas" }],
+          hTargets: [{ value: 0.5, origin: "canvas" }]
+        };
+        const snapResult = getSnapPositionsWithTargets(x, y, element.width, element.height, targets.vTargets, targets.hTargets, thresholdX, thresholdY);
         xAbs = snapResult.x * displayW;
         yAbs = snapResult.y * displayH;
       }
@@ -494,12 +569,16 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({ element
         const y = e.target.y() / displayH;
         const thresholdX = 5 / displayW;
         const thresholdY = 5 / displayH;
-        const currentElements = useEditorStore.getState().elements;
-        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
+        const targets = snapTargetsRef.current || {
+          vTargets: [{ value: 0.5, origin: "canvas" }],
+          hTargets: [{ value: 0.5, origin: "canvas" }]
+        };
+        const snapResult = getSnapPositionsWithTargets(x, y, element.width, element.height, targets.vTargets, targets.hTargets, thresholdX, thresholdY);
         setActiveGuides(snapResult.guides);
       }
     },
     onDragEnd: (e: any) => {
+      snapTargetsRef.current = null;
       setActiveGuides([]);
       const rawX = e.target.x() / displayW;
       onChange({

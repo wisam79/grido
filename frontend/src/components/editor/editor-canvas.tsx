@@ -4,12 +4,8 @@ import { X, RefreshCw } from "lucide-react";
 import { OpenFile, SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 import { SnapGuide } from "@/lib/snap-utils";
 import { KonvaCanvas } from "./konva/konva-canvas";
-
-
-
 import { useShallow } from "zustand/react/shallow";
-
-
+import { HorizontalRuler, VerticalRuler } from "./ruler";
 
 export const EditorCanvas = React.forwardRef<
   HTMLDivElement,
@@ -19,6 +15,7 @@ export const EditorCanvas = React.forwardRef<
   const innerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
 
   const {
     mode,
@@ -38,6 +35,9 @@ export const EditorCanvas = React.forwardRef<
     updateSlot,
     collageGap,
     collageMargin,
+    template,
+    printSettings,
+    showRuler,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
     elements: state.elements,
@@ -56,6 +56,9 @@ export const EditorCanvas = React.forwardRef<
     updateSlot: state.updateSlot,
     collageGap: state.collageGap,
     collageMargin: state.collageMargin,
+    template: state.template,
+    printSettings: state.printSettings,
+    showRuler: state.showRuler,
   })));
 
   // قياس حجم الحاوية لتحجيم الكانفس (مع throttle)
@@ -78,7 +81,6 @@ export const EditorCanvas = React.forwardRef<
     };
   }, []);
 
-
   // حساب حجم الكانفس المعروض
   const aspect = canvasWidth / canvasHeight;
   const maxW = containerSize.w - 32;
@@ -92,7 +94,30 @@ export const EditorCanvas = React.forwardRef<
   displayW = Math.max(100, displayW);
   displayH = Math.max(100, displayH);
 
+  // حساب الأبعاد الفيزيائية بالمليمتر
+  const widthMM = useMemo(() => {
+    if (template) return template.widthMM;
+    return (canvasWidth / (printSettings?.dpi || 300)) * 25.4;
+  }, [template, canvasWidth, printSettings]);
 
+  const heightMM = useMemo(() => {
+    if (template) return template.heightMM;
+    return (canvasHeight / (printSettings?.dpi || 300)) * 25.4;
+  }, [template, canvasHeight, printSettings]);
+
+  // تتبع الفأرة بالنسبة للكانفاس
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (printMode) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCursorPos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  const handleCanvasMouseLeave = () => {
+    setCursorPos(null);
+  };
 
   // النقر المزدوج لاستبدال الصورة أو تعديل النص
   const handleDoubleClick = async (el: CanvasElement) => {
@@ -186,6 +211,181 @@ export const EditorCanvas = React.forwardRef<
     [elements]
   );
 
+  const canvasArea = (
+    <div
+      ref={innerRef}
+      id="canvas-area"
+      className="relative rounded-sm overflow-hidden border border-white/5 transition-all duration-300 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.55)] hover:shadow-[0_30px_70px_-10px_rgba(0,0,0,0.7)]"
+      style={{
+        width: displayW,
+        height: displayH,
+        backgroundColor,
+        backgroundImage:
+          backgroundColor === "transparent"
+            ? "linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%)"
+            : undefined,
+        backgroundSize: backgroundColor === "transparent" ? "20px 20px" : undefined,
+        backgroundPosition: backgroundColor === "transparent" ? "0 0, 0 10px, 10px -10px, -10px 0px" : undefined,
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) selectElement(null);
+      }}
+      onMouseMove={handleCanvasMouseMove}
+      onMouseLeave={handleCanvasMouseLeave}
+    >
+      {/* Render KonvaCanvas for collage or single modes */}
+      {(mode === "collage" || (mode === "single" && elements.length > 0)) && (
+        <KonvaCanvas
+          displayW={displayW}
+          displayH={displayH}
+          sortedElements={sortedElements}
+          handleDoubleClick={handleDoubleClick}
+          setActiveGuides={setActiveGuides}
+          handleSlotClick={handleSlotClick}
+        />
+      )}
+
+      {/* Overlay buttons for Selected Slot in Collage mode */}
+      {mode === "collage" && !printMode && (() => {
+        const selectedSlot = slots.find((s) => s.id === selectedId);
+        if (!selectedSlot || !selectedSlot.imageSrc) return null;
+
+        const scale = displayW / 1200;
+        const margin = collageMargin * scale;
+        const gap = collageGap * scale;
+
+        const availW = displayW - 2 * margin;
+        const availH = displayH - 2 * margin;
+
+        const left = margin + selectedSlot.x * availW + gap / 2;
+        const top = margin + selectedSlot.y * availH + gap / 2;
+        const width = selectedSlot.w * availW - gap;
+        const height = selectedSlot.h * availH - gap;
+
+        return (
+          <div
+            className="absolute pointer-events-none z-30"
+            style={{
+              left: `${left}px`,
+              top: `${top}px`,
+              width: `${width}px`,
+              height: `${height}px`,
+            }}
+          >
+            <button
+              className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                updateSlot(selectedSlot.id, { imageSrc: undefined });
+              }}
+              title="إزالة"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <button
+              className="absolute top-1 left-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  const src = await OpenFile();
+                  if (src) {
+                    setSlotImage(selectedSlot.id, src);
+                  }
+                } catch (err) {
+                  console.error("Replace image error:", err);
+                }
+              }}
+              title="استبدال"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* وضع فارغ: رسالة ترحيب */}
+      {mode === "single" && elements.length === 0 && !printMode && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground pointer-events-none">
+          <svg className="w-16 h-16 mb-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <path d="m21 15-5-5L5 21" />
+          </svg>
+          <p className="text-sm">اختر قالباً من القائمة الجانبية أو أضف صورة للبدء</p>
+        </div>
+      )}
+
+      {/* خطوط الإرشاد والمحاذاة المغناطيسية */}
+      {!printMode && activeGuides.map((guide, idx) => (
+        <div
+          key={idx}
+          className="absolute pointer-events-none z-50"
+          style={{
+            left: guide.type === "v" ? `${guide.coord * 100}%` : 0,
+            top: guide.type === "h" ? `${guide.coord * 100}%` : 0,
+            width: guide.type === "v" ? "1.5px" : "100%",
+            height: guide.type === "h" ? "1.5px" : "100%",
+            borderStyle: "dashed",
+            borderWidth: guide.type === "v" ? "0 0 0 1.5px" : "1.5px 0 0 0",
+            borderColor: "#ec4899", // لون زهري لامع لرؤية ممتازة
+          }}
+        />
+      ))}
+
+      {/* التعديل المباشر للنصوص (In-place Text Editing) */}
+      {!printMode && editingTextId && (() => {
+        const textEl = elements.find(e => e.id === editingTextId);
+        if (!textEl || textEl.type !== "text") return null;
+
+        return (
+          <textarea
+            autoFocus
+            className="absolute z-50 bg-transparent resize-none outline-none border-2 border-primary ring-0 m-0 p-0"
+            style={{
+              left: `${textEl.x * displayW}px`,
+              top: `${textEl.y * displayH}px`,
+              width: `${textEl.width * displayW}px`,
+              height: `${textEl.height * displayH}px`,
+              transform: `rotate(${textEl.rotation || 0}deg)`,
+              transformOrigin: "top left",
+              fontSize: `${(textEl.fontSize || 20) * Math.min(displayW / canvasWidth, displayH / canvasHeight)}px`,
+              fontFamily: textEl.fontFamily || "Arial",
+              fontWeight: textEl.fontWeight || 400,
+              color: textEl.color || "#000000",
+              textAlign: textEl.textAlign || "center",
+              lineHeight: textEl.lineHeight || 1.2,
+              letterSpacing: `${textEl.letterSpacing || 0}px`,
+              padding: "2px", // للتعويض البصري البسيط عن حدود Canvas
+            }}
+            defaultValue={textEl.text}
+            onFocus={(e) => {
+              e.target.select();
+            }}
+            onBlur={(e) => {
+              updateElement(textEl.id, { text: e.target.value });
+              pushHistory();
+              setEditingTextId(null);
+            }}
+            onKeyDown={(e) => {
+              // حفظ عند ضغط Enter (بدون Shift)
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                updateElement(textEl.id, { text: e.currentTarget.value });
+                pushHistory();
+                setEditingTextId(null);
+              }
+              // الخروج بدون حفظ عند ضغط Escape
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setEditingTextId(null);
+              }
+            }}
+          />
+        );
+      })()}
+    </div>
+  );
+
   return (
     <div
       ref={(node) => {
@@ -200,176 +400,33 @@ export const EditorCanvas = React.forwardRef<
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div
-        ref={innerRef}
-        id="canvas-area"
-        className="relative rounded-sm overflow-hidden border border-white/5 transition-all duration-300 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.55)] hover:shadow-[0_30px_70px_-10px_rgba(0,0,0,0.7)]"
-        style={{
-          width: displayW,
-          height: displayH,
-          backgroundColor,
-          backgroundImage:
-            backgroundColor === "transparent"
-              ? "linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%)"
-              : undefined,
-          backgroundSize: backgroundColor === "transparent" ? "20px 20px" : undefined,
-          backgroundPosition: backgroundColor === "transparent" ? "0 0, 0 10px, 10px -10px, -10px 0px" : undefined,
-        }}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) selectElement(null);
-        }}
-      >
-        {/* Render KonvaCanvas for collage or single modes */}
-        {(mode === "collage" || (mode === "single" && elements.length > 0)) && (
-          <KonvaCanvas
-            displayW={displayW}
-            displayH={displayH}
-            sortedElements={sortedElements}
-            handleDoubleClick={handleDoubleClick}
-            setActiveGuides={setActiveGuides}
-            handleSlotClick={handleSlotClick}
-          />
-        )}
-
-        {/* Overlay buttons for Selected Slot in Collage mode */}
-        {mode === "collage" && !printMode && (() => {
-          const selectedSlot = slots.find((s) => s.id === selectedId);
-          if (!selectedSlot || !selectedSlot.imageSrc) return null;
-
-          const scale = displayW / 1200;
-          const margin = collageMargin * scale;
-          const gap = collageGap * scale;
-
-          const availW = displayW - 2 * margin;
-          const availH = displayH - 2 * margin;
-
-          const left = margin + selectedSlot.x * availW + gap / 2;
-          const top = margin + selectedSlot.y * availH + gap / 2;
-          const width = selectedSlot.w * availW - gap;
-          const height = selectedSlot.h * availH - gap;
-
-          return (
-            <div
-              className="absolute pointer-events-none z-30"
-              style={{
-                left: `${left}px`,
-                top: `${top}px`,
-                width: `${width}px`,
-                height: `${height}px`,
-              }}
-            >
-              <button
-                className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateSlot(selectedSlot.id, { imageSrc: undefined });
-                }}
-                title="إزالة"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-              <button
-                className="absolute top-1 left-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  try {
-                    const src = await OpenFile();
-                    if (src) {
-                      setSlotImage(selectedSlot.id, src);
-                    }
-                  } catch (err) {
-                    console.error("Replace image error:", err);
-                  }
-                }}
-                title="استبدال"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </button>
+      {showRuler && !printMode ? (
+        <div className="relative flex flex-col items-start select-none">
+          {/* Top Row: Unit corner + Horizontal Ruler */}
+          <div className="flex flex-row items-end">
+            <div className="w-6 h-6 bg-card border-b border-l border-border flex items-center justify-center text-[9px] text-muted-foreground/75 font-mono select-none">
+              mm
             </div>
-          );
-        })()}
-
-        {/* وضع فارغ: رسالة ترحيب */}
-        {mode === "single" && elements.length === 0 && !printMode && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground pointer-events-none">
-            <svg className="w-16 h-16 mb-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="m21 15-5-5L5 21" />
-            </svg>
-            <p className="text-sm">اختر قالباً من القائمة الجانبية أو أضف صورة للبدء</p>
-          </div>
-        )}
-
-        {/* خطوط الإرشاد والمحاذاة المغناطيسية */}
-        {!printMode && activeGuides.map((guide, idx) => (
-          <div
-            key={idx}
-            className="absolute pointer-events-none z-50"
-            style={{
-              left: guide.type === "v" ? `${guide.coord * 100}%` : 0,
-              top: guide.type === "h" ? `${guide.coord * 100}%` : 0,
-              width: guide.type === "v" ? "1.5px" : "100%",
-              height: guide.type === "h" ? "1.5px" : "100%",
-              borderStyle: "dashed",
-              borderWidth: guide.type === "v" ? "0 0 0 1.5px" : "1.5px 0 0 0",
-              borderColor: "#ec4899", // لون زهري لامع لرؤية ممتازة
-            }}
-          />
-        ))}
-
-        {/* التعديل المباشر للنصوص (In-place Text Editing) */}
-        {!printMode && editingTextId && (() => {
-          const textEl = elements.find(e => e.id === editingTextId);
-          if (!textEl || textEl.type !== "text") return null;
-
-          return (
-            <textarea
-              autoFocus
-              className="absolute z-50 bg-transparent resize-none outline-none border-2 border-primary ring-0 m-0 p-0"
-              style={{
-                left: `${textEl.x * displayW}px`,
-                top: `${textEl.y * displayH}px`,
-                width: `${textEl.width * displayW}px`,
-                height: `${textEl.height * displayH}px`,
-                transform: `rotate(${textEl.rotation || 0}deg)`,
-                transformOrigin: "top left",
-                fontSize: `${(textEl.fontSize || 20) * Math.min(displayW / canvasWidth, displayH / canvasHeight)}px`,
-                fontFamily: textEl.fontFamily || "Arial",
-                fontWeight: textEl.fontWeight || 400,
-                color: textEl.color || "#000000",
-                textAlign: textEl.textAlign || "center",
-                lineHeight: textEl.lineHeight || 1.2,
-                letterSpacing: `${textEl.letterSpacing || 0}px`,
-                padding: "2px", // للتعويض البصري البسيط عن حدود Canvas
-              }}
-              defaultValue={textEl.text}
-              onFocus={(e) => {
-                e.target.select();
-              }}
-              onBlur={(e) => {
-                updateElement(textEl.id, { text: e.target.value });
-                pushHistory();
-                setEditingTextId(null);
-              }}
-              onKeyDown={(e) => {
-                // حفظ عند ضغط Enter (بدون Shift)
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  updateElement(textEl.id, { text: e.currentTarget.value });
-                  pushHistory();
-                  setEditingTextId(null);
-                }
-                // الخروج بدون حفظ عند ضغط Escape
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  setEditingTextId(null);
-                }
-              }}
+            <HorizontalRuler 
+              width={displayW} 
+              mmWidth={widthMM} 
+              cursorX={cursorPos ? cursorPos.x : null} 
             />
-          );
-        })()}
-      </div>
+          </div>
+
+          {/* Bottom Row: Vertical Ruler + Canvas area */}
+          <div className="flex flex-row items-start">
+            <VerticalRuler 
+              height={displayH} 
+              mmHeight={heightMM} 
+              cursorY={cursorPos ? cursorPos.y : null} 
+            />
+            {canvasArea}
+          </div>
+        </div>
+      ) : (
+        canvasArea
+      )}
     </div>
   );
 });

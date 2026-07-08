@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Grid3x3, Monitor, FileText, Printer, Eye, EyeOff, Magnet, Columns, Palette, ChevronDown, Check } from "lucide-react";
+import { RefreshCw, Grid3x3, Monitor, FileText, Printer, Eye, EyeOff, Magnet, Columns, Palette, ChevronDown, Check, Square } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useShallow } from "zustand/react/shallow";
-import { Row } from "./shared-controls";
+import { Row, SliderControl } from "./shared-controls";
 
 export function GeneralSettings() {
   const {
@@ -568,23 +568,19 @@ export function GeneralSettings() {
             {/* Grid Configuration Content */}
             {activeGridTab === "grid" && (
               <div className="space-y-3 pt-3 border-t border-border/10 animate-in fade-in duration-200">
-                {/* Size and subdivisions row */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <span className="text-[10px] text-muted-foreground font-semibold">حجم المربع</span>
-                    <div className="flex items-center gap-1 bg-background border border-border/60 rounded-md px-2 h-9 shadow-xs">
-                      <input
-                        type="number"
-                        min={5}
-                        max={200}
-                        value={gridSize}
-                        onChange={(e) => setGridSize(Math.max(5, Number(e.target.value)))}
-                        className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-center text-foreground font-semibold"
-                      />
-                      <span className="text-[9px] text-muted-foreground/60 font-bold select-none shrink-0">px</span>
-                    </div>
-                  </div>
+                {/* Size slider (full width) */}
+                <SliderControl
+                  label="حجم المربع"
+                  icon={<Square className="w-3.5 h-3.5 text-primary" />}
+                  value={gridSize}
+                  min={5}
+                  max={200}
+                  step={1}
+                  unit="px"
+                  onChange={setGridSize}
+                />
 
+                <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <span className="text-[10px] text-muted-foreground font-semibold">التقسيم الرئيسي</span>
                     <Select
@@ -602,34 +598,33 @@ export function GeneralSettings() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                {/* Grid Type & Drawing Pattern */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-muted-foreground font-semibold">نمط الرسم</span>
-                  <div className="grid grid-cols-2 gap-1 bg-muted/30 p-0.5 rounded-md border border-border/10">
-                    <button
-                      onClick={() => setGridType("lines")}
-                      className={cn(
-                        "py-1.5 text-xs font-bold rounded-sm transition-all cursor-pointer",
-                        gridType === "lines" 
-                          ? "bg-background text-primary shadow-2xs" 
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      خطوط متصلة
-                    </button>
-                    <button
-                      onClick={() => setGridType("dots")}
-                      className={cn(
-                        "py-1.5 text-xs font-bold rounded-sm transition-all cursor-pointer",
-                        gridType === "dots" 
-                          ? "bg-background text-primary shadow-2xs" 
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      نقاط إرشادية
-                    </button>
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-muted-foreground font-semibold">نمط الرسم</span>
+                    <div className="grid grid-cols-2 gap-1 bg-muted/30 p-0.5 rounded-md border border-border/10 h-9 items-center">
+                      <button
+                        onClick={() => setGridType("lines")}
+                        className={cn(
+                          "py-1 text-[11px] font-bold rounded-sm transition-all cursor-pointer h-7 flex items-center justify-center",
+                          gridType === "lines" 
+                            ? "bg-background text-primary shadow-2xs" 
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        خطوط
+                      </button>
+                      <button
+                        onClick={() => setGridType("dots")}
+                        className={cn(
+                          "py-1 text-[11px] font-bold rounded-sm transition-all cursor-pointer h-7 flex items-center justify-center",
+                          gridType === "dots" 
+                            ? "bg-background text-primary shadow-2xs" 
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        نقاط
+                      </button>
+                    </div>
                   </div>
                 </div>
 

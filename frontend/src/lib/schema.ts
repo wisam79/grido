@@ -30,7 +30,7 @@ export const CanvasElementSchema = z.object({
   lineHeight: z.number().optional(),
   letterSpacing: z.number().optional(),
   
-  shape: z.enum(["rect", "ellipse", "line", "star"]).optional(),
+  shape: z.enum(["rect", "ellipse", "line", "star", "path"]).optional(),
   fill: z.string().optional(),
   stroke: z.string().optional(),
   strokeWidth: z.number().optional(),

@@ -16,40 +16,22 @@ export interface SnapResult {
 /**
  * Computes snapped coordinates (and active guides) for an element being dragged or resized.
  */
-export function getSnapPositions(
-  dragId: string,
+export interface SnapTarget {
+  value: number;
+  origin: string;
+}
+
+export function getSnapPositionsWithTargets(
   x: number,
   y: number,
   w: number,
   h: number,
-  elements: CanvasElement[],
+  vTargets: SnapTarget[],
+  hTargets: SnapTarget[],
   thresholdX: number,
   thresholdY: number,
   resizeHandle: string | null = null
 ): SnapResult {
-  // Collect vertical targets (X-axis lines to snap to)
-  const vTargets = [
-    { value: 0.5, origin: "canvas" }
-  ];
-  // Collect horizontal targets (Y-axis lines to snap to)
-  const hTargets = [
-    { value: 0.5, origin: "canvas" }
-  ];
-
-  for (const el of elements) {
-    if (el.id === dragId) continue;
-    
-    // X targets from other elements (left, center, right)
-    vTargets.push({ value: el.x, origin: "element" });
-    vTargets.push({ value: el.x + el.width / 2, origin: "element" });
-    vTargets.push({ value: el.x + el.width, origin: "element" });
-
-    // Y targets from other elements (top, center, bottom)
-    hTargets.push({ value: el.y, origin: "element" });
-    hTargets.push({ value: el.y + el.height / 2, origin: "element" });
-    hTargets.push({ value: el.y + el.height, origin: "element" });
-  }
-
   const guides: SnapGuide[] = [];
   let snappedX = x;
   let snappedY = y;
@@ -119,11 +101,11 @@ export function getSnapPositions(
     if (bestHTarget !== -1) {
       guides.push({ type: "h", coord: bestHTarget });
     }
-  } 
+  }
   // Snapping logic when RESIZING
   else {
     const handle = resizeHandle.toLowerCase();
-    
+
     // East side handles (e, ne, se) change width
     if (handle.includes("e")) {
       let minDiffX = thresholdX;
@@ -139,7 +121,7 @@ export function getSnapPositions(
         }
       }
       if (bestVTarget !== -1) guides.push({ type: "v", coord: bestVTarget });
-    } 
+    }
     // West side handles (w, nw, sw) change x and width
     else if (handle.includes("w")) {
       let minDiffX = thresholdX;
@@ -173,7 +155,7 @@ export function getSnapPositions(
         }
       }
       if (bestHTarget !== -1) guides.push({ type: "h", coord: bestHTarget });
-    } 
+    }
     // North side handles (n, nw, ne) change y and height
     else if (handle.includes("n")) {
       let minDiffY = thresholdY;
@@ -200,4 +182,31 @@ export function getSnapPositions(
     h: snappedH,
     guides
   };
+}
+
+export function getSnapPositions(
+  dragId: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  elements: CanvasElement[],
+  thresholdX: number,
+  thresholdY: number,
+  resizeHandle: string | null = null
+): SnapResult {
+  const vTargets = [{ value: 0.5, origin: "canvas" }];
+  const hTargets = [{ value: 0.5, origin: "canvas" }];
+
+  for (const el of elements) {
+    if (el.id === dragId) continue;
+    vTargets.push({ value: el.x, origin: "element" });
+    vTargets.push({ value: el.x + el.width / 2, origin: "element" });
+    vTargets.push({ value: el.x + el.width, origin: "element" });
+    hTargets.push({ value: el.y, origin: "element" });
+    hTargets.push({ value: el.y + el.height / 2, origin: "element" });
+    hTargets.push({ value: el.y + el.height, origin: "element" });
+  }
+
+  return getSnapPositionsWithTargets(x, y, w, h, vTargets, hTargets, thresholdX, thresholdY, resizeHandle);
 }

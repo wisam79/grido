@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { ImageIcon, ImagePlus, Copy, Scissors, Paintbrush, Sliders } from "lucide-react";
 import { OpenFile, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { toast } from "sonner";
-import { useEditorStore } from "@/lib/editor-store";
+import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
 import { IMAGE_FILTERS } from "@/lib/templates";
 import { CropDialog } from "../crop-dialog";
 import { SliderControl } from "./shared-controls";
@@ -16,8 +16,8 @@ export function SlotProperties({
   slot,
   onUpdate,
 }: {
-  slot: any;
-  onUpdate: (id: string, patch: any) => void;
+  slot: CanvasSlot;
+  onUpdate: (id: string, patch: Partial<CanvasSlot>) => void;
 }) {
   const { fillAllSlots, setSlotImage, lastEditedImage } = useEditorStore(useShallow((state) => ({
     fillAllSlots: state.fillAllSlots,

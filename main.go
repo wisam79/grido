@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"embed"
-	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -98,40 +97,20 @@ func main() {
 					absPath := filepath.Join(mediaDir, filename)
 
 					if _, err := os.Stat(absPath); err == nil {
-						file, err := os.Open(absPath)
-						if err != nil {
-							http.Error(w, "Unable to open image file", http.StatusInternalServerError)
-							return
-						}
-						defer file.Close()
-
-						// قراءة أول 512 بايت للتحقق من نوع MIME للملف
-						buf := make([]byte, 512)
-						n, err := file.Read(buf)
-						if err != nil && err != io.EOF {
-							http.Error(w, "Unable to read image headers", http.StatusInternalServerError)
-							return
-						}
-
-						contentType := http.DetectContentType(buf[:n])
-						if !strings.HasPrefix(contentType, "image/") {
-							http.Error(w, "Forbidden: Invalid file content type", http.StatusForbidden)
-							return
-						}
-
-						// تعيين رؤوس الأمان المناسبة
+						// تعيين رؤوس الأمان والسرعة والتخزين المؤقت الطويل لأن أسماء الملفات فريدة
 						w.Header().Set("X-Content-Type-Options", "nosniff")
+						w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+
+						var contentType string
+						ext := strings.ToLower(filepath.Ext(filename))
+						if ext == ".png" {
+							contentType = "image/png"
+						} else {
+							contentType = "image/jpeg"
+						}
 						w.Header().Set("Content-Type", contentType)
 
-						// إرجاع مؤشر القراءة للبداية
-						_, _ = file.Seek(0, 0)
-						stat, err := file.Stat()
-						if err != nil {
-							http.Error(w, "Unable to stat file", http.StatusInternalServerError)
-							return
-						}
-
-						http.ServeContent(w, r, filename, stat.ModTime(), file)
+						http.ServeFile(w, r, absPath)
 						return
 					} else {
 						http.Error(w, "Image not found on disk", http.StatusNotFound)
@@ -183,6 +162,9 @@ func main() {
 				Max:    isMax,
 			}
 			_ = saveWindowState(state)
+
+			// إيقاف تنظيف الميديا بشكل آمن
+			repository.StopCleanupUnusedMedia()
 
 			// إغلاق آمن لقاعدة البيانات
 			_ = repository.CloseDB()
