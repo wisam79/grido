@@ -80,9 +80,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           const targetWidth = 400;
           const pRatio = Math.min(1, targetWidth / stageRef.width());
           
-          // إخفاء مقابض التحكم (Transformer) مؤقتاً قبل التقاط المعاينة والطباعة
+          // إخفاء الشبكة والأعمدة ومقابض التحكم مؤقتاً قبل التقاط المعاينة والطباعة لكي لا تظهر في المخرج المطبوع
           const transformers = stageRef.find('Transformer');
+          const gridLayers = stageRef.find('.grid-layer');
+          const columnsLayers = stageRef.find('.columns-layer');
+
           transformers.forEach((tr: any) => tr.hide());
+          gridLayers.forEach((gl: any) => gl.hide());
+          columnsLayers.forEach((cl: any) => cl.hide());
           stageRef.batchDraw();
 
           const previewUrl = stageRef.toDataURL({
@@ -96,8 +101,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             mimeType: "image/png"
           });
 
-          // استعادة مقابض التحكم بعد الالتقاط
+          // استعادة الشبكة والأعمدة ومقابض التحكم بعد الالتقاط لتستمر بالظهور للمستخدم في المحرر
           transformers.forEach((tr: any) => tr.show());
+          gridLayers.forEach((gl: any) => gl.show());
+          columnsLayers.forEach((cl: any) => cl.show());
           stageRef.batchDraw();
 
           setPreviewImageSrc(previewUrl);
@@ -109,7 +116,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       return () => clearTimeout(timer);
     } else if (!open) {
       setPreviewImageSrc("");
-      useEditorStore.getState().setPrintImageSrc(null);
+      // مسح صورة الطباعة بعد تأخير بسيط لضمان أن نافذة الطباعة التقطت محتوى الصفحة بالكامل
+      const timer = setTimeout(() => {
+        useEditorStore.getState().setPrintImageSrc(null);
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [open, stageRef, elements, slots, backgroundColor, mode]);
 
@@ -165,11 +176,15 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     try {
       // استدعاء نافذة طباعة النظام مباشرة
       window.print();
-      onOpenChange(false);
-      toast.success("تم فتح نافذة الطباعة الخاصة بالنظام");
+      
+      // تأخير إغلاق نافذة الإعدادات لضمان بقاء الصور في الـ DOM أثناء بدء معالجة الطباعة في WebView2/Wails
+      setTimeout(() => {
+        onOpenChange(false);
+        setIsExporting(false);
+        toast.success("تم فتح نافذة الطباعة الخاصة بالنظام");
+      }, 500);
     } catch (err: any) {
       toast.error("حدث خطأ أثناء محاولة تشغيل الطباعة: " + String(err));
-    } finally {
       setIsExporting(false);
     }
   };

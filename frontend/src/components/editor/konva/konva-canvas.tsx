@@ -6,6 +6,7 @@ import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { URLImage, KonvaTextElement, KonvaShapeElement } from "./konva-elements";
 import { SnapGuide } from "@/lib/snap-utils";
 import { useShallow } from "zustand/react/shallow";
+import "@/lib/custom-filters";
 
 interface KonvaCanvasProps {
   displayW: number;
@@ -16,7 +17,7 @@ interface KonvaCanvasProps {
   handleSlotClick?: (slotId: string) => void;
 }
 
-function KonvaCollageImage({
+const KonvaCollageImage = React.memo(function KonvaCollageImage({
   imageSrc,
   width,
   height,
@@ -79,31 +80,39 @@ function KonvaCollageImage({
   let useSepia = false;
   let useGrayscale = false;
 
-  if (filter === "grayscale") {
-    useGrayscale = true;
-  } else if (filter === "sepia") {
-    useSepia = true;
-  } else if (filter === "vivid") {
-    totalContrast = (totalContrast / 100) * 110;
-    totalSaturation = (totalSaturation / 100) * 140;
-  } else if (filter === "cool") {
-    totalHue = 180;
-    totalSaturation = (totalSaturation / 100) * 120;
-  } else if (filter === "warm") {
-    useSepia = true;
-    totalHue = -10;
-    totalSaturation = (totalSaturation / 100) * 130;
-  } else if (filter === "soft") {
-    totalBrightness = (totalBrightness / 100) * 110;
-    totalContrast = (totalContrast / 100) * 90;
-    totalSaturation = (totalSaturation / 100) * 90;
-  } else if (filter === "professional") {
-    totalContrast = (totalContrast / 100) * 115;
+  if (filter === "enhance") {
+    totalContrast = (totalContrast / 100) * 108;
+    totalSaturation = (totalSaturation / 100) * 112;
+    totalBrightness = (totalBrightness / 100) * 102;
+  } else if (filter === "skinGlow") {
+    totalHue = 10;
     totalSaturation = (totalSaturation / 100) * 110;
+    totalContrast = (totalContrast / 100) * 94;
+    totalBrightness = (totalBrightness / 100) * 106;
+  } else if (filter === "clarity") {
+    totalContrast = (totalContrast / 100) * 122;
+    totalSaturation = (totalSaturation / 100) * 120;
+    totalBrightness = (totalBrightness / 100) * 98;
+  } else if (filter === "lowlight") {
+    totalBrightness = (totalBrightness / 100) * 116;
+    totalContrast = (totalContrast / 100) * 90;
+    totalSaturation = (totalSaturation / 100) * 105;
+  } else if (filter === "cinematic") {
+    useSepia = true;
+    totalHue = 5;
+    totalSaturation = (totalSaturation / 100) * 115;
+    totalContrast = (totalContrast / 100) * 110;
+    totalBrightness = (totalBrightness / 100) * 102;
+  } else if (filter === "monoPro") {
+    useGrayscale = true;
+    totalContrast = (totalContrast / 100) * 125;
     totalBrightness = (totalBrightness / 100) * 102;
   }
 
   const filters: any[] = [];
+  if (filter === "skinGlow" && (Konva.Filters as any).SkinGlow) {
+    filters.push((Konva.Filters as any).SkinGlow);
+  }
   if (useGrayscale) filters.push(Konva.Filters.Grayscale);
   if (useSepia) filters.push(Konva.Filters.Sepia);
   if (totalBrightness !== 100) filters.push(Konva.Filters.Brighten);
@@ -131,7 +140,15 @@ function KonvaCollageImage({
       ref={imageRef}
     />
   );
-}
+}, (prev, next) => {
+  return prev.imageSrc === next.imageSrc &&
+         prev.width === next.width &&
+         prev.height === next.height &&
+         prev.filter === next.filter &&
+         prev.brightness === next.brightness &&
+         prev.contrast === next.contrast &&
+         prev.saturation === next.saturation;
+});
 
 export function KonvaCanvas({
   displayW,
@@ -145,7 +162,9 @@ export function KonvaCanvas({
     mode,
     slots,
     selectedId,
+    selectedIds,
     selectElement,
+    toggleElementSelection,
     updateElement,
     pushHistory,
     showGrid,
@@ -172,7 +191,9 @@ export function KonvaCanvas({
     mode: state.mode,
     slots: state.slots,
     selectedId: state.selectedId,
+    selectedIds: state.selectedIds,
     selectElement: state.selectElement,
+    toggleElementSelection: state.toggleElementSelection,
     updateElement: state.updateElement,
     pushHistory: state.pushHistory,
     showGrid: state.showGrid,
@@ -221,18 +242,18 @@ export function KonvaCanvas({
 
   useEffect(() => {
     if (trRef.current) {
-      if (selectedId && mode === "single") {
-        const selectedNode = elementsRefs.current[selectedId];
-        if (selectedNode) {
-          trRef.current.nodes([selectedNode]);
-          trRef.current.getLayer().batchDraw();
-          return;
-        }
+      if (selectedIds.length > 0 && mode === "single") {
+        const nodes = selectedIds
+          .map((id) => elementsRefs.current[id])
+          .filter(Boolean);
+        trRef.current.nodes(nodes);
+        trRef.current.getLayer().batchDraw();
+      } else {
+        trRef.current.nodes([]);
+        trRef.current.getLayer().batchDraw();
       }
-      trRef.current.nodes([]);
-      trRef.current.getLayer().batchDraw();
     }
-  }, [selectedId, sortedElements, mode]);
+  }, [selectedIds, sortedElements, mode]);
 
   const handleStageMouseDown = (e: any) => {
     const isBackgroundOrEmpty = e.target === e.target.getStage() || e.target.hasName("bg-rect");
@@ -265,7 +286,7 @@ export function KonvaCanvas({
 
       {/* Grid Layer */}
       {showGrid && gridSize > 0 && mode === "single" && (
-        <Layer listening={false}>
+        <Layer listening={false} name="grid-layer">
           {(() => {
             const lines = [];
             const numH = Math.ceil(displayH / gridSize);
@@ -320,7 +341,7 @@ export function KonvaCanvas({
 
       {/* Columns Layout Layer */}
       {showColumns && mode === "single" && (
-        <Layer listening={false}>
+        <Layer listening={false} name="columns-layer">
           {(() => {
             const cols = [];
             const margin = columnsMargin;
@@ -491,8 +512,14 @@ export function KonvaCanvas({
             const elementProps = {
               key: el.id,
               element: el,
-              isSelected: selectedId === el.id,
-              onSelect: () => selectElement(el.id),
+              isSelected: selectedIds.includes(el.id),
+              onSelect: (e?: any) => {
+                if (e?.evt?.shiftKey) {
+                  toggleElementSelection(el.id);
+                } else {
+                  selectElement(el.id);
+                }
+              },
               onChange: (patch: Partial<CanvasElement>) => handleElementChange(el.id, patch),
               displayW,
               displayH,

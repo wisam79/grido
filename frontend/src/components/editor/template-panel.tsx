@@ -29,14 +29,6 @@ export function TemplatePanel() {
 
   return (
     <div className="flex flex-col h-full bg-background border-l border-border/40 select-none">
-      {/* Panel Header */}
-      <div className="p-4 border-b border-border/50 bg-card/45 backdrop-blur-md shrink-0">
-        <h2 className="text-xs font-bold flex items-center gap-2 text-foreground/95">
-          <LayoutGrid className="w-4 h-4 text-primary animate-pulse" />
-          <span>تخطيط الكولاج واللون</span>
-        </h2>
-      </div>
-
       {/* Scrollable Sidebar Content */}
       <ScrollArea className="flex-1">
         <div className="p-4 pb-8 space-y-4">
@@ -83,9 +75,9 @@ export function TemplatePanel() {
                   </DialogDescription>
                 </DialogHeader>
 
-                <ScrollArea className="flex-1 py-4 pr-1">
+                <ScrollArea className="flex-1 min-h-0 py-4 pr-1">
                   <div className="grid grid-cols-3 gap-3.5">
-                    {COLLAGE_TEMPLATES.slice(0, 5).map((tpl) => (
+                    {COLLAGE_TEMPLATES.map((tpl) => (
                       <CollageTemplateCard 
                         key={tpl.id} 
                         tpl={tpl} 
@@ -284,52 +276,92 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   return (
     <div
       className={cn(
-        "group flex flex-col items-stretch gap-2.5 p-3 rounded-2xl border transition-all duration-300 text-right relative overflow-hidden bg-card",
+        "group p-3 rounded-xl border transition-all duration-300 relative overflow-hidden bg-card flex flex-col gap-3",
         isCurrentActive
           ? "border-2 border-primary shadow-[0_8px_20px_rgba(59,130,246,0.12)]"
           : "border-border shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:border-primary/45 hover:shadow-[0_12px_24px_rgba(0,0,0,0.06)]"
       )}
     >
-      {/* Visual representation of custom grid */}
-      <div className="w-28 h-28 mx-auto bg-muted/40 dark:bg-muted/15 rounded-xl p-1.5 border border-border/40 relative flex flex-col justify-between overflow-hidden shrink-0 shadow-inner">
-        <div className="w-full h-full relative overflow-hidden rounded-lg bg-background dark:bg-background shadow-inner border border-border/20">
-          {previewCells.map((c, i) => (
-            <div
-              key={i}
-              className={cn(
-                "absolute border rounded-md flex items-center justify-center overflow-hidden transition-all duration-300",
-                isCurrentActive
-                  ? "bg-primary/10 border-primary/30"
-                  : "bg-muted/60 dark:bg-muted/20 border-border group-hover:bg-accent/40"
-              )}
-              style={{
-                left: `${c.x * 100}%`,
-                top: `${c.y * 100}%`,
-                width: `${c.w * 100}%`,
-                height: `${c.h * 100}%`,
-              }}
-            >
-              <ImageIcon className={cn(
-                "w-2.5 h-2.5 shrink-0",
-                isCurrentActive ? "text-primary/60" : "text-muted-foreground/35"
-              )} />
-            </div>
-          ))}
-        </div>
+      <div className={cn(
+        "text-xs font-bold leading-tight transition-colors border-b border-border/10 pb-2",
+        isCurrentActive ? "text-primary" : "text-foreground group-hover:text-primary"
+      )}>
+        تخصيص حر (أعمدة × صفوف)
       </div>
 
-      {/* Inputs for custom grid */}
-      <div className="flex flex-col gap-2.5 mt-0.5 px-0.5">
-        <div className={cn(
-          "text-[10px] font-bold leading-tight transition-colors",
-          isCurrentActive ? "text-primary" : "text-foreground group-hover:text-primary"
-        )}>
-          تخصيص حر (أعمدة × صفوف)
+      <div className="flex flex-col gap-3">
+        {/* Row 1: Steppers side-by-side */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Rows Stepper */}
+          <div className="flex items-center justify-between bg-muted/40 dark:bg-muted/20 border border-border/60 rounded-lg px-2.5 py-1.5">
+            <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground" title="الصفوف">
+              <Rows className="w-3.5 h-3.5" />
+              <span>الصفوف</span>
+            </span>
+            <div className="flex items-center gap-2" dir="ltr">
+              <button
+                type="button"
+                onClick={() => {
+                  const r = Math.max(1, rows - 1);
+                  setRows(r);
+                  applyCustomCollage(r, cols);
+                }}
+                className="w-6 h-6 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground flex items-center justify-center border border-border/30 cursor-pointer shadow-2xs hover:text-foreground active:scale-90 transition-all"
+              >
+                <Minus className="w-2.5 h-2.5" />
+              </button>
+              <span className="font-mono text-sm font-bold text-foreground w-4 text-center">{rows}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const r = Math.min(6, rows + 1);
+                  setRows(r);
+                  applyCustomCollage(r, cols);
+                }}
+                className="w-6 h-6 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground flex items-center justify-center border border-border/30 cursor-pointer shadow-2xs hover:text-foreground active:scale-90 transition-all"
+              >
+                <Plus className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Columns Stepper */}
+          <div className="flex items-center justify-between bg-muted/40 dark:bg-muted/20 border border-border/60 rounded-lg px-2.5 py-1.5">
+            <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground" title="الأعمدة">
+              <Columns className="w-3.5 h-3.5" />
+              <span>الأعمدة</span>
+            </span>
+            <div className="flex items-center gap-2" dir="ltr">
+              <button
+                type="button"
+                onClick={() => {
+                  const c = Math.max(1, cols - 1);
+                  setCols(c);
+                  applyCustomCollage(rows, c);
+                }}
+                className="w-6 h-6 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground flex items-center justify-center border border-border/30 cursor-pointer shadow-2xs hover:text-foreground active:scale-90 transition-all"
+              >
+                <Minus className="w-2.5 h-2.5" />
+              </button>
+              <span className="font-mono text-sm font-bold text-foreground w-4 text-center">{cols}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const c = Math.min(6, cols + 1);
+                  setCols(c);
+                  applyCustomCollage(rows, c);
+                }}
+                className="w-6 h-6 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground flex items-center justify-center border border-border/30 cursor-pointer shadow-2xs hover:text-foreground active:scale-90 transition-all"
+              >
+                <Plus className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Photo Type Selector */}
+        {/* Row 2: Photo Type Selector */}
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-muted-foreground">نسبة وحجم الصورة:</span>
+          <span className="text-[10px] font-bold text-muted-foreground">نسبة وحجم الصورة:</span>
           <div className="grid grid-cols-4 gap-1 bg-muted/40 dark:bg-muted/25 p-0.5 rounded-lg border border-border/40">
             <button
               type="button"
@@ -339,7 +371,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               }}
               title="ملء الورقة (تمدد)"
               className={cn(
-                "h-8 px-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                "h-8 px-1 rounded-md text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
                 photoType === "stretch"
                   ? "bg-background text-primary shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/30"
@@ -355,7 +387,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               }}
               title="جواز سفر (3.5×4.5)"
               className={cn(
-                "h-8 px-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                "h-8 px-1 rounded-md text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
                 photoType === "passport"
                   ? "bg-background text-primary shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/30"
@@ -371,7 +403,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               }}
               title="هوية (4×6)"
               className={cn(
-                "h-8 px-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                "h-8 px-1 rounded-md text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
                 photoType === "id"
                   ? "bg-background text-primary shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/30"
@@ -387,7 +419,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               }}
               title="تأشيرة (5×5)"
               className={cn(
-                "h-8 px-1 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                "h-8 px-1 rounded-md text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
                 photoType === "visa"
                   ? "bg-background text-primary shadow-xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/30"
@@ -397,80 +429,12 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             </button>
           </div>
         </div>
-        
-        {/* Row & Column Stepper Controls */}
-        <div className="flex flex-col gap-2.5 mt-0.5">
-          {/* Rows Stepper */}
-          <div className="flex items-center justify-between bg-muted/40 dark:bg-muted/20 border border-border/60 rounded-lg px-3 py-2">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground" title="الصفوف">
-              <Rows className="w-4 h-4" />
-              <span>الصفوف</span>
-            </span>
-            <div className="flex items-center gap-2.5" dir="ltr">
-              <button
-                type="button"
-                onClick={() => {
-                  const r = Math.max(1, rows - 1);
-                  setRows(r);
-                  applyCustomCollage(r, cols);
-                }}
-                className="w-8 h-8 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="font-mono text-sm font-bold w-6 text-center text-foreground">{rows}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  const r = Math.min(6, rows + 1);
-                  setRows(r);
-                  applyCustomCollage(r, cols);
-                }}
-                className="w-8 h-8 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
 
-          {/* Columns Stepper */}
-          <div className="flex items-center justify-between bg-muted/40 dark:bg-muted/20 border border-border/60 rounded-lg px-3 py-2">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground" title="الأعمدة">
-              <Columns className="w-4 h-4" />
-              <span>الأعمدة</span>
-            </span>
-            <div className="flex items-center gap-2.5" dir="ltr">
-              <button
-                type="button"
-                onClick={() => {
-                  const c = Math.max(1, cols - 1);
-                  setCols(c);
-                  applyCustomCollage(rows, c);
-                }}
-                className="w-8 h-8 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="font-mono text-sm font-bold w-6 text-center text-foreground">{cols}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  const c = Math.min(6, cols + 1);
-                  setCols(c);
-                  applyCustomCollage(rows, c);
-                }}
-                className="w-8 h-8 rounded-md bg-background dark:bg-card hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-90 transition-all border border-border/30 shadow-xs cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
+        {/* Row 3: Apply Button */}
         <button
           onClick={() => applyCustomCollage(rows, cols)}
           className={cn(
-            "w-full py-3 text-xs font-bold rounded-xl mt-1.5 transition-all border active:scale-[0.96] cursor-pointer",
+            "w-full py-2.5 text-xs font-bold rounded-lg mt-0.5 transition-all border active:scale-[0.96] cursor-pointer flex items-center justify-center",
             isCurrentActive
               ? "bg-primary text-primary-foreground border-primary hover:bg-primary/95 shadow-sm shadow-primary/25"
               : "bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-700 border border-border/80"

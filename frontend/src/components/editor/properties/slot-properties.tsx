@@ -146,33 +146,33 @@ export function SlotProperties({
             />
           )}
 
-          <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2">
-            <Label className="text-xs mb-2 block font-bold text-foreground/80">المرشحات الجاهزة</Label>
-            <div className="grid grid-cols-2 gap-1.5" dir="rtl">
+          <div className="bg-muted/30 dark:bg-muted/10 p-2.5 rounded-xl border border-border/30 space-y-2">
+            <Label className="text-xs mb-1.5 block font-bold text-foreground/80">المرشحات الجاهزة</Label>
+            <div className="grid grid-cols-4 gap-1.5" dir="rtl">
               {IMAGE_FILTERS.map((f) => (
                 <button
                   key={f.id}
                   onClick={() => onUpdate(slot.id, { filter: f.id })}
                   className={cn(
-                    "flex items-center gap-2 px-2.5 py-2 text-[10.5px] rounded-lg border transition-all text-right font-medium cursor-pointer active:scale-95",
+                    "flex flex-col items-center gap-1 p-1 rounded-lg border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer",
                     slot.filter === f.id
-                      ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
-                      : "border-border/60 bg-card hover:bg-accent hover:text-foreground text-muted-foreground"
+                      ? "border-primary bg-primary/10 text-primary shadow-xs shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
+                      : "border-border/60 bg-card hover:bg-accent text-muted-foreground"
                   )}
                 >
-                  {/* دائرة ملونة ممثلة للتأثير */}
-                  <div className={cn(
-                    "w-3.5 h-3.5 rounded-full shadow-2xs shrink-0 border border-black/10 dark:border-white/10",
-                    f.id === "original" ? "bg-radial from-neutral-200 to-neutral-400 dark:from-neutral-700 dark:to-neutral-900" :
-                    f.id === "grayscale" ? "bg-gradient-to-br from-neutral-300 via-neutral-500 to-neutral-800" :
-                    f.id === "vibrant" ? "bg-gradient-to-br from-amber-400 via-red-500 to-pink-600" :
-                    f.id === "sepia" ? "bg-gradient-to-br from-amber-800 via-yellow-700 to-amber-950" :
-                    f.id === "warm" ? "bg-gradient-to-br from-amber-300 via-orange-400 to-red-500" :
-                    f.id === "cold" ? "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600" :
-                    f.id === "professional" ? "bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-700" :
-                    f.id === "soft" ? "bg-gradient-to-br from-pink-300 via-purple-300 to-indigo-200" : "bg-neutral-400"
-                  )} />
-                  <span className="truncate">{f.name}</span>
+                  <div className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-black/10 dark:border-white/10 bg-slate-100 relative">
+                    {slot.imageSrc ? (
+                      <img
+                        src={slot.imageSrc}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        style={{ filter: f.css }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500" style={{ filter: f.css }} />
+                    )}
+                  </div>
+                  <span className="text-[9px] tracking-tight leading-tight truncate max-w-full text-center mt-0.5">{f.name}</span>
                 </button>
               ))}
             </div>

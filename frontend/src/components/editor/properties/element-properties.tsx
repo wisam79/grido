@@ -17,6 +17,105 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 
+
+const GradientPicker = ({
+  fillType,
+  color,
+  colorStops,
+  onChangeType,
+  onChangeSolidColor,
+  onChangeColorStops,
+}: {
+  fillType: "solid" | "linear" | "radial";
+  color: string;
+  colorStops: Array<number | string>;
+  onChangeType: (type: "solid" | "linear" | "radial") => void;
+  onChangeSolidColor: (color: string) => void;
+  onChangeColorStops: (stops: Array<number | string>) => void;
+}) => {
+  const stop1 = (colorStops[1] as string) || "#3b82f6";
+  const stop2 = (colorStops[3] as string) || "#8b5cf6";
+
+  const handleStop1Change = (newColor: string) => {
+    onChangeColorStops([0, newColor, 1, stop2]);
+  };
+
+  const handleStop2Change = (newColor: string) => {
+    onChangeColorStops([0, stop1, 1, newColor]);
+  };
+
+  const presets = [
+    { name: "شروق 🌅", stops: [0, "#f59e0b", 1, "#ef4444"] },
+    { name: "سماء 🌌", stops: [0, "#3b82f6", 1, "#8b5cf6"] },
+    { name: "زمرد 🌲", stops: [0, "#10b981", 1, "#059669"] },
+    { name: "بركان 🌋", stops: [0, "#f43f5e", 1, "#fb7185"] },
+    { name: "غروب 🌇", stops: [0, "#ea580c", 1, "#e11d48"] },
+    { name: "محيط 🌊", stops: [0, "#06b6d4", 1, "#3b82f6"] }
+  ];
+
+  return (
+    <div className="space-y-2 border border-border/40 p-2.5 rounded-xl bg-muted/20">
+      <div className="flex bg-muted/40 p-0.5 rounded-lg border border-border/10">
+        {(["solid", "linear", "radial"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => onChangeType(t)}
+            className={cn(
+              "flex-1 py-1 rounded-md transition-all cursor-pointer flex items-center justify-center text-[10.5px] font-bold",
+              fillType === t 
+                ? "bg-background text-primary shadow-xs border border-border/10" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {t === "solid" ? "مصمت" : t === "linear" ? "خطي ⇄" : "دائري ⊙"}
+          </button>
+        ))}
+      </div>
+
+      {fillType === "solid" ? (
+        <div className="flex items-center justify-between gap-2.5">
+          <span className="text-[10px] text-muted-foreground font-semibold">اللون:</span>
+          <PopoverColorPicker color={color} onChange={onChangeSolidColor} className="w-28 h-7" />
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <span className="text-[9px] text-muted-foreground font-semibold">اللون الأول:</span>
+              <PopoverColorPicker color={stop1} onChange={handleStop1Change} className="w-full h-7" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[9px] text-muted-foreground font-semibold">اللون الثاني:</span>
+              <PopoverColorPicker color={stop2} onChange={handleStop2Change} className="w-full h-7" />
+            </div>
+          </div>
+
+          <div className="space-y-1 pt-1.5 border-t border-border/10">
+            <span className="text-[9px] text-muted-foreground font-semibold block mb-1">تدرجات جاهزة:</span>
+            <div className="grid grid-cols-3 gap-1">
+              {presets.map((p) => (
+                <button
+                  key={p.name}
+                  type="button"
+                  onClick={() => onChangeColorStops(p.stops)}
+                  className="py-1 px-1.5 text-[9.5px] rounded-md border border-border/40 hover:border-primary/30 bg-card transition-all cursor-pointer text-center font-bold flex items-center justify-center gap-1"
+                >
+                  <div 
+                    className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/10" 
+                    style={{ background: `linear-gradient(135deg, ${p.stops[1]}, ${p.stops[3]})` }}
+                  />
+                  <span className="truncate">{p.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 let globalBgWorker: Worker | null = null;
 let isWorkerBusy = false;
 let isModelCached = false;
@@ -284,37 +383,116 @@ export function ElementProperties({
                 />
               )}
 
-              <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2.5">
-                <Label className="text-[11px] font-bold text-foreground/80 block">المرشحات الجاهزة</Label>
-                <div className="grid grid-cols-2 gap-1.5" dir="rtl">
-                  {IMAGE_FILTERS.map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => onUpdate(element.id, { filter: f.id })}
-                      className={cn(
-                        "flex items-center gap-2 px-2.5 py-2 text-[10.5px] rounded-lg border transition-all text-right font-medium cursor-pointer active:scale-95",
-                        element.filter === f.id
-                          ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
-                          : "border-border/60 bg-card hover:bg-accent hover:text-foreground text-muted-foreground"
-                      )}
+              <Tabs defaultValue="filters" className="w-full">
+                <TabsList className="grid grid-cols-2 bg-muted/40 p-0.5 rounded-lg border border-border/10 w-full mb-3">
+                  <TabsTrigger 
+                    value="filters" 
+                    className="py-1.5 rounded-md text-[11px] font-bold cursor-pointer transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1"
+                  >
+                    <Paintbrush className="w-3.5 h-3.5" />
+                    <span>المرشحات الجاهزة</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="adjust" 
+                    className="py-1.5 rounded-md text-[11px] font-bold cursor-pointer transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>تعديل الألوان</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="filters" className="mt-0 animate-in fade-in duration-200">
+                  <div className="bg-muted/30 dark:bg-muted/10 p-2.5 rounded-xl border border-border/30 space-y-2">
+                    <div className="grid grid-cols-4 gap-1.5" dir="rtl">
+                      {IMAGE_FILTERS.map((f) => (
+                        <button
+                          key={f.id}
+                          onClick={() => onUpdate(element.id, { filter: f.id })}
+                          className={cn(
+                            "flex flex-col items-center gap-1 p-1 rounded-lg border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer",
+                            element.filter === f.id
+                              ? "border-primary bg-primary/10 text-primary shadow-xs shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
+                              : "border-border/60 bg-card hover:bg-accent text-muted-foreground"
+                          )}
+                        >
+                          <div className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-black/10 dark:border-white/10 bg-slate-100 relative">
+                            {element.imageSrc ? (
+                              <img
+                                src={element.imageSrc}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                style={{ filter: f.css }}
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500" style={{ filter: f.css }} />
+                            )}
+                          </div>
+                          <span className="text-[9px] tracking-tight leading-tight truncate max-w-full text-center mt-0.5">{f.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="adjust" className="mt-0 animate-in fade-in duration-200">
+                  <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3">
+                    <SliderControl
+                      label="السطوع"
+                      value={element.brightness ?? 100}
+                      min={50}
+                      max={150}
+                      step={1}
+                      unit="%"
+                      onChange={(v) => onUpdate(element.id, { brightness: v })}
+                    />
+                    <SliderControl
+                      label="التباين"
+                      value={element.contrast ?? 100}
+                      min={50}
+                      max={150}
+                      step={1}
+                      unit="%"
+                      onChange={(v) => onUpdate(element.id, { contrast: v })}
+                    />
+                    <SliderControl
+                      label="التشبع"
+                      value={element.saturation ?? 100}
+                      min={0}
+                      max={200}
+                      step={1}
+                      unit="%"
+                      onChange={(v) => onUpdate(element.id, { saturation: v })}
+                    />
+                    <SliderControl
+                      label="التغبيش"
+                      value={element.blur ?? 0}
+                      min={0}
+                      max={30}
+                      step={1}
+                      unit="px"
+                      onChange={(v) => onUpdate(element.id, { blur: v })}
+                    />
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-2 text-xs font-semibold gap-1.5 flex items-center justify-center cursor-pointer"
+                      onClick={() =>
+                        onUpdate(element.id, {
+                          filter: "none",
+                          brightness: 100,
+                          contrast: 100,
+                          saturation: 100,
+                          blur: 0,
+                        })
+                      }
                     >
-                      {/* دائرة ملونة ممثلة للتأثير */}
-                      <div className={cn(
-                        "w-3.5 h-3.5 rounded-full shadow-2xs shrink-0 border border-black/10 dark:border-white/10",
-                        f.id === "original" ? "bg-radial from-neutral-200 to-neutral-400 dark:from-neutral-700 dark:to-neutral-900" :
-                        f.id === "grayscale" ? "bg-gradient-to-br from-neutral-300 via-neutral-500 to-neutral-800" :
-                        f.id === "vibrant" ? "bg-gradient-to-br from-amber-400 via-red-500 to-pink-600" :
-                        f.id === "sepia" ? "bg-gradient-to-br from-amber-800 via-yellow-700 to-amber-950" :
-                        f.id === "warm" ? "bg-gradient-to-br from-amber-300 via-orange-400 to-red-500" :
-                        f.id === "cold" ? "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600" :
-                        f.id === "professional" ? "bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-700" :
-                        f.id === "soft" ? "bg-gradient-to-br from-pink-300 via-purple-300 to-indigo-200" : "bg-neutral-400"
-                      )} />
-                      <span className="truncate">{f.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      <RefreshCw className="w-3 h-3" />
+                      <span>إعادة تعيين الألوان</span>
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           )}
 
@@ -422,15 +600,30 @@ export function ElementProperties({
                 <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-2">اللون والخلفية</Label>
                 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
-                      <Type className="w-3.5 h-3.5 text-primary/70" />
-                      <span>لون النص</span>
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
+                      <Type className="w-3 h-3 text-primary/70" />
+                      <span>لون وتعبئة النص</span>
                     </span>
-                    <PopoverColorPicker
+                    <GradientPicker
+                      fillType={element.fillType || "solid"}
                       color={element.color || "#000000"}
-                      onChange={(val) => onUpdate(element.id, { color: val })}
-                      className="w-32 h-8"
+                      colorStops={element.fillLinearGradientColorStops || element.fillRadialGradientColorStops || [0, "#3b82f6", 1, "#8b5cf6"]}
+                      onChangeType={(type) => {
+                        onUpdate(element.id, { fillType: type });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                      onChangeSolidColor={(col) => {
+                        onUpdate(element.id, { color: col });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                      onChangeColorStops={(stops) => {
+                        onUpdate(element.id, {
+                          fillLinearGradientColorStops: stops,
+                          fillRadialGradientColorStops: stops,
+                        });
+                        useEditorStore.getState().pushHistory();
+                      }}
                     />
                   </div>
 
@@ -471,15 +664,30 @@ export function ElementProperties({
                 <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-2">المظهر واللون</Label>
                 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
-                      <PaintBucket className="w-3.5 h-3.5 text-primary/70" />
-                      <span>لون التعبئة</span>
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
+                      <PaintBucket className="w-3 h-3 text-primary/70" />
+                      <span>تعبئة الشكل</span>
                     </span>
-                    <PopoverColorPicker
+                    <GradientPicker
+                      fillType={element.fillType || "solid"}
                       color={element.fill || "#6366f1"}
-                      onChange={(val) => onUpdate(element.id, { fill: val })}
-                      className="w-32 h-8"
+                      colorStops={element.fillLinearGradientColorStops || element.fillRadialGradientColorStops || [0, "#3b82f6", 1, "#8b5cf6"]}
+                      onChangeType={(type) => {
+                        onUpdate(element.id, { fillType: type });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                      onChangeSolidColor={(col) => {
+                        onUpdate(element.id, { fill: col });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                      onChangeColorStops={(stops) => {
+                        onUpdate(element.id, {
+                          fillLinearGradientColorStops: stops,
+                          fillRadialGradientColorStops: stops,
+                        });
+                        useEditorStore.getState().pushHistory();
+                      }}
                     />
                   </div>
 

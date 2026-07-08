@@ -359,6 +359,53 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     icon: Grid3x3,
   },
   {
+    id: "collage-3v",
+    name: "ثلاث صور عمودية",
+    slots: 3,
+    cells: [
+      { x: 0, y: 0, w: 1 / 3, h: 1 },
+      { x: 1 / 3, y: 0, w: 1 / 3, h: 1 },
+      { x: 2 / 3, y: 0, w: 1 / 3, h: 1 },
+    ],
+    icon: Columns4,
+  },
+  {
+    id: "collage-3h",
+    name: "ثلاث صور أفقية",
+    slots: 3,
+    cells: [
+      { x: 0, y: 0, w: 1, h: 1 / 3 },
+      { x: 0, y: 1 / 3, w: 1, h: 1 / 3 },
+      { x: 0, y: 2 / 3, w: 1, h: 1 / 3 },
+    ],
+    icon: LayoutPanelTop,
+  },
+  {
+    id: "collage-5",
+    name: "خمس صور (2×3 مختلط)",
+    slots: 5,
+    cells: [
+      { x: 0, y: 0, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { x: 0, y: 0.5, w: 1 / 3, h: 0.5 },
+      { x: 1 / 3, y: 0.5, w: 1 / 3, h: 0.5 },
+      { x: 2 / 3, y: 0.5, w: 1 / 3, h: 0.5 },
+    ],
+    icon: LayoutGrid,
+  },
+  {
+    id: "collage-12",
+    name: "١٢ صورة (4×3)",
+    slots: 12,
+    cells: Array.from({ length: 12 }, (_, i) => ({
+      x: (i % 4) / 4,
+      y: Math.floor(i / 4) / 3,
+      w: 1 / 4,
+      h: 1 / 3,
+    })),
+    icon: Grid3x3,
+  },
+  {
     id: "collage-passport-sheet",
     name: "ورقة صور هوية (8 صور)",
     slots: 8,
@@ -400,13 +447,12 @@ export interface ImageFilter {
 
 export const IMAGE_FILTERS: ImageFilter[] = [
   { id: "none", name: "الأصلي", css: "", preview: "" },
-  { id: "grayscale", name: "أبيض وأسود", css: "grayscale(100%)", preview: "grayscale(100%)" },
-  { id: "sepia", name: "بني قديم", css: "sepia(80%)", preview: "sepia(80%)" },
-  { id: "vivid", name: "نابض", css: "saturate(1.4) contrast(1.1)", preview: "saturate(1.4) contrast(1.1)" },
-  { id: "cool", name: "بارد", css: "hue-rotate(180deg) saturate(1.2)", preview: "hue-rotate(180deg) saturate(1.2)" },
-  { id: "warm", name: "دافئ", css: "sepia(30%) saturate(1.3) hue-rotate(-10deg)", preview: "sepia(30%) saturate(1.3) hue-rotate(-10deg)" },
-  { id: "soft", name: "ناعم", css: "brightness(1.1) contrast(0.9) saturate(0.9)", preview: "brightness(1.1) contrast(0.9) saturate(0.9)" },
-  { id: "professional", name: "احترافي", css: "contrast(1.15) saturate(1.1) brightness(1.02)", preview: "contrast(1.15) saturate(1.1) brightness(1.02)" },
+  { id: "enhance", name: "تحسين تلقائي", css: "contrast(1.08) saturate(1.12) brightness(1.02)", preview: "contrast(1.08) saturate(1.12) brightness(1.02)" },
+  { id: "skinGlow", name: "نضارة البشرة", css: "brightness(1.06) contrast(0.94) saturate(1.08) sepia(10%)", preview: "brightness(1.06) contrast(0.94) saturate(1.08) sepia(10%)" },
+  { id: "clarity", name: "تفاصيل فائقة", css: "contrast(1.22) saturate(1.2) brightness(0.98)", preview: "contrast(1.22) saturate(1.2) brightness(0.98)" },
+  { id: "lowlight", name: "معالجة الظلال", css: "brightness(1.16) contrast(0.9) saturate(1.05)", preview: "brightness(1.16) contrast(0.9) saturate(1.05)" },
+  { id: "cinematic", name: "ألوان سينمائية", css: "contrast(1.1) saturate(1.15) sepia(5%) brightness(1.02)", preview: "contrast(1.1) saturate(1.15) sepia(5%) brightness(1.02)" },
+  { id: "monoPro", name: "أحادي فاخر", css: "grayscale(100%) contrast(1.25) brightness(1.02)", preview: "grayscale(100%) contrast(1.25) brightness(1.02)" },
 ];
 
 // ألوان خلفية جاهزة

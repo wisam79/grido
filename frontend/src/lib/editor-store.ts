@@ -49,11 +49,22 @@ export interface CanvasElement {
   lineHeight?: number;
   letterSpacing?: number;
   // خصائص الشكل
-  shape?: "rect" | "ellipse" | "line" | "star";
+  shape?: "rect" | "ellipse" | "line" | "star" | "path";
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
   radius?: number;
+  
+  // خصائص التعبئة التدرجية (Gradients)
+  fillType?: "solid" | "linear" | "radial";
+  fillLinearGradientStartPoint?: { x: number; y: number };
+  fillLinearGradientEndPoint?: { x: number; y: number };
+  fillLinearGradientColorStops?: Array<number | string>;
+  fillRadialGradientStartPoint?: { x: number; y: number };
+  fillRadialGradientStartRadius?: number;
+  fillRadialGradientEndPoint?: { x: number; y: number };
+  fillRadialGradientEndRadius?: number;
+  fillRadialGradientColorStops?: Array<number | string>;
   
   // خصائص متقدمة (Advanced)
   shadowColor?: string;
@@ -64,6 +75,8 @@ export interface CanvasElement {
   cornerRadius?: number;
   globalCompositeOperation?: string;
   flipX?: boolean;
+  svgPath?: string; // كود مسار الـ SVG للمجسمات المخصصة
+  groupId?: string; // معرف المجموعة لتجميع العناصر
 }
 
 export interface CanvasSlot {
@@ -103,6 +116,7 @@ interface EditorState {
   elements: CanvasElement[];
   slots: CanvasSlot[];
   selectedId: string | null;
+  selectedIds: string[];
   editingTextId: string | null;
   canvasWidth: number; // بكسل (العرض)
   canvasHeight: number; // بكسل
@@ -173,13 +187,16 @@ interface EditorState {
 
   addImageElement: (src: string, imageAspectRatio?: number) => void;
   addTextElement: (text?: string) => void;
-  addShapeElement: (shape: CanvasElement["shape"]) => void;
+  addShapeElement: (shape: CanvasElement["shape"], svgPath?: string) => void;
   updateElement: (id: string, patch: Partial<CanvasElement>) => void;
   removeElement: (id: string) => void;
   duplicateElement: (id: string) => void;
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   selectElement: (id: string | null) => void;
+  toggleElementSelection: (id: string) => void;
+  groupSelectedElements: () => void;
+  ungroupSelectedElements: () => void;
   setEditingTextId: (id: string | null) => void;
 
   setSlotImage: (slotId: string, src: string) => void;
@@ -240,6 +257,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   elements: [],
   slots: initialSlots,
   selectedId: null,
+  selectedIds: [],
   editingTextId: null,
   canvasWidth: 1200,
   canvasHeight: 1200,
@@ -387,7 +405,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setLastEditedImage: (src) => set({ lastEditedImage: src }),
   setLastEditedImageAspect: (aspect) => set({ lastEditedImageAspect: aspect }),
 
-  setCanvasSize: (w, h) => set({ canvasWidth: w, canvasHeight: h }),
+  setCanvasSize: (w, h) => {
+    const oldW = get().canvasWidth;
+    const oldH = get().canvasHeight;
+    if (oldW === w && oldH === h) return;
+
+    // ضبط موقع وأبعاد العناصر المرفقة لكي تحتفظ بنفس مقاساتها الفيزيائية بالبكسل ونسبة أبعادها دون تمدد
+    const scaleX = oldW / w;
+    const scaleY = oldH / h;
+
+    const adjustedElements = get().elements.map((el) => ({
+      ...el,
+      x: el.x * scaleX,
+      y: el.y * scaleY,
+      width: el.width * scaleX,
+      height: el.height * scaleY,
+    }));
+
+    set({
+      canvasWidth: w,
+      canvasHeight: h,
+      elements: adjustedElements,
+    });
+  },
   setBackgroundColor: (c) => set({ backgroundColor: c }),
 
   setCollageGap: (gap) => set({ collageGap: gap }),
@@ -426,7 +466,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       saturation: 100,
       blur: 0,
     };
-    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, lastEditedImage: src, lastEditedImageAspect: imageAspectRatio }));
+    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id], lastEditedImage: src, lastEditedImageAspect: imageAspectRatio }));
     get().pushHistory();
   },
 
@@ -452,11 +492,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       lineHeight: 1.2,
       letterSpacing: 0,
     };
-    set((s) => ({ elements: [...s.elements, newEl], selectedId: id }));
+    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
     get().pushHistory();
   },
 
-  addShapeElement: (shape) => {
+  addShapeElement: (shape, svgPath) => {
     const id = uid();
     const state = get();
     
@@ -474,12 +514,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       opacity: 1,
       zIndex: (state.elements.length + 1) * 10,
       shape,
-      fill: "#6366f1",
+      fill: "#3b82f6",
       stroke: "#000000",
       strokeWidth: 0,
       radius: 8,
+      svgPath,
     };
-    set((s) => ({ elements: [...s.elements, newEl], selectedId: id }));
+    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
     get().pushHistory();
   },
 
@@ -516,7 +557,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       y: Math.min(el.y + 0.05, 0.9),
       zIndex: (get().elements.length + 1) * 10,
     };
-    set((s) => ({ elements: [...s.elements, copy], selectedId: newId }));
+    set((s) => ({ elements: [...s.elements, copy], selectedId: newId, selectedIds: [newId] }));
     get().pushHistory();
   },
 
@@ -532,7 +573,90 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     get().pushHistory();
   },
 
-  selectElement: (id) => set({ selectedId: id }),
+  selectElement: (id) => {
+    if (!id) {
+      set({ selectedId: null, selectedIds: [] });
+      return;
+    }
+    const el = get().elements.find((e) => e.id === id);
+    if (el && el.groupId) {
+      // اختيار كافة العناصر في هذه المجموعة
+      const groupElIds = get().elements
+        .filter((e) => e.groupId === el.groupId)
+        .map((e) => e.id);
+      set({ selectedId: id, selectedIds: groupElIds });
+    } else {
+      set({ selectedId: id, selectedIds: [id] });
+    }
+  },
+
+  toggleElementSelection: (id) => {
+    set((s) => {
+      const el = s.elements.find((e) => e.id === id);
+      if (!el) return {};
+      
+      const isSelected = s.selectedIds.includes(id);
+      let nextSelected: string[];
+      
+      if (el.groupId) {
+        // إذا كان العنصر ينتمي لمجموعة، قم بتبديل اختيار كل عناصر المجموعة معاً
+        const groupElIds = s.elements
+          .filter((e) => e.groupId === el.groupId)
+          .map((e) => e.id);
+        
+        if (isSelected) {
+          nextSelected = s.selectedIds.filter((x) => !groupElIds.includes(x));
+        } else {
+          nextSelected = [...s.selectedIds, ...groupElIds];
+        }
+      } else {
+        if (isSelected) {
+          nextSelected = s.selectedIds.filter((x) => x !== id);
+        } else {
+          nextSelected = [...s.selectedIds, id];
+        }
+      }
+      
+      return {
+        selectedIds: nextSelected,
+        selectedId: nextSelected.length > 0 ? nextSelected[nextSelected.length - 1] : null,
+      };
+    });
+  },
+
+  groupSelectedElements: () => {
+    const { selectedIds } = get();
+    if (selectedIds.length < 2) return;
+    
+    const newGroupId = `group-${Date.now()}`;
+    
+    set((s) => ({
+      elements: s.elements.map((el) =>
+        selectedIds.includes(el.id) ? { ...el, groupId: newGroupId } : el
+      ),
+    }));
+    get().pushHistory();
+  },
+
+  ungroupSelectedElements: () => {
+    const { selectedIds, elements } = get();
+    if (selectedIds.length === 0) return;
+    
+    const groupIdsToUngroup = elements
+      .filter((el) => selectedIds.includes(el.id) && el.groupId)
+      .map((el) => el.groupId as string);
+    
+    if (groupIdsToUngroup.length === 0) return;
+    
+    set((s) => ({
+      elements: s.elements.map((el) =>
+        el.groupId && groupIdsToUngroup.includes(el.groupId)
+          ? { ...el, groupId: undefined }
+          : el
+      ),
+    }));
+    get().pushHistory();
+  },
   
   setEditingTextId: (id) => set({ editingTextId: id }),
 
@@ -608,6 +732,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       slots: structuredClone(prev.slots),
       historyIndex: historyIndex - 1,
       selectedId: null,
+      selectedIds: [],
       editingTextId: null,
     });
   },
@@ -621,6 +746,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       slots: structuredClone(next.slots),
       historyIndex: historyIndex + 1,
       selectedId: null,
+      selectedIds: [],
       editingTextId: null,
     });
   },
@@ -634,6 +760,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       elements: [],
       slots: initialSlots,
       selectedId: null,
+      selectedIds: [],
       editingTextId: null,
       canvasWidth: 1200,
       canvasHeight: 1200,
@@ -677,6 +804,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       collageTemplate: restoredCollageTemplate,
       printSettings: project.printSettings ? { ...defaultPrint, ...project.printSettings } : defaultPrint,
       selectedId: null,
+      selectedIds: [],
       editingTextId: null,
       history: [{ elements: project.elements || [], slots: project.slots || initialSlots }],
       historyIndex: 0,

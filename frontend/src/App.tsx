@@ -1,5 +1,6 @@
 
 import { useState, lazy, Suspense } from "react";
+import { motion } from "framer-motion";
 import { Toolbar } from "@/components/editor/toolbar";
 import { TemplatePanel } from "@/components/editor/template-panel";
 import { PropertiesPanel } from "@/components/editor/properties-panel";
@@ -21,11 +22,14 @@ import {
   Square,
   Minimize2,
   X,
+  LayoutGrid,
+  Images,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useAutoSave } from "@/hooks/use-autosave";
+import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 
 export default function App() {
@@ -46,6 +50,9 @@ export default function App() {
   useKeyboardShortcuts();
   useAutoSave();
 
+  const mode = useEditorStore((state) => state.mode);
+  const setMode = useEditorStore((state) => state.setMode);
+
   const isModalOpen = printOpen || exportOpen || mobileTemplatesOpen || mobilePropsOpen;
 
   return (
@@ -65,13 +72,62 @@ export default function App() {
         }`}
         onDoubleClick={handleMaximize}
       >
-        <div className="flex items-center justify-between px-4 py-1.5">
+        <div className="flex items-center justify-between px-4 py-1.5 relative">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary/80 shrink-0" />
             <h1 className="text-xs font-bold text-foreground/80">
               Grido Studio | استوديو الهوية
             </h1>
           </div>
+
+          {/* وضع العمل */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-900/60 p-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-800/50 shadow-inner z-10 backdrop-blur-xs title-bar-controls">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMode("collage")}
+              aria-label="وضع الكولاج"
+              className={cn(
+                "h-7 px-3.5 rounded-full cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[10px] z-10 relative transition-colors duration-300",
+                mode === "collage"
+                  ? "text-primary dark:text-blue-400 font-bold"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
+              )}
+            >
+              {mode === "collage" && (
+                <motion.div
+                  layoutId="active-mode-pill"
+                  className="absolute inset-0 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/40 dark:border-zinc-700/40 rounded-full -z-10"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="leading-none">كولاج</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMode("single")}
+              aria-label="وضع التعديل الحر"
+              className={cn(
+                "h-7 px-3.5 rounded-full cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[10px] z-10 relative transition-colors duration-300",
+                mode === "single"
+                  ? "text-primary dark:text-blue-400 font-bold"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
+              )}
+            >
+              {mode === "single" && (
+                <motion.div
+                  layoutId="active-mode-pill"
+                  className="absolute inset-0 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/40 dark:border-zinc-700/40 rounded-full -z-10"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+              <Images className="w-3.5 h-3.5" />
+              <span className="leading-none">تعديل حر</span>
+            </Button>
+          </div>
+
           <div className="flex items-center gap-2 title-bar-controls">
             <Button
               variant="ghost"
@@ -146,12 +202,12 @@ export default function App() {
       {/* المحتوى الرئيسي */}
       <main className="flex-1 flex overflow-hidden">
         {/* اللوحة اليسرى - القوالب (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex w-[28%] min-w-[320px] max-w-[420px] border-l bg-card flex-col no-print">
+        <aside className="hidden lg:flex h-full w-[28%] min-w-[320px] max-w-[420px] border-l bg-card flex-col no-print animate-panel-right">
           <TemplatePanel />
         </aside>
 
         {/* الكانفس - الوسط */}
-        <section className="flex-1 flex flex-col min-w-0 bg-muted/20">
+        <section className="flex-1 flex flex-col min-w-0 bg-muted/20 animate-fade-in">
           <div className="flex-1 relative">
             <EditorCanvas />
           </div>
@@ -175,7 +231,7 @@ export default function App() {
         </section>
 
         {/* اللوحة اليمنى - الخصائص (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex w-[28%] min-w-[320px] max-w-[420px] border-r bg-card flex-col no-print">
+        <aside className="hidden lg:flex h-full w-[28%] min-w-[320px] max-w-[420px] border-r bg-card flex-col no-print animate-panel-left">
           <PropertiesPanel />
         </aside>
       </main>

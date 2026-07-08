@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Grid3x3, Monitor, FileText, Printer, Eye, EyeOff, Magnet, Columns, Palette } from "lucide-react";
+import { RefreshCw, Grid3x3, Monitor, FileText, Printer, Eye, EyeOff, Magnet, Columns, Palette, ChevronDown, Check } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 import { useShallow } from "zustand/react/shallow";
 import { Row } from "./shared-controls";
@@ -86,6 +92,8 @@ export function GeneralSettings() {
   })));
 
   const [unit, setUnit] = useState<"px" | "mm">("px");
+  const [dimensionsExpanded, setDimensionsExpanded] = useState(true);
+  const [gridExpanded, setGridExpanded] = useState(false);
   const [activeGridTab, setActiveGridTab] = useState<"grid" | "columns">("grid");
   const [widthVal, setWidthVal] = useState(canvasWidth.toString());
   const [heightVal, setHeightVal] = useState(canvasHeight.toString());
@@ -197,36 +205,56 @@ export function GeneralSettings() {
   return (
     <div className="space-y-4">
       {/* أبعاد مساحة العمل */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-bold text-foreground/90">أبعاد مساحة العمل</Label>
-          
-          {/* وحدة القياس */}
-          <div className="flex rounded-lg bg-muted/60 p-0.5 border border-border/30">
-            <button
-              onClick={() => setUnit("px")}
-              className={cn(
-                "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
-                unit === "px"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              بكسل
-            </button>
-            <button
-              onClick={() => setUnit("mm")}
-              className={cn(
-                "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
-                unit === "mm"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              ملم
-            </button>
+      <div className="space-y-3 border border-border/40 rounded-xl bg-card/30 p-3">
+        <button
+          type="button"
+          onClick={() => setDimensionsExpanded(!dimensionsExpanded)}
+          className="flex items-center justify-between w-full text-right cursor-pointer select-none"
+        >
+          <div className="flex items-center gap-1.5">
+            <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !dimensionsExpanded && "-rotate-90")} />
+            <Label className="text-sm font-bold text-foreground/90 cursor-pointer">أبعاد مساحة العمل</Label>
           </div>
-        </div>
+          {!dimensionsExpanded && (
+            <span className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded-md font-bold" dir="ltr">
+              {canvasWidth}×{canvasHeight}px
+            </span>
+          )}
+        </button>
+
+        {dimensionsExpanded && (
+          <div className="space-y-3 pt-2 border-t border-border/10 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground font-semibold">وحدة القياس</span>
+              
+              {/* وحدة القياس */}
+              <div className="flex rounded-lg bg-muted/60 p-0.5 border border-border/30">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setUnit("px"); }}
+                  className={cn(
+                    "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
+                    unit === "px"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  بكسل
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setUnit("mm"); }}
+                  className={cn(
+                    "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
+                    unit === "mm"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  ملم
+                </button>
+              </div>
+            </div>
 
         {/* الحجم القياسي (Visual Grid Cards) */}
         <div className="space-y-1.5">
@@ -237,12 +265,17 @@ export function GeneralSettings() {
               type="button"
               onClick={() => handlePresetChange("a4")}
               className={cn(
-                "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
                 activePresetId === "a4"
-                  ? "border-2 border-primary bg-primary/5 text-primary shadow-xs font-bold"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border hover:bg-muted/20 text-foreground"
               )}
             >
+              {activePresetId === "a4" && (
+                <span className="absolute top-1 left-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs animate-in zoom-in-50 duration-200">
+                  <Check className="w-2 h-2 stroke-[3.5]" />
+                </span>
+              )}
               <span className="text-[11.5px] font-bold">A4</span>
               <span className="text-[9px] text-muted-foreground/80 font-medium">٢١٠×٢٩٧ مم</span>
             </button>
@@ -252,12 +285,17 @@ export function GeneralSettings() {
               type="button"
               onClick={() => handlePresetChange("4x6")}
               className={cn(
-                "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
                 activePresetId === "4x6"
-                  ? "border-2 border-primary bg-primary/5 text-primary shadow-xs font-bold"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border hover:bg-muted/20 text-foreground"
               )}
             >
+              {activePresetId === "4x6" && (
+                <span className="absolute top-1 left-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs animate-in zoom-in-50 duration-200">
+                  <Check className="w-2 h-2 stroke-[3.5]" />
+                </span>
+              )}
               <span className="text-[11.5px] font-bold">4×6 بوصة</span>
               <span className="text-[9px] text-muted-foreground/80 font-medium">١٠×١٥ سم</span>
             </button>
@@ -267,12 +305,17 @@ export function GeneralSettings() {
               type="button"
               onClick={() => handlePresetChange("a5")}
               className={cn(
-                "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
                 activePresetId === "a5"
-                  ? "border-2 border-primary bg-primary/5 text-primary shadow-xs font-bold"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border hover:bg-muted/20 text-foreground"
               )}
             >
+              {activePresetId === "a5" && (
+                <span className="absolute top-1 left-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs animate-in zoom-in-50 duration-200">
+                  <Check className="w-2 h-2 stroke-[3.5]" />
+                </span>
+              )}
               <span className="text-[11.5px] font-bold">A5</span>
               <span className="text-[9px] text-muted-foreground/80 font-medium">١٤٨×٢١٠ مم</span>
             </button>
@@ -282,12 +325,17 @@ export function GeneralSettings() {
               type="button"
               onClick={() => handlePresetChange("a3")}
               className={cn(
-                "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
                 activePresetId === "a3"
-                  ? "border-2 border-primary bg-primary/5 text-primary shadow-xs font-bold"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border hover:bg-muted/20 text-foreground"
               )}
             >
+              {activePresetId === "a3" && (
+                <span className="absolute top-1 left-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs animate-in zoom-in-50 duration-200">
+                  <Check className="w-2 h-2 stroke-[3.5]" />
+                </span>
+              )}
               <span className="text-[11.5px] font-bold">A3</span>
               <span className="text-[9px] text-muted-foreground/80 font-medium">٢٩٧×٤٢٠ مم</span>
             </button>
@@ -297,36 +345,38 @@ export function GeneralSettings() {
               type="button"
               onClick={() => handlePresetChange("5x7")}
               className={cn(
-                "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97]",
                 activePresetId === "5x7"
-                  ? "border-2 border-primary bg-primary/5 text-primary shadow-xs font-bold"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border hover:bg-muted/20 text-foreground"
               )}
             >
+              {activePresetId === "5x7" && (
+                <span className="absolute top-1 left-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs animate-in zoom-in-50 duration-200">
+                  <Check className="w-2 h-2 stroke-[3.5]" />
+                </span>
+              )}
               <span className="text-[11.5px] font-bold">5×7 بوصة</span>
               <span className="text-[9px] text-muted-foreground/80 font-medium">١٢×١٧ سم</span>
             </button>
 
-            {/* Dropdown for other sizes (styled as grid button card) */}
-            <Select
-              value={activePresetId}
-              onValueChange={(val) => {
-                if (val !== "custom") {
-                  handlePresetChange(val);
-                } else {
-                  if (template) setTemplate(null);
-                }
-              }}
-            >
-              <SelectTrigger
-                className={cn(
-                  "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card hover:bg-muted/20 hover:border-primary/45 shadow-none focus:ring-0 focus:ring-offset-0 [&>span]:w-full [&>span]:flex [&>span]:flex-col [&>span]:items-center [&>span]:justify-center [&>svg]:hidden select-none active:scale-[0.97]",
-                  ["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId)
-                    ? "border-border text-foreground"
-                    : "border-2 border-primary bg-primary/5 text-primary shadow-xs font-bold"
-                )}
-              >
-                <SelectValue placeholder="أخرى...">
+            {/* Dropdown for other sizes (styled as grid button card using DropdownMenu for perfect symmetry) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-14 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                    ["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId)
+                      ? "border-border text-foreground"
+                      : "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
+                  )}
+                >
+                  {!["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId) && (
+                    <span className="absolute top-1 left-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs animate-in zoom-in-50 duration-200">
+                      <Check className="w-2 h-2 stroke-[3.5]" />
+                    </span>
+                  )}
                   {(() => {
                     const isCommon = ["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId);
                     if (isCommon) {
@@ -353,22 +403,33 @@ export function GeneralSettings() {
                       </>
                     );
                   })()}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="custom">📐 مقاس مخصص (Custom Size)</SelectItem>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (template) setTemplate(null);
+                  }}
+                  className="text-xs text-right justify-end font-bold cursor-pointer"
+                >
+                  📐 مقاس مخصص (Custom Size)
+                </DropdownMenuItem>
                 {PAPER_SIZES.map((p) => {
                   const nameParts = p.name.split(" (");
                   const mainName = nameParts[0].replace(" بوصة", "″");
                   const label = `${mainName} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
                   return (
-                    <SelectItem key={p.id} value={p.id}>
+                    <DropdownMenuItem
+                      key={p.id}
+                      onClick={() => handlePresetChange(p.id)}
+                      className="text-xs text-right justify-end cursor-pointer"
+                    >
                       {label}
-                    </SelectItem>
+                    </DropdownMenuItem>
                   );
                 })}
-              </SelectContent>
-            </Select>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -445,100 +506,67 @@ export function GeneralSettings() {
           <Row label="الأبعاد الفعلية" value={`${Math.round((canvasWidth / dpiVal) * 25.4)} × ${Math.round((canvasHeight / dpiVal) * 25.4)} mm`} />
           <Row label="دقة الطباعة" value={`${dpiVal} DPI`} />
         </div>
+          </div>
+        )}
+      </div>
 
         {/* قسم إعدادات شبكة ومخطط العمل (Figma-style Layout Grid Options) */}
         {mode === "single" && (
-          <div className="space-y-3 bg-muted/20 dark:bg-muted/5 p-3 rounded-lg border border-border/10">
-            {/* Title & Visibility Control Toggles */}
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5 select-none">
-                <Grid3x3 className="w-4 h-4 text-primary" /> شبكة ومخطط العمل
-              </Label>
-            </div>
-            
-            <div className="flex items-center justify-between gap-2.5 pt-1.5">
-              {/* Tab Switchers (Figma layout styling) - takes full width */}
-              <div className="flex flex-1 bg-muted/40 p-0.5 rounded-lg border border-border/10">
-                <button
-                  onClick={() => setActiveGridTab("grid")}
-                  className={cn(
-                    "flex-1 py-1.5 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-[11px] font-bold",
-                    activeGridTab === "grid" 
-                      ? "bg-background text-primary shadow-xs border border-border/10" 
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Grid3x3 className="w-3.5 h-3.5" />
-                  <span>الشبكة</span>
-                </button>
-                <button
-                  onClick={() => setActiveGridTab("columns")}
-                  className={cn(
-                    "flex-1 py-1.5 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-[11px] font-bold",
-                    activeGridTab === "columns" 
-                      ? "bg-background text-primary shadow-xs border border-border/10" 
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Columns className="w-3.5 h-3.5" />
-                  <span>الأعمدة</span>
-                </button>
+          <div className="space-y-3 bg-card/30 p-3 rounded-xl border border-border/40">
+            {/* Clickable Header */}
+            <button
+              type="button"
+              onClick={() => setGridExpanded(!gridExpanded)}
+              className="flex items-center justify-between w-full text-right cursor-pointer select-none"
+            >
+              <div className="flex items-center gap-1.5">
+                <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !gridExpanded && "-rotate-90")} />
+                <Label className="text-sm font-bold text-foreground/90 cursor-pointer flex items-center gap-1.5">
+                  <Grid3x3 className="w-4 h-4 text-primary shrink-0" />
+                  <span>شبكة ومخطط العمل</span>
+                </Label>
               </div>
+              {!gridExpanded && (
+                <span className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded-md font-bold">
+                  {showGrid || showColumns ? "نشط" : "مخفي"}
+                </span>
+              )}
+            </button>
 
-              {/* Visibility buttons */}
-              <div className="flex items-center gap-1">
-                {activeGridTab === "grid" ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setShowGrid(!showGrid)}
-                      className={cn(
-                        "h-8 w-8 rounded-lg transition-colors cursor-pointer bg-background border-border/60",
-                        showGrid 
-                          ? "bg-primary/10 text-primary border-primary/30" 
-                          : "text-muted-foreground hover:bg-muted"
-                      )}
-                      title={showGrid ? "إخفاء الشبكة" : "إظهار الشبكة"}
-                    >
-                      {showGrid ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setSnapToGrid(!snapToGrid)}
-                      className={cn(
-                        "h-8 w-8 rounded-lg transition-colors cursor-pointer bg-background border-border/60",
-                        snapToGrid 
-                          ? "bg-primary/10 text-primary border-primary/30" 
-                          : "text-muted-foreground hover:bg-muted"
-                      )}
-                      title="محاذاة مغناطيسية للشبكة"
-                    >
-                      <Magnet className="w-4 h-4" />
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setShowColumns(!showColumns)}
-                    className={cn(
-                      "h-8 w-8 rounded-lg transition-colors cursor-pointer bg-background border-border/60",
-                      showColumns 
-                        ? "bg-primary/10 text-primary border-primary/30" 
-                        : "text-muted-foreground hover:bg-muted"
-                    )}
-                    title={showColumns ? "إخفاء الأعمدة" : "إظهار الأعمدة"}
-                  >
-                    {showColumns ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  </Button>
+            {gridExpanded && (
+              <div className="space-y-3 pt-2 border-t border-border/10 animate-in fade-in duration-200">
+            {/* Tab Switchers (Figma layout styling) - takes full width */}
+            <div className="flex bg-muted/40 p-0.5 rounded-lg border border-border/10 w-full">
+              <button
+                type="button"
+                onClick={() => setActiveGridTab("grid")}
+                className={cn(
+                  "flex-1 py-1.5 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-[11px] font-bold",
+                  activeGridTab === "grid" 
+                    ? "bg-background text-primary shadow-xs border border-border/10" 
+                    : "text-muted-foreground hover:text-foreground"
                 )}
-              </div>
+              >
+                <Grid3x3 className="w-3.5 h-3.5" />
+                <span>الشبكة</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveGridTab("columns")}
+                className={cn(
+                  "flex-1 py-1.5 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-[11px] font-bold",
+                  activeGridTab === "columns" 
+                    ? "bg-background text-primary shadow-xs border border-border/10" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Columns className="w-3.5 h-3.5" />
+                <span>الأعمدة</span>
+              </button>
             </div>
 
             {/* Grid Configuration Content */}
-            {activeGridTab === "grid" && showGrid && (
+            {activeGridTab === "grid" && (
               <div className="space-y-3 pt-3 border-t border-border/10 animate-in fade-in duration-200">
                 {/* Size and subdivisions row */}
                 <div className="grid grid-cols-2 gap-2">
@@ -653,7 +681,7 @@ export function GeneralSettings() {
             )}
 
             {/* Layout Columns Configuration Content */}
-            {activeGridTab === "columns" && showColumns && (
+            {activeGridTab === "columns" && (
               <div className="space-y-3 pt-3 border-t border-border/10 animate-in fade-in duration-200">
                 {/* Column settings parameters */}
                 <div className="grid grid-cols-3 gap-2">
@@ -733,6 +761,7 @@ export function GeneralSettings() {
           </div>
         )}
       </div>
-    </div>
+    )}
+  </div>
   );
 }

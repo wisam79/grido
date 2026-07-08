@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
 import {
-  Layers, Eye, EyeOff, Lock, Unlock, Type, Square, Image as ImageIcon, Trash2, GripVertical
+  Layers, Eye, EyeOff, Lock, Unlock, Type, Square, Image as ImageIcon, Trash2, GripVertical, ChevronDown
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent
@@ -99,6 +100,8 @@ export function LayersList() {
     pushHistory: state.pushHistory,
   })));
 
+  const [expanded, setExpanded] = useState(true);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
@@ -169,30 +172,43 @@ export function LayersList() {
   };
 
   return (
-    <div className="bg-muted/20 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2 select-none">
-      <div className="text-[11px] font-bold text-foreground/80 flex items-center justify-between pb-1.5 border-b border-border/20">
-        <span className="flex items-center gap-1.5">
-          <Layers className="w-3.5 h-3.5 text-primary" /> الطبقات ({elements.length})
-        </span>
-      </div>
+    <div className="bg-card/30 p-3 rounded-xl border border-border/40 space-y-2 select-none">
+      {/* Clickable Header */}
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between w-full text-right cursor-pointer select-none"
+      >
+        <div className="flex items-center gap-1.5">
+          <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !expanded && "-rotate-90")} />
+          <span className="text-sm font-bold text-foreground/90 cursor-pointer flex items-center gap-1.5">
+            <Layers className="w-4 h-4 text-primary shrink-0" />
+            الطبقات ({elements.length})
+          </span>
+        </div>
+      </button>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={sorted.map(el => el.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-1 max-h-[220px] overflow-y-auto pr-0.5">
-            {sorted.map((el) => (
-              <SortableLayerItem
-                key={el.id}
-                el={el}
-                isSelected={selectedId === el.id}
-                toggleVisibility={toggleVisibility}
-                toggleLock={toggleLock}
-                deleteLayer={deleteLayer}
-                selectElement={selectElement}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      {expanded && (
+        <div className="space-y-2 pt-2 border-t border-border/10 animate-in fade-in duration-200">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={sorted.map(el => el.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-1 max-h-[220px] overflow-y-auto pr-0.5">
+                {sorted.map((el) => (
+                  <SortableLayerItem
+                    key={el.id}
+                    el={el}
+                    isSelected={selectedId === el.id}
+                    toggleVisibility={toggleVisibility}
+                    toggleLock={toggleLock}
+                    deleteLayer={deleteLayer}
+                    selectElement={selectElement}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
+      )}
     </div>
   );
 }

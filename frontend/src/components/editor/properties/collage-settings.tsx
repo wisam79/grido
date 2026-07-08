@@ -36,85 +36,85 @@ export function CollageSettings() {
   })));
 
   return (
-    <div className="rounded-lg border bg-muted/30 p-3 space-y-4">
-      <div className="font-semibold text-xs text-foreground/90 mb-1 flex items-center gap-1.5 border-b border-border/10 pb-2">
-        <Sparkles className="w-4 h-4 text-primary" />
+    <div className="rounded-xl border bg-muted/30 p-2.5 space-y-2.5">
+      <div className="font-bold text-[11px] text-foreground/90 flex items-center gap-1.5 border-b border-border/10 pb-1.5">
+        <Sparkles className="w-3.5 h-3.5 text-primary" />
         <span>تنسيق الكولاج</span>
       </div>
 
-      <SliderControl
-        label="المسافة بين الصور"
-        icon={<Columns className="w-3.5 h-3.5" />}
-        value={collageGap}
-        min={0}
-        max={60}
-        step={2}
-        onChange={setCollageGap}
-        unit="بكسل"
-      />
-
-      <SliderControl
-        label="الهامش الخارجي"
-        icon={<Move className="w-3.5 h-3.5" />}
-        value={collageMargin}
-        min={0}
-        max={100}
-        step={2}
-        onChange={setCollageMargin}
-        unit="بكسل"
-      />
-
-      <SliderControl
-        label="استدارة الزوايا"
-        icon={<Square className="w-3.5 h-3.5" />}
-        value={collageRadius}
-        min={0}
-        max={50}
-        step={2}
-        onChange={setCollageRadius}
-        unit="بكسل"
-      />
-
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
         <SliderControl
-          label="سمك إطار الصور"
-          icon={<Maximize2 className="w-3.5 h-3.5" />}
+          label="المسافات"
+          icon={<Columns className="w-3 h-3" />}
+          value={collageGap}
+          min={0}
+          max={60}
+          step={2}
+          onChange={setCollageGap}
+          unit="px"
+        />
+
+        <SliderControl
+          label="الهامش"
+          icon={<Move className="w-3 h-3" />}
+          value={collageMargin}
+          min={0}
+          max={100}
+          step={2}
+          onChange={setCollageMargin}
+          unit="px"
+        />
+
+        <SliderControl
+          label="الزوايا"
+          icon={<Square className="w-3 h-3" />}
+          value={collageRadius}
+          min={0}
+          max={50}
+          step={2}
+          onChange={setCollageRadius}
+          unit="px"
+        />
+
+        <SliderControl
+          label="الإطار"
+          icon={<Maximize2 className="w-3 h-3" />}
           value={collageStrokeWidth}
           min={0}
           max={15}
           step={1}
           onChange={setCollageStrokeWidth}
-          unit="بكسل"
+          unit="px"
         />
-
-        {collageStrokeWidth > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground w-16">لون الإطار:</span>
-            <div className="flex-1 flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs">
-              <PaintBucket className="w-3.5 h-3.5 text-muted-foreground/60 select-none" />
-              <input
-                type="text"
-                value={collageStrokeColor}
-                onChange={(e) => setCollageStrokeColor(e.target.value)}
-                className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
-              />
-              <input
-                type="color"
-                value={collageStrokeColor}
-                onChange={(e) => setCollageStrokeColor(e.target.value)}
-                className="w-5 h-5 rounded border border-border/20 cursor-pointer p-0 bg-transparent shrink-0"
-              />
-            </div>
-          </div>
-        )}
       </div>
 
-      <Separator className="bg-border/20" />
+      {collageStrokeWidth > 0 && (
+        <div className="flex items-center gap-2 border-t border-border/10 pt-2.5">
+          <span className="text-[9px] text-muted-foreground w-14 font-bold">لون الإطار:</span>
+          <div className="flex-1 flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-1.5 h-7 shadow-xs">
+            <PaintBucket className="w-3 h-3 text-muted-foreground/60 select-none" />
+            <input
+              type="text"
+              value={collageStrokeColor}
+              onChange={(e) => setCollageStrokeColor(e.target.value)}
+              className="w-full bg-transparent border-0 p-0 text-[10px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+            />
+            <input
+              type="color"
+              value={collageStrokeColor}
+              onChange={(e) => setCollageStrokeColor(e.target.value)}
+              className="w-4 h-4 rounded border border-border/20 cursor-pointer p-0 bg-transparent shrink-0"
+            />
+          </div>
+        </div>
+      )}
 
-      <div className="flex items-center justify-between">
+      <Separator className="bg-border/10 my-0.5" />
+
+      <div className="flex items-center justify-between pt-0.5">
         <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Scissors className="w-3.5 h-3.5 text-muted-foreground/75" />
-          <span className="text-xs font-semibold">خطوط القص والمحاذاة</span>
+          <Scissors className="w-3 h-3 text-muted-foreground/75" />
+          <span className="text-[10px] font-bold">خطوط القص والمحاذاة</span>
         </div>
         <Switch
           checked={collageShowCutLines}

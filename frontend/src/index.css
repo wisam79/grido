@@ -44,6 +44,11 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* تكبير أحجام الخطوط فقط مع الحفاظ على الهوامش والمسافات مضغوطة */
+  --text-xs: 13px;
+  --text-sm: 15px;
+  --text-base: 17px;
 }
 
 :root {
@@ -131,7 +136,7 @@
   body {
     color: var(--foreground);
     font-family: var(--font-cairo), var(--font-tajawal), system-ui, sans-serif;
-    font-size: 15px;
+    font-size: 15.5px;
     user-select: none;
     cursor: default;
     overscroll-behavior: none;
@@ -233,33 +238,39 @@
 }
 
 @media print {
-  /* إخفاء الرؤية عن كافة عناصر الصفحة لمنع طباعة واجهة التطبيق والـ Portals المنبثقة */
-  body * {
-    visibility: hidden !important;
+  /* إخفاء واجهة التطبيق بالكامل وكل العناصر غير المخصصة للطباعة */
+  #root > div > :not(#print-container),
+  .no-print,
+  .toaster,
+  [role="status"],
+  [role="presentation"] {
+    display: none !important;
   }
 
-  /* استثناء حاوية الطباعة ومحتوياتها لجعلها مرئية تماماً */
-  #print-container, #print-container * {
-    visibility: visible !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  /* تهيئة الصفحة وجسم المستند للطباعة لمنع قطع الصفحات أو المشاكل الهيكلية */
+  html, body, #root, #root > div {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  /* إجبار الصفحة على عدم تجاوز الارتفاع لمنع الصفحات البيضاء الزائدة */
-  html, body {
-    height: 100% !important;
-    overflow: hidden !important;
-  }
-
-  /* تهيئة منطقة الطباعة لتملأ الصفحة بالكامل كخلفية بيضاء */
+  /* تهيئة حاوية الطباعة لتملأ الصفحة بالكامل وإلغاء إزاحتها خارج الشاشة */
   #print-container {
     display: block !important;
-    position: absolute !important;
-    inset: 0 !important;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
-    z-index: 999999 !important;
+  }
+
+  #print-container, #print-container * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 
@@ -303,4 +314,63 @@
   border: 2px solid #ffffff !important;
   box-shadow: 0 1px 4px rgba(0,0,0,0.4) !important;
 }
+
+/* رسومات متحركة خفيفة لتحسين تجربة المستخدم دون التأثير على الأداء */
+@keyframes slide-fade-in-rtl {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-fade-in-ltr {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-panel-left {
+  animation: slide-fade-in-ltr 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-panel-right {
+  animation: slide-fade-in-rtl 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity;
+}
+
+/* تأثير التكبير البسيط عند التفاعل مع الأزرار */
+.interactive-btn {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, opacity 0.2s ease;
+}
+.interactive-btn:hover {
+  transform: translateY(-0.5px) scale(1.02);
+}
+.interactive-btn:active {
+  transform: translateY(0.5px) scale(0.97);
+}
+
 

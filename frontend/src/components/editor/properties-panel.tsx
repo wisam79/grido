@@ -31,17 +31,6 @@ export function PropertiesPanel() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 border-b">
-        <h2 className="text-sm font-bold flex items-center gap-2">
-          <Settings2 className="w-4 h-4" /> خصائص التعديل
-        </h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          {selectedElement || selectedSlot
-            ? "عدّل خصائص العنصر المحدد"
-            : "اختر عنصراً لتعديله"}
-        </p>
-      </div>
-
       <ScrollArea className="flex-1">
         <div className="p-3 pb-8 space-y-4">
           {/* خصائص العنصر المحدد */}

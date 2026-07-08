@@ -193,7 +193,7 @@ export const EditorCanvas = React.forwardRef<
         if (typeof ref === "function") ref(node);
         else if (ref) (ref as any).current = node;
       }}
-      className="relative flex items-center justify-center w-full h-full overflow-hidden p-4 workspace-grid bg-muted/40"
+      className="absolute inset-0 flex items-center justify-center overflow-hidden p-4 workspace-grid bg-muted/40"
       onClick={(e) => {
         if (e.target === e.currentTarget) selectElement(null);
       }}

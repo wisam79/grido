@@ -5,12 +5,42 @@ import {
   Rect as KonvaRect, 
   Ellipse as KonvaEllipse, 
   Line as KonvaLine, 
-  Star as KonvaStar 
+  Star as KonvaStar,
+  Path as KonvaPath
 } from "react-konva";
 import useImage from "use-image";
 import Konva from "konva";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { getSnapPositions } from "@/lib/snap-utils";
+import "@/lib/custom-filters";
+
+function getFillProps(element: CanvasElement, w: number, h: number) {
+  if (element.fillType === "linear") {
+    const start = element.fillLinearGradientStartPoint || { x: 0, y: 0 };
+    const end = element.fillLinearGradientEndPoint || { x: 1, y: 1 };
+    return {
+      fillLinearGradientStartPoint: { x: start.x * w, y: start.y * h },
+      fillLinearGradientEndPoint: { x: end.x * w, y: end.y * h },
+      fillLinearGradientColorStops: element.fillLinearGradientColorStops || [0, "#3b82f6", 1, "#8b5cf6"],
+    };
+  }
+  if (element.fillType === "radial") {
+    const start = element.fillRadialGradientStartPoint || { x: 0.5, y: 0.5 };
+    const end = element.fillRadialGradientEndPoint || { x: 0.5, y: 0.5 };
+    const rStart = element.fillRadialGradientStartRadius !== undefined ? element.fillRadialGradientStartRadius : 0;
+    const rEnd = element.fillRadialGradientEndRadius !== undefined ? element.fillRadialGradientEndRadius : 0.5;
+    return {
+      fillRadialGradientStartPoint: { x: start.x * w, y: start.y * h },
+      fillRadialGradientStartRadius: rStart * Math.max(w, h),
+      fillRadialGradientEndPoint: { x: end.x * w, y: end.y * h },
+      fillRadialGradientEndRadius: rEnd * Math.max(w, h),
+      fillRadialGradientColorStops: element.fillRadialGradientColorStops || [0, "#3b82f6", 1, "#8b5cf6"],
+    };
+  }
+  return {
+    fill: element.type === "text" ? (element.color || "#000000") : (element.fill || "transparent"),
+  };
+}
 
 interface ElementProps {
   element: CanvasElement;
@@ -19,7 +49,7 @@ interface ElementProps {
   onChange: (patch: Partial<CanvasElement>) => void;
   displayW: number;
   displayH: number;
-  allElements: CanvasElement[];
+  allElements: CanvasElement[]; // Passed but ignored in memo
   setActiveGuides: (guides: any[]) => void;
   elementRef: React.MutableRefObject<any>;
   snapToGrid?: boolean;
@@ -28,8 +58,35 @@ interface ElementProps {
   onDblClick?: () => void;
 }
 
-export function URLImage({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef }: ElementProps) {
+const propsAreEqual = (prev: ElementProps, next: ElementProps) => {
+  return prev.element === next.element &&
+         prev.isSelected === next.isSelected &&
+         prev.displayW === next.displayW &&
+         prev.displayH === next.displayH &&
+         prev.snapToGrid === next.snapToGrid &&
+         prev.gridSize === next.gridSize;
+};
+
+export const URLImage = React.memo(function URLImage({ element, isSelected, onSelect, onChange, displayW, displayH, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef }: ElementProps) {
   const [image] = useImage(element.imageSrc || "");
+  const hasAnimatedRef = React.useRef(false);
+
+  useEffect(() => {
+    const node = elementRef.current;
+    if (node && !hasAnimatedRef.current) {
+      hasAnimatedRef.current = true;
+      const targetOpacity = element.opacity;
+      node.opacity(0);
+      node.scale({ x: 0.8, y: 0.8 });
+      node.to({
+        opacity: targetOpacity,
+        scaleX: element.flipX === true ? -1 : 1,
+        scaleY: 1,
+        duration: 0.28,
+        easing: Konva.Easings.BackEaseOut
+      });
+    }
+  }, [elementRef, element.opacity, element.flipX]);
 
   useEffect(() => {
     const node = elementRef.current;
@@ -59,31 +116,39 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
   let useSepia = false;
   let useGrayscale = false;
 
-  if (element.filter === "grayscale") {
-    useGrayscale = true;
-  } else if (element.filter === "sepia") {
-    useSepia = true;
-  } else if (element.filter === "vivid") {
-    totalContrast = (totalContrast / 100) * 110;
-    totalSaturation = (totalSaturation / 100) * 140;
-  } else if (element.filter === "cool") {
-    totalHue = 180;
-    totalSaturation = (totalSaturation / 100) * 120;
-  } else if (element.filter === "warm") {
-    useSepia = true;
-    totalHue = -10;
-    totalSaturation = (totalSaturation / 100) * 130;
-  } else if (element.filter === "soft") {
-    totalBrightness = (totalBrightness / 100) * 110;
-    totalContrast = (totalContrast / 100) * 90;
-    totalSaturation = (totalSaturation / 100) * 90;
-  } else if (element.filter === "professional") {
-    totalContrast = (totalContrast / 100) * 115;
+  if (element.filter === "enhance") {
+    totalContrast = (totalContrast / 100) * 108;
+    totalSaturation = (totalSaturation / 100) * 112;
+    totalBrightness = (totalBrightness / 100) * 102;
+  } else if (element.filter === "skinGlow") {
+    totalHue = 10;
     totalSaturation = (totalSaturation / 100) * 110;
+    totalContrast = (totalContrast / 100) * 94;
+    totalBrightness = (totalBrightness / 100) * 106;
+  } else if (element.filter === "clarity") {
+    totalContrast = (totalContrast / 100) * 122;
+    totalSaturation = (totalSaturation / 100) * 120;
+    totalBrightness = (totalBrightness / 100) * 98;
+  } else if (element.filter === "lowlight") {
+    totalBrightness = (totalBrightness / 100) * 116;
+    totalContrast = (totalContrast / 100) * 90;
+    totalSaturation = (totalSaturation / 100) * 105;
+  } else if (element.filter === "cinematic") {
+    useSepia = true;
+    totalHue = 5;
+    totalSaturation = (totalSaturation / 100) * 115;
+    totalContrast = (totalContrast / 100) * 110;
+    totalBrightness = (totalBrightness / 100) * 102;
+  } else if (element.filter === "monoPro") {
+    useGrayscale = true;
+    totalContrast = (totalContrast / 100) * 125;
     totalBrightness = (totalBrightness / 100) * 102;
   }
 
   const filters: any[] = [];
+  if (element.filter === "skinGlow" && (Konva.Filters as any).SkinGlow) {
+    filters.push((Konva.Filters as any).SkinGlow);
+  }
   if (useGrayscale) filters.push(Konva.Filters.Grayscale);
   if (useSepia) filters.push(Konva.Filters.Sepia);
   if (totalBrightness !== 100) filters.push(Konva.Filters.Brighten);
@@ -138,7 +203,8 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
           const y = yAbs / displayH;
           const thresholdX = 5 / displayW;
           const thresholdY = 5 / displayH;
-          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+          const currentElements = useEditorStore.getState().elements;
+          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
           xAbs = snapResult.x * displayW;
           yAbs = snapResult.y * displayH;
         }
@@ -157,7 +223,8 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
           const y = e.target.y() / displayH;
           const thresholdX = 5 / displayW;
           const thresholdY = 5 / displayH;
-          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+          const currentElements = useEditorStore.getState().elements;
+          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
           setActiveGuides(snapResult.guides);
         }
       }}
@@ -193,10 +260,28 @@ export function URLImage({ element, isSelected, onSelect, onChange, displayW, di
       }}
     />
   );
-}
+}, propsAreEqual);
 
-export function KonvaTextElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef, onDblClick }: ElementProps) {
+export const KonvaTextElement = React.memo(function KonvaTextElement({ element, isSelected, onSelect, onChange, displayW, displayH, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef, onDblClick }: ElementProps) {
   const editingTextId = useEditorStore((state) => state.editingTextId);
+  const hasAnimatedRef = React.useRef(false);
+
+  useEffect(() => {
+    const node = elementRef.current;
+    if (node && !hasAnimatedRef.current) {
+      hasAnimatedRef.current = true;
+      const targetOpacity = editingTextId === element.id ? 0 : element.opacity;
+      node.opacity(0);
+      node.scale({ x: 0.8, y: 0.8 });
+      node.to({
+        opacity: targetOpacity,
+        scaleX: element.flipX === true ? -1 : 1,
+        scaleY: 1,
+        duration: 0.28,
+        easing: Konva.Easings.BackEaseOut
+      });
+    }
+  }, [elementRef, element.opacity, element.flipX, editingTextId]);
   
   // Sync auto height back to store so bounding boxes and overlays stay perfect
   useEffect(() => {
@@ -214,6 +299,8 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
   }, [element.text, element.fontSize, element.width, element.height, displayH, elementRef, onChange]);
 
   const flipped = element.flipX === true;
+  const w = element.width * displayW;
+  const h = element.height * displayH;
 
   return (
     <KonvaText
@@ -221,7 +308,7 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
       text={element.text || ""}
       x={flipped ? (element.x + element.width) * displayW : element.x * displayW}
       y={element.y * displayH}
-      width={element.width * displayW}
+      width={w}
       scaleX={flipped ? -1 : 1}
       rotation={element.rotation}
       opacity={editingTextId === element.id ? 0 : element.opacity}
@@ -239,7 +326,7 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
       onDblTap={onDblClick}
       fontSize={element.fontSize ? element.fontSize * (displayW / 600) : 16}
       fontWeight={element.fontWeight ? String(element.fontWeight) : "normal"}
-      fill={element.color || "#000000"}
+      {...getFillProps(element, w, h)}
       fontFamily={element.fontFamily || "sans-serif"}
       align={element.textAlign || "center"}
       lineHeight={element.lineHeight ?? 1.2}
@@ -257,7 +344,8 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
           const y = yAbs / displayH;
           const thresholdX = 5 / displayW;
           const thresholdY = 5 / displayH;
-          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+          const currentElements = useEditorStore.getState().elements;
+          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
           xAbs = snapResult.x * displayW;
           yAbs = snapResult.y * displayH;
         }
@@ -275,7 +363,8 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
           const y = e.target.y() / displayH;
           const thresholdX = 5 / displayW;
           const thresholdY = 5 / displayH;
-          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+          const currentElements = useEditorStore.getState().elements;
+          const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
           setActiveGuides(snapResult.guides);
         }
       }}
@@ -324,12 +413,30 @@ export function KonvaTextElement({ element, isSelected, onSelect, onChange, disp
       }}
     />
   );
-}
+}, propsAreEqual);
 
-export function KonvaShapeElement({ element, isSelected, onSelect, onChange, displayW, displayH, allElements, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef }: ElementProps) {
+export const KonvaShapeElement = React.memo(function KonvaShapeElement({ element, isSelected, onSelect, onChange, displayW, displayH, setActiveGuides, elementRef, snapToGrid, gridSize, altPressedRef }: ElementProps) {
   const w = element.width * displayW;
   const h = element.height * displayH;
   const flipped = element.flipX === true;
+  const hasAnimatedRef = React.useRef(false);
+
+  useEffect(() => {
+    const node = elementRef.current;
+    if (node && !hasAnimatedRef.current) {
+      hasAnimatedRef.current = true;
+      const targetOpacity = element.opacity;
+      node.opacity(0);
+      node.scale({ x: 0.8, y: 0.8 });
+      node.to({
+        opacity: targetOpacity,
+        scaleX: element.flipX === true ? -1 : 1,
+        scaleY: 1,
+        duration: 0.28,
+        easing: Konva.Easings.BackEaseOut
+      });
+    }
+  }, [elementRef, element.opacity, element.flipX]);
 
   const shapeProps = {
     ref: elementRef,
@@ -351,7 +458,7 @@ export function KonvaShapeElement({ element, isSelected, onSelect, onChange, dis
     cornerRadius: element.cornerRadius || 0,
     onClick: onSelect,
     onTap: onSelect,
-    fill: element.fill || "transparent",
+    ...getFillProps(element, w, h),
     stroke: element.strokeWidth && element.strokeWidth > 0 ? element.stroke || "#000000" : undefined,
     strokeWidth: element.strokeWidth || 0,
     draggable: !element.locked && isSelected,
@@ -368,7 +475,8 @@ export function KonvaShapeElement({ element, isSelected, onSelect, onChange, dis
         const y = yAbs / displayH;
         const thresholdX = 5 / displayW;
         const thresholdY = 5 / displayH;
-        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+        const currentElements = useEditorStore.getState().elements;
+        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
         xAbs = snapResult.x * displayW;
         yAbs = snapResult.y * displayH;
       }
@@ -386,7 +494,8 @@ export function KonvaShapeElement({ element, isSelected, onSelect, onChange, dis
         const y = e.target.y() / displayH;
         const thresholdX = 5 / displayW;
         const thresholdY = 5 / displayH;
-        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, allElements, thresholdX, thresholdY);
+        const currentElements = useEditorStore.getState().elements;
+        const snapResult = getSnapPositions(element.id, x, y, element.width, element.height, currentElements, thresholdX, thresholdY);
         setActiveGuides(snapResult.guides);
       }
     },
@@ -455,10 +564,19 @@ export function KonvaShapeElement({ element, isSelected, onSelect, onChange, dis
     );
   }
 
+  if (element.shape === "path") {
+    return (
+      <KonvaPath
+        {...shapeProps}
+        data={element.svgPath || ""}
+      />
+    );
+  }
+
   return (
     <KonvaRect
       {...shapeProps}
       cornerRadius={element.radius || 0}
     />
   );
-}
+}, propsAreEqual);

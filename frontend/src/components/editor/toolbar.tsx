@@ -3,6 +3,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { deserializeProjectFile } from "@/lib/project-serializer";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   ImagePlus,
   Type,
@@ -27,8 +28,11 @@ import {
   AlignRight,
   ChevronDown,
   Database,
-  Images,
-  LayoutGrid,
+  Grid3x3,
+  Magnet,
+  Columns,
+  Link,
+  Unlink,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -88,7 +92,6 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   
   const {
     mode,
-    setMode,
     elements,
     updateElement,
     pushHistory,
@@ -96,6 +99,9 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     addTextElement,
     addShapeElement,
     selectedId,
+    selectedIds,
+    groupSelectedElements,
+    ungroupSelectedElements,
     removeElement,
     duplicateElement,
     bringToFront,
@@ -109,9 +115,14 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     setSlotImage,
     canvasWidth,
     canvasHeight,
+    showGrid,
+    setShowGrid,
+    snapToGrid,
+    setSnapToGrid,
+    showColumns,
+    setShowColumns,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
-    setMode: state.setMode,
     elements: state.elements,
     updateElement: state.updateElement,
     pushHistory: state.pushHistory,
@@ -119,6 +130,9 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     addTextElement: state.addTextElement,
     addShapeElement: state.addShapeElement,
     selectedId: state.selectedId,
+    selectedIds: state.selectedIds,
+    groupSelectedElements: state.groupSelectedElements,
+    ungroupSelectedElements: state.ungroupSelectedElements,
     removeElement: state.removeElement,
     duplicateElement: state.duplicateElement,
     bringToFront: state.bringToFront,
@@ -132,6 +146,12 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
     setSlotImage: state.setSlotImage,
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
+    showGrid: state.showGrid,
+    setShowGrid: state.setShowGrid,
+    snapToGrid: state.snapToGrid,
+    setSnapToGrid: state.setSnapToGrid,
+    showColumns: state.showColumns,
+    setShowColumns: state.setShowColumns,
   })));
 
   const handleOpenFile = async () => {
@@ -369,7 +389,8 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
                 <ChevronDown className="w-2.5 h-2.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-36 font-cairo">
+            <DropdownMenuContent align="start" className="w-40 font-cairo">
+              <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">أشكال أساسية</div>
               <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-[11px] cursor-pointer">
                 <Square className="w-4 h-4 text-muted-foreground" />
                 <span>مستطيل</span>
@@ -385,6 +406,34 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2 text-[11px] cursor-pointer">
                 <Minus className="w-4 h-4 text-muted-foreground" />
                 <span>خط مستقيم</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">رموز وأشكال متجهة</div>
+              
+              <DropdownMenuItem onClick={() => addShapeElement("path", "M 12,21.35 L 10.55,20.03 C 5.4,15.36 2,12.28 2,8.5 C 2,5.42 4.42,3 7.5,3 C 9.24,3 10.91,3.81 12,5.09 C 13.09,3.81 14.76,3 16.5,3 C 19.58,3 22,5.42 22,8.5 C 22,12.28 18.6,15.36 13.45,20.04 L 12,21.35 Z")} className="gap-2 text-[11px] cursor-pointer">
+                <span className="text-xs shrink-0 select-none">❤️</span>
+                <span>قلب رومانسي</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem onClick={() => addShapeElement("path", "M 10,40 L 60,40 L 60,20 L 90,50 L 60,80 L 60,60 L 10,60 Z")} className="gap-2 text-[11px] cursor-pointer">
+                <span className="text-xs shrink-0 select-none">➡️</span>
+                <span>سهم توجيهي</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem onClick={() => addShapeElement("path", "M 20 2 H 4 C 2.9 2 2 2.9 2 4 V 22 L 6 18 H 20 C 21.1 18 22 17.1 22 16 V 4 C 22 2.9 21.1 2 20 2 Z")} className="gap-2 text-[11px] cursor-pointer">
+                <span className="text-xs shrink-0 select-none">💬</span>
+                <span>فقاعة كلام</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem onClick={() => addShapeElement("path", "M 12 2.163 c 3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069 z M 12 0 C 8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12 c 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98 C 15.668.014 15.259 0 12 0 z M 12 5.838 c -3.403 0 -6.162 2.759 -6.162 6.162 0 3.403 2.759 6.162 6.162 6.162 3.403 0 6.162 -2.759 6.162 -6.162 0 -3.403 -2.759 -6.162 -6.162 -6.162 z M 12 16 c -2.209 0 -4 -1.79 -4 -4 0 -2.209 1.791 -4 4 -4 2.209 0 4 1.791 4 4 0 2.21 -1.79 4 -4 4 z M 18.406 4.156 c -.796 0 -1.441.645 -1.441 1.44 0 .797.645 1.44 1.441 1.44.795 0 1.439 -.643 1.439 -1.44 0 -.795 -.644 -1.44 -1.439 -1.44 z")} className="gap-2 text-[11px] cursor-pointer">
+                <span className="text-xs shrink-0 select-none">📸</span>
+                <span>إنستغرام</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem onClick={() => addShapeElement("path", "M 24 12.073 c 0 -6.627 -5.373 -12 -12 -12 s -12 5.373 -12 12 c 0 5.99 4.388 10.954 10.125 11.854 v -8.385 H 7.078 v -3.47 h 3.047 V 9.43 c 0 -3.007 1.792 -4.669 4.533 -4.669 c 1.312 0 2.686.235 2.686.235 v 2.953 H 15.83 c -1.491 0 -1.956.925 -1.956 1.874 v 2.25 h 3.328 l -0.532 3.47 h -2.796 v 8.385 C 19.612 23.027 24 18.062 24 12.073 z")} className="gap-2 text-[11px] cursor-pointer">
+                <span className="text-xs shrink-0 select-none">📘</span>
+                <span>فيسبوك</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -426,6 +475,34 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
                 <Copy className="w-3.5 h-3.5" />
               </Button>
             </TooltipBtn>
+
+            {selectedIds.length >= 2 && (
+              <TooltipBtn content="تجميع العناصر المحددة (Group)">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={groupSelectedElements}
+                  aria-label="تجميع"
+                  className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
+                >
+                  <Link className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipBtn>
+            )}
+
+            {elements.some((el) => selectedIds.includes(el.id) && el.groupId) && (
+              <TooltipBtn content="فك تجميع العناصر (Ungroup)">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={ungroupSelectedElements}
+                  aria-label="فك التجميع"
+                  className="h-7 px-2 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
+                >
+                  <Unlink className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipBtn>
+            )}
             
             <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
@@ -523,39 +600,66 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           </TooltipBtn>
         </div>
 
-        <div className="flex-1" />
+        {/* المجموعة 6: خيارات الرؤية والشبكة (Grid & Snapping - تظهر في وضع التعديل الحر فقط) */}
+        {mode === "single" && (
+          <>
+            <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
+            <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+              <TooltipBtn content={showGrid ? "إخفاء الشبكة الإرشادية" : "إظهار الشبكة الإرشادية"}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowGrid(!showGrid)}
+                  aria-label="إظهار/إخفاء الشبكة"
+                  className={cn(
+                    "h-7 px-2 rounded-md transition-all cursor-pointer",
+                    showGrid
+                      ? "bg-primary/10 text-primary hover:bg-primary/15"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Grid3x3 className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipBtn>
 
-        {/* المجموعة 2: وضع العمل */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-900/60 p-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-800/50 shadow-inner z-10 backdrop-blur-xs">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setMode("collage")}
-            aria-label="وضع الكولاج"
-            className={`h-7 px-3.5 rounded-full transition-all duration-300 cursor-pointer gap-1.5 flex items-center justify-center font-cairo ${
-              mode === "collage"
-                ? "bg-white dark:bg-zinc-800 text-primary dark:text-blue-400 shadow-sm border border-zinc-200/40 dark:border-zinc-700/40 font-bold scale-[1.03]"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50"
-            }`}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold leading-none">كولاج</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setMode("single")}
-            aria-label="وضع التعديل الحر"
-            className={`h-7 px-3.5 rounded-full transition-all duration-300 cursor-pointer gap-1.5 flex items-center justify-center font-cairo ${
-              mode === "single"
-                ? "bg-white dark:bg-zinc-800 text-primary dark:text-blue-400 shadow-sm border border-zinc-200/40 dark:border-zinc-700/40 font-bold scale-[1.03]"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50"
-            }`}
-          >
-            <Images className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold leading-none">تعديل حر</span>
-          </Button>
-        </div>
+              <TooltipBtn content={showColumns ? "إخفاء أعمدة التخطيط" : "إظهار أعمدة التخطيط"}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowColumns(!showColumns)}
+                  aria-label="إظهار/إخفاء الأعمدة"
+                  className={cn(
+                    "h-7 px-2 rounded-md transition-all cursor-pointer",
+                    showColumns
+                      ? "bg-primary/10 text-primary hover:bg-primary/15"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Columns className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipBtn>
+
+              <TooltipBtn content={snapToGrid ? "إيقاف المحاذاة المغناطيسية للشبكة" : "تفعيل المحاذاة المغناطيسية للشبكة"}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSnapToGrid(!snapToGrid)}
+                  aria-label="محاذاة مغناطيسية"
+                  className={cn(
+                    "h-7 px-2 rounded-md transition-all cursor-pointer",
+                    snapToGrid
+                      ? "bg-primary/10 text-primary hover:bg-primary/15"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Magnet className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipBtn>
+            </div>
+          </>
+        )}
+
+        <div className="flex-1" />
 
         {/* معلومات القالب */}
         {template && (
