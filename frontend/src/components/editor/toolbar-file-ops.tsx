@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProjectsDialog } from "./projects-dialog";
 import { OpenFile, ClearAutoSave } from "../../../wailsjs/go/main/App";
+import { saveProjectAsJSON } from "./export-utils";
 
 interface TooltipBtnProps {
   content: string;
@@ -107,34 +108,7 @@ export function ToolbarFileOps() {
   };
 
   const handleSaveProject = () => {
-    try {
-      const state = useEditorStore.getState();
-      const projectData = {
-        mode: state.mode,
-        canvasWidth: state.canvasWidth,
-        canvasHeight: state.canvasHeight,
-        backgroundColor: state.backgroundColor,
-        elements: state.elements,
-        slots: state.slots,
-        template: state.template,
-        collageTemplate: state.collageTemplate,
-        printSettings: state.printSettings,
-      };
-
-      const blob = new Blob([JSON.stringify(projectData, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `grido-project-${template?.name || "custom"}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("تم تصدير المشروع كملف JSON بنجاح");
-    } catch (err) {
-      console.error(err);
-      toast.error("فشل تصدير ملف المشروع");
-    }
+    saveProjectAsJSON();
   };
 
   const handleLoadProject = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,6 +128,7 @@ export function ToolbarFileOps() {
       }
     };
     reader.readAsText(file);
+    e.target.value = "";
   };
 
   const handleClearCanvas = () => {
@@ -161,11 +136,7 @@ export function ToolbarFileOps() {
   };
 
   const confirmClearCanvas = () => {
-    useEditorStore.setState({
-      elements: [],
-      slots: [],
-      selectedId: null,
-    });
+    useEditorStore.getState().reset();
     ClearAutoSave().catch((err) => console.error("Failed to clear autosave:", err));
     toast.success("تم مسح مساحة العمل بالكامل");
   };

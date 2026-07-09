@@ -170,7 +170,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
       const res = await SaveFileDialog(dataStr, "grido_backup.json", "Grido Backup (*.json)", "*.json");
       if (res === "success") {
         toast.success("تم تصدير النسخة الاحتياطية بنجاح");
-      } else if (res === "cancelled") {
+      } else if (res === "") {
         toast.info("تم إلغاء التصدير");
       }
     } catch (err) {

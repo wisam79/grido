@@ -14,7 +14,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement }: any) {
+function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement, toggleElementSelection }: any) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: el.id });
 
   const style = {
@@ -31,7 +31,13 @@ function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, delet
     <div
       ref={setNodeRef}
       style={style}
-      onClick={() => selectElement(el.id)}
+      onClick={(e) => {
+        if (e.shiftKey || e.ctrlKey || e.metaKey) {
+          toggleElementSelection(el.id);
+        } else {
+          selectElement(el.id);
+        }
+      }}
       className={`flex items-center justify-between p-2.5 rounded-lg border text-right cursor-pointer transition-colors duration-200 ${
         isSelected
           ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
@@ -91,13 +97,15 @@ function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, delet
 }
 
 export function LayersList() {
-  const { elements, selectedId, selectElement, updateElement, removeElement, pushHistory } = useEditorStore(useShallow((state) => ({
+  const { elements, selectedId, selectedIds, selectElement, updateElement, removeElement, pushHistory, toggleElementSelection } = useEditorStore(useShallow((state) => ({
     elements: state.elements,
     selectedId: state.selectedId,
+    selectedIds: state.selectedIds,
     selectElement: state.selectElement,
     updateElement: state.updateElement,
     removeElement: state.removeElement,
     pushHistory: state.pushHistory,
+    toggleElementSelection: state.toggleElementSelection,
   })));
 
   const [expanded, setExpanded] = useState(true);
@@ -197,11 +205,12 @@ export function LayersList() {
                   <SortableLayerItem
                     key={el.id}
                     el={el}
-                    isSelected={selectedId === el.id}
+                    isSelected={selectedIds.includes(el.id)}
                     toggleVisibility={toggleVisibility}
                     toggleLock={toggleLock}
                     deleteLayer={deleteLayer}
                     selectElement={selectElement}
+                    toggleElementSelection={toggleElementSelection}
                   />
                 ))}
               </div>

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useEditorStore } from "@/lib/editor-store";
+import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { saveProjectAsJSON } from "@/components/editor/export-utils";
 
 export function useKeyboardShortcuts() {
@@ -11,7 +11,15 @@ export function useKeyboardShortcuts() {
       // تجاهل الاختصارات داخل حقول الإدخال
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
 
-      const { undo, redo, selectedId, removeElement, duplicateElement } = useEditorStore.getState();
+      const {
+        undo,
+        redo,
+        selectedIds,
+        removeElements,
+        duplicateElements,
+        groupSelectedElements,
+        ungroupSelectedElements,
+      } = useEditorStore.getState();
 
       // Ctrl+Z = تراجع
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
@@ -23,39 +31,74 @@ export function useKeyboardShortcuts() {
         e.preventDefault();
         redo();
       }
-      // Delete / Backspace = حذف العنصر
-      if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
+      // Delete / Backspace = حذف العناصر المحددة
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedIds.length > 0) {
         e.preventDefault();
-        removeElement(selectedId);
+        if (selectedIds.length === 1) {
+          const { removeElement } = useEditorStore.getState();
+          removeElement(selectedIds[0]);
+        } else {
+          removeElements(selectedIds);
+        }
       }
-      // Ctrl+D = تكرار
-      if ((e.ctrlKey || e.metaKey) && e.key === "d" && selectedId) {
+      // Ctrl+D = تكرار العناصر المحددة
+      if ((e.ctrlKey || e.metaKey) && e.key === "d" && selectedIds.length > 0) {
         e.preventDefault();
-        duplicateElement(selectedId);
+        if (selectedIds.length === 1) {
+          const { duplicateElement } = useEditorStore.getState();
+          duplicateElement(selectedIds[0]);
+        } else {
+          duplicateElements(selectedIds);
+        }
+      }
+      // Ctrl+G = تجميع العناصر المحددة
+      if ((e.ctrlKey || e.metaKey) && e.key === "g" && !e.shiftKey && selectedIds.length > 0) {
+        e.preventDefault();
+        groupSelectedElements();
+      }
+      // Ctrl+Shift+G = فك التجميع
+      if ((e.ctrlKey || e.metaKey) && e.key === "g" && e.shiftKey && selectedIds.length > 0) {
+        e.preventDefault();
+        ungroupSelectedElements();
       }
       // Ctrl+S = حفظ
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         saveProjectAsJSON();
       }
-      // Arrow Keys = Nudging selected element
-      if (selectedId && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      // Arrow Keys = Nudging selected elements
+      if (selectedIds.length > 0 && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         e.preventDefault();
-        const { elements, updateElement } = useEditorStore.getState();
-        const el = elements.find((x) => x.id === selectedId);
-        if (el && !el.locked) {
-          const step = e.shiftKey ? 0.015 : 0.002; // Shift gives larger steps
-          let dx = 0;
-          let dy = 0;
-          if (e.key === "ArrowUp") dy = -step;
-          if (e.key === "ArrowDown") dy = step;
-          if (e.key === "ArrowLeft") dx = -step;
-          if (e.key === "ArrowRight") dx = step;
+        const { elements, updateElements } = useEditorStore.getState();
+        const step = e.shiftKey ? 0.015 : 0.002; // Shift gives larger steps
+        let dx = 0;
+        let dy = 0;
+        if (e.key === "ArrowUp") dy = -step;
+        if (e.key === "ArrowDown") dy = step;
+        if (e.key === "ArrowLeft") dx = -step;
+        if (e.key === "ArrowRight") dx = step;
 
-          updateElement(selectedId, {
-            x: Math.max(-0.5, Math.min(1, el.x + dx)),
-            y: Math.max(-0.5, Math.min(1, el.y + dy)),
-          });
+        const patches = selectedIds.map((id) => {
+          const el = elements.find((x) => x.id === id);
+          if (el && !el.locked) {
+            return {
+              id,
+              patch: {
+                x: Math.max(-0.5, Math.min(1, el.x + dx)),
+                y: Math.max(-0.5, Math.min(1, el.y + dy)),
+              },
+            };
+          }
+          return null;
+        }).filter(Boolean) as { id: string; patch: Partial<CanvasElement> }[];
+
+        if (patches.length > 0) {
+          if (patches.length === 1) {
+            const { updateElement } = useEditorStore.getState();
+            updateElement(patches[0].id, patches[0].patch);
+          } else {
+            updateElements(patches);
+          }
 
           // تجميع سجل التراجع أثناء الضغط المستمر (Debouncing pushHistory)
           if (nudgeTimeout) clearTimeout(nudgeTimeout);
@@ -71,8 +114,8 @@ export function useKeyboardShortcuts() {
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
 
-      const { selectedId, pushHistory } = useEditorStore.getState();
-      if (selectedId && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      const { selectedIds, pushHistory } = useEditorStore.getState();
+      if (selectedIds.length > 0 && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         // عند إفلات الزر، نقوم بحفظ الحالة فوراً وإلغاء المؤقت المؤجل لتفادي تكرار السجلات
         if (nudgeTimeout) {
           clearTimeout(nudgeTimeout);

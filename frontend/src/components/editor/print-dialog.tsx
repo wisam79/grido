@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useEditorStore } from "@/lib/editor-store";
+import { useStageRef } from "@/lib/stage-context";
 import { usePrintLayout } from "@/hooks/use-print-layout";
 
 import { PAPER_SIZES } from "@/lib/templates";
@@ -44,6 +45,7 @@ interface PrintDialogProps {
 }
 
 export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
+  const stageRef = useStageRef();
   const {
     template,
     canvasWidth,
@@ -54,7 +56,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     slots,
     mode,
     backgroundColor,
-    stageRef,
   } = useEditorStore(useShallow((state) => ({
     template: state.template,
     canvasWidth: state.canvasWidth,
@@ -65,7 +66,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     slots: state.slots,
     mode: state.mode,
     backgroundColor: state.backgroundColor,
-    stageRef: state.stageRef,
   })));
   const [zoom, setZoom] = useState(1);
   const [previewImageSrc, setPreviewImageSrc] = useState<string>("");
@@ -78,29 +78,30 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   }, [open]);
 
   useEffect(() => {
-    if (open && stageRef) {
+    if (open && stageRef.current) {
       const timer = setTimeout(() => {
-        const transformers = stageRef.find('Transformer');
-        const gridLayers = stageRef.find('.grid-layer');
-        const columnsLayers = stageRef.find('.columns-layer');
+        const stage = stageRef.current!;
+        const transformers = stage.find('Transformer');
+        const gridLayers = stage.find('.grid-layer');
+        const columnsLayers = stage.find('.columns-layer');
         try {
           const targetWidth = 400;
-          const pRatio = Math.min(1, targetWidth / stageRef.width());
+          const pRatio = Math.min(1, targetWidth / stage.width());
 
           // إخفاء الشبكة والأعمدة ومقابض التحكم مؤقتاً قبل التقاط المعاينة والطباعة لكي لا تظهر في المخرج المطبوع
           transformers.forEach((tr: any) => tr.hide());
           gridLayers.forEach((gl: any) => gl.hide());
           columnsLayers.forEach((cl: any) => cl.hide());
-          stageRef.batchDraw();
+          stage.batchDraw();
 
-          const previewUrl = stageRef.toDataURL({
+          const previewUrl = stage.toDataURL({
             pixelRatio: pRatio,
             mimeType: "image/jpeg",
             quality: 0.8,
           });
 
-          const printUrl = stageRef.toDataURL({
-            pixelRatio: canvasWidth / stageRef.width(),
+          const printUrl = stage.toDataURL({
+            pixelRatio: canvasWidth / stage.width(),
             mimeType: "image/png"
           });
 
@@ -113,7 +114,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           transformers.forEach((tr: any) => tr.show());
           gridLayers.forEach((gl: any) => gl.show());
           columnsLayers.forEach((cl: any) => cl.show());
-          stageRef.batchDraw();
+          stage.batchDraw();
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -150,15 +151,16 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
   const handlePrint = async () => {
     // التقاط الكانفاس فقط من stageRef بدقة عالية — لا window.print() ولا التقاط لواجهة التطبيق
-    if (!stageRef) {
+    const stage = stageRef.current;
+    if (!stage) {
       toast.error("تعذر الوصول إلى محتوى الكانفاس");
       return;
     }
 
     setIsExporting(true);
-    const transformers = stageRef.find('Transformer');
-    const gridLayers = stageRef.find('.grid-layer');
-    const columnsLayers = stageRef.find('.columns-layer');
+    const transformers = stage.find('Transformer');
+    const gridLayers = stage.find('.grid-layer');
+    const columnsLayers = stage.find('.columns-layer');
     let canvasDataUrl: string | null = null;
 
     try {
@@ -166,11 +168,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       transformers.forEach((tr: any) => tr.hide());
       gridLayers.forEach((gl: any) => gl.hide());
       columnsLayers.forEach((cl: any) => cl.hide());
-      stageRef.batchDraw();
+      stage.batchDraw();
 
       // التقاط الكانفاس بدقة عالية (pixelRatio = الدقة الكاملة للكانفس لضمان جودة طباعة ممتازة)
-      canvasDataUrl = stageRef.toDataURL({
-        pixelRatio: canvasWidth / stageRef.width(),
+      canvasDataUrl = stage.toDataURL({
+        pixelRatio: canvasWidth / stage.width(),
         mimeType: "image/png",
       });
     } finally {
@@ -178,7 +180,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       transformers.forEach((tr: any) => tr.show());
       gridLayers.forEach((gl: any) => gl.show());
       columnsLayers.forEach((cl: any) => cl.show());
-      stageRef.batchDraw();
+      stage.batchDraw();
     }
 
     if (!canvasDataUrl) {

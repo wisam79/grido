@@ -14,6 +14,7 @@ export const CanvasElementSchema = z.object({
   visible: z.boolean().optional(),
   
   imageSrc: z.string().optional(),
+  originalImageSrc: z.string().optional(),
   filter: z.string().optional(),
   brightness: z.number().optional(),
   contrast: z.number().optional(),
@@ -35,6 +36,17 @@ export const CanvasElementSchema = z.object({
   stroke: z.string().optional(),
   strokeWidth: z.number().optional(),
   radius: z.number().optional(),
+
+  // gradient properties
+  fillType: z.enum(["solid", "linear", "radial"]).optional(),
+  fillLinearGradientStartPoint: z.object({ x: z.number(), y: z.number() }).optional(),
+  fillLinearGradientEndPoint: z.object({ x: z.number(), y: z.number() }).optional(),
+  fillLinearGradientColorStops: z.array(z.union([z.number(), z.string()])).optional(),
+  fillRadialGradientStartPoint: z.object({ x: z.number(), y: z.number() }).optional(),
+  fillRadialGradientStartRadius: z.number().optional(),
+  fillRadialGradientEndPoint: z.object({ x: z.number(), y: z.number() }).optional(),
+  fillRadialGradientEndRadius: z.number().optional(),
+  fillRadialGradientColorStops: z.array(z.union([z.number(), z.string()])).optional(),
   
   // خصائص متقدمة
   shadowColor: z.string().optional(),
@@ -45,6 +57,8 @@ export const CanvasElementSchema = z.object({
   cornerRadius: z.number().optional(),
   globalCompositeOperation: z.string().optional(),
   flipX: z.boolean().optional(),
+  svgPath: z.string().optional(),
+  groupId: z.string().optional(),
 });
 
 export const CanvasSlotSchema = z.object({

@@ -250,7 +250,7 @@ export const EditorCanvas = React.forwardRef<
         const selectedSlot = slots.find((s) => s.id === selectedId);
         if (!selectedSlot || !selectedSlot.imageSrc) return null;
 
-        const scale = displayW / 1200;
+        const scale = displayW / canvasWidth;
         const margin = collageMargin * scale;
         const gap = collageGap * scale;
 

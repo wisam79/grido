@@ -3,6 +3,7 @@ import { Stage, Layer, Transformer, Line, Circle, Group, Rect, Text, FastLayer }
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
+import { useStageRef } from "@/lib/stage-context";
 import { URLImage, KonvaTextElement, KonvaShapeElement } from "./konva-elements";
 import { SnapGuide } from "@/lib/snap-utils";
 import { useShallow } from "zustand/react/shallow";
@@ -298,7 +299,6 @@ export function KonvaCanvas({
     columnsColor,
     columnsMargin,
     columnsGutter,
-    setStageRef,
     collageGap,
     collageMargin,
     collageRadius,
@@ -306,6 +306,7 @@ export function KonvaCanvas({
     collageStrokeWidth,
     collageStrokeColor,
     backgroundColor,
+    canvasWidth,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
     slots: state.slots,
@@ -327,7 +328,6 @@ export function KonvaCanvas({
     columnsColor: state.columnsColor,
     columnsMargin: state.columnsMargin,
     columnsGutter: state.columnsGutter,
-    setStageRef: state.setStageRef,
     collageGap: state.collageGap,
     collageMargin: state.collageMargin,
     collageRadius: state.collageRadius,
@@ -335,11 +335,14 @@ export function KonvaCanvas({
     collageStrokeWidth: state.collageStrokeWidth,
     collageStrokeColor: state.collageStrokeColor,
     backgroundColor: state.backgroundColor,
+    canvasWidth: state.canvasWidth,
   })));
   
   const trRef = useRef<any>(null);
   const elementsRefs = useRef<Record<string, any>>({});
   const altPressedRef = useRef(false);
+  // استخدام StageContext بدلاً من Zustand لتجنب مشاكل GC
+  const stageContextRef = useStageRef();
   
   const selectedEl = sortedElements.find((e) => e.id === selectedId);
   const isText = selectedEl?.type === "text";
@@ -391,7 +394,7 @@ export function KonvaCanvas({
       height={displayH}
       onMouseDown={handleStageMouseDown}
       onTouchStart={handleStageMouseDown}
-      ref={setStageRef}
+      ref={(stage) => { stageContextRef.current = stage; }}
     >
       {/* Background Color Layer */}
       <Layer>
@@ -434,7 +437,7 @@ export function KonvaCanvas({
       {mode === "collage" && (
         <Layer>
           {slots.map((slot) => {
-            const scale = displayW / 1200;
+            const scale = displayW / canvasWidth;
             const margin = collageMargin * scale;
             const gap = collageGap * scale;
             const radius = collageRadius * scale;
@@ -581,17 +584,36 @@ export function KonvaCanvas({
               return null;
             }
 
+            const handleMouseDown = (e: any) => {
+              const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
+              if (!isMulti) {
+                const { selectedIds } = useEditorStore.getState();
+                if (!selectedIds.includes(el.id)) {
+                  selectElement(el.id);
+                }
+              } else {
+                toggleElementSelection(el.id);
+              }
+            };
+
+            const handleClick = (e: any) => {
+              const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
+              if (!isMulti) {
+                const { selectedIds } = useEditorStore.getState();
+                if (selectedIds.includes(el.id)) {
+                  selectElement(el.id);
+                }
+              }
+            };
+
             const elementProps = {
               key: el.id,
               element: el,
               isSelected: selectedIds.includes(el.id),
-              onSelect: (e?: any) => {
-                if (e?.evt?.shiftKey) {
-                  toggleElementSelection(el.id);
-                } else {
-                  selectElement(el.id);
-                }
-              },
+              onMouseDown: handleMouseDown,
+              onTouchStart: handleMouseDown,
+              onClick: handleClick,
+              onTap: handleClick,
               onChange: (patch: Partial<CanvasElement>) => handleElementChange(el.id, patch),
               displayW,
               displayH,
@@ -600,6 +622,7 @@ export function KonvaCanvas({
               snapToGrid,
               gridSize,
               altPressedRef,
+              getKonvaNode: (id: string) => elementsRefs.current[id],
               elementRef: {
                 get current() {
                   return elementsRefs.current[el.id];
@@ -657,8 +680,45 @@ export function KonvaCanvas({
                 }
                 return newBox;
               }}
-              onTransformEnd={() => {
-                pushHistory();
+
+              onTransformEnd={(e) => {
+                if (!trRef.current) return;
+                const nodes = trRef.current.nodes();
+                const patches = nodes.map((node: any) => {
+                  const id = node.id();
+                  const el = sortedElements.find((x) => x.id === id);
+                  if (!el) return null;
+
+                  const sx = node.scaleX();
+                  const sy = node.scaleY();
+                  const isNowFlipped = sx < 0;
+                  const absScaleX = Math.abs(sx);
+                  node.scaleX(isNowFlipped ? -1 : 1);
+                  node.scaleY(1);
+
+                  const newWidth = (node.width() * absScaleX) / displayW;
+                  const rawX = node.x() / displayW;
+
+                  const patch: Partial<CanvasElement> = {
+                    x: isNowFlipped ? rawX - newWidth : rawX,
+                    y: node.y() / displayH,
+                    width: newWidth,
+                    rotation: node.rotation(),
+                    flipX: isNowFlipped,
+                  };
+
+                  if (el.type === "text") {
+                    patch.height = node.height() / displayH;
+                    (patch as any).fontSize = Math.max(6, Math.round((el.fontSize || 16) * Math.abs(sy)));
+                  } else {
+                    patch.height = (node.height() * Math.abs(sy)) / displayH;
+                  }
+
+                  return { id, patch };
+                }).filter(Boolean) as { id: string; patch: Partial<CanvasElement> }[];
+
+                useEditorStore.getState().updateElements(patches);
+                useEditorStore.getState().pushHistory();
               }}
             />
           )}

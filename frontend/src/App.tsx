@@ -39,29 +39,7 @@ export default function App() {
 
   const { theme, toggleTheme } = useTheme();
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && typeof Worker !== "undefined") {
-      const timer = setTimeout(() => {
-        try {
-          const worker = new Worker(
-            new URL("./components/editor/bg-worker.ts", import.meta.url),
-            { type: "module" }
-          );
-          worker.postMessage({ type: "warmup" });
-          worker.onmessage = (e) => {
-            if (e.data.type === "warmup_done") {
-              (window as any).isModelCached = true;
-            }
-          };
-          (window as any).globalBgWorker = worker;
-        } catch (err) {
-          console.warn("Failed to pre-warm background worker:", err);
-        }
-      }, 5000); // تأخير 5 ثوانٍ لتفادي إشغال المعالج عند التحميل الأولي
 
-      return () => clearTimeout(timer);
-    }
-  }, []);
   const {
     isMaximized,
     isFocused,

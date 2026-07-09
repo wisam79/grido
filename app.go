@@ -242,7 +242,7 @@ func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayN
 		return "", fmt.Errorf("save dialog: %w", err)
 	}
 	if filePath == "" {
-		return "cancelled", nil
+		return "", nil // إلغاء — نُرجع سلسلة فارغة ليكون متسقاً مع SaveFile وOpenFile
 	}
 
 	if err := os.WriteFile(filePath, decoded, 0o644); err != nil {
@@ -284,26 +284,37 @@ func (a *App) ClearAutoSave() error {
 }
 
 func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string) (string, error) {
-	// 1. Resolve local path to actual path on disk
+	var srcImg image.Image
+	var err error
 	mediaDir := getMediaDir()
-	fileName := filepath.Base(filepath.Clean(localImagePath))
-	actualImagePath := filepath.Join(mediaDir, fileName)
 
-	// Check if file exists
-	if _, err := os.Stat(actualImagePath); err != nil {
-		return "", fmt.Errorf("image file not found: %w", err)
+	if strings.HasPrefix(localImagePath, "data:image/") {
+		decodedSrc, _, err := decodeBase64Image(localImagePath)
+		if err != nil {
+			return "", fmt.Errorf("decode source base64: %w", err)
+		}
+		srcImg, err = imaging.Decode(bytes.NewReader(decodedSrc))
+		if err != nil {
+			return "", fmt.Errorf("decode source image: %w", err)
+		}
+	} else {
+		fileName := filepath.Base(filepath.Clean(localImagePath))
+		actualImagePath := filepath.Join(mediaDir, fileName)
+
+		if _, err := os.Stat(actualImagePath); err != nil {
+			return "", fmt.Errorf("image file not found: %w", err)
+		}
+
+		srcImg, err = imaging.Open(actualImagePath)
+		if err != nil {
+			return "", fmt.Errorf("open original image: %w", err)
+		}
 	}
 
 	// 2. Decode the mask base64
 	decodedMask, _, err := decodeBase64Image(maskBase64)
 	if err != nil {
 		return "", fmt.Errorf("decode mask: %w", err)
-	}
-
-	// 3. Open original image
-	srcImg, err := imaging.Open(actualImagePath)
-	if err != nil {
-		return "", fmt.Errorf("open original image: %w", err)
 	}
 
 	// 4. Open mask image

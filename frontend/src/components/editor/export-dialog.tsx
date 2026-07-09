@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { Download, FileJson, FileImage, Loader2 } from "lucide-react";
 import { exportCanvas, downloadBlob, saveProjectAsJSON } from "./export-utils";
 import { useEditorStore } from "@/lib/editor-store";
+import { useStageRef } from "@/lib/stage-context";
 import { toast } from "sonner";
 
 import { useShallow } from "zustand/react/shallow";
@@ -26,6 +27,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const [format, setFormat] = useState<"png" | "jpg">("png");
   const [quality, setQuality] = useState(95);
   const [loading, setLoading] = useState(false);
+  const stageRef = useStageRef();
   const { template, canvasWidth, canvasHeight, mode, printSettings } = useEditorStore(useShallow((state) => ({
     template: state.template,
     canvasWidth: state.canvasWidth,
@@ -39,7 +41,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     // نمنح المتصفح فرصة لرسم مؤشر التحميل أولاً (Paint Cycle) قبل حظر الخيط الرئيسي بالمعالجة
     setTimeout(async () => {
       try {
-        const blob = await exportCanvas(format, quality / 100);
+        const blob = await exportCanvas(format, quality / 100, stageRef.current);
         if (blob) {
           const ext = format === "png" ? "png" : "jpg";
           const name = template

@@ -35,7 +35,21 @@ export function PropertiesPanel() {
         <div className="p-3 pb-8 space-y-4">
           {/* خصائص العنصر المحدد */}
           {selectedElement && (
-            <ElementProperties element={selectedElement} onUpdate={updateElement} />
+            <ElementProperties 
+              element={selectedElement} 
+              onUpdate={(id, patch) => {
+                const { selectedIds, updateElements } = useEditorStore.getState();
+                if (selectedIds.length > 1 && selectedIds.includes(id)) {
+                  const patches = selectedIds.map((sid) => ({
+                    id: sid,
+                    patch,
+                  }));
+                  updateElements(patches);
+                } else {
+                  updateElement(id, patch);
+                }
+              }} 
+            />
           )}
 
           {/* خصائص الخلية المحددة (كولاج) */}

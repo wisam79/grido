@@ -1,12 +1,15 @@
-import { useEditorStore } from "@/lib/editor-store";
+import type Konva from "konva";
+import { ImageElement, useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { buildCSSFilter } from "@/lib/utils";
 import { serializeEditorState } from "@/lib/project-serializer";
 
 // تصدير الكانفس الحالي كصورة PNG/JPG
+// يقبل stageRef كمعامل بدلاً من قراءته من Zustand مباشرة
 export async function exportCanvas(
   format: "png" | "jpg" = "png",
-  quality = 0.95
+  quality = 0.95,
+  stageRef?: Konva.Stage | null
 ): Promise<Blob | null> {
   const {
     mode,
@@ -15,10 +18,9 @@ export async function exportCanvas(
     backgroundColor,
     elements,
     slots,
-    stageRef,
   } = useEditorStore.getState();
 
-  // محاولة التصدير مباشرة من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
+  // محاولة التصدير مباشرةً من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
   if (stageRef) {
     let dataUrl: string | null = null;
     const transformers = stageRef.find('Transformer');
@@ -156,10 +158,10 @@ export async function exportCanvas(
 
     const elImageMap: Record<string, HTMLImageElement> = {};
     const elLoadPromises = sorted
-      .filter((el) => el.type === "image" && el.imageSrc)
+      .filter((el): el is ImageElement => el.type === "image" && !!el.imageSrc)
       .map(async (el) => {
         try {
-          const img = await loadImage(el.imageSrc!);
+          const img = await loadImage(el.imageSrc);
           elImageMap[el.id] = img;
         } catch (e) {
           console.error("Failed to pre-load element image:", el.imageSrc, e);
@@ -187,7 +189,7 @@ export async function exportCanvas(
         drawImageCover(ctx, img, 0, 0, w, h);
         ctx.filter = "none";
       } else if (el.type === "text") {
-        const fontSize = (el.fontSize || 32) * (canvasWidth / 600);
+        const fontSize = el.fontSize || 32;
         ctx.font = `${el.fontWeight || 700} ${fontSize}px Cairo, Tajawal, sans-serif`;
         ctx.fillStyle = el.color || "#000000";
         ctx.textAlign = (el.textAlign as CanvasTextAlign) || "center";
@@ -368,7 +370,11 @@ export async function saveProjectAsJSON() {
   });
   const res = await downloadBlob(blob, `identity-studio-${Date.now()}.json`);
   if (res === "success") {
-    toast.success("تم حفظ المشروع");
+    toast.success("تم حفظ المشروع بنجاح");
+  } else if (res === "") {
+    toast.info("تم إلغاء حفظ المشروع");
+  } else {
+    toast.error("فشل حفظ المشروع");
   }
 }
 
@@ -379,6 +385,10 @@ export async function quickExportPNG() {
     const res = await downloadBlob(blob, `photo-${Date.now()}.png`);
     if (res === "success") {
       toast.success("تم تصدير الصورة بنجاح");
+    } else if (res === "") {
+      toast.info("تم إلغاء تصدير الصورة");
+    } else {
+      toast.error("فشل تصدير الصورة");
     }
   } else {
     toast.error("تعذر تصدير الصورة");

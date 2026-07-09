@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"log/slog"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -101,12 +102,11 @@ func main() {
 						w.Header().Set("X-Content-Type-Options", "nosniff")
 						w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 
-						var contentType string
+						// تحديد نوع المحتوى بدقة بناءً على الامتداد — يدعم png وjpeg وwebp وgif
 						ext := strings.ToLower(filepath.Ext(filename))
-						if ext == ".png" {
-							contentType = "image/png"
-						} else {
-							contentType = "image/jpeg"
+						contentType := mime.TypeByExtension(ext)
+						if contentType == "" {
+							contentType = "application/octet-stream"
 						}
 						w.Header().Set("Content-Type", contentType)
 

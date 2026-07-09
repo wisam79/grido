@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -41,13 +42,24 @@ func InitDB() (*gorm.DB, error) {
 	}
 
 	// ⚡ Enable WAL (Write-Ahead Logging) mode, busy timeout and foreign keys with performance settings
-	_, _ = sqlDB.Exec("PRAGMA journal_mode=WAL;")
-	_, _ = sqlDB.Exec("PRAGMA busy_timeout=5000;")
-	_, _ = sqlDB.Exec("PRAGMA foreign_keys=ON;")
-	_, _ = sqlDB.Exec("PRAGMA synchronous=NORMAL;")
-	_, _ = sqlDB.Exec("PRAGMA cache_size=-8000;")
-	_, _ = sqlDB.Exec("PRAGMA temp_store=MEMORY;")
-	_, _ = sqlDB.Exec("PRAGMA mmap_size=268435456;")
+	pragmas := []struct {
+		query string
+		name  string
+	}{
+		{"PRAGMA journal_mode=WAL;", "journal_mode=WAL"},
+		{"PRAGMA busy_timeout=5000;", "busy_timeout=5000"},
+		{"PRAGMA foreign_keys=ON;", "foreign_keys=ON"},
+		{"PRAGMA synchronous=NORMAL;", "synchronous=NORMAL"},
+		{"PRAGMA cache_size=-8000;", "cache_size=-8000"},
+		{"PRAGMA temp_store=MEMORY;", "temp_store=MEMORY"},
+		{"PRAGMA mmap_size=268435456;", "mmap_size=268435456"},
+	}
+
+	for _, pragma := range pragmas {
+		if _, err := sqlDB.Exec(pragma.query); err != nil {
+			slog.Warn("Failed to execute SQLite PRAGMA", "pragma", pragma.name, "error", err)
+		}
+	}
 
 	// SQLite only supports one concurrent writer. Limit connections to 1 to avoid locking
 	sqlDB.SetMaxOpenConns(1)
@@ -186,7 +198,8 @@ func StopCleanupUnusedMedia() {
 }
 
 type elementJSONStruct struct {
-	ImageSrc string `json:"imageSrc"`
+	ImageSrc         string `json:"imageSrc"`
+	OriginalImageSrc string `json:"originalImageSrc"`
 }
 
 type slotJSONStruct struct {
@@ -201,6 +214,10 @@ func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]b
 			for _, el := range elems {
 				if el.ImageSrc != "" {
 					filename := filepath.Base(filepath.Clean(el.ImageSrc))
+					referenced[filename] = true
+				}
+				if el.OriginalImageSrc != "" {
+					filename := filepath.Base(filepath.Clean(el.OriginalImageSrc))
 					referenced[filename] = true
 				}
 			}

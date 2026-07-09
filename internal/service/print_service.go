@@ -126,12 +126,22 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 	return widthPx, heightPx, nil
 }
 
-// loadAndProcessImage يقو بفتح الصورة ومعالجة ألوانها وأبعادها
+type imageCache struct {
+	images map[string]image.Image
+	access map[string]time.Time
+}
+
+type processedCache struct {
+	images map[processedKey]image.Image
+	access map[processedKey]time.Time
+}
+
+// loadAndProcessImage يقوم بفتح الصورة ومعالجة ألوانها وأبعادها مع إدارة الذاكرة بنظام LRU
 func (s *PrintService) loadAndProcessImage(
 	item domain.PrintItem,
 	dpi int,
-	imageCache map[string]image.Image,
-	processedCache map[processedKey]image.Image,
+	imgCache *imageCache,
+	procCache *processedCache,
 ) (image.Image, error) {
 	filePath := resolveLocalPath(item.ImageSrc)
 	targetW := int(math.Round(mmToPx(item.W, dpi)))
@@ -151,14 +161,16 @@ func (s *PrintService) loadAndProcessImage(
 		targetH:    targetH,
 	}
 
-	if cached, ok := processedCache[pKey]; ok {
+	if cached, ok := procCache.images[pKey]; ok {
+		procCache.access[pKey] = time.Now()
 		return cached, nil
 	}
 
 	var img image.Image
 	var err error
-	if cachedRaw, ok := imageCache[cacheKey]; ok {
+	if cachedRaw, ok := imgCache.images[cacheKey]; ok {
 		img = cachedRaw
+		imgCache.access[cacheKey] = time.Now()
 	} else {
 		if strings.HasPrefix(filePath, "data:image/") {
 			commaIdx := strings.Index(filePath, ",")
@@ -181,25 +193,45 @@ func (s *PrintService) loadAndProcessImage(
 			}
 		}
 
-		if len(imageCache) >= 8 {
-			for k := range imageCache {
-				delete(imageCache, k)
-				break
+		if len(imgCache.images) >= 8 {
+			var oldestKey string
+			var oldestTime time.Time
+			first := true
+			for k := range imgCache.images {
+				t := imgCache.access[k]
+				if first || t.Before(oldestTime) {
+					oldestTime = t
+					oldestKey = k
+					first = false
+				}
 			}
+			delete(imgCache.images, oldestKey)
+			delete(imgCache.access, oldestKey)
 		}
-		imageCache[cacheKey] = img
+		imgCache.images[cacheKey] = img
+		imgCache.access[cacheKey] = time.Now()
 	}
 
 	adjustedImg := applyColorAdjustments(img, item.Brightness, item.Contrast, item.Saturation)
 	processedImg := imaging.Fill(adjustedImg, targetW, targetH, imaging.Center, imaging.CatmullRom)
 
-	if len(processedCache) >= 16 {
-		for k := range processedCache {
-			delete(processedCache, k)
-			break
+	if len(procCache.images) >= 16 {
+		var oldestKey processedKey
+		var oldestTime time.Time
+		first := true
+		for k := range procCache.images {
+			t := procCache.access[k]
+			if first || t.Before(oldestTime) {
+				oldestTime = t
+				oldestKey = k
+				first = false
+			}
 		}
+		delete(procCache.images, oldestKey)
+		delete(procCache.access, oldestKey)
 	}
-	processedCache[pKey] = processedImg
+	procCache.images[pKey] = processedImg
+	procCache.access[pKey] = time.Now()
 
 	return processedImg, nil
 }
@@ -248,15 +280,21 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, erro
 	dc.SetColor(bgColor)
 	dc.Clear()
 
-	imageCache := make(map[string]image.Image)
-	processedCache := make(map[processedKey]image.Image)
+	imgCache := &imageCache{
+		images: make(map[string]image.Image),
+		access: make(map[string]time.Time),
+	}
+	procCache := &processedCache{
+		images: make(map[processedKey]image.Image),
+		access: make(map[processedKey]time.Time),
+	}
 
 	for _, item := range req.Items {
 		if item.ImageSrc == "" {
 			continue
 		}
 
-		processedImg, err := s.loadAndProcessImage(item, req.DPI, imageCache, processedCache)
+		processedImg, err := s.loadAndProcessImage(item, req.DPI, imgCache, procCache)
 		if err != nil {
 			return "", err
 		}
@@ -269,8 +307,8 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, erro
 
 	s.drawCutLines(dc, req)
 
-	imageCache = nil
-	processedCache = nil
+	imgCache = nil
+	procCache = nil
 
 	return s.saveOutput(dc)
 }

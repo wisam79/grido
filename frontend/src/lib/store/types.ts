@@ -1,0 +1,116 @@
+import { PhotoTemplate, CollageTemplate } from "../templates";
+import { ProjectFileV1 } from "../project-serializer";
+
+export interface ProjectStateData {
+  mode: EditorMode;
+  canvasWidth: number;
+  canvasHeight: number;
+  backgroundColor: string;
+  elements?: CanvasElement[];
+  slots?: CanvasSlot[];
+  template?: PhotoTemplate | null;
+  collageTemplate?: CollageTemplate | null;
+  printSettings?: PrintSettings;
+}
+
+export type ElementType = "image" | "text" | "shape";
+
+export interface BaseCanvasElement {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  opacity: number;
+  zIndex: number;
+  locked?: boolean;
+  visible?: boolean;
+
+  fillType?: "solid" | "linear" | "radial";
+  fillLinearGradientStartPoint?: { x: number; y: number };
+  fillLinearGradientEndPoint?: { x: number; y: number };
+  fillLinearGradientColorStops?: Array<number | string>;
+  fillRadialGradientStartPoint?: { x: number; y: number };
+  fillRadialGradientStartRadius?: number;
+  fillRadialGradientEndPoint?: { x: number; y: number };
+  fillRadialGradientEndRadius?: number;
+  fillRadialGradientColorStops?: Array<number | string>;
+
+  shadowColor?: string;
+  shadowBlur?: number;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  shadowOpacity?: number;
+  cornerRadius?: number;
+  globalCompositeOperation?: string;
+  flipX?: boolean;
+  groupId?: string;
+}
+
+export interface ImageElement extends BaseCanvasElement {
+  type: "image";
+  imageSrc: string;
+  originalImageSrc?: string;
+  filter?: string;
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+  blur?: number;
+}
+
+export interface TextElement extends BaseCanvasElement {
+  type: "text";
+  text: string;
+  fontSize: number;
+  fontWeight?: number;
+  color?: string;
+  fontFamily?: string;
+  textAlign?: "right" | "center" | "left";
+  textBgColor?: string;
+  lineHeight?: number;
+  letterSpacing?: number;
+}
+
+export interface ShapeElement extends BaseCanvasElement {
+  type: "shape";
+  shape: "rect" | "ellipse" | "line" | "star" | "path";
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  radius?: number;
+  svgPath?: string;
+}
+
+export type CanvasElement = ImageElement | TextElement | ShapeElement;
+
+export interface CanvasSlot {
+  id: string;
+  cellIndex: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  imageSrc?: string;
+  filter?: string;
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+}
+
+export type EditorMode = "single" | "collage";
+
+export interface PrintSettings {
+  paperId: string;
+  paperWidthMM: number;
+  paperHeightMM: number;
+  marginMM: number;
+  gapMM?: number;
+  dpi: number;
+  copiesPerSheet: number;
+  showCutLines: boolean;
+  orientation: "portrait" | "landscape";
+  fitToPage?: boolean;
+}
+
+export type { PhotoTemplate, CollageTemplate, ProjectFileV1 };
