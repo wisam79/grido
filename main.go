@@ -36,7 +36,7 @@ func main() {
 	cleanup, err := checkSingleInstance()
 	if err != nil {
 		slog.Error("Grido Studio is already running. Exiting...")
-		os.Exit(0)
+		os.Exit(1)
 	}
 	defer cleanup()
 
@@ -89,34 +89,46 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if strings.HasPrefix(r.URL.Path, "/local-image/") {
-					filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
-					filename := filepath.Base(filepath.Clean(filePath))
+			if strings.HasPrefix(r.URL.Path, "/local-image/") {
+				filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
+				filename := filepath.Base(filepath.Clean(filePath))
 
-					// 🔒 التحقق الأمني: السماح فقط بالملفات داخل مجلد Media المعتمد
-					mediaDir := getMediaDir()
-					absPath := filepath.Join(mediaDir, filename)
+				// 🔒 التحقق الأمني: السماح فقط بالملفات داخل مجلد Media المعتمد
+				mediaDir := getMediaDir()
+				absPath := filepath.Join(mediaDir, filename)
 
-					if _, err := os.Stat(absPath); err == nil {
-						// تعيين رؤوس الأمان والسرعة والتخزين المؤقت الطويل لأن أسماء الملفات فريدة
-						w.Header().Set("X-Content-Type-Options", "nosniff")
-						w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-
-						// تحديد نوع المحتوى بدقة بناءً على الامتداد — يدعم png وjpeg وwebp وgif
-						ext := strings.ToLower(filepath.Ext(filename))
-						contentType := mime.TypeByExtension(ext)
-						if contentType == "" {
-							contentType = "application/octet-stream"
-						}
-						w.Header().Set("Content-Type", contentType)
-
-						http.ServeFile(w, r, absPath)
-						return
-					} else {
-						http.Error(w, "Image not found on disk", http.StatusNotFound)
-						return
-					}
+				if _, err := os.Stat(absPath); err != nil {
+					http.Error(w, "Image not found on disk", http.StatusNotFound)
+					return
 				}
+
+				// 🔒 حماية ضد هجمات Symlink: تحليل المسار بالكامل والتأكد من بقائه داخل mediaDir
+				resolvedPath, err := filepath.EvalSymlinks(absPath)
+				if err != nil {
+					http.Error(w, "Forbidden", http.StatusForbidden)
+					return
+				}
+				if !strings.HasPrefix(resolvedPath, filepath.Clean(mediaDir)+string(filepath.Separator)) &&
+					resolvedPath != filepath.Clean(mediaDir) {
+					http.Error(w, "Forbidden", http.StatusForbidden)
+					return
+				}
+
+				// تعيين رؤوس الأمان والسرعة والتخزين المؤقت الطويل لأن أسماء الملفات فريدة
+				w.Header().Set("X-Content-Type-Options", "nosniff")
+				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+
+				// تحديد نوع المحتوى بدقة بناءً على الامتداد — يدعم png وjpeg وwebp وgif
+				ext := strings.ToLower(filepath.Ext(filename))
+				contentType := mime.TypeByExtension(ext)
+				if contentType == "" {
+					contentType = "application/octet-stream"
+				}
+				w.Header().Set("Content-Type", contentType)
+
+				http.ServeFile(w, r, absPath)
+				return
+			}
 				http.NotFound(w, r)
 			}),
 			Middleware: func(next http.Handler) http.Handler {

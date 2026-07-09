@@ -341,9 +341,18 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string) (string
 	maskPix := maskNRGBA.Pix
 	outPix := outImg.Pix
 
-	limit := len(srcPix)
-	// Process pixels in a flat loop - 50x-100x faster than interface-based At()/Set()
-	for i := 0; i < limit; i += 4 {
+	// 🔒 Bounds check: ensure all three arrays are large enough before flat looping.
+	// This prevents an index-out-of-range panic if resize produces unexpected dimensions.
+	maxSafe := len(srcPix)
+	if len(maskPix) < maxSafe {
+		maxSafe = len(maskPix)
+	}
+	if len(outPix) < maxSafe {
+		maxSafe = len(outPix)
+	}
+	maxSafe = (maxSafe / 4) * 4 // floor to nearest full RGBA pixel
+
+	for i := 0; i < maxSafe; i += 4 {
 		mr := uint32(maskPix[i])
 		mg := uint32(maskPix[i+1])
 		mb := uint32(maskPix[i+2])
