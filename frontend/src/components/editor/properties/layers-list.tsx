@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,95 +14,110 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement, toggleElementSelection }: any) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: el.id });
+const SortableLayerItem = React.memo(
+  function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement, toggleElementSelection }: any) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: el.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 100 : "auto",
-    opacity: isDragging ? 0.9 : 1,
-  };
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      zIndex: isDragging ? 100 : "auto",
+      opacity: isDragging ? 0.9 : 1,
+    };
 
-  const isVisible = el.visible !== false;
-  const isLocked = !!el.locked;
+    const isVisible = el.visible !== false;
+    const isLocked = !!el.locked;
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      onClick={(e) => {
-        if (e.shiftKey || e.ctrlKey || e.metaKey) {
-          toggleElementSelection(el.id);
-        } else {
-          selectElement(el.id);
-        }
-      }}
-      className={`flex items-center justify-between p-2.5 rounded-lg border text-right cursor-pointer transition-colors duration-200 ${
-        isSelected
-          ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
-          : "border-transparent bg-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-      } ${isDragging ? "shadow-md bg-background ring-1 ring-primary/30" : ""}`}
-    >
-      <div className="flex items-center gap-2 min-w-0">
-        <div 
-          {...attributes} 
-          {...listeners} 
-          className="cursor-grab active:cursor-grabbing hover:bg-muted/50 p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical className="w-4 h-4" />
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        onClick={(e) => {
+          if (e.shiftKey || e.ctrlKey || e.metaKey) {
+            toggleElementSelection(el.id);
+          } else {
+            selectElement(el.id);
+          }
+        }}
+        className={`flex items-center justify-between p-2.5 rounded-lg border text-right cursor-pointer transition-colors duration-200 ${
+          isSelected
+            ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
+            : "border-transparent bg-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+        } ${isDragging ? "shadow-md bg-background ring-1 ring-primary/30" : ""}`}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <div 
+            {...attributes} 
+            {...listeners} 
+            className="cursor-grab active:cursor-grabbing hover:bg-muted/50 p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="w-4 h-4" />
+          </div>
+          <span className="shrink-0 text-muted-foreground/80">
+            {el.type === "image" && <ImageIcon className="w-4 h-4" />}
+            {el.type === "text" && <Type className="w-4 h-4" />}
+            {el.type === "shape" && <Square className="w-4 h-4" />}
+          </span>
+          <span className="text-xs font-semibold truncate max-w-[120px]">
+            {el.type === "image" ? "صورة" : el.type === "text" ? el.text || "نص" : `شكل (${el.shape})`}
+          </span>
         </div>
-        <span className="shrink-0 text-muted-foreground/80">
-          {el.type === "image" && <ImageIcon className="w-4 h-4" />}
-          {el.type === "text" && <Type className="w-4 h-4" />}
-          {el.type === "shape" && <Square className="w-4 h-4" />}
-        </span>
-        <span className="text-xs font-semibold truncate max-w-[120px]">
-          {el.type === "image" ? "صورة" : el.type === "text" ? el.text || "نص" : `شكل (${el.shape})`}
-        </span>
-      </div>
 
-      <div className="flex items-center gap-1 shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
-          onClick={(e) => toggleLock(el, e)}
-          title={isLocked ? "إلغاء القفل" : "قفل الطبقة"}
-        >
-          {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
-          onClick={(e) => toggleVisibility(el, e)}
-          title={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}
-        >
-          {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-7.5 h-7.5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
-          onClick={(e) => deleteLayer(el.id, e)}
-          title="حذف"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
+            onClick={(e) => toggleLock(el, e)}
+            title={isLocked ? "إلغاء القفل" : "قفل الطبقة"}
+          >
+            {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
+            onClick={(e) => toggleVisibility(el, e)}
+            title={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}
+          >
+            {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-7.5 h-7.5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
+            onClick={(e) => deleteLayer(el.id, e)}
+            title="حذف"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.el.id === nextProps.el.id &&
+      prevProps.el.type === nextProps.el.type &&
+      prevProps.el.visible === nextProps.el.visible &&
+      prevProps.el.locked === nextProps.el.locked &&
+      prevProps.el.text === nextProps.el.text &&
+      prevProps.el.shape === nextProps.el.shape &&
+      prevProps.el.zIndex === nextProps.el.zIndex
+    );
+  }
+);
 
 export function LayersList() {
-  const { elements, selectedId, selectedIds, selectElement, updateElement, removeElement, pushHistory, toggleElementSelection } = useEditorStore(useShallow((state) => ({
+  const { elements, selectedId, selectedIds, selectElement, updateElement, updateElements, removeElement, pushHistory, toggleElementSelection } = useEditorStore(useShallow((state) => ({
     elements: state.elements,
     selectedId: state.selectedId,
     selectedIds: state.selectedIds,
     selectElement: state.selectElement,
     updateElement: state.updateElement,
+    updateElements: state.updateElements,
     removeElement: state.removeElement,
     pushHistory: state.pushHistory,
     toggleElementSelection: state.toggleElementSelection,
@@ -118,6 +133,31 @@ export function LayersList() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  const toggleVisibility = useCallback((el: CanvasElement, e: React.MouseEvent) => {
+    e.stopPropagation();
+    updateElement(el.id, { visible: el.visible === false ? true : false });
+    pushHistory();
+  }, [updateElement, pushHistory]);
+
+  const toggleLock = useCallback((el: CanvasElement, e: React.MouseEvent) => {
+    e.stopPropagation();
+    updateElement(el.id, { locked: !el.locked });
+    pushHistory();
+  }, [updateElement, pushHistory]);
+
+  const deleteLayer = useCallback((id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeElement(id);
+  }, [removeElement]);
+
+  const handleSelectElement = useCallback((id: string) => {
+    selectElement(id);
+  }, [selectElement]);
+
+  const handleToggleSelection = useCallback((id: string) => {
+    toggleElementSelection(id);
+  }, [toggleElementSelection]);
 
   if (elements.length === 0) {
     return (
@@ -136,23 +176,6 @@ export function LayersList() {
   // ترتيب من الأكبر إلى الأصغر Z-Index (العنصر الأعلى يظهر أولاً)
   const sorted = [...elements].sort((a, b) => b.zIndex - a.zIndex);
 
-  const toggleVisibility = (el: CanvasElement, e: React.MouseEvent) => {
-    e.stopPropagation();
-    updateElement(el.id, { visible: el.visible === false ? true : false });
-    pushHistory();
-  };
-
-  const toggleLock = (el: CanvasElement, e: React.MouseEvent) => {
-    e.stopPropagation();
-    updateElement(el.id, { locked: !el.locked });
-    pushHistory();
-  };
-
-  const deleteLayer = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    removeElement(id);
-  };
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -170,13 +193,18 @@ export function LayersList() {
     const len = newSorted.length;
     
     // منع تحديث العناصر التي لم تتغير لتقليل الـ Renders
+    const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
     newSorted.forEach((el, index) => {
       const targetZ = (len - index) * baseZ;
       if (el.zIndex !== targetZ) {
-        updateElement(el.id, { zIndex: targetZ });
+        patches.push({ id: el.id, patch: { zIndex: targetZ } });
       }
     });
-    pushHistory();
+
+    if (patches.length > 0) {
+      updateElements(patches);
+      pushHistory();
+    }
   };
 
   return (
@@ -209,8 +237,8 @@ export function LayersList() {
                     toggleVisibility={toggleVisibility}
                     toggleLock={toggleLock}
                     deleteLayer={deleteLayer}
-                    selectElement={selectElement}
-                    toggleElementSelection={toggleElementSelection}
+                    selectElement={handleSelectElement}
+                    toggleElementSelection={handleToggleSelection}
                   />
                 ))}
               </div>

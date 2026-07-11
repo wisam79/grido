@@ -15,7 +15,7 @@ let sharedQueueY: Int32Array | null = null;
 interface RefineBgDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  element: ImageElement;
+  element: any;
   onSave: (newImageSrc: string) => void;
 }
 
@@ -171,17 +171,28 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     setHistoryLength(1);
   }, [currentImage, originalImage, open]);
 
+  const getHistoryMax = (imgData: ImageData) => {
+    // حساب حجم ImageData بالبايت لتحديد العدد الأقصى المسموح به في السجل
+    // الصور الكبيرة تستهلك ذاكرة هائلة، لذا نحدّ السجل ديناميكياً
+    const bytes = imgData.data.length;
+    if (bytes > 50_000_000) return 2;   // >50MB → سجلين فقط
+    if (bytes > 10_000_000) return 4;   // >10MB → 4 سجلات
+    return 10;                           // ≥10 سجلات للصور الصغيرة
+  };
+
   const saveHistory = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     
-    // Keep max 10 history states to avoid high memory usage
-    if (historyRef.current.length > 10) {
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const maxStates = getHistoryMax(imgData);
+
+    if (historyRef.current.length >= maxStates) {
       historyRef.current.shift();
     }
-    historyRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    historyRef.current.push(imgData);
     setHistoryLength(historyRef.current.length);
   };
 

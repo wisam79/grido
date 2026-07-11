@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { Stage, Layer, Transformer, Line, Circle, Group, Rect, Text, FastLayer } from "react-konva";
+import { Stage, Layer, Transformer, Line, Circle, Group, Rect, Text, FastLayer, Shape } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
@@ -26,6 +26,12 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
   brightness,
   contrast,
   saturation,
+  zoom = 1,
+  dragX = 0,
+  dragY = 0,
+  draggable = false,
+  onUpdateOffsets,
+  onDragEnd,
   onClick
 }: {
   imageSrc: string;
@@ -35,6 +41,12 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
   brightness?: number;
   contrast?: number;
   saturation?: number;
+  zoom?: number;
+  dragX?: number;
+  dragY?: number;
+  draggable?: boolean;
+  onUpdateOffsets?: (x: number, y: number) => void;
+  onDragEnd?: () => void;
   onClick: () => void;
 }) {
   const [image] = useAsyncImage(imageSrc);
@@ -58,21 +70,40 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }
       }
     };
-  }, [image, filter, brightness, contrast, saturation]);
+  }, [image, filter, brightness, contrast, saturation, zoom, dragX, dragY]);
 
   if (!image) return null;
 
   // object-fit: cover
   const imgAspect = image.width / image.height;
   const slotAspect = width / height;
-  let sx = 0, sy = 0, sw = image.width, sh = image.height;
+  let sw = image.width;
+  let sh = image.height;
+
   if (imgAspect > slotAspect) {
     sw = image.height * slotAspect;
-    sx = (image.width - sw) / 2;
   } else {
     sh = image.width / slotAspect;
-    sy = (image.height - sh) / 2;
   }
+
+  // Apply zoom factor
+  sw = sw / zoom;
+  sh = sh / zoom;
+
+  // Default centering offset
+  const defaultSx = imgAspect > slotAspect ? (image.width - sw) / 2 : 0;
+  const defaultSy = imgAspect > slotAspect ? 0 : (image.height - sh) / 2;
+
+  // Max bounds for offset X and Y
+  const maxDragX = (image.width - sw) / 2;
+  const maxDragY = (image.height - sh) / 2;
+
+  // Clamp the drag offsets to ensure crop window stays within the image boundaries
+  const dragXClamped = Math.max(-maxDragX, Math.min(maxDragX, dragX));
+  const dragYClamped = Math.max(-maxDragY, Math.min(maxDragY, dragY));
+
+  const sx = defaultSx + dragXClamped;
+  const sy = defaultSy + dragYClamped;
 
   let totalBrightness = brightness ?? 100;
   let totalContrast = contrast ?? 100;
@@ -122,6 +153,26 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
 
   return (
     <Rect
+      draggable={draggable}
+      onDragMove={(e) => {
+        if (!draggable) return;
+        const dx = e.target.x();
+        const dy = e.target.y();
+        // Reset Rect position to stay locked in place
+        e.target.x(0);
+        e.target.y(0);
+        
+        // Calculate new drag offsets
+        const newDragX = dragX - dx * (sw / width);
+        const newDragY = dragY - dy * (sh / height);
+        
+        onUpdateOffsets?.(newDragX, newDragY);
+      }}
+      onDragEnd={() => {
+        if (draggable) {
+          onDragEnd?.();
+        }
+      }}
       fillPatternImage={image}
       fillPatternX={-sx * (width / sw)}
       fillPatternY={-sy * (height / sh)}
@@ -148,7 +199,11 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
          prev.filter === next.filter &&
          prev.brightness === next.brightness &&
          prev.contrast === next.contrast &&
-         prev.saturation === next.saturation;
+         prev.saturation === next.saturation &&
+         prev.zoom === next.zoom &&
+         prev.dragX === next.dragX &&
+         prev.dragY === next.dragY &&
+         prev.draggable === next.draggable;
 });
 
 const GridLayer = React.memo(function GridLayer({
@@ -174,54 +229,49 @@ const GridLayer = React.memo(function GridLayer({
 
   const numH = Math.ceil(displayH / gridSize);
   const numW = Math.ceil(displayW / gridSize);
-  const elements = [];
-
-  if (gridType === "lines") {
-    for (let i = 0; i <= numH; i++) {
-      const isMajor = gridSubdivisions > 0 && i % gridSubdivisions === 0;
-      elements.push(
-        <Line
-          key={`grid-h-${i}`}
-          points={[0, i * gridSize, displayW, i * gridSize]}
-          stroke={gridColor}
-          opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
-          strokeWidth={isMajor ? 0.8 : 0.4}
-        />
-      );
-    }
-    for (let j = 0; j <= numW; j++) {
-      const isMajor = gridSubdivisions > 0 && j % gridSubdivisions === 0;
-      elements.push(
-        <Line
-          key={`grid-v-${j}`}
-          points={[j * gridSize, 0, j * gridSize, displayH]}
-          stroke={gridColor}
-          opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
-          strokeWidth={isMajor ? 0.8 : 0.4}
-        />
-      );
-    }
-  } else {
-    for (let i = 0; i <= numH; i++) {
-      for (let j = 0; j <= numW; j++) {
-        const isMajor = gridSubdivisions > 0 && (i % gridSubdivisions === 0 || j % gridSubdivisions === 0);
-        elements.push(
-          <Circle
-            key={`grid-dot-${i}-${j}`}
-            x={j * gridSize}
-            y={i * gridSize}
-            radius={isMajor ? 1.5 : 0.8}
-            fill={gridColor}
-            opacity={isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity}
-          />
-        );
-      }
-    }
-  }
 
   return (
     <FastLayer listening={false} name="grid-layer">
-      {elements}
+      <Shape
+        sceneFunc={(context, shape) => {
+          context.beginPath();
+          if (gridType === "lines") {
+            for (let i = 0; i <= numH; i++) {
+              const isMajor = gridSubdivisions > 0 && i % gridSubdivisions === 0;
+              context.moveTo(0, i * gridSize);
+              context.lineTo(displayW, i * gridSize);
+              context.strokeStyle = gridColor;
+              context.lineWidth = isMajor ? 0.8 : 0.4;
+              context.globalAlpha = isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity;
+              context.stroke();
+              context.beginPath();
+            }
+            for (let j = 0; j <= numW; j++) {
+              const isMajor = gridSubdivisions > 0 && j % gridSubdivisions === 0;
+              context.moveTo(j * gridSize, 0);
+              context.lineTo(j * gridSize, displayH);
+              context.strokeStyle = gridColor;
+              context.lineWidth = isMajor ? 0.8 : 0.4;
+              context.globalAlpha = isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity;
+              context.stroke();
+              context.beginPath();
+            }
+          } else {
+            context.fillStyle = gridColor;
+            for (let i = 0; i <= numH; i++) {
+              for (let j = 0; j <= numW; j++) {
+                const isMajor = gridSubdivisions > 0 && (i % gridSubdivisions === 0 || j % gridSubdivisions === 0);
+                const radius = isMajor ? 1.5 : 0.8;
+                const alpha = isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity;
+                context.globalAlpha = alpha;
+                context.beginPath();
+                context.arc(j * gridSize, i * gridSize, radius, 0, Math.PI * 2);
+                context.fill();
+              }
+            }
+          }
+        }}
+      />
     </FastLayer>
   );
 });
@@ -286,6 +336,7 @@ export function KonvaCanvas({
     selectElement,
     toggleElementSelection,
     updateElement,
+    updateSlot,
     pushHistory,
     showGrid,
     gridSize,
@@ -301,6 +352,7 @@ export function KonvaCanvas({
     columnsGutter,
     collageGap,
     collageMargin,
+    collageTemplate,
     collageRadius,
     collageShowCutLines,
     collageStrokeWidth,
@@ -315,6 +367,7 @@ export function KonvaCanvas({
     selectElement: state.selectElement,
     toggleElementSelection: state.toggleElementSelection,
     updateElement: state.updateElement,
+    updateSlot: state.updateSlot,
     pushHistory: state.pushHistory,
     showGrid: state.showGrid,
     gridSize: state.gridSize,
@@ -330,6 +383,7 @@ export function KonvaCanvas({
     columnsGutter: state.columnsGutter,
     collageGap: state.collageGap,
     collageMargin: state.collageMargin,
+    collageTemplate: state.collageTemplate,
     collageRadius: state.collageRadius,
     collageShowCutLines: state.collageShowCutLines,
     collageStrokeWidth: state.collageStrokeWidth,
@@ -438,8 +492,9 @@ export function KonvaCanvas({
         <Layer>
           {slots.map((slot) => {
             const scale = displayW / canvasWidth;
-            const margin = collageMargin * scale;
-            const gap = collageGap * scale;
+            const hasPhysical = collageTemplate?.physicalLayout;
+            const margin = hasPhysical ? 0 : collageMargin * scale;
+            const gap = hasPhysical ? 0 : collageGap * scale;
             const radius = collageRadius * scale;
             const borderW = collageStrokeWidth * scale;
 
@@ -500,6 +555,16 @@ export function KonvaCanvas({
                       brightness={slot.brightness}
                       contrast={slot.contrast}
                       saturation={slot.saturation}
+                      zoom={slot.zoom}
+                      dragX={slot.dragX}
+                      dragY={slot.dragY}
+                      draggable={isSelected}
+                      onUpdateOffsets={(x, y) => {
+                        updateSlot(slot.id, { dragX: x, dragY: y });
+                      }}
+                      onDragEnd={() => {
+                        pushHistory();
+                      }}
                       onClick={() => handleSlotClick?.(slot.id)}
                     />
                   ) : (
@@ -656,7 +721,7 @@ export function KonvaCanvas({
             return null;
           })}
 
-          {selectedId && (
+          {selectedIds.length > 0 && (
             <Transformer
               ref={trRef}
               anchorSize={10}
@@ -670,7 +735,7 @@ export function KonvaCanvas({
               rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
               rotateAnchorOffset={25}
               enabledAnchors={
-                isText
+                isText && selectedIds.length === 1
                   ? ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right"]
                   : ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"]
               }

@@ -55,11 +55,11 @@ describe('Component Testing: UI Rendering', () => {
     render(<App />);
     
     // Open the templates dialog
-    const openBtn = screen.getByText('قوالب كولاج جاهزة...');
+    const openBtn = screen.getByText('قوالب الكولاج والطباعة');
     fireEvent.click(openBtn);
 
-    expect(screen.getAllByText('صورتان عمودي')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('صورتان أفقي')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('ثلاث صور')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('طقم هوية ومعاملات عراقية (مختلط)')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('ورقة البطاقة الوطنية وجواز السفر (8 صور)')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('ورقة الأحوال والجنسية العراقية (8 صور)')[0]).toBeInTheDocument();
   });
 });

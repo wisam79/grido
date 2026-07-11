@@ -96,6 +96,10 @@ export interface CanvasSlot {
   brightness?: number;
   contrast?: number;
   saturation?: number;
+  zoom?: number;
+  dragX?: number;
+  dragY?: number;
+  originalImageSrc?: string;
 }
 
 export type EditorMode = "single" | "collage";

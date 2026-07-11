@@ -60,7 +60,7 @@ export function ElementProperties({
               <Paintbrush className="w-3.5 h-3.5" />
             </TabsTrigger>
             {hasAdjustTab && (
-              <TabsTrigger value="adjust" title="تعديل الألوان والفلاتر" className="rounded-md py-1 cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="adjust" title="تعديل الألوان" className="rounded-md py-1 cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
                 <Sliders className="w-3.5 h-3.5" />
               </TabsTrigger>
             )}

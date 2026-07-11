@@ -32,25 +32,21 @@ test.describe('Collage Mode and Filters E2E', () => {
     });
   });
 
-  test('Switch to collage mode and apply a ready-made template', async ({ page }) => {
+  test('Switch to collage mode and apply an official template', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
     await page.getByTitle('وضع الكولاج').click();
 
-    await page.getByRole('button', { name: 'قوالب كولاج جاهزة...' }).click();
+    // Toggle open official print templates
+    const toggleBtn = page.getByRole('button', { name: 'قوالب الكولاج والطباعة' });
+    await expect(toggleBtn).toBeVisible();
+    await toggleBtn.click();
 
-    const dialog = page.getByRole('dialog', { name: 'اختيار قالب كولاج جاهز' });
-    await expect(dialog).toBeVisible();
-
-    await dialog.getByRole('button', { name: 'ثلاث صور' }).click();
-
-    await expect(dialog).toBeHidden();
-
-    await page.getByRole('button', { name: 'قوالب كولاج جاهزة...' }).click();
-    const reopenedDialog = page.getByRole('dialog', { name: 'اختيار قالب كولاج جاهز' });
-    await expect(reopenedDialog).toBeVisible();
-    await expect(reopenedDialog.getByRole('button', { name: 'ثلاث صور' })).toHaveClass(/border-primary/);
+    // Select the mixed template
+    const mixedTemplateCard = page.getByText('طقم هوية ومعاملات عراقية (مختلط)').first();
+    await expect(mixedTemplateCard).toBeVisible();
+    await mixedTemplateCard.click();
   });
 
 });

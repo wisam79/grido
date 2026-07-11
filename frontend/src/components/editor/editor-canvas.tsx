@@ -35,6 +35,7 @@ export const EditorCanvas = React.forwardRef<
     updateSlot,
     collageGap,
     collageMargin,
+    collageTemplate,
     template,
     printSettings,
     showRuler,
@@ -56,6 +57,7 @@ export const EditorCanvas = React.forwardRef<
     updateSlot: state.updateSlot,
     collageGap: state.collageGap,
     collageMargin: state.collageMargin,
+    collageTemplate: state.collageTemplate,
     template: state.template,
     printSettings: state.printSettings,
     showRuler: state.showRuler,
@@ -251,8 +253,9 @@ export const EditorCanvas = React.forwardRef<
         if (!selectedSlot || !selectedSlot.imageSrc) return null;
 
         const scale = displayW / canvasWidth;
-        const margin = collageMargin * scale;
-        const gap = collageGap * scale;
+        const hasPhysical = collageTemplate?.physicalLayout;
+        const margin = hasPhysical ? 0 : collageMargin * scale;
+        const gap = hasPhysical ? 0 : collageGap * scale;
 
         const availW = displayW - 2 * margin;
         const availH = displayH - 2 * margin;

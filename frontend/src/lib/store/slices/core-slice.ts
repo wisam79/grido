@@ -1,8 +1,9 @@
 import { StateCreator } from "zustand";
 import { EditorMode, ProjectFileV1 } from "../types";
-import { PHOTO_TEMPLATES, COLLAGE_TEMPLATES } from "../../templates";
+import { PHOTO_TEMPLATES, COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
 import { generateInitialSlots } from "./collage-slice";
 import { DEFAULT_PRINT_SETTINGS } from "./print-slice";
+import { uid } from "../../utils";
 
 export interface CoreSlice {
   projectId: string | null;
@@ -25,8 +26,8 @@ export interface CoreSlice {
 export const DEFAULT_CORE_STATE = {
   projectId: null as string | null,
   mode: "collage" as EditorMode,
-  canvasWidth: 1200,
-  canvasHeight: 1200,
+  canvasWidth: 2480,
+  canvasHeight: 3508,
   backgroundColor: "#FFFFFF",
   lastEditedImage: null as string | null,
   lastEditedImageAspect: null as number | null,
@@ -94,10 +95,44 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       };
     });
 
+    const collageTemplate = get().collageTemplate;
+    const mode = get().mode;
+    let adjustedSlots = get().slots || [];
+
+    if (mode === "collage" && collageTemplate) {
+      if (collageTemplate.physicalLayout) {
+        const storedDpi = get().printSettings?.dpi || 300;
+        const dpi = getEffectiveDpi(w, h, storedDpi);
+        const dynamicCells = computeDynamicCollageCells(
+          collageTemplate,
+          w,
+          h,
+          dpi,
+          get().collageGap,
+          get().collageMargin
+        );
+        if (dynamicCells) {
+          adjustedSlots = dynamicCells.map((c, i) => {
+            const existingSlot = (get().slots || [])[i] || {};
+            return {
+              ...existingSlot,
+              id: existingSlot.id || uid(),
+              cellIndex: i,
+              x: c.x,
+              y: c.y,
+              w: c.w,
+              h: c.h,
+            };
+          });
+        }
+      }
+    }
+
     set({
       canvasWidth: w,
       canvasHeight: h,
       elements: adjustedElements,
+      slots: adjustedSlots,
     });
     get().pushHistory();
   },
@@ -112,8 +147,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     set({
       projectId: null,
       mode: "collage" as EditorMode,
-      canvasWidth: 1200,
-      canvasHeight: 1200,
+      canvasWidth: 2480,
+      canvasHeight: 3508,
       backgroundColor: "#FFFFFF",
       lastEditedImage: null,
       lastEditedImageAspect: null,

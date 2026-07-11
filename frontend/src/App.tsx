@@ -88,6 +88,7 @@ export default function App() {
               size="sm"
               onClick={() => setMode("collage")}
               aria-label="وضع الكولاج"
+              title="وضع الكولاج"
               className={cn(
                 "h-7 px-3.5 rounded-full cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[10px] z-10 relative transition-colors duration-300",
                 mode === "collage"
@@ -110,6 +111,7 @@ export default function App() {
               size="sm"
               onClick={() => setMode("single")}
               aria-label="وضع التعديل الحر"
+              title="وضع التعديل الحر"
               className={cn(
                 "h-7 px-3.5 rounded-full cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[10px] z-10 relative transition-colors duration-300",
                 mode === "single"
@@ -203,7 +205,7 @@ export default function App() {
       {/* المحتوى الرئيسي */}
       <main className="flex-1 flex overflow-hidden">
         {/* اللوحة اليسرى - القوالب (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[28%] min-w-[320px] max-w-[420px] border-l bg-card flex-col no-print animate-panel-right">
+        <aside className="hidden lg:flex h-full w-[320px] min-w-[320px] max-w-[320px] border-l bg-card flex-col no-print animate-panel-right">
           <TemplatePanel />
         </aside>
 
@@ -232,7 +234,7 @@ export default function App() {
         </section>
 
         {/* اللوحة اليمنى - الخصائص (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[28%] min-w-[320px] max-w-[420px] border-r bg-card flex-col no-print animate-panel-left">
+        <aside className="hidden lg:flex h-full w-[320px] min-w-[320px] max-w-[320px] border-r bg-card flex-col no-print animate-panel-left">
           <PropertiesPanel />
         </aside>
       </main>

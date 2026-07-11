@@ -43,6 +43,82 @@ export interface PhotoTemplate {
 }
 
 export const PHOTO_TEMPLATES: PhotoTemplate[] = [
+  // === الوثائق الرسمية العراقية ===
+  {
+    id: "iq-national-id",
+    name: "البطاقة الوطنية الموحدة العراقية · 35×45 ملم",
+    category: "id",
+    width: 413,
+    height: 531,
+    widthMM: 35,
+    heightMM: 45,
+    dpi: 300,
+    headHeightMin: 70,
+    headHeightMax: 80,
+    background: "#FFFFFF",
+    backgroundHint: "خلفية بيضاء صلبة، الرأس يشغل 70-80%",
+    icon: IdCard,
+    notes: "المواصفات الرسمية لمديرية الأحوال المدنية والجوازات والإقامة العراقية",
+  },
+  {
+    id: "iq-passport",
+    name: "جواز السفر العراقي / الإلكتروني · 35×45 ملم",
+    category: "passport",
+    width: 413,
+    height: 531,
+    widthMM: 35,
+    heightMM: 45,
+    dpi: 300,
+    headHeightMin: 70,
+    headHeightMax: 80,
+    background: "#FFFFFF",
+    backgroundHint: "خلفية بيضاء صلبة، الرأس يشغل 70-80%",
+    icon: BookUser,
+    notes: "المقاس الرسمي لجواز السفر العراقي المقروء آلياً والبيومتري الجديد",
+  },
+  {
+    id: "iq-civil-id",
+    name: "هوية الأحوال / الجنسية العراقية · 32×40 ملم",
+    category: "id",
+    width: 378,
+    height: 472,
+    widthMM: 32,
+    heightMM: 40,
+    dpi: 300,
+    background: "#FFFFFF",
+    backgroundHint: "خلفية بيضاء",
+    icon: IdCard,
+    notes: "المقاس التقليدي لهوية الأحوال المدنية وشهادة الجنسية العراقية",
+  },
+  {
+    id: "iq-general-id",
+    name: "المعاملات العراقية / هوية النقابة · 40×60 ملم",
+    category: "id",
+    width: 472,
+    height: 709,
+    widthMM: 40,
+    heightMM: 60,
+    dpi: 300,
+    background: "#FFFFFF",
+    backgroundHint: "خلفية بيضاء",
+    icon: IdCard,
+    notes: "مقاس صورة المعاملات الرسمية العامة، والجامعات، ونقابات المهن العراقية",
+  },
+  {
+    id: "iq-pension",
+    name: "معاملات المتقاعدين والدوائر · 30×40 ملم",
+    category: "id",
+    width: 354,
+    height: 472,
+    widthMM: 30,
+    heightMM: 40,
+    dpi: 300,
+    background: "#FFFFFF",
+    backgroundHint: "خلفية بيضاء",
+    icon: IdCard,
+    notes: "المقاس المستخدم لهوية المتقاعدين وبطاقات الرعاية الاجتماعية والدوائر العامة في العراق",
+  },
+
   // === بطاقة الهوية المدنية ===
   {
     id: "id-30x40",
@@ -276,9 +352,27 @@ export interface CollageTemplate {
   // نسب الخلايا: x, y, w, h (بالكسر من 0 إلى 1)
   cells: { x: number; y: number; w: number; h: number }[];
   icon: LucideIcon;
+  physicalLayout?: {
+    type: string;
+    rows: number;
+    cols: number;
+    align?: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  };
 }
 
 export const COLLAGE_TEMPLATES: CollageTemplate[] = [
+  {
+    id: "collage-6v-row",
+    name: "ست صور سطر واحد (1×6)",
+    slots: 6,
+    cells: Array.from({ length: 6 }, (_, i) => ({
+      x: i / 6,
+      y: 0,
+      w: 1 / 6,
+      h: 1,
+    })),
+    icon: Columns4,
+  },
   {
     id: "collage-2v",
     name: "صورتان عمودي",
@@ -417,6 +511,87 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     })),
     icon: ClipboardList,
   },
+  {
+    id: "collage-iq-mixed",
+    name: "طقم هوية ومعاملات عراقية (مختلط)",
+    slots: 6,
+    cells: [
+      // 4 صور 35×45 ملم (يسار)
+      { x: 0.0473, y: 0.0714, w: 0.2365, h: 0.4286 },
+      { x: 0.2973, y: 0.0714, w: 0.2365, h: 0.4286 },
+      { x: 0.0473, y: 0.5190, w: 0.2365, h: 0.4286 },
+      { x: 0.2973, y: 0.5190, w: 0.2365, h: 0.4286 },
+      // 2 صورة 60×40 ملم (يمين)
+      { x: 0.5473, y: 0.1095, w: 0.4054, h: 0.3810 },
+      { x: 0.5473, y: 0.5350, w: 0.4054, h: 0.3810 },
+    ],
+    icon: ClipboardList,
+    physicalLayout: { type: "iq-mixed", rows: 2, cols: 3, align: "center" }
+  },
+  {
+    id: "collage-iq-national",
+    name: "ورقة البطاقة الوطنية وجواز السفر (8 صور)",
+    slots: 8,
+    cells: [
+      { x: 0.0068, y: 0.0619, w: 0.2365, h: 0.4286 },
+      { x: 0.2568, y: 0.0619, w: 0.2365, h: 0.4286 },
+      { x: 0.5068, y: 0.0619, w: 0.2365, h: 0.4286 },
+      { x: 0.7568, y: 0.0619, w: 0.2365, h: 0.4286 },
+      { x: 0.0068, y: 0.5095, w: 0.2365, h: 0.4286 },
+      { x: 0.2568, y: 0.5095, w: 0.2365, h: 0.4286 },
+      { x: 0.5068, y: 0.5095, w: 0.2365, h: 0.4286 },
+      { x: 0.7568, y: 0.5095, w: 0.2365, h: 0.4286 },
+    ],
+    icon: ClipboardList,
+    physicalLayout: { type: "iq-national-id", rows: 2, cols: 4, align: "center" }
+  },
+  {
+    id: "collage-iq-civil",
+    name: "ورقة الأحوال والجنسية العراقية (8 صور)",
+    slots: 8,
+    cells: [
+      { x: 0.0473, y: 0.1095, w: 0.2162, h: 0.3810 },
+      { x: 0.2770, y: 0.1095, w: 0.2162, h: 0.3810 },
+      { x: 0.5068, y: 0.1095, w: 0.2162, h: 0.3810 },
+      { x: 0.7365, y: 0.1095, w: 0.2162, h: 0.3810 },
+      { x: 0.0473, y: 0.5095, w: 0.2162, h: 0.3810 },
+      { x: 0.2770, y: 0.5095, w: 0.2162, h: 0.3810 },
+      { x: 0.5068, y: 0.5095, w: 0.2162, h: 0.3810 },
+      { x: 0.7365, y: 0.5095, w: 0.2162, h: 0.3810 },
+    ],
+    icon: ClipboardList,
+    physicalLayout: { type: "iq-civil-id", rows: 2, cols: 4, align: "center" }
+  },
+  {
+    id: "collage-iq-pension",
+    name: "ورقة معاملات المتقاعدين والدوائر (8 صور)",
+    slots: 8,
+    cells: [
+      { x: 0.0743, y: 0.1095, w: 0.2027, h: 0.3810 },
+      { x: 0.2905, y: 0.1095, w: 0.2027, h: 0.3810 },
+      { x: 0.5068, y: 0.1095, w: 0.2027, h: 0.3810 },
+      { x: 0.7230, y: 0.1095, w: 0.2027, h: 0.3810 },
+      { x: 0.0743, y: 0.5095, w: 0.2027, h: 0.3810 },
+      { x: 0.2905, y: 0.5095, w: 0.2027, h: 0.3810 },
+      { x: 0.5068, y: 0.5095, w: 0.2027, h: 0.3810 },
+      { x: 0.7230, y: 0.5095, w: 0.2027, h: 0.3810 },
+    ],
+    icon: ClipboardList,
+    physicalLayout: { type: "iq-transactions", rows: 2, cols: 4, align: "center" }
+  },
+  {
+    id: "collage-iq-general",
+    name: "ورقة المعاملات العامة والجامعات (4 صور)",
+    slots: 4,
+    cells: [
+      { x: 0.0878, y: 0.1095, w: 0.4054, h: 0.3810 },
+      { x: 0.5068, y: 0.1095, w: 0.4054, h: 0.3810 },
+      { x: 0.0878, y: 0.5095, w: 0.4054, h: 0.3810 },
+      { x: 0.5068, y: 0.5095, w: 0.4054, h: 0.3810 },
+    ],
+    icon: ClipboardList,
+    physicalLayout: { type: "iq-general-id", rows: 2, cols: 2, align: "center" }
+  },
 ];
 
 // أحجام الورق القياسية للطباعة
@@ -466,3 +641,224 @@ export const BACKGROUND_COLORS: { name: string; value: string }[] = [
   { name: "أزرق", value: "#3182CE" },
   { name: "برتقالي", value: "#DD6B20" },
 ];
+
+export function getEffectiveDpi(W: number, H: number, storedDpi: number = 300): number {
+  let dpi = storedDpi;
+  outerLoop:
+  for (const paper of PAPER_SIZES) {
+    for (const [pW, pH] of [
+      [paper.widthMM, paper.heightMM],
+      [paper.heightMM, paper.widthMM],
+    ] as [number, number][]) {
+      const expectedW = (pW * storedDpi) / 25.4;
+      const expectedH = (pH * storedDpi) / 25.4;
+      if (
+        Math.abs(W - expectedW) / expectedW < 0.02 &&
+        Math.abs(H - expectedH) / expectedH < 0.02
+      ) {
+        const dpiFromW = (W * 25.4) / pW;
+        const dpiFromH = (H * 25.4) / pH;
+        dpi = (dpiFromW + dpiFromH) / 2;
+        break outerLoop;
+      }
+    }
+  }
+  return dpi;
+}
+
+function getGridCells(
+  cols: number,
+  rows: number,
+  wMM: number,
+  hMM: number,
+  gapMM: number,
+  paperW: number,
+  paperH: number,
+  align: string = "center",
+  marginMM: number = 4
+) {
+  const marginX = marginMM;
+  const marginY = marginMM;
+  const availW = paperW - 2 * marginX;
+  const availH = paperH - 2 * marginY;
+
+  const gridW_raw = cols * wMM + (cols - 1) * gapMM;
+  const gridH_raw = rows * hMM + (rows - 1) * gapMM;
+
+  let scale = 1;
+  const tolerance = 0.15; // 0.15 mm tolerance for floating point rounding
+  if (gridW_raw > availW + tolerance || gridH_raw > availH + tolerance) {
+    scale = Math.min(availW / gridW_raw, availH / gridH_raw);
+  }
+
+  const finalCellW = wMM * scale;
+  const finalCellH = hMM * scale;
+  const finalGap = gapMM * scale;
+
+  const gridW = cols * finalCellW + (cols - 1) * finalGap;
+  const gridH = rows * finalCellH + (rows - 1) * finalGap;
+
+  let startX = (paperW - gridW) / 2;
+  let startY = (paperH - gridH) / 2;
+
+  if (align === "top-left") {
+    startX = marginX;
+    startY = marginY;
+  } else if (align === "top-right") {
+    startX = paperW - marginX - gridW;
+    startY = marginY;
+  } else if (align === "bottom-left") {
+    startX = marginX;
+    startY = paperH - marginY - gridH;
+  } else if (align === "bottom-right") {
+    startX = paperW - marginX - gridW;
+    startY = paperH - marginY - gridH;
+  }
+
+  const cells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      cells.push({
+        x: (startX + c * (finalCellW + finalGap)) / paperW,
+        y: (startY + r * (finalCellH + finalGap)) / paperH,
+        w: finalCellW / paperW,
+        h: finalCellH / paperH,
+      });
+    }
+  }
+  return cells;
+}
+
+function getMixedCells(
+  paperW: number,
+  paperH: number,
+  gapMM: number,
+  align: string = "center",
+  marginMM: number = 4
+) {
+  const marginX = marginMM;
+  const marginY = marginMM;
+  const availW = paperW - 2 * marginX;
+  const availH = paperH - 2 * marginY;
+
+  const leftW = 2 * 35 + gapMM;
+  const leftH = 2 * 45 + gapMM;
+  const rightW = 60;
+  const rightH = 2 * 40 + gapMM;
+
+  const totalW_raw = leftW + gapMM + rightW;
+  const totalH_raw = Math.max(leftH, rightH);
+
+  let scale = 1;
+  if (totalW_raw > availW || totalH_raw > availH) {
+    scale = Math.min(availW / totalW_raw, availH / totalH_raw);
+  }
+
+  const final35 = 35 * scale;
+  const final45 = 45 * scale;
+  const final60 = 60 * scale;
+  const final40 = 40 * scale;
+  const finalGap = gapMM * scale;
+
+  const finalLeftW = 2 * final35 + finalGap;
+  const finalLeftH = 2 * final45 + finalGap;
+  const finalRightW = final60;
+  const finalRightH = 2 * final40 + finalGap;
+
+  const gridW = finalLeftW + finalGap + finalRightW;
+  const gridH = Math.max(finalLeftH, finalRightH);
+
+  let startX = (paperW - gridW) / 2;
+  let startY = (paperH - gridH) / 2;
+
+  if (align === "top-left") {
+    startX = marginX;
+    startY = marginY;
+  } else if (align === "top-right") {
+    startX = paperW - marginX - gridW;
+    startY = marginY;
+  } else if (align === "bottom-left") {
+    startX = marginX;
+    startY = paperH - marginY - gridH;
+  } else if (align === "bottom-right") {
+    startX = paperW - marginX - gridW;
+    startY = paperH - marginY - gridH;
+  }
+
+  const cells = [];
+
+  // Left 2x2 grid of 35x45 mm (4 slots)
+  for (let r = 0; r < 2; r++) {
+    for (let c = 0; c < 2; c++) {
+      cells.push({
+        x: (startX + c * (final35 + finalGap)) / paperW,
+        y: (startY + (gridH - finalLeftH) / 2 + r * (final45 + finalGap)) / paperH,
+        w: final35 / paperW,
+        h: final45 / paperH,
+      });
+    }
+  }
+
+  // Right 1x2 grid of 60x40 mm (2 slots)
+  for (let r = 0; r < 2; r++) {
+    cells.push({
+      x: (startX + finalLeftW + finalGap) / paperW,
+      y: (startY + (gridH - finalRightH) / 2 + r * (final40 + finalGap)) / paperH,
+      w: final60 / paperW,
+      h: final40 / paperH,
+    });
+  }
+
+  return cells;
+}
+
+export function computeDynamicCollageCells(
+  template: CollageTemplate,
+  canvasW: number,
+  canvasH: number,
+  dpi: number,
+  collageGap: number = 0,
+  collageMargin: number = 0
+): { x: number; y: number; w: number; h: number }[] | null {
+  if (!template.physicalLayout) return null;
+
+  const { type, rows, cols, align = "center" } = template.physicalLayout;
+  const paperW_mm = (canvasW / dpi) * 25.4;
+  const paperH_mm = (canvasH / dpi) * 25.4;
+
+  const gap = collageGap > 0 ? (collageGap / dpi) * 25.4 : 2.0;
+  const margin = collageMargin > 0 ? (collageMargin / dpi) * 25.4 : 4.0;
+
+  if (type === "iq-mixed") {
+    return getMixedCells(paperW_mm, paperH_mm, gap, align, margin);
+  }
+
+  let wMM = 35;
+  let hMM = 45;
+
+  if (type === "iq-national-id" || type === "passport") {
+    wMM = 35;
+    hMM = 45;
+  } else if (type === "iq-civil-id") {
+    wMM = 32;
+    hMM = 40;
+  } else if (type === "iq-general-id" || type === "id") {
+    if (template.id === "collage-iq-general") {
+      wMM = 60;
+      hMM = 40;
+    } else {
+      wMM = 40;
+      hMM = 60;
+    }
+  } else if (type === "iq-transactions") {
+    wMM = 30;
+    hMM = 40;
+  } else if (type === "visa") {
+    wMM = 50;
+    hMM = 50;
+  } else {
+    return null;
+  }
+
+  return getGridCells(cols, rows, wMM, hMM, gap, paperW_mm, paperH_mm, align, margin);
+}

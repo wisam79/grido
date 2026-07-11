@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Settings2 } from "lucide-react";
@@ -29,6 +30,19 @@ export function PropertiesPanel() {
   const selectedElement = elements.find((e) => e.id === selectedId);
   const selectedSlot = slots.find((s) => s.id === selectedId);
 
+  const handleUpdateElement = useCallback((id: string, patch: any) => {
+    const { selectedIds, updateElements } = useEditorStore.getState();
+    if (selectedIds.length > 1 && selectedIds.includes(id)) {
+      const patches = selectedIds.map((sid) => ({
+        id: sid,
+        patch,
+      }));
+      updateElements(patches);
+    } else {
+      updateElement(id, patch);
+    }
+  }, [updateElement]);
+
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1">
@@ -37,18 +51,7 @@ export function PropertiesPanel() {
           {selectedElement && (
             <ElementProperties 
               element={selectedElement} 
-              onUpdate={(id, patch) => {
-                const { selectedIds, updateElements } = useEditorStore.getState();
-                if (selectedIds.length > 1 && selectedIds.includes(id)) {
-                  const patches = selectedIds.map((sid) => ({
-                    id: sid,
-                    patch,
-                  }));
-                  updateElements(patches);
-                } else {
-                  updateElement(id, patch);
-                }
-              }} 
+              onUpdate={handleUpdateElement} 
             />
           )}
 

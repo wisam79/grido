@@ -61,6 +61,7 @@ describe('ElementProperties - Main Thread Background Removal', () => {
     HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
       drawImage: vi.fn(),
       createImageData: vi.fn().mockReturnValue({ data: new Uint8Array(40000) }),
+      getImageData: vi.fn().mockReturnValue({ data: new Uint8Array(40000) }),
       putImageData: vi.fn(),
     } as any);
 

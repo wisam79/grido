@@ -283,7 +283,7 @@ func (a *App) ClearAutoSave() error {
 	return nil
 }
 
-func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string) (string, error) {
+func (a *App) ApplyMaskToImage(localImagePath string, maskBytes []byte, maskW int, maskH int) (string, error) {
 	var srcImg image.Image
 	var err error
 	mediaDir := getMediaDir()
@@ -311,30 +311,33 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string) (string
 		}
 	}
 
-	// 2. Decode the mask base64
-	decodedMask, _, err := decodeBase64Image(maskBase64)
-	if err != nil {
-		return "", fmt.Errorf("decode mask: %w", err)
+	if len(maskBytes) != maskW*maskH {
+		return "", fmt.Errorf("mask bytes size mismatch: expected %d, got %d", maskW*maskH, len(maskBytes))
 	}
 
-	// 4. Open mask image
-	maskImg, err := imaging.Decode(bytes.NewReader(decodedMask))
-	if err != nil {
-		return "", fmt.Errorf("decode mask image: %w", err)
+	// 4. Create mask image directly from raw grayscale bytes
+	var maskImg image.Image = &image.Gray{
+		Pix:    maskBytes,
+		Stride: maskW,
+		Rect:   image.Rect(0, 0, maskW, maskH),
 	}
+
+	// 🌫️ تطبيق Gaussian Blur طفيف على القناع لتنعيم الحواف ومنع المظهر المكسّر (Feathering)
+	// نقوم بعمل الـ Blur قبل تكبير القناع (Resize) لتسريع العملية بشكل كبير جداً وتقليل استخدام الذاكرة!
+	maskImg = imaging.Blur(maskImg, 1.5)
 
 	// 5. Resize mask to match original image dimensions if they differ
 	srcBounds := srcImg.Bounds()
 	srcW, srcH := srcBounds.Dx(), srcBounds.Dy()
 
-	maskBounds := maskImg.Bounds()
-	if maskBounds.Dx() != srcW || maskBounds.Dy() != srcH {
-		maskImg = imaging.Resize(maskImg, srcW, srcH, imaging.Linear)
+	var maskResized image.Image = maskImg
+	if maskW != srcW || maskH != srcH {
+		maskResized = imaging.Resize(maskImg, srcW, srcH, imaging.Linear)
 	}
 
 	// 6. Apply mask using fast direct slice access (*image.NRGBA)
 	srcNRGBA := imaging.Clone(srcImg)
-	maskNRGBA := imaging.Clone(maskImg)
+	maskNRGBA := imaging.Clone(maskResized)
 	outImg := image.NewNRGBA(image.Rect(0, 0, srcW, srcH))
 
 	srcPix := srcNRGBA.Pix
@@ -342,7 +345,6 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string) (string
 	outPix := outImg.Pix
 
 	// 🔒 Bounds check: ensure all three arrays are large enough before flat looping.
-	// This prevents an index-out-of-range panic if resize produces unexpected dimensions.
 	maxSafe := len(srcPix)
 	if len(maskPix) < maxSafe {
 		maxSafe = len(maskPix)

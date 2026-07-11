@@ -1,7 +1,7 @@
 import { StateCreator } from "zustand";
 import { CanvasElement, ImageElement, CanvasSlot, PhotoTemplate, CollageTemplate } from "../types";
 import { uid } from "../../utils";
-import { COLLAGE_TEMPLATES } from "../../templates";
+import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
 
 export interface CollageSlice {
   template: PhotoTemplate | null;
@@ -43,6 +43,9 @@ export function generateInitialSlots(): CanvasSlot[] {
     brightness: 100,
     contrast: 100,
     saturation: 100,
+    zoom: 1,
+    dragX: 0,
+    dragY: 0,
   }));
 }
 
@@ -70,6 +73,7 @@ type CollageCross = CollageSlice & {
   history: any[];
   historyIndex: number;
   pushHistory: () => void;
+  printSettings?: any;
 };
 
 export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice> = (set, get) => ({
@@ -127,24 +131,45 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
 
   setCollageTemplate: (template) => {
     if (template) {
-      const firstImageEl = get().elements.find((e): e is ImageElement => e.type === "image");
-      const lastEditedImage = firstImageEl?.imageSrc || get().lastEditedImage;
-      const currentWidth = get().canvasWidth || 1200;
-      const currentHeight = get().canvasHeight || 1200;
+      const currentWidth = get().canvasWidth || 2480;
+      const currentHeight = get().canvasHeight || 3508;
+      const storedDpi = get().printSettings?.dpi || 300;
+      const dpi = getEffectiveDpi(currentWidth, currentHeight, storedDpi);
 
-      const slots: CanvasSlot[] = template.cells.map((c, i) => ({
-        id: uid(),
-        cellIndex: i,
-        x: c.x,
-        y: c.y,
-        w: c.w,
-        h: c.h,
-        imageSrc: lastEditedImage || undefined,
-        filter: "none",
-        brightness: 100,
-        contrast: 100,
-        saturation: 100,
-      }));
+      let cells = template.cells;
+      if (template.physicalLayout) {
+        const dynamicCells = computeDynamicCollageCells(
+          template,
+          currentWidth,
+          currentHeight,
+          dpi,
+          get().collageGap,
+          get().collageMargin
+        );
+        if (dynamicCells) {
+          cells = dynamicCells;
+        }
+      }
+
+      const slots: CanvasSlot[] = cells.map((c, i) => {
+        const existingSlot = get().slots[i];
+        return {
+          id: uid(),
+          cellIndex: i,
+          x: c.x,
+          y: c.y,
+          w: c.w,
+          h: c.h,
+          imageSrc: existingSlot?.imageSrc || undefined,
+          filter: existingSlot?.filter || "none",
+          brightness: existingSlot?.brightness || 100,
+          contrast: existingSlot?.contrast || 100,
+          saturation: existingSlot?.saturation || 100,
+          zoom: existingSlot?.zoom || 1,
+          dragX: existingSlot?.dragX || 0,
+          dragY: existingSlot?.dragY || 0,
+        };
+      });
       set({
         collageTemplate: template,
         mode: "collage",
@@ -155,7 +180,6 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         canvasHeight: currentHeight,
         history: [{ elements: [], slots }],
         historyIndex: 0,
-        ...(lastEditedImage ? { lastEditedImage } : {}),
       });
     } else {
       set({ collageTemplate: null, slots: [] });
@@ -208,8 +232,81 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     get().pushHistory();
   },
 
-  setCollageGap: (gap) => set({ collageGap: gap }),
-  setCollageMargin: (margin) => set({ collageMargin: margin }),
+  setCollageGap: (gap) =>
+    set((s) => {
+      let adjustedSlots = s.slots || [];
+      const collageTemplate = s.collageTemplate;
+      const mode = s.mode;
+
+      if (mode === "collage" && collageTemplate && collageTemplate.physicalLayout) {
+        const storedDpi = s.printSettings?.dpi || 300;
+        const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
+        const dynamicCells = computeDynamicCollageCells(
+          collageTemplate,
+          s.canvasWidth,
+          s.canvasHeight,
+          dpi,
+          gap,
+          s.collageMargin
+        );
+        if (dynamicCells) {
+          adjustedSlots = dynamicCells.map((c, i) => {
+            const existingSlot = (s.slots || [])[i] || {};
+            return {
+              ...existingSlot,
+              id: existingSlot.id || uid(),
+              cellIndex: i,
+              x: c.x,
+              y: c.y,
+              w: c.w,
+              h: c.h,
+            };
+          });
+        }
+      }
+      return {
+        collageGap: gap,
+        slots: adjustedSlots,
+      };
+    }),
+
+  setCollageMargin: (margin) =>
+    set((s) => {
+      let adjustedSlots = s.slots || [];
+      const collageTemplate = s.collageTemplate;
+      const mode = s.mode;
+
+      if (mode === "collage" && collageTemplate && collageTemplate.physicalLayout) {
+        const storedDpi = s.printSettings?.dpi || 300;
+        const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
+        const dynamicCells = computeDynamicCollageCells(
+          collageTemplate,
+          s.canvasWidth,
+          s.canvasHeight,
+          dpi,
+          s.collageGap,
+          margin
+        );
+        if (dynamicCells) {
+          adjustedSlots = dynamicCells.map((c, i) => {
+            const existingSlot = (s.slots || [])[i] || {};
+            return {
+              ...existingSlot,
+              id: existingSlot.id || uid(),
+              cellIndex: i,
+              x: c.x,
+              y: c.y,
+              w: c.w,
+              h: c.h,
+            };
+          });
+        }
+      }
+      return {
+        collageMargin: margin,
+        slots: adjustedSlots,
+      };
+    }),
   setCollageRadius: (radius) => set({ collageRadius: radius }),
   setCollageShowCutLines: (show) => set({ collageShowCutLines: show }),
   setCollageStrokeWidth: (width) => set({ collageStrokeWidth: width }),
