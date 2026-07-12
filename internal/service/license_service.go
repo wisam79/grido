@@ -305,7 +305,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 		}
 	}()
 
-	authURL := fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=http://localhost:34567/callback", supabaseURL)
+	authURL := fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=https://grido.cloud-ip.cc/callback", supabaseURL)
 	_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", authURL).Start()
 
 	var oauthBody string
