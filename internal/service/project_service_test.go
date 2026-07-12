@@ -16,7 +16,7 @@ func setupTestDB(t *testing.T) (*gorm.DB, func()) {
 		t.Fatalf("failed to connect database: %v", err)
 	}
 
-	err = db.AutoMigrate(&domain.Project{})
+	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{})
 	if err != nil {
 		t.Fatalf("failed to migrate database: %v", err)
 	}
@@ -34,7 +34,7 @@ func TestProjectService_SaveAndGet(t *testing.T) {
 	defer cleanup()
 
 	repo := repository.NewProjectRepository(db)
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, repository.NewLicenseRepository(db))
 
 	project := &domain.Project{
 		ID:              "test-id-123",
@@ -72,7 +72,7 @@ func TestProjectService_SaveValidation(t *testing.T) {
 	defer cleanup()
 
 	repo := repository.NewProjectRepository(db)
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, repository.NewLicenseRepository(db))
 
 	// اختبار الحفظ بدون ID (يجب أن يفشل)
 	project := &domain.Project{
@@ -108,7 +108,7 @@ func TestProjectService_GetAll(t *testing.T) {
 	defer cleanup()
 
 	repo := repository.NewProjectRepository(db)
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, repository.NewLicenseRepository(db))
 
 	// إدراج مشروعين
 	p1 := &domain.Project{ID: "id1", Name: "Project 1"}
@@ -132,7 +132,7 @@ func TestProjectService_Delete(t *testing.T) {
 	defer cleanup()
 
 	repo := repository.NewProjectRepository(db)
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, repository.NewLicenseRepository(db))
 
 	p := &domain.Project{ID: "del-id", Name: "Delete Me"}
 	_ = svc.SaveProject(p)
@@ -153,7 +153,7 @@ func TestProjectService_SaveUpdateCreatedAt(t *testing.T) {
 	defer cleanup()
 
 	repo := repository.NewProjectRepository(db)
-	svc := NewProjectService(repo)
+	svc := NewProjectService(repo, repository.NewLicenseRepository(db))
 
 	p := &domain.Project{
 		ID:   "update-created-at-test",

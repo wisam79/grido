@@ -1,5 +1,5 @@
 import { StateCreator } from "zustand";
-import { CanvasElement, ImageElement, CanvasSlot, PhotoTemplate, CollageTemplate } from "../types";
+import { CanvasElement, CanvasSlot, PhotoTemplate, CollageTemplate } from "../types";
 import { uid } from "../../utils";
 import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
 
@@ -20,6 +20,8 @@ export interface CollageSlice {
   updateSlot: (slotId: string, patch: Partial<CanvasSlot>) => void;
   clearSlots: () => void;
   fillAllSlots: (src: string) => void;
+  fillRowSlots: (slotId: string, src: string) => void;
+  fillColumnSlots: (slotId: string, src: string) => void;
 
   setCollageGap: (gap: number) => void;
   setCollageMargin: (margin: number) => void;
@@ -228,6 +230,46 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         contrast: 100,
         saturation: 100,
       })),
+    }));
+    get().pushHistory();
+  },
+
+  fillRowSlots: (slotId, src) => {
+    const targetSlot = get().slots.find((sl) => sl.id === slotId);
+    if (!targetSlot) return;
+    set((s: any) => ({
+      slots: s.slots.map((sl: CanvasSlot) =>
+        Math.abs(sl.y - targetSlot.y) < 0.01
+          ? {
+              ...sl,
+              imageSrc: src,
+              filter: "none",
+              brightness: 100,
+              contrast: 100,
+              saturation: 100,
+            }
+          : sl
+      ),
+    }));
+    get().pushHistory();
+  },
+
+  fillColumnSlots: (slotId, src) => {
+    const targetSlot = get().slots.find((sl) => sl.id === slotId);
+    if (!targetSlot) return;
+    set((s: any) => ({
+      slots: s.slots.map((sl: CanvasSlot) =>
+        Math.abs(sl.x - targetSlot.x) < 0.01
+          ? {
+              ...sl,
+              imageSrc: src,
+              filter: "none",
+              brightness: 100,
+              contrast: 100,
+              saturation: 100,
+            }
+          : sl
+      ),
     }));
     get().pushHistory();
   },

@@ -65,7 +65,7 @@ func InitDB() (*gorm.DB, error) {
 	sqlDB.SetMaxOpenConns(1)
 
 	// الهجرة التلقائية لجداول قاعدة البيانات
-	err = db.AutoMigrate(&domain.Project{})
+	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{})
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +96,86 @@ type projectRepositoryImpl struct {
 	db *gorm.DB
 }
 
+type licenseRepositoryImpl struct {
+	db *gorm.DB
+}
+
 func NewProjectRepository(db *gorm.DB) domain.ProjectRepository {
 	return &projectRepositoryImpl{db: db}
+}
+
+func NewLicenseRepository(db *gorm.DB) domain.LicenseRepository {
+	return &licenseRepositoryImpl{db: db}
+}
+
+func (r *licenseRepositoryImpl) Save(profile *domain.UserProfile) error {
+	err := r.db.Save(profile).Error
+	if err == nil {
+		_ = utils.SaveLicenseSignature(profile)
+		_ = utils.UpdateLastTime(time.Now())
+	}
+	return err
+}
+
+func (r *licenseRepositoryImpl) Get() (*domain.UserProfile, error) {
+	var profile domain.UserProfile
+	err := r.db.First(&profile).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify signature to prevent SQLite tampering
+	if !utils.VerifyLicenseSignature(&profile) {
+		slog.Warn("License signature verification failed: Local profile tampered!")
+		profile.Plan = "free"
+		profile.Status = "expired"
+	}
+
+	// Verify system time to prevent clock rollback
+	if !utils.VerifyTime(time.Now()) {
+		slog.Warn("System clock rollback detected!")
+		profile.Plan = "free"
+		profile.Status = "expired"
+	} else {
+		_ = utils.UpdateLastTime(time.Now())
+	}
+
+	return &profile, nil
+}
+
+func (r *licenseRepositoryImpl) Clear() error {
+	err := r.db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&domain.UserProfile{}).Error
+	if err == nil {
+		_ = utils.ClearLicenseSignature()
+	}
+	return err
+}
+
+func (r *licenseRepositoryImpl) GetAll() ([]domain.UserProfile, error) {
+	var profiles []domain.UserProfile
+	err := r.db.Find(&profiles).Error
+	if err == nil {
+		for i := range profiles {
+			if !utils.VerifyLicenseSignature(&profiles[i]) {
+				profiles[i].Plan = "free"
+				profiles[i].Status = "expired"
+			}
+		}
+	}
+	return profiles, err
+}
+
+func (r *licenseRepositoryImpl) SaveUser(profile *domain.UserProfile) error {
+	err := r.db.Save(profile).Error
+	if err == nil {
+		_ = utils.SaveLicenseSignature(profile)
+		_ = utils.UpdateLastTime(time.Now())
+	}
+	return err
+}
+
+func (r *licenseRepositoryImpl) DeleteUser(id string) error {
+	return r.db.Delete(&domain.UserProfile{}, "id = ?", id).Error
 }
 
 func (r *projectRepositoryImpl) Save(project *domain.Project) error {

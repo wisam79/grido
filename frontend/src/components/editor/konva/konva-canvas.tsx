@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { Stage, Layer, Transformer, Line, Circle, Group, Rect, Text, FastLayer, Shape } from "react-konva";
+import { Stage, Layer, Transformer, Line, Circle, Group, Rect, Text, FastLayer, Shape, Image as KonvaImage } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
@@ -55,10 +55,29 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
   useEffect(() => {
     const node = imageRef.current;
     if (node && image) {
-      try {
-        node.cache();
-      } catch (err) {
-        console.warn("Failed to cache collage image", err);
+      const hasFilters = !!(
+        (filter && filter !== "none") ||
+        (brightness !== undefined && brightness !== 100) ||
+        (contrast !== undefined && contrast !== 100) ||
+        (saturation !== undefined && saturation !== 100)
+      );
+
+      if (hasFilters) {
+        try {
+          const stage = node.getStage();
+          const exportRatio = stage ? (useEditorStore.getState().canvasWidth / stage.width()) : 4;
+          node.cache({
+            pixelRatio: Math.max(2, exportRatio)
+          });
+        } catch (err) {
+          console.warn("Failed to cache collage image", err);
+        }
+      } else {
+        try {
+          node.clearCache();
+        } catch (err) {
+          // Ignore
+        }
       }
     }
     return () => {
@@ -152,13 +171,13 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
   if (totalSaturation !== 100 || totalHue !== 0) filters.push(Konva.Filters.HSL);
 
   return (
-    <Rect
+    <KonvaImage
       draggable={draggable}
       onDragMove={(e) => {
         if (!draggable) return;
         const dx = e.target.x();
         const dy = e.target.y();
-        // Reset Rect position to stay locked in place
+        // Reset component position to stay locked inside slot
         e.target.x(0);
         e.target.y(0);
         
@@ -173,11 +192,13 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
           onDragEnd?.();
         }
       }}
-      fillPatternImage={image}
-      fillPatternX={-sx * (width / sw)}
-      fillPatternY={-sy * (height / sh)}
-      fillPatternScaleX={width / sw}
-      fillPatternScaleY={height / sh}
+      image={image}
+      cropX={sx}
+      cropY={sy}
+      cropWidth={sw}
+      cropHeight={sh}
+      x={0}
+      y={0}
       width={width}
       height={height}
       filters={filters}

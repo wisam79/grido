@@ -2,8 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { 
-  ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, FolderHeart, Trash2, Sparkles, X
+  ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, FolderHeart, Trash2, Sparkles, X, Rows, Columns, LayoutGrid
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { OpenFile, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { toast } from "sonner";
 import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
@@ -23,8 +29,10 @@ export function SlotProperties({
   slot: CanvasSlot;
   onUpdate: (id: string, patch: Partial<CanvasSlot>) => void;
 }) {
-  const { fillAllSlots, setSlotImage, lastEditedImage, canvasWidth, canvasHeight, printSettings } = useEditorStore(useShallow((state) => ({
+  const { fillAllSlots, fillRowSlots, fillColumnSlots, setSlotImage, lastEditedImage, canvasWidth, canvasHeight, printSettings } = useEditorStore(useShallow((state) => ({
     fillAllSlots: state.fillAllSlots,
+    fillRowSlots: state.fillRowSlots,
+    fillColumnSlots: state.fillColumnSlots,
     setSlotImage: state.setSlotImage,
     lastEditedImage: state.lastEditedImage,
     canvasWidth: state.canvasWidth,
@@ -37,6 +45,8 @@ export function SlotProperties({
     return localStorage.getItem("grido_auto_fill_grid") !== "false";
   });
   
+  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
+
   const {
     isRemovingBg,
     bgProgress,
@@ -62,6 +72,18 @@ export function SlotProperties({
   const handleFillAll = () => {
     if (slot.imageSrc) {
       fillAllSlots(slot.imageSrc);
+    }
+  };
+
+  const handleFillRow = () => {
+    if (slot.imageSrc) {
+      fillRowSlots(slot.id, slot.imageSrc);
+    }
+  };
+
+  const handleFillColumn = () => {
+    if (slot.imageSrc) {
+      fillColumnSlots(slot.id, slot.imageSrc);
     }
   };
 
@@ -187,14 +209,54 @@ export function SlotProperties({
             </Button>
           </div>
 
-          <Button
-            variant="secondary"
-            className="w-full h-10 gap-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:hover:bg-indigo-900/50 border border-indigo-100 dark:border-indigo-900/30 transition-all cursor-pointer flex items-center justify-center font-bold text-xs shadow-xs active:scale-[0.98]"
-            onClick={handleFillAll}
-          >
-            <Copy className="w-4 h-4" />
-            <span>تكرار هذه الصورة في كل الخلايا</span>
-          </Button>
+          <div className="space-y-1.5 font-cairo">
+            <Label className="text-[10px] font-bold text-muted-foreground block text-right">تكرار الصورة في الخلايا</Label>
+            <div className="grid grid-cols-3 gap-1.5">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      className="h-10 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:hover:bg-indigo-900/50 border border-indigo-100 dark:border-indigo-900/30 transition-all cursor-pointer flex flex-col items-center justify-center p-1 font-bold text-[10px] gap-0.5 shadow-xs active:scale-[0.97]"
+                      onClick={handleFillRow}
+                    >
+                      <Rows className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>الصف</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">تكرار الصورة في صف الخلية</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      className="h-10 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:hover:bg-indigo-900/50 border border-indigo-100 dark:border-indigo-900/30 transition-all cursor-pointer flex flex-col items-center justify-center p-1 font-bold text-[10px] gap-0.5 shadow-xs active:scale-[0.97]"
+                      onClick={handleFillColumn}
+                    >
+                      <Columns className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>العمود</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">تكرار الصورة في عمود الخلية</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      className="h-10 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:hover:bg-indigo-900/50 border border-indigo-100 dark:border-indigo-900/30 transition-all cursor-pointer flex flex-col items-center justify-center p-1 font-bold text-[10px] gap-0.5 shadow-xs active:scale-[0.97]"
+                      onClick={handleFillAll}
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>الكل</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">تكرار الصورة في جميع خلايا الكولاج</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
 
           {renderAutoFillToggle()}
 
@@ -232,7 +294,12 @@ export function SlotProperties({
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 text-white group-hover:scale-115 group-hover:rotate-6 transition-all duration-300" />
-                    <span className="text-[10px] font-bold">عزل الخلفية</span>
+                    <span className="text-[10px] font-bold flex items-center gap-1">
+                      عزل الخلفية
+                      {!isLicenseActive && (
+                        <span className="text-[8px] bg-amber-500 text-slate-900 px-1 py-0.5 rounded font-extrabold uppercase scale-90 select-none leading-none">PRO</span>
+                      )}
+                    </span>
                   </>
                 )}
               </Button>

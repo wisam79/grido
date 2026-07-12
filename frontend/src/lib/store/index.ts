@@ -5,8 +5,9 @@ import { createCollageSlice, CollageSlice } from "./slices/collage-slice";
 import { createGridSlice, GridSlice } from "./slices/grid-slice";
 import { createPrintSlice, PrintSlice } from "./slices/print-slice";
 import { createHistorySlice, HistorySlice } from "./slices/history-slice";
+import { createLicenseSlice, LicenseSlice } from "./slices/license-slice";
 
-export type EditorState = CoreSlice & ElementSlice & CollageSlice & GridSlice & PrintSlice & HistorySlice;
+export type EditorState = CoreSlice & ElementSlice & CollageSlice & GridSlice & PrintSlice & HistorySlice & LicenseSlice;
 
 export type { ImageElement, TextElement, ShapeElement } from "./types";
 
@@ -17,4 +18,5 @@ export const useEditorStore = create<EditorState>()((...a) => ({
   ...createGridSlice(...a),
   ...createPrintSlice(...a),
   ...createHistorySlice(...a),
+  ...createLicenseSlice(...a),
 }));

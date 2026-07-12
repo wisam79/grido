@@ -19,8 +19,8 @@ export function usePrintLayout({
 }: UsePrintLayoutProps) {
   return useMemo(() => {
     const dpi = template ? template.dpi : printSettings.dpi;
-    const originalImageWidthMM = template ? template.widthMM : Math.round((canvasWidth / dpi) * 25.4);
-    const originalImageHeightMM = template ? template.heightMM : Math.round((canvasHeight / dpi) * 25.4);
+    const originalImageWidthMM = template ? template.widthMM : (canvasWidth / dpi) * 25.4;
+    const originalImageHeightMM = template ? template.heightMM : (canvasHeight / dpi) * 25.4;
 
     const availableWidthMM =
       printSettings.orientation === "portrait"
@@ -33,8 +33,10 @@ export function usePrintLayout({
 
     const gapMM = printSettings.gapMM ?? 2;
 
+    const repeatMode = printSettings.repeatMode || "all";
+
     const fitToPage = printSettings.fitToPage !== false;
-    const shouldFit = fitToPage && mode === "single" && printSettings.copiesPerSheet === 1;
+    const shouldFit = fitToPage && mode === "single" && printSettings.copiesPerSheet === 1 && repeatMode === "all";
 
     let imageWidthMM = originalImageWidthMM;
     let imageHeightMM = originalImageHeightMM;
@@ -43,8 +45,8 @@ export function usePrintLayout({
       const scaleX = availableWidthMM / originalImageWidthMM;
       const scaleY = availableHeightMM / originalImageHeightMM;
       const scale = Math.min(scaleX, scaleY);
-      imageWidthMM = Math.round(originalImageWidthMM * scale);
-      imageHeightMM = Math.round(originalImageHeightMM * scale);
+      imageWidthMM = originalImageWidthMM * scale;
+      imageHeightMM = originalImageHeightMM * scale;
     }
 
     const cellW = imageWidthMM + gapMM;
@@ -53,9 +55,23 @@ export function usePrintLayout({
     const tempRows = cellH > 0 ? Math.floor(availableHeightMM / cellH) : 1;
     const autoCount = Math.max(1, tempCols * tempRows);
 
-    const actualCopies = Math.min(printSettings.copiesPerSheet, autoCount);
-    const cols = Math.max(1, Math.floor(availableWidthMM / (imageWidthMM + gapMM)));
-    const rows = Math.ceil(actualCopies / Math.max(1, cols));
+    let actualCopies = 1;
+    let cols = 1;
+    let rows = 1;
+
+    if (repeatMode === "row") {
+      cols = Math.max(1, Math.floor(availableWidthMM / (imageWidthMM + gapMM)));
+      rows = 1;
+      actualCopies = cols;
+    } else if (repeatMode === "column") {
+      cols = 1;
+      rows = Math.max(1, Math.floor(availableHeightMM / (imageHeightMM + gapMM)));
+      actualCopies = rows;
+    } else {
+      cols = Math.max(1, Math.floor(availableWidthMM / (imageWidthMM + gapMM)));
+      actualCopies = Math.min(printSettings.copiesPerSheet ?? 1, autoCount);
+      rows = Math.ceil(actualCopies / Math.max(1, cols));
+    }
 
     const paperWidth =
       printSettings.orientation === "portrait"

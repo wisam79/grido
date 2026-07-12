@@ -1,5 +1,5 @@
 import { StateCreator } from "zustand";
-import { CanvasElement, ImageElement, TextElement, ShapeElement } from "../types";
+import { CanvasElement, ShapeElement, ImageElement } from "../types";
 import { uid } from "../../utils";
 
 export interface ElementSlice {

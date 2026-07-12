@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { saveProjectAsJSON } from "@/components/editor/export-utils";
+import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
@@ -125,11 +126,71 @@ export function useKeyboardShortcuts() {
       }
     };
 
+    const handlePaste = async (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf("image") !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+              if (event.target?.result) {
+                const b64 = event.target.result as string;
+                try {
+                  // حفظ الصورة محلياً لتفادي استهلاك الذاكرة وحفظ مسار محلي فقط
+                  const localPath = await SaveImageFromBase64(b64);
+                  if (!localPath) return;
+
+                  const state = useEditorStore.getState();
+                  
+                  if (state.mode === "collage") {
+                    let targetSlotId = state.selectedId;
+                    if (!targetSlotId) {
+                      const emptySlot = state.slots.find((s) => !s.imageSrc);
+                      if (emptySlot) {
+                        targetSlotId = emptySlot.id;
+                      } else if (state.slots.length > 0) {
+                        targetSlotId = state.slots[0].id;
+                      }
+                    }
+                    
+                    if (targetSlotId) {
+                      state.setSlotImage(targetSlotId, localPath);
+                      const autoFill = localStorage.getItem("grido_auto_fill_grid") !== "false";
+                      if (autoFill) {
+                        state.fillAllSlots(localPath);
+                      }
+                    }
+                  } else {
+                    // Single mode
+                    state.addImageElement(localPath);
+                  }
+                } catch (err) {
+                  console.error("Failed to save pasted image:", err);
+                }
+              }
+            };
+            reader.readAsDataURL(file);
+            break; // معالجة أول صورة فقط
+          }
+        }
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("paste", handlePaste);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("paste", handlePaste);
       if (nudgeTimeout) clearTimeout(nudgeTimeout);
     };
   }, []);

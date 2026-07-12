@@ -102,43 +102,35 @@ export function SheetPreview({
 
   const cutLines = [];
   if (showCutLines) {
-    const paperW_Px = paperWidthMM * 2 * zoom;
-    const paperH_Px = paperHeightMM * 2 * zoom;
     const marginPx = marginMM * 2 * zoom;
 
-    for (let i = 0; i <= cols; i++) {
-      const x = i * (imageWidthMM + gapMM) * 2 * zoom - (gapMM * zoom);
-      const absoluteX = marginPx + x;
-      if (absoluteX > 0 && absoluteX < paperW_Px) {
-        cutLines.push(
-          <div
-            key={`v-${i}`}
-            className="absolute border-l border-dashed border-red-400/60 pointer-events-none"
-            style={{ 
-              left: x, 
-              top: -marginPx, 
-              bottom: -marginPx 
-            }}
-          />
-        );
-      }
+    for (let i = 1; i < cols; i++) {
+      const x = i * (imageWidthMM + gapMM) * 2 * zoom - gapMM * zoom;
+      cutLines.push(
+        <div
+          key={`v-${i}`}
+          className="absolute border-l border-dashed border-red-400/60 pointer-events-none"
+          style={{ 
+            left: x, 
+            top: -marginPx, 
+            bottom: -marginPx 
+          }}
+        />
+      );
     }
-    for (let i = 0; i <= rows; i++) {
-      const y = i * (imageHeightMM + gapMM) * 2 * zoom - (gapMM * zoom);
-      const absoluteY = marginPx + y;
-      if (absoluteY > 0 && absoluteY < paperH_Px) {
-        cutLines.push(
-          <div
-            key={`h-${i}`}
-            className="absolute border-t border-dashed border-red-400/60 pointer-events-none"
-            style={{ 
-              top: y, 
-              left: -marginPx, 
-              right: -marginPx 
-            }}
-          />
-        );
-      }
+    for (let i = 1; i < rows; i++) {
+      const y = i * (imageHeightMM + gapMM) * 2 * zoom - gapMM * zoom;
+      cutLines.push(
+        <div
+          key={`h-${i}`}
+          className="absolute border-t border-dashed border-red-400/60 pointer-events-none"
+          style={{ 
+            top: y, 
+            left: -marginPx, 
+            right: -marginPx 
+          }}
+        />
+      );
     }
   }
 

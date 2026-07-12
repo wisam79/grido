@@ -30,6 +30,9 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useAutoSave } from "@/hooks/use-autosave";
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
+import { AccountLicenseModal } from "@/components/editor/account-license-modal";
+import { toast } from "sonner";
+import { User, ShieldCheck, Lock, Key, Loader2 } from "lucide-react";
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
@@ -54,7 +57,94 @@ export default function App() {
   const mode = useEditorStore((state) => state.mode);
   const setMode = useEditorStore((state) => state.setMode);
 
+  const checkLicenseStatus = useEditorStore((state) => state.checkLicenseStatus);
+  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
+  const user = useEditorStore((state) => state.user);
+  const setAccountModalOpen = useEditorStore((state) => state.setAccountModalOpen);
+  const activateLicenseKey = useEditorStore((state) => state.activateLicenseKey);
+  const logoutAccount = useEditorStore((state) => state.logoutAccount);
+
+  const [lockKey, setLockKey] = useState("");
+  const [lockLoading, setLockLoading] = useState(false);
+
+  useEffect(() => {
+    checkLicenseStatus().then((profile) => {
+      if (!profile || !profile.token) {
+        setAccountModalOpen(true);
+      }
+    });
+  }, [checkLicenseStatus, setAccountModalOpen]);
+
   const isModalOpen = exportOpen || printOpen || mobileTemplatesOpen || mobilePropsOpen;
+
+  if (!isLicenseActive) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl text-right p-6 font-cairo select-none" dir="rtl">
+        <div className="w-full max-w-md bg-card/60 backdrop-blur-xl border border-border/40 p-8 rounded-2xl shadow-2xl space-y-6 text-center">
+          <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
+            <Lock className="w-10 h-10" />
+          </div>
+          
+          <div className="space-y-2">
+            <h1 className="text-xl font-extrabold text-foreground">تم تقييد استخدام التطبيق</h1>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              لقد انتهت الفترة التجريبية المجانية الخاصة بك (7 أيام) أو لم يتم تفعيل ترخيص نشط بعد. يرجى تفعيل مفتاح ترخيص للولوج لكافة الميزات.
+            </p>
+          </div>
+
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (!lockKey) return;
+            setLockLoading(true);
+            try {
+              await activateLicenseKey(lockKey);
+              toast.success("تم تفعيل الترخيص بنجاح! شكراً لك.");
+            } catch (err: any) {
+              toast.error(err.message || "فشل تفعيل الترخيص");
+            } finally {
+              setLockLoading(false);
+            }
+          }} className="space-y-4 text-right">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">أدخل مفتاح الترخيص</label>
+              <div className="relative">
+                <Key className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                <input
+                  type="text"
+                  required
+                  placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
+                  value={lockKey}
+                  onChange={(e) => setLockKey(e.target.value)}
+                  className="w-full pr-9 pl-4 py-2 text-xs border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase text-foreground"
+                />
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border-0 font-bold text-xs" disabled={lockLoading}>
+              {lockLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "تفعيل الترخيص الفوري"
+              )}
+            </Button>
+          </form>
+
+          <div className="border-t border-border/40 pt-4 flex flex-col gap-2">
+            <Button variant="outline" className="w-full text-xs font-semibold h-9 cursor-pointer" onClick={() => setAccountModalOpen(true)}>
+              تسجيل الدخول أو إنشاء حساب جديد
+            </Button>
+            
+            {user && user.token && (
+              <Button variant="ghost" className="w-full text-xs text-red-500 hover:bg-red-500/5 h-9 cursor-pointer" onClick={() => logoutAccount()}>
+                تسجيل الخروج
+              </Button>
+            )}
+          </div>
+        </div>
+        <AccountLicenseModal />
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -135,6 +225,22 @@ export default function App() {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setAccountModalOpen(true)}
+              className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted relative"
+              title="الحساب والتراخيص"
+            >
+              {isLicenseActive ? (
+                <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" />
+              ) : (
+                <User className="w-4.5 h-4.5 text-muted-foreground" />
+              )}
+              {user?.plan === "trial" && (
+                <span className="absolute top-1 left-1 w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={toggleTheme}
               className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
               title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
@@ -197,7 +303,18 @@ export default function App() {
 
       {/* شريط الأدوات */}
       <Toolbar
-        onPrint={() => setPrintOpen(true)}
+        onPrint={() => {
+          if (!isLicenseActive) {
+            toast.error("ميزة الطباعة متوفرة فقط في الخطة الاحترافية (Pro).", {
+              action: {
+                label: "تفعيل الآن",
+                onClick: () => setAccountModalOpen(true)
+              }
+            });
+            return;
+          }
+          setPrintOpen(true);
+        }}
         onExport={() => setExportOpen(true)}
         onSave={saveProjectAsJSON}
       />
@@ -271,6 +388,8 @@ export default function App() {
       <Suspense fallback={null}>
         <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
       </Suspense>
+
+      <AccountLicenseModal />
 
       <SonnerToaster position="top-center" duration={2500} richColors />
     </div>

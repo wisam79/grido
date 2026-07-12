@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ImageElement } from "@/lib/editor-store";
+import { ImageElement, useEditorStore } from "@/lib/editor-store";
 import { FilesetResolver, ImageSegmenter } from "@mediapipe/tasks-vision";
 import { toast } from "sonner";
 import { ApplyMaskToImage } from "../../wailsjs/go/main/App";
@@ -18,7 +18,8 @@ async function getSegmenter() {
       delegate: "GPU",
     },
     runningMode: "IMAGE",
-    outputCategoryMask: true,
+    outputCategoryMask: false,
+    outputConfidenceMasks: true,
   });
   
   return segmenterInstance;
@@ -47,6 +48,21 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
 
   const handleRemoveBg = async (element: any) => {
     if (!element.imageSrc) return;
+
+    // التحقق من صلاحية الترخيص
+    const isLicenseActive = useEditorStore.getState().isLicenseActive;
+    if (!isLicenseActive()) {
+      toast.error("ميزة عزل الخلفية متوفرة فقط في الخطة الاحترافية (Pro).", {
+        action: {
+          label: "تفعيل الآن",
+          onClick: () => {
+            useEditorStore.getState().setAccountModalOpen(true);
+          }
+        }
+      });
+      return;
+    }
+
     if (isWorkerBusyRef.current) {
       toast.warning("هناك عملية إزالة خلفية قيد التنفيذ حالياً. يرجى الانتظار.");
       return;
@@ -86,7 +102,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
       setBgProgress(65);
       let targetW = imageBitmap.width;
       let targetH = imageBitmap.height;
-      const maxDim = 512; // دقة معتدلة ومثالية جداً للتعرف على الحواف وسريعة للغاية
+      const maxDim = 1024; // دقة ممتازة تعطي تفاصيل عالية جداً للحواف والشعر مع الحفاظ على الأداء
       if (targetW > maxDim || targetH > maxDim) {
         const ratio = Math.min(maxDim / targetW, maxDim / targetH);
         targetW = Math.round(targetW * ratio);
@@ -105,27 +121,44 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
       setBgProgressText("عزل الخلفية... (80%)");
       setBgProgress(80);
       const result = segmenter.segment(imageData);
-      const categoryMask = result.categoryMask;
-      if (!categoryMask || !isWorkerBusyRef.current) return;
+      const confidenceMasks = result.confidenceMasks;
+      if (!confidenceMasks || confidenceMasks.length === 0 || !isWorkerBusyRef.current) return;
  
       // 5. تطبيق القناع وتكوين الصورة النهائية الشفافة
       setBgProgressText("توليد الصورة النهائية... (90%)");
       setBgProgress(90);
       
-      const maskData = categoryMask.getAsUint8Array();
-      const maskBytes = new Uint8Array(maskData.length);
-      for (let i = 0; i < maskData.length; i++) {
-        maskBytes[i] = maskData[i] > 0 ? 255 : 0;
+      // confidenceMasks[0] هي نسبة احتمالية أن يكون البكسل "خلفية"
+      const bgMaskData = confidenceMasks[0].getAsFloat32Array();
+      const maskBytes = new Uint8Array(bgMaskData.length);
+      
+      for (let i = 0; i < bgMaskData.length; i++) {
+        const fgProb = 1.0 - bgMaskData[i];
+        
+        // استخدام عتبة بسيطة لتنظيف الشوائب مع الحفاظ على نعومة الحواف (Anti-aliasing)
+        if (fgProb < 0.05) {
+          maskBytes[i] = 0;
+        } else if (fgProb > 0.95) {
+          maskBytes[i] = 255;
+        } else {
+          maskBytes[i] = Math.round(fgProb * 255);
+        }
       }
       
-      const maskArray = Array.from(maskBytes);
+      // تحويل مصفوفة Uint8Array إلى Base64 بسرعة البرق باستخدام كتل (Chunks) لتفادي تجاوز الحد الأقصى للمكدس
+      const CHUNK_SIZE = 0x8000; // 32768
+      const chunks = [];
+      for (let i = 0; i < maskBytes.length; i += CHUNK_SIZE) {
+        chunks.push(String.fromCharCode.apply(null, Array.from(maskBytes.subarray(i, i + CHUNK_SIZE))));
+      }
+      const b64Mask = btoa(chunks.join(""));
  
       if (!isWorkerBusyRef.current) return;
  
       // 6. الحفظ في الخلفية عبر Go
       setBgProgressText("تجهيز الصورة...");
       setBgProgress(97);
-      const localPath = await ApplyMaskToImage(element.imageSrc || "", maskArray, targetW, targetH);
+      const localPath = await ApplyMaskToImage(element.imageSrc || "", b64Mask, targetW, targetH);
  
       if (!isWorkerBusyRef.current) return;
  

@@ -115,6 +115,7 @@ export interface PrintSettings {
   showCutLines: boolean;
   orientation: "portrait" | "landscape";
   fitToPage?: boolean;
+  repeatMode?: "all" | "row" | "column";
 }
 
 export type { PhotoTemplate, CollageTemplate, ProjectFileV1 };

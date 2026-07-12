@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { deserializeProjectFile } from "@/lib/project-serializer";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ export function ToolbarFileOps() {
     slots,
     setSlotImage,
     addImageElement,
-    template,
+
     selectedId,
   } = useEditorStore(
     useShallow((state) => ({
@@ -152,7 +152,7 @@ export function ToolbarFileOps() {
             onClick={handleOpenFile}
             aria-label="رفع صورة جديدة"
             title="رفع صورة جديدة"
-            className="h-7 px-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-md shadow-xs hover:shadow-md hover:shadow-teal-500/20 active:scale-95 transition-all cursor-pointer border-0 gap-1 flex items-center justify-center font-cairo"
+            className="h-7 px-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-md shadow-xs hover:shadow-md hover:shadow-blue-500/20 active:scale-95 transition-all cursor-pointer border-0 gap-1 flex items-center justify-center font-cairo"
           >
             <ImagePlus className="w-3.5 h-3.5 text-white" />
             <span className="text-[10px] font-bold text-white leading-none">صورة</span>

@@ -73,12 +73,20 @@ export const URLImage = React.memo(function URLImage({
       );
       if (hasFilters) {
         try {
-          node.cache();
+          const stage = node.getStage();
+          const exportRatio = stage ? (useEditorStore.getState().canvasWidth / stage.width()) : 4;
+          node.cache({
+            pixelRatio: Math.max(2, exportRatio)
+          });
         } catch (err) {
           console.warn("Failed to cache Konva image", err);
         }
       } else {
-        node.clearCache();
+        try {
+          node.clearCache();
+        } catch (err) {
+          // Ignore
+        }
       }
     }
     return () => {

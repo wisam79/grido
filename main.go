@@ -57,8 +57,12 @@ func main() {
 	}
 
 	// تهيئة طبقات المعمارية النظيفة
+	licenseRepo := repository.NewLicenseRepository(db)
+	licenseSvc := service.NewLicenseService(licenseRepo)
+	licenseHandler := handlers.NewLicenseHandler(licenseSvc)
+
 	projectRepo := repository.NewProjectRepository(db)
-	projectSvc := service.NewProjectService(projectRepo)
+	projectSvc := service.NewProjectService(projectRepo, licenseRepo)
 	projectHandler := handlers.NewProjectHandler(projectSvc)
 
 	printSvc := service.NewPrintService()
@@ -188,6 +192,7 @@ func main() {
 			projectHandler, // ربط طبقة التحكم مع Wails
 			printHandler,
 			backupHandler,
+			licenseHandler,
 		},
 		Frameless:         true,
 		Windows: &windows.Options{

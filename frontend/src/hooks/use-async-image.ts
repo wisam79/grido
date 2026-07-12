@@ -6,9 +6,11 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
 
   useEffect(() => {
     if (!src) {
-      setImage(undefined);
-      setStatus("failed");
-      return;
+      const timer = setTimeout(() => {
+        setImage(undefined);
+        setStatus("failed");
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     const img = new Image();
@@ -17,7 +19,9 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
     }
     
     let isCurrent = true;
-    setStatus("loading");
+    const timer2 = setTimeout(() => {
+      setStatus("loading");
+    }, 0);
 
     // Set src after setting onload to capture cached images correctly
     img.onload = () => {
@@ -53,6 +57,7 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
 
     return () => {
       isCurrent = false;
+      clearTimeout(timer2);
     };
   }, [src, crossOrigin]);
 

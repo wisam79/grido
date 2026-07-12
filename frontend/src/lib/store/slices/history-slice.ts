@@ -28,21 +28,13 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     const { elements, slots, history, historyIndex } = get() as HistoryCross;
     const newHistory = history.slice(0, historyIndex + 1);
 
-    const lastState = newHistory[newHistory.length - 1];
-    if (lastState) {
-      if (lastState.elements.length === elements.length && lastState.slots.length === slots.length) {
-        const currentStr = JSON.stringify({ elements, slots });
-        const lastStr = JSON.stringify({ elements: lastState.elements, slots: lastState.slots });
-        if (currentStr === lastStr) {
-          return;
-        }
-      }
-    }
-
+    // نحن لا نستخدم JSON.stringify هنا لتجنب مشاكل المعالجة البطيئة (CPU Bottleneck).
+    // الثقة مبنية على أن استدعاء pushHistory يتم فقط عند حدوث تغيير فعلي في التطبيق (مثل انتهاء النقل أو التحجيم).
     newHistory.push({
       elements: structuredClone(elements),
       slots: structuredClone(slots),
     });
+    
     if (newHistory.length > 20) newHistory.shift();
     set({ history: newHistory, historyIndex: newHistory.length - 1 });
   },

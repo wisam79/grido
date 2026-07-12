@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"fmt"
+	"hash/crc32"
 	"image"
 	"image/color"
 	"math"
@@ -80,11 +82,50 @@ func applyColorAdjustments(img image.Image, brightness, contrast, saturation flo
 	return img
 }
 
+func applyFilter(img image.Image, filter string) image.Image {
+	switch filter {
+	case "grayscale":
+		return imaging.Grayscale(img)
+	case "invert":
+		return imaging.Invert(img)
+	case "blur":
+		return imaging.Blur(img, 4.0)
+	case "sepia":
+		return applySepia(img)
+	}
+	return img
+}
+
+func applySepia(img image.Image) image.Image {
+	return imaging.AdjustFunc(img, func(c color.NRGBA) color.NRGBA {
+		r := float64(c.R)
+		g := float64(c.G)
+		b := float64(c.B)
+
+		tr := (r * 0.393) + (g * 0.769) + (b * 0.189)
+		tg := (r * 0.349) + (g * 0.686) + (b * 0.168)
+		tb := (r * 0.272) + (g * 0.534) + (b * 0.131)
+
+		if tr > 255 {
+			tr = 255
+		}
+		if tg > 255 {
+			tg = 255
+		}
+		if tb > 255 {
+			tb = 255
+		}
+
+		return color.NRGBA{R: uint8(tr), G: uint8(tg), B: uint8(tb), A: c.A}
+	})
+}
+
 type processedKey struct {
 	filePath   string
 	brightness float64
 	contrast   float64
 	saturation float64
+	filter     string
 	targetW    int
 	targetH    int
 }
@@ -157,6 +198,7 @@ func (s *PrintService) loadAndProcessImage(
 		brightness: item.Brightness,
 		contrast:   item.Contrast,
 		saturation: item.Saturation,
+		filter:     item.Filter,
 		targetW:    targetW,
 		targetH:    targetH,
 	}
@@ -212,8 +254,33 @@ func (s *PrintService) loadAndProcessImage(
 		imgCache.access[cacheKey] = time.Now()
 	}
 
+	if targetW <= 0 {
+		targetW = 1
+	}
+	if targetH <= 0 {
+		targetH = 1
+	}
+
+	if item.CropW > 0 && item.CropH > 0 {
+		rect := image.Rect(
+			int(math.Round(item.CropX)),
+			int(math.Round(item.CropY)),
+			int(math.Round(item.CropX+item.CropW)),
+			int(math.Round(item.CropY+item.CropH)),
+		)
+		img = imaging.Crop(img, rect)
+	}
+
 	adjustedImg := applyColorAdjustments(img, item.Brightness, item.Contrast, item.Saturation)
-	processedImg := imaging.Fill(adjustedImg, targetW, targetH, imaging.Center, imaging.CatmullRom)
+	adjustedImg = applyFilter(adjustedImg, item.Filter)
+	
+	var processedImg image.Image
+	bounds := adjustedImg.Bounds()
+	if bounds.Dx() == targetW && bounds.Dy() == targetH {
+		processedImg = adjustedImg
+	} else {
+		processedImg = imaging.Resize(adjustedImg, targetW, targetH, imaging.Lanczos)
+	}
 
 	if len(procCache.images) >= 16 {
 		var oldestKey processedKey
@@ -242,8 +309,16 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 		return
 	}
 	dc.SetColor(color.RGBA{R: 255, G: 0, B: 0, A: 255})
-	dc.SetLineWidth(1.5)
-	dc.SetDash(5, 5)
+	lineWidth := mmToPx(0.25, req.DPI)
+	if lineWidth < 1.0 {
+		lineWidth = 1.0
+	}
+	dashSize := mmToPx(1.5, req.DPI)
+	if dashSize < 1.0 {
+		dashSize = 1.0
+	}
+	dc.SetLineWidth(lineWidth)
+	dc.SetDash(dashSize, dashSize)
 
 	for _, line := range req.CutLines {
 		x1 := mmToPx(line.X1, req.DPI)
@@ -256,7 +331,7 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 	}
 }
 
-func (s *PrintService) saveOutput(dc *gg.Context) (string, error) {
+func (s *PrintService) saveOutput(dc *gg.Context, dpi int) (string, error) {
 	appDir := utils.GetAppDir()
 	outDir := filepath.Join(appDir, "Exports")
 	_ = os.MkdirAll(outDir, 0755)
@@ -264,7 +339,20 @@ func (s *PrintService) saveOutput(dc *gg.Context) (string, error) {
 	filename := fmt.Sprintf("print_%d.png", time.Now().UnixNano())
 	outPath := filepath.Join(outDir, filename)
 
-	err := dc.SavePNG(outPath)
+	var buf bytes.Buffer
+	err := dc.EncodePNG(&buf)
+	if err != nil {
+		return "", err
+	}
+
+	pngData := buf.Bytes()
+	if updatedData, err := setPngDPI(pngData, dpi); err == nil {
+		pngData = updatedData
+	} else {
+		fmt.Printf("Failed to set PNG DPI: %v\n", err)
+	}
+
+	err = os.WriteFile(outPath, pngData, 0644)
 	return outPath, err
 }
 
@@ -299,10 +387,28 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, erro
 			return "", err
 		}
 
-		xPx := int(math.Round(mmToPx(item.X, req.DPI)))
-		yPx := int(math.Round(mmToPx(item.Y, req.DPI)))
+		xPx := float64(int(math.Round(mmToPx(item.X, req.DPI))))
+		yPx := float64(int(math.Round(mmToPx(item.Y, req.DPI))))
+		wPx := float64(int(math.Round(mmToPx(item.W, req.DPI))))
+		hPx := float64(int(math.Round(mmToPx(item.H, req.DPI))))
 
-		dc.DrawImage(processedImg, xPx, yPx)
+		dc.Push()
+		if item.CornerRadiusMM > 0 {
+			rPx := mmToPx(item.CornerRadiusMM, req.DPI)
+			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+			dc.Clip()
+		}
+		dc.DrawImage(processedImg, int(xPx), int(yPx))
+		dc.Pop()
+
+		if item.BorderWidthMM > 0 && item.BorderColor != "" {
+			bPx := mmToPx(item.BorderWidthMM, req.DPI)
+			rPx := mmToPx(item.CornerRadiusMM, req.DPI)
+			dc.SetHexColor(item.BorderColor)
+			dc.SetLineWidth(bPx)
+			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+			dc.Stroke()
+		}
 	}
 
 	s.drawCutLines(dc, req)
@@ -310,5 +416,46 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, erro
 	imgCache = nil
 	procCache = nil
 
-	return s.saveOutput(dc)
+	return s.saveOutput(dc, req.DPI)
+}
+
+// setPngDPI modifies a PNG byte slice to include a pHYs chunk with the specified DPI.
+func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
+	if len(pngData) < 33 {
+		return nil, fmt.Errorf("invalid PNG data")
+	}
+
+	sig := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+	if !bytes.Equal(pngData[:8], sig) {
+		return nil, fmt.Errorf("not a valid PNG")
+	}
+
+	ppm := uint32(math.Round(float64(dpi) / 0.0254))
+
+	physType := []byte("pHYs")
+	physData := make([]byte, 9)
+	binary.BigEndian.PutUint32(physData[0:4], ppm)
+	binary.BigEndian.PutUint32(physData[4:8], ppm)
+	physData[8] = 1
+
+	physChunk := make([]byte, 21)
+	binary.BigEndian.PutUint32(physChunk[0:4], 9)
+	copy(physChunk[4:8], physType)
+	copy(physChunk[8:17], physData)
+
+	crc := crc32.ChecksumIEEE(append(physType, physData...))
+	binary.BigEndian.PutUint32(physChunk[17:21], crc)
+
+	chunkLen := binary.BigEndian.Uint32(pngData[8:12])
+	if string(pngData[12:16]) != "IHDR" {
+		return nil, fmt.Errorf("first chunk is not IHDR")
+	}
+	insertPos := 8 + 12 + int(chunkLen)
+
+	result := make([]byte, 0, len(pngData)+len(physChunk))
+	result = append(result, pngData[:insertPos]...)
+	result = append(result, physChunk...)
+	result = append(result, pngData[insertPos:]...)
+
+	return result, nil
 }

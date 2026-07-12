@@ -15,10 +15,11 @@ func TestProjectHandler_SaveAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
-	_ = db.AutoMigrate(&domain.Project{})
+	_ = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{})
 
 	repo := repository.NewProjectRepository(db)
-	svc := service.NewProjectService(repo)
+	licRepo := repository.NewLicenseRepository(db)
+	svc := service.NewProjectService(repo, licRepo)
 	handler := NewProjectHandler(svc)
 
 	// 1. اختبار الحفظ مع مدخلات خاطئة (validation)

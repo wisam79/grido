@@ -22,6 +22,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   showCutLines: true,
   orientation: "portrait",
   fitToPage: true,
+  repeatMode: "all",
 };
 
 export const createPrintSlice: StateCreator<EditorState, [], [], PrintSlice> = (set) => ({

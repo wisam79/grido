@@ -15,7 +15,7 @@ func setupBackupTestDB(t *testing.T) (*gorm.DB, func()) {
 		t.Fatalf("failed to connect database: %v", err)
 	}
 
-	err = db.AutoMigrate(&domain.Project{})
+	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{})
 	if err != nil {
 		t.Fatalf("failed to migrate database: %v", err)
 	}
@@ -33,7 +33,7 @@ func TestBackupService_ExportAndImport(t *testing.T) {
 	defer cleanup()
 
 	repo := repository.NewProjectRepository(db)
-	projectSvc := NewProjectService(repo)
+	projectSvc := NewProjectService(repo, repository.NewLicenseRepository(db))
 	backupSvc := NewBackupService(repo)
 
 	// Add dummy projects

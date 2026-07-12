@@ -97,6 +97,7 @@ export function ImageAdjustProperties({
 
 export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps) {
   const [cropOpen, setCropOpen] = useState(false);
+  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
   const [refineOpen, setRefineOpen] = useState(false);
   const {
     isRemovingBg,
@@ -150,7 +151,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             ) : (
               <>
                 <Sparkles className="w-4 h-4 text-white group-hover:scale-115 group-hover:rotate-6 transition-all duration-300" />
-                <span className="text-[10px] font-bold">عزل الخلفية</span>
+                <span className="text-[10px] font-bold flex items-center gap-1">
+                  عزل الخلفية
+                  {!isLicenseActive && (
+                    <span className="text-[8px] bg-amber-500 text-slate-900 px-1 py-0.5 rounded font-extrabold uppercase scale-90 select-none leading-none">PRO</span>
+                  )}
+                </span>
               </>
             )}
           </Button>
