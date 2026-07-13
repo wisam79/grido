@@ -186,7 +186,7 @@ export default function App() {
   return (
     <div 
       className={cn(
-        "h-screen flex flex-col overflow-hidden font-cairo transition-colors duration-200",
+        "h-screen flex flex-col overflow-hidden font-cairo",
         isModalOpen 
           ? "bg-background" // خلفية صلبة عند فتح النوافذ المنبثقة لمنع بطء الرسوميات (GPU Compositing Overdraw)
           : "bg-background/80 backdrop-blur-xl" // مظهر زجاجي شفاف فاخر في الصفحة الرئيسية

@@ -77,7 +77,7 @@ export function HorizontalRuler({ width, mmWidth }: HorizontalRulerProps) {
     <svg 
       width={width} 
       height={24} 
-      className="bg-card text-card-foreground overflow-hidden border-b border-border transition-colors duration-200"
+      className="bg-card text-card-foreground overflow-hidden border-b border-border"
     >
       {ticks}
       <line 
@@ -173,7 +173,7 @@ export function VerticalRuler({ height, mmHeight }: VerticalRulerProps) {
     <svg 
       width={24} 
       height={height} 
-      className="bg-card text-card-foreground overflow-hidden border-l border-border transition-colors duration-200"
+      className="bg-card text-card-foreground overflow-hidden border-l border-border"
     >
       {ticks}
       <line 
