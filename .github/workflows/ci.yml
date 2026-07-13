@@ -34,7 +34,9 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       - name: Generate Wails Bindings
-        run: wails generate module
+        run: |
+          mkdir -p frontend/dist
+          wails generate module
 
       - name: Typecheck Frontend
         working-directory: ./frontend
