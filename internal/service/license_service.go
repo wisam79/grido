@@ -41,6 +41,25 @@ var (
 )
 
 func init() {
+	// 🌟 Load .env locally if it exists (only for development)
+	if envBytes, err := os.ReadFile(".env"); err == nil {
+		for _, line := range strings.Split(string(envBytes), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				val := strings.TrimSpace(parts[1])
+				val = strings.Trim(val, `"'`)
+				if os.Getenv(key) == "" {
+					os.Setenv(key, val)
+				}
+			}
+		}
+	}
+
 	// Fallback to environment variables if ldflags not set (local dev)
 	if SupabaseURL == "" {
 		SupabaseURL = os.Getenv("SUPABASE_URL")
