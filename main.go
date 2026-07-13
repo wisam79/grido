@@ -148,7 +148,7 @@ func main() {
 				})
 			},
 		},
-		BackgroundColour: &options.RGBA{R: 0, G: 0, B: 0, A: 0},
+		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 255},
 		OnStartup: func(ctx context.Context) {
 			// استعادة موضع النافذة وحالة التكبير عند بدء التشغيل
 			if state, err := loadWindowState(); err == nil {
@@ -196,11 +196,11 @@ func main() {
 		},
 		Frameless: true,
 		Windows: &windows.Options{
-			WebviewIsTransparent:              true,
+			WebviewIsTransparent:              false, // إيقاف الشفافية لأنها تسبب مشاكل بصرية وظهور خلفية سوداء في ويندوز 10
 			WindowIsTranslucent:               false,
-			BackdropType:                      windows.Mica,
+			BackdropType:                      windows.None, // إيقاف Mica لأنه مدعوم فقط في ويندوز 11 ويتسبب بتشوهات في ويندوز 10
 			DisableWindowIcon:                 false,
-			DisableFramelessWindowDecorations: false,
+			DisableFramelessWindowDecorations: false, // الحفاظ على هذه كـ false للإبقاء على ظل النافذة الافتراضي لنظام ويندوز
 			WebviewUserDataPath:               getWebviewCacheDir(), // تعيين مجلد الكاش الآمن لـ WebView2
 			OnSuspend: func() {
 				slog.Info("Entering suspend mode...")
