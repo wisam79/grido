@@ -127,7 +127,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             !isRemovingBg && "hover:bg-primary/10 hover:text-primary"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
-          title={isRemovingBg ? "إلغاء عملية عزل الخلفية" : "إزالة الخلفية بالذكاء الاصطناعي"}
+          title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية"}
         >
           {isRemovingBg ? (
             <>
@@ -154,7 +154,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             onClick={() => setRefineOpen(true)}
           >
             <Paintbrush className="w-3.5 h-3.5 text-muted-foreground" />
-            تعديل القص يدوياً (ممحاة / استرجاع)
+            تعديل يدوي
           </Button>
         )}
 

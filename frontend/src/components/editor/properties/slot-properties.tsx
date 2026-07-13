@@ -224,7 +224,7 @@ export function SlotProperties({
                       <span>الصف</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">تكرار الصورة في صف الخلية</TooltipContent>
+                  <TooltipContent side="top">تعبئة الصف</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -238,7 +238,7 @@ export function SlotProperties({
                       <span>العمود</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">تكرار الصورة في عمود الخلية</TooltipContent>
+                  <TooltipContent side="top">تعبئة العمود</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -252,7 +252,7 @@ export function SlotProperties({
                       <span>الكل</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">تكرار الصورة في جميع خلايا الكولاج</TooltipContent>
+                  <TooltipContent side="top">تعبئة الكل</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
@@ -270,7 +270,7 @@ export function SlotProperties({
                 !isRemovingBg && "hover:bg-primary/10 hover:text-primary"
               )}
               onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(slot)}
-              title={isRemovingBg ? "إلغاء عملية عزل الخلفية" : "إزالة الخلفية بالذكاء الاصطناعي"}
+              title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية"}
             >
               {isRemovingBg ? (
                 <>
@@ -297,7 +297,7 @@ export function SlotProperties({
                 onClick={() => setRefineOpen(true)}
               >
                 <Paintbrush className="w-3.5 h-3.5 text-muted-foreground" />
-                تعديل القص يدوياً (ممحاة / استرجاع)
+                تعديل يدوي
               </Button>
             )}
 
