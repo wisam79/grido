@@ -97,11 +97,48 @@ func applyFilter(img image.Image, filter string) image.Image {
 		return imaging.Blur(img, 4.0)
 	case "sepia":
 		return applySepia(img)
+	case "enhance":
+		img = imaging.AdjustContrast(img, 8)
+		img = imaging.AdjustSaturation(img, 12)
+		img = imaging.AdjustBrightness(img, 2)
+		return img
+	case "skinGlow":
+		img = imaging.AdjustBrightness(img, 6)
+		img = imaging.AdjustContrast(img, -6)
+		img = imaging.AdjustSaturation(img, 8)
+		img = applySepiaRatio(img, 0.10)
+		img = applySkinGlowBlur(img)
+		return img
+	case "clarity":
+		img = imaging.AdjustContrast(img, 22)
+		img = imaging.AdjustSaturation(img, 20)
+		img = imaging.AdjustBrightness(img, -2)
+		return img
+	case "lowlight":
+		img = imaging.AdjustBrightness(img, 16)
+		img = imaging.AdjustContrast(img, -10)
+		img = imaging.AdjustSaturation(img, 5)
+		return img
+	case "cinematic":
+		img = imaging.AdjustContrast(img, 10)
+		img = imaging.AdjustSaturation(img, 15)
+		img = applySepiaRatio(img, 0.05)
+		img = imaging.AdjustBrightness(img, 2)
+		return img
+	case "monoPro":
+		img = imaging.Grayscale(img)
+		img = imaging.AdjustContrast(img, 25)
+		img = imaging.AdjustBrightness(img, 2)
+		return img
 	}
 	return img
 }
 
 func applySepia(img image.Image) image.Image {
+	return applySepiaRatio(img, 1.0)
+}
+
+func applySepiaRatio(img image.Image, ratio float64) image.Image {
 	return imaging.AdjustFunc(img, func(c color.NRGBA) color.NRGBA {
 		r := float64(c.R)
 		g := float64(c.G)
@@ -121,8 +158,81 @@ func applySepia(img image.Image) image.Image {
 			tb = 255
 		}
 
-		return color.NRGBA{R: uint8(tr), G: uint8(tg), B: uint8(tb), A: c.A}
+		outR := r + (tr-r)*ratio
+		outG := g + (tg-g)*ratio
+		outB := b + (tb-b)*ratio
+
+		return color.NRGBA{R: uint8(outR), G: uint8(outG), B: uint8(outB), A: c.A}
 	})
+}
+
+func isSkinColor(r, g, b uint8) bool {
+	if r <= 95 || g <= 40 || b <= 20 || r <= g || r <= b {
+		return false
+	}
+	min := g
+	if b < g {
+		min = b
+	}
+	return (r-min) > 15 && (r-g) > 15
+}
+
+func applySkinGlowBlur(img image.Image) image.Image {
+	srcNRGBA := imaging.Clone(img)
+	bounds := srcNRGBA.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+
+	orig := make([]uint8, len(srcNRGBA.Pix))
+	copy(orig, srcNRGBA.Pix)
+
+	isSkin := make([]bool, width*height)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			idx := (y*width + x) * 4
+			if idx+2 < len(orig) {
+				r := orig[idx]
+				g := orig[idx+1]
+				b := orig[idx+2]
+				if isSkinColor(r, g, b) {
+					isSkin[y*width+x] = true
+				}
+			}
+		}
+	}
+
+	for y := 1; y < height-1; y++ {
+		for x := 1; x < width-1; x++ {
+			i := y*width + x
+			if isSkin[i] {
+				var sumR, sumG, sumB, count int
+				for dy := -1; dy <= 1; dy++ {
+					for dx := -1; dx <= 1; dx++ {
+						ni := (y+dy)*width + (x+dx)
+						if isSkin[ni] {
+							nIdx := ni * 4
+							if nIdx+2 < len(orig) {
+								sumR += int(orig[nIdx])
+								sumG += int(orig[nIdx+1])
+								sumB += int(orig[nIdx+2])
+								count++
+							}
+						}
+					}
+				}
+				if count > 0 {
+					idx := i * 4
+					if idx+2 < len(srcNRGBA.Pix) {
+						srcNRGBA.Pix[idx] = uint8(sumR / count)
+						srcNRGBA.Pix[idx+1] = uint8(sumG / count)
+						srcNRGBA.Pix[idx+2] = uint8(sumB / count)
+					}
+				}
+			}
+		}
+	}
+
+	return srcNRGBA
 }
 
 type processedKey struct {

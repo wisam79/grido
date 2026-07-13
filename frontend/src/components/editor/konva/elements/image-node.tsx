@@ -99,7 +99,20 @@ export const URLImage = React.memo(function URLImage({
         }
       }
     };
-  }, [image, hasFilters, element.width, element.height, displayW, displayH, elementRef]);
+  }, [
+    image,
+    hasFilters,
+    element.width,
+    element.height,
+    displayW,
+    displayH,
+    elementRef,
+    element.filter,
+    element.brightness,
+    element.contrast,
+    element.saturation,
+    element.blur,
+  ]);
 
   // حساب القيم الكلية بدمج مرشحات الصور الجاهزة والتعديلات اليدوية
   let totalBrightness = element.brightness ?? 100;

@@ -89,7 +89,7 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }
       }
     };
-  }, [image, hasFilters, width, height]);
+  }, [image, hasFilters, width, height, filter, brightness, contrast, saturation, zoom, dragX, dragY]);
 
   if (!image) return null;
 
