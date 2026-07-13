@@ -59,7 +59,7 @@ func TestPrintService_GeneratePrintSheet(t *testing.T) {
 	}
 
 	// 3. تشغيل الخدمة لتوليد ورقة الطباعة
-	outPath, err := svc.GeneratePrintSheet(req)
+	outPath, _, err := svc.GeneratePrintSheet(req)
 	if err != nil {
 		t.Fatalf("unexpected error generating print sheet: %v", err)
 	}
@@ -71,7 +71,14 @@ func TestPrintService_GeneratePrintSheet(t *testing.T) {
 	}
 
 	// قراءة الملف الناتج للتحقق من أبعاده بالبكسل
-	outImg, err := imaging.Open(outPath)
+	// بما أن outPath قد يكون ملف HTML، نستنتج مسار الـ PNG
+	pngPath := outPath
+	if strings.HasSuffix(outPath, ".html") {
+		pngPath = strings.TrimSuffix(outPath, ".html") + ".png"
+		defer os.Remove(pngPath) // تأكد من حذف الصورة أيضاً
+	}
+
+	outImg, err := imaging.Open(pngPath)
 	if err != nil {
 		t.Fatalf("failed to open output image: %v", err)
 	}
@@ -120,35 +127,35 @@ func TestPrintService_Validation(t *testing.T) {
 
 	// 1. اختبار DPI غير صالح (أقل من 50)
 	req1 := domain.PrintRequest{DPI: 40, PaperWidthMM: 100, PaperHeightMM: 100}
-	_, err := svc.GeneratePrintSheet(req1)
+	_, _, err := svc.GeneratePrintSheet(req1)
 	if err == nil || !strings.Contains(err.Error(), "invalid DPI") {
 		t.Errorf("expected error for DPI < 50, got: %v", err)
 	}
 
 	// 2. اختبار DPI غير صالح (أكبر من 600)
 	req2 := domain.PrintRequest{DPI: 800, PaperWidthMM: 100, PaperHeightMM: 100}
-	_, err = svc.GeneratePrintSheet(req2)
+	_, _, err = svc.GeneratePrintSheet(req2)
 	if err == nil || !strings.Contains(err.Error(), "invalid DPI") {
 		t.Errorf("expected error for DPI > 600, got: %v", err)
 	}
 
 	// 3. اختبار أبعاد غير صالحة (عرض الورقة أقل من 10mm)
 	req3 := domain.PrintRequest{DPI: 300, PaperWidthMM: 5, PaperHeightMM: 100}
-	_, err = svc.GeneratePrintSheet(req3)
+	_, _, err = svc.GeneratePrintSheet(req3)
 	if err == nil || !strings.Contains(err.Error(), "invalid PaperWidthMM") {
 		t.Errorf("expected error for PaperWidthMM < 10, got: %v", err)
 	}
 
 	// 4. اختبار أبعاد غير صالحة (طول الورقة أكبر من 1000mm)
 	req4 := domain.PrintRequest{DPI: 300, PaperWidthMM: 100, PaperHeightMM: 1200}
-	_, err = svc.GeneratePrintSheet(req4)
+	_, _, err = svc.GeneratePrintSheet(req4)
 	if err == nil || !strings.Contains(err.Error(), "invalid PaperHeightMM") {
 		t.Errorf("expected error for PaperHeightMM > 1000, got: %v", err)
 	}
 
 	// 5. اختبار عدد بكسلات ضخم جداً لمنع OOM
 	req5 := domain.PrintRequest{DPI: 600, PaperWidthMM: 900, PaperHeightMM: 900}
-	_, err = svc.GeneratePrintSheet(req5)
+	_, _, err = svc.GeneratePrintSheet(req5)
 	if err == nil || !strings.Contains(err.Error(), "pixels exceed 144 megapixels") {
 		t.Errorf("expected error for huge canvas size, got: %v", err)
 	}
@@ -162,7 +169,7 @@ func TestPrintService_Validation(t *testing.T) {
 			{ImageSrc: "/local-image/nonexistent_file.png", X: 10, Y: 10, W: 50, H: 50},
 		},
 	}
-	_, err = svc.GeneratePrintSheet(req6)
+	_, _, err = svc.GeneratePrintSheet(req6)
 	if err == nil || !strings.Contains(err.Error(), "image file does not exist") {
 		t.Errorf("expected error for missing image file, got: %v", err)
 	}
@@ -216,10 +223,13 @@ func BenchmarkPrintService_GeneratePrintSheet(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		out, err := svc.GeneratePrintSheet(req)
+		out, _, err := svc.GeneratePrintSheet(req)
 		if err != nil {
 			b.Fatalf("GeneratePrintSheet failed: %v", err)
 		}
 		_ = os.Remove(out)
+		if strings.HasSuffix(out, ".html") {
+			_ = os.Remove(strings.TrimSuffix(out, ".html") + ".png")
+		}
 	}
 }

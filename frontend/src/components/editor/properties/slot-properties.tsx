@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { 
-  ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, FolderHeart, Trash2, Sparkles, X, Rows, Columns, LayoutGrid
+  ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, Sparkles, X, Rows, Columns, LayoutGrid
 } from "lucide-react";
 import {
   Tooltip,

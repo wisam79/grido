@@ -68,11 +68,6 @@ declare
   user_status text := 'active';
   user_expiry timestamp with time zone := timezone('utc'::text, now()) + interval '7 days';
 begin
-  -- ترقية حساب المطور الأساسي تلقائياً عند التسجيل لرتبة Enterprise مدى الحياة
-  if new.email = 'wisamsamir78@gmail.com' then
-    user_plan := 'enterprise';
-    user_expiry := timezone('utc'::text, now()) + interval '100 years';
-  end if;
 
   insert into public.profiles (id, name, email, plan, expires_at, status)
   values (
@@ -93,9 +88,3 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- ترقية حساب المطور الأساسي يدوياً في حال كان مسجلاً مسبقاً قبل تفعيل الـ Trigger
-update public.profiles 
-set plan = 'enterprise', 
-    status = 'active', 
-    expires_at = timezone('utc'::text, now()) + interval '100 years' 
-where email = 'wisamsamir78@gmail.com';

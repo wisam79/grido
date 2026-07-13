@@ -59,7 +59,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         easing: Konva.Easings.BackEaseOut
       });
     }
-  }, [elementRef, element.opacity, element.flipX, editingTextId]);
+  }, [elementRef, element.opacity, element.flipX, editingTextId, element.id]);
   
   // Sync auto height back to store so bounding boxes and overlays stay perfect
   useEffect(() => {
@@ -74,7 +74,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         return () => clearTimeout(timer);
       }
     }
-  }, [element.text, element.fontSize, element.width, element.height, displayH, elementRef, onChange]);
+  }, [element.text, element.fontSize, element.fontFamily, element.textAlign, element.color, element.width, element.id, displayH, element.height, elementRef, onChange]);
 
   const flipped = element.flipX === true;
   const w = element.width * displayW;

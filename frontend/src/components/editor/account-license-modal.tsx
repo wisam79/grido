@@ -4,8 +4,18 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,11 +31,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   Sparkles,
-  Printer,
-  Download,
-  LayoutGrid,
   CheckCircle2,
-  Smartphone,
   ExternalLink,
 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
@@ -58,7 +64,13 @@ export function AccountLicenseModal() {
   );
 
   // Form states
-  const [activeTab, setActiveTab] = useState<"auth" | "license">("auth");
+  const [activeTab, setActiveTab] = useState<"auth" | "license">(() => {
+    const user = useEditorStore.getState().user;
+    if (user && user.plan !== "free" && user.token) {
+      return "license";
+    }
+    return "auth";
+  });
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -70,15 +82,21 @@ export function AccountLicenseModal() {
 
   // Reset errors when modal status changes or tabs toggle
   useEffect(() => {
-    setError(null);
+    setTimeout(() => {
+      setError(null);
+    }, 0);
   }, [activeTab, authMode, accountModalOpen]);
 
   // Automatically switch tabs if user is logged in
   useEffect(() => {
     if (user && user.plan !== "free" && user.token) {
-      setActiveTab("license");
+      setTimeout(() => {
+        setActiveTab("license");
+      }, 0);
     } else {
-      setActiveTab("auth");
+      setTimeout(() => {
+        setActiveTab("auth");
+      }, 0);
     }
   }, [user]);
 
@@ -143,25 +161,29 @@ export function AccountLicenseModal() {
     }
   };
 
-  const handleLogout = async () => {
-    if (confirm("هل أنت متأكد من رغبتك في تسجيل الخروج؟")) {
-      await logoutAccount();
-      toast.info("تم تسجيل الخروج بنجاح.");
-      setAuthMode("login");
-      setActiveTab("auth");
+  const confirmLogout = async () => {
+    await logoutAccount();
+    toast.info("تم تسجيل الخروج بنجاح.");
+    setAuthMode("login");
+    setActiveTab("auth");
+  };
+
+  const [trialDaysLeft, setTrialDaysLeft] = useState(0);
+
+  useEffect(() => {
+    if (user && user.plan === "trial" && user.expiresAt) {
+      const expiry = new Date(user.expiresAt).getTime();
+      const diff = expiry - Date.now();
+      setTimeout(() => {
+        setTrialDaysLeft(Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))));
+      }, 0);
+    } else {
+      setTimeout(() => {
+        setTrialDaysLeft(0);
+      }, 0);
     }
-  };
+  }, [user]);
 
-  // Calculate remaining days for Trial
-  const getTrialDaysLeft = () => {
-    if (!user || user.plan !== "trial" || !user.expiresAt) return 0;
-    const expiry = new Date(user.expiresAt).getTime();
-    const now = Date.now();
-    const diff = expiry - now;
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  };
-
-  const trialDaysLeft = getTrialDaysLeft();
   const active = isLicenseActive();
 
   return (
@@ -173,8 +195,7 @@ export function AccountLicenseModal() {
               <User className="w-5 h-5" />
             </div>
             <div className="flex flex-col text-right">
-              <span className="text-sm font-extrabold text-foreground tracking-tight">إدارة الحساب والتراخيص</span>
-              <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">سجل دخولك أو فعّل مفتاح الترخيص لفتح كامل الميزات</span>
+              <span className="text-sm font-extrabold text-foreground tracking-tight">الحساب والتراخيص</span>
             </div>
           </DialogTitle>
         </DialogHeader>
@@ -182,61 +203,56 @@ export function AccountLicenseModal() {
         {/* 📊 صندوق حالة الاشتراك الحالي */}
         <div className="bg-card border border-border/60 p-4 rounded-xl space-y-3.5 shadow-xs">
           <div className="flex justify-between items-center">
-            <span className="text-[11px] font-bold text-muted-foreground">حالة الاشتراك الحالية:</span>
+            <span className="text-[11px] font-bold text-muted-foreground">الباقة:</span>
             {active ? (
               user?.plan === "trial" ? (
                 <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-extrabold text-[10px] px-2 py-0.5 rounded-md">
-                  نسخة تجريبية ({trialDaysLeft} أيام متبقية)
+                  تجريبي ({trialDaysLeft} يوم)
                 </Badge>
               ) : (
                 <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-extrabold text-[10px] px-2 py-0.5 rounded-md">
-                  مفعّل PRO
+                  PRO
                 </Badge>
               )
             ) : (
               <Badge variant="outline" className="text-muted-foreground border-border text-[10px] px-2 py-0.5 rounded-md bg-muted/40 font-bold">
-                خطة مجانية مقيدة
+                مجاني
               </Badge>
             )}
           </div>
 
           {user && user.email ? (
             <div className="flex justify-between items-center text-xs border-t border-border/40 pt-3">
-              <span className="text-[11px] text-muted-foreground">المستخدم النشط:</span>
+              <span className="text-[11px] text-muted-foreground">الحساب:</span>
               <span className="font-bold text-foreground">{user.email}</span>
             </div>
           ) : (
-            <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 space-y-2">
-              <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-500">
-                <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span className="text-xs font-bold">خطة مجانية محدودة</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground leading-normal">
-                يرجى تسجيل الدخول أو إنشاء حساب جديد لتنشيط باقة تجريبية متكاملة مجاناً لمدة 7 أيام فوراً.
-              </p>
+            <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="text-[10px] text-amber-600 dark:text-amber-500 font-bold">سجل دخولك لتفعيل 7 أيام مجاناً</span>
             </div>
           )}
 
           {/* 🌟 قائمة مقارنة الميزات وقيود الباقة */}
           <div className="border-t border-border/60 pt-3 space-y-2 text-[10px]">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">عدد المشاريع المتاحة:</span>
+              <span className="text-muted-foreground">المشاريع:</span>
               <span className={`font-bold flex items-center gap-1.5 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-500'}`}>
-                {active ? 'غير محدودة' : 'الحد الأقصى 3 مشاريع'}
+                {active ? 'غير محدودة' : '3 كحد أقصى'}
                 <CheckCircle2 className={`w-3.5 h-3.5 ${active ? 'text-emerald-500' : 'text-amber-500/40'}`} />
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">إزالة علامة التصدير المائية:</span>
+              <span className="text-muted-foreground">العلامة المائية:</span>
               <span className={`font-bold flex items-center gap-1.5 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-500'}`}>
-                {active ? 'بدون علامة مائية' : 'مفعّلة على التصاميم'}
+                {active ? 'مخفية' : 'مضافة للتصدير'}
                 <CheckCircle2 className={`w-3.5 h-3.5 ${active ? 'text-emerald-500' : 'text-amber-500/40'}`} />
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">عزل الخلفية الذكي والطباعة:</span>
+              <span className="text-muted-foreground">الطباعة والعزل:</span>
               <span className={`font-bold flex items-center gap-1.5 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground/60'}`}>
-                {active ? 'متاحة بالكامل' : 'مغلقة'}
+                {active ? 'مفعل' : 'مغلق'}
                 <CheckCircle2 className={`w-3.5 h-3.5 ${active ? 'text-emerald-500' : 'text-muted-foreground/30'}`} />
               </span>
             </div>
@@ -325,9 +341,9 @@ export function AccountLicenseModal() {
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : authMode === "login" ? (
-                  "تسجيل الدخول"
+                  "دخول"
                 ) : (
-                  "إنشاء الحساب وتفعيل الأسبوع المجاني"
+                  "إنشاء حساب"
                 )}
               </Button>
 
@@ -354,7 +370,7 @@ export function AccountLicenseModal() {
                         d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.69 5.69 0 0 1 8.24 12.8a5.69 5.69 0 0 1 5.751-5.714c1.47 0 2.824.509 3.89 1.527l3.076-3.076C19.11 3.793 15.932 2.4 12.24 2.4a9.6 9.6 0 0 0-9.6 9.6c0 5.302 4.298 9.6 9.6 9.6c5.8 0 9.69-4.08 9.69-9.873c0-.622-.057-1.12-.132-1.44H12.24Z"
                       />
                     </svg>
-                    <span>الدخول بحساب Google</span>
+                    <span>Google</span>
                   </>
                 )}
               </Button>
@@ -366,7 +382,7 @@ export function AccountLicenseModal() {
                 onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
                 className="text-[10px] text-primary hover:text-primary/80 hover:underline font-bold cursor-pointer"
               >
-                {authMode === "login" ? "لا تملك حساباً؟ أنشئ حساباً جديداً" : "لديك حساب بالفعل؟ سجل دخولك"}
+                {authMode === "login" ? "إنشاء حساب جديد" : "تسجيل الدخول"}
               </button>
             </div>
           </TabsContent>
@@ -384,8 +400,7 @@ export function AccountLicenseModal() {
                       <ShieldCheck className="w-8 h-8" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-sm font-extrabold text-foreground tracking-wide">الترخيص مفعل بنشاط</h3>
-                      <p className="text-[10px] text-muted-foreground leading-normal">التطبيق مرخص بالكامل ويعمل بدون أي قيود.</p>
+                      <h3 className="text-sm font-extrabold text-foreground tracking-wide">النسخة مفعلة</h3>
                     </div>
 
                     <div className="bg-muted/50 border border-border/60 rounded-xl p-3.5 text-right space-y-2.5 text-xs">
@@ -452,10 +467,28 @@ export function AccountLicenseModal() {
                 )}
 
                 <div className="flex items-center justify-between border-t border-border/60 pt-4 mt-2">
-                  <Button variant="ghost" size="sm" onClick={handleLogout} className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer gap-1.5 h-8.5 px-3 rounded-lg">
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>تسجيل الخروج</span>
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer gap-1.5 h-8.5 px-3 rounded-lg">
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>تسجيل الخروج</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="font-cairo text-right" dir="rtl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>تسجيل الخروج</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          هل أنت متأكد من رغبتك في تسجيل الخروج من الحساب الحالي؟
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="flex-row-reverse sm:justify-start gap-2">
+                        <AlertDialogAction onClick={confirmLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          تأكيد الخروج
+                        </AlertDialogAction>
+                        <AlertDialogCancel className="mt-0 border-border">إلغاء</AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
 
                   <a
                     href="https://grido.studio/pricing"

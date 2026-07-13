@@ -6,6 +6,17 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +28,6 @@ import {
   ShieldCheck,
   ShieldAlert,
   Loader2,
-  Trash2,
-  Calendar,
   Sparkles,
   BarChart3,
   Copy,
@@ -93,13 +102,11 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
   };
 
   const handleRevoke = async (email: string) => {
-    if (confirm(`هل أنت متأكد من إلغاء اشتراك/ترخيص المستخدم (${email})؟`)) {
-      try {
-        await adminRevokeLicense(email);
-        toast.success("تم إلغاء الترخيص وإرجاع الحساب للخطة المجانية.");
-      } catch (err: any) {
-        toast.error(err.message || "فشلت عملية إلغاء الترخيص");
-      }
+    try {
+      await adminRevokeLicense(email);
+      toast.success("تم إلغاء الترخيص وإرجاع الحساب للخطة المجانية.");
+    } catch (err: any) {
+      toast.error(err.message || "فشلت عملية إلغاء الترخيص");
     }
   };
 
@@ -261,14 +268,31 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
                                   تمديد (+1 سنة)
                                 </Button>
                                 {(u.plan === "pro" || u.plan === "enterprise") && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-500/5 cursor-pointer font-bold px-2 rounded-md"
-                                    onClick={() => handleRevoke(u.email)}
-                                  >
-                                    إلغاء الترخيص
-                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-500/5 cursor-pointer font-bold px-2 rounded-md"
+                                      >
+                                        إلغاء الترخيص
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="font-cairo text-right" dir="rtl">
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>إلغاء اشتراك مستخدم</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          هل أنت متأكد من إلغاء اشتراك/ترخيص المستخدم ({u.email}) وإعادته للباقة المجانية؟
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter className="flex-row-reverse sm:justify-start gap-2">
+                                        <AlertDialogAction onClick={() => handleRevoke(u.email)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                          إلغاء الاشتراك
+                                        </AlertDialogAction>
+                                        <AlertDialogCancel className="mt-0 border-border">إلغاء</AlertDialogCancel>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 )}
                               </div>
                             </td>

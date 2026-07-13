@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"grido/internal/core/domain"
+	"time"
 )
 
 type BackupService struct {
-	repo domain.ProjectRepository
+	repo        domain.ProjectRepository
+	licenseRepo domain.LicenseRepository
 }
 
-func NewBackupService(repo domain.ProjectRepository) *BackupService {
-	return &BackupService{repo: repo}
+func NewBackupService(repo domain.ProjectRepository, licenseRepo domain.LicenseRepository) *BackupService {
+	return &BackupService{repo: repo, licenseRepo: licenseRepo}
 }
 
 // ExportBackup retrieves all projects and returns them serialized in JSON format
@@ -38,6 +40,42 @@ func (s *BackupService) ImportBackup(jsonData string, mode string) error {
 
 	if mode != "merge" && mode != "overwrite" {
 		return fmt.Errorf("invalid backup import mode: %q (expected %q or %q)", mode, "merge", "overwrite")
+	}
+
+	// Check licensing limits
+	profile, err := s.licenseRepo.Get()
+	isFree := true
+	if err == nil && profile != nil {
+		if profile.Plan == "pro" || profile.Plan == "enterprise" {
+			if profile.Status == "active" && time.Now().Before(profile.ExpiresAt) {
+				isFree = false
+			}
+		} else if profile.Plan == "trial" {
+			if time.Now().Before(profile.ExpiresAt) {
+				isFree = false
+			}
+		}
+	}
+
+	if isFree {
+		existingCount := 0
+		if mode == "merge" {
+			existingProjects, _ := s.repo.FindAll()
+			uniqueProjects := make(map[string]bool)
+			for _, p := range existingProjects {
+				uniqueProjects[p.ID] = true
+			}
+			for _, p := range projects {
+				uniqueProjects[p.ID] = true
+			}
+			existingCount = len(uniqueProjects)
+		} else {
+			existingCount = len(projects)
+		}
+
+		if existingCount > 3 {
+			return fmt.Errorf("لقد تجاوزت الحد الأقصى للمشاريع في الخطة المجانية (3 مشاريع). يرجى الترقية لباقة Pro للاستيراد.")
+		}
 	}
 
 	overwrite := (mode == "overwrite")

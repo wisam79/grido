@@ -1,10 +1,13 @@
 package utils
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -85,7 +88,7 @@ func VerifyLicenseSignature(profile *domain.UserProfile) bool {
 		return false
 	}
 
-	return computedSig == string(storedSigBytes)
+	return hmac.Equal([]byte(computedSig), storedSigBytes)
 }
 
 // ClearLicenseSignature deletes local key and signature files.
@@ -118,4 +121,77 @@ func VerifyTime(t time.Time) bool {
 
 	// Allow 5 minutes maximum drift (in case of small sync adjustments)
 	return t.Unix() >= lastUnix-300
+}
+
+// SaveEncryptedToken encrypts the JWT token using AES-GCM and saves it to .license_token
+func SaveEncryptedToken(token string) error {
+	if token == "" {
+		return ClearEncryptedToken()
+	}
+
+	key, err := LoadOrCreateMasterKey()
+	if err != nil {
+		return err
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return err
+	}
+
+	ciphertext := gcm.Seal(nonce, nonce, []byte(token), nil)
+	path := filepath.Join(GetAppDir(), ".license_token")
+	return os.WriteFile(path, ciphertext, 0600)
+}
+
+// LoadEncryptedToken reads and decrypts the token from .license_token
+func LoadEncryptedToken() (string, error) {
+	path := filepath.Join(GetAppDir(), ".license_token")
+	ciphertext, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	key, err := LoadOrCreateMasterKey()
+	if err != nil {
+		return "", err
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	if len(ciphertext) < gcm.NonceSize() {
+		return "", errors.New("malformed ciphertext")
+	}
+
+	nonce, ciphertext := ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():]
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(plaintext), nil
+}
+
+// ClearEncryptedToken removes the saved token
+func ClearEncryptedToken() error {
+	path := filepath.Join(GetAppDir(), ".license_token")
+	return os.Remove(path)
 }

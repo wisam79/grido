@@ -109,8 +109,19 @@ func NewLicenseRepository(db *gorm.DB) domain.LicenseRepository {
 }
 
 func (r *licenseRepositoryImpl) Save(profile *domain.UserProfile) error {
+	// Extract token to save securely
+	token := profile.Token
+	
+	// Save to DB (Token field will still be saved if it's there, but we can blank it)
+	// Wait, to prevent DB from saving it, we can blank it out momentarily
+	profile.Token = ""
 	err := r.db.Save(profile).Error
+	
+	// Restore token for the runtime
+	profile.Token = token
+
 	if err == nil {
+		_ = utils.SaveEncryptedToken(token)
 		_ = utils.SaveLicenseSignature(profile)
 		_ = utils.UpdateLastTime(time.Now())
 	}
@@ -122,6 +133,12 @@ func (r *licenseRepositoryImpl) Get() (*domain.UserProfile, error) {
 	err := r.db.First(&profile).Error
 	if err != nil {
 		return nil, err
+	}
+
+	// Load token from secure storage
+	token, kerr := utils.LoadEncryptedToken()
+	if kerr == nil {
+		profile.Token = token
 	}
 
 	// Verify signature to prevent SQLite tampering
@@ -144,11 +161,9 @@ func (r *licenseRepositoryImpl) Get() (*domain.UserProfile, error) {
 }
 
 func (r *licenseRepositoryImpl) Clear() error {
-	err := r.db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&domain.UserProfile{}).Error
-	if err == nil {
-		_ = utils.ClearLicenseSignature()
-	}
-	return err
+	_ = utils.ClearEncryptedToken()
+	_ = utils.ClearLicenseSignature()
+	return r.db.Where("1 = 1").Delete(&domain.UserProfile{}).Error
 }
 
 func (r *licenseRepositoryImpl) GetAll() ([]domain.UserProfile, error) {

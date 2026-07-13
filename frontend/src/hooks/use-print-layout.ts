@@ -22,14 +22,22 @@ export function usePrintLayout({
     const originalImageWidthMM = template ? template.widthMM : (canvasWidth / dpi) * 25.4;
     const originalImageHeightMM = template ? template.heightMM : (canvasHeight / dpi) * 25.4;
 
-    const availableWidthMM =
+    const paperWidth =
       printSettings.orientation === "portrait"
-        ? printSettings.paperWidthMM - 2 * printSettings.marginMM
-        : printSettings.paperHeightMM - 2 * printSettings.marginMM;
-    const availableHeightMM =
+        ? printSettings.paperWidthMM
+        : printSettings.paperHeightMM;
+    const paperHeight =
       printSettings.orientation === "portrait"
-        ? printSettings.paperHeightMM - 2 * printSettings.marginMM
-        : printSettings.paperWidthMM - 2 * printSettings.marginMM;
+        ? printSettings.paperHeightMM
+        : printSettings.paperWidthMM;
+
+    // If the image is A4 (or whatever the full paper size is), ignore the print margins 
+    // because the user is designing a full page layout.
+    const isFullPage = originalImageWidthMM >= paperWidth - 1 && originalImageHeightMM >= paperHeight - 1;
+    const effectiveMarginMM = isFullPage ? 0 : printSettings.marginMM;
+
+    const availableWidthMM = paperWidth - 2 * effectiveMarginMM;
+    const availableHeightMM = paperHeight - 2 * effectiveMarginMM;
 
     const gapMM = printSettings.gapMM ?? 2;
 
@@ -73,21 +81,13 @@ export function usePrintLayout({
       rows = Math.ceil(actualCopies / Math.max(1, cols));
     }
 
-    const paperWidth =
-      printSettings.orientation === "portrait"
-        ? printSettings.paperWidthMM
-        : printSettings.paperHeightMM;
-    const paperHeight =
-      printSettings.orientation === "portrait"
-        ? printSettings.paperHeightMM
-        : printSettings.paperWidthMM;
-
     return {
       dpi,
       originalImageWidthMM,
       originalImageHeightMM,
       availableWidthMM,
       availableHeightMM,
+      effectiveMarginMM,
       gapMM,
       imageWidthMM,
       imageHeightMM,

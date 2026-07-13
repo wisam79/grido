@@ -2,8 +2,7 @@ import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
-  ImageIcon, Type, Palette, Sparkles, 
-  EyeOff, Eye, RotateCw, FlipHorizontal, Square, 
+  ImageIcon, Type, Palette, Sparkles, Eye, RotateCw, FlipHorizontal, Square, 
   Paintbrush, Sliders, Move, Lock, Droplet
 } from "lucide-react";
 import { SliderControl, PopoverColorPicker } from "./shared-controls";

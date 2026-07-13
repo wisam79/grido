@@ -7,7 +7,7 @@ import {
   Path as KonvaPath 
 } from "react-konva";
 import Konva from "konva";
-import { ShapeElement, useEditorStore } from "@/lib/editor-store";
+import { ShapeElement } from "@/lib/editor-store";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import { getFillProps } from "./fill-utils";

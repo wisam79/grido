@@ -25,6 +25,7 @@ export function StageProvider({ children }: { children: ReactNode }) {
  * useStageRef — Hook للوصول لمرجع Konva.Stage من أي مكون
  * يجب استخدامه داخل <StageProvider>
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useStageRef() {
   const ctx = useContext(StageContext);
   if (!ctx) {

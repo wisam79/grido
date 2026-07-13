@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Grid3x3, Monitor, FileText, Printer, Eye, EyeOff, Magnet, Columns, Palette, ChevronDown, Check, Square } from "lucide-react";
+import { RefreshCw, Grid3x3, Columns, Palette, ChevronDown, Square } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useShallow } from "zustand/react/shallow";
-import { Row, SliderControl } from "./shared-controls";
+import { SliderControl } from "./shared-controls";
 
 function PresetMiniature({ id, active }: { id: string; active: boolean }) {
   const isLandscape = ["4x6", "5x7"].includes(id);

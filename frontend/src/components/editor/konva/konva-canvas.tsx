@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { Stage, Layer, Transformer, Line, Circle, Group, Rect, Text, FastLayer, Shape, Image as KonvaImage } from "react-konva";
+import { Stage, Layer, Transformer, Group, Rect, Text, FastLayer, Shape, Image as KonvaImage } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
@@ -89,7 +89,7 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }
       }
     };
-  }, [image, filter, brightness, contrast, saturation, zoom, dragX, dragY]);
+  }, [image, filter, brightness, contrast, saturation]);
 
   if (!image) return null;
 
@@ -121,8 +121,10 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const dragXClamped = Math.max(-maxDragX, Math.min(maxDragX, dragX));
   const dragYClamped = Math.max(-maxDragY, Math.min(maxDragY, dragY));
 
-  const sx = defaultSx + dragXClamped;
-  const sy = defaultSy + dragYClamped;
+  const sx = Math.round(defaultSx + dragXClamped);
+  const sy = Math.round(defaultSy + dragYClamped);
+  sw = Math.round(sw);
+  sh = Math.round(sh);
 
   let totalBrightness = brightness ?? 100;
   let totalContrast = contrast ?? 100;

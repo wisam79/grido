@@ -3,7 +3,6 @@ import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { COLLAGE_TEMPLATES, CollageTemplate, PAPER_SIZES } from "@/lib/templates";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
@@ -14,14 +13,20 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+
 import { cn } from "@/lib/utils";
-import { LayoutGrid, Plus, Minus, Image as ImageIcon, Paintbrush, Rows, Columns, IdCard, User, Contact, Scaling, FolderHeart, Trash2, Save, X, ChevronDown, ArrowUpRight, ArrowUpLeft, ArrowDownRight, ArrowDownLeft, Crosshair, ClipboardList } from "lucide-react";
+import { LayoutGrid, Plus, Minus, Image as ImageIcon, Paintbrush, Rows, Columns, FolderHeart, Trash2, Save, X, ArrowUpRight, ArrowUpLeft, ArrowDownRight, ArrowDownLeft, Crosshair } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { PopoverColorPicker } from "./properties/shared-controls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,7 +39,21 @@ export function TemplatePanel() {
     setBackgroundColor: state.setBackgroundColor,
   })));
 
-  const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
+  const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>(() => {
+    const raw = localStorage.getItem("grido_user_collage_templates");
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        return parsed.map((t: any) => ({
+          ...t,
+          icon: LayoutGrid,
+        }));
+      } catch (e) {
+        console.error("Failed to load user templates", e);
+      }
+    }
+    return [];
+  });
   const [showTemplates, setShowTemplates] = useState(false);
   const [showPredefined, setShowPredefined] = useState(false);
   
@@ -59,10 +78,6 @@ export function TemplatePanel() {
       setSavedTemplates([]);
     }
   };
-
-  useEffect(() => {
-    loadTemplates();
-  }, []);
 
   const handleSaveTemplate = (name: string, cells: any[]) => {
     const newTpl: CollageTemplate = {
@@ -235,19 +250,32 @@ const CollageTemplateCard = React.memo(function CollageTemplateCard({
 
       {/* Delete Button (Top Left) */}
       {onDelete && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (confirm("هل أنت متأكد من رغبتك في حذف هذا القالب؟")) {
-              onDelete(e);
-            }
-          }}
-          className="absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-500 hover:text-red-600 flex items-center justify-center border border-red-100 dark:border-red-900/30 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-sm"
-          title="حذف القالب"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              type="button"
+              onClick={(e) => e.stopPropagation()}
+              className="absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-500 hover:text-red-600 flex items-center justify-center border border-red-100 dark:border-red-900/30 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-sm"
+              title="حذف القالب"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="font-cairo text-right" dir="rtl" onClick={(e) => e.stopPropagation()}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>حذف القالب</AlertDialogTitle>
+              <AlertDialogDescription>
+                هل أنت متأكد من حذف هذا القالب نهائياً؟ لا يمكن التراجع عن هذا الإجراء.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row-reverse sm:justify-start gap-2">
+              <AlertDialogAction onClick={(e) => { e.stopPropagation(); onDelete(e); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                حذف نهائي
+              </AlertDialogAction>
+              <AlertDialogCancel onClick={(e) => e.stopPropagation()} className="mt-0 border-border">إلغاء</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
 
       {/* Collage Preview Frame */}
@@ -420,28 +448,6 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
   const { maxRows, maxCols } = getMaxGridConfig();
 
-  useEffect(() => {
-    const { maxRows: mR, maxCols: mC } = getMaxGridConfig();
-    let adjustedRows = rows;
-    let adjustedCols = cols;
-    let changed = false;
-
-    if (rows > mR) {
-      adjustedRows = mR;
-      changed = true;
-    }
-    if (cols > mC) {
-      adjustedCols = mC;
-      changed = true;
-    }
-
-    if (changed) {
-      setRows(adjustedRows);
-      setCols(adjustedCols);
-      applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
-    }
-  }, [photoType, canvasWidth, canvasHeight]);
-
   const handleSave = () => {
     if (!saveName.trim()) {
       toast.error("يرجى إدخال اسم للقالب");
@@ -527,7 +533,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
     if (!isPhysical) {
       // Fallback to purely aspect ratio-based calculations
-      let photoRatio = 0.7778;
+      const photoRatio = 0.7778;
       const gap = Math.max(8, Math.round(W * 0.012));
       const marginX = Math.max(16, Math.round(W * 0.025));
       const marginY = Math.max(16, Math.round(H * 0.025));
@@ -599,8 +605,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       return calculateCells(r, c, "stretch", align);
     }
 
-    let gridW = c * cellW_px + (c - 1) * gap;
-    let gridH = r * cellH_px + (r - 1) * gap;
+    const gridW = c * cellW_px + (c - 1) * gap;
+    const gridH = r * cellH_px + (r - 1) * gap;
 
     // Enforce 100% exact scale for physical documents to prevent invalid sizes
     const cellW = cellW_px;
@@ -651,6 +657,32 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     };
     onSelect(tpl);
   };
+
+  useEffect(() => {
+    const { maxRows: mR, maxCols: mC } = getMaxGridConfig();
+    let adjustedRows = rows;
+    let adjustedCols = cols;
+    let changed = false;
+
+    if (rows > mR) {
+      adjustedRows = mR;
+      changed = true;
+    }
+    if (cols > mC) {
+      adjustedCols = mC;
+      changed = true;
+    }
+
+    if (changed) {
+      setTimeout(() => {
+        setRows(adjustedRows);
+        setCols(adjustedCols);
+        applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
+      }, 0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoType, canvasWidth, canvasHeight]);
+
 
   const isCurrentActive = activeTemplateId === "collage-custom";
 

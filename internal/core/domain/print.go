@@ -39,5 +39,6 @@ type CutLine struct {
 type PrintResult struct {
 	Success  bool   `json:"success"`
 	FilePath string `json:"filePath"`
+	HtmlDoc  string `json:"htmlDoc,omitempty"`
 	Error    string `json:"error,omitempty"`
 }

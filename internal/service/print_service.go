@@ -9,6 +9,7 @@ import (
 	"hash/crc32"
 	"image"
 	"image/color"
+	"log/slog"
 	"math"
 	"os"
 	"path/filepath"
@@ -273,7 +274,7 @@ func (s *PrintService) loadAndProcessImage(
 
 	adjustedImg := applyColorAdjustments(img, item.Brightness, item.Contrast, item.Saturation)
 	adjustedImg = applyFilter(adjustedImg, item.Filter)
-	
+
 	var processedImg image.Image
 	bounds := adjustedImg.Bounds()
 	if bounds.Dx() == targetW && bounds.Dy() == targetH {
@@ -331,35 +332,99 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 	}
 }
 
-func (s *PrintService) saveOutput(dc *gg.Context, dpi int) (string, error) {
+func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (string, string, error) {
 	appDir := utils.GetAppDir()
 	outDir := filepath.Join(appDir, "Exports")
 	_ = os.MkdirAll(outDir, 0755)
 
-	filename := fmt.Sprintf("print_%d.png", time.Now().UnixNano())
-	outPath := filepath.Join(outDir, filename)
+	baseName := fmt.Sprintf("print_%d", time.Now().UnixNano())
+	pngPath := filepath.Join(outDir, baseName+".png")
+	htmlPath := filepath.Join(outDir, baseName+".html")
 
 	var buf bytes.Buffer
 	err := dc.EncodePNG(&buf)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	pngData := buf.Bytes()
-	if updatedData, err := setPngDPI(pngData, dpi); err == nil {
+	if updatedData, err := setPngDPI(pngData, req.DPI); err == nil {
 		pngData = updatedData
 	} else {
-		fmt.Printf("Failed to set PNG DPI: %v\n", err)
+		slog.Warn("Failed to set PNG DPI", "error", err)
 	}
 
-	err = os.WriteFile(outPath, pngData, 0644)
-	return outPath, err
+	err = os.WriteFile(pngPath, pngData, 0644)
+	if err != nil {
+		return "", "", err
+	}
+
+	// إنتاج ملف HTML لضمان طباعة دقيقة للمليمترات عبر متصفح الويب (يتجاهل عارض الصور الافتراضي للويندوز)
+	htmlContent := fmt.Sprintf(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>طباعة الكولاج - Grido Studio</title>
+<style>
+  body { margin: 0; padding: 0; display: flex; justify-content: center; background: #525659; }
+  img { 
+    width: %.2fmm; 
+    height: %.2fmm; 
+    object-fit: contain; 
+    box-shadow: 0 0 10px rgba(0,0,0,0.5); 
+    margin-top: 20px; 
+    background: white;
+  }
+  @media print {
+    body { background: white; }
+    img { box-shadow: none; margin: 0; }
+    @page { margin: 0; size: %.2fmm %.2fmm; }
+  }
+</style>
+</head>
+<body onload="setTimeout(() => { window.print(); window.close(); }, 500)">
+  <img src="%s.png" />
+</body>
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, baseName)
+
+	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
+
+	// إنشاء نسخة HTML كاملة ومدمجة (Self-contained HTML Doc with base64 encoded image) لإتاحة الطباعة داخل الـ WebView مباشرة دون فتح متصفح خارجي
+	base64Img := base64.StdEncoding.EncodeToString(pngData)
+	selfContainedHTML := fmt.Sprintf(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>طباعة الكولاج - Grido Studio</title>
+<style>
+  body { margin: 0; padding: 0; display: flex; justify-content: center; background: #525659; }
+  img { 
+    width: %.2fmm; 
+    height: %.2fmm; 
+    object-fit: contain; 
+    box-shadow: 0 0 10px rgba(0,0,0,0.5); 
+    margin-top: 20px; 
+    background: white;
+  }
+  @media print {
+    body { background: white; }
+    img { box-shadow: none; margin: 0; }
+    @page { margin: 0; size: %.2fmm %.2fmm; }
+  }
+</style>
+</head>
+<body>
+  <img src="data:image/png;base64,%s" />
+</body>
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, base64Img)
+
+	return htmlPath, selfContainedHTML, nil
 }
 
-func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, error) {
+func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, string, error) {
 	widthPx, heightPx, err := s.validatePrintRequest(req)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	dc := gg.NewContext(widthPx, heightPx)
@@ -384,7 +449,7 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, erro
 
 		processedImg, err := s.loadAndProcessImage(item, req.DPI, imgCache, procCache)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		xPx := float64(int(math.Round(mmToPx(item.X, req.DPI))))
@@ -416,7 +481,7 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, erro
 	imgCache = nil
 	procCache = nil
 
-	return s.saveOutput(dc, req.DPI)
+	return s.saveOutput(dc, req)
 }
 
 // setPngDPI modifies a PNG byte slice to include a pHYs chunk with the specified DPI.

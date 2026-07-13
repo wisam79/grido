@@ -4,13 +4,18 @@ package handlers
 
 import (
 	"fmt"
+	"strings"
 	"syscall"
 	"unsafe"
 )
 
 func printFileOS(absPath string) error {
 	hwnd := uintptr(0)
-	opPtr, err := syscall.UTF16PtrFromString("print")
+	action := "print"
+	if strings.HasSuffix(strings.ToLower(absPath), ".html") {
+		action = "open"
+	}
+	opPtr, err := syscall.UTF16PtrFromString(action)
 	if err != nil {
 		return err
 	}

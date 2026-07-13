@@ -12,8 +12,8 @@ describe('useEditorStore - Canvas Store Tests', () => {
     expect(state.mode).toBe('collage');
     expect(state.elements).toEqual([]);
     expect(state.slots.length).toBeGreaterThan(0);
-    expect(state.canvasWidth).toBe(1200);
-    expect(state.canvasHeight).toBe(1200);
+    expect(state.canvasWidth).toBe(2480);
+    expect(state.canvasHeight).toBe(3508);
     expect(state.backgroundColor).toBe('#FFFFFF');
   });
 

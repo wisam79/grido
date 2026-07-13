@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings2 } from "lucide-react";
 import { GeneralSettings } from "./properties/general-settings";
 import { ElementProperties } from "./properties/element-properties";
 import { SlotProperties } from "./properties/slot-properties";

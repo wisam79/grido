@@ -13,11 +13,11 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os/exec"
 	"strings"
 	"time"
 
 	"grido/internal/core/domain"
+	"grido/internal/utils"
 )
 
 type LicenseService struct {
@@ -28,9 +28,9 @@ func NewLicenseService(repo domain.LicenseRepository) *LicenseService {
 	return &LicenseService{repo: repo}
 }
 
-const (
-	supabaseURL     = "https://mvovehnyvoiawvwaurav.supabase.co"
-	supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12b3ZlaG55dm9pYXd2d2F1cmF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3Nzg2MjQsImV4cCI6MjA5OTM1NDYyNH0.DrZxhJkwjHrk1qP1kJ6JtwAo5AJZegOvFol2L-pGuUg"
+var (
+	SupabaseURL     = "https://mvovehnyvoiawvwaurav.supabase.co"
+	SupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12b3ZlaG55dm9pYXd2d2F1cmF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3Nzg2MjQsImV4cCI6MjA5OTM1NDYyNH0.DrZxhJkwjHrk1qP1kJ6JtwAo5AJZegOvFol2L-pGuUg"
 )
 
 // Supabase Auth Payloads
@@ -66,8 +66,8 @@ type LicenseKeyRequest struct {
 }
 
 func (s *LicenseService) fetchProfile(token, userID string) (*SupabaseProfile, error) {
-	req, _ := http.NewRequest("GET", supabaseURL+"/rest/v1/profiles?select=*&id=eq."+userID, nil)
-	req.Header.Set("apikey", supabaseAnonKey)
+	req, _ := http.NewRequest("GET", SupabaseURL+"/rest/v1/profiles?select=*&id=eq."+userID, nil)
+	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -106,8 +106,8 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 		Password: password,
 		Data:     map[string]interface{}{"name": name},
 	})
-	req, _ := http.NewRequest("POST", supabaseURL+"/auth/v1/signup", bytes.NewBuffer(payload))
-	req.Header.Set("apikey", supabaseAnonKey)
+	req, _ := http.NewRequest("POST", SupabaseURL+"/auth/v1/signup", bytes.NewBuffer(payload))
+	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -180,8 +180,8 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 		Email:    email,
 		Password: password,
 	})
-	req, _ := http.NewRequest("POST", supabaseURL+"/auth/v1/token?grant_type=password", bytes.NewBuffer(payload))
-	req.Header.Set("apikey", supabaseAnonKey)
+	req, _ := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=password", bytes.NewBuffer(payload))
+	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -236,8 +236,14 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	tokenChan := make(chan string, 1)
 	errChan := make(chan error, 1)
 
+	// Start listener on a fixed port 34567
+	listener, err := net.Listen("tcp", "127.0.0.1:34567")
+	if err != nil {
+		return nil, fmt.Errorf("المنفذ 34567 مشغول، يرجى التأكد من عدم تشغيل محاولة تسجيل دخول أخرى: %w", err)
+	}
+
 	mux := http.NewServeMux()
-	
+
 	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `
@@ -248,20 +254,24 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
     <title>جاري تسجيل الدخول...</title>
 </head>
 <body style="font-family: system-ui, sans-serif; text-align: center; margin-top: 50px; background-color: #0f172a; color: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh;">
-    <div style="background-color: #1e293b; border: 1px solid #334155; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); max-width: 400px; width: 90%;">
+    <div style="background-color: #1e293b; border: 1px solid #334155; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); max-width: 400px; width: 90%%;">
         <h2 id="msg" style="font-weight: 800; font-size: 1.25rem; margin-bottom: 10px;">جاري مصادقة الحساب، يرجى الانتظار...</h2>
         <p style="color: #94a3b8; font-size: 0.875rem;">يمكنك العودة إلى تطبيق Grido Studio بعد نجاح المصادقة.</p>
     </div>
     <script>
         const hash = window.location.hash;
         if (hash) {
-            fetch('http://localhost:34567/exchange', {
+            fetch('/exchange', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: hash.substring(1)
             }).then(r => {
-                document.getElementById("msg").innerHTML = 'تم تسجيل الدخول بنجاح! 🎉<br>يمكنك إغلاق هذه النافذة والعودة إلى التطبيق.';
-                setTimeout(() => window.close(), 3000);
+                if (r.ok) {
+                    document.getElementById("msg").innerHTML = 'تم تسجيل الدخول بنجاح! 🎉<br>يمكنك إغلاق هذه النافذة والعودة إلى التطبيق.';
+                    setTimeout(() => window.close(), 3000);
+                } else {
+                    document.getElementById("msg").innerHTML = 'حدث خطأ أثناء المصادقة.';
+                }
             }).catch(e => {
                 document.getElementById("msg").innerHTML = 'حدث خطأ أثناء المصادقة.';
             });
@@ -275,25 +285,43 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	})
 
 	mux.HandleFunc("/exchange", func(w http.ResponseWriter, r *http.Request) {
+		// Verify Origin
+		origin := r.Header.Get("Origin")
+		if origin != "https://grido.cloud-ip.cc" && origin != "http://127.0.0.1:34567" && origin != "http://localhost:34567" && origin != "" {
+			slog.Warn("Blocked OAuth exchange from untrusted origin", "origin", origin)
+			http.Error(w, "Forbidden Origin", http.StatusForbidden)
+			return
+		}
+
+		// CORS Headers - Dynamic Allowed Origin
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			w.Header().Set("Access-Control-Allow-Origin", "https://grido.cloud-ip.cc")
+		}
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
+
 		bodyBytes, err := io.ReadAll(r.Body)
 		if err != nil {
 			errChan <- err
 			http.Error(w, "Read error", http.StatusBadRequest)
 			return
 		}
+
 		tokenChan <- string(bodyBytes)
 		w.WriteHeader(http.StatusOK)
 	})
-
-	// Start listener on localhost:34567
-	listener, err := net.Listen("tcp", "127.0.0.1:34567")
-	if err != nil {
-		return nil, fmt.Errorf("المنفذ 34567 مشغول، يرجى التأكد من عدم تشغيل محاولة تسجيل دخول أخرى: %w", err)
-	}
 
 	srv := &http.Server{
 		Handler: mux,
@@ -305,8 +333,8 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 		}
 	}()
 
-	authURL := fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=https://grido.cloud-ip.cc/callback", supabaseURL)
-	_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", authURL).Start()
+	authURL := fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=https://grido.cloud-ip.cc/callback", SupabaseURL)
+	_ = utils.OpenBrowser(authURL)
 
 	var oauthBody string
 	select {
@@ -333,8 +361,8 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	}
 
 	client := &http.Client{Timeout: 5 * time.Second}
-	userReq, _ := http.NewRequest("GET", supabaseURL+"/auth/v1/user", nil)
-	userReq.Header.Set("apikey", supabaseAnonKey)
+	userReq, _ := http.NewRequest("GET", SupabaseURL+"/auth/v1/user", nil)
+	userReq.Header.Set("apikey", SupabaseAnonKey)
 	userReq.Header.Set("Authorization", "Bearer "+accessToken)
 
 	userResp, err := client.Do(userReq)
@@ -404,11 +432,11 @@ func (s *LicenseService) ActivateKey(key string) (*domain.UserProfile, error) {
 		return nil, errors.New("يرجى تسجيل الدخول أولاً قبل تفعيل الترخيص")
 	}
 
-	deviceID := "desktop-win"
+	deviceID := utils.GetDeviceID()
 
 	payload, _ := json.Marshal(LicenseKeyRequest{PKey: key, PDeviceID: deviceID})
-	req, _ := http.NewRequest("POST", supabaseURL+"/rest/v1/rpc/activate_license", bytes.NewBuffer(payload))
-	req.Header.Set("apikey", supabaseAnonKey)
+	req, _ := http.NewRequest("POST", SupabaseURL+"/rest/v1/rpc/activate_license", bytes.NewBuffer(payload))
+	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+local.Token)
 
@@ -420,7 +448,9 @@ func (s *LicenseService) ActivateKey(key string) (*domain.UserProfile, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var errRes struct{ Message string `json:"message"` }
+		var errRes struct {
+			Message string `json:"message"`
+		}
 		_ = json.NewDecoder(resp.Body).Decode(&errRes)
 		if errRes.Message != "" {
 			return nil, errors.New(errRes.Message)
@@ -486,7 +516,7 @@ func generateRandomBlock(length int) string {
 }
 
 func (s *LicenseService) GetAllUsers() ([]domain.UserProfile, error) {
-	req, _ := http.NewRequest("GET", supabaseURL+"/admin/users", nil)
+	req, _ := http.NewRequest("GET", SupabaseURL+"/admin/users", nil)
 	if local, err := s.repo.Get(); err == nil && local != nil {
 		req.Header.Set("Authorization", "Bearer "+local.Token)
 	}
@@ -520,7 +550,7 @@ func (s *LicenseService) GenerateLicenseKey(plan string, durationMonths int) (st
 	key := fmt.Sprintf("GRIDO-%s-%s-%s", plan, block1, block2)
 
 	payload, _ := json.Marshal(map[string]interface{}{"key": key, "plan": plan, "months": durationMonths})
-	req, _ := http.NewRequest("POST", supabaseURL+"/admin/keys", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", SupabaseURL+"/admin/keys", bytes.NewBuffer(payload))
 	req.Header.Set("Content-Type", "application/json")
 	if local, err := s.repo.Get(); err == nil && local != nil {
 		req.Header.Set("Authorization", "Bearer "+local.Token)
@@ -529,13 +559,14 @@ func (s *LicenseService) GenerateLicenseKey(plan string, durationMonths int) (st
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		slog.Info("Cloud API offline, generated license key locally: " + key)
-		return key, nil
+		return "", fmt.Errorf("Cloud API offline or unreachable: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		var res struct{ Key string `json:"key"` }
+		var res struct {
+			Key string `json:"key"`
+		}
 		if err := json.NewDecoder(resp.Body).Decode(&res); err == nil {
 			return res.Key, nil
 		}
@@ -545,7 +576,7 @@ func (s *LicenseService) GenerateLicenseKey(plan string, durationMonths int) (st
 }
 
 func (s *LicenseService) RevokeLicense(email string) error {
-	req, _ := http.NewRequest("POST", supabaseURL+"/admin/users/revoke?email="+email, nil)
+	req, _ := http.NewRequest("POST", SupabaseURL+"/admin/users/revoke?email="+email, nil)
 	if local, err := s.repo.Get(); err == nil && local != nil {
 		req.Header.Set("Authorization", "Bearer "+local.Token)
 	}
@@ -553,24 +584,7 @@ func (s *LicenseService) RevokeLicense(email string) error {
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		slog.Info("Cloud API offline, revoking user license locally for email: " + email)
-		users, _ := s.repo.GetAll()
-		for _, u := range users {
-			if u.Email == email {
-				u.Plan = "free"
-				u.Status = "none"
-				u.ExpiresAt = time.Now()
-				u.UpdatedAt = time.Now()
-				_ = s.repo.SaveUser(&u)
-				
-				current, _ := s.repo.Get()
-				if current != nil && current.Email == email {
-					_ = s.repo.Save(&u)
-				}
-				break
-			}
-		}
-		return nil
+		return fmt.Errorf("Cloud API offline or unreachable: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -582,7 +596,7 @@ func (s *LicenseService) RevokeLicense(email string) error {
 }
 
 func (s *LicenseService) ExtendLicense(email string, months int) error {
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/admin/users/extend?email=%s&months=%d", supabaseURL, email, months), nil)
+	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/admin/users/extend?email=%s&months=%d", SupabaseURL, email, months), nil)
 	if local, err := s.repo.Get(); err == nil && local != nil {
 		req.Header.Set("Authorization", "Bearer "+local.Token)
 	}
@@ -590,28 +604,7 @@ func (s *LicenseService) ExtendLicense(email string, months int) error {
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		slog.Info(fmt.Sprintf("Cloud API offline, extending user license locally by %d months for email: %s", months, email))
-		users, _ := s.repo.GetAll()
-		for _, u := range users {
-			if u.Email == email {
-				if u.Plan == "free" || u.Plan == "trial" || u.Plan == "none" {
-					u.Plan = "pro"
-					u.Status = "active"
-					u.ExpiresAt = time.Now().AddDate(0, months, 0)
-				} else {
-					u.ExpiresAt = u.ExpiresAt.AddDate(0, months, 0)
-				}
-				u.UpdatedAt = time.Now()
-				_ = s.repo.SaveUser(&u)
-				
-				current, _ := s.repo.Get()
-				if current != nil && current.Email == email {
-					_ = s.repo.Save(&u)
-				}
-				break
-			}
-		}
-		return nil
+		return fmt.Errorf("Cloud API offline or unreachable: %w", err)
 	}
 	defer resp.Body.Close()
 

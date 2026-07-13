@@ -106,7 +106,7 @@ func TestCleanupUnusedMedia(t *testing.T) {
 	img1 := filepath.Join(mediaDir, "image1.jpg")
 	img2 := filepath.Join(mediaDir, "image2.jpg")
 	img3 := filepath.Join(mediaDir, "image3.jpg")
-	
+
 	_ = os.WriteFile(img1, []byte("data1"), 0644)
 	_ = os.WriteFile(img2, []byte("data2"), 0644)
 	_ = os.WriteFile(img3, []byte("data3"), 0644)
@@ -125,10 +125,10 @@ func TestCleanupUnusedMedia(t *testing.T) {
 
 	// إعداد المشاريع
 	p := &domain.Project{
-		ID:              "p1",
-		Name:            "Active Project",
-		Elements:        `[{"imageSrc": "/local-image/image1.jpg"}]`,
-		Slots:           `[]`,
+		ID:       "p1",
+		Name:     "Active Project",
+		Elements: `[{"imageSrc": "/local-image/image1.jpg"}]`,
+		Slots:    `[]`,
 	}
 	_ = db.Save(p)
 

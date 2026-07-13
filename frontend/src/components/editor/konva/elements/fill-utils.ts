@@ -1,4 +1,4 @@
-import { CanvasElement, ImageElement, TextElement, ShapeElement } from "@/lib/editor-store";
+import { CanvasElement } from "@/lib/editor-store";
 
 export function getFillProps(element: CanvasElement, w: number, h: number) {
   if (element.fillType === "linear") {

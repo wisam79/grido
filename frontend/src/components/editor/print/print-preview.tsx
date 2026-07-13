@@ -13,6 +13,12 @@ interface SheetPreviewProps {
   marginMM?: number;
   paperWidthMM?: number;
   paperHeightMM?: number;
+  slots?: any[];
+  collageGap?: number;
+  collageMargin?: number;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  hasPhysical?: boolean;
 }
 
 export function SheetPreview({
@@ -30,6 +36,12 @@ export function SheetPreview({
   marginMM = 0,
   paperWidthMM = 210,
   paperHeightMM = 297,
+  slots,
+  collageGap = 0,
+  collageMargin = 0,
+  canvasWidth = 2480,
+  canvasHeight = 3508,
+  hasPhysical = false,
 }: SheetPreviewProps) {
   if (mode === "collage") {
     return (
@@ -40,7 +52,50 @@ export function SheetPreview({
           boxSizing: "border-box",
         }}
       >
-        {previewImageSrc ? (
+        {slots && slots.length > 0 ? (
+          slots.map((slot, index) => {
+            if (!slot.imageSrc) return null;
+            
+            const scaleX = 100;
+            const scaleY = 100;
+
+            const marginX_pct = hasPhysical ? 0 : (collageMargin / canvasWidth) * 100;
+            const marginY_pct = hasPhysical ? 0 : (collageMargin / canvasHeight) * 100;
+            const gapX_pct = hasPhysical ? 0 : (collageGap / canvasWidth) * 100;
+            const gapY_pct = hasPhysical ? 0 : (collageGap / canvasHeight) * 100;
+            
+            const availW_pct = 100 - 2 * marginX_pct;
+            const availH_pct = 100 - 2 * marginY_pct;
+            
+            const left_pct = marginX_pct + slot.x * availW_pct + gapX_pct / 2;
+            const top_pct = marginY_pct + slot.y * availH_pct + gapY_pct / 2;
+            const width_pct = slot.w * availW_pct - gapX_pct;
+            const height_pct = slot.h * availH_pct - gapY_pct;
+
+            return (
+              <div 
+                key={index} 
+                className="absolute overflow-hidden shadow-xs"
+                style={{
+                  left: `${left_pct}%`,
+                  top: `${top_pct}%`,
+                  width: `${width_pct}%`,
+                  height: `${height_pct}%`,
+                  borderRadius: "2px",
+                }}
+              >
+                <img
+                  src={slot.imageSrc}
+                  alt=""
+                  className="w-full h-full"
+                  style={{
+                    objectFit: "fill",
+                  }}
+                />
+              </div>
+            );
+          })
+        ) : previewImageSrc ? (
           <img
             src={previewImageSrc}
             alt=""
@@ -58,13 +113,21 @@ export function SheetPreview({
     );
   }
 
+  const actualRows = Math.ceil(count / cols);
+  const gridWidth = cols * imageWidthMM + Math.max(0, cols - 1) * gapMM;
+  const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
+  const availableWidthMM = paperWidthMM - 2 * marginMM;
+  const availableHeightMM = paperHeightMM - 2 * marginMM;
+  const offsetX = Math.max(0, availableWidthMM - gridWidth) / 2;
+  const offsetY = Math.max(0, availableHeightMM - gridHeight) / 2;
+
   // الوضع الحر (Free mode): تكرار لقطة الكانفس الكاملة على الورقة
   const items = [];
   for (let i = 0; i < count; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const x = col * (imageWidthMM + gapMM) * 2 * zoom;
-    const y = row * (imageHeightMM + gapMM) * 2 * zoom;
+    const x = (offsetX + col * (imageWidthMM + gapMM)) * 2 * zoom;
+    const y = (offsetY + row * (imageHeightMM + gapMM)) * 2 * zoom;
     const w = imageWidthMM * 2 * zoom;
     const h = imageHeightMM * 2 * zoom;
 

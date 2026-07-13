@@ -1,5 +1,4 @@
 import { useEditorStore } from "@/lib/editor-store";
-import { useState, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { usePrintLayout } from "@/hooks/use-print-layout";

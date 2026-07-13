@@ -14,6 +14,13 @@ vi.mock("sonner", () => ({
 describe("export-utils - Image/Project Export Utilities Tests", () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
+    useEditorStore.setState({
+      user: {
+        plan: 'pro',
+        status: 'active',
+        expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      } as any
+    });
     vi.clearAllMocks();
 
     // Mock Canvas context and toBlob for jsdom compatibility

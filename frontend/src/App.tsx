@@ -1,5 +1,4 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { Toolbar } from "@/components/editor/toolbar";
 import { TemplatePanel } from "@/components/editor/template-panel";
@@ -33,12 +32,15 @@ import { cn } from "@/lib/utils";
 import { AccountLicenseModal } from "@/components/editor/account-license-modal";
 import { toast } from "sonner";
 import { User, ShieldCheck, Lock, Key, Loader2 } from "lucide-react";
+import { KeyboardShortcutsDialog } from "@/components/editor/keyboard-shortcuts-dialog";
+import { WindowResizeHandles } from "@/components/editor/window-resize-handles";
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
   const [mobileTemplatesOpen, setMobileTemplatesOpen] = useState(false);
   const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const { theme, toggleTheme } = useTheme();
 
@@ -72,10 +74,45 @@ export default function App() {
       if (!profile || !profile.token) {
         setAccountModalOpen(true);
       }
+    }).finally(() => {
+      setIsInitializing(false);
     });
   }, [checkLicenseStatus, setAccountModalOpen]);
 
   const isModalOpen = exportOpen || printOpen || mobileTemplatesOpen || mobilePropsOpen;
+
+  if (isInitializing) {
+    return (
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background text-foreground font-cairo">
+        <div className="relative flex flex-col items-center">
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mb-6 border border-primary/20 shadow-2xl shadow-primary/20"
+          >
+            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="text-2xl font-black tracking-tight"
+          >
+            Grido Studio
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="text-sm text-muted-foreground mt-2 animate-pulse"
+          >
+            جاري تهيئة مساحة العمل...
+          </motion.p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLicenseActive) {
     return (
@@ -86,9 +123,9 @@ export default function App() {
           </div>
           
           <div className="space-y-2">
-            <h1 className="text-xl font-extrabold text-foreground">تم تقييد استخدام التطبيق</h1>
+            <h1 className="text-xl font-extrabold text-foreground">النسخة مقفلة</h1>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              لقد انتهت الفترة التجريبية المجانية الخاصة بك (7 أيام) أو لم يتم تفعيل ترخيص نشط بعد. يرجى تفعيل مفتاح ترخيص للولوج لكافة الميزات.
+              انتهت الفترة التجريبية. يرجى التفعيل.
             </p>
           </div>
 
@@ -131,7 +168,7 @@ export default function App() {
 
           <div className="border-t border-border/40 pt-4 flex flex-col gap-2">
             <Button variant="outline" className="w-full text-xs font-semibold h-9 cursor-pointer" onClick={() => setAccountModalOpen(true)}>
-              تسجيل الدخول أو إنشاء حساب جديد
+              إدارة الحساب
             </Button>
             
             {user && user.token && (
@@ -156,6 +193,7 @@ export default function App() {
       )}
       dir="rtl"
     >
+      {!isMaximized && <WindowResizeHandles />}
       {/* الرأس */}
       <header
         className={`border-b bg-card/90 backdrop-blur-md no-print title-bar-draggable select-none transition-opacity duration-200 ${
@@ -392,6 +430,7 @@ export default function App() {
       <AccountLicenseModal />
 
       <SonnerToaster position="top-center" duration={2500} richColors />
+      <KeyboardShortcutsDialog />
     </div>
   );
 }

@@ -106,7 +106,7 @@ func (a *App) OpenFile() (string, error) {
 	if err != nil && err != io.EOF {
 		return "", fmt.Errorf("read file header: %w", err)
 	}
-	
+
 	detectedType := http.DetectContentType(buf[:n])
 	if !strings.HasPrefix(detectedType, "image/") {
 		return "", fmt.Errorf("invalid file type: %s (expected image)", detectedType)
@@ -211,7 +211,6 @@ func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
 
 	return "/local-image/" + newName, nil
 }
-
 
 func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayName string, pattern string) (string, error) {
 	var decoded []byte
@@ -391,4 +390,3 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 
 	return "/local-image/" + newName, nil
 }
-

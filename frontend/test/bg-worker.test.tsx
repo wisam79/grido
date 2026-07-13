@@ -22,11 +22,9 @@ vi.mock('sonner', () => ({
 vi.mock('@mediapipe/tasks-vision', () => {
   const mockSegmenter = {
     segment: vi.fn().mockReturnValue({
-      categoryMask: {
-        width: 100,
-        height: 100,
-        getAsUint8Array: () => new Uint8Array(10000).fill(1),
-      },
+      confidenceMasks: [{
+        getAsFloat32Array: () => new Float32Array(10000).fill(0.1),
+      }],
     }),
   };
   return {
@@ -67,7 +65,16 @@ describe('ElementProperties - Main Thread Background Removal', () => {
 
     HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue("data:image/png;base64,mockdata");
 
-    // Dynamically load the component to pick up the mocks
+    // Dynamically load the component and set active license state to pick up the mocks
+    const { useEditorStore } = await import('../src/lib/editor-store');
+    useEditorStore.setState({
+      user: {
+        plan: 'pro',
+        status: 'active',
+        expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      } as any
+    });
+
     const mod = await import('../src/components/editor/properties/element-properties');
     ElementProperties = mod.ElementProperties;
   });

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ImageElement, useEditorStore } from "@/lib/editor-store";
+import { useEditorStore } from "@/lib/editor-store";
 import { FilesetResolver, ImageSegmenter } from "@mediapipe/tasks-vision";
 import { toast } from "sonner";
 import { ApplyMaskToImage } from "../../wailsjs/go/main/App";

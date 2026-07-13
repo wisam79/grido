@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ImageElement } from "@/lib/editor-store";
 import { Eraser, Paintbrush, ZoomIn, ZoomOut, Save, X, Undo, MousePointer2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";

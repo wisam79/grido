@@ -21,7 +21,7 @@ func NewPrintHandler(printService *service.PrintService) *PrintHandler {
 }
 
 func (h *PrintHandler) ExportPrintSheet(req domain.PrintRequest) domain.PrintResult {
-	outPath, err := h.printService.GeneratePrintSheet(req)
+	outPath, htmlDoc, err := h.printService.GeneratePrintSheet(req)
 	if err != nil {
 		return domain.PrintResult{
 			Success: false,
@@ -29,12 +29,10 @@ func (h *PrintHandler) ExportPrintSheet(req domain.PrintRequest) domain.PrintRes
 		}
 	}
 
-	// فتح الصورة الناتجة تلقائياً في عارض الصور الافتراضي
-	h.openFile(outPath)
-
 	return domain.PrintResult{
 		Success:  true,
 		FilePath: outPath,
+		HtmlDoc:  htmlDoc,
 	}
 }
 
@@ -61,7 +59,7 @@ func (h *PrintHandler) openFile(path string) {
 		return
 	}
 	ext := strings.ToLower(filepath.Ext(absPath))
-	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
+	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" && ext != ".html" {
 		slog.Warn("File validation failed (invalid extension)", "path", absPath)
 		return
 	}

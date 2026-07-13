@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from '../src/App';
 import React from 'react';
+import { useEditorStore } from '../src/lib/editor-store';
 
 // Mock Wails backend functions
 vi.mock('../../wailsjs/go/main/App', () => ({
@@ -21,11 +22,25 @@ vi.mock('../../wailsjs/runtime/runtime', () => ({
 }));
 
 // Mock ProjectHandler functions
-vi.mock('../../../wailsjs/go/handlers/ProjectHandler', () => ({
+vi.mock('../../wailsjs/go/handlers/ProjectHandler', () => ({
   SaveProject: vi.fn(() => Promise.resolve('success')),
   GetAllProjects: vi.fn(() => Promise.resolve([])),
   GetProject: vi.fn(() => Promise.resolve(null)),
   DeleteProject: vi.fn(() => Promise.resolve('success')),
+}));
+
+// Mock LicenseHandler functions
+vi.mock('../../wailsjs/go/handlers/LicenseHandler', () => ({
+  GetLicenseStatus: vi.fn(() => Promise.resolve({
+    id: 'test-id',
+    name: 'Test User',
+    email: 'test@example.com',
+    plan: 'pro',
+    status: 'active',
+    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+    hardwareId: 'test-hw-id',
+    role: 'user'
+  })),
 }));
 
 // Mock KonvaCanvas to avoid loading canvas/konva dependencies in test
@@ -39,23 +54,34 @@ vi.mock('../src/components/editor/projects-dialog', () => ({
 }));
 
 describe('Component Testing: UI Rendering', () => {
+  beforeEach(() => {
+    useEditorStore.getState().reset();
+    useEditorStore.setState({
+      user: {
+        plan: 'pro',
+        status: 'active',
+        expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      } as any
+    });
+  });
+
   it('renders the initial header and toolbar correctly', async () => {
     render(<App />);
-    expect(screen.getByText('Grido Studio | استوديو الهوية')).toBeInTheDocument();
+    expect(await screen.findByText('Grido Studio | استوديو الهوية')).toBeInTheDocument();
     expect(screen.getByTitle('رفع صورة جديدة')).toBeInTheDocument();
     expect(await screen.findByTitle('مكتبة المشاريع المحلية')).toBeInTheDocument();
   });
 
-  it('renders the TemplatePanel correctly', () => {
+  it('renders the TemplatePanel correctly', async () => {
     render(<App />);
-    expect(screen.getByText('لون خلفية مساحة العمل')).toBeInTheDocument();
+    expect(await screen.findByText('لون خلفية مساحة العمل')).toBeInTheDocument();
   });
 
-  it('renders initial collage templates correctly', () => {
+  it('renders initial collage templates correctly', async () => {
     render(<App />);
     
     // Open the templates dialog
-    const openBtn = screen.getByText('قوالب الكولاج والطباعة');
+    const openBtn = await screen.findByText('قوالب الكولاج والطباعة');
     fireEvent.click(openBtn);
 
     expect(screen.getAllByText('طقم هوية ومعاملات عراقية (مختلط)')[0]).toBeInTheDocument();

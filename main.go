@@ -68,7 +68,7 @@ func main() {
 	printSvc := service.NewPrintService()
 	printHandler := handlers.NewPrintHandler(printSvc)
 
-	backupSvc := service.NewBackupService(projectRepo)
+	backupSvc := service.NewBackupService(projectRepo, licenseRepo)
 	backupHandler := handlers.NewBackupHandler(backupSvc)
 
 	// استعادة أبعاد وموقع النافذة من الجلسة السابقة
@@ -84,55 +84,55 @@ func main() {
 	app := NewApp()
 
 	err = wails.Run(&options.App{
-		Title:             "Grido Studio",
-		Width:             initialWidth,
-		Height:            initialHeight,
-		MinWidth:          900,
-		MinHeight:         600,
-		StartHidden:       true, // إخفاء النافذة أثناء التحميل الأولي لتفادي الوميض
+		Title:       "Grido Studio",
+		Width:       initialWidth,
+		Height:      initialHeight,
+		MinWidth:    900,
+		MinHeight:   600,
+		StartHidden: true, // إخفاء النافذة أثناء التحميل الأولي لتفادي الوميض
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.HasPrefix(r.URL.Path, "/local-image/") {
-				filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
-				filename := filepath.Base(filepath.Clean(filePath))
+				if strings.HasPrefix(r.URL.Path, "/local-image/") {
+					filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
+					filename := filepath.Base(filepath.Clean(filePath))
 
-				// 🔒 التحقق الأمني: السماح فقط بالملفات داخل مجلد Media المعتمد
-				mediaDir := getMediaDir()
-				absPath := filepath.Join(mediaDir, filename)
+					// 🔒 التحقق الأمني: السماح فقط بالملفات داخل مجلد Media المعتمد
+					mediaDir := getMediaDir()
+					absPath := filepath.Join(mediaDir, filename)
 
-				if _, err := os.Stat(absPath); err != nil {
-					http.Error(w, "Image not found on disk", http.StatusNotFound)
+					if _, err := os.Stat(absPath); err != nil {
+						http.Error(w, "Image not found on disk", http.StatusNotFound)
+						return
+					}
+
+					// 🔒 حماية ضد هجمات Symlink: تحليل المسار بالكامل والتأكد من بقائه داخل mediaDir
+					resolvedPath, err := filepath.EvalSymlinks(absPath)
+					if err != nil {
+						http.Error(w, "Forbidden", http.StatusForbidden)
+						return
+					}
+					if !strings.HasPrefix(resolvedPath, filepath.Clean(mediaDir)+string(filepath.Separator)) &&
+						resolvedPath != filepath.Clean(mediaDir) {
+						http.Error(w, "Forbidden", http.StatusForbidden)
+						return
+					}
+
+					// تعيين رؤوس الأمان والسرعة والتخزين المؤقت الطويل لأن أسماء الملفات فريدة
+					w.Header().Set("X-Content-Type-Options", "nosniff")
+					w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+
+					// تحديد نوع المحتوى بدقة بناءً على الامتداد — يدعم png وjpeg وwebp وgif
+					ext := strings.ToLower(filepath.Ext(filename))
+					contentType := mime.TypeByExtension(ext)
+					if contentType == "" {
+						contentType = "application/octet-stream"
+					}
+					w.Header().Set("Content-Type", contentType)
+
+					http.ServeFile(w, r, absPath)
 					return
 				}
-
-				// 🔒 حماية ضد هجمات Symlink: تحليل المسار بالكامل والتأكد من بقائه داخل mediaDir
-				resolvedPath, err := filepath.EvalSymlinks(absPath)
-				if err != nil {
-					http.Error(w, "Forbidden", http.StatusForbidden)
-					return
-				}
-				if !strings.HasPrefix(resolvedPath, filepath.Clean(mediaDir)+string(filepath.Separator)) &&
-					resolvedPath != filepath.Clean(mediaDir) {
-					http.Error(w, "Forbidden", http.StatusForbidden)
-					return
-				}
-
-				// تعيين رؤوس الأمان والسرعة والتخزين المؤقت الطويل لأن أسماء الملفات فريدة
-				w.Header().Set("X-Content-Type-Options", "nosniff")
-				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-
-				// تحديد نوع المحتوى بدقة بناءً على الامتداد — يدعم png وjpeg وwebp وgif
-				ext := strings.ToLower(filepath.Ext(filename))
-				contentType := mime.TypeByExtension(ext)
-				if contentType == "" {
-					contentType = "application/octet-stream"
-				}
-				w.Header().Set("Content-Type", contentType)
-
-				http.ServeFile(w, r, absPath)
-				return
-			}
 				http.NotFound(w, r)
 			}),
 			Middleware: func(next http.Handler) http.Handler {
@@ -148,7 +148,7 @@ func main() {
 				})
 			},
 		},
-		BackgroundColour:  &options.RGBA{R: 0, G: 0, B: 0, A: 0},
+		BackgroundColour: &options.RGBA{R: 0, G: 0, B: 0, A: 0},
 		OnStartup: func(ctx context.Context) {
 			// استعادة موضع النافذة وحالة التكبير عند بدء التشغيل
 			if state, err := loadWindowState(); err == nil {
@@ -194,14 +194,14 @@ func main() {
 			backupHandler,
 			licenseHandler,
 		},
-		Frameless:         true,
+		Frameless: true,
 		Windows: &windows.Options{
 			WebviewIsTransparent:              true,
 			WindowIsTranslucent:               true,
 			BackdropType:                      windows.Mica,
 			DisableWindowIcon:                 false,
 			DisableFramelessWindowDecorations: false,
-			WebviewUserDataPath:              getWebviewCacheDir(), // تعيين مجلد الكاش الآمن لـ WebView2
+			WebviewUserDataPath:               getWebviewCacheDir(), // تعيين مجلد الكاش الآمن لـ WebView2
 			OnSuspend: func() {
 				slog.Info("Entering suspend mode...")
 				// ملاحظة: لا نغلق قاعدة البيانات لأن الـ Repository يحتفظ بمرجع قديم
