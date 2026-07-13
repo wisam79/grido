@@ -36,6 +36,7 @@ jobs:
       - name: Generate Wails Bindings
         run: |
           mkdir -p frontend/dist
+          echo "<html></html>" > frontend/dist/index.html
           wails generate module
 
       - name: Typecheck Frontend
