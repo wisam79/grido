@@ -42,10 +42,10 @@ describe("snap-utils - Magnetic Alignment (Snap to Grid/Guides) Tests", () => {
   });
 
   it("should collect targets from all other elements when using getSnapPositions", () => {
-    const mockElements: CanvasElement[] = [
+    const mockElements = [
       { id: "el1", type: "shape", shape: "rect", x: 0.1, y: 0.2, width: 0.3, height: 0.4, rotation: 0, opacity: 1, zIndex: 1 },
       { id: "el2", type: "text", text: "Drag me", x: 0.7, y: 0.7, width: 0.1, height: 0.1, rotation: 0, opacity: 1, zIndex: 2 },
-    ];
+    ] as any[] as CanvasElement[];
 
     const result = getSnapPositions("el2", 0.099, 0.5, 0.1, 0.1, mockElements, 0.01, 0.01);
     // Should snap to el1.x (0.1)

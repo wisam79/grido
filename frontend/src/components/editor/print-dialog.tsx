@@ -409,7 +409,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     ((actualCopies * imageWidthMM * imageHeightMM) /
       (availableWidthMM * availableHeightMM)) * 100
   );
-  const isOverflowing = spaceUsedPercent > 100 || imageWidthMM > availableWidthMM || imageHeightMM > availableHeightMM;
+  // Add a 0.5mm tolerance for floating point conversions (px to mm) to avoid false positive overflow warnings
+  const isOverflowing = spaceUsedPercent > 101 || imageWidthMM > availableWidthMM + 0.5 || imageHeightMM > availableHeightMM + 0.5;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

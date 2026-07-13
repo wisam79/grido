@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func GetDeviceID() string {
+func getFallbackDeviceID() string {
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "unknown-host"

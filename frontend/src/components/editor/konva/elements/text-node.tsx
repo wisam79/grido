@@ -26,6 +26,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
 }: ElementProps) {
   const element = _element as TextElement;
   const editingTextId = useEditorStore((state) => state.editingTextId);
+  const canvasWidth = useEditorStore((state) => state.canvasWidth) || 2480;
   const hasAnimatedRef = React.useRef(false);
 
   const {
@@ -104,7 +105,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       onTap={onTap}
       onDblClick={onDblClick}
       onDblTap={onDblClick}
-      fontSize={element.fontSize ? element.fontSize * (displayW / 600) : 16}
+      fontSize={element.fontSize ? element.fontSize * (displayW / canvasWidth) : 16}
       fontWeight={element.fontWeight ? String(element.fontWeight) : "normal"}
       {...getFillProps(element, w, h)}
       fontFamily={element.fontFamily || "sans-serif"}

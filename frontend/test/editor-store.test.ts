@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useEditorStore } from '../src/lib/editor-store';
+import { useEditorStore, TextElement } from '../src/lib/editor-store';
 
 describe('useEditorStore - Canvas Store Tests', () => {
   beforeEach(() => {
@@ -30,7 +30,7 @@ describe('useEditorStore - Canvas Store Tests', () => {
     const state = useEditorStore.getState();
     expect(state.elements.length).toBe(1);
     expect(state.elements[0].type).toBe('text');
-    expect(state.elements[0].text).toBe('نص للتجربة');
+    expect((state.elements[0] as TextElement).text).toBe('نص للتجربة');
   });
 
   it('should update element properties', () => {
@@ -43,8 +43,8 @@ describe('useEditorStore - Canvas Store Tests', () => {
     store.updateElement(elemId, { color: '#FF0000', fontSize: 24 });
     
     state = useEditorStore.getState();
-    expect(state.elements[0].color).toBe('#FF0000');
-    expect(state.elements[0].fontSize).toBe(24);
+    expect((state.elements[0] as TextElement).color).toBe('#FF0000');
+    expect((state.elements[0] as TextElement).fontSize).toBe(24);
   });
 
   it('should remove elements', () => {
@@ -76,7 +76,7 @@ describe('useEditorStore - Canvas Store Tests', () => {
     store.undo();
     state = useEditorStore.getState();
     expect(state.elements.length).toBe(1);
-    expect(state.elements[0].text).toBe('العنصر 1');
+    expect((state.elements[0] as TextElement).text).toBe('العنصر 1');
     
     // الإعادة
     store.redo();

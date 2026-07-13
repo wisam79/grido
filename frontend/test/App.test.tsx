@@ -68,8 +68,8 @@ describe('Component Testing: UI Rendering', () => {
   it('renders the initial header and toolbar correctly', async () => {
     render(<App />);
     expect(await screen.findByText('Grido Studio | استوديو الهوية')).toBeInTheDocument();
-    expect(screen.getByTitle('رفع صورة جديدة')).toBeInTheDocument();
-    expect(await screen.findByTitle('مكتبة المشاريع المحلية')).toBeInTheDocument();
+    expect(screen.getByLabelText('رفع صورة جديدة')).toBeInTheDocument();
+    expect(await screen.findByLabelText('مكتبة المشاريع المحلية')).toBeInTheDocument();
   });
 
   it('renders the TemplatePanel correctly', async () => {

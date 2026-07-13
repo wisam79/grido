@@ -13,6 +13,23 @@ import {
   SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+
+function TooltipBtn({ content, children }: { content: string; children: React.ReactElement }) {
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="font-cairo text-[10px] py-1 px-2.5 bg-primary text-primary-foreground border-0 shadow-sm rounded font-medium"
+        >
+          {content}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 const SortableLayerItem = React.memo(
   function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement, toggleElementSelection }: any) {
@@ -65,33 +82,36 @@ const SortableLayerItem = React.memo(
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
-            onClick={(e) => toggleLock(el, e)}
-            title={isLocked ? "إلغاء القفل" : "قفل الطبقة"}
-          >
-            {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
-            onClick={(e) => toggleVisibility(el, e)}
-            title={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}
-          >
-            {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-7.5 h-7.5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
-            onClick={(e) => deleteLayer(el.id, e)}
-            title="حذف"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
+          <TooltipBtn content={isLocked ? "إلغاء قفل الطبقة" : "قفل الطبقة"}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
+              onClick={(e) => toggleLock(el, e)}
+            >
+              {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+            </Button>
+          </TooltipBtn>
+          <TooltipBtn content={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
+              onClick={(e) => toggleVisibility(el, e)}
+            >
+              {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            </Button>
+          </TooltipBtn>
+          <TooltipBtn content="حذف الطبقة">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-7.5 h-7.5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
+              onClick={(e) => deleteLayer(el.id, e)}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipBtn>
         </div>
       </div>
     );

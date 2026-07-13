@@ -61,7 +61,7 @@ export function SlotProperties({
       if (b64) {
         setSlotImage(slot.id, b64);
         if (autoFill) {
-          fillAllSlots(b64);
+          fillAllSlots(b64, slot.id);
         }
       }
     } catch (err) {
@@ -71,7 +71,7 @@ export function SlotProperties({
 
   const handleFillAll = () => {
     if (slot.imageSrc) {
-      fillAllSlots(slot.imageSrc);
+      fillAllSlots(slot.imageSrc, slot.id);
     }
   };
 
@@ -91,7 +91,7 @@ export function SlotProperties({
     if (lastEditedImage) {
       setSlotImage(slot.id, lastEditedImage);
       if (autoFill) {
-        fillAllSlots(lastEditedImage);
+        fillAllSlots(lastEditedImage, slot.id);
       }
     }
   };

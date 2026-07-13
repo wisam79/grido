@@ -151,11 +151,9 @@ export function ToolbarFileOps() {
             size="sm"
             onClick={handleOpenFile}
             aria-label="رفع صورة جديدة"
-            title="رفع صورة جديدة"
-            className="h-7 px-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-md shadow-xs hover:shadow-md hover:shadow-blue-500/20 active:scale-95 transition-all cursor-pointer border-0 gap-1 flex items-center justify-center font-cairo"
+            className="h-7 w-7 p-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-md shadow-xs hover:shadow-md hover:shadow-blue-500/20 active:scale-95 transition-all cursor-pointer border-0 flex items-center justify-center"
           >
             <ImagePlus className="w-3.5 h-3.5 text-white" />
-            <span className="text-[10px] font-bold text-white leading-none">صورة</span>
           </Button>
         </TooltipBtn>
 
@@ -168,7 +166,6 @@ export function ToolbarFileOps() {
             size="sm"
             onClick={handleClearCanvas}
             aria-label="جديد (مسح مساحة العمل)"
-            title="جديد (مسح مساحة العمل)"
             className="h-7 px-2 text-destructive/80 hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
           >
             <Eraser className="w-3.5 h-3.5" />
@@ -183,7 +180,6 @@ export function ToolbarFileOps() {
               size="sm"
               onClick={() => setIsProjectsOpen(true)}
               aria-label="مكتبة المشاريع المحلية"
-              title="مكتبة المشاريع المحلية"
               className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
             >
               <Database className="w-3.5 h-3.5" />
@@ -194,7 +190,7 @@ export function ToolbarFileOps() {
 
         {/* استيراد JSON */}
         <TooltipBtn content="فتح مشروع (.json)">
-          <label className="cursor-pointer" aria-label="فتح مشروع (.json)" title="فتح مشروع (.json)">
+          <label className="cursor-pointer" aria-label="فتح مشروع (.json)">
             <input
               type="file"
               accept=".json"
@@ -214,7 +210,6 @@ export function ToolbarFileOps() {
             size="sm"
             onClick={handleSaveProject}
             aria-label="تصدير ملف مشروع (.json)"
-            title="تصدير ملف مشروع (.json)"
             className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
           >
             <FileJson className="w-3.5 h-3.5" />

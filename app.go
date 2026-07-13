@@ -287,6 +287,98 @@ func (a *App) ClearAutoSave() error {
 	return nil
 }
 
+// resizeGrayLinear performs linear interpolation resizing on an 8-bit *image.Gray image.
+func resizeGrayLinear(src *image.Gray, w, h int) *image.Gray {
+	dst := image.NewGray(image.Rect(0, 0, w, h))
+	srcBounds := src.Bounds()
+	srcW, srcH := srcBounds.Dx(), srcBounds.Dy()
+	if srcW == 0 || srcH == 0 {
+		return dst
+	}
+	for y := 0; y < h; y++ {
+		srcY := float64(y) * float64(srcH) / float64(h)
+		y0 := int(srcY)
+		y1 := y0 + 1
+		if y1 >= srcH {
+			y1 = srcH - 1
+		}
+		dy := srcY - float64(y0)
+
+		y0Stride := y0 * src.Stride
+		y1Stride := y1 * src.Stride
+		dstStride := y * dst.Stride
+
+		for x := 0; x < w; x++ {
+			srcX := float64(x) * float64(srcW) / float64(w)
+			x0 := int(srcX)
+			x1 := x0 + 1
+			if x1 >= srcW {
+				x1 = srcW - 1
+			}
+			dx := srcX - float64(x0)
+
+			val00 := float64(src.Pix[y0Stride+x0])
+			val10 := float64(src.Pix[y0Stride+x1])
+			val01 := float64(src.Pix[y1Stride+x0])
+			val11 := float64(src.Pix[y1Stride+x1])
+
+			val := (1-dy)*((1-dx)*val00+dx*val10) + dy*((1-dx)*val01+dx*val11)
+			dst.Pix[dstStride+x] = uint8(val)
+		}
+	}
+	return dst
+}
+
+// blurGray performs a highly optimized 3x3 box blur approximation on an 8-bit *image.Gray image.
+func blurGray(src *image.Gray) *image.Gray {
+	w, h := src.Bounds().Dx(), src.Bounds().Dy()
+	dst := image.NewGray(image.Rect(0, 0, w, h))
+
+	for y := 0; y < h; y++ {
+		yStride := y * src.Stride
+		dstStride := y * dst.Stride
+
+		ym1 := (y - 1)
+		if ym1 < 0 {
+			ym1 = 0
+		}
+		ym1Stride := ym1 * src.Stride
+
+		yp1 := (y + 1)
+		if yp1 >= h {
+			yp1 = h - 1
+		}
+		yp1Stride := yp1 * src.Stride
+
+		for x := 0; x < w; x++ {
+			xm1 := x - 1
+			if xm1 < 0 {
+				xm1 = 0
+			}
+			xp1 := x + 1
+			if xp1 >= w {
+				xp1 = w - 1
+			}
+
+			// Weights: center=4, adjacent=2, diagonal=1 (Total = 16)
+			sum := uint32(src.Pix[yStride+x]) * 4
+
+			sum += uint32(src.Pix[yStride+xm1]) * 2
+			sum += uint32(src.Pix[yStride+xp1]) * 2
+			sum += uint32(src.Pix[ym1Stride+x]) * 2
+			sum += uint32(src.Pix[yp1Stride+x]) * 2
+
+			sum += uint32(src.Pix[ym1Stride+xm1])
+			sum += uint32(src.Pix[ym1Stride+xp1])
+			sum += uint32(src.Pix[yp1Stride+xm1])
+			sum += uint32(src.Pix[yp1Stride+xp1])
+
+			dst.Pix[dstStride+x] = uint8(sum >> 4) // divide by 16
+		}
+	}
+	return dst
+}
+
 func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW int, maskH int) (string, error) {
 	maskBytes, err := base64.StdEncoding.DecodeString(maskBase64)
 	if err != nil {
@@ -309,11 +401,20 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 		fileName := filepath.Base(filepath.Clean(localImagePath))
 		actualImagePath := filepath.Join(mediaDir, fileName)
 
-		if _, err := os.Stat(actualImagePath); err != nil {
+		// 🔒 Symlink resolution protection check
+		resolvedPath, err := filepath.EvalSymlinks(actualImagePath)
+		if err != nil {
+			return "", fmt.Errorf("eval symlink: %w", err)
+		}
+		if !strings.HasPrefix(filepath.Clean(resolvedPath), filepath.Clean(mediaDir)) {
+			return "", fmt.Errorf("invalid image path: outside media directory")
+		}
+
+		if _, err := os.Stat(resolvedPath); err != nil {
 			return "", fmt.Errorf("image file not found: %w", err)
 		}
 
-		srcImg, err = imaging.Open(actualImagePath)
+		srcImg, err = imaging.Open(resolvedPath)
 		if err != nil {
 			return "", fmt.Errorf("open original image: %w", err)
 		}
@@ -324,57 +425,54 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 	}
 
 	// 4. Create mask image directly from raw grayscale bytes
-	var maskImg image.Image = &image.Gray{
+	maskImg := &image.Gray{
 		Pix:    maskBytes,
 		Stride: maskW,
 		Rect:   image.Rect(0, 0, maskW, maskH),
 	}
 
-	// لا نقوم بعمل Blur هنا لأن القناع لا يزال صغيراً، مما قد يسبب حواف مكسرة عند تكبيره.
-
 	// 5. Resize mask to match original image dimensions if they differ
 	srcBounds := srcImg.Bounds()
 	srcW, srcH := srcBounds.Dx(), srcBounds.Dy()
 
-	var maskResized image.Image = maskImg
+	var maskResized *image.Gray = maskImg
 	if maskW != srcW || maskH != srcH {
-		// استخدام Linear لتكبير القناع بدلاً من Lanczos لزيادة السرعة 3-5 مرات دون فقدان ملاحظ للجودة في القناع
-		maskResized = imaging.Resize(maskImg, srcW, srcH, imaging.Linear)
+		maskResized = resizeGrayLinear(maskImg, srcW, srcH)
 	}
 
-	// تطبيق تنعيم خفيف (Feathering) على القناع بحجمه الكامل لضمان اندماج مثالي مع الخلفية
-	// تم استخدام 0.8 كقيمة مثالية تعطي نعومة بدون ضبابية مفرطة
-	maskResized = imaging.Blur(maskResized, 0.8)
+	// Apply feathering (blur) directly to the grayscale mask (radius 0.8 / 3x3 box blur)
+	maskBlurred := blurGray(maskResized)
 
-	// 6. Apply mask using fast direct slice access (*image.NRGBA)
-	srcNRGBA := imaging.Clone(srcImg)
-	maskNRGBA := imaging.Clone(maskResized)
+	// 6. Convert source image to NRGBA for fast slice access if it's not already
+	srcNRGBA, ok := srcImg.(*image.NRGBA)
+	if !ok {
+		srcNRGBA = imaging.Clone(srcImg)
+	}
+
 	outImg := image.NewNRGBA(image.Rect(0, 0, srcW, srcH))
 
 	srcPix := srcNRGBA.Pix
-	maskPix := maskNRGBA.Pix
+	maskPix := maskBlurred.Pix
 	outPix := outImg.Pix
 
-	// 🔒 Bounds check: ensure all three arrays are large enough before flat looping.
-	maxSafe := len(srcPix)
-	if len(maskPix) < maxSafe {
-		maxSafe = len(maskPix)
-	}
-	if len(outPix) < maxSafe {
-		maxSafe = len(outPix)
-	}
-	maxSafe = (maxSafe / 4) * 4 // floor to nearest full RGBA pixel
+	// Loop over rows and columns using fast direct slice index offsets
+	for y := 0; y < srcH; y++ {
+		srcRowOffset := y * srcNRGBA.Stride
+		maskRowOffset := y * maskBlurred.Stride
+		outRowOffset := y * outImg.Stride
 
-	for i := 0; i < maxSafe; i += 4 {
-		mr := uint32(maskPix[i])
-		mg := uint32(maskPix[i+1])
-		mb := uint32(maskPix[i+2])
-		alpha := uint8((mr + mg + mb) / 3)
+		for x := 0; x < srcW; x++ {
+			srcIdx := srcRowOffset + x*4
+			outIdx := outRowOffset + x*4
+			maskIdx := maskRowOffset + x
 
-		outPix[i] = srcPix[i]
-		outPix[i+1] = srcPix[i+1]
-		outPix[i+2] = srcPix[i+2]
-		outPix[i+3] = alpha
+			alpha := maskPix[maskIdx]
+
+			outPix[outIdx] = srcPix[srcIdx]
+			outPix[outIdx+1] = srcPix[srcIdx+1]
+			outPix[outIdx+2] = srcPix[srcIdx+2]
+			outPix[outIdx+3] = alpha
+		}
 	}
 
 	// 7. Save output image as PNG using BestSpeed encoder

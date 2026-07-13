@@ -72,8 +72,8 @@ func main() {
 	backupHandler := handlers.NewBackupHandler(backupSvc)
 
 	// استعادة أبعاد وموقع النافذة من الجلسة السابقة
-	initialWidth := 1280
-	initialHeight := 820
+	initialWidth := 1024
+	initialHeight := 720
 	if state, err := loadWindowState(); err == nil {
 		if state.Width > 0 && state.Height > 0 {
 			initialWidth = state.Width

@@ -24,7 +24,9 @@
     }
   },
   "include": [
-    "src"
+    "src",
+    "test",
+    "e2e"
   ],
   "references": [
     {

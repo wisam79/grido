@@ -52,16 +52,16 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const [image] = useAsyncImage(imageSrc);
   const imageRef = useRef<any>(null);
 
+  const hasFilters = !!(
+    (filter && filter !== "none") ||
+    (brightness !== undefined && brightness !== 100) ||
+    (contrast !== undefined && contrast !== 100) ||
+    (saturation !== undefined && saturation !== 100)
+  );
+
   useEffect(() => {
     const node = imageRef.current;
     if (node && image) {
-      const hasFilters = !!(
-        (filter && filter !== "none") ||
-        (brightness !== undefined && brightness !== 100) ||
-        (contrast !== undefined && contrast !== 100) ||
-        (saturation !== undefined && saturation !== 100)
-      );
-
       if (hasFilters) {
         try {
           const stage = node.getStage();
@@ -89,7 +89,7 @@ const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }
       }
     };
-  }, [image, filter, brightness, contrast, saturation]);
+  }, [image, hasFilters, width, height]);
 
   if (!image) return null;
 

@@ -88,6 +88,40 @@ export const PrintSettingsSchema = z.object({
   fitToPage: z.boolean().optional(),
 });
 
+export const PhotoTemplateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.enum(["id", "passport", "visa", "personal", "collage"]),
+  width: z.number(),
+  height: z.number(),
+  widthMM: z.number(),
+  heightMM: z.number(),
+  dpi: z.number(),
+  headHeightMin: z.number().optional(),
+  headHeightMax: z.number().optional(),
+  background: z.string(),
+  backgroundHint: z.string(),
+  notes: z.string().optional(),
+});
+
+export const CollageTemplateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slots: z.number(),
+  cells: z.array(z.object({
+    x: z.number(),
+    y: z.number(),
+    w: z.number(),
+    h: z.number(),
+  })),
+  physicalLayout: z.object({
+    type: z.string(),
+    rows: z.number(),
+    cols: z.number(),
+    align: z.enum(["center", "top-left", "top-right", "bottom-left", "bottom-right"]).optional(),
+  }).optional(),
+});
+
 export const ProjectSchema = z.object({
   mode: z.enum(["single", "collage"]).default("single"),
   canvasWidth: z.number().default(413),
@@ -95,8 +129,8 @@ export const ProjectSchema = z.object({
   backgroundColor: z.string().default("#FFFFFF"),
   elements: z.array(CanvasElementSchema).default([]),
   slots: z.array(CanvasSlotSchema).default([]),
-  template: z.any().nullable().default(null),
-  collageTemplate: z.any().nullable().default(null),
+  template: PhotoTemplateSchema.nullable().default(null),
+  collageTemplate: CollageTemplateSchema.nullable().default(null),
   printSettings: PrintSettingsSchema.optional(),
   
   // إعدادات شبكة الإرشاد

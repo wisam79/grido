@@ -13,8 +13,12 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"grido/internal/core/domain"
 	"grido/internal/utils"
@@ -169,11 +173,13 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 }
 
 type imageCache struct {
+	mu     sync.RWMutex
 	images map[string]image.Image
 	access map[string]time.Time
 }
 
 type processedCache struct {
+	mu     sync.RWMutex
 	images map[processedKey]image.Image
 	access map[processedKey]time.Time
 }
@@ -204,16 +210,29 @@ func (s *PrintService) loadAndProcessImage(
 		targetH:    targetH,
 	}
 
-	if cached, ok := procCache.images[pKey]; ok {
+	procCache.mu.RLock()
+	cached, ok := procCache.images[pKey]
+	procCache.mu.RUnlock()
+
+	if ok {
+		procCache.mu.Lock()
 		procCache.access[pKey] = time.Now()
+		procCache.mu.Unlock()
 		return cached, nil
 	}
 
 	var img image.Image
 	var err error
-	if cachedRaw, ok := imgCache.images[cacheKey]; ok {
+	
+	imgCache.mu.RLock()
+	cachedRaw, ok := imgCache.images[cacheKey]
+	imgCache.mu.RUnlock()
+
+	if ok {
 		img = cachedRaw
+		imgCache.mu.Lock()
 		imgCache.access[cacheKey] = time.Now()
+		imgCache.mu.Unlock()
 	} else {
 		if strings.HasPrefix(filePath, "data:image/") {
 			commaIdx := strings.Index(filePath, ",")
@@ -236,6 +255,7 @@ func (s *PrintService) loadAndProcessImage(
 			}
 		}
 
+		imgCache.mu.Lock()
 		if len(imgCache.images) >= 8 {
 			var oldestKey string
 			var oldestTime time.Time
@@ -253,6 +273,7 @@ func (s *PrintService) loadAndProcessImage(
 		}
 		imgCache.images[cacheKey] = img
 		imgCache.access[cacheKey] = time.Now()
+		imgCache.mu.Unlock()
 	}
 
 	if targetW <= 0 {
@@ -272,17 +293,20 @@ func (s *PrintService) loadAndProcessImage(
 		img = imaging.Crop(img, rect)
 	}
 
-	adjustedImg := applyColorAdjustments(img, item.Brightness, item.Contrast, item.Saturation)
-	adjustedImg = applyFilter(adjustedImg, item.Filter)
-
-	var processedImg image.Image
-	bounds := adjustedImg.Bounds()
+	// Resize first to reduce pixel count before expensive color/filter operations
+	var resizedImg image.Image
+	bounds := img.Bounds()
 	if bounds.Dx() == targetW && bounds.Dy() == targetH {
-		processedImg = adjustedImg
+		resizedImg = img
 	} else {
-		processedImg = imaging.Resize(adjustedImg, targetW, targetH, imaging.Lanczos)
+		resizedImg = imaging.Resize(img, targetW, targetH, imaging.Lanczos)
 	}
 
+	// Apply adjustments and filters on the much smaller resized image
+	adjustedImg := applyColorAdjustments(resizedImg, item.Brightness, item.Contrast, item.Saturation)
+	processedImg := applyFilter(adjustedImg, item.Filter)
+
+	procCache.mu.Lock()
 	if len(procCache.images) >= 16 {
 		var oldestKey processedKey
 		var oldestTime time.Time
@@ -300,6 +324,7 @@ func (s *PrintService) loadAndProcessImage(
 	}
 	procCache.images[pKey] = processedImg
 	procCache.access[pKey] = time.Now()
+	procCache.mu.Unlock()
 
 	return processedImg, nil
 }
@@ -442,16 +467,45 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 		access: make(map[processedKey]time.Time),
 	}
 
-	for _, item := range req.Items {
+	// 1. Process all images in parallel
+	processedImages := make([]image.Image, len(req.Items))
+	var g errgroup.Group
+	
+	// Limit concurrency to number of CPUs to avoid memory spikes and context switching overhead
+	maxConcurrency := runtime.NumCPU()
+	if maxConcurrency < 2 {
+		maxConcurrency = 2
+	}
+	g.SetLimit(maxConcurrency)
+
+	for i, item := range req.Items {
 		if item.ImageSrc == "" {
 			continue
 		}
+		
+		// Capture loop variables for the goroutine
+		i, item := i, item 
+		g.Go(func() error {
+			img, err := s.loadAndProcessImage(item, req.DPI, imgCache, procCache)
+			if err != nil {
+				return err
+			}
+			processedImages[i] = img
+			return nil
+		})
+	}
 
-		processedImg, err := s.loadAndProcessImage(item, req.DPI, imgCache, procCache)
-		if err != nil {
-			return "", "", err
+	if err := g.Wait(); err != nil {
+		return "", "", err
+	}
+
+	// 2. Draw everything sequentially (gg.Context is NOT thread-safe)
+	for i, item := range req.Items {
+		if item.ImageSrc == "" || processedImages[i] == nil {
+			continue
 		}
 
+		processedImg := processedImages[i]
 		xPx := float64(int(math.Round(mmToPx(item.X, req.DPI))))
 		yPx := float64(int(math.Round(mmToPx(item.Y, req.DPI))))
 		wPx := float64(int(math.Round(mmToPx(item.W, req.DPI))))
@@ -516,6 +570,9 @@ func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
 		return nil, fmt.Errorf("first chunk is not IHDR")
 	}
 	insertPos := 8 + 12 + int(chunkLen)
+	if insertPos > len(pngData) {
+		return nil, fmt.Errorf("corrupt PNG data: insert position out of bounds")
+	}
 
 	result := make([]byte, 0, len(pngData)+len(physChunk))
 	result = append(result, pngData[:insertPos]...)

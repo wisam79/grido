@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -123,10 +124,25 @@ func VerifyTime(t time.Time) bool {
 	return t.Unix() >= lastUnix-300
 }
 
-// SaveEncryptedToken encrypts the JWT token using AES-GCM and saves it to .license_token
-func SaveEncryptedToken(token string) error {
-	if token == "" {
+type encryptedTokenPair struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+// SaveEncryptedToken encrypts the access and refresh tokens using AES-GCM and saves it to .license_token
+func SaveEncryptedToken(accessToken, refreshToken string) error {
+	if accessToken == "" && refreshToken == "" {
 		return ClearEncryptedToken()
+	}
+
+	pair := encryptedTokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
+	payload, err := json.Marshal(pair)
+	if err != nil {
+		return err
 	}
 
 	key, err := LoadOrCreateMasterKey()
@@ -149,45 +165,51 @@ func SaveEncryptedToken(token string) error {
 		return err
 	}
 
-	ciphertext := gcm.Seal(nonce, nonce, []byte(token), nil)
+	ciphertext := gcm.Seal(nonce, nonce, payload, nil)
 	path := filepath.Join(GetAppDir(), ".license_token")
 	return os.WriteFile(path, ciphertext, 0600)
 }
 
-// LoadEncryptedToken reads and decrypts the token from .license_token
-func LoadEncryptedToken() (string, error) {
+// LoadEncryptedToken reads and decrypts the tokens from .license_token
+func LoadEncryptedToken() (string, string, error) {
 	path := filepath.Join(GetAppDir(), ".license_token")
 	ciphertext, err := os.ReadFile(path)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	key, err := LoadOrCreateMasterKey()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if len(ciphertext) < gcm.NonceSize() {
-		return "", errors.New("malformed ciphertext")
+		return "", "", errors.New("malformed ciphertext")
 	}
 
 	nonce, ciphertext := ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():]
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return string(plaintext), nil
+	var pair encryptedTokenPair
+	if err := json.Unmarshal(plaintext, &pair); err != nil {
+		// Fallback for backward compatibility if the stored token is raw plaintext
+		return string(plaintext), "", nil
+	}
+
+	return pair.AccessToken, pair.RefreshToken, nil
 }
 
 // ClearEncryptedToken removes the saved token

@@ -45,10 +45,10 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* تكبير أحجام الخطوط فقط مع الحفاظ على الهوامش والمسافات مضغوطة */
-  --text-xs: 13px;
-  --text-sm: 15px;
-  --text-base: 17px;
+  /* أحجام الخطوط الافتراضية المضغوطة لتصميم محترف شبيه بـ Figma */
+  --text-xs: 11.5px;
+  --text-sm: 13.5px;
+  --text-base: 15px;
 }
 
 :root {
@@ -177,11 +177,11 @@
 
   /* Desktop Drag Window Titles */
   .title-bar-draggable {
-    -webkit-app-region: drag;
+    --wails-draggable:drag;
   }
 
   .title-bar-controls {
-    -webkit-app-region: no-drag;
+    --wails-draggable:no-drag;
   }
 
   /* Win11 Style Overlay Scrollbars */

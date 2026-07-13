@@ -19,7 +19,7 @@ export interface CollageSlice {
   setSlotImage: (slotId: string, src: string) => void;
   updateSlot: (slotId: string, patch: Partial<CanvasSlot>) => void;
   clearSlots: () => void;
-  fillAllSlots: (src: string) => void;
+  fillAllSlots: (src: string, sourceSlotId?: string) => void;
   fillRowSlots: (slotId: string, src: string) => void;
   fillColumnSlots: (slotId: string, src: string) => void;
 
@@ -220,15 +220,16 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     get().pushHistory();
   },
 
-  fillAllSlots: (src) => {
+  fillAllSlots: (src, sourceSlotId) => {
+    const targetSlot = sourceSlotId ? get().slots.find((sl) => sl.id === sourceSlotId) : null;
     set((s: any) => ({
       slots: s.slots.map((sl: CanvasSlot) => ({
         ...sl,
         imageSrc: src,
-        filter: "none",
-        brightness: 100,
-        contrast: 100,
-        saturation: 100,
+        filter: targetSlot?.filter || "none",
+        brightness: targetSlot?.brightness ?? 100,
+        contrast: targetSlot?.contrast ?? 100,
+        saturation: targetSlot?.saturation ?? 100,
       })),
     }));
     get().pushHistory();
@@ -243,10 +244,10 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           ? {
               ...sl,
               imageSrc: src,
-              filter: "none",
-              brightness: 100,
-              contrast: 100,
-              saturation: 100,
+              filter: targetSlot.filter || "none",
+              brightness: targetSlot.brightness ?? 100,
+              contrast: targetSlot.contrast ?? 100,
+              saturation: targetSlot.saturation ?? 100,
             }
           : sl
       ),
@@ -263,10 +264,10 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           ? {
               ...sl,
               imageSrc: src,
-              filter: "none",
-              brightness: 100,
-              contrast: 100,
-              saturation: 100,
+              filter: targetSlot.filter || "none",
+              brightness: targetSlot.brightness ?? 100,
+              contrast: targetSlot.contrast ?? 100,
+              saturation: targetSlot.saturation ?? 100,
             }
           : sl
       ),

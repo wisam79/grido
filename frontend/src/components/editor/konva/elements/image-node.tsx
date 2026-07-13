@@ -61,16 +61,17 @@ export const URLImage = React.memo(function URLImage({
     }
   }, [elementRef, element.opacity, element.flipX]);
 
+  const hasFilters = !!(
+    element.filter ||
+    (element.brightness !== undefined && element.brightness !== 100) ||
+    (element.contrast !== undefined && element.contrast !== 100) ||
+    (element.saturation !== undefined && element.saturation !== 100) ||
+    (element.blur !== undefined && element.blur > 0)
+  );
+
   useEffect(() => {
     const node = elementRef.current;
     if (node && image) {
-      const hasFilters = !!(
-        element.filter ||
-        (element.brightness !== undefined && element.brightness !== 100) ||
-        (element.contrast !== undefined && element.contrast !== 100) ||
-        (element.saturation !== undefined && element.saturation !== 100) ||
-        (element.blur !== undefined && element.blur > 0)
-      );
       if (hasFilters) {
         try {
           const stage = node.getStage();
@@ -98,7 +99,7 @@ export const URLImage = React.memo(function URLImage({
         }
       }
     };
-  }, [image, element.filter, element.brightness, element.contrast, element.saturation, element.blur, elementRef]);
+  }, [image, hasFilters, element.width, element.height, displayW, displayH, elementRef]);
 
   // حساب القيم الكلية بدمج مرشحات الصور الجاهزة والتعديلات اليدوية
   let totalBrightness = element.brightness ?? 100;

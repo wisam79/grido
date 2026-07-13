@@ -111,9 +111,9 @@ func NewLicenseRepository(db *gorm.DB) domain.LicenseRepository {
 func (r *licenseRepositoryImpl) Save(profile *domain.UserProfile) error {
 	// Extract token to save securely
 	token := profile.Token
+	refreshToken := profile.RefreshToken
 	
 	// Save to DB (Token field will still be saved if it's there, but we can blank it)
-	// Wait, to prevent DB from saving it, we can blank it out momentarily
 	profile.Token = ""
 	err := r.db.Save(profile).Error
 	
@@ -121,7 +121,7 @@ func (r *licenseRepositoryImpl) Save(profile *domain.UserProfile) error {
 	profile.Token = token
 
 	if err == nil {
-		_ = utils.SaveEncryptedToken(token)
+		_ = utils.SaveEncryptedToken(token, refreshToken)
 		_ = utils.SaveLicenseSignature(profile)
 		_ = utils.UpdateLastTime(time.Now())
 	}
@@ -136,9 +136,10 @@ func (r *licenseRepositoryImpl) Get() (*domain.UserProfile, error) {
 	}
 
 	// Load token from secure storage
-	token, kerr := utils.LoadEncryptedToken()
+	token, refreshToken, kerr := utils.LoadEncryptedToken()
 	if kerr == nil {
 		profile.Token = token
+		profile.RefreshToken = refreshToken
 	}
 
 	// Verify signature to prevent SQLite tampering
@@ -249,6 +250,12 @@ var (
 
 // CleanupUnusedMedia يقوم بمسح جميع الصور غير المستخدمة في أي مشروع لتوفير مساحة القرص بشكل دوري
 func CleanupUnusedMedia() {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Recovered from panic in CleanupUnusedMedia background task", "error", r)
+		}
+	}()
+
 	cleanupMu.Lock()
 	if cleanupStopChan != nil {
 		cleanupMu.Unlock()
@@ -330,7 +337,7 @@ func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]b
 }
 
 // collectReferencedImages يجمع كل الصور المشار إليها في المشاريع وقاعدة البيانات ومسودة autosave.json
-func collectReferencedImages(projects []domain.Project, appDir string) map[string]bool {
+func collectReferencedImages(projects []domain.Project, appDir string) (map[string]bool, error) {
 	referencedImages := make(map[string]bool)
 
 	// 1. فحص مسارات الصور في المشاريع المحفوظة بقاعدة البيانات
@@ -345,15 +352,16 @@ func collectReferencedImages(projects []domain.Project, appDir string) map[strin
 			Elements []elementJSONStruct `json:"elements"`
 			Slots    []slotJSONStruct    `json:"slots"`
 		}
-		if err := json.Unmarshal(autosaveBytes, &autosaveData); err == nil {
-			// تحويل الهياكل الفرعية إلى JSON string لإعادة استخدام دالة collectImageFilenames
-			elemsBytes, _ := json.Marshal(autosaveData.Elements)
-			slotsBytes, _ := json.Marshal(autosaveData.Slots)
-			collectImageFilenames(string(elemsBytes), string(slotsBytes), referencedImages)
+		if err := json.Unmarshal(autosaveBytes, &autosaveData); err != nil {
+			return nil, err
 		}
+		// تحويل الهياكل الفرعية إلى JSON string لإعادة استخدام دالة collectImageFilenames
+		elemsBytes, _ := json.Marshal(autosaveData.Elements)
+		slotsBytes, _ := json.Marshal(autosaveData.Slots)
+		collectImageFilenames(string(elemsBytes), string(slotsBytes), referencedImages)
 	}
 
-	return referencedImages
+	return referencedImages, nil
 }
 
 // moveUnreferencedToTrash ينقل الملفات غير المشار إليها إلى الحجر الصحي (MediaTrash)
@@ -406,6 +414,12 @@ func purgeOldTrash(trashDir string) {
 }
 
 func runCleanupMedia() {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Recovered from panic in runCleanupMedia execution", "error", r)
+		}
+	}()
+
 	dbMu.RLock()
 	db := dbInstance
 	dbMu.RUnlock()
@@ -423,7 +437,11 @@ func runCleanupMedia() {
 	mediaDir := filepath.Join(appDir, "Media")
 	trashDir := filepath.Join(appDir, "MediaTrash")
 
-	referenced := collectReferencedImages(projects, appDir)
+	referenced, err := collectReferencedImages(projects, appDir)
+	if err != nil {
+		slog.Error("Failed to collect referenced images (autosave might be corrupt), aborting cleanup to prevent data loss", "error", err)
+		return
+	}
 	moveUnreferencedToTrash(mediaDir, trashDir, referenced)
 	purgeOldTrash(trashDir)
 }

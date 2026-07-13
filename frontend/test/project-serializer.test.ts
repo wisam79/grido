@@ -77,7 +77,7 @@ describe("project-serializer - Project Serialization and Migration Tests", () =>
   });
 
   it("should validate and deserialize valid projects", () => {
-    const validFile: ProjectFileV1 = {
+    const validFile = {
       version: 1,
       mode: "single",
       canvasWidth: 800,
@@ -87,7 +87,7 @@ describe("project-serializer - Project Serialization and Migration Tests", () =>
       slots: [],
       showGrid: true,
       gridSize: 40,
-    };
+    } as unknown as ProjectFileV1;
 
     const deserialized = deserializeProjectFile(validFile);
     expect(deserialized.version).toBe(1);

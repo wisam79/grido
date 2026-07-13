@@ -175,3 +175,62 @@ func TestCleanupUnusedMedia(t *testing.T) {
 		t.Error("expected very old image3.jpg to be purged from MediaTrash")
 	}
 }
+
+func TestCleanupUnusedMedia_CorruptAutosave(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "grido-test-corrupt-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	origAppData := os.Getenv("APPDATA")
+	origHome := os.Getenv("HOME")
+	origXdg := os.Getenv("XDG_CONFIG_HOME")
+	defer func() {
+		os.Setenv("APPDATA", origAppData)
+		os.Setenv("HOME", origHome)
+		os.Setenv("XDG_CONFIG_HOME", origXdg)
+	}()
+
+	os.Setenv("APPDATA", tempDir)
+	os.Setenv("HOME", tempDir)
+	os.Setenv("XDG_CONFIG_HOME", tempDir)
+
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	mediaDir := filepath.Join(appDir, "Media")
+	_ = os.MkdirAll(mediaDir, 0755)
+
+	// Create a corrupt autosave.json
+	_ = os.WriteFile(filepath.Join(appDir, "autosave.json"), []byte("{invalid-json}"), 0644)
+
+	// Create an old image file
+	img := filepath.Join(mediaDir, "unreferenced.jpg")
+	_ = os.WriteFile(img, []byte("data"), 0644)
+	oldTime := time.Now().Add(-20 * time.Minute)
+	_ = os.Chtimes(img, oldTime, oldTime)
+
+	// Set up DB in memory
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+	_ = db.AutoMigrate(&domain.Project{})
+
+	dbMu.Lock()
+	dbInstance = db
+	dbMu.Unlock()
+	defer func() {
+		dbMu.Lock()
+		dbInstance = nil
+		dbMu.Unlock()
+	}()
+
+	// Run cleanup - should abort
+	runCleanupMedia()
+
+	// Verify that unreferenced.jpg is STILL in Media and not moved to trash
+	if _, err := os.Stat(img); os.IsNotExist(err) {
+		t.Error("expected unreferenced.jpg to still exist in Media because cleanup should have aborted")
+	}
+}
+
