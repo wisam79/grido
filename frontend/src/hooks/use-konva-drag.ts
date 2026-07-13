@@ -28,6 +28,7 @@ export function useKonvaDrag({
     hTargets: SnapTarget[];
   } | null>(null);
   const dragStartPositionsRef = React.useRef<Record<string, { x: number; y: number }>>({});
+  const prevGuidesRef = React.useRef<any[]>([]);
 
   const onDragStart = () => {
     const currentElements = useEditorStore.getState().elements;
@@ -90,7 +91,10 @@ export function useKonvaDrag({
 
   const onDragMove = (e: any) => {
     if (altPressedRef.current) {
-      setActiveGuides([]);
+      if (prevGuidesRef.current.length > 0) {
+        setActiveGuides([]);
+        prevGuidesRef.current = [];
+      }
       return;
     }
 
@@ -116,7 +120,10 @@ export function useKonvaDrag({
     }
 
     if (snapToGrid) {
-      setActiveGuides([]);
+      if (prevGuidesRef.current.length > 0) {
+        setActiveGuides([]);
+        prevGuidesRef.current = [];
+      }
     } else {
       const x = e.target.x() / displayW;
       const y = e.target.y() / displayH;
@@ -136,7 +143,13 @@ export function useKonvaDrag({
         thresholdX,
         thresholdY
       );
-      setActiveGuides(snapResult.guides);
+      
+      const newGuidesStr = JSON.stringify(snapResult.guides);
+      const oldGuidesStr = JSON.stringify(prevGuidesRef.current);
+      if (newGuidesStr !== oldGuidesStr) {
+        setActiveGuides(snapResult.guides);
+        prevGuidesRef.current = snapResult.guides;
+      }
     }
   };
 
@@ -147,7 +160,10 @@ export function useKonvaDrag({
     const startPos = dragStartPositionsRef.current[draggedId];
     
     snapTargetsRef.current = null;
-    setActiveGuides([]);
+    if (prevGuidesRef.current.length > 0) {
+      setActiveGuides([]);
+      prevGuidesRef.current = [];
+    }
     
     if (startPos) {
       const dx = draggedNode.x() - startPos.x;
