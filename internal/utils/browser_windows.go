@@ -2,9 +2,20 @@
 
 package utils
 
-import "os/exec"
+import (
+	"errors"
+	"net/url"
+	"os/exec"
+)
 
 // OpenBrowser opens the specified URL in the default browser of the user.
-func OpenBrowser(url string) error {
-	return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+func OpenBrowser(targetURL string) error {
+	u, err := url.Parse(targetURL)
+	if err != nil {
+		return err
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return errors.New("unsupported protocol scheme")
+	}
+	return exec.Command("rundll32", "url.dll,FileProtocolHandler", targetURL).Start()
 }

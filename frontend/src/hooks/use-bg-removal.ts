@@ -25,6 +25,18 @@ async function getSegmenter() {
   return segmenterInstance;
 }
 
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", () => {
+    if (segmenterInstance) {
+      try {
+        segmenterInstance.close();
+      } catch (e) {
+        // Ignore errors during unload
+      }
+    }
+  });
+}
+
 export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void) {
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [bgProgress, setBgProgress] = useState(0);
@@ -135,13 +147,19 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
       for (let i = 0; i < bgMaskData.length; i++) {
         const fgProb = 1.0 - bgMaskData[i];
         
-        // استخدام عتبة بسيطة لتنظيف الشوائب مع الحفاظ على نعومة الحواف (Anti-aliasing)
-        if (fgProb < 0.05) {
+        // تضييق نطاق التنعيم لمنع التغبيش الداخلي (Inward blur) وحماية ملامح الصورة
+        // أي بكسل يتأكد الذكاء الاصطناعي بنسبة أكثر من 60% أنه للشخص، يجعله صلباً تماماً (يحمي الوجه والتفاصيل)
+        // أي بكسل بنسبة أقل من 20% يتم حذفه تماماً
+        if (fgProb < 0.2) {
           maskBytes[i] = 0;
-        } else if (fgProb > 0.95) {
+        } else if (fgProb > 0.6) {
           maskBytes[i] = 255;
         } else {
-          maskBytes[i] = Math.round(fgProb * 255);
+          // التدرج الناعم يطبق فقط على الحافة الدقيقة (بين 20% و 60%)
+          const normalized = (fgProb - 0.2) / (0.6 - 0.2);
+          // دالة Smoothstep لجعل التدرج طبيعياً جداً
+          const smooth = normalized * normalized * (3 - 2 * normalized);
+          maskBytes[i] = Math.round(smooth * 255);
         }
       }
       

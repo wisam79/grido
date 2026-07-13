@@ -1,12 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = ['app://grido', 'https://grido.app', 'http://localhost:5173', 'http://localhost:34115']
+
+const getCorsHeaders = (origin: string | null) => {
+  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin)
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin'
+  }
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin')
+  const corsHeaders = getCorsHeaders(origin)
+
   // معالجة طلبات CORS المسبقة (Pre-flight requests)
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -42,64 +51,19 @@ serve(async (req) => {
     const path = url.pathname.replace(/\/$/, '') // إزالة الشرطة المائلة الأخيرة
 
     // 1. تفعيل مفتاح ترخيص: POST /license/activate
+    // تم توحيد هذا المنطق ليستخدم دالة activate_license لمنع Race Conditions
     if (req.method === 'POST' && path.endsWith('/activate')) {
-      const { key } = await req.json()
+      const { key, deviceId } = await req.json()
       
-      // جلب المفتاح والتحقق من كونه غير مستخدم
-      const { data: licenseKey, error: keyErr } = await supabaseClient
-        .from('license_keys')
-        .select('*')
-        .eq('key', key)
-        .eq('status', 'unused')
-        .single()
+      const { data: profile, error: rpcErr } = await supabaseClient.rpc('activate_license', {
+        p_key: key,
+        p_device_id: deviceId || 'unknown'
+      })
 
-      if (keyErr || !licenseKey) {
-        return new Response(JSON.stringify({ message: 'مفتاح الترخيص غير صالح أو تم استخدامه مسبقاً' }), {
+      if (rpcErr) {
+        console.error('RPC Activation Error:', rpcErr)
+        return new Response(JSON.stringify({ message: rpcErr.message || 'فشل التفعيل: تم استخدام مفتاح الترخيص هذا مسبقاً أو غير صالح' }), {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-
-      // حساب تاريخ الانتهاء بناءً على عدد الأشهر المحددة بالترخيص
-      const expiresAt = new Date()
-      expiresAt.setMonth(expiresAt.getMonth() + licenseKey.duration_months)
-
-      // تحديث حالة المفتاح إلى مستخدم وربطه بالمستخدم الحالي بشرط أن يكون ما زال غير مستخدم لمنع السباق البرمجي
-      const { data: updatedKeys, error: updateErr } = await supabaseClient
-        .from('license_keys')
-        .update({ 
-          status: 'used', 
-          user_id: user.id, 
-          activated_at: new Date().toISOString() 
-        })
-        .eq('key', key)
-        .eq('status', 'unused')
-        .select()
-
-      if (updateErr || !updatedKeys || updatedKeys.length === 0) {
-        return new Response(JSON.stringify({ message: 'فشل التفعيل: تم استخدام مفتاح الترخيص هذا مسبقاً أو غير صالح' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-
-      // ترقية الحساب الشخصي للمستخدم لباقة الترخيص المقررة
-      const { data: profile, error: profErr } = await supabaseClient
-        .from('profiles')
-        .update({
-          plan: licenseKey.plan.toLowerCase(),
-          status: 'active',
-          expires_at: expiresAt.toISOString(),
-          license_key: key,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-        .select()
-        .single()
-
-      if (profErr) {
-        return new Response(JSON.stringify({ error: 'Failed to update user profile' }), {
-          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
@@ -155,10 +119,14 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
+  } catch (err: unknown) {
+    console.error('License function error:', err)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { 
+        'Access-Control-Allow-Origin': ALLOWED_ORIGINS[0],
+        'Content-Type': 'application/json' 
+      },
     })
   }
 })

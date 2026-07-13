@@ -32,13 +32,20 @@ export function buildCSSFilter(el: FilterableObject | undefined): string {
 
 export const uid = () => crypto.randomUUID();
 
-export function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): (...args: Parameters<T>) => void {
+export function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
   let timeout: ReturnType<typeof setTimeout> | null = null;
-  return (...args: Parameters<T>) => {
+  const debounced = (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => {
       fn(...args);
       timeout = null;
     }, delay);
   };
+  debounced.cancel = () => {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
+  };
+  return debounced;
 }

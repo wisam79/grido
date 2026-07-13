@@ -138,6 +138,7 @@ export function useAutoSave() {
 
     return () => {
       unsubscribe();
+      debouncedSave.cancel();
       // حفظ فوري للحالة الحالية قبل إلغاء التنشيط لمنع فقدان أي تعديلات
       const currentState = useEditorStore.getState();
       const projectData = serializeEditorState(currentState);

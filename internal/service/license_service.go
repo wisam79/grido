@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -28,16 +29,45 @@ func NewLicenseService(repo domain.LicenseRepository) *LicenseService {
 	return &LicenseService{repo: repo}
 }
 
+// SupabaseURL and SupabaseAnonKey are injected at build time via:
+//
+//	-ldflags "-X grido/internal/service.SupabaseURL=https://... -X grido/internal/service.SupabaseAnonKey=..."
+//
+// For local development, set SUPABASE_URL and SUPABASE_ANON_KEY in a .env file
+// and load it before running (see .env.example).
 var (
-	SupabaseURL     = "https://mvovehnyvoiawvwaurav.supabase.co"
-	SupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12b3ZlaG55dm9pYXd2d2F1cmF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3Nzg2MjQsImV4cCI6MjA5OTM1NDYyNH0.DrZxhJkwjHrk1qP1kJ6JtwAo5AJZegOvFol2L-pGuUg"
+	SupabaseURL     = "" // injected via ldflags at build time
+	SupabaseAnonKey = "" // injected via ldflags at build time
 )
+
+func init() {
+	// Fallback to environment variables if ldflags not set (local dev)
+	if SupabaseURL == "" {
+		SupabaseURL = os.Getenv("SUPABASE_URL")
+	}
+	if SupabaseAnonKey == "" {
+		SupabaseAnonKey = os.Getenv("SUPABASE_ANON_KEY")
+	}
+	if SupabaseURL == "" || SupabaseAnonKey == "" {
+		slog.Warn("Supabase credentials not configured — set SUPABASE_URL and SUPABASE_ANON_KEY")
+	}
+}
+
+var sharedClient = &http.Client{Timeout: 10 * time.Second}
+
+const maxResponseSize = 5 * 1024 * 1024 // 5 MB limit for HTTP responses
 
 // Supabase Auth Payloads
 type SupabaseAuthRequest struct {
 	Email    string                 `json:"email"`
 	Password string                 `json:"password"`
 	Data     map[string]interface{} `json:"data,omitempty"`
+}
+
+type SupabaseVerifyRequest struct {
+	Type  string `json:"type"`
+	Email string `json:"email"`
+	Token string `json:"token"`
 }
 
 type SupabaseAuthResponse struct {
@@ -67,12 +97,15 @@ type LicenseKeyRequest struct {
 }
 
 func (s *LicenseService) fetchProfile(token, userID string) (*SupabaseProfile, error) {
-	req, _ := http.NewRequest("GET", SupabaseURL+"/rest/v1/profiles?select=*&id=eq."+userID, nil)
+	encodedUserID := url.QueryEscape(userID)
+	req, err := http.NewRequest("GET", SupabaseURL+"/rest/v1/profiles?select=*&id=eq."+encodedUserID, nil)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := sharedClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +116,7 @@ func (s *LicenseService) fetchProfile(token, userID string) (*SupabaseProfile, e
 	}
 
 	var profiles []SupabaseProfile
-	if err := json.NewDecoder(resp.Body).Decode(&profiles); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&profiles); err != nil {
 		return nil, err
 	}
 	if len(profiles) == 0 {
@@ -102,24 +135,30 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 		return nil, errors.New("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
 	}
 
-	payload, _ := json.Marshal(SupabaseAuthRequest{
+	payload, err := json.Marshal(SupabaseAuthRequest{
 		Email:    email,
 		Password: password,
 		Data:     map[string]interface{}{"name": name},
 	})
-	req, _ := http.NewRequest("POST", SupabaseURL+"/auth/v1/signup", bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/signup", bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := sharedClient.Do(req)
 	if err != nil {
 		return nil, errors.New("خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}
@@ -127,82 +166,59 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 	}
 
 	var authRes SupabaseAuthResponse
-	if err := json.NewDecoder(resp.Body).Decode(&authRes); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&authRes); err != nil {
 		return nil, err
 	}
 
 	if authRes.User.ID == "" {
 		if authRes.ID != "" {
-			return nil, errors.New("تم إنشاء الحساب بنجاح. يرجى تفعيل الحساب من الرابط المرسل لبريدك الإلكتروني، ثم تسجيل الدخول.")
+			// This means email confirmation is required.
+			// Return a dummy profile with "pending_otp" status to let the frontend know to show the OTP screen.
+			return &domain.UserProfile{Email: email, Status: "pending_otp"}, nil
 		}
 		return nil, errors.New("حدث خطأ غير متوقع أثناء التسجيل")
 	}
 
-	// Retry fetching profile with backoff (wait for DB trigger)
-	var prof *SupabaseProfile
-	for i := 0; i < 3; i++ {
-		time.Sleep(time.Duration(200*(i+1)) * time.Millisecond)
-		prof, err = s.fetchProfile(authRes.AccessToken, authRes.User.ID)
-		if err == nil {
-			break
-		}
-	}
-	if prof == nil {
-		return nil, errors.New("فشل جلب بيانات الحساب الشخصي")
-	}
-
-	user := &domain.UserProfile{
-		ID:         authRes.User.ID,
-		Name:       name,
-		Email:        email,
-		Plan:         prof.Plan,
-		Token:        authRes.AccessToken,
-		RefreshToken: authRes.RefreshToken,
-		CreatedAt:    time.Now(),
-		ExpiresAt:    prof.ExpiresAt,
-		LicenseKey:   prof.LicenseKey,
-		Status:       prof.Status,
-		UpdatedAt:    time.Now(),
-	}
-
-	_ = s.repo.Clear()
-	_ = s.repo.Save(user)
-	return user, nil
+	return nil, errors.New("يرجى تفعيل الحساب باستخدام الكود المرسل لبريدك الإلكتروني")
 }
 
-func (s *LicenseService) Login(email, password string) (*domain.UserProfile, error) {
-	if email == "" || password == "" {
-		return nil, errors.New("البريد الإلكتروني وكلمة المرور مطلوبة")
-	}
-	if len(password) < 6 {
-		return nil, errors.New("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
+func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, error) {
+	if email == "" || token == "" {
+		return nil, errors.New("البريد الإلكتروني ورمز التحقق مطلوبان")
 	}
 
-	payload, _ := json.Marshal(SupabaseAuthRequest{
-		Email:    email,
-		Password: password,
+	payload, err := json.Marshal(SupabaseVerifyRequest{
+		Type:  "signup",
+		Email: email,
+		Token: token,
 	})
-	req, _ := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=password", bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/verify", bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := sharedClient.Do(req)
 	if err != nil {
 		return nil, errors.New("خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}
-		return nil, errors.New("البريد الإلكتروني أو كلمة المرور غير صحيحة")
+		return nil, errors.New("رمز التحقق غير صحيح أو منتهي الصلاحية")
 	}
 
 	var authRes SupabaseAuthResponse
-	if err := json.NewDecoder(resp.Body).Decode(&authRes); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&authRes); err != nil {
 		return nil, err
 	}
 
@@ -217,8 +233,8 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 	}
 
 	user := &domain.UserProfile{
-		ID:         authRes.User.ID,
-		Name:       name,
+		ID:           authRes.User.ID,
+		Name:         name,
 		Email:        email,
 		Plan:         prof.Plan,
 		Token:        authRes.AccessToken,
@@ -230,8 +246,87 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 		UpdatedAt:    time.Now(),
 	}
 
-	_ = s.repo.Clear()
-	_ = s.repo.Save(user)
+	if err := s.repo.Clear(); err != nil {
+		slog.Warn("Failed to clear repo", "error", err)
+	}
+	if err := s.repo.Save(user); err != nil {
+		return nil, fmt.Errorf("failed to save local session: %w", err)
+	}
+	return user, nil
+}
+
+func (s *LicenseService) Login(email, password string) (*domain.UserProfile, error) {
+	if email == "" || password == "" {
+		return nil, errors.New("البريد الإلكتروني وكلمة المرور مطلوبة")
+	}
+	if len(password) < 6 {
+		return nil, errors.New("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
+	}
+
+	payload, err := json.Marshal(SupabaseAuthRequest{
+		Email:    email,
+		Password: password,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=password", bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("apikey", SupabaseAnonKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := sharedClient.Do(req)
+	if err != nil {
+		return nil, errors.New("خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+		if errMsg := parseSupabaseError(body); errMsg != "" {
+			return nil, errors.New(errMsg)
+		}
+		return nil, errors.New("البريد الإلكتروني أو كلمة المرور غير صحيحة")
+	}
+
+	var authRes SupabaseAuthResponse
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&authRes); err != nil {
+		return nil, err
+	}
+
+	prof, err := s.fetchProfile(authRes.AccessToken, authRes.User.ID)
+	if err != nil {
+		return nil, errors.New("فشل جلب بيانات الحساب الشخصي")
+	}
+
+	name := email
+	if n, ok := authRes.User.UserMeta["name"].(string); ok && n != "" {
+		name = n
+	}
+
+	user := &domain.UserProfile{
+		ID:           authRes.User.ID,
+		Name:         name,
+		Email:        email,
+		Plan:         prof.Plan,
+		Token:        authRes.AccessToken,
+		RefreshToken: authRes.RefreshToken,
+		CreatedAt:    time.Now(),
+		ExpiresAt:    prof.ExpiresAt,
+		LicenseKey:   prof.LicenseKey,
+		Status:       prof.Status,
+		UpdatedAt:    time.Now(),
+	}
+
+	if err := s.repo.Clear(); err != nil {
+		slog.Warn("Failed to clear repo", "error", err)
+	}
+	if err := s.repo.Save(user); err != nil {
+		return nil, fmt.Errorf("failed to save session: %w", err)
+	}
 	return user, nil
 }
 
@@ -257,7 +352,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
     <title>جاري تسجيل الدخول...</title>
 </head>
 <body style="font-family: system-ui, sans-serif; text-align: center; margin-top: 50px; background-color: #0f172a; color: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh;">
-    <div style="background-color: #1e293b; border: 1px solid #334155; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); max-width: 400px; width: 90%%;">
+    <div style="background-color: #1e293b; border: 1px solid #334155; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); max-width: 400px; width: 90%;">
         <h2 id="msg" style="font-weight: 800; font-size: 1.25rem; margin-bottom: 10px;">جاري مصادقة الحساب، يرجى الانتظار...</h2>
         <p style="color: #94a3b8; font-size: 0.875rem;">يمكنك العودة إلى تطبيق Grido Studio بعد نجاح المصادقة.</p>
     </div>
@@ -296,7 +391,6 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 			return
 		}
 
-		// CORS Headers - Dynamic Allowed Origin
 		if origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 		} else {
@@ -315,7 +409,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 			return
 		}
 
-		bodyBytes, err := io.ReadAll(r.Body)
+		bodyBytes, err := io.ReadAll(io.LimitReader(r.Body, maxResponseSize))
 		if err != nil {
 			errChan <- err
 			http.Error(w, "Read error", http.StatusBadRequest)
@@ -364,12 +458,14 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	}
 	refreshToken := values.Get("refresh_token")
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	userReq, _ := http.NewRequest("GET", SupabaseURL+"/auth/v1/user", nil)
+	userReq, err := http.NewRequest("GET", SupabaseURL+"/auth/v1/user", nil)
+	if err != nil {
+		return nil, err
+	}
 	userReq.Header.Set("apikey", SupabaseAnonKey)
 	userReq.Header.Set("Authorization", "Bearer "+accessToken)
 
-	userResp, err := client.Do(userReq)
+	userResp, err := sharedClient.Do(userReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user details: %w", err)
 	}
@@ -386,7 +482,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 			Name string `json:"full_name"`
 		} `json:"user_metadata"`
 	}
-	if err := json.NewDecoder(userResp.Body).Decode(&supabaseUser); err != nil {
+	if err := json.NewDecoder(io.LimitReader(userResp.Body, maxResponseSize)).Decode(&supabaseUser); err != nil {
 		return nil, err
 	}
 
@@ -408,8 +504,8 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	}
 
 	userProfile := &domain.UserProfile{
-		ID:         supabaseUser.ID,
-		Name:       name,
+		ID:           supabaseUser.ID,
+		Name:         name,
 		Email:        supabaseUser.Email,
 		Plan:         prof.Plan,
 		Token:        accessToken,
@@ -421,8 +517,12 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 		UpdatedAt:    time.Now(),
 	}
 
-	_ = s.repo.Clear()
-	_ = s.repo.Save(userProfile)
+	if err := s.repo.Clear(); err != nil {
+		slog.Warn("Failed to clear repo", "error", err)
+	}
+	if err := s.repo.Save(userProfile); err != nil {
+		return nil, fmt.Errorf("failed to save session: %w", err)
+	}
 	return userProfile, nil
 }
 
@@ -439,14 +539,19 @@ func (s *LicenseService) ActivateKey(key string) (*domain.UserProfile, error) {
 
 	deviceID := utils.GetDeviceID()
 
-	payload, _ := json.Marshal(LicenseKeyRequest{PKey: key, PDeviceID: deviceID})
-	req, _ := http.NewRequest("POST", SupabaseURL+"/rest/v1/rpc/activate_license", bytes.NewBuffer(payload))
+	payload, err := json.Marshal(LicenseKeyRequest{PKey: key, PDeviceID: deviceID})
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", SupabaseURL+"/rest/v1/rpc/activate_license", bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+local.Token)
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := sharedClient.Do(req)
 	if err != nil {
 		return nil, errors.New("خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت")
 	}
@@ -456,7 +561,7 @@ func (s *LicenseService) ActivateKey(key string) (*domain.UserProfile, error) {
 		var errRes struct {
 			Message string `json:"message"`
 		}
-		_ = json.NewDecoder(resp.Body).Decode(&errRes)
+		_ = json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&errRes)
 		if errRes.Message != "" {
 			return nil, errors.New(errRes.Message)
 		}
@@ -470,7 +575,9 @@ func (s *LicenseService) ActivateKey(key string) (*domain.UserProfile, error) {
 		local.Status = prof.Status
 		local.LicenseKey = prof.LicenseKey
 		local.UpdatedAt = time.Now()
-		_ = s.repo.Save(local)
+		if err := s.repo.Save(local); err != nil {
+			slog.Warn("Failed to save local repo after activation", "error", err)
+		}
 	}
 
 	return local, nil
@@ -517,15 +624,20 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 		return errors.New("no refresh token available")
 	}
 
-	payload, _ := json.Marshal(map[string]string{
+	payload, err := json.Marshal(map[string]string{
 		"refresh_token": local.RefreshToken,
 	})
-	req, _ := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=refresh_token", bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=refresh_token", bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
 	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := sharedClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -536,7 +648,7 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 	}
 
 	var authRes SupabaseAuthResponse
-	if err := json.NewDecoder(resp.Body).Decode(&authRes); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&authRes); err != nil {
 		return err
 	}
 
@@ -562,14 +674,28 @@ func generateRandomBlock(length int) string {
 	return string(b)
 }
 
+func (s *LicenseService) isAdmin() bool {
+	local, err := s.repo.Get()
+	if err != nil || local == nil {
+		return false
+	}
+	return local.Plan == "enterprise"
+}
+
 func (s *LicenseService) GetAllUsers() ([]domain.UserProfile, error) {
-	req, _ := http.NewRequest("GET", SupabaseURL+"/admin/users", nil)
+	if !s.isAdmin() {
+		return nil, errors.New("unauthorized: admin access required")
+	}
+
+	req, err := http.NewRequest("GET", SupabaseURL+"/admin/users", nil)
+	if err != nil {
+		return nil, err
+	}
 	if local, err := s.repo.Get(); err == nil && local != nil {
 		req.Header.Set("Authorization", "Bearer "+local.Token)
 	}
 
-	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := sharedClient.Do(req)
 	if err != nil {
 		slog.Info("Cloud API offline, listing users from local database...")
 		return s.repo.GetAll()
@@ -578,7 +704,7 @@ func (s *LicenseService) GetAllUsers() ([]domain.UserProfile, error) {
 
 	if resp.StatusCode == http.StatusOK {
 		var users []domain.UserProfile
-		if err := json.NewDecoder(resp.Body).Decode(&users); err == nil {
+		if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&users); err == nil {
 			return users, nil
 		}
 	}
@@ -587,6 +713,10 @@ func (s *LicenseService) GetAllUsers() ([]domain.UserProfile, error) {
 }
 
 func (s *LicenseService) GenerateLicenseKey(plan string, durationMonths int) (string, error) {
+	if !s.isAdmin() {
+		return "", errors.New("unauthorized: admin access required")
+	}
+
 	plan = strings.ToUpper(plan)
 	if plan != "PRO" && plan != "ENTERPRISE" {
 		plan = "PRO"
@@ -596,15 +726,20 @@ func (s *LicenseService) GenerateLicenseKey(plan string, durationMonths int) (st
 	block2 := generateRandomBlock(4)
 	key := fmt.Sprintf("GRIDO-%s-%s-%s", plan, block1, block2)
 
-	payload, _ := json.Marshal(map[string]interface{}{"key": key, "plan": plan, "months": durationMonths})
-	req, _ := http.NewRequest("POST", SupabaseURL+"/admin/keys", bytes.NewBuffer(payload))
+	payload, err := json.Marshal(map[string]interface{}{"key": key, "plan": plan, "months": durationMonths})
+	if err != nil {
+		return "", err
+	}
+	req, err := http.NewRequest("POST", SupabaseURL+"/admin/keys", bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
 	req.Header.Set("Content-Type", "application/json")
 	if local, err := s.repo.Get(); err == nil && local != nil {
 		req.Header.Set("Authorization", "Bearer "+local.Token)
 	}
 
-	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := sharedClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("Cloud API offline or unreachable: %w", err)
 	}
@@ -614,7 +749,7 @@ func (s *LicenseService) GenerateLicenseKey(plan string, durationMonths int) (st
 		var res struct {
 			Key string `json:"key"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&res); err == nil {
+		if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&res); err == nil {
 			return res.Key, nil
 		}
 	}
@@ -623,13 +758,20 @@ func (s *LicenseService) GenerateLicenseKey(plan string, durationMonths int) (st
 }
 
 func (s *LicenseService) RevokeLicense(email string) error {
-	req, _ := http.NewRequest("POST", SupabaseURL+"/admin/users/revoke?email="+email, nil)
+	if !s.isAdmin() {
+		return errors.New("unauthorized: admin access required")
+	}
+
+	encodedEmail := url.QueryEscape(email)
+	req, err := http.NewRequest("POST", SupabaseURL+"/admin/users/revoke?email="+encodedEmail, nil)
+	if err != nil {
+		return err
+	}
 	if local, err := s.repo.Get(); err == nil && local != nil {
 		req.Header.Set("Authorization", "Bearer "+local.Token)
 	}
 
-	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := sharedClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("Cloud API offline or unreachable: %w", err)
 	}
@@ -643,13 +785,20 @@ func (s *LicenseService) RevokeLicense(email string) error {
 }
 
 func (s *LicenseService) ExtendLicense(email string, months int) error {
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/admin/users/extend?email=%s&months=%d", SupabaseURL, email, months), nil)
+	if !s.isAdmin() {
+		return errors.New("unauthorized: admin access required")
+	}
+
+	encodedEmail := url.QueryEscape(email)
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/admin/users/extend?email=%s&months=%d", SupabaseURL, encodedEmail, months), nil)
+	if err != nil {
+		return err
+	}
 	if local, err := s.repo.Get(); err == nil && local != nil {
 		req.Header.Set("Authorization", "Bearer "+local.Token)
 	}
 
-	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := sharedClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("Cloud API offline or unreachable: %w", err)
 	}

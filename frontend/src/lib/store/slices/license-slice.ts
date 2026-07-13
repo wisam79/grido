@@ -14,6 +14,7 @@ export interface LicenseSlice {
   checkLicenseStatus: () => Promise<UserProfile | null>;
   registerAccount: (name: string, email: string, password: string) => Promise<UserProfile>;
   loginAccount: (email: string, password: string) => Promise<UserProfile>;
+  verifyOTP: (email: string, otp: string) => Promise<UserProfile>;
   loginWithGoogle: () => Promise<UserProfile>;
   activateLicenseKey: (key: string) => Promise<UserProfile>;
   logoutAccount: () => Promise<void>;
@@ -63,6 +64,18 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     set({ licenseLoading: true });
     try {
       const profile = await LicenseHandler.LoginAccount(email, password);
+      set({ user: profile, licenseLoading: false });
+      return profile;
+    } catch (err) {
+      set({ licenseLoading: false });
+      throw err;
+    }
+  },
+
+  verifyOTP: async (email, otp) => {
+    set({ licenseLoading: true });
+    try {
+      const profile = await LicenseHandler.VerifyOTP(email, otp);
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err) {

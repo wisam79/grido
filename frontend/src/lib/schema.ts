@@ -73,6 +73,9 @@ export const CanvasSlotSchema = z.object({
   brightness: z.number().optional(),
   contrast: z.number().optional(),
   saturation: z.number().optional(),
+  zoom: z.number().optional(),
+  dragX: z.number().optional(),
+  dragY: z.number().optional(),
 });
 
 export const PrintSettingsSchema = z.object({

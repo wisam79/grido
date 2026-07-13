@@ -19,9 +19,11 @@ begin
 end;
 $$ language plpgsql security definer;
 
--- 2. إرجاع حساب المطور إلى الخطة المجانية إن وجد لإلغاء الترقية غير المصرح بها
-update public.profiles 
-set plan = 'free', 
-    status = 'expired', 
+-- 2. إعادة ضبط أي حساب تمت ترقيته بشكل غير مصرح به (ثغرة قديمة)
+-- تنبيه: لا تُضمِّن عناوين بريد إلكتروني في ملفات المهاجرة — استخدم UUID
+update public.profiles
+set plan = 'free',
+    status = 'expired',
     expires_at = timezone('utc'::text, now())
-where email = 'wisamsamir78@gmail.com';
+where plan = 'enterprise'
+  and id != 'b2943199-cb11-4adc-9275-5a746aab879c'; -- استثناء حساب الأدمن الفعلي

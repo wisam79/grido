@@ -49,6 +49,7 @@ export function AccountLicenseModal() {
     activateLicenseKey,
     logoutAccount,
     isLicenseActive,
+    verifyOTP,
   } = useEditorStore(
     useShallow((state) => ({
       user: state.user,
@@ -60,6 +61,7 @@ export function AccountLicenseModal() {
       activateLicenseKey: state.activateLicenseKey,
       logoutAccount: state.logoutAccount,
       isLicenseActive: state.isLicenseActive,
+      verifyOTP: state.verifyOTP,
     }))
   );
 
@@ -79,6 +81,8 @@ export function AccountLicenseModal() {
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
 
   // Reset errors when modal status changes or tabs toggle
   useEffect(() => {
@@ -121,14 +125,27 @@ export function AccountLicenseModal() {
     setLoading(true);
     setError(null);
     try {
-      if (authMode === "login") {
-        await loginAccount(email, password);
-        toast.success("تم تسجيل الدخول بنجاح! تم تنشيط الفترة التجريبية (7 أيام) تلقائياً.");
+      if (showOtp) {
+        await verifyOTP(email, otpCode);
+        toast.success("تم تأكيد الحساب وتسجيل الدخول بنجاح!");
+        setShowOtp(false);
+        setActiveTab("license");
       } else {
-        await registerAccount(name, email, password);
-        toast.success("تم إنشاء الحساب وتنشيط الفترة التجريبية (7 أيام) بنجاح!");
+        let profile;
+        if (authMode === "login") {
+          profile = await loginAccount(email, password);
+        } else {
+          profile = await registerAccount(name, email, password);
+        }
+        
+        if (profile.status === "pending_otp") {
+          setShowOtp(true);
+          toast.info("تم إرسال كود التحقق المكون من 6 أرقام إلى بريدك الإلكتروني.");
+        } else {
+          toast.success("تم تسجيل الدخول بنجاح!");
+          setActiveTab("license");
+        }
       }
-      setActiveTab("license");
     } catch (err: any) {
       const errMsg = typeof err === "string" ? err : (err?.message || "فشلت العملية، يرجى التحقق من المدخلات.");
       if (errMsg.includes("تم إنشاء الحساب بنجاح")) {
@@ -287,7 +304,38 @@ export function AccountLicenseModal() {
                   <span>{error}</span>
                 </div>
               )}
-              {authMode === "register" && (
+              {showOtp ? (
+                <div className="space-y-1.5 animate-fade-in">
+                  <Label className="text-xs text-foreground/80 font-bold">كود التحقق (OTP)</Label>
+                  <div className="relative">
+                    <Key className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                    <Input
+                      type="text"
+                      placeholder="123456"
+                      maxLength={6}
+                      className="pr-9 h-10 text-xs tracking-widest text-center bg-card border-border focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary rounded-lg text-foreground font-mono font-bold"
+                      required
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      dir="ltr"
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center mt-2">
+                    الرجاء إدخال الكود المكون من 6 أرقام المرسل إلى {email}
+                  </p>
+                  <div className="text-center mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowOtp(false)}
+                      className="text-[10px] text-primary hover:text-primary/80 hover:underline font-bold cursor-pointer"
+                    >
+                      العودة وإدخال بريد آخر
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {authMode === "register" && (
                 <div className="space-y-1.5">
                   <Label className="text-xs text-foreground/80 font-bold">الاسم بالكامل</Label>
                   <div className="relative">
@@ -374,6 +422,8 @@ export function AccountLicenseModal() {
                   </>
                 )}
               </Button>
+                </>
+              )}
             </form>
 
             <div className="text-center">

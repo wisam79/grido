@@ -32,6 +32,11 @@ func (s *BackupService) ExportBackup() (string, error) {
 
 // ImportBackup deserializes the backup JSON and saves projects to database
 func (s *BackupService) ImportBackup(jsonData string, mode string) error {
+	// Prevent excessively large payloads (e.g. > 50MB)
+	if len(jsonData) > 50*1024*1024 {
+		return fmt.Errorf("الملف كبير جداً، الحد الأقصى للاستيراد هو 50 ميغابايت")
+	}
+
 	var projects []domain.Project
 	if err := json.Unmarshal([]byte(jsonData), &projects); err != nil {
 		return fmt.Errorf("failed to parse backup JSON data: %w", err)

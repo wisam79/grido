@@ -17,6 +17,10 @@ func (h *LicenseHandler) RegisterAccount(name, email, password string) (*domain.
 	return h.service.Register(name, email, password)
 }
 
+func (h *LicenseHandler) VerifyOTP(email, token string) (*domain.UserProfile, error) {
+	return h.service.VerifyOTP(email, token)
+}
+
 func (h *LicenseHandler) LoginAccount(email, password string) (*domain.UserProfile, error) {
 	return h.service.Login(email, password)
 }

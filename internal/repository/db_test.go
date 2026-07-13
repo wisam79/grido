@@ -234,3 +234,40 @@ func TestCleanupUnusedMedia_CorruptAutosave(t *testing.T) {
 	}
 }
 
+func TestLicenseRepository_AntiTamper(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+	_ = db.AutoMigrate(&domain.UserProfile{})
+
+	repo := NewLicenseRepository(db)
+
+	profile := &domain.UserProfile{
+		ID:    "test-id",
+		Email: "test@example.com",
+		Plan:  "pro",
+	}
+
+	// Save valid profile
+	err = repo.Save(profile)
+	if err != nil {
+		t.Fatalf("failed to save profile: %v", err)
+	}
+
+	// Manually tamper the database via GORM bypassing hooks
+	db.Model(&domain.UserProfile{}).Where("id = ?", "test-id").Update("plan", "enterprise")
+
+	// Try to get the tampered profile
+	retrieved, err := repo.Get()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if retrieved != nil {
+		if retrieved.Plan != "free" {
+			t.Errorf("expected tampered profile to be reset to free, got %v", retrieved.Plan)
+		}
+	}
+}
+

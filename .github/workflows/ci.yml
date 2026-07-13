@@ -50,3 +50,18 @@ jobs:
 
       - name: Build Wails App
         run: wails build -platform windows/amd64
+
+      - name: Sign Windows Executable (Code Signing)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          if ($env:CERTIFICATE_BASE64) {
+            $certPath = "$env:TEMP\cert.pfx"
+            [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:CERTIFICATE_BASE64))
+            & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe' sign /f $certPath /p $env:CERTIFICATE_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 "build\bin\GridoStudio.exe"
+            Remove-Item $certPath
+          } else {
+            Write-Output "Code signing certificate not provided. Skipping signature."
+          }
