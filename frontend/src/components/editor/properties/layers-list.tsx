@@ -17,7 +17,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 
 function TooltipBtn({ content, children }: { content: string; children: React.ReactElement }) {
   return (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent

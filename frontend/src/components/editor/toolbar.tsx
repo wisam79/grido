@@ -600,7 +600,7 @@ const TemplateInfo = React.memo(function TemplateInfo() {
 
 export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   return (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider>
       <div className="relative flex items-center gap-2 p-1 px-3 border-b bg-card/65 backdrop-blur-md flex-nowrap overflow-x-auto select-none no-print h-12.5 shrink-0 scrollbar-none shadow-xs">
         
         {/* المجموعة 1: إدارة الملفات والمستندات */}
