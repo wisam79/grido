@@ -331,6 +331,10 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 }
 
 func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
+	if SupabaseURL == "" {
+		return nil, errors.New("بيئة التطوير تفتقد لروابط قاعدة البيانات (SUPABASE_URL). يرجى إعداد ملف .env للمصادقة.")
+	}
+
 	tokenChan := make(chan string, 1)
 	errChan := make(chan error, 1)
 
