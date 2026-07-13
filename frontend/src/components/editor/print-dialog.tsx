@@ -96,15 +96,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             quality: 0.8,
           });
 
-          const exportDpi = printSettings.dpi || 300;
-          const dpiRatio = exportDpi / 300;
-          const printUrl = stage.toDataURL({
-            pixelRatio: (canvasWidth / stage.width()) * dpiRatio,
-            mimeType: "image/png"
-          });
-
           setPreviewImageSrc(previewUrl);
-          useEditorStore.getState().setPrintImageSrc(printUrl);
         } catch (err) {
           console.error("Failed to generate print preview image:", err);
         } finally {
@@ -120,11 +112,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       setTimeout(() => {
         setPreviewImageSrc("");
       }, 0);
-      // مسح صورة الطباعة بعد تأخير بسيط لضمان أن نافذة الطباعة التقطت محتوى الصفحة بالكامل
-      const timer = setTimeout(() => {
-        useEditorStore.getState().setPrintImageSrc(null);
-      }, 1000);
-      return () => clearTimeout(timer);
+      // Not needed anymore
     }
   }, [open, stageRef, elements, slots, backgroundColor, mode, canvasWidth, printSettings]);
 
