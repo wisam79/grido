@@ -7,7 +7,7 @@ import { KonvaCanvas } from "./konva/konva-canvas";
 import { useShallow } from "zustand/react/shallow";
 import { HorizontalRuler, VerticalRuler } from "./ruler";
 
-export const EditorCanvas = React.forwardRef<
+export const EditorCanvas = React.memo(React.forwardRef<
   HTMLDivElement,
   { printMode?: boolean }
 >(function EditorCanvas({ printMode = false }, ref) {
@@ -443,4 +443,4 @@ export const EditorCanvas = React.forwardRef<
       )}
     </div>
   );
-});
+}));
