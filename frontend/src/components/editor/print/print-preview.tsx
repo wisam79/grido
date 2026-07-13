@@ -1,3 +1,5 @@
+import { buildCSSFilter } from "@/lib/utils";
+
 interface SheetPreviewProps {
   cols: number;
   rows: number;
@@ -90,6 +92,7 @@ export function SheetPreview({
                   className="w-full h-full"
                   style={{
                     objectFit: "fill",
+                    filter: buildCSSFilter(slot),
                   }}
                 />
               </div>
