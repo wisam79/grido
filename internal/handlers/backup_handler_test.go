@@ -18,7 +18,8 @@ func TestBackupHandler_ExportAndImport(t *testing.T) {
 	_ = db.AutoMigrate(&domain.Project{})
 
 	repo := repository.NewProjectRepository(db)
-	svc := service.NewBackupService(repo)
+	licenseRepo := repository.NewLicenseRepository(db)
+	svc := service.NewBackupService(repo, licenseRepo)
 	handler := NewBackupHandler(svc)
 
 	// 1. اختبار استيراد بيانات فارغة (Error)

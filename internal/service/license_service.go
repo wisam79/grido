@@ -41,8 +41,9 @@ type SupabaseAuthRequest struct {
 }
 
 type SupabaseAuthResponse struct {
-	AccessToken string `json:"access_token"`
-	User        struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	User         struct {
 		ID       string                 `json:"id"`
 		Email    string                 `json:"email"`
 		UserMeta map[string]interface{} `json:"user_metadata"`
@@ -153,14 +154,15 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 	user := &domain.UserProfile{
 		ID:         authRes.User.ID,
 		Name:       name,
-		Email:      email,
-		Plan:       prof.Plan,
-		Token:      authRes.AccessToken,
-		CreatedAt:  time.Now(),
-		ExpiresAt:  prof.ExpiresAt,
-		LicenseKey: prof.LicenseKey,
-		Status:     prof.Status,
-		UpdatedAt:  time.Now(),
+		Email:        email,
+		Plan:         prof.Plan,
+		Token:        authRes.AccessToken,
+		RefreshToken: authRes.RefreshToken,
+		CreatedAt:    time.Now(),
+		ExpiresAt:    prof.ExpiresAt,
+		LicenseKey:   prof.LicenseKey,
+		Status:       prof.Status,
+		UpdatedAt:    time.Now(),
 	}
 
 	_ = s.repo.Clear()
@@ -217,14 +219,15 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 	user := &domain.UserProfile{
 		ID:         authRes.User.ID,
 		Name:       name,
-		Email:      email,
-		Plan:       prof.Plan,
-		Token:      authRes.AccessToken,
-		CreatedAt:  time.Now(),
-		ExpiresAt:  prof.ExpiresAt,
-		LicenseKey: prof.LicenseKey,
-		Status:     prof.Status,
-		UpdatedAt:  time.Now(),
+		Email:        email,
+		Plan:         prof.Plan,
+		Token:        authRes.AccessToken,
+		RefreshToken: authRes.RefreshToken,
+		CreatedAt:    time.Now(),
+		ExpiresAt:    prof.ExpiresAt,
+		LicenseKey:   prof.LicenseKey,
+		Status:       prof.Status,
+		UpdatedAt:    time.Now(),
 	}
 
 	_ = s.repo.Clear()
@@ -359,6 +362,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	if accessToken == "" {
 		return nil, errors.New("لم يتم استلام رمز الدخول من جوجل")
 	}
+	refreshToken := values.Get("refresh_token")
 
 	client := &http.Client{Timeout: 5 * time.Second}
 	userReq, _ := http.NewRequest("GET", SupabaseURL+"/auth/v1/user", nil)
@@ -406,14 +410,15 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	userProfile := &domain.UserProfile{
 		ID:         supabaseUser.ID,
 		Name:       name,
-		Email:      supabaseUser.Email,
-		Plan:       prof.Plan,
-		Token:      accessToken,
-		CreatedAt:  time.Now(),
-		ExpiresAt:  prof.ExpiresAt,
-		LicenseKey: prof.LicenseKey,
-		Status:     prof.Status,
-		UpdatedAt:  time.Now(),
+		Email:        supabaseUser.Email,
+		Plan:         prof.Plan,
+		Token:        accessToken,
+		RefreshToken: refreshToken,
+		CreatedAt:    time.Now(),
+		ExpiresAt:    prof.ExpiresAt,
+		LicenseKey:   prof.LicenseKey,
+		Status:       prof.Status,
+		UpdatedAt:    time.Now(),
 	}
 
 	_ = s.repo.Clear()
@@ -486,6 +491,12 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 	}
 
 	prof, err := s.fetchProfile(local.Token, local.ID)
+	if err != nil && strings.Contains(err.Error(), "401") {
+		if refreshErr := s.refreshTokenIfNeeded(local); refreshErr == nil {
+			prof, err = s.fetchProfile(local.Token, local.ID)
+		}
+	}
+
 	if err == nil {
 		local.Plan = prof.Plan
 		local.ExpiresAt = prof.ExpiresAt
@@ -499,6 +510,42 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 	}
 
 	return local, nil
+}
+
+func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
+	if local.RefreshToken == "" {
+		return errors.New("no refresh token available")
+	}
+
+	payload, _ := json.Marshal(map[string]string{
+		"refresh_token": local.RefreshToken,
+	})
+	req, _ := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=refresh_token", bytes.NewBuffer(payload))
+	req.Header.Set("apikey", SupabaseAnonKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to refresh token: status %d", resp.StatusCode)
+	}
+
+	var authRes SupabaseAuthResponse
+	if err := json.NewDecoder(resp.Body).Decode(&authRes); err != nil {
+		return err
+	}
+
+	local.Token = authRes.AccessToken
+	if authRes.RefreshToken != "" {
+		local.RefreshToken = authRes.RefreshToken
+	}
+	_ = s.repo.Save(local)
+	return nil
 }
 
 func (s *LicenseService) Logout() error {

@@ -33,8 +33,9 @@ func TestBackupService_ExportAndImport(t *testing.T) {
 	defer cleanup()
 
 	repo := repository.NewProjectRepository(db)
-	projectSvc := NewProjectService(repo, repository.NewLicenseRepository(db))
-	backupSvc := NewBackupService(repo)
+	licenseRepo := repository.NewLicenseRepository(db)
+	projectSvc := NewProjectService(repo, licenseRepo)
+	backupSvc := NewBackupService(repo, licenseRepo)
 
 	// Add dummy projects
 	p1 := &domain.Project{ID: "p1", Name: "Project 1", Mode: "single"}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"grido/internal/core/domain"
-	"time"
 )
 
 type BackupService struct {
@@ -46,15 +45,7 @@ func (s *BackupService) ImportBackup(jsonData string, mode string) error {
 	profile, err := s.licenseRepo.Get()
 	isFree := true
 	if err == nil && profile != nil {
-		if profile.Plan == "pro" || profile.Plan == "enterprise" {
-			if profile.Status == "active" && time.Now().Before(profile.ExpiresAt) {
-				isFree = false
-			}
-		} else if profile.Plan == "trial" {
-			if time.Now().Before(profile.ExpiresAt) {
-				isFree = false
-			}
-		}
+		isFree = !profile.IsEntitled()
 	}
 
 	if isFree {

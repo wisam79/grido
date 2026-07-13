@@ -12,7 +12,7 @@ func InitLogger() (*os.File, error) {
 	appDir := GetAppDir()
 	logPath := filepath.Join(appDir, "app.log")
 
-	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return nil, err
 	}

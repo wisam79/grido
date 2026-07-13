@@ -271,7 +271,11 @@ func (a *App) LoadAutoSave() (string, error) {
 
 func (a *App) SaveAutoSave(jsonData string) error {
 	path := getSavePath()
-	return os.WriteFile(path, []byte(jsonData), 0644)
+	tmpPath := path + ".tmp"
+	if err := os.WriteFile(tmpPath, []byte(jsonData), 0644); err != nil {
+		return fmt.Errorf("failed to write tmp autosave file: %w", err)
+	}
+	return os.Rename(tmpPath, path)
 }
 
 func (a *App) ClearAutoSave() error {
