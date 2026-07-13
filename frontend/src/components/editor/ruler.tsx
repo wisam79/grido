@@ -3,10 +3,9 @@ import React from "react";
 interface HorizontalRulerProps {
   width: number;
   mmWidth: number;
-  cursorX: number | null;
 }
 
-export function HorizontalRuler({ width, mmWidth, cursorX }: HorizontalRulerProps) {
+export function HorizontalRuler({ width, mmWidth }: HorizontalRulerProps) {
   const pixelsPerMM = width / mmWidth;
   const ticks = [];
   
@@ -81,17 +80,17 @@ export function HorizontalRuler({ width, mmWidth, cursorX }: HorizontalRulerProp
       className="bg-card text-card-foreground overflow-hidden border-b border-border transition-colors duration-200"
     >
       {ticks}
-      {cursorX !== null && cursorX >= 0 && cursorX <= width && (
-        <line 
-          x1={cursorX} 
-          y1={0} 
-          x2={cursorX} 
-          y2={24} 
-          stroke="#3b82f6" 
-          strokeWidth={1.5} 
-          strokeDasharray="2,2" 
-        />
-      )}
+      <line 
+        id="h-ruler-cursor"
+        x1={0} 
+        y1={0} 
+        x2={0} 
+        y2={24} 
+        stroke="#3b82f6" 
+        strokeWidth={1.5} 
+        strokeDasharray="2,2"
+        style={{ display: "none" }}
+      />
     </svg>
   );
 }
@@ -99,10 +98,9 @@ export function HorizontalRuler({ width, mmWidth, cursorX }: HorizontalRulerProp
 interface VerticalRulerProps {
   height: number;
   mmHeight: number;
-  cursorY: number | null;
 }
 
-export function VerticalRuler({ height, mmHeight, cursorY }: VerticalRulerProps) {
+export function VerticalRuler({ height, mmHeight }: VerticalRulerProps) {
   const pixelsPerMM = height / mmHeight;
   const ticks = [];
 
@@ -178,17 +176,17 @@ export function VerticalRuler({ height, mmHeight, cursorY }: VerticalRulerProps)
       className="bg-card text-card-foreground overflow-hidden border-l border-border transition-colors duration-200"
     >
       {ticks}
-      {cursorY !== null && cursorY >= 0 && cursorY <= height && (
-        <line 
-          x1={0} 
-          y1={cursorY} 
-          x2={24} 
-          y2={cursorY} 
-          stroke="#3b82f6" 
-          strokeWidth={1.5} 
-          strokeDasharray="2,2" 
-        />
-      )}
+      <line 
+        id="v-ruler-cursor"
+        x1={0} 
+        y1={0} 
+        x2={24} 
+        y2={0} 
+        stroke="#3b82f6" 
+        strokeWidth={1.5} 
+        strokeDasharray="2,2"
+        style={{ display: "none" }}
+      />
     </svg>
   );
 }

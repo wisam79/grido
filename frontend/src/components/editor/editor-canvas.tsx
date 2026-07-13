@@ -15,7 +15,6 @@ export const EditorCanvas = React.forwardRef<
   const innerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
 
   const {
     mode,
@@ -107,18 +106,32 @@ export const EditorCanvas = React.forwardRef<
     return (canvasHeight / (printSettings?.dpi || 300)) * 25.4;
   }, [template, canvasHeight, printSettings]);
 
-  // تتبع الفأرة بالنسبة للكانفاس
+  // تتبع الفأرة بالنسبة للكانفاس (تحديث مباشر للـ DOM لتفادي إعادة رندرة React الثقيلة على كل بكسل)
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (printMode) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    setCursorPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const hCursor = document.getElementById("h-ruler-cursor");
+    if (hCursor) {
+      hCursor.setAttribute("x1", x.toString());
+      hCursor.setAttribute("x2", x.toString());
+      hCursor.style.display = "block";
+    }
+    const vCursor = document.getElementById("v-ruler-cursor");
+    if (vCursor) {
+      vCursor.setAttribute("y1", y.toString());
+      vCursor.setAttribute("y2", y.toString());
+      vCursor.style.display = "block";
+    }
   };
 
   const handleCanvasMouseLeave = () => {
-    setCursorPos(null);
+    const hCursor = document.getElementById("h-ruler-cursor");
+    if (hCursor) hCursor.style.display = "none";
+    const vCursor = document.getElementById("v-ruler-cursor");
+    if (vCursor) vCursor.style.display = "none";
   };
 
   // النقر المزدوج لاستبدال الصورة أو تعديل النص
@@ -412,8 +425,7 @@ export const EditorCanvas = React.forwardRef<
             </div>
             <HorizontalRuler 
               width={displayW} 
-              mmWidth={widthMM} 
-              cursorX={cursorPos ? cursorPos.x : null} 
+              mmWidth={widthMM}
             />
           </div>
 
@@ -421,8 +433,7 @@ export const EditorCanvas = React.forwardRef<
           <div className="flex flex-row items-start">
             <VerticalRuler 
               height={displayH} 
-              mmHeight={heightMM} 
-              cursorY={cursorPos ? cursorPos.y : null} 
+              mmHeight={heightMM}
             />
             {canvasArea}
           </div>
