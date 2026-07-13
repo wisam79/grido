@@ -5,7 +5,7 @@ import React from 'react';
 import { useEditorStore } from '../src/lib/editor-store';
 
 // Mock Wails backend functions
-vi.mock('../../wailsjs/go/main/App', () => ({
+vi.mock('../wailsjs/go/main/App', () => ({
   OpenFile: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
   SaveFile: vi.fn(() => Promise.resolve('success')),
   SaveFileDialog: vi.fn(() => Promise.resolve('success')),
@@ -15,14 +15,14 @@ vi.mock('../../wailsjs/go/main/App', () => ({
 }));
 
 // Mock Wails runtime functions
-vi.mock('../../wailsjs/runtime/runtime', () => ({
+vi.mock('../wailsjs/runtime/runtime', () => ({
   WindowMinimise: vi.fn(),
   WindowToggleMaximise: vi.fn(),
   Quit: vi.fn(),
 }));
 
 // Mock ProjectHandler functions
-vi.mock('../../wailsjs/go/handlers/ProjectHandler', () => ({
+vi.mock('../wailsjs/go/handlers/ProjectHandler', () => ({
   SaveProject: vi.fn(() => Promise.resolve('success')),
   GetAllProjects: vi.fn(() => Promise.resolve([])),
   GetProject: vi.fn(() => Promise.resolve(null)),
@@ -30,7 +30,7 @@ vi.mock('../../wailsjs/go/handlers/ProjectHandler', () => ({
 }));
 
 // Mock LicenseHandler functions
-vi.mock('../../wailsjs/go/handlers/LicenseHandler', () => ({
+vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
   GetLicenseStatus: vi.fn(() => Promise.resolve({
     id: 'test-id',
     name: 'Test User',
@@ -40,6 +40,17 @@ vi.mock('../../wailsjs/go/handlers/LicenseHandler', () => ({
     expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
     hardwareId: 'test-hw-id',
     role: 'user'
+  })),
+  VerifyOTP: vi.fn(() => Promise.resolve({
+    id: 'test-id',
+    name: 'Test User',
+    email: 'test@example.com',
+    plan: 'pro',
+    status: 'active',
+    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+    hardwareId: 'test-hw-id',
+    role: 'user',
+    token: 'test-token'
   })),
 }));
 
@@ -51,6 +62,14 @@ vi.mock('../src/components/editor/konva/konva-canvas', () => ({
 // Mock ProjectsDialog to render trigger synchronously under lazy evaluation
 vi.mock('../src/components/editor/projects-dialog', () => ({
   ProjectsDialog: ({ trigger }: any) => trigger || null,
+}));
+
+// Mock ExportDialog and PrintDialog to avoid useStageRef errors during testing
+vi.mock('../src/components/editor/export-dialog', () => ({
+  ExportDialog: () => null,
+}));
+vi.mock('../src/components/editor/print-dialog', () => ({
+  PrintDialog: () => null,
 }));
 
 describe('Component Testing: UI Rendering', () => {
