@@ -17,5 +17,5 @@ func OpenBrowser(targetURL string) error {
 	if u.Scheme != "http" && u.Scheme != "https" {
 		return errors.New("unsupported protocol scheme")
 	}
-	return exec.Command("rundll32", "url.dll,FileProtocolHandler", targetURL).Start()
+	return exec.Command("cmd", "/c", "start", "", targetURL).Start()
 }
