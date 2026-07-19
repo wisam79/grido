@@ -60,6 +60,8 @@ export function SlotProperties({
     isEnhancing,
     enhanceProgress,
     enhanceProgressText,
+    remainingQuota,
+    dailyLimit,
     handleEnhance,
   } = useAiEnhance(onUpdate);
 
@@ -334,15 +336,20 @@ export function SlotProperties({
               <Button
                 variant="outline"
                 className={cn(
-                  "w-full flex items-center justify-center gap-1.5 h-10 rounded-xl transition-all duration-200 cursor-pointer font-bold text-xs bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-indigo-500/10 hover:from-violet-500/20 hover:to-indigo-500/20 border-violet-500/20 text-violet-700 dark:text-violet-300",
+                  "w-full flex items-center justify-between px-3 h-10 rounded-xl transition-all duration-200 cursor-pointer font-bold text-xs bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-indigo-500/10 hover:from-violet-500/20 hover:to-indigo-500/20 border-violet-500/20 text-violet-700 dark:text-violet-300",
                   isEnhancing && "opacity-50 cursor-not-allowed"
                 )}
                 disabled={isEnhancing}
                 onClick={() => handleEnhance(slot)}
-                title="تحسين دقة الصورة وترميم الملامح بالذكاء الاصطناعي"
+                title="تحسين دقة الصورة وترميم الملامح بالذكاء الاصطناعي (حد 10 صور يومياً)"
               >
-                <Wand2 className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                <span>تحسين الجودة والوضوح ✨</span>
+                <div className="flex items-center gap-1.5">
+                  <Wand2 className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                  <span>تحسين الجودة والوضوح ✨</span>
+                </div>
+                <span className="text-[9px] bg-violet-500/15 border border-violet-500/20 text-violet-700 dark:text-violet-300 px-1.5 py-0.5 rounded-full font-bold">
+                  {remainingQuota}/{dailyLimit} اليوم
+                </span>
               </Button>
 
               {isEnhancing && (

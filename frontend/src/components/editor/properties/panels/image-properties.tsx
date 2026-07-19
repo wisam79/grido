@@ -110,6 +110,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
     isEnhancing,
     enhanceProgress,
     enhanceProgressText,
+    remainingQuota,
+    dailyLimit,
     handleEnhance,
   } = useAiEnhance(onUpdate);
 
@@ -171,13 +173,18 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           variant="secondary"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "w-full flex items-center justify-center gap-1.5 h-10 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.97] group font-bold text-xs mt-2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20"
+            "w-full flex items-center justify-between px-3 h-10 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.97] group font-bold text-xs mt-2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20"
           )}
           onClick={() => handleEnhance(element)}
-          title="تحسين وتكبير دقة الصورة بالذكاء الاصطناعي"
+          title="تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (حد 10 صور يومياً)"
         >
-          <Wand2 className="w-4 h-4 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 text-indigo-500" />
-          <span>تحسين الجودة والوضوح ✨</span>
+          <div className="flex items-center gap-1.5">
+            <Wand2 className="w-4 h-4 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 text-indigo-500" />
+            <span>تحسين الجودة والوضوح ✨</span>
+          </div>
+          <span className="text-[9px] bg-indigo-500/15 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-full font-bold">
+            {remainingQuota}/{dailyLimit} اليوم
+          </span>
         </Button>
 
         <div className="grid grid-cols-2 gap-2 mt-2">
