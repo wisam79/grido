@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
+import { useAiEnhance } from "@/hooks/use-ai-enhance";
 import { RefineBgDialog } from "../refine-bg-dialog";
 import { Switch } from "@/components/ui/switch";
 
@@ -54,6 +55,13 @@ export function SlotProperties({
     handleCancelBgRemoval,
     handleRemoveBg,
   } = useBgRemoval(onUpdate);
+
+  const {
+    isEnhancing,
+    enhanceProgress,
+    enhanceProgressText,
+    handleEnhance,
+  } = useAiEnhance(onUpdate);
 
   const handleOpenFile = async () => {
     try {
@@ -321,6 +329,40 @@ export function SlotProperties({
           </div>
 
           {slot.imageSrc && (
+            <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 mt-3 space-y-2.5">
+              <Label className="text-[11px] font-bold text-foreground/80 block">الذكاء الاصطناعي</Label>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full flex items-center justify-center gap-1.5 h-10 rounded-xl transition-all duration-200 cursor-pointer font-bold text-xs bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-indigo-500/10 hover:from-violet-500/20 hover:to-indigo-500/20 border-violet-500/20 text-violet-700 dark:text-violet-300",
+                  isEnhancing && "opacity-50 cursor-not-allowed"
+                )}
+                disabled={isEnhancing}
+                onClick={() => handleEnhance(slot)}
+                title="تحسين دقة الصورة وترميم الملامح بالذكاء الاصطناعي"
+              >
+                <Wand2 className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                <span>تحسين الجودة والوضوح ✨</span>
+              </Button>
+
+              {isEnhancing && (
+                <div className="mt-2 p-2.5 rounded-lg bg-violet-500/[0.05] dark:bg-violet-500/[0.08] border border-violet-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex justify-between items-center text-[9px] font-bold text-violet-600 dark:text-violet-400">
+                    <span className="animate-pulse">{enhanceProgressText}</span>
+                    <span className="font-mono font-extrabold">{enhanceProgress}%</span>
+                  </div>
+                  <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+                    <div 
+                      className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-500 h-full rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${enhanceProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {slot.imageSrc && (
             <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 mt-3 space-y-2">
               <SliderControl
                 label="تكبير الصورة (Zoom)"
@@ -344,6 +386,7 @@ export function SlotProperties({
               open={cropOpen}
               onOpenChange={setCropOpen}
               imageSrc={slot.imageSrc}
+              originalImageSrc={slot.originalImageSrc}
               onCropSave={async (cropped) => {
                 try {
                   const localPath = await SaveImageFromBase64(cropped);

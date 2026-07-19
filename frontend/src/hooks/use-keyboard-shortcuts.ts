@@ -165,8 +165,16 @@ export function useKeyboardShortcuts() {
                       state.setSlotImage(targetSlotId, localPath);
                     }
                   } else {
-                    // Single mode
-                    state.addImageElement(localPath);
+                    // Single mode - calculate natural image aspect ratio to prevent distortion
+                    const img = new Image();
+                    img.onload = () => {
+                      const aspect = img.width / img.height;
+                      state.addImageElement(localPath, aspect);
+                    };
+                    img.onerror = () => {
+                      state.addImageElement(localPath, 1);
+                    };
+                    img.src = localPath;
                   }
                 } catch (err) {
                   console.error("Failed to save pasted image:", err);

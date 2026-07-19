@@ -86,6 +86,7 @@ export const URLImage = React.memo(function URLImage({
             ratio = 2;
           }
           
+          node.clearCache();
           node.cache({
             pixelRatio: ratio
           });

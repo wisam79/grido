@@ -36,6 +36,11 @@ import {
   Clock,
   Mail,
   UserCheck,
+  Wand2,
+  DollarSign,
+  Activity,
+  Cpu,
+  CheckCircle2,
 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
@@ -49,6 +54,7 @@ interface AdminDashboardDialogProps {
 export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialogProps) {
   const {
     adminUsers,
+    aiUsageLogs,
     licenseLoading,
     adminFetchAllUsers,
     adminGenerateKey,
@@ -57,6 +63,7 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
   } = useEditorStore(
     useShallow((state) => ({
       adminUsers: state.adminUsers,
+      aiUsageLogs: state.aiUsageLogs,
       licenseLoading: state.licenseLoading,
       adminFetchAllUsers: state.adminFetchAllUsers,
       adminGenerateKey: state.adminGenerateKey,
@@ -65,7 +72,7 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
     }))
   );
 
-  const [activeTab, setActiveTab] = useState<"users" | "generator" | "stats">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "generator" | "usage" | "stats">("users");
 
   // Key generator form
   const [genPlan, setGenPlan] = useState<"PRO" | "ENTERPRISE">("PRO");
@@ -74,94 +81,116 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
+  const [usageSearch, setUsageSearch] = useState("");
 
+  // Fetch users on open
   useEffect(() => {
     if (open) {
       adminFetchAllUsers();
     }
   }, [open, adminFetchAllUsers]);
 
-  const handleGenerateKey = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Actions
+  const handleGenerate = async () => {
     try {
-      const months = parseInt(genDuration, 10) || 12;
+      const months = parseInt(genDuration, 10);
       const key = await adminGenerateKey(genPlan, months);
       setGeneratedKey(key);
-      toast.success("تم توليد مفتاح الترخيص بنجاح!");
-      adminFetchAllUsers(); // update user stats if mock updated
+      toast.success("تم توليد مفتاح الترخيص بنجاح");
+      adminFetchAllUsers();
     } catch (err: any) {
-      toast.error(err.message || "فشل توليد مفتاح الترخيص");
+      toast.error(err.message || "فشل توليد المفتاح");
     }
   };
 
   const handleCopyKey = () => {
-    if (generatedKey) {
-      navigator.clipboard.writeText(generatedKey);
-      toast.success("تم نسخ مفتاح الترخيص إلى الحافظة!");
-    }
+    if (!generatedKey) return;
+    navigator.clipboard.writeText(generatedKey);
+    toast.success("تم نسخ الترخيص للحافظة");
   };
 
   const handleRevoke = async (email: string) => {
     try {
       await adminRevokeLicense(email);
-      toast.success("تم إلغاء الترخيص وإرجاع الحساب للخطة المجانية.");
+      toast.success(`تم إلغاء ترخيص الحساب ${email}`);
     } catch (err: any) {
-      toast.error(err.message || "فشلت عملية إلغاء الترخيص");
+      toast.error(err.message || "فشل إلغاء الترخيص");
     }
   };
 
   const handleExtend = async (email: string, months: number) => {
     try {
       await adminExtendLicense(email, months);
-      toast.success(`تم تمديد اشتراك المستخدم بمقدار ${months} شهر بنجاح.`);
+      toast.success(`تم تمديد الترخيص لـ ${email} بـ ${months} شهر`);
     } catch (err: any) {
-      toast.error(err.message || "فشلت عملية التمديد");
+      toast.error(err.message || "فشل تمديد الترخيص");
     }
   };
 
-  // Filter users based on search
+  // Filtering
   const filteredUsers = adminUsers.filter(
     (u) =>
-      (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (u.name && u.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (u.plan && u.plan.toLowerCase().includes(searchQuery.toLowerCase()))
+      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.plan.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Compute stats
+  const filteredLogs = aiUsageLogs.filter(
+    (l) =>
+      l.email.toLowerCase().includes(usageSearch.toLowerCase()) ||
+      l.serviceName.toLowerCase().includes(usageSearch.toLowerCase()) ||
+      l.source.toLowerCase().includes(usageSearch.toLowerCase())
+  );
+
+  // Overall Stats
   const totalUsers = adminUsers.length;
   const activePro = adminUsers.filter((u) => u.plan === "pro" || u.plan === "enterprise").length;
   const activeTrial = adminUsers.filter(
-    (u) => u.plan === "trial" && new Date(u.expiresAt) > new Date()
+    (u) => u.plan === "trial" && new Date(u.expiresAt).getTime() > Date.now()
   ).length;
   const expiredUsers = adminUsers.filter(
-    (u) => u.status === "expired" || (u.plan === "trial" && new Date(u.expiresAt) <= new Date())
+    (u) => u.plan !== "free" && new Date(u.expiresAt).getTime() <= Date.now()
   ).length;
+
+  // AI Usage Stats
+  const totalAiRequests = aiUsageLogs.length;
+  const totalAiCostUsd = aiUsageLogs.reduce((acc, curr) => acc + curr.costUsd, 0);
+  const avgDurationSec = totalAiRequests > 0 ? (aiUsageLogs.reduce((acc, curr) => acc + curr.durationSec, 0) / totalAiRequests).toFixed(2) : "0";
+  const uniqueAiAccounts = new Set(aiUsageLogs.map((l) => l.email)).size;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl bg-background/95 backdrop-blur-lg border border-border/80 shadow-2xl rounded-2xl p-6 h-[85vh] flex flex-col" dir="rtl">
-        <DialogHeader className="space-y-1.5 text-right shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
-            <ShieldCheck className="w-5 h-5 text-indigo-600" />
-            <span>لوحة تحكم إدارة الاشتراكات والتراخيص</span>
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            إدارة الحسابات، توليد وتمديد مفاتيح الترخيص لـ Grido Studio
-          </DialogDescription>
+      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border/60 bg-card p-6 shadow-2xl" dir="rtl">
+        <DialogHeader className="pb-3 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
+          <div>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+              <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 border border-indigo-500/20">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <span>لوحة التحكم والإدارة (Admin Dashboard)</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              إدارة المشتركين، توليد التراخيص، وتتبع سجل استهلاك الذكاء الاصطناعي على السيرفر السحابي.
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
         {/* التبويبات الرئيسية */}
         <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="flex-1 flex flex-col overflow-hidden mt-3 font-cairo">
-          <TabsList className="grid w-full grid-cols-3 bg-muted p-1 rounded-lg h-9 shrink-0">
-            <TabsTrigger value="users" className="text-xs rounded-md cursor-pointer flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-4 bg-muted p-1 rounded-xl h-10 shrink-0">
+            <TabsTrigger value="users" className="text-xs rounded-lg cursor-pointer flex items-center justify-center gap-1.5 font-bold">
               <Users className="w-3.5 h-3.5" />
               <span>إدارة المشتركين</span>
             </TabsTrigger>
-            <TabsTrigger value="generator" className="text-xs rounded-md cursor-pointer flex items-center gap-2">
+            <TabsTrigger value="generator" className="text-xs rounded-lg cursor-pointer flex items-center justify-center gap-1.5 font-bold">
               <Key className="w-3.5 h-3.5" />
               <span>توليد التراخيص</span>
             </TabsTrigger>
-            <TabsTrigger value="stats" className="text-xs rounded-md cursor-pointer flex items-center gap-2">
+            <TabsTrigger value="usage" className="text-xs rounded-lg cursor-pointer flex items-center justify-center gap-1.5 font-bold text-violet-600 dark:text-violet-400">
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>سجل استهلاك الـ AI 📊</span>
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="text-xs rounded-lg cursor-pointer flex items-center justify-center gap-1.5 font-bold">
               <BarChart3 className="w-3.5 h-3.5" />
               <span>الإحصائيات العامة</span>
             </TabsTrigger>
@@ -173,7 +202,7 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
               <div className="relative flex-1">
                 <Input
                   placeholder="ابحث بالبريد الإلكتروني، الاسم، الباقة..."
-                  className="h-9.5 text-xs pr-4 pl-9"
+                  className="h-9.5 text-xs pr-4 pl-9 rounded-xl"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -181,7 +210,7 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9.5 gap-1.5 text-xs font-semibold"
+                className="h-9.5 gap-1.5 text-xs font-semibold rounded-xl"
                 onClick={() => adminFetchAllUsers()}
                 disabled={licenseLoading}
               >
@@ -201,99 +230,80 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
                 ) : (
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-muted/50 border-b border-border/60 text-[10px] text-muted-foreground uppercase font-bold">
-                        <th className="p-3 text-right">المشترك</th>
+                      <tr className="border-b bg-muted/40 text-[11px] font-bold text-muted-foreground sticky top-0 backdrop-blur-md">
+                        <th className="p-3 text-right">المستخدم / البريد</th>
                         <th className="p-3 text-right">الباقة الحالية</th>
-                        <th className="p-3 text-right">تاريخ الانتهاء</th>
                         <th className="p-3 text-right">مفتاح الترخيص</th>
-                        <th className="p-3 text-center">العمليات والإجراءات</th>
+                        <th className="p-3 text-right">تاريخ الانتهاء</th>
+                        <th className="p-3 text-center">الإجراءات</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y border-border/30 font-medium">
                       {filteredUsers.map((u) => {
-                        const isUserActive = u.plan === "pro" || u.plan === "enterprise" || (u.plan === "trial" && new Date(u.expiresAt) > new Date());
+                        const isExpired = new Date(u.expiresAt).getTime() <= Date.now() && u.plan !== "free";
                         return (
-                          <tr key={u.id} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
+                          <tr key={u.id || u.email} className="hover:bg-muted/30 transition-colors">
                             <td className="p-3">
-                              <div className="font-semibold text-foreground">{u.name || "مستخدم غير معروف"}</div>
-                              <div className="text-[10px] text-muted-foreground font-mono flex items-center gap-1 mt-0.5">
-                                <Mail className="w-3 h-3" />
-                                {u.email}
-                              </div>
+                              <div className="font-bold text-foreground">{u.name || "مستخدم Grido"}</div>
+                              <div className="text-[10px] text-muted-foreground font-mono">{u.email}</div>
                             </td>
                             <td className="p-3">
-                              {u.plan === "pro" ? (
-                                <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[9px] font-bold">PRO احترافي</Badge>
-                              ) : u.plan === "enterprise" ? (
-                                <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 text-[9px] font-bold">Enterprise مؤسسات</Badge>
-                              ) : u.plan === "trial" ? (
-                                <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[9px] font-bold">تجريبي (Trial)</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-muted-foreground border-border text-[9px] font-bold">مجاني (Free)</Badge>
-                              )}
+                              <Badge
+                                variant={u.plan === "enterprise" ? "default" : u.plan === "pro" ? "secondary" : "outline"}
+                                className="text-[10px] uppercase font-bold"
+                              >
+                                {u.plan}
+                              </Badge>
                             </td>
-                            <td className="p-3 text-muted-foreground font-mono text-[10px]">
-                              {u.expiresAt ? (
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3 text-muted-foreground/60" />
-                                  <span>{new Date(u.expiresAt).toLocaleDateString("ar-SA")}</span>
-                                </div>
+                            <td className="p-3 font-mono text-[10px] text-muted-foreground select-all">
+                              {u.licenseKey || "—"}
+                            </td>
+                            <td className="p-3 font-mono text-[11px]">
+                              {u.plan === "free" ? (
+                                <span className="text-muted-foreground">غير محدد</span>
+                              ) : isExpired ? (
+                                <span className="text-red-500 font-bold">منتهي ({new Date(u.expiresAt).toLocaleDateString("ar-EG")})</span>
                               ) : (
-                                "—"
+                                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                                  {new Date(u.expiresAt).toLocaleDateString("ar-EG")}
+                                </span>
                               )}
                             </td>
                             <td className="p-3">
-                              {u.licenseKey ? (
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] text-indigo-600 dark:text-indigo-400 font-mono font-bold select-all">{u.licenseKey}</code>
-                              ) : (
-                                <span className="text-muted-foreground/60">—</span>
-                              )}
-                            </td>
-                            <td className="p-3 text-center">
-                              <div className="flex items-center justify-center gap-1">
+                              <div className="flex items-center justify-center gap-1.5">
                                 <Button
-                                  variant="ghost"
+                                  variant="outline"
                                   size="sm"
-                                  className="h-7 text-[10px] text-indigo-600 hover:text-indigo-700 hover:bg-indigo-500/5 cursor-pointer font-bold px-2 rounded-md"
-                                  onClick={() => handleExtend(u.email, 1)}
-                                >
-                                  تمديد (+1 شهر)
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 text-[10px] text-indigo-600 hover:text-indigo-700 hover:bg-indigo-500/5 cursor-pointer font-bold px-2 rounded-md"
+                                  className="h-7 text-[10px] font-bold gap-1 rounded-lg border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-600"
                                   onClick={() => handleExtend(u.email, 12)}
                                 >
-                                  تمديد (+1 سنة)
+                                  + سنة
                                 </Button>
-                                {(u.plan === "pro" || u.plan === "enterprise") && (
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 text-[10px] text-red-600 hover:text-red-700 hover:bg-red-500/5 cursor-pointer font-bold px-2 rounded-md"
+
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold text-red-500 hover:bg-red-500/10 rounded-lg">
+                                      إلغاء
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent dir="rtl" className="rounded-xl">
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>تأكيد إلغاء ترخيص الحساب</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        هل أنت أعدت التأكيد على إلغاء ترخيص الحساب <span className="font-mono font-bold text-foreground">{u.email}</span> وتحويله إلى الباقة المجانية؟
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter className="gap-2">
+                                      <AlertDialogCancel className="rounded-lg text-xs">تراجع</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg text-xs font-bold"
+                                        onClick={() => handleRevoke(u.email)}
                                       >
                                         إلغاء الترخيص
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="font-cairo text-right" dir="rtl">
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>إلغاء اشتراك مستخدم</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          هل أنت متأكد من إلغاء اشتراك/ترخيص المستخدم ({u.email}) وإعادته للباقة المجانية؟
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter className="flex-row-reverse sm:justify-start gap-2">
-                                        <AlertDialogAction onClick={() => handleRevoke(u.email)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                          إلغاء الاشتراك
-                                        </AlertDialogAction>
-                                        <AlertDialogCancel className="mt-0 border-border">إلغاء</AlertDialogCancel>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                )}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </td>
                           </tr>
@@ -306,82 +316,166 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
             </div>
           </TabsContent>
 
-          {/* تبويب مولد مفاتيح التراخيص */}
-          <TabsContent value="generator" className="mt-4 space-y-4 shrink-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <form onSubmit={handleGenerateKey} className="bg-card/50 border rounded-xl p-5 space-y-4 text-right">
-                <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                  توليد ترخيص جديد
-                </h3>
+          {/* تبويب سجل استهلاك الـ AI الجوهري 📊 */}
+          <TabsContent value="usage" className="flex-1 flex flex-col overflow-hidden mt-4 space-y-4">
+            {/* بطاقات المؤشرات الأربعة */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
+              <div className="bg-card border border-violet-500/20 rounded-xl p-3.5 text-right space-y-1 bg-gradient-to-br from-violet-500/[0.03] to-purple-500/[0.05]">
+                <div className="flex items-center gap-1.5 text-violet-600 dark:text-violet-400 font-bold text-[11px]">
+                  <DollarSign className="w-4 h-4" />
+                  <span>إجمالي الاستهلاك ($)</span>
+                </div>
+                <div className="text-xl font-extrabold font-mono text-foreground">${totalAiCostUsd.toFixed(6)}</div>
+                <div className="text-[9px] text-muted-foreground">تكلفة معالجة الـ GPU الحقيقية</div>
+              </div>
 
+              <div className="bg-card border rounded-xl p-3.5 text-right space-y-1">
+                <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-bold text-[11px]">
+                  <Activity className="w-4 h-4" />
+                  <span>إجمالي عدد الطلبات</span>
+                </div>
+                <div className="text-xl font-extrabold font-mono text-foreground">{totalAiRequests} طلب</div>
+                <div className="text-[9px] text-muted-foreground">معالجة الذكاء الاصطناعي الناجحة</div>
+              </div>
+
+              <div className="bg-card border rounded-xl p-3.5 text-right space-y-1">
+                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold text-[11px]">
+                  <Cpu className="w-4 h-4" />
+                  <span>متوسط سرعة الطلب</span>
+                </div>
+                <div className="text-xl font-extrabold font-mono text-foreground">{avgDurationSec} ثانية</div>
+                <div className="text-[9px] text-muted-foreground">على كرت NVIDIA A10G</div>
+              </div>
+
+              <div className="bg-card border rounded-xl p-3.5 text-right space-y-1">
+                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
+                  <UserCheck className="w-4 h-4" />
+                  <span>الحسابات المستهلكة</span>
+                </div>
+                <div className="text-xl font-extrabold font-mono text-foreground">{uniqueAiAccounts} حساب</div>
+                <div className="text-[9px] text-muted-foreground">مستخدم نشط للذكاء الاصطناعي</div>
+              </div>
+            </div>
+
+            {/* فلتر البحث في سجل الاستهلاك */}
+            <div className="relative shrink-0">
+              <Input
+                placeholder="تصفية السجل حسب البريد الإلكتروني، نوع الخدمة، أو المصدر..."
+                className="h-9 text-xs pr-4 rounded-xl"
+                value={usageSearch}
+                onChange={(e) => setUsageSearch(e.target.value)}
+              />
+            </div>
+
+            {/* جدول سجل الطلبات والاستهلاك */}
+            <div className="flex-1 border rounded-xl overflow-hidden bg-card/50 flex flex-col">
+              <div className="overflow-y-auto flex-1 text-right text-xs">
+                {filteredLogs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-44 text-muted-foreground gap-2">
+                    <Wand2 className="w-8 h-8 opacity-40 text-violet-500" />
+                    <span>لا توجد سجلات استهلاك مطابقة للبحث</span>
+                  </div>
+                ) : (
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b bg-muted/40 text-[11px] font-bold text-muted-foreground sticky top-0 backdrop-blur-md">
+                        <th className="p-3 text-right">الحساب المستهلك</th>
+                        <th className="p-3 text-right">نوع الخدمة والنموذج</th>
+                        <th className="p-3 text-right">منصة المصدر</th>
+                        <th className="p-3 text-center">الزمن (ثانية)</th>
+                        <th className="p-3 text-left">التكلفة ($)</th>
+                        <th className="p-3 text-center">التاريخ والوقت</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y border-border/30 font-medium">
+                      {filteredLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="p-3">
+                            <div className="font-bold text-foreground font-mono text-[11px]">{log.email}</div>
+                          </td>
+                          <td className="p-3">
+                            <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/20 text-[10px] font-bold">
+                              {log.serviceName}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-muted-foreground text-[11px]">
+                            {log.source}
+                          </td>
+                          <td className="p-3 text-center font-mono font-bold text-foreground">
+                            {log.durationSec}ث
+                          </td>
+                          <td className="p-3 text-left font-mono font-extrabold text-violet-600 dark:text-violet-400 dir-ltr">
+                            ${log.costUsd.toFixed(6)}
+                          </td>
+                          <td className="p-3 text-center font-mono text-[10px] text-muted-foreground">
+                            {log.timestamp}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* تبويب مولد التراخيص */}
+          <TabsContent value="generator" className="mt-4 space-y-4 flex-1 overflow-y-auto">
+            <div className="bg-card border rounded-xl p-5 space-y-4 max-w-xl mx-auto">
+              <div className="space-y-1 text-right">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-indigo-500" />
+                  <span>توليد مفتاح ترخيص جديد</span>
+                </h3>
+                <p className="text-xs text-muted-foreground">قم باختيار نوع الباقة والمدة الزمنية لتوليد كود ترخيص مشفر.</p>
+              </div>
+
+              <div className="space-y-3 text-right">
                 <div className="space-y-1.5">
-                  <Label className="text-xs">نوع باقة الاشتراك</Label>
+                  <Label className="text-xs font-bold">الباقة المطلوبة</Label>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant={genPlan === "PRO" ? "default" : "outline"}
+                      className="h-10 text-xs font-bold rounded-lg cursor-pointer"
                       onClick={() => setGenPlan("PRO")}
-                      className={`h-9.5 text-xs font-bold rounded-lg border-2 transition-all cursor-pointer ${
-                        genPlan === "PRO"
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border hover:bg-muted text-muted-foreground"
-                      }`}
                     >
-                      باقة Pro الاحترافية
-                    </button>
-                    <button
-                      type="button"
+                      Pro الاحترافية
+                    </Button>
+                    <Button
+                      variant={genPlan === "ENTERPRISE" ? "default" : "outline"}
+                      className="h-10 text-xs font-bold rounded-lg cursor-pointer"
                       onClick={() => setGenPlan("ENTERPRISE")}
-                      className={`h-9.5 text-xs font-bold rounded-lg border-2 transition-all cursor-pointer ${
-                        genPlan === "ENTERPRISE"
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border hover:bg-muted text-muted-foreground"
-                      }`}
                     >
-                      باقة Enterprise للمؤسسات
-                    </button>
+                      Enterprise المتقدمة
+                    </Button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs">فترة الترخيص المتاحة</Label>
-                  <select
-                    className="w-full h-9.5 rounded-lg border border-border px-3 text-xs bg-background focus:outline-hidden"
-                    value={genDuration}
-                    onChange={(e) => setGenDuration(e.target.value)}
-                  >
-                    <option value="1">1 شهر (30 يوم)</option>
-                    <option value="3">3 أشهر (90 يوم)</option>
-                    <option value="6">6 أشهر (180 يوم)</option>
-                    <option value="12">1 سنة كاملة (365 يوم)</option>
-                    <option value="120">مدى الحياة (LifeTime)</option>
-                  </select>
+                  <Label className="text-xs font-bold">مدة الترخيص (بالأشهر)</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {["1", "3", "12", "120"].map((d) => (
+                      <Button
+                        key={d}
+                        variant={genDuration === d ? "default" : "outline"}
+                        className="h-9 text-xs font-bold rounded-lg cursor-pointer"
+                        onClick={() => setGenDuration(d)}
+                      >
+                        {d === "120" ? "مدى الحياة" : `${d} شهر`}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
 
-                <Button type="submit" className="w-full h-10 mt-2 gap-2 text-xs font-bold" disabled={licenseLoading}>
-                  {licenseLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Plus className="w-4 h-4" />
-                  )}
-                  توليد مفتاح الترخيص السحابي
-                </Button>
-              </form>
-
-              {/* قسم عرض الكود المولد */}
-              <div className="bg-card/50 border rounded-xl p-5 flex flex-col justify-center items-center text-center space-y-4">
-                <div className="p-3 bg-indigo-500/5 rounded-full border border-indigo-500/10">
-                  <Key className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-foreground">مفتاح الترخيص المولد حديثاً</h4>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    انسخ هذا الكود وأرسله للعميل لتفعيل اشتراكه على أي جهاز
-                  </p>
+                <div className="pt-2">
+                  <Button className="w-full h-10 text-xs font-bold gap-2 rounded-lg cursor-pointer" onClick={handleGenerate} disabled={licenseLoading}>
+                    {licenseLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    <span>توليد المفتاح الآن</span>
+                  </Button>
                 </div>
 
                 {generatedKey ? (
-                  <div className="w-full space-y-2.5">
+                  <div className="w-full space-y-2.5 pt-2">
                     <div className="w-full bg-muted border border-border/80 p-3 rounded-lg flex items-center justify-between font-mono font-bold text-sm tracking-wide text-indigo-600 dark:text-indigo-400 select-all justify-center">
                       <span>{generatedKey}</span>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer" onClick={handleCopyKey} title="نسخ الكود">
@@ -430,9 +524,9 @@ export function AdminDashboardDialog({ open, onOpenChange }: AdminDashboardDialo
             </div>
 
             <div className="bg-card/50 border rounded-xl p-5 space-y-3 text-right">
-              <h4 className="text-xs font-bold text-foreground">💡 معلومات إرشادية حول خادم الترخيص</h4>
+              <h4 className="text-xs font-bold text-foreground">💡 معلومات إرشادية حول سجل الاستهلاك والترخيص</h4>
               <p className="text-[11px] text-muted-foreground leading-normal">
-                لوحة التحكم الحالية ترتبط سحابياً بـ Supabase CLI وقاعدة البيانات الخاصة بها. في حال وجود التطبيق في وضع عدم الاتصال (Offline)، يعمل الباك اند Go بوضع المحاكاة ويقوم بالحقن والتغيير الفوري في قاعدة بيانات SQLite المحلية مما يتيح لك معاينة التنشيطات والتمديدات والاشتراكات بشكل كامل وسلس 100%.
+                لوحة التحكم ترتبط سحابياً بقاعدة البيانات المركزية وبمنصة Modal. يتم توثيق وتسجيل كل طلب معالجة ذكاء اصطناعي (مثل ترميم الوجوه بـ GFPGAN أو عزل الخلفية) بشكل فوري مبيناً بريد الحساب، نوع الخدمة، زمن الاستغراق بالثواني، والتكلفة الحقيقية بالدولار على كرت الشاشة السحابي.
               </p>
             </div>
           </TabsContent>

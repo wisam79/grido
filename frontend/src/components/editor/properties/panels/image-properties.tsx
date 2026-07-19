@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { SaveImageFromBase64, OpenFile } from "../../../../../wailsjs/go/main/App";
 import { RefineBgDialog } from "../../refine-bg-dialog";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
+import { useAiEnhance } from "@/hooks/use-ai-enhance";
 interface ImagePropertiesProps {
   element: ImageElement;
   onUpdate: (id: string, patch: Partial<ImageElement>) => void;
@@ -105,6 +106,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
     handleCancelBgRemoval,
     handleRemoveBg,
   } = useBgRemoval(onUpdate);
+  const {
+    isEnhancing,
+    enhanceProgress,
+    enhanceProgressText,
+    handleEnhance,
+  } = useAiEnhance(onUpdate);
 
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -160,6 +167,19 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           )}
         </Button>
 
+        <Button
+          variant="secondary"
+          disabled={isEnhancing || isRemovingBg}
+          className={cn(
+            "w-full flex items-center justify-center gap-1.5 h-10 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.97] group font-bold text-xs mt-2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20"
+          )}
+          onClick={() => handleEnhance(element)}
+          title="تحسين وتكبير دقة الصورة بالذكاء الاصطناعي"
+        >
+          <Wand2 className="w-4 h-4 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 text-indigo-500" />
+          <span>تحسين الجودة والوضوح ✨</span>
+        </Button>
+
         <div className="grid grid-cols-2 gap-2 mt-2">
           <Button
             variant="outline"
@@ -208,6 +228,21 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             </div>
           </div>
         )}
+
+        {isEnhancing && (
+          <div className="mt-2 p-2.5 rounded-lg bg-violet-500/[0.05] dark:bg-violet-500/[0.08] border border-violet-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex justify-between items-center text-[9px] font-bold text-violet-600 dark:text-violet-400">
+              <span className="animate-pulse">{enhanceProgressText}</span>
+              <span className="font-mono font-extrabold">{enhanceProgress}%</span>
+            </div>
+            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+              <div 
+                className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-500 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${enhanceProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {element.imageSrc && (
@@ -215,6 +250,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           open={cropOpen}
           onOpenChange={setCropOpen}
           imageSrc={element.imageSrc}
+          originalImageSrc={element.originalImageSrc}
           onCropSave={async (cropped) => {
             try {
               // حفظ الصورة المقصوصة محلياً بدلاً من تخزين Base64 في الذاكرة

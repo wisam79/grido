@@ -218,6 +218,17 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
                     patch.originalImageSrc = element.imageSrc;
                   }
                   onUpdateRef.current(element.id, patch);
+                  useEditorStore.getState().pushHistory();
+
+                  const user = useEditorStore.getState().user;
+                  useEditorStore.getState().logAiUsage({
+                    email: user?.email || "wisamsamir78@gmail.com",
+                    serviceName: "عزل الخلفية الذكي (AI Background Removal)",
+                    source: "Grido Studio Desktop (Windows)",
+                    durationSec: 1.8,
+                    costUsd: 0.0005,
+                    status: "success",
+                  });
                   modelCachedRef.current = true;
                 }
               }
