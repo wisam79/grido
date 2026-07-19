@@ -616,7 +616,9 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 		local.Plan = "free"
 		local.Status = "expired"
 		local.UpdatedAt = time.Now()
-		_ = s.repo.Save(local)
+		if err := s.repo.Save(local); err != nil {
+			slog.Error("Failed to save expired license state", "error", err)
+		}
 		return local, nil
 	}
 
@@ -633,7 +635,9 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 		local.Status = prof.Status
 		local.LicenseKey = prof.LicenseKey
 		local.UpdatedAt = time.Now()
-		_ = s.repo.Save(local)
+		if saveErr := s.repo.Save(local); saveErr != nil {
+			slog.Error("Failed to save updated license profile", "error", saveErr)
+		}
 	} else if strings.Contains(err.Error(), "401") {
 		_ = s.repo.Clear()
 		return &domain.UserProfile{Plan: "free", Status: "none"}, nil
@@ -775,6 +779,8 @@ func (s *LicenseService) GenerateLicenseKey(plan string, durationMonths int) (st
 		if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&res); err == nil {
 			return res.Key, nil
 		}
+	} else {
+		slog.Error("API failed to generate license key, falling back to local generation", "statusCode", resp.StatusCode)
 	}
 
 	return key, nil

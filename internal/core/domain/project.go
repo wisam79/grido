@@ -44,6 +44,7 @@ type ProjectRepository interface {
 	Save(project *Project) error
 	FindByID(id string) (*Project, error)
 	FindAll() ([]Project, error)
+	Count() (int64, error)
 	Delete(id string) error
 	ImportProjects(projects []Project, overwrite bool) error
 }

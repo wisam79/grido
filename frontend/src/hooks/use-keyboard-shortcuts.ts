@@ -163,10 +163,6 @@ export function useKeyboardShortcuts() {
                     
                     if (targetSlotId) {
                       state.setSlotImage(targetSlotId, localPath);
-                      const autoFill = localStorage.getItem("grido_auto_fill_grid") !== "false";
-                      if (autoFill) {
-                        state.fillAllSlots(localPath);
-                      }
                     }
                   } else {
                     // Single mode

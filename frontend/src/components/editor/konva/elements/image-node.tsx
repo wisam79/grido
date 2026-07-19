@@ -3,6 +3,7 @@ import { Image as KonvaImage } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { ImageElement, useEditorStore } from "@/lib/editor-store";
+import { getKonvaFilters } from "@/lib/konva-filters";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import "@/lib/custom-filters";
@@ -72,12 +73,21 @@ export const URLImage = React.memo(function URLImage({
   useEffect(() => {
     const node = elementRef.current;
     if (node && image) {
-      if (hasFilters) {
+      const isLargeImage = image.width * image.height > 1000000;
+      if (hasFilters || isLargeImage) {
         try {
           const stage = node.getStage();
-          const exportRatio = stage ? (useEditorStore.getState().canvasWidth / stage.width()) : 4;
+          const stageW = stage ? stage.width() : 0;
+          const exportRatio = stageW > 0 ? (useEditorStore.getState().canvasWidth / stageW) : 4;
+          let ratio = Math.max(2, exportRatio);
+          
+          // حماية إضافية ضد قيم غير محدودة أو NaN أو كبيرة جداً قد تسبب انهيار الرندرة واختفاء الكانفس
+          if (!isFinite(ratio) || isNaN(ratio) || ratio > 8) {
+            ratio = 2;
+          }
+          
           node.cache({
-            pixelRatio: Math.max(2, exportRatio)
+            pixelRatio: ratio
           });
         } catch (err) {
           console.warn("Failed to cache Konva image", err);
@@ -114,52 +124,14 @@ export const URLImage = React.memo(function URLImage({
     element.blur,
   ]);
 
-  // حساب القيم الكلية بدمج مرشحات الصور الجاهزة والتعديلات اليدوية
-  let totalBrightness = element.brightness ?? 100;
-  let totalContrast = element.contrast ?? 100;
-  let totalSaturation = element.saturation ?? 100;
-  let totalHue = 0;
-  let useSepia = false;
-  let useGrayscale = false;
+  const filterProps = React.useMemo(() => getKonvaFilters({
+    filter: element.filter,
+    brightness: element.brightness,
+    contrast: element.contrast,
+    saturation: element.saturation
+  }), [element.filter, element.brightness, element.contrast, element.saturation]);
 
-  if (element.filter === "enhance") {
-    totalContrast = (totalContrast / 100) * 108;
-    totalSaturation = (totalSaturation / 100) * 112;
-    totalBrightness = (totalBrightness / 100) * 102;
-  } else if (element.filter === "skinGlow") {
-    totalHue = 10;
-    totalSaturation = (totalSaturation / 100) * 110;
-    totalContrast = (totalContrast / 100) * 94;
-    totalBrightness = (totalBrightness / 100) * 106;
-  } else if (element.filter === "clarity") {
-    totalContrast = (totalContrast / 100) * 122;
-    totalSaturation = (totalSaturation / 100) * 120;
-    totalBrightness = (totalBrightness / 100) * 98;
-  } else if (element.filter === "lowlight") {
-    totalBrightness = (totalBrightness / 100) * 116;
-    totalContrast = (totalContrast / 100) * 90;
-    totalSaturation = (totalSaturation / 100) * 105;
-  } else if (element.filter === "cinematic") {
-    useSepia = true;
-    totalHue = 5;
-    totalSaturation = (totalSaturation / 100) * 115;
-    totalContrast = (totalContrast / 100) * 110;
-    totalBrightness = (totalBrightness / 100) * 102;
-  } else if (element.filter === "monoPro") {
-    useGrayscale = true;
-    totalContrast = (totalContrast / 100) * 125;
-    totalBrightness = (totalBrightness / 100) * 102;
-  }
-
-  const filters: any[] = [];
-  if (element.filter === "skinGlow" && (Konva.Filters as any).SkinGlow) {
-    filters.push((Konva.Filters as any).SkinGlow);
-  }
-  if (useGrayscale) filters.push(Konva.Filters.Grayscale);
-  if (useSepia) filters.push(Konva.Filters.Sepia);
-  if (totalBrightness !== 100) filters.push(Konva.Filters.Brighten);
-  if (totalContrast !== 100) filters.push(Konva.Filters.Contrast);
-  if (totalSaturation !== 100 || totalHue !== 0) filters.push(Konva.Filters.HSL);
+  const filters = [...filterProps.filters];
   if (element.blur && element.blur > 0) filters.push(Konva.Filters.Blur);
 
   const flipped = element.flipX === true;
@@ -189,12 +161,12 @@ export const URLImage = React.memo(function URLImage({
       onClick={onClick}
       onTap={onTap}
       filters={filters}
-      brightness={totalBrightness !== 100 ? (totalBrightness - 100) / 100 : 0}
-      contrast={totalContrast !== 100 ? totalContrast - 100 : 0}
+      brightness={filterProps.brightness}
+      contrast={filterProps.contrast}
       blurRadius={element.blur || 0}
       {...({
-        hue: totalHue,
-        saturation: totalSaturation !== 100 ? Math.log2(Math.max(1, totalSaturation) / 100) : 0
+        hue: filterProps.hue,
+        saturation: filterProps.saturation
       } as any)}
       draggable={!element.locked && isSelected}
       onDragStart={onDragStart}

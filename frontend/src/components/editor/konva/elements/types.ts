@@ -1,12 +1,13 @@
 import { CanvasElement } from "@/lib/editor-store";
+import { KonvaEventObject } from "konva/lib/Node";
 
 export interface ElementProps {
   element: CanvasElement;
   isSelected: boolean;
-  onMouseDown: (e: any) => void;
-  onTouchStart: (e: any) => void;
-  onClick: (e: any) => void;
-  onTap: (e: any) => void;
+  onMouseDown: (e: KonvaEventObject<MouseEvent>) => void;
+  onTouchStart: (e: KonvaEventObject<TouchEvent>) => void;
+  onClick: (e: KonvaEventObject<MouseEvent>) => void;
+  onTap: (e: KonvaEventObject<TouchEvent>) => void;
   onChange: (patch: Partial<CanvasElement>) => void;
   displayW: number;
   displayH: number;

@@ -243,6 +243,10 @@ type processedKey struct {
 	filter     string
 	targetW    int
 	targetH    int
+	cropX      float64
+	cropY      float64
+	cropW      float64
+	cropH      float64
 }
 
 // validatePrintRequest يتحقق من صحة بيانات طلب الطباعة وحجم الكانفس
@@ -307,7 +311,15 @@ func (s *PrintService) loadAndProcessImage(
 
 	cacheKey := filePath
 	if strings.HasPrefix(filePath, "data:image/") {
-		cacheKey = fmt.Sprintf("b64_%x", sha256.Sum256([]byte(filePath)))
+		// تلافي عمل Hash لسلسلة Base64 ضخمة قد تكون بحجم عشرات الميجابايت
+		if len(filePath) > 1024 {
+			h := sha256.New()
+			h.Write([]byte(filePath[:512]))
+			h.Write([]byte(filePath[len(filePath)-512:]))
+			cacheKey = fmt.Sprintf("b64_%x_len%d", h.Sum(nil), len(filePath))
+		} else {
+			cacheKey = fmt.Sprintf("b64_%x", sha256.Sum256([]byte(filePath)))
+		}
 	}
 
 	pKey := processedKey{
@@ -318,6 +330,10 @@ func (s *PrintService) loadAndProcessImage(
 		filter:     item.Filter,
 		targetW:    targetW,
 		targetH:    targetH,
+		cropX:      item.CropX,
+		cropY:      item.CropY,
+		cropW:      item.CropW,
+		cropH:      item.CropH,
 	}
 
 	procCache.mu.RLock()
@@ -472,6 +488,17 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	outDir := filepath.Join(appDir, "Exports")
 	_ = os.MkdirAll(outDir, 0755)
 
+	// 🧹 تنظيف المخرجات القديمة (أقدم من 24 ساعة) تلقائياً لتفادي امتلاء القرص
+	if files, err := os.ReadDir(outDir); err == nil {
+		for _, f := range files {
+			if info, err := f.Info(); err == nil {
+				if time.Since(info.ModTime()) > 24*time.Hour {
+					_ = os.Remove(filepath.Join(outDir, f.Name()))
+				}
+			}
+		}
+	}
+
 	baseName := fmt.Sprintf("print_%d", time.Now().UnixNano())
 	pngPath := filepath.Join(outDir, baseName+".png")
 	htmlPath := filepath.Join(outDir, baseName+".html")
@@ -518,14 +545,13 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 </style>
 </head>
 <body onload="setTimeout(() => { window.print(); window.close(); }, 500)">
-  <img src="%s.png" />
+  <img src="/local-image/%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, baseName)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, baseName+".png")
 
 	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 
-	// إنشاء نسخة HTML كاملة ومدمجة (Self-contained HTML Doc with base64 encoded image) لإتاحة الطباعة داخل الـ WebView مباشرة دون فتح متصفح خارجي
-	base64Img := base64.StdEncoding.EncodeToString(pngData)
+	// إرسال كود HTML يشير للمسار المحلي بدلاً من ترميز base64 لتفادي استهلاك الذاكرة العالي
 	selfContainedHTML := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -549,9 +575,9 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 </style>
 </head>
 <body>
-  <img src="data:image/png;base64,%s" />
+  <img src="/local-image/%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, base64Img)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, baseName+".png")
 
 	return htmlPath, selfContainedHTML, nil
 }

@@ -26,15 +26,28 @@ export async function exportCanvas(
     const transformers = stageRef.find('Transformer');
     const gridLayers = stageRef.find('.grid-layer');
     const columnsLayers = stageRef.find('.columns-layer');
+    let previouslyCached: any[] = [];
     try {
       // إخفاء مقابض التحكم وطبقات الشبكة والأعمدة مؤقتاً قبل التصدير لمنع ظهورها في الصورة النهائية
       transformers.forEach((tr: any) => tr.hide());
       gridLayers.forEach((gl: any) => gl.hide());
       columnsLayers.forEach((cl: any) => cl.hide());
+
+      // إعادة بناء كاش الصور المفلترة بدقة التصدير لضمان عدم انخفاض الجودة
+      const targetPixelRatio = canvasWidth / stageRef.width();
+      const images = stageRef.find('Image');
+      images.forEach((img: any) => {
+        if (img.isCached()) {
+          previouslyCached.push(img);
+          img.clearCache();
+          img.cache({ pixelRatio: targetPixelRatio });
+        }
+      });
+
       stageRef.batchDraw();
 
       dataUrl = stageRef.toDataURL({
-        pixelRatio: canvasWidth / stageRef.width(), // تصدير بالدقة الأصلية الكاملة للكانفس
+        pixelRatio: targetPixelRatio, // تصدير بالدقة الأصلية الكاملة للكانفس
         mimeType: format === "png" ? "image/png" : "image/jpeg",
         quality: quality
       });
@@ -45,12 +58,20 @@ export async function exportCanvas(
       transformers.forEach((tr: any) => tr.show());
       gridLayers.forEach((gl: any) => gl.show());
       columnsLayers.forEach((cl: any) => cl.show());
+      
+      // استعادة الكاش بدقة الشاشة لتوفير الذاكرة
+      previouslyCached.forEach((img: any) => {
+        img.clearCache();
+        const screenRatio = Math.max(2, canvasWidth / stageRef.width());
+        img.cache({ pixelRatio: screenRatio });
+      });
+
       stageRef.batchDraw();
     }
 
     if (dataUrl) {
-      const res = await fetch(dataUrl);
-      const originalBlob = await res.blob();
+      // [FIX #9] تحويل مباشر بدلاً من fetch(dataUrl) غير الضروري
+      const originalBlob = dataURLToBlob(dataUrl);
       return await applyWatermarkIfFree(originalBlob, format, quality);
     }
   }
@@ -353,6 +374,17 @@ export async function downloadBlob(blob: Blob, filename: string): Promise<string
     console.error("Save failed:", err);
     return "error";
   }
+}
+
+
+// [FIX #9] تحويل Data URL إلى Blob مباشرة في الذاكرة بدلاً من fetch غير الضروري
+function dataURLToBlob(dataUrl: string): Blob {
+  const [header, data] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)?.[1] || "image/png";
+  const bytes = atob(data);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return new Blob([arr], { type: mime });
 }
 
 // تحميل صورة من رابط أو DataURL

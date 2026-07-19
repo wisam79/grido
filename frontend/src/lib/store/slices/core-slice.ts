@@ -70,7 +70,55 @@ type CoreSliceCross = CoreSlice & {
 export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = (set, get) => ({
   ...DEFAULT_CORE_STATE,
 
-  setMode: (mode) => set({ mode, selectedId: null }),
+  setMode: (mode) => {
+    set((s: any) => {
+      const nextState: any = { mode, selectedId: null };
+      
+      // إذا تم الانتقال لوضع الكولاج وكانت الخانات فارغة، نقوم بإعادة بناء الخلايا لتجنب ظهور الكانفس فارغاً
+      if (mode === "collage" && (!s.slots || s.slots.length === 0)) {
+        const template = s.collageTemplate || COLLAGE_TEMPLATES[0];
+        const currentWidth = s.canvasWidth || 2480;
+        const currentHeight = s.canvasHeight || 3508;
+        const storedDpi = s.printSettings?.dpi || 300;
+        const dpi = getEffectiveDpi(currentWidth, currentHeight, storedDpi);
+
+        let cells = template.cells;
+        if (template.physicalLayout) {
+          const dynamicCells = computeDynamicCollageCells(
+            template,
+            currentWidth,
+            currentHeight,
+            dpi,
+            s.collageGap || 0,
+            s.collageMargin || 0
+          );
+          if (dynamicCells) {
+            cells = dynamicCells;
+          }
+        }
+
+        nextState.slots = cells.map((c: any, i: number) => ({
+          id: uid(),
+          cellIndex: i,
+          x: c.x,
+          y: c.y,
+          w: c.w,
+          h: c.h,
+          filter: "none",
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+          zoom: 1,
+          dragX: 0,
+          dragY: 0,
+        }));
+        
+        nextState.elements = []; // مسح عناصر التعديل الحر عند العودة للكولاج
+      }
+      
+      return nextState;
+    });
+  },
 
   setCanvasSize: (w, h) => {
     const oldW = get().canvasWidth;
@@ -200,7 +248,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       canvasHeight: project.canvasHeight,
       backgroundColor: project.backgroundColor || "#FFFFFF",
       elements: project.elements || [],
-      slots: project.slots || generateInitialSlots(),
+      slots: (project.slots && project.slots.length > 0) ? project.slots : (project.mode === "collage" ? generateInitialSlots() : []),
       template: restoredTemplate,
       collageTemplate: restoredCollageTemplate,
       printSettings: project.printSettings
@@ -209,7 +257,10 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
-      history: [{ elements: project.elements || [], slots: project.slots || generateInitialSlots() }],
+      history: [{ 
+        elements: project.elements || [], 
+        slots: (project.slots && project.slots.length > 0) ? project.slots : (project.mode === "collage" ? generateInitialSlots() : []) 
+      }],
       historyIndex: 0,
       showGrid: project.showGrid ?? false,
       gridSize: project.gridSize ?? 50,

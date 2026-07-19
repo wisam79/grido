@@ -72,17 +72,27 @@ export function ToolbarFileOps() {
     try {
       const b64 = await OpenFile();
       if (b64) {
-        if (mode === "collage") {
-          if (selectedId && slots.some((s) => s.id === selectedId)) {
-            setSlotImage(selectedId, b64);
+        // قراءة أحدث نسخة من الـ state بعد انتهاء await لتجنب stale closure
+        const freshState = useEditorStore.getState();
+        const freshMode = freshState.mode;
+        const freshSlots = freshState.slots;
+        const freshSelectedId = freshState.selectedId;
+
+        if (freshMode === "collage") {
+          const isPhysical = freshState.collageTemplate?.physicalLayout;
+          if (isPhysical) {
+            freshState.fillAllSlots(b64);
+            toast.success("تم إدراج الصورة في جميع الخانات");
+          } else if (freshSelectedId && freshSlots.some((s) => s.id === freshSelectedId)) {
+            freshState.setSlotImage(freshSelectedId, b64);
             toast.success("تم إدراج الصورة في الخانة المحددة");
           } else {
-            const emptySlot = slots.find((s) => !s.imageSrc);
+            const emptySlot = freshSlots.find((s) => !s.imageSrc);
             if (emptySlot) {
-              setSlotImage(emptySlot.id, b64);
+              freshState.setSlotImage(emptySlot.id, b64);
               toast.success("تم إدراج الصورة في خانة فارغة");
-            } else if (slots[0]) {
-              setSlotImage(slots[0].id, b64);
+            } else if (freshSlots[0]) {
+              freshState.setSlotImage(freshSlots[0].id, b64);
               toast.success("تم تحديث صورة الخانة الأولى");
             } else {
               toast.warning("يرجى اختيار تخطيط كولاج أولاً");

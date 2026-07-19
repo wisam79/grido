@@ -21,24 +21,10 @@ export function useWindowControls() {
       window.addEventListener("focus", handleFocus);
       window.addEventListener("blur", handleBlur);
 
-      const handleContextMenu = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        if (
-          target.tagName !== "INPUT" &&
-          target.tagName !== "TEXTAREA" &&
-          !target.isContentEditable &&
-          !target.closest("[contenteditable='true']")
-        ) {
-          e.preventDefault();
-        }
-      };
-      window.addEventListener("contextmenu", handleContextMenu);
-
       return () => {
         window.removeEventListener("resize", handleResize);
         window.removeEventListener("focus", handleFocus);
         window.removeEventListener("blur", handleBlur);
-        window.removeEventListener("contextmenu", handleContextMenu);
       };
     }
   }, []);

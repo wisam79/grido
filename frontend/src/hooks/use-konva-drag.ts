@@ -1,6 +1,7 @@
 import React from "react";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { getSnapPositionsWithTargets, SnapTarget } from "@/lib/snap-utils";
+import { KonvaEventObject } from "konva/lib/Node";
 
 interface UseKonvaDragProps {
   element: CanvasElement;
@@ -89,7 +90,7 @@ export function useKonvaDrag({
     return { x: xAbs, y: yAbs };
   };
 
-  const onDragMove = (e: any) => {
+  const onDragMove = (e: KonvaEventObject<DragEvent>) => {
     if (altPressedRef.current) {
       if (prevGuidesRef.current.length > 0) {
         setActiveGuides([]);
@@ -144,16 +145,22 @@ export function useKonvaDrag({
         thresholdY
       );
       
-      const newGuidesStr = JSON.stringify(snapResult.guides);
-      const oldGuidesStr = JSON.stringify(prevGuidesRef.current);
-      if (newGuidesStr !== oldGuidesStr) {
+      const isGuidesEqual = (g1: any[], g2: any[]) => {
+        if (g1.length !== g2.length) return false;
+        for (let i = 0; i < g1.length; i++) {
+          if (g1[i].type !== g2[i].type || Math.abs(g1[i].coord - g2[i].coord) > 0.0001) return false;
+        }
+        return true;
+      };
+
+      if (!isGuidesEqual(snapResult.guides, prevGuidesRef.current)) {
         setActiveGuides(snapResult.guides);
         prevGuidesRef.current = snapResult.guides;
       }
     }
   };
 
-  const onDragEnd = (e: any) => {
+  const onDragEnd = (e: KonvaEventObject<DragEvent>) => {
     const { selectedIds, updateElements, pushHistory } = useEditorStore.getState();
     const draggedNode = e.target;
     const draggedId = element.id;

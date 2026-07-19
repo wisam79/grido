@@ -152,6 +152,11 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       setOriginalImage(null);
       setCurrentImage(null);
       originalImageDataRef.current = null;
+      historyRef.current = [];
+      setHistoryLength(0);
+      sharedVisited = null;
+      sharedQueueX = null;
+      sharedQueueY = null;
     };
   }, [open, element.originalImageSrc, element.imageSrc]);
 

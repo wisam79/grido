@@ -109,10 +109,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       }, 300);
       return () => clearTimeout(timer);
     } else if (!open) {
-      setTimeout(() => {
+      // [FIX #8] حفظ مرجع الـ timer لإلغائه عند تغيير الـ dependencies بسرعة
+      const clearTimer = setTimeout(() => {
         setPreviewImageSrc("");
       }, 0);
-      // Not needed anymore
+      return () => clearTimeout(clearTimer);
     }
   }, [open, stageRef, elements, slots, backgroundColor, mode, canvasWidth, printSettings]);
 
@@ -173,6 +174,19 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         const offsetX = mMM + Math.max(0, availableWidthMM - gridWidth) / 2;
         const offsetY = mMM + Math.max(0, availableHeightMM - gridHeight) / 2;
 
+        // Preload image dimensions to prevent extreme slowness in nested loops
+        const imgSizeCache: Record<string, { w: number, h: number }> = {};
+        const uniqueImageSrcs = Array.from(new Set(slots.filter(s => s.imageSrc).map(s => s.imageSrc!)));
+        
+        await Promise.all(uniqueImageSrcs.map(async (src) => {
+          imgSizeCache[src] = await new Promise<{ w: number, h: number }>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+            img.onerror = () => resolve({ w: 100, h: 100 });
+            img.src = src;
+          });
+        }));
+
         // Loop over the requested copies on the paper
         for (let i = 0; i < actualCopies; i++) {
           const col = i % cols;
@@ -200,12 +214,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           for (const slot of slots) {
             if (!slot.imageSrc) continue;
 
-            const imgSize = await new Promise<{ w: number, h: number }>((resolve) => {
-              const img = new Image();
-              img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-              img.onerror = () => resolve({ w: 100, h: 100 });
-              img.src = slot.imageSrc!;
-            });
+            const imgSize = imgSizeCache[slot.imageSrc] || { w: 100, h: 100 };
 
             const slotW_MM = slot.w * availWMM - gapMM_cell;
             const slotH_MM = slot.h * availHMM - gapMM_cell;
@@ -277,22 +286,42 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         const columnsLayers = stage.find('.columns-layer');
         let canvasDataUrl: string | null = null;
 
+        let previouslyCached: any[] = [];
         try {
           transformers.forEach((tr: any) => tr.hide());
           gridLayers.forEach((gl: any) => gl.hide());
           columnsLayers.forEach((cl: any) => cl.hide());
-          stage.batchDraw();
-
+          
           const exportDpi = printSettings.dpi || 300;
           const dpiRatio = exportDpi / 300;
+          const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
+
+          const images = stage.find('Image');
+          images.forEach((img: any) => {
+            if (img.isCached()) {
+              previouslyCached.push(img);
+              img.clearCache();
+              img.cache({ pixelRatio: targetPixelRatio });
+            }
+          });
+
+          stage.batchDraw();
+
           canvasDataUrl = stage.toDataURL({
-            pixelRatio: (canvasWidth / stage.width()) * dpiRatio,
+            pixelRatio: targetPixelRatio,
             mimeType: "image/png",
           });
         } finally {
           transformers.forEach((tr: any) => tr.show());
           gridLayers.forEach((gl: any) => gl.show());
           columnsLayers.forEach((cl: any) => cl.show());
+
+          previouslyCached.forEach((img: any) => {
+            img.clearCache();
+            const screenRatio = Math.max(2, canvasWidth / stage.width());
+            img.cache({ pixelRatio: screenRatio });
+          });
+
           stage.batchDraw();
         }
 

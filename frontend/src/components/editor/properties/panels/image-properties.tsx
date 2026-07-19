@@ -4,16 +4,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
   Sparkles, RefreshCw, Sun, Contrast, Droplet, 
-  EyeOff, Scissors, Paintbrush, X
+  EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2
 } from "lucide-react";
 import { CropDialog } from "../../crop-dialog";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
+import { SaveImageFromBase64, OpenFile } from "../../../../../wailsjs/go/main/App";
 import { RefineBgDialog } from "../../refine-bg-dialog";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
-
 interface ImagePropertiesProps {
   element: ImageElement;
   onUpdate: (id: string, patch: Partial<ImageElement>) => void;
@@ -115,6 +114,20 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
     };
   }, []);
 
+  const handleOpenFile = async () => {
+    try {
+      const b64 = await OpenFile();
+      if (b64) {
+        const localPath = await SaveImageFromBase64(b64);
+        onUpdate(element.id, { imageSrc: localPath });
+        useEditorStore.getState().pushHistory();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("فشل تغيير الصورة");
+    }
+  };
+
   return (
     <div className="space-y-3.5 animate-in fade-in duration-200">
       <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2.5">
@@ -147,10 +160,33 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           )}
         </Button>
 
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 rounded-xl border-border/60 hover:border-primary/45 hover:bg-accent/50 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs"
+            onClick={handleOpenFile}
+            title="تغيير الصورة"
+          >
+            <ImagePlus className="w-4 h-4 text-primary" />
+            <span>تغيير الصورة</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 rounded-xl border-border/60 hover:border-primary/45 hover:bg-accent/50 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs"
+            onClick={() => setCropOpen(true)}
+            title="قص وتدوير الصورة"
+          >
+            <Scissors className="w-4 h-4 text-primary" />
+            <span>قص وتدوير</span>
+          </Button>
+        </div>
+
         {element.originalImageSrc && (
           <Button
             variant="outline"
-            className="w-full mt-2 h-9 text-[11px] font-semibold transition-colors gap-2"
+            className="w-full mt-2 h-9 text-[11px] font-semibold transition-colors gap-2 flex items-center justify-center cursor-pointer"
             onClick={() => setRefineOpen(true)}
           >
             <Paintbrush className="w-3.5 h-3.5 text-muted-foreground" />

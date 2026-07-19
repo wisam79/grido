@@ -12,6 +12,12 @@ func InitLogger() (*os.File, error) {
 	appDir := GetAppDir()
 	logPath := filepath.Join(appDir, "app.log")
 
+	// 🧹 تدوير السجلات إذا تجاوز حجم الملف 1 ميغابايت لتفادي استهلاك مساحة القرص
+	if info, err := os.Stat(logPath); err == nil && info.Size() > 1*1024*1024 {
+		_ = os.Remove(logPath + ".old") // Delete old backup if it exists
+		_ = os.Rename(logPath, logPath+".old")
+	}
+
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return nil, err

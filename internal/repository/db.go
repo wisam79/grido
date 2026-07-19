@@ -121,9 +121,15 @@ func (r *licenseRepositoryImpl) Save(profile *domain.UserProfile) error {
 	profile.Token = token
 
 	if err == nil {
-		_ = utils.SaveEncryptedToken(token, refreshToken)
-		_ = utils.SaveLicenseSignature(profile)
-		_ = utils.UpdateLastTime(time.Now())
+		if saveErr := utils.SaveEncryptedToken(token, refreshToken); saveErr != nil {
+			slog.Error("Failed to save encrypted token", "error", saveErr)
+		}
+		if signErr := utils.SaveLicenseSignature(profile); signErr != nil {
+			slog.Error("Failed to save license signature", "error", signErr)
+		}
+		if timeErr := utils.UpdateLastTime(time.Now()); timeErr != nil {
+			slog.Error("Failed to update last time", "error", timeErr)
+		}
 	}
 	return err
 }
@@ -221,6 +227,12 @@ func (r *projectRepositoryImpl) FindAll() ([]domain.Project, error) {
 	return projects, err
 }
 
+func (r *projectRepositoryImpl) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.Project{}).Count(&count).Error
+	return count, err
+}
+
 func (r *projectRepositoryImpl) Delete(id string) error {
 	return r.db.Delete(&domain.Project{}, "id = ?", id).Error
 }
@@ -232,6 +244,10 @@ func (r *projectRepositoryImpl) ImportProjects(projects []domain.Project, overwr
 			if err := tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&domain.Project{}).Error; err != nil {
 				return err
 			}
+			if len(projects) > 0 {
+				return tx.CreateInBatches(&projects, 50).Error
+			}
+			return nil
 		}
 
 		for _, p := range projects {

@@ -49,6 +49,7 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
 
     img.onerror = () => {
       if (!isCurrent) return;
+      console.error("[useAsyncImage] Failed to load image:", src);
       setImage(undefined);
       setStatus("failed");
     };

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { 
-  ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, Sparkles, X, Rows, Columns, LayoutGrid
+  ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, Sparkles, X, Rows, Columns, LayoutGrid, Wand2
 } from "lucide-react";
 import {
   Tooltip,
@@ -59,9 +59,11 @@ export function SlotProperties({
     try {
       const b64 = await OpenFile();
       if (b64) {
-        setSlotImage(slot.id, b64);
+        // قراءة أحدث نسخة من الـ store بعد إغلاق نافذة الملف (لتجنب stale closure)
+        const freshStore = useEditorStore.getState();
+        freshStore.setSlotImage(slot.id, b64);
         if (autoFill) {
-          fillAllSlots(b64, slot.id);
+          freshStore.fillAllSlots(b64, slot.id);
         }
       }
     } catch (err) {
@@ -208,6 +210,7 @@ export function SlotProperties({
               <span>قص وتدوير</span>
             </Button>
           </div>
+
 
           <div className="space-y-1.5 font-cairo">
             <Label className="text-[10px] font-bold text-muted-foreground block text-right">تكرار الصورة في الخلايا</Label>

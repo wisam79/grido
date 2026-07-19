@@ -97,23 +97,28 @@ func main() {
 					filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
 					filename := filepath.Base(filepath.Clean(filePath))
 
-					// 🔒 التحقق الأمني: السماح فقط بالملفات داخل مجلد Media المعتمد
-					mediaDir := getMediaDir()
-					absPath := filepath.Join(mediaDir, filename)
+					// 🔒 التحقق الأمني: السماح بالملفات داخل مجلد Media، أو مجلد Exports للملفات المؤقتة التي تبدأ بـ print_
+					var baseDir string
+					if strings.HasPrefix(filename, "print_") {
+						baseDir = filepath.Join(utils.GetAppDir(), "Exports")
+					} else {
+						baseDir = getMediaDir()
+					}
+					absPath := filepath.Join(baseDir, filename)
 
 					if _, err := os.Stat(absPath); err != nil {
 						http.Error(w, "Image not found on disk", http.StatusNotFound)
 						return
 					}
 
-					// 🔒 حماية ضد هجمات Symlink: تحليل المسار بالكامل والتأكد من بقائه داخل mediaDir
+					// 🔒 حماية ضد هجمات Symlink: تحليل المسار بالكامل والتأكد من بقائه داخل المجلد المعتمد
 					resolvedPath, err := filepath.EvalSymlinks(absPath)
 					if err != nil {
 						http.Error(w, "Forbidden", http.StatusForbidden)
 						return
 					}
-					if !strings.HasPrefix(resolvedPath, filepath.Clean(mediaDir)+string(filepath.Separator)) &&
-						resolvedPath != filepath.Clean(mediaDir) {
+					if !strings.HasPrefix(resolvedPath, filepath.Clean(baseDir)+string(filepath.Separator)) &&
+						resolvedPath != filepath.Clean(baseDir) {
 						http.Error(w, "Forbidden", http.StatusForbidden)
 						return
 					}
@@ -140,7 +145,7 @@ func main() {
 					// Ensure WebAssembly and model files are served with correct MIME types
 					if strings.HasSuffix(r.URL.Path, ".wasm") {
 						w.Header().Set("Content-Type", "application/wasm")
-					} else if strings.HasSuffix(r.URL.Path, ".onnx") || strings.HasSuffix(r.URL.Path, ".ort") {
+					} else if strings.HasSuffix(r.URL.Path, ".onnx") || strings.HasSuffix(r.URL.Path, ".ort") || strings.HasSuffix(r.URL.Path, ".bin") {
 						w.Header().Set("Content-Type", "application/octet-stream")
 					}
 

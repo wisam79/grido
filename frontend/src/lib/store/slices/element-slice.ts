@@ -65,7 +65,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       height: hPercent,
       rotation: 0,
       opacity: 1,
-      zIndex: (state.elements.length + 1) * 10,
+      // [FIX #5] استخدام timestamp + عدد العناصر لمنع تصادم zIndex عند الإضافة السريعة
+      zIndex: (state.elements.length + 1) * 10 + Date.now() % 1000,
       imageSrc: src,
       filter: "none",
       brightness: 100,
@@ -94,7 +95,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       height: 0.05,
       rotation: 0,
       opacity: 1,
-      zIndex: (get().elements.length + 1) * 10,
+      zIndex: (get().elements.length + 1) * 10 + Date.now() % 1000,
       text,
       fontSize: 32,
       fontWeight: 700,
@@ -125,7 +126,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       height: hPercent,
       rotation: 0,
       opacity: 1,
-      zIndex: (state.elements.length + 1) * 10,
+      zIndex: (state.elements.length + 1) * 10 + Date.now() % 1000,
       shape,
       fill: "#3b82f6",
       stroke: "#000000",
@@ -172,6 +173,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     set((s: any) => ({
       elements: s.elements.filter((el: CanvasElement) => el.id !== id),
       selectedId: s.selectedId === id ? null : s.selectedId,
+      // [FIX #4] تنظيف selectedIds أيضاً لمنع الإشارة لعنصر محذوف
+      selectedIds: s.selectedIds.filter((sid: string) => sid !== id),
     }));
     get().pushHistory();
   },

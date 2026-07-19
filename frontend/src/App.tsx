@@ -4,6 +4,7 @@ import { Toolbar } from "@/components/editor/toolbar";
 import { TemplatePanel } from "@/components/editor/template-panel";
 import { PropertiesPanel } from "@/components/editor/properties-panel";
 import { EditorCanvas } from "@/components/editor/editor-canvas";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const ExportDialog = lazy(() => import("@/components/editor/export-dialog").then(module => ({ default: module.ExportDialog })));
 const PrintDialog = lazy(() => import("@/components/editor/print-dialog").then(module => ({ default: module.PrintDialog })));
@@ -60,8 +61,9 @@ export default function App() {
   const setMode = useEditorStore((state) => state.setMode);
 
   const checkLicenseStatus = useEditorStore((state) => state.checkLicenseStatus);
-  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
+  // [FIX #7] قراءة user مباشرة لضمان إعادة render عند تغيير أي من حقوله
   const user = useEditorStore((state) => state.user);
+  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
   const setAccountModalOpen = useEditorStore((state) => state.setAccountModalOpen);
   const activateLicenseKey = useEditorStore((state) => state.activateLicenseKey);
   const logoutAccount = useEditorStore((state) => state.logoutAccount);
@@ -70,13 +72,21 @@ export default function App() {
   const [lockLoading, setLockLoading] = useState(false);
 
   useEffect(() => {
-    checkLicenseStatus().then((profile) => {
+    const check = async () => {
+      const profile = await checkLicenseStatus();
       if (!profile || !profile.token) {
         setAccountModalOpen(true);
       }
-    }).finally(() => {
       setIsInitializing(false);
-    });
+    };
+    check();
+
+    // Check periodically every 5 minutes to ensure dynamic state updates
+    const intervalId = setInterval(() => {
+      checkLicenseStatus();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
   }, [checkLicenseStatus, setAccountModalOpen]);
 
   const isModalOpen = exportOpen || printOpen || mobileTemplatesOpen || mobilePropsOpen;
@@ -415,14 +425,18 @@ export default function App() {
       </Sheet>
 
       {/* نافذة التصدير */}
-      <Suspense fallback={null}>
-        <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={null}>
+          <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
+        </Suspense>
+      </ErrorBoundary>
 
       {/* نافذة إعدادات الطباعة */}
-      <Suspense fallback={null}>
-        <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={null}>
+          <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
+        </Suspense>
+      </ErrorBoundary>
 
       <AccountLicenseModal />
 

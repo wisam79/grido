@@ -34,7 +34,9 @@ func (a *App) startup(ctx context.Context) {
 }
 
 func (a *App) shutdown(_ context.Context) {
-	a.ctx = context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	a.ctx = ctx
 }
 
 var imageFilters = []runtime.FileFilter{
@@ -146,14 +148,15 @@ func decodeBase64Image(base64Data string) ([]byte, string, error) {
 	mimeType = strings.TrimSpace(strings.TrimPrefix(mimeType, "data:"))
 	mimeType = strings.SplitN(mimeType, ";", 2)[0]
 
-	decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(payload))
-	if err != nil {
-		return nil, "", fmt.Errorf("%w: %v", errInvalidBase64, err)
+	trimmedPayload := strings.TrimSpace(payload)
+	// 🔒 التحقق من حجم السلسلة قبل فك تشفيرها لتفادي تخصيص ذاكرة ضخم
+	if len(trimmedPayload) > maxFileSize*4/3+4 {
+		return nil, "", fmt.Errorf("base64 payload too large: %d chars (max %d)", len(trimmedPayload), maxFileSize*4/3+4)
 	}
 
-	// 🔒 التحقق من الحجم لبيانات Base64 لمنع ثغرات نفاذ الذاكرة
-	if len(decoded) > maxFileSize {
-		return nil, "", fmt.Errorf("decoded data size exceeds limit: %d bytes (max %d)", len(decoded), maxFileSize)
+	decoded, err := base64.StdEncoding.DecodeString(trimmedPayload)
+	if err != nil {
+		return nil, "", fmt.Errorf("%w: %v", errInvalidBase64, err)
 	}
 
 	return decoded, mimeType, nil
@@ -270,6 +273,9 @@ func (a *App) LoadAutoSave() (string, error) {
 }
 
 func (a *App) SaveAutoSave(jsonData string) error {
+	if len(jsonData) > 100*1024*1024 { // 100MB limit
+		return fmt.Errorf("autosave payload too large: %d bytes (limit 100MB)", len(jsonData))
+	}
 	path := getSavePath()
 	tmpPath := path + ".tmp"
 	if err := os.WriteFile(tmpPath, []byte(jsonData), 0644); err != nil {
@@ -397,6 +403,7 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 		if err != nil {
 			return "", fmt.Errorf("decode source image: %w", err)
 		}
+		decodedSrc = nil // release decoded bytes early
 	} else {
 		fileName := filepath.Base(filepath.Clean(localImagePath))
 		actualImagePath := filepath.Join(mediaDir, fileName)
@@ -442,12 +449,15 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 
 	// Apply feathering (blur) directly to the grayscale mask (radius 0.8 / 3x3 box blur)
 	maskBlurred := blurGray(maskResized)
+	maskResized = nil
+	maskImg = nil
 
 	// 6. Convert source image to NRGBA for fast slice access if it's not already
 	srcNRGBA, ok := srcImg.(*image.NRGBA)
 	if !ok {
 		srcNRGBA = imaging.Clone(srcImg)
 	}
+	srcImg = nil // release original image reference
 
 	outImg := image.NewNRGBA(image.Rect(0, 0, srcW, srcH))
 
@@ -483,12 +493,21 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 	if err != nil {
 		return "", fmt.Errorf("create file for saving: %w", err)
 	}
-	defer f.Close()
+
+	var encodeErr error
+	defer func() {
+		f.Close()
+		if encodeErr != nil {
+			os.Remove(newPath) // cleanup on failure
+		}
+	}()
 
 	encoder := png.Encoder{CompressionLevel: png.BestSpeed}
-	if err := encoder.Encode(f, outImg); err != nil {
-		return "", fmt.Errorf("save final image: %w", err)
+	encodeErr = encoder.Encode(f, outImg)
+	if encodeErr != nil {
+		return "", fmt.Errorf("save final image: %w", encodeErr)
 	}
 
 	return "/local-image/" + newName, nil
 }
+

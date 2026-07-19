@@ -15,6 +15,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
   const innerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     mode,
@@ -38,6 +39,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     template,
     printSettings,
     showRuler,
+    fillAllSlots,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
     elements: state.elements,
@@ -60,6 +62,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     template: state.template,
     printSettings: state.printSettings,
     showRuler: state.showRuler,
+    fillAllSlots: state.fillAllSlots,
   })));
 
   // قياس حجم الحاوية لتحجيم الكانفس (مع throttle)
@@ -139,6 +142,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     if (printMode) return;
     if (el.type === "image") {
       try {
+        setIsLoading(true);
         const b64 = await OpenFile();
         if (b64) {
           updateElement(el.id, { imageSrc: b64 });
@@ -146,27 +150,33 @@ export const EditorCanvas = React.memo(React.forwardRef<
         }
       } catch (err) {
         console.error("Open file error:", err);
+      } finally {
+        setIsLoading(false);
       }
     } else if (el.type === "text") {
       setEditingTextId(el.id);
     }
   };
 
-  // النقر على الخلية (للكولاج)
-  const handleSlotClick = async (slotId: string) => {
+  // النقر على الخلية (للكولاج) - تحديد الخلية فقط
+  const handleSlotClick = (slotId: string) => {
     if (printMode) return;
     selectElement(slotId);
-    const slot = slots.find((s) => s.id === slotId);
-    if (!slot) return;
-    if (!slot.imageSrc) {
-      try {
-        const b64 = await OpenFile();
-        if (b64) {
-          setSlotImage(slotId, b64);
-        }
-      } catch (err) {
-        console.error("Open file error:", err);
+  };
+
+  // النقر المزدوج على الخلية (للكولاج) - إضافة أو تغيير الصورة
+  const handleSlotDblClick = async (slotId: string) => {
+    if (printMode) return;
+    try {
+      setIsLoading(true);
+      const b64 = await OpenFile();
+      if (b64) {
+        useEditorStore.getState().setSlotImage(slotId, b64);
       }
+    } catch (err) {
+      console.error("Open file error:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -180,6 +190,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     if (!file || !file.type.startsWith("image/")) return;
 
     try {
+      setIsLoading(true);
       // قراءة الملف المسحوب وتحويله إلى Base64
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -194,7 +205,10 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
       if (mode === "collage") {
         const slotId = (e.target as HTMLElement).closest("[data-slot-id]")?.getAttribute("data-slot-id");
-        if (slotId) {
+        if (collageTemplate?.physicalLayout) {
+          // Auto-fill all slots for ID templates and grids to prevent "only first cell printed" bug
+          fillAllSlots(src);
+        } else if (slotId) {
           setSlotImage(slotId, src);
         } else {
           const emptySlot = slots.find((s) => !s.imageSrc);
@@ -218,6 +232,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
       }
     } catch (err) {
       console.error("Drop file error:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -248,6 +264,11 @@ export const EditorCanvas = React.memo(React.forwardRef<
       onMouseMove={handleCanvasMouseMove}
       onMouseLeave={handleCanvasMouseLeave}
     >
+      {isLoading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-sm">
+          <RefreshCw className="w-8 h-8 text-white animate-spin" />
+        </div>
+      )}
       {/* Render KonvaCanvas for collage or single modes */}
       {(mode === "collage" || (mode === "single" && elements.length > 0)) && (
         <KonvaCanvas
@@ -257,6 +278,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
           handleDoubleClick={handleDoubleClick}
           setActiveGuides={setActiveGuides}
           handleSlotClick={handleSlotClick}
+          handleSlotDblClick={handleSlotDblClick}
         />
       )}
 

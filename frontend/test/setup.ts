@@ -34,7 +34,8 @@ Object.defineProperty(window, 'go', {
         SaveImageFromBase64: () => Promise.resolve(""),
         OpenFile: () => Promise.resolve(""),
         SaveFile: () => Promise.resolve(),
-        SaveFileDialog: () => Promise.resolve("")
+        SaveFileDialog: () => Promise.resolve(""),
+        EnhanceImage: () => Promise.resolve("")
       }
     }
   },

@@ -9,6 +9,10 @@ import { SnapGuide } from "@/lib/snap-utils";
 import { useShallow } from "zustand/react/shallow";
 import "@/lib/custom-filters";
 
+import { KonvaCollageImage } from "./elements/collage-image";
+import { GridLayer } from "./elements/grid-layer";
+import { ColumnsLayer } from "./elements/columns-layer";
+
 interface KonvaCanvasProps {
   displayW: number;
   displayH: number;
@@ -16,332 +20,9 @@ interface KonvaCanvasProps {
   handleDoubleClick: (el: CanvasElement) => void;
   setActiveGuides: (guides: SnapGuide[]) => void;
   handleSlotClick?: (slotId: string) => void;
+  handleSlotDblClick?: (slotId: string) => void;
 }
 
-const KonvaCollageImage = React.memo(function KonvaCollageImage({
-  imageSrc,
-  width,
-  height,
-  filter,
-  brightness,
-  contrast,
-  saturation,
-  zoom = 1,
-  dragX = 0,
-  dragY = 0,
-  draggable = false,
-  onUpdateOffsets,
-  onDragEnd,
-  onClick
-}: {
-  imageSrc: string;
-  width: number;
-  height: number;
-  filter?: string;
-  brightness?: number;
-  contrast?: number;
-  saturation?: number;
-  zoom?: number;
-  dragX?: number;
-  dragY?: number;
-  draggable?: boolean;
-  onUpdateOffsets?: (x: number, y: number) => void;
-  onDragEnd?: () => void;
-  onClick: () => void;
-}) {
-  const [image] = useAsyncImage(imageSrc);
-  const imageRef = useRef<any>(null);
-
-  const hasFilters = !!(
-    (filter && filter !== "none") ||
-    (brightness !== undefined && brightness !== 100) ||
-    (contrast !== undefined && contrast !== 100) ||
-    (saturation !== undefined && saturation !== 100)
-  );
-
-  useEffect(() => {
-    const node = imageRef.current;
-    if (node && image) {
-      if (hasFilters) {
-        try {
-          const stage = node.getStage();
-          const exportRatio = stage ? (useEditorStore.getState().canvasWidth / stage.width()) : 4;
-          node.cache({
-            pixelRatio: Math.max(2, exportRatio)
-          });
-        } catch (err) {
-          console.warn("Failed to cache collage image", err);
-        }
-      } else {
-        try {
-          node.clearCache();
-        } catch (err) {
-          // Ignore
-        }
-      }
-    }
-    return () => {
-      if (node) {
-        try {
-          node.clearCache();
-        } catch (err) {
-          console.warn("Failed to clear collage image cache", err);
-        }
-      }
-    };
-  }, [image, hasFilters, width, height, filter, brightness, contrast, saturation, zoom, dragX, dragY]);
-
-  if (!image) return null;
-
-  // object-fit: cover
-  const imgAspect = image.width / image.height;
-  const slotAspect = width / height;
-  let sw = image.width;
-  let sh = image.height;
-
-  if (imgAspect > slotAspect) {
-    sw = image.height * slotAspect;
-  } else {
-    sh = image.width / slotAspect;
-  }
-
-  // Apply zoom factor
-  sw = sw / zoom;
-  sh = sh / zoom;
-
-  // Default centering offset
-  const defaultSx = imgAspect > slotAspect ? (image.width - sw) / 2 : 0;
-  const defaultSy = imgAspect > slotAspect ? 0 : (image.height - sh) / 2;
-
-  // Max bounds for offset X and Y
-  const maxDragX = (image.width - sw) / 2;
-  const maxDragY = (image.height - sh) / 2;
-
-  // Clamp the drag offsets to ensure crop window stays within the image boundaries
-  const dragXClamped = Math.max(-maxDragX, Math.min(maxDragX, dragX));
-  const dragYClamped = Math.max(-maxDragY, Math.min(maxDragY, dragY));
-
-  const sx = Math.round(defaultSx + dragXClamped);
-  const sy = Math.round(defaultSy + dragYClamped);
-  sw = Math.round(sw);
-  sh = Math.round(sh);
-
-  let totalBrightness = brightness ?? 100;
-  let totalContrast = contrast ?? 100;
-  let totalSaturation = saturation ?? 100;
-  let totalHue = 0;
-  let useSepia = false;
-  let useGrayscale = false;
-
-  if (filter === "enhance") {
-    totalContrast = (totalContrast / 100) * 108;
-    totalSaturation = (totalSaturation / 100) * 112;
-    totalBrightness = (totalBrightness / 100) * 102;
-  } else if (filter === "skinGlow") {
-    totalHue = 10;
-    totalSaturation = (totalSaturation / 100) * 110;
-    totalContrast = (totalContrast / 100) * 94;
-    totalBrightness = (totalBrightness / 100) * 106;
-  } else if (filter === "clarity") {
-    totalContrast = (totalContrast / 100) * 122;
-    totalSaturation = (totalSaturation / 100) * 120;
-    totalBrightness = (totalBrightness / 100) * 98;
-  } else if (filter === "lowlight") {
-    totalBrightness = (totalBrightness / 100) * 116;
-    totalContrast = (totalContrast / 100) * 90;
-    totalSaturation = (totalSaturation / 100) * 105;
-  } else if (filter === "cinematic") {
-    useSepia = true;
-    totalHue = 5;
-    totalSaturation = (totalSaturation / 100) * 115;
-    totalContrast = (totalContrast / 100) * 110;
-    totalBrightness = (totalBrightness / 100) * 102;
-  } else if (filter === "monoPro") {
-    useGrayscale = true;
-    totalContrast = (totalContrast / 100) * 125;
-    totalBrightness = (totalBrightness / 100) * 102;
-  }
-
-  const filters: any[] = [];
-  if (filter === "skinGlow" && (Konva.Filters as any).SkinGlow) {
-    filters.push((Konva.Filters as any).SkinGlow);
-  }
-  if (useGrayscale) filters.push(Konva.Filters.Grayscale);
-  if (useSepia) filters.push(Konva.Filters.Sepia);
-  if (totalBrightness !== 100) filters.push(Konva.Filters.Brighten);
-  if (totalContrast !== 100) filters.push(Konva.Filters.Contrast);
-  if (totalSaturation !== 100 || totalHue !== 0) filters.push(Konva.Filters.HSL);
-
-  return (
-    <KonvaImage
-      draggable={draggable}
-      onDragMove={(e) => {
-        if (!draggable) return;
-        const dx = e.target.x();
-        const dy = e.target.y();
-        // Reset component position to stay locked inside slot
-        e.target.x(0);
-        e.target.y(0);
-        
-        // Calculate new drag offsets
-        const newDragX = dragX - dx * (sw / width);
-        const newDragY = dragY - dy * (sh / height);
-        
-        onUpdateOffsets?.(newDragX, newDragY);
-      }}
-      onDragEnd={() => {
-        if (draggable) {
-          onDragEnd?.();
-        }
-      }}
-      image={image}
-      cropX={sx}
-      cropY={sy}
-      cropWidth={sw}
-      cropHeight={sh}
-      x={0}
-      y={0}
-      width={width}
-      height={height}
-      filters={filters}
-      brightness={totalBrightness !== 100 ? (totalBrightness - 100) / 100 : 0}
-      contrast={totalContrast !== 100 ? totalContrast - 100 : 0}
-      {...({
-        hue: totalHue,
-        saturation: totalSaturation !== 100 ? Math.log2(Math.max(1, totalSaturation) / 100) : 0
-      } as any)}
-      onClick={onClick}
-      onTap={onClick}
-      ref={imageRef}
-    />
-  );
-}, (prev, next) => {
-  return prev.imageSrc === next.imageSrc &&
-         prev.width === next.width &&
-         prev.height === next.height &&
-         prev.filter === next.filter &&
-         prev.brightness === next.brightness &&
-         prev.contrast === next.contrast &&
-         prev.saturation === next.saturation &&
-         prev.zoom === next.zoom &&
-         prev.dragX === next.dragX &&
-         prev.dragY === next.dragY &&
-         prev.draggable === next.draggable;
-});
-
-const GridLayer = React.memo(function GridLayer({
-  showGrid,
-  gridSize,
-  gridColor,
-  gridOpacity,
-  gridSubdivisions,
-  gridType,
-  displayW,
-  displayH
-}: {
-  showGrid: boolean;
-  gridSize: number;
-  gridColor: string;
-  gridOpacity: number;
-  gridSubdivisions: number;
-  gridType: "lines" | "dots";
-  displayW: number;
-  displayH: number;
-}) {
-  if (!showGrid || gridSize <= 0) return null;
-
-  const numH = Math.ceil(displayH / gridSize);
-  const numW = Math.ceil(displayW / gridSize);
-
-  return (
-    <FastLayer listening={false} name="grid-layer">
-      <Shape
-        sceneFunc={(context, shape) => {
-          context.beginPath();
-          if (gridType === "lines") {
-            for (let i = 0; i <= numH; i++) {
-              const isMajor = gridSubdivisions > 0 && i % gridSubdivisions === 0;
-              context.moveTo(0, i * gridSize);
-              context.lineTo(displayW, i * gridSize);
-              context.strokeStyle = gridColor;
-              context.lineWidth = isMajor ? 0.8 : 0.4;
-              context.globalAlpha = isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity;
-              context.stroke();
-              context.beginPath();
-            }
-            for (let j = 0; j <= numW; j++) {
-              const isMajor = gridSubdivisions > 0 && j % gridSubdivisions === 0;
-              context.moveTo(j * gridSize, 0);
-              context.lineTo(j * gridSize, displayH);
-              context.strokeStyle = gridColor;
-              context.lineWidth = isMajor ? 0.8 : 0.4;
-              context.globalAlpha = isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity;
-              context.stroke();
-              context.beginPath();
-            }
-          } else {
-            context.fillStyle = gridColor;
-            for (let i = 0; i <= numH; i++) {
-              for (let j = 0; j <= numW; j++) {
-                const isMajor = gridSubdivisions > 0 && (i % gridSubdivisions === 0 || j % gridSubdivisions === 0);
-                const radius = isMajor ? 1.5 : 0.8;
-                const alpha = isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity;
-                context.globalAlpha = alpha;
-                context.beginPath();
-                context.arc(j * gridSize, i * gridSize, radius, 0, Math.PI * 2);
-                context.fill();
-              }
-            }
-          }
-        }}
-      />
-    </FastLayer>
-  );
-});
-
-const ColumnsLayer = React.memo(function ColumnsLayer({
-  showColumns,
-  columnsMargin,
-  columnsGutter,
-  columnsCount,
-  columnsColor,
-  displayW,
-  displayH
-}: {
-  showColumns: boolean;
-  columnsMargin: number;
-  columnsGutter: number;
-  columnsCount: number;
-  columnsColor: string;
-  displayW: number;
-  displayH: number;
-}) {
-  if (!showColumns) return null;
-
-  const cols = [];
-  const availW = displayW - 2 * columnsMargin;
-  const colW = (availW - (columnsCount - 1) * columnsGutter) / columnsCount;
-
-  for (let i = 0; i < columnsCount; i++) {
-    const xPos = columnsMargin + i * (colW + columnsGutter);
-    cols.push(
-      <Rect
-        key={`col-${i}`}
-        x={xPos}
-        y={0}
-        width={colW}
-        height={displayH}
-        fill={columnsColor}
-      />
-    );
-  }
-
-  return (
-    <FastLayer listening={false} name="columns-layer">
-      {cols}
-    </FastLayer>
-  );
-});
 
 export function KonvaCanvas({
   displayW,
@@ -349,8 +30,18 @@ export function KonvaCanvas({
   sortedElements,
   handleDoubleClick,
   setActiveGuides,
-  handleSlotClick
+  handleSlotClick,
+  handleSlotDblClick
 }: KonvaCanvasProps) {
+  const wheelTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (wheelTimeoutRef.current) {
+        clearTimeout(wheelTimeoutRef.current);
+      }
+    };
+  }, []);
   const {
     mode,
     slots,
@@ -424,6 +115,7 @@ export function KonvaCanvas({
   const selectedEl = sortedElements.find((e) => e.id === selectedId);
   const isText = selectedEl?.type === "text";
 
+  // Handle caching logic for main image (Single Mode)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Alt") altPressedRef.current = true;
@@ -534,40 +226,49 @@ export function KonvaCanvas({
             return (
               <Group key={slot.id}>
                 {/* Cut Lines (dashed background guide) */}
-                {collageShowCutLines && (
+                {collageShowCutLines && hasPhysical && (
                   <Rect
-                    x={left - gap / 2}
-                    y={top - gap / 2}
-                    width={width + gap}
-                    height={height + gap}
-                    stroke="#a0aec0"
-                    strokeWidth={Math.max(1, 2 * scale)}
-                    dash={[8, 8]}
+                    x={left}
+                    y={top}
+                    width={width}
+                    height={height}
+                    stroke="#ff0000"
+                    strokeWidth={1 * scale}
+                    dash={[4 * scale, 4 * scale]}
                     listening={false}
                   />
                 )}
 
-                {/* Slot clipping group for image/placeholder */}
+                {/* Slot rendering group */}
                 <Group
                   x={left}
                   y={top}
                   width={width}
                   height={height}
-                  clipFunc={(ctx) => {
-                    ctx.beginPath();
-                    ctx.moveTo(radius, 0);
-                    ctx.lineTo(width - radius, 0);
-                    ctx.quadraticCurveTo(width, 0, width, radius);
-                    ctx.lineTo(width, height - radius);
-                    ctx.quadraticCurveTo(width, height, width - radius, height);
-                    ctx.lineTo(radius, height);
-                    ctx.quadraticCurveTo(0, height, 0, height - radius);
-                    ctx.lineTo(0, radius);
-                    ctx.quadraticCurveTo(0, 0, radius, 0);
-                    ctx.closePath();
-                  }}
                   onClick={() => handleSlotClick?.(slot.id)}
                   onTouchEnd={() => handleSlotClick?.(slot.id)}
+                  onDblClick={() => handleSlotDblClick?.(slot.id)}
+                  onDblTap={() => handleSlotDblClick?.(slot.id)}
+                  onWheel={(e) => {
+                    if (slot.imageSrc && selectedId === slot.id) {
+                      e.evt.preventDefault();
+                      const currentZoom = slot.zoom ?? 1;
+                      const delta = e.evt.deltaY;
+                      let newZoom = currentZoom;
+                      if (delta < 0) {
+                        newZoom = Math.min(3.0, currentZoom + 0.05);
+                      } else {
+                        newZoom = Math.max(1.0, currentZoom - 0.05);
+                      }
+                      updateSlot(slot.id, { zoom: newZoom });
+                      
+                      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+                      wheelTimeoutRef.current = setTimeout(() => {
+                        pushHistory();
+                        wheelTimeoutRef.current = null;
+                      }, 500);
+                    }
+                  }}
                 >
                   {slot.imageSrc ? (
                     <KonvaCollageImage
@@ -582,6 +283,7 @@ export function KonvaCanvas({
                       dragX={slot.dragX}
                       dragY={slot.dragY}
                       draggable={isSelected}
+                      cornerRadius={radius}
                       onUpdateOffsets={(x, y) => {
                         updateSlot(slot.id, { dragX: x, dragY: y });
                       }}
@@ -589,6 +291,7 @@ export function KonvaCanvas({
                         pushHistory();
                       }}
                       onClick={() => handleSlotClick?.(slot.id)}
+                      onDblClick={() => handleSlotDblClick?.(slot.id)}
                     />
                   ) : (
                     // Placeholder background & text
@@ -599,6 +302,7 @@ export function KonvaCanvas({
                         width={width}
                         height={height}
                         fill="#f3f4f6"
+                        cornerRadius={radius}
                       />
                       <Text
                         text="+"

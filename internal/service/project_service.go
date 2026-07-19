@@ -24,6 +24,10 @@ func (s *ProjectService) SaveProject(project *domain.Project) error {
 	}
 	project.UpdatedAt = time.Now()
 
+	// Check if project already exists to determine if it is new and preserve CreatedAt
+	existing, findErr := s.repo.FindByID(project.ID)
+	isNew := findErr != nil || existing == nil
+
 	// Check licensing limits
 	profile, err := s.licenseRepo.Get()
 	isFree := true
@@ -31,24 +35,15 @@ func (s *ProjectService) SaveProject(project *domain.Project) error {
 		isFree = !profile.IsEntitled()
 	}
 
-	if isFree {
-		existingProjects, err := s.repo.FindAll()
-		if err == nil {
-			isNew := true
-			for _, p := range existingProjects {
-				if p.ID == project.ID {
-					isNew = false
-					break
-				}
-			}
-			if isNew && len(existingProjects) >= 3 {
-				return errors.New("لقد تجاوزت الحد الأقصى للمشاريع في الخطة المجانية (3 مشاريع). يرجى تسجيل حساب لتفعيل الفترة التجريبية (7 أيام) أو الترقية لباقة Pro.")
-			}
+	if isFree && isNew {
+		count, err := s.repo.Count()
+		if err == nil && count >= 3 {
+			return errors.New("لقد تجاوزت الحد الأقصى للمشاريع في الخطة المجانية (3 مشاريع). يرجى تسجيل حساب لتفعيل الفترة التجريبية (7 أيام) أو الترقية لباقة Pro.")
 		}
 	}
 
 	// Preserve CreatedAt on update, set it on insert
-	if existing, err := s.repo.FindByID(project.ID); err == nil && existing != nil {
+	if !isNew {
 		project.CreatedAt = existing.CreatedAt
 	} else {
 		if project.CreatedAt.IsZero() {
