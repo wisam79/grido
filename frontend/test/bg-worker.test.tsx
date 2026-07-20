@@ -96,7 +96,7 @@ describe('ElementProperties - Main Thread Background Removal', () => {
     const onUpdateMock = vi.fn();
     render(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />);
     
-    const removeBgBtn = screen.getByTitle('عزل الخلفية');
+    const removeBgBtn = screen.getByTitle(/عزل الخلفية/);
     
     await act(async () => {
       fireEvent.click(removeBgBtn);
@@ -116,7 +116,7 @@ describe('ElementProperties - Main Thread Background Removal', () => {
     const onUpdateMock = vi.fn();
     render(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />);
     
-    const removeBgBtn = screen.getByTitle('عزل الخلفية');
+    const removeBgBtn = screen.getByTitle(/عزل الخلفية/);
     
     // We mock getSegmenter to take a bit of time to check loading/canceling states
     const mediapipe = await import('@mediapipe/tasks-vision');
@@ -141,6 +141,6 @@ describe('ElementProperties - Main Thread Background Removal', () => {
 
     // UI should reset back to normal
     expect(screen.queryByTitle('إلغاء العزل')).toBeNull();
-    expect(screen.getByTitle('عزل الخلفية')).toBeDefined();
+    expect(screen.getByTitle(/عزل الخلفية/)).toBeDefined();
   });
 });

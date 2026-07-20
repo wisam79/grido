@@ -3,13 +3,11 @@ package service
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
-	"math/big"
 	"net"
 	"net/http"
 	"net/url"
@@ -351,7 +349,7 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 
 func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	if SupabaseURL == "" {
-		return nil, errors.New("بيئة التطوير تفتقد لروابط قاعدة البيانات (SUPABASE_URL). يرجى إعداد ملف .env للمصادقة.")
+		return nil, errors.New("بيئة التطوير تفتقد لروابط قاعدة البيانات (SUPABASE_URL). يرجى إعداد ملف .env للمصادقة")
 	}
 
 	tokenChan := make(chan string, 1)
@@ -691,154 +689,6 @@ func (s *LicenseService) Logout() error {
 	return s.repo.Clear()
 }
 
-func generateRandomBlock(length int) string {
-	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, length)
-	for i := range b {
-		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-		b[i] = charset[n.Int64()]
-	}
-	return string(b)
-}
-
-func (s *LicenseService) isAdmin() bool {
-	local, err := s.repo.Get()
-	if err != nil || local == nil {
-		return false
-	}
-	return local.Plan == "enterprise"
-}
-
-func (s *LicenseService) GetAllUsers() ([]domain.UserProfile, error) {
-	if !s.isAdmin() {
-		return nil, errors.New("unauthorized: admin access required")
-	}
-
-	req, err := http.NewRequest("GET", SupabaseURL+"/admin/users", nil)
-	if err != nil {
-		return nil, err
-	}
-	if local, err := s.repo.Get(); err == nil && local != nil {
-		req.Header.Set("Authorization", "Bearer "+local.Token)
-	}
-
-	resp, err := sharedClient.Do(req)
-	if err != nil {
-		slog.Info("Cloud API offline, listing users from local database...")
-		return s.repo.GetAll()
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		var users []domain.UserProfile
-		if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&users); err == nil {
-			return users, nil
-		}
-	}
-
-	return s.repo.GetAll()
-}
-
-func (s *LicenseService) GenerateLicenseKey(plan string, durationMonths int) (string, error) {
-	if !s.isAdmin() {
-		return "", errors.New("unauthorized: admin access required")
-	}
-
-	plan = strings.ToUpper(plan)
-	if plan != "PRO" && plan != "ENTERPRISE" {
-		plan = "PRO"
-	}
-
-	block1 := generateRandomBlock(4)
-	block2 := generateRandomBlock(4)
-	key := fmt.Sprintf("GRIDO-%s-%s-%s", plan, block1, block2)
-
-	payload, err := json.Marshal(map[string]interface{}{"key": key, "plan": plan, "months": durationMonths})
-	if err != nil {
-		return "", err
-	}
-	req, err := http.NewRequest("POST", SupabaseURL+"/admin/keys", bytes.NewBuffer(payload))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if local, err := s.repo.Get(); err == nil && local != nil {
-		req.Header.Set("Authorization", "Bearer "+local.Token)
-	}
-
-	resp, err := sharedClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("Cloud API offline or unreachable: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		var res struct {
-			Key string `json:"key"`
-		}
-		if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&res); err == nil {
-			return res.Key, nil
-		}
-	} else {
-		slog.Error("API failed to generate license key, falling back to local generation", "statusCode", resp.StatusCode)
-	}
-
-	return key, nil
-}
-
-func (s *LicenseService) RevokeLicense(email string) error {
-	if !s.isAdmin() {
-		return errors.New("unauthorized: admin access required")
-	}
-
-	encodedEmail := url.QueryEscape(email)
-	req, err := http.NewRequest("POST", SupabaseURL+"/admin/users/revoke?email="+encodedEmail, nil)
-	if err != nil {
-		return err
-	}
-	if local, err := s.repo.Get(); err == nil && local != nil {
-		req.Header.Set("Authorization", "Bearer "+local.Token)
-	}
-
-	resp, err := sharedClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("Cloud API offline or unreachable: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("failed to revoke license on server")
-	}
-
-	return nil
-}
-
-func (s *LicenseService) ExtendLicense(email string, months int) error {
-	if !s.isAdmin() {
-		return errors.New("unauthorized: admin access required")
-	}
-
-	encodedEmail := url.QueryEscape(email)
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/admin/users/extend?email=%s&months=%d", SupabaseURL, encodedEmail, months), nil)
-	if err != nil {
-		return err
-	}
-	if local, err := s.repo.Get(); err == nil && local != nil {
-		req.Header.Set("Authorization", "Bearer "+local.Token)
-	}
-
-	resp, err := sharedClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("Cloud API offline or unreachable: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("failed to extend license on server")
-	}
-
-	return nil
-}
 
 func parseSupabaseError(body []byte) string {
 	var data map[string]interface{}

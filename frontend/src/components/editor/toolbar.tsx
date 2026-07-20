@@ -1,50 +1,16 @@
-import React, { useCallback } from "react";
-import { useEditorStore } from "@/lib/editor-store";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 import {
-  Type,
-  Square,
-  Circle,
-  Star,
-  Minus,
-  Undo2,
-  Redo2,
-  Trash2,
-  Copy,
-  ArrowUp,
-  ArrowDown,
   Download,
   Printer,
   Save,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  ChevronDown,
-  Grid3x3,
-  Magnet,
-  Columns,
-  Link,
-  Unlink,
-  Ruler,
-  Paintbrush,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { IMAGE_FILTERS } from "@/lib/templates";
-import { ToolbarFileOps } from "./toolbar-file-ops";
-import { VECTOR_SHAPES } from "@/lib/svg-paths";
 
-import { toast } from "sonner";
-import { useShallow } from "zustand/react/shallow";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+
+import { ToolbarFileOps } from "./toolbar-file-ops";
+
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface ToolbarProps {
   onPrint: () => void;
@@ -52,7 +18,7 @@ interface ToolbarProps {
   onSave: () => void;
 }
 
-import { TooltipBtn, ToolbarAddTools, ImageFiltersPopover, ToolbarSelectionTools, ToolbarHistoryTools, ToolbarViewTools, TemplateInfo } from "./toolbar-items";
+import { TooltipBtn, ToolbarAddTools, ToolbarSelectionTools, ToolbarHistoryTools, ToolbarViewTools, TemplateInfo } from "./toolbar-items";
 
 
 export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
-  Type, Square, Circle, Star, Minus, Undo2, Redo2, Trash2, Copy, ArrowUp, ArrowDown, Download, Printer, Save, AlignLeft, AlignCenter, AlignRight, ChevronDown, Grid3x3, Magnet, Columns, Link, Unlink, Ruler, Paintbrush,
+  Type, Square, Circle, Star, Minus, Undo2, Redo2, Trash2, Copy, ArrowUp, ArrowDown, AlignLeft, AlignCenter, AlignRight, ChevronDown, Grid3x3, Magnet, Columns, Link, Unlink, Ruler, Paintbrush,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";

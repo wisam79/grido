@@ -19,7 +19,6 @@ export interface LicenseSlice {
   user: UserProfile | null;
   licenseLoading: boolean;
   accountModalOpen: boolean;
-  adminUsers: UserProfile[];
   aiUsageLogs: AiUsageRecord[];
 
   setAccountModalOpen: (open: boolean) => void;
@@ -32,11 +31,6 @@ export interface LicenseSlice {
   logoutAccount: () => Promise<void>;
   isLicenseActive: () => boolean;
   
-  // Admin Operations
-  adminFetchAllUsers: () => Promise<UserProfile[]>;
-  adminGenerateKey: (plan: string, durationMonths: number) => Promise<string>;
-  adminRevokeLicense: (email: string) => Promise<void>;
-  adminExtendLicense: (email: string, months: number) => Promise<void>;
   logAiUsage: (record: Omit<AiUsageRecord, "id" | "timestamp">) => void;
 }
 
@@ -87,7 +81,6 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
   user: null,
   licenseLoading: false,
   accountModalOpen: false,
-  adminUsers: [],
   aiUsageLogs: (() => {
     try {
       const saved = localStorage.getItem("grido_ai_usage_logs");
@@ -204,53 +197,5 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       }
     }
     return false;
-  },
-
-  adminFetchAllUsers: async () => {
-    set({ licenseLoading: true });
-    try {
-      const users = await LicenseHandler.AdminGetAllUsers();
-      const mapped = users || [];
-      set({ adminUsers: mapped, licenseLoading: false });
-      return mapped;
-    } catch (err) {
-      console.error("Failed to fetch admin users:", err);
-      set({ licenseLoading: false });
-      return [];
-    }
-  },
-
-  adminGenerateKey: async (plan, durationMonths) => {
-    set({ licenseLoading: true });
-    try {
-      const key = await LicenseHandler.AdminGenerateKey(plan, durationMonths);
-      set({ licenseLoading: false });
-      return key;
-    } catch (err: any) {
-      set({ licenseLoading: false });
-      throw new Error(err || "فشل توليد المفتاح");
-    }
-  },
-
-  adminRevokeLicense: async (email) => {
-    set({ licenseLoading: true });
-    try {
-      await LicenseHandler.AdminRevokeUserLicense(email);
-      await get().adminFetchAllUsers();
-    } catch (err: any) {
-      set({ licenseLoading: false });
-      throw new Error(err || "فشل إلغاء الترخيص");
-    }
-  },
-
-  adminExtendLicense: async (email, months) => {
-    set({ licenseLoading: true });
-    try {
-      await LicenseHandler.AdminExtendUserLicense(email, months);
-      await get().adminFetchAllUsers();
-    } catch (err: any) {
-      set({ licenseLoading: false });
-      throw new Error(err || "فشل تمديد الترخيص");
-    }
   },
 });

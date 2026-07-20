@@ -21,6 +21,17 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
             GetAllProjects: async () => [],
             GetProject: async () => null,
             DeleteProject: async () => 'success',
+          },
+          LicenseHandler: {
+            GetLicenseStatus: async () => ({
+              id: "mock-user",
+              email: "e2e-test@grido.app",
+              name: "E2E Tester",
+              plan: "pro",
+              status: "active",
+              expiresAt: "2030-01-01T00:00:00Z",
+              token: "mock-token"
+            })
           }
         }
       };

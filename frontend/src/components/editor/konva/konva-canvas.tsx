@@ -1,7 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { Stage, Layer, Transformer, Group, Rect, Text, FastLayer, Shape, Image as KonvaImage } from "react-konva";
-import { useAsyncImage } from "@/hooks/use-async-image";
-import Konva from "konva";
+import { Stage, Layer, Transformer, Group, Rect, Text } from "react-konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/stage-context";
 import { URLImage, KonvaTextElement, KonvaShapeElement } from "./konva-elements";

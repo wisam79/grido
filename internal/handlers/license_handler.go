@@ -45,26 +45,4 @@ func (h *LicenseHandler) Logout() (string, error) {
 	return "success", nil
 }
 
-func (h *LicenseHandler) AdminGetAllUsers() ([]domain.UserProfile, error) {
-	return h.service.GetAllUsers()
-}
 
-func (h *LicenseHandler) AdminGenerateKey(plan string, durationMonths int) (string, error) {
-	return h.service.GenerateLicenseKey(plan, durationMonths)
-}
-
-func (h *LicenseHandler) AdminRevokeUserLicense(email string) (string, error) {
-	err := h.service.RevokeLicense(email)
-	if err != nil {
-		return "", err
-	}
-	return "success", nil
-}
-
-func (h *LicenseHandler) AdminExtendUserLicense(email string, months int) (string, error) {
-	err := h.service.ExtendLicense(email, months)
-	if err != nil {
-		return "", err
-	}
-	return "success", nil
-}

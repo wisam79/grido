@@ -70,7 +70,7 @@ func (s *BackupService) ImportBackup(jsonData string, mode string) error {
 		}
 
 		if existingCount > 3 {
-			return fmt.Errorf("لقد تجاوزت الحد الأقصى للمشاريع في الخطة المجانية (3 مشاريع). يرجى الترقية لباقة Pro للاستيراد.")
+			return fmt.Errorf("لقد تجاوزت الحد الأقصى للمشاريع في الخطة المجانية (3 مشاريع). يرجى الترقية لباقة Pro للاستيراد")
 		}
 	}
 

@@ -1,77 +1,82 @@
 import { useEffect } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { saveProjectAsJSON } from "@/components/editor/export-utils";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 
 export function useKeyboardShortcuts() {
+  // --- Shortcuts via react-hotkeys-hook ---
+  
+  // Undo: Ctrl+Z or Cmd+Z
+  useHotkeys("mod+z", (e) => {
+    e.preventDefault();
+    useEditorStore.getState().undo();
+  });
+
+  // Redo: Ctrl+Shift+Z or Ctrl+Y or Cmd+Shift+Z or Cmd+Y
+  useHotkeys("mod+shift+z, mod+y", (e) => {
+    e.preventDefault();
+    useEditorStore.getState().redo();
+  });
+
+  // Delete / Backspace
+  useHotkeys("delete, backspace", (e) => {
+    e.preventDefault();
+    const { selectedIds, removeElements, removeElement } = useEditorStore.getState();
+    if (selectedIds.length === 1) {
+      removeElement(selectedIds[0]);
+    } else if (selectedIds.length > 1) {
+      removeElements(selectedIds);
+    }
+  });
+
+  // Duplicate: Ctrl+D or Cmd+D
+  useHotkeys("mod+d", (e) => {
+    e.preventDefault();
+    const { selectedIds, duplicateElements, duplicateElement } = useEditorStore.getState();
+    if (selectedIds.length === 1) {
+      duplicateElement(selectedIds[0]);
+    } else if (selectedIds.length > 1) {
+      duplicateElements(selectedIds);
+    }
+  });
+
+  // Group: Ctrl+G or Cmd+G
+  useHotkeys("mod+g", (e) => {
+    e.preventDefault();
+    const { selectedIds, groupSelectedElements } = useEditorStore.getState();
+    if (selectedIds.length > 0) groupSelectedElements();
+  });
+
+  // Ungroup: Ctrl+Shift+G or Cmd+Shift+G
+  useHotkeys("shift+mod+g", (e) => {
+    e.preventDefault();
+    const { selectedIds, ungroupSelectedElements } = useEditorStore.getState();
+    if (selectedIds.length > 0) ungroupSelectedElements();
+  });
+
+  // Save: Ctrl+S or Cmd+S
+  useHotkeys("mod+s", (e) => {
+    e.preventDefault();
+    saveProjectAsJSON();
+  });
+
+  // --- Arrows (Nudging) & Paste via native events ---
+  // نحتفظ بأسهم التحريك هنا لدعم ميزة ضغط الزر المستمر والتجميع للسجل (Debounced pushHistory)
   useEffect(() => {
     let nudgeTimeout: any = null;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      // تجاهل الاختصارات داخل حقول الإدخال
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
 
-      const {
-        undo,
-        redo,
-        selectedIds,
-        removeElements,
-        duplicateElements,
-        groupSelectedElements,
-        ungroupSelectedElements,
-      } = useEditorStore.getState();
-
-      // Ctrl+Z = تراجع
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      }
-      // Ctrl+Shift+Z أو Ctrl+Y = إعادة
-      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
-        e.preventDefault();
-        redo();
-      }
-      // Delete / Backspace = حذف العناصر المحددة
-      if ((e.key === "Delete" || e.key === "Backspace") && selectedIds.length > 0) {
-        e.preventDefault();
-        if (selectedIds.length === 1) {
-          const { removeElement } = useEditorStore.getState();
-          removeElement(selectedIds[0]);
-        } else {
-          removeElements(selectedIds);
-        }
-      }
-      // Ctrl+D = تكرار العناصر المحددة
-      if ((e.ctrlKey || e.metaKey) && e.key === "d" && selectedIds.length > 0) {
-        e.preventDefault();
-        if (selectedIds.length === 1) {
-          const { duplicateElement } = useEditorStore.getState();
-          duplicateElement(selectedIds[0]);
-        } else {
-          duplicateElements(selectedIds);
-        }
-      }
-      // Ctrl+G = تجميع العناصر المحددة
-      if ((e.ctrlKey || e.metaKey) && e.key === "g" && !e.shiftKey && selectedIds.length > 0) {
-        e.preventDefault();
-        groupSelectedElements();
-      }
-      // Ctrl+Shift+G = فك التجميع
-      if ((e.ctrlKey || e.metaKey) && e.key === "g" && e.shiftKey && selectedIds.length > 0) {
-        e.preventDefault();
-        ungroupSelectedElements();
-      }
-      // Ctrl+S = حفظ
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        saveProjectAsJSON();
-      }
+      const { selectedIds } = useEditorStore.getState();
+      
       // Arrow Keys = Nudging selected elements
       if (selectedIds.length > 0 && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         e.preventDefault();
-        const { elements, updateElements } = useEditorStore.getState();
-        const step = e.shiftKey ? 0.015 : 0.002; // Shift gives larger steps
+        const { elements, updateElements, updateElement } = useEditorStore.getState();
+        const step = e.shiftKey ? 0.015 : 0.002;
         let dx = 0;
         let dy = 0;
         if (e.key === "ArrowUp") dy = -step;
@@ -95,7 +100,6 @@ export function useKeyboardShortcuts() {
 
         if (patches.length > 0) {
           if (patches.length === 1) {
-            const { updateElement } = useEditorStore.getState();
             updateElement(patches[0].id, patches[0].patch);
           } else {
             updateElements(patches);
@@ -117,7 +121,6 @@ export function useKeyboardShortcuts() {
 
       const { selectedIds, pushHistory } = useEditorStore.getState();
       if (selectedIds.length > 0 && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-        // عند إفلات الزر، نقوم بحفظ الحالة فوراً وإلغاء المؤقت المؤجل لتفادي تكرار السجلات
         if (nudgeTimeout) {
           clearTimeout(nudgeTimeout);
           nudgeTimeout = null;
@@ -144,28 +147,19 @@ export function useKeyboardShortcuts() {
               if (event.target?.result) {
                 const b64 = event.target.result as string;
                 try {
-                  // حفظ الصورة محلياً لتفادي استهلاك الذاكرة وحفظ مسار محلي فقط
                   const localPath = await SaveImageFromBase64(b64);
                   if (!localPath) return;
 
                   const state = useEditorStore.getState();
-                  
                   if (state.mode === "collage") {
                     let targetSlotId = state.selectedId;
                     if (!targetSlotId) {
                       const emptySlot = state.slots.find((s) => !s.imageSrc);
-                      if (emptySlot) {
-                        targetSlotId = emptySlot.id;
-                      } else if (state.slots.length > 0) {
-                        targetSlotId = state.slots[0].id;
-                      }
+                      if (emptySlot) targetSlotId = emptySlot.id;
+                      else if (state.slots.length > 0) targetSlotId = state.slots[0].id;
                     }
-                    
-                    if (targetSlotId) {
-                      state.setSlotImage(targetSlotId, localPath);
-                    }
+                    if (targetSlotId) state.setSlotImage(targetSlotId, localPath);
                   } else {
-                    // Single mode - calculate natural image aspect ratio to prevent distortion
                     const img = new Image();
                     img.onload = () => {
                       const aspect = img.width / img.height;
@@ -199,3 +193,4 @@ export function useKeyboardShortcuts() {
     };
   }, []);
 }
+

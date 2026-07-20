@@ -48,20 +48,7 @@ var saveFilters = []runtime.FileFilter{
 	{DisplayName: "JPEG Image (*.jpg;*.jpeg)", Pattern: "*.jpg;*.jpeg"},
 }
 
-var supportedMime = map[string]string{
-	".png":  "image/png",
-	".jpg":  "image/jpeg",
-	".jpeg": "image/jpeg",
-}
 
-func mimeTypeForPath(path string) string {
-	if m, ok := supportedMime[strings.ToLower(filepath.Ext(path))]; ok {
-		return m
-	}
-	return "image/jpeg"
-}
-
-var errEmptySelection = errors.New("no file selected")
 var errInvalidBase64 = errors.New("invalid base64 payload")
 
 func getMediaDir() string {

@@ -139,85 +139,94 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
   return (
     <div className="space-y-3.5 animate-in fade-in duration-200">
-      <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2.5">
-        <Label className="text-[11px] font-bold text-foreground/80 block">تحرير الصورة</Label>
+      <div className="bg-card/40 dark:bg-card/20 backdrop-blur-xs p-3.5 rounded-2xl border border-border/50 space-y-3 shadow-xs">
+        <div className="flex items-center justify-between border-b border-border/30 pb-2">
+          <Label className="text-[11px] font-extrabold text-foreground/90 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <span>تحرير ومعالجة الصورة</span>
+          </Label>
+        </div>
         
+        {/* زر عزل الخلفية الذكي */}
         <Button
-          variant={isRemovingBg ? "destructive" : "secondary"}
+          variant={isRemovingBg ? "destructive" : "outline"}
           className={cn(
-            "w-full flex items-center justify-center gap-1.5 h-10 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.97] group font-bold text-xs",
-            !isRemovingBg && "hover:bg-primary/10 hover:text-primary"
+            "w-full flex items-center justify-center gap-2 h-10.5 rounded-xl transition-all duration-300 cursor-pointer active:scale-[0.98] group font-extrabold text-xs shadow-xs",
+            !isRemovingBg && "bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:border-emerald-500/50"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
-          title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية"}
+          title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية الذكي للذكاء الاصطناعي"}
         >
           {isRemovingBg ? (
             <>
-              <X className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span>إلغاء العملية</span>
+              <X className="w-4 h-4 group-hover:scale-110 transition-transform text-destructive-foreground" />
+              <span>إلغاء العملية الحالية</span>
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4 group-hover:scale-115 group-hover:rotate-6 transition-all duration-300" />
-              <span className="flex items-center gap-1">
-                عزل الخلفية
+              <Sparkles className="w-4 h-4 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 text-emerald-500" />
+              <span className="flex items-center gap-1.5">
+                عزل الخلفية الذكي
                 {!isLicenseActive && (
-                  <span className="text-[8px] bg-primary text-primary-foreground px-1 py-0.5 rounded font-extrabold uppercase scale-90 select-none leading-none">PRO</span>
+                  <span className="text-[8px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider scale-95 shadow-xs">PRO</span>
                 )}
               </span>
             </>
           )}
         </Button>
 
+        {/* زر تحسين الجودة والوضوح */}
         <Button
-          variant="secondary"
+          variant="outline"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "w-full flex items-center justify-between px-3 h-10 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.97] group font-bold text-xs mt-2 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20"
+            "w-full flex items-center justify-between px-3.5 h-10.5 rounded-xl transition-all duration-300 cursor-pointer active:scale-[0.98] group font-extrabold text-xs bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-violet-500/10 hover:from-indigo-500/20 hover:to-violet-500/20 border-indigo-500/30 text-indigo-700 dark:text-indigo-300 hover:border-indigo-500/50 shadow-xs",
+            (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(element)}
-          title="تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (حد 10 صور يومياً)"
+          title={`تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
         >
-          <div className="flex items-center gap-1.5">
-            <Wand2 className="w-4 h-4 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 text-indigo-500" />
+          <div className="flex items-center gap-2">
+            <Wand2 className="w-4 h-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-300 text-indigo-500" />
             <span>تحسين الجودة والوضوح ✨</span>
           </div>
-          <span className="text-[9px] bg-indigo-500/15 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-full font-bold">
+          <span className="text-[9.5px] bg-indigo-500/15 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-extrabold shadow-2xs font-mono">
             {remainingQuota}/{dailyLimit} اليوم
           </span>
         </Button>
 
-        <div className="grid grid-cols-2 gap-2 mt-2">
+        {/* أزرار القص وتغيير الصورة */}
+        <div className="grid grid-cols-2 gap-2 pt-0.5">
           <Button
             variant="outline"
             size="sm"
-            className="h-10 rounded-xl border-border/60 hover:border-primary/45 hover:bg-accent/50 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs"
-            onClick={handleOpenFile}
-            title="تغيير الصورة"
+            className="h-10 rounded-xl border-border/60 hover:border-primary/50 hover:bg-accent/60 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs shadow-2xs group"
+            onClick={() => setCropOpen(true)}
+            title="قص وتدوير الصورة"
           >
-            <ImagePlus className="w-4 h-4 text-primary" />
-            <span>تغيير الصورة</span>
+            <Scissors className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+            <span>قص وتدوير</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-10 rounded-xl border-border/60 hover:border-primary/45 hover:bg-accent/50 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs"
-            onClick={() => setCropOpen(true)}
-            title="قص وتدوير الصورة"
+            className="h-10 rounded-xl border-border/60 hover:border-primary/50 hover:bg-accent/60 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs shadow-2xs group"
+            onClick={handleOpenFile}
+            title="تغيير الصورة"
           >
-            <Scissors className="w-4 h-4 text-primary" />
-            <span>قص وتدوير</span>
+            <ImagePlus className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+            <span>تغيير الصورة</span>
           </Button>
         </div>
 
         {element.originalImageSrc && (
           <Button
             variant="outline"
-            className="w-full mt-2 h-9 text-[11px] font-semibold transition-colors gap-2 flex items-center justify-center cursor-pointer"
+            className="w-full mt-1.5 h-9 text-[11px] font-bold transition-all gap-2 flex items-center justify-center cursor-pointer rounded-xl border-border/50 hover:bg-muted/60"
             onClick={() => setRefineOpen(true)}
           >
             <Paintbrush className="w-3.5 h-3.5 text-muted-foreground" />
-            تعديل يدوي
+            تعديل يدوي وحواف
           </Button>
         )}
 

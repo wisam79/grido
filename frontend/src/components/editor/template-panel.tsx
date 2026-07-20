@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
-import { COLLAGE_TEMPLATES, CollageTemplate, PAPER_SIZES } from "@/lib/templates";
+import { COLLAGE_TEMPLATES, CollageTemplate } from "@/lib/templates";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -12,23 +12,13 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
+
 
 
 import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
-import { cn } from "@/lib/utils";
-import { LayoutGrid, Plus, Minus, Image as ImageIcon, Paintbrush, Rows, Columns, FolderHeart, Trash2, Save, X, ArrowUpRight, ArrowUpLeft, ArrowDownRight, ArrowDownLeft, Crosshair } from "lucide-react";
+import { LayoutGrid, Paintbrush, FolderHeart, ArrowUpRight } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { PopoverColorPicker } from "./properties/shared-controls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

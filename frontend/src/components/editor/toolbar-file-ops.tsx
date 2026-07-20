@@ -161,6 +161,7 @@ export function ToolbarFileOps() {
             size="sm"
             onClick={handleOpenFile}
             aria-label="رفع صورة جديدة"
+            title="رفع صورة جديدة"
             className="h-7 w-7 p-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-md shadow-xs hover:shadow-md hover:shadow-blue-500/20 active:scale-95 transition-all cursor-pointer border-0 flex items-center justify-center"
           >
             <ImagePlus className="w-3.5 h-3.5 text-white" />
@@ -190,6 +191,7 @@ export function ToolbarFileOps() {
               size="sm"
               onClick={() => setIsProjectsOpen(true)}
               aria-label="مكتبة المشاريع المحلية"
+              title="مكتبة المشاريع المحلية"
               className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
             >
               <Database className="w-3.5 h-3.5" />

@@ -42,7 +42,9 @@ if (typeof window !== "undefined") {
 
 export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void) {
   const onUpdateRef = useRef(onUpdate);
-  onUpdateRef.current = onUpdate;
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
 
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [bgProgress, setBgProgress] = useState(0);
@@ -250,7 +252,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
     } finally {
       // [FIX #1] هذا الـ finally يُنفَّذ دائماً بصرف النظر عن أي early-return سابق
       if (imageBitmap) {
-        try { imageBitmap.close(); } catch (e) {}
+        try { imageBitmap.close(); } catch { /* ignore cleanup error */ }
       }
       if (canvas) {
         canvas.width = 0;

@@ -26,7 +26,7 @@ export async function exportCanvas(
     const transformers = stageRef.find('Transformer');
     const gridLayers = stageRef.find('.grid-layer');
     const columnsLayers = stageRef.find('.columns-layer');
-    let previouslyCached: any[] = [];
+    const previouslyCached: any[] = [];
     try {
       // إخفاء مقابض التحكم وطبقات الشبكة والأعمدة مؤقتاً قبل التصدير لمنع ظهورها في الصورة النهائية
       transformers.forEach((tr: any) => tr.hide());

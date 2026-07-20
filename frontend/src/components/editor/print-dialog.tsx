@@ -286,7 +286,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         const columnsLayers = stage.find('.columns-layer');
         let canvasDataUrl: string | null = null;
 
-        let previouslyCached: any[] = [];
+        const previouslyCached: any[] = [];
         try {
           transformers.forEach((tr: any) => tr.hide());
           gridLayers.forEach((gl: any) => gl.hide());

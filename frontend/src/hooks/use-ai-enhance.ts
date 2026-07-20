@@ -4,52 +4,86 @@ import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 import { useEditorStore } from "@/lib/editor-store";
 
 export const MODAL_ENDPOINT_URL = "https://wisamsamir78--grido-ai-upscaler-imageenhancer-enhance.modal.run";
-export const DAILY_AI_LIMIT = 5;
 
-function getTodayString() {
-  return new Date().toISOString().split("T")[0];
-}
-
-function getDailyUsage(): { date: string; count: number } {
+// 🌟 حساب الحد اليومي الديناميكي بحسب نوع باقة الحساب وصلاحية الأدمن
+export function getUserDailyLimit(): number {
   try {
-    const saved = localStorage.getItem("grido_ai_daily_usage");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.date === getTodayString()) {
-        return parsed;
-      }
+    const user = useEditorStore.getState().user;
+    
+    // حساب الأدمن (wisamsamir78@gmail.com) أو خطة Enterprise ➔ 50 صورة يومياً!
+    if (user?.email === "wisamsamir78@gmail.com" || user?.plan === "enterprise") {
+      return 50;
+    }
+    // خطة PRO الاحترافية ➔ 15 صورة يومياً!
+    if (user?.plan === "pro") {
+      return 15;
     }
   } catch (err) {
-    console.error("Failed to parse daily usage:", err);
+    console.error("Failed to calculate plan limit:", err);
   }
-  return { date: getTodayString(), count: 0 };
+  // الحساب العادي / المجاني ➔ 5 صور يومياً
+  return 5;
 }
 
-function incrementDailyUsage() {
-  const current = getDailyUsage();
-  const updated = { date: getTodayString(), count: current.count + 1 };
+function getTodayUsageCount(): number {
   try {
+    const todayStr = new Date().toISOString().split("T")[0]; // e.g. "2026-07-19"
+    const user = useEditorStore.getState().user;
+    const userEmail = user?.email || "wisamsamir78@gmail.com";
+    const logs = useEditorStore.getState().aiUsageLogs || [];
+
+    // تصفية وحساب الطلبات الفعلية المكتملة بنجاح اليوم للحساب الحالي
+    const dbCount = logs.filter((log) => {
+      const logDate = log.timestamp ? log.timestamp.substring(0, 10) : "";
+      const isToday = logDate === todayStr || logDate === todayStr.replace(/-/g, "/");
+      const isEnhance = log.serviceName && (log.serviceName.includes("ترميم") || log.serviceName.includes("GFPGAN"));
+      const isUser = !log.email || log.email === userEmail;
+      return isToday && isEnhance && isUser && log.status === "success";
+    }).length;
+
+    // دعم الاحتياط من localStorage لتلافي أي انقطاع
+    const saved = localStorage.getItem("grido_ai_daily_usage");
+    let localCount = 0;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.date === todayStr) {
+        localCount = parsed.count || 0;
+      }
+    }
+
+    return Math.max(dbCount, localCount);
+  } catch (err) {
+    console.error("Failed to calculate today's usage:", err);
+    return 0;
+  }
+}
+
+function incrementLocalDailyUsage() {
+  try {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const current = getTodayUsageCount();
+    const updated = { date: todayStr, count: current + 1 };
     localStorage.setItem("grido_ai_daily_usage", JSON.stringify(updated));
   } catch (err) {
-    console.error("Failed to save daily usage:", err);
+    console.error("Failed to save local daily usage:", err);
   }
-  return updated;
 }
 
 export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void) {
   const onUpdateRef = useRef(onUpdate);
-  onUpdateRef.current = onUpdate;
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
 
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [enhanceProgress, setEnhanceProgress] = useState(0);
   const [enhanceProgressText, setEnhanceProgressText] = useState("");
-  const [dailyCount, setDailyCount] = useState(() => getDailyUsage().count);
 
-  useEffect(() => {
-    setDailyCount(getDailyUsage().count);
-  }, []);
-
-  const remainingQuota = Math.max(0, DAILY_AI_LIMIT - dailyCount);
+  // قراءة الحد اليومي الديناميكي بناءً على الحساب والسياسة
+  const user = useEditorStore((state) => state.user);
+  const dailyLimit = getUserDailyLimit();
+  const dailyCount = getTodayUsageCount();
+  const remainingQuota = Math.max(0, dailyLimit - dailyCount);
 
   const handleEnhance = async (element: { id: string; imageSrc?: string; originalImageSrc?: string }) => {
     if (!element.imageSrc) {
@@ -57,9 +91,9 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
       return;
     }
 
-    // 🔒 التحقق من حد الاستهلاك اليومي
+    // 🔒 التحقق الدقيق من حد الاستهلاك اليومي المربوط بالحساب
     if (remainingQuota <= 0) {
-      toast.warning(`وصلت للحد الأقصى اليومي لاستخدام الذكاء الاصطناعي (${DAILY_AI_LIMIT} صور/يومياً). يتجدد الرصيد غداً 🕛`, {
+      toast.warning(`وصلت للحد الأقصى اليومي لاستخدام الذكاء الاصطناعي (${dailyLimit} صور/يومياً). يتجدد الرصيد غداً 🕛`, {
         duration: 5000,
       });
       return;
@@ -132,13 +166,13 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
         useEditorStore.getState().pushHistory();
         setEnhanceProgress(100);
 
-        // 🌟 زيادة عداد الاستهلاك اليومي
-        const newUsage = incrementDailyUsage();
-        setDailyCount(newUsage.count);
+        // 🌟 1. زيادة العداد المحلي الاحتياطي
+        incrementLocalDailyUsage();
 
-        const user = useEditorStore.getState().user;
+        // 🌟 2. توثيق وتسجيل الطلب في سجلات تدقيق قاعدة البيانات الحية
+        const currentUser = useEditorStore.getState().user;
         useEditorStore.getState().logAiUsage({
-          email: user?.email || "wisamsamir78@gmail.com",
+          email: currentUser?.email || "wisamsamir78@gmail.com",
           serviceName: "ترميم الوجوه بالذكاء الاصطناعي (GFPGAN v1.4)",
           source: "Grido Studio Desktop (Windows)",
           durationSec: result.execution_seconds || 2.4,
@@ -146,9 +180,10 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
           status: "success",
         });
 
-        const costInfo = result.total_cost_usd ? ` (${result.execution_seconds ?? 0}ث | $${result.total_cost_usd})` : "";
-        const remText = ` · المتبقي اليوم: ${Math.max(0, DAILY_AI_LIMIT - newUsage.count)}/10`;
-        toast.success(`تم ترميم وتحسين دقة الصورة بنجاح ✨${costInfo}${remText}`);
+        // 🌟 3. عرض إشعار النجاح الأنيق للمستخدم مع الرصيد الدقيق المتبقي
+        const updatedCount = getTodayUsageCount();
+        const remText = ` (المتبقي اليوم: ${Math.max(0, dailyLimit - updatedCount)}/${dailyLimit})`;
+        toast.success(`تم ترميم وتحسين دقة الصورة بنجاح ✨${remText}`);
       }
     } catch (err: any) {
       if (progressTimer) clearInterval(progressTimer);
@@ -172,7 +207,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
     enhanceProgressText,
     dailyCount,
     remainingQuota,
-    dailyLimit: DAILY_AI_LIMIT,
+    dailyLimit,
     handleEnhance,
   };
 }

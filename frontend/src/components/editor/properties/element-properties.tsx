@@ -12,6 +12,8 @@ import { ImageStyleProperties, ImageAdjustProperties } from "./panels/image-prop
 import { TextProperties } from "./panels/text-properties";
 import { ShapeProperties } from "./panels/shape-properties";
 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 export function ElementProperties({
   element,
   onUpdate,
@@ -23,10 +25,10 @@ export function ElementProperties({
 
   return (
     <div className="space-y-4">
-      <div className="text-xs font-semibold text-primary flex items-center gap-1.5 border-b border-border/10 pb-2">
-        {element.type === "image" && (<><ImageIcon className="w-3.5 h-3.5" /> خصائص الصورة</>)}
-        {element.type === "text" && (<><Type className="w-3.5 h-3.5" /> خصائص النص</>)}
-        {element.type === "shape" && (<><Palette className="w-3.5 h-3.5" /> خصائص الشكل</>)}
+      <div className="text-xs font-extrabold text-primary flex items-center gap-1.5 border-b border-border/15 pb-2.5">
+        {element.type === "image" && (<><ImageIcon className="w-4 h-4 text-primary" /> <span>خصائص الصورة</span></>)}
+        {element.type === "text" && (<><Type className="w-4 h-4 text-primary" /> <span>خصائص النص</span></>)}
+        {element.type === "shape" && (<><Palette className="w-4 h-4 text-primary" /> <span>خصائص الشكل</span></>)}
       </div>
 
       {element.locked && (
@@ -50,26 +52,50 @@ export function ElementProperties({
       )}
 
       <div className={cn(element.locked && "pointer-events-none opacity-50 select-none")}>
-        <Tabs defaultValue="style" className="w-full">
-          <TabsList className={cn(
-            "grid w-full h-9 p-[3px] bg-muted rounded-lg border",
-            hasAdjustTab ? "grid-cols-4" : "grid-cols-3"
-          )}>
-            <TabsTrigger value="style" title="التنسيق والمظهر" className="rounded-md py-1 cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
-              <Paintbrush className="w-3.5 h-3.5" />
-            </TabsTrigger>
-            {hasAdjustTab && (
-              <TabsTrigger value="adjust" title="تعديل الألوان" className="rounded-md py-1 cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
-                <Sliders className="w-3.5 h-3.5" />
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="effects" title="التأثيرات (ظلال، زوايا، دمج)" className="rounded-md py-1 cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
-              <Sparkles className="w-3.5 h-3.5" />
-            </TabsTrigger>
-            <TabsTrigger value="arrange" title="الموضع والترتيب" className="rounded-md py-1 cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
-              <Move className="w-3.5 h-3.5" />
-            </TabsTrigger>
-          </TabsList>
+        <TooltipProvider delayDuration={150}>
+          <Tabs defaultValue="style" className="w-full">
+            <TabsList className={cn(
+              "grid w-full h-10 p-[3px] bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/40 backdrop-blur-xs",
+              hasAdjustTab ? "grid-cols-4" : "grid-cols-3"
+            )}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="style" className="rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
+                    <Paintbrush className="w-4 h-4" />
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs font-bold">التنسيق والأدوات</TooltipContent>
+              </Tooltip>
+
+              {hasAdjustTab && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger value="adjust" className="rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
+                      <Sliders className="w-4 h-4" />
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-bold">تعديل الألوان والسطوع</TooltipContent>
+                </Tooltip>
+              )}
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="effects" className="rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
+                    <Sparkles className="w-4 h-4" />
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs font-bold">التأثيرات والظلال</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="arrange" className="rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
+                    <Move className="w-4 h-4" />
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs font-bold">الموضع والترتيب</TooltipContent>
+              </Tooltip>
+            </TabsList>
 
           <TabsContent value="style" className="mt-3.5 space-y-3.5">
             {element.type === "image" && (
@@ -296,7 +322,8 @@ export function ElementProperties({
               </div>
             </div>
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </TooltipProvider>
       </div>
     </div>
   );

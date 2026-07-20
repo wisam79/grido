@@ -38,7 +38,7 @@ func (s *ProjectService) SaveProject(project *domain.Project) error {
 	if isFree && isNew {
 		count, err := s.repo.Count()
 		if err == nil && count >= 3 {
-			return errors.New("لقد تجاوزت الحد الأقصى للمشاريع في الخطة المجانية (3 مشاريع). يرجى تسجيل حساب لتفعيل الفترة التجريبية (7 أيام) أو الترقية لباقة Pro.")
+			return errors.New("لقد تجاوزت الحد الأقصى للمشاريع في الخطة المجانية (3 مشاريع). يرجى تسجيل حساب لتفعيل الفترة التجريبية (7 أيام) أو الترقية لباقة Pro")
 		}
 	}
 

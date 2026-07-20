@@ -1,4 +1,4 @@
-import { IdCard, Plane, Image, Camera, Briefcase, LayoutGrid, LayoutPanelTop, Grid2x2, Grid3x3, Grid3x2, Columns4, ClipboardList } from 'lucide-react';
+import { LayoutGrid, LayoutPanelTop, Grid2x2, Grid3x3, Grid3x2, Columns4, ClipboardList } from 'lucide-react';
 import type { CollageTemplate } from './types';
 
 export const COLLAGE_TEMPLATES: CollageTemplate[] = [

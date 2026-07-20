@@ -61,6 +61,7 @@
     "react-cropper": "^2.3.3",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.81.0",
+    "react-hotkeys-hook": "^5.3.3",
     "react-konva": "^18.2.16",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
