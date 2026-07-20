@@ -6,6 +6,7 @@ import { SnapGuide } from "@/lib/snap-utils";
 import { KonvaCanvas } from "./konva/konva-canvas";
 import { useShallow } from "zustand/react/shallow";
 import { HorizontalRuler, VerticalRuler } from "./ruler";
+import { ContextMenu, ContextMenuPosition, ContextMenuTarget } from "./context-menu";
 
 export const EditorCanvas = React.memo(React.forwardRef<
   HTMLDivElement,
@@ -16,12 +17,18 @@ export const EditorCanvas = React.memo(React.forwardRef<
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [contextMenu, setContextMenu] = useState<{
+    position: ContextMenuPosition;
+    target: ContextMenuTarget;
+  } | null>(null);
 
   const {
     mode,
     elements,
     slots,
     selectedId,
+    selectedIds,
     editingTextId,
     canvasWidth,
     canvasHeight,
@@ -40,11 +47,14 @@ export const EditorCanvas = React.memo(React.forwardRef<
     printSettings,
     showRuler,
     fillAllSlots,
+    canvasZoom,
+    setCanvasZoom,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
     elements: state.elements,
     slots: state.slots,
     selectedId: state.selectedId,
+    selectedIds: state.selectedIds,
     editingTextId: state.editingTextId,
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
@@ -63,6 +73,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
     printSettings: state.printSettings,
     showRuler: state.showRuler,
     fillAllSlots: state.fillAllSlots,
+    canvasZoom: state.canvasZoom,
+    setCanvasZoom: state.setCanvasZoom,
   })));
 
   // قياس حجم الحاوية لتحجيم الكانفس (مع throttle)
@@ -87,16 +99,36 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
   // حساب حجم الكانفس المعروض
   const aspect = canvasWidth / canvasHeight;
-  const maxW = containerSize.w - 32;
-  const maxH = containerSize.h - 32;
+  const maxW = (containerSize.w - 32) * canvasZoom;
+  const maxH = (containerSize.h - 32) * canvasZoom;
   let displayW = maxW;
   let displayH = displayW / aspect;
   if (displayH > maxH) {
     displayH = maxH;
     displayW = displayH * aspect;
   }
-  displayW = Math.max(100, displayW);
-  displayH = Math.max(100, displayH);
+  displayW = Math.max(100 * canvasZoom, displayW);
+  displayH = Math.max(100 * canvasZoom, displayH);
+
+  // دعم التقريب بالعجلة (Ctrl + Scroll)
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setCanvasZoom((z: number) => Math.min(Math.max(0.1, z + delta), 5));
+      }
+    };
+    const node = containerRef.current;
+    if (node) {
+      node.addEventListener("wheel", handleWheel, { passive: false });
+    }
+    return () => {
+      if (node) {
+        node.removeEventListener("wheel", handleWheel);
+      }
+    };
+  }, [setCanvasZoom]);
 
   // حساب الأبعاد الفيزيائية بالمليمتر
   const widthMM = useMemo(() => {
@@ -279,6 +311,61 @@ export const EditorCanvas = React.memo(React.forwardRef<
           setActiveGuides={setActiveGuides}
           handleSlotClick={handleSlotClick}
           handleSlotDblClick={handleSlotDblClick}
+          onContextMenu={(e) => {
+            if (printMode) return;
+            const evt = e.evt;
+            if (!evt) return;
+            
+            const x = evt.clientX;
+            const y = evt.clientY;
+
+            let targetType: "element" | "slot" | "canvas" = "canvas";
+            let targetId: string | null = null;
+            
+            const node = e.target;
+            const stage = node.getStage();
+            const isBackground = node === stage || node.hasName("bg-rect");
+            
+            if (!isBackground) {
+              if (mode === "single") {
+                const elNode = typeof node.findAncestor === 'function' ? (node.findAncestor((n: any) => !!n.id(), true)) : null;
+                const id = elNode?.id() || node.id() || node.attrs?.id;
+                if (id) {
+                  targetType = "element";
+                  targetId = id;
+                  if (!selectedIds.includes(id)) {
+                    selectElement(id);
+                  }
+                }
+              } else if (mode === "collage") {
+                const parentGroup = typeof node.findAncestor === 'function' ? node.findAncestor((n: any) => n.id() && n.id().startsWith("slot-"), true) : null;
+                if (parentGroup) {
+                  targetType = "slot";
+                  targetId = parentGroup.id().replace("slot-", "");
+                  selectElement(targetId);
+                }
+              }
+            }
+            
+            if (targetType === "canvas") {
+              setContextMenu(null);
+              return;
+            }
+            
+            setContextMenu({
+              position: { x, y },
+              target: { type: targetType, id: targetId }
+            });
+          }}
+        />
+      )}
+
+      {/* Context Menu Overlay */}
+      {contextMenu && !printMode && (
+        <ContextMenu
+          position={contextMenu.position}
+          target={contextMenu.target}
+          onClose={() => setContextMenu(null)}
         />
       )}
 
@@ -431,13 +518,16 @@ export const EditorCanvas = React.memo(React.forwardRef<
         if (typeof ref === "function") ref(node);
         else if (ref) (ref as any).current = node;
       }}
-      className="absolute inset-0 flex items-center justify-center overflow-hidden p-4 workspace-grid bg-muted/40"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) selectElement(null);
-      }}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+      className="absolute inset-0 overflow-auto workspace-grid bg-muted/40"
     >
+      <div 
+        className="min-w-full min-h-full flex items-center justify-center p-4 relative"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) selectElement(null);
+        }}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
       {showRuler && !printMode ? (
         <div className="relative flex flex-col items-start select-none">
           {/* Top Row: Unit corner + Horizontal Ruler */}
@@ -463,6 +553,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       ) : (
         canvasArea
       )}
+      </div>
     </div>
   );
 }));

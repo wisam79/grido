@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { COLLAGE_TEMPLATES, CollageTemplate } from "@/lib/templates";
@@ -12,6 +12,7 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "../../../wailsjs/go/main/App";
 
 
 
@@ -31,66 +32,57 @@ export function TemplatePanel() {
     setBackgroundColor: state.setBackgroundColor,
   })));
 
-  const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>(() => {
-    const raw = localStorage.getItem("grido_user_collage_templates");
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        return parsed.map((t: any) => ({
-          ...t,
-          icon: LayoutGrid,
-        }));
-      } catch (e) {
-        console.error("Failed to load user templates", e);
-      }
-    }
-    return [];
-  });
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [showPredefined, setShowPredefined] = useState(false);
-  
+  const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
+
   const officialTemplates = COLLAGE_TEMPLATES.filter(
     (t) => t.id.startsWith("collage-iq-") || t.id === "collage-passport-sheet"
   );
 
-  const loadTemplates = () => {
-    const raw = localStorage.getItem("grido_user_collage_templates");
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        const mapped = parsed.map((t: any) => ({
-          ...t,
-          icon: LayoutGrid,
-        }));
-        setSavedTemplates(mapped);
-      } catch (e) {
-        console.error("Failed to load user templates", e);
-      }
-    } else {
-      setSavedTemplates([]);
+  const loadTemplates = useCallback(async () => {
+    try {
+      const templates = await GetCustomTemplates();
+      const mapped = templates.map((t: any) => ({
+        id: "collage-user-" + t.id,
+        name: t.name,
+        slots: t.slots,
+        cells: typeof t.cells === "string" ? JSON.parse(t.cells) : t.cells,
+        icon: LayoutGrid,
+      }));
+      setSavedTemplates(mapped);
+    } catch (e) {
+      console.error("Failed to load user templates", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadTemplates();
+  }, [loadTemplates]);
+
+  const handleSaveTemplate = async (name: string, cells: any[]) => {
+    try {
+      await SaveCustomTemplate(name, cells.length, JSON.stringify(cells));
+      toast.success("تم حفظ القالب بنجاح");
+      loadTemplates();
+    } catch (e) {
+      console.error(e);
+      toast.error("حدث خطأ أثناء حفظ القالب");
     }
   };
 
-  const handleSaveTemplate = (name: string, cells: any[]) => {
-    const newTpl: CollageTemplate = {
-      id: "collage-user-" + Date.now(),
-      name,
-      slots: cells.length,
-      cells,
-      icon: LayoutGrid,
-    };
-    const updated = [...savedTemplates, newTpl];
-    localStorage.setItem("grido_user_collage_templates", JSON.stringify(updated));
-    setSavedTemplates(updated);
-    toast.success("تم حفظ القالب بنجاح");
-  };
-
-  const handleDeleteTemplate = (id: string, e: React.MouseEvent) => {
+  const handleDeleteTemplate = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = savedTemplates.filter((t) => t.id !== id);
-    localStorage.setItem("grido_user_collage_templates", JSON.stringify(updated));
-    setSavedTemplates(updated);
-    toast.success("تم حذف القالب بنجاح");
+    try {
+      const numericId = parseInt(id.replace("collage-user-", ""));
+      if (!isNaN(numericId)) {
+        await DeleteCustomTemplate(numericId);
+        toast.success("تم حذف القالب بنجاح");
+        loadTemplates();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("فشل حذف القالب");
+    }
   };
 
   return (

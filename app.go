@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"grido/internal/core/domain"
+	"grido/internal/repository"
 	"grido/internal/utils"
 
 	"github.com/disintegration/imaging"
@@ -48,7 +50,6 @@ var saveFilters = []runtime.FileFilter{
 	{DisplayName: "JPEG Image (*.jpg;*.jpeg)", Pattern: "*.jpg;*.jpeg"},
 }
 
-
 var errInvalidBase64 = errors.New("invalid base64 payload")
 
 func getMediaDir() string {
@@ -62,6 +63,8 @@ func getMediaDir() string {
 const maxFileSize = 50 * 1024 * 1024
 
 func (a *App) OpenFile() (string, error) {
+	defer runtime.WindowShow(a.ctx)
+
 	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:   "Select an Image",
 		Filters: imageFilters,
@@ -157,6 +160,8 @@ func getExtensionFromMime(mimeType string) string {
 }
 
 func (a *App) SaveFile(base64Data string) (string, error) {
+	defer runtime.WindowShow(a.ctx)
+
 	decoded, mimeType, err := decodeBase64Image(base64Data)
 	if err != nil {
 		return "", err
@@ -203,6 +208,8 @@ func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
 }
 
 func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayName string, pattern string) (string, error) {
+	defer runtime.WindowShow(a.ctx)
+
 	var decoded []byte
 	var err error
 
@@ -245,6 +252,39 @@ func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayN
 func getSavePath() string {
 	appDir := utils.GetAppDir()
 	return filepath.Join(appDir, "autosave.json")
+}
+
+func (a *App) SaveCustomTemplate(name string, slots int, cellsJSON string) (domain.CustomTemplate, error) {
+	db, err := repository.InitDB()
+	if err != nil {
+		return domain.CustomTemplate{}, err
+	}
+	tmpl := domain.CustomTemplate{
+		Name:  name,
+		Slots: slots,
+		Cells: domain.JSONText(cellsJSON),
+	}
+	result := db.Create(&tmpl)
+	return tmpl, result.Error
+}
+
+func (a *App) GetCustomTemplates() ([]domain.CustomTemplate, error) {
+	db, err := repository.InitDB()
+	if err != nil {
+		return nil, err
+	}
+	var templates []domain.CustomTemplate
+	result := db.Find(&templates)
+	return templates, result.Error
+}
+
+func (a *App) DeleteCustomTemplate(id uint) error {
+	db, err := repository.InitDB()
+	if err != nil {
+		return err
+	}
+	result := db.Delete(&domain.CustomTemplate{}, id)
+	return result.Error
 }
 
 func (a *App) LoadAutoSave() (string, error) {

@@ -21,6 +21,8 @@ export interface CoreSlice {
   setLastEditedImageAspect: (aspect: number | null) => void;
   reset: () => void;
   loadProject: (project: ProjectFileV1, projectId?: string | null) => void;
+  canvasZoom: number;
+  setCanvasZoom: (zoom: number | ((prev: number) => number)) => void;
 }
 
 export const DEFAULT_CORE_STATE = {
@@ -31,6 +33,7 @@ export const DEFAULT_CORE_STATE = {
   backgroundColor: "#FFFFFF",
   lastEditedImage: null as string | null,
   lastEditedImageAspect: null as number | null,
+  canvasZoom: 1,
 };
 
 type CoreSliceCross = CoreSlice & {
@@ -189,6 +192,9 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
 
   setLastEditedImage: (src) => set({ lastEditedImage: src }),
   setLastEditedImageAspect: (aspect) => set({ lastEditedImageAspect: aspect }),
+  setCanvasZoom: (zoom) => set((state: any) => ({
+    canvasZoom: typeof zoom === "function" ? zoom(state.canvasZoom) : zoom
+  })),
 
   reset: () => {
     const freshSlots = generateInitialSlots();

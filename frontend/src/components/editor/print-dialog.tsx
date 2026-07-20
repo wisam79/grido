@@ -146,8 +146,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       const paperH = printSettings.orientation === "portrait" ? printSettings.paperHeightMM : printSettings.paperWidthMM;
       const mMM = effectiveMarginMM;
 
-      const items: any[] = [];
-      const cutLines: any[] = [];
+      const items: domain.PrintItem[] = [];
+      const cutLines: domain.CutLine[] = [];
 
 
       if (mode === "collage") {
@@ -252,7 +252,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             const sx = defaultSx + dragXClamped;
             const sy = defaultSy + dragYClamped;
 
-            items.push({
+            items.push(domain.PrintItem.createFrom({
               imageSrc: slot.imageSrc,
               x: slotX_MM,
               y: slotY_MM,
@@ -269,7 +269,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               cornerRadiusMM: radiusMM,
               borderWidthMM: borderWMM,
               borderColor: borderColor,
-            });
+            }));
           }
         }
       } else {
@@ -349,7 +349,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           const row = Math.floor(i / cols);
           const xMM = offsetX + col * (imageWidthMM + gapMM);
           const yMM = offsetY + row * (imageHeightMM + gapMM);
-          items.push({
+          items.push(domain.PrintItem.createFrom({
             imageSrc: localPath,
             x: xMM,
             y: yMM,
@@ -359,7 +359,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             brightness: 100,
             contrast: 100,
             saturation: 100,
-          });
+          }));
         }
 
         if (printSettings.showCutLines && actualCopies > 1) {

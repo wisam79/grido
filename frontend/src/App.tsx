@@ -23,12 +23,15 @@ import {
   X,
   LayoutGrid,
   Images,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useAutoSave } from "@/hooks/use-autosave";
 import { useEditorStore } from "@/lib/editor-store";
+import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { AccountLicenseModal } from "@/components/editor/account-license-modal";
 import { toast } from "sonner";
@@ -63,7 +66,16 @@ export default function App() {
   const checkLicenseStatus = useEditorStore((state) => state.checkLicenseStatus);
   // [FIX #7] قراءة user مباشرة لضمان إعادة render عند تغيير أي من حقوله
   const user = useEditorStore((state) => state.user);
-  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
+  const {
+    isLicenseActive: isLicenseActiveFn,
+    canvasZoom,
+    setCanvasZoom,
+  } = useEditorStore(useShallow((state) => ({
+    isLicenseActive: state.isLicenseActive,
+    canvasZoom: state.canvasZoom,
+    setCanvasZoom: state.setCanvasZoom,
+  })));
+  const isLicenseActive = isLicenseActiveFn();
   const setAccountModalOpen = useEditorStore((state) => state.setAccountModalOpen);
   const activateLicenseKey = useEditorStore((state) => state.activateLicenseKey);
   const logoutAccount = useEditorStore((state) => state.logoutAccount);
@@ -208,7 +220,7 @@ export default function App() {
         }`}
         onDoubleClick={handleMaximize}
       >
-        <div className="flex items-center justify-between px-4 py-1.5 relative">
+        <div className="flex items-center justify-between px-4 py-2 relative">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary/80 shrink-0" />
             <h1 className="text-xs font-bold text-foreground/80">
@@ -225,7 +237,7 @@ export default function App() {
               aria-label="وضع الكولاج"
               title="وضع الكولاج"
               className={cn(
-                "h-7 px-3.5 rounded-full cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[10px] z-10 relative transition-colors duration-300",
+                "h-8 px-4 rounded-full cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-colors duration-300",
                 mode === "collage"
                   ? "text-primary dark:text-blue-400 font-bold"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
@@ -238,7 +250,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
-              <LayoutGrid className="w-3.5 h-3.5" />
+              <LayoutGrid className="w-4 h-4" />
               <span className="leading-none">كولاج</span>
             </Button>
             <Button
@@ -248,7 +260,7 @@ export default function App() {
               aria-label="وضع التعديل الحر"
               title="وضع التعديل الحر"
               className={cn(
-                "h-7 px-3.5 rounded-full cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[10px] z-10 relative transition-colors duration-300",
+                "h-8 px-4 rounded-full cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-colors duration-300",
                 mode === "single"
                   ? "text-primary dark:text-blue-400 font-bold"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
@@ -261,7 +273,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
-              <Images className="w-3.5 h-3.5" />
+              <Images className="w-4 h-4" />
               <span className="leading-none">تعديل حر</span>
             </Button>
           </div>
@@ -389,8 +401,20 @@ export default function App() {
                 حذف العنصر
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <span>اضغط على عنصر لتحديده · اسحب لتغيير الموضع</span>
+              
+              <div className="flex items-center gap-1 border-r pr-4 border-border">
+                <button className="hover:bg-muted p-1 rounded transition-colors" onClick={() => setCanvasZoom((z: number) => Math.max(0.1, z - 0.1))}>
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
+                <div className="text-[11px] font-mono w-10 text-center select-none cursor-pointer hover:text-foreground" onDoubleClick={() => setCanvasZoom(1)}>
+                  {Math.round(canvasZoom * 100)}%
+                </div>
+                <button className="hover:bg-muted p-1 rounded transition-colors" onClick={() => setCanvasZoom((z: number) => Math.min(5, z + 0.1))}>
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -440,7 +464,7 @@ export default function App() {
 
       <AccountLicenseModal />
 
-      <SonnerToaster position="top-center" duration={2500} richColors />
+      <SonnerToaster position="top-center" duration={4000} richColors />
       <KeyboardShortcutsDialog />
     </div>
   );

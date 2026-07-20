@@ -51,9 +51,9 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             onClick={() => addTextElement()} 
             disabled={mode === "collage"}
             aria-label="إضافة نص"
-            className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-40"
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-40"
           >
-            <Type className="w-3.5 h-3.5" />
+            <Type className="w-4 h-4" />
           </Button>
         </div>
       </TooltipBtn>
@@ -67,10 +67,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
                 variant="ghost" 
                 size="sm" 
                 disabled={mode === "collage"}
-                className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5 disabled:pointer-events-none disabled:opacity-40" 
+                className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5 disabled:pointer-events-none disabled:opacity-40" 
                 aria-label="إضافة شكل"
               >
-                <Square className="w-3.5 h-3.5" />
+                <Square className="w-4 h-4" />
                 <ChevronDown className="w-2.5 h-2.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
@@ -141,9 +141,9 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
             variant="ghost"
             size="sm"
             aria-label="المرشحات الجاهزة"
-            className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
           >
-            <Paintbrush className="w-3.5 h-3.5" />
+            <Paintbrush className="w-4 h-4" />
           </Button>
         </PopoverTrigger>
       </TooltipBtn>
@@ -259,9 +259,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           size="sm"
           onClick={() => selectedId && bringToFront(selectedId)}
           aria-label="إحضار للأمام"
-          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <ArrowUp className="w-3.5 h-3.5" />
+          <ArrowUp className="w-4 h-4" />
         </Button>
       </TooltipBtn>
       <TooltipBtn content="ترتيب: إرسال للخلف">
@@ -270,9 +270,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           size="sm"
           onClick={() => selectedId && sendToBack(selectedId)}
           aria-label="إرسال للخلف"
-          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <ArrowDown className="w-3.5 h-3.5" />
+          <ArrowDown className="w-4 h-4" />
         </Button>
       </TooltipBtn>
       <TooltipBtn content="تكرار العناصر المحددة">
@@ -290,9 +290,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             }
           }}
           aria-label="تكرار"
-          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <Copy className="w-3.5 h-3.5" />
+          <Copy className="w-4 h-4" />
         </Button>
       </TooltipBtn>
 
@@ -310,9 +310,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             size="sm"
             onClick={groupSelectedElements}
             aria-label="تجميع"
-            className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
+            className="h-8 px-2.5 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
           >
-            <Link className="w-3.5 h-3.5" />
+            <Link className="w-4 h-4" />
           </Button>
         </TooltipBtn>
       )}
@@ -324,9 +324,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             size="sm"
             onClick={ungroupSelectedElements}
             aria-label="فك التجميع"
-            className="h-7 px-2 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
+            className="h-8 px-2.5 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
           >
-            <Unlink className="w-3.5 h-3.5" />
+            <Unlink className="w-4 h-4" />
           </Button>
         </TooltipBtn>
       )}
@@ -339,10 +339,10 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
             aria-label="محاذاة العنصر المحدد"
           >
-            <AlignLeft className="w-3.5 h-3.5" />
+            <AlignLeft className="w-4 h-4" />
             <ChevronDown className="w-2.5 h-2.5 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
@@ -396,9 +396,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             }
           }}
           aria-label="حذف"
-          className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
+          className="h-8 px-2.5 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-4 h-4" />
         </Button>
       </TooltipBtn>
     </div>
@@ -420,9 +420,9 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           onClick={undo}
           disabled={!canUndo}
           aria-label="تراجع"
-          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <Undo2 className="w-3.5 h-3.5" />
+          <Undo2 className="w-4 h-4" />
         </Button>
       </TooltipBtn>
       <TooltipBtn content="إعادة (Ctrl+Y)">
@@ -432,9 +432,9 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           onClick={redo}
           disabled={!canRedo}
           aria-label="إعادة"
-          className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <Redo2 className="w-3.5 h-3.5" />
+          <Redo2 className="w-4 h-4" />
         </Button>
       </TooltipBtn>
     </div>
@@ -474,13 +474,13 @@ const ToolbarViewTools = React.memo(function ToolbarViewTools() {
             onClick={() => setShowGrid(!showGrid)}
             aria-label="إظهار/إخفاء الشبكة"
             className={cn(
-              "h-7 px-2 rounded-md transition-all cursor-pointer",
+              "h-8 px-2.5 rounded-md transition-all cursor-pointer",
               showGrid
                 ? "bg-primary/10 text-primary hover:bg-primary/15"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Grid3x3 className="w-3.5 h-3.5" />
+            <Grid3x3 className="w-4 h-4" />
           </Button>
         </TooltipBtn>
 
@@ -491,13 +491,13 @@ const ToolbarViewTools = React.memo(function ToolbarViewTools() {
             onClick={() => setShowColumns(!showColumns)}
             aria-label="إظهار/إخفاء الأعمدة"
             className={cn(
-              "h-7 px-2 rounded-md transition-all cursor-pointer",
+              "h-8 px-2.5 rounded-md transition-all cursor-pointer",
               showColumns
                 ? "bg-primary/10 text-primary hover:bg-primary/15"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Columns className="w-3.5 h-3.5" />
+            <Columns className="w-4 h-4" />
           </Button>
         </TooltipBtn>
 
@@ -508,13 +508,13 @@ const ToolbarViewTools = React.memo(function ToolbarViewTools() {
             onClick={() => setShowRuler(!showRuler)}
             aria-label="إظهار/إخفاء المسطرة"
             className={cn(
-              "h-7 px-2 rounded-md transition-all cursor-pointer",
+              "h-8 px-2.5 rounded-md transition-all cursor-pointer",
               showRuler
                 ? "bg-primary/10 text-primary hover:bg-primary/15"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Ruler className="w-3.5 h-3.5" />
+            <Ruler className="w-4 h-4" />
           </Button>
         </TooltipBtn>
 
@@ -525,13 +525,13 @@ const ToolbarViewTools = React.memo(function ToolbarViewTools() {
             onClick={() => setSnapToGrid(!snapToGrid)}
             aria-label="محاذاة مغناطيسية"
             className={cn(
-              "h-7 px-2 rounded-md transition-all cursor-pointer",
+              "h-8 px-2.5 rounded-md transition-all cursor-pointer",
               snapToGrid
                 ? "bg-primary/10 text-primary hover:bg-primary/15"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Magnet className="w-3.5 h-3.5" />
+            <Magnet className="w-4 h-4" />
           </Button>
         </TooltipBtn>
       </div>
@@ -552,7 +552,7 @@ const TemplateInfo = React.memo(function TemplateInfo() {
 
   return (
     <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/10 rounded-lg px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium">
-      <Icon className="w-3.5 h-3.5 text-primary" />
+      <Icon className="w-4 h-4 text-primary" />
       <span className="font-bold">{template.name}</span>
       <span className="text-muted-foreground/60">·</span>
       <span className="font-mono text-muted-foreground/75">{canvasWidth}×{canvasHeight}px</span>

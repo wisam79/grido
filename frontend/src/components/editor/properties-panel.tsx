@@ -6,6 +6,7 @@ import { ElementProperties } from "./properties/element-properties";
 import { SlotProperties } from "./properties/slot-properties";
 import { CollageSettings } from "./properties/collage-settings";
 import { LayersList } from "./properties/layers-list";
+import { SlotsList } from "./properties/slots-list";
 
 import { useShallow } from "zustand/react/shallow";
 
@@ -72,6 +73,11 @@ export function PropertiesPanel() {
           {/* لوحة الطبقات (نشطة فقط في وضع التعديل الفردي) */}
           {mode === "single" && (
             <LayersList />
+          )}
+
+          {/* لوحة الخانات (نشطة فقط في وضع الكولاج وغير محددة عنصر مفرد) */}
+          {mode === "collage" && !selectedElement && !selectedSlot && (
+            <SlotsList />
           )}
         </div>
       </ScrollArea>

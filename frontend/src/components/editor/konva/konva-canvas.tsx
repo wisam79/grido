@@ -19,8 +19,8 @@ interface KonvaCanvasProps {
   setActiveGuides: (guides: SnapGuide[]) => void;
   handleSlotClick?: (slotId: string) => void;
   handleSlotDblClick?: (slotId: string) => void;
+  onContextMenu?: (e: any) => void;
 }
-
 
 export function KonvaCanvas({
   displayW,
@@ -29,7 +29,8 @@ export function KonvaCanvas({
   handleDoubleClick,
   setActiveGuides,
   handleSlotClick,
-  handleSlotDblClick
+  handleSlotDblClick,
+  onContextMenu
 }: KonvaCanvasProps) {
   const wheelTimeoutRef = useRef<any>(null);
 
@@ -161,6 +162,11 @@ export function KonvaCanvas({
       height={displayH}
       onMouseDown={handleStageMouseDown}
       onTouchStart={handleStageMouseDown}
+      onContextMenu={(e) => {
+        // Prevent native context menu on the canvas
+        e.evt.preventDefault();
+        onContextMenu?.(e);
+      }}
       ref={(stage) => { stageContextRef.current = stage; }}
     >
       {/* Background Color Layer */}
@@ -222,7 +228,7 @@ export function KonvaCanvas({
             const isSelected = selectedId === slot.id;
 
             return (
-              <Group key={slot.id}>
+              <Group key={slot.id} id={`slot-${slot.id}`}>
                 {/* Cut Lines (dashed background guide) */}
                 {collageShowCutLines && hasPhysical && (
                   <Rect
@@ -239,6 +245,7 @@ export function KonvaCanvas({
 
                 {/* Slot rendering group */}
                 <Group
+                  id={slot.id}
                   x={left}
                   y={top}
                   width={width}

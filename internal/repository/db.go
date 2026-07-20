@@ -65,7 +65,7 @@ func InitDB() (*gorm.DB, error) {
 	sqlDB.SetMaxOpenConns(1)
 
 	// الهجرة التلقائية لجداول قاعدة البيانات
-	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{})
+	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{}, &domain.CustomTemplate{})
 	if err != nil {
 		return nil, err
 	}
