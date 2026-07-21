@@ -247,6 +247,13 @@ type processedKey struct {
 	cropY      float64
 	cropW      float64
 	cropH      float64
+	flipX      bool
+	flipY      bool
+	rotation   float64
+	slotAspect float64
+	zoom       float64
+	dragX      float64
+	dragY      float64
 }
 
 // validatePrintRequest يتحقق من صحة بيانات طلب الطباعة وحجم الكانفس
@@ -334,6 +341,13 @@ func (s *PrintService) loadAndProcessImage(
 		cropY:      item.CropY,
 		cropW:      item.CropW,
 		cropH:      item.CropH,
+		flipX:      item.FlipX,
+		flipY:      item.FlipY,
+		rotation:   item.Rotation,
+		slotAspect: item.SlotAspect,
+		zoom:       item.Zoom,
+		dragX:      item.DragX,
+		dragY:      item.DragY,
 	}
 
 	procCache.mu.RLock()
@@ -409,12 +423,60 @@ func (s *PrintService) loadAndProcessImage(
 		targetH = 1
 	}
 
-	if item.CropW > 0 && item.CropH > 0 {
+	cropX := item.CropX
+	cropY := item.CropY
+	cropW := item.CropW
+	cropH := item.CropH
+
+	if (cropW <= 0 || cropH <= 0) && item.SlotAspect > 0 {
+		imgW := float64(img.Bounds().Dx())
+		imgH := float64(img.Bounds().Dy())
+		imgAspect := imgW / imgH
+		slotAspect := item.SlotAspect
+
+		sw := imgW
+		sh := imgH
+
+		if imgAspect > slotAspect {
+			sw = imgH * slotAspect
+		} else {
+			sh = imgW / slotAspect
+		}
+
+		zoomVal := item.Zoom
+		if zoomVal <= 0 {
+			zoomVal = 1
+		}
+
+		sw = sw / zoomVal
+		sh = sh / zoomVal
+
+		defaultSx := 0.0
+		defaultSy := 0.0
+		if imgAspect > slotAspect {
+			defaultSx = (imgW - sw) / 2
+		} else {
+			defaultSy = (imgH - sh) / 2
+		}
+
+		maxDragX := (imgW - sw) / 2
+		maxDragY := (imgH - sh) / 2
+
+		dragXClamped := math.Max(-maxDragX, math.Min(maxDragX, item.DragX))
+		dragYClamped := math.Max(-maxDragY, math.Min(maxDragY, item.DragY))
+
+		cropX = defaultSx + dragXClamped
+		cropY = defaultSy + dragYClamped
+		cropW = sw
+		cropH = sh
+	}
+
+	if cropW > 0 && cropH > 0 {
 		rect := image.Rect(
-			int(math.Round(item.CropX)),
-			int(math.Round(item.CropY)),
-			int(math.Round(item.CropX+item.CropW)),
-			int(math.Round(item.CropY+item.CropH)),
+			int(math.Round(cropX)),
+			int(math.Round(cropY)),
+			int(math.Round(cropX+cropW)),
+			int(math.Round(cropY+cropH)),
 		)
 		img = imaging.Crop(img, rect)
 	}
@@ -431,6 +493,15 @@ func (s *PrintService) loadAndProcessImage(
 	// Apply adjustments and filters on the much smaller resized image
 	adjustedImg := applyColorAdjustments(resizedImg, item.Brightness, item.Contrast, item.Saturation)
 	processedImg := applyFilter(adjustedImg, item.Filter)
+	if item.FlipX {
+		processedImg = imaging.FlipH(processedImg)
+	}
+	if item.FlipY {
+		processedImg = imaging.FlipV(processedImg)
+	}
+	if item.Rotation != 0 {
+		processedImg = imaging.Rotate(processedImg, item.Rotation, color.Transparent)
+	}
 
 	procCache.mu.Lock()
 	if len(procCache.images) >= 16 {

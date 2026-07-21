@@ -53,17 +53,19 @@ export const GridLayer = React.memo(function GridLayer({
             }
           } else {
             context.fillStyle = gridColor;
+            context.globalAlpha = gridOpacity;
+            context.beginPath();
             for (let i = 0; i <= numH; i++) {
               for (let j = 0; j <= numW; j++) {
                 const isMajor = gridSubdivisions > 0 && (i % gridSubdivisions === 0 || j % gridSubdivisions === 0);
                 const radius = isMajor ? 1.5 : 0.8;
-                const alpha = isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity;
-                context.globalAlpha = alpha;
-                context.beginPath();
-                context.arc(j * gridSize, i * gridSize, radius, 0, Math.PI * 2);
-                context.fill();
+                const x = j * gridSize;
+                const y = i * gridSize;
+                context.moveTo(x + radius, y);
+                context.arc(x, y, radius, 0, Math.PI * 2);
               }
             }
+            context.fill();
           }
         }}
       />

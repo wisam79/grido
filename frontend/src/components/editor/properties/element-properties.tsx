@@ -60,9 +60,11 @@ export function ElementProperties({
             )}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="style" className="rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
-                    <Paintbrush className="w-4 h-4" />
-                  </TabsTrigger>
+                  <div className="flex w-full h-full">
+                    <TabsTrigger value="style" className="flex-1 rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
+                      <Paintbrush className="w-4 h-4" />
+                    </TabsTrigger>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold">التنسيق والأدوات</TooltipContent>
               </Tooltip>
@@ -70,9 +72,11 @@ export function ElementProperties({
               {hasAdjustTab && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <TabsTrigger value="adjust" className="rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
-                      <Sliders className="w-4 h-4" />
-                    </TabsTrigger>
+                    <div className="flex w-full h-full">
+                      <TabsTrigger value="adjust" className="flex-1 rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
+                        <Sliders className="w-4 h-4" />
+                      </TabsTrigger>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-bold">تعديل الألوان والسطوع</TooltipContent>
                 </Tooltip>
@@ -80,18 +84,22 @@ export function ElementProperties({
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="effects" className="rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
-                    <Sparkles className="w-4 h-4" />
-                  </TabsTrigger>
+                  <div className="flex w-full h-full">
+                    <TabsTrigger value="effects" className="flex-1 rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
+                      <Sparkles className="w-4 h-4" />
+                    </TabsTrigger>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold">التأثيرات والظلال</TooltipContent>
               </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="arrange" className="rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
-                    <Move className="w-4 h-4" />
-                  </TabsTrigger>
+                  <div className="flex w-full h-full">
+                    <TabsTrigger value="arrange" className="flex-1 rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
+                      <Move className="w-4 h-4" />
+                    </TabsTrigger>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold">الموضع والترتيب</TooltipContent>
               </Tooltip>

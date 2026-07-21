@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ProjectsDialog } from "./projects-dialog";
-import { OpenFile, ClearAutoSave } from "../../../wailsjs/go/main/App";
+import { OpenFile, OpenMultipleFiles, ClearAutoSave } from "../../../wailsjs/go/main/App";
 import { saveProjectAsJSON } from "./export-utils";
 
 interface TooltipBtnProps {
@@ -70,9 +70,16 @@ export function ToolbarFileOps() {
 
   const handleOpenFile = async () => {
     try {
-      const b64 = await OpenFile();
-      if (b64) {
-        // قراءة أحدث نسخة من الـ state بعد انتهاء await لتجنب stale closure
+      let b64s: string[] = [];
+      if (typeof OpenMultipleFiles === "function") {
+        b64s = await OpenMultipleFiles();
+      }
+      if (!b64s || b64s.length === 0) {
+        const single = await OpenFile();
+        if (single) b64s = [single];
+      }
+
+      if (b64s && b64s.length > 0) {
         const freshState = useEditorStore.getState();
         const freshMode = freshState.mode;
         const freshSlots = freshState.slots;
@@ -80,40 +87,47 @@ export function ToolbarFileOps() {
 
         if (freshMode === "collage") {
           const isPhysical = freshState.collageTemplate?.physicalLayout;
-          if (isPhysical) {
-            freshState.fillAllSlots(b64);
+          if (isPhysical && b64s[0]) {
+            freshState.fillAllSlots(b64s[0]);
             toast.success("تم إدراج الصورة في جميع الخانات");
-          } else if (freshSelectedId && freshSlots.some((s) => s.id === freshSelectedId)) {
-            freshState.setSlotImage(freshSelectedId, b64);
-            toast.success("تم إدراج الصورة في الخانة المحددة");
           } else {
-            const emptySlot = freshSlots.find((s) => !s.imageSrc);
-            if (emptySlot) {
-              freshState.setSlotImage(emptySlot.id, b64);
-              toast.success("تم إدراج الصورة في خانة فارغة");
-            } else if (freshSlots[0]) {
-              freshState.setSlotImage(freshSlots[0].id, b64);
-              toast.success("تم تحديث صورة الخانة الأولى");
-            } else {
-              toast.warning("يرجى اختيار تخطيط كولاج أولاً");
+            let srcIdx = 0;
+            if (freshSelectedId && freshSlots.some((s) => s.id === freshSelectedId) && b64s[0]) {
+              freshState.setSlotImage(freshSelectedId, b64s[0]);
+              srcIdx = 1;
             }
+            for (const s of freshSlots) {
+              if (s.id !== freshSelectedId && !s.imageSrc && srcIdx < b64s.length) {
+                freshState.setSlotImage(s.id, b64s[srcIdx++]);
+              }
+            }
+            if (srcIdx === 0 && freshSlots[0] && b64s[0]) {
+              freshState.setSlotImage(freshSlots[0].id, b64s[0]);
+            }
+            toast.success(`تم استيراد ${b64s.length} صورة بنجاح`);
           }
         } else {
-          const img = new Image();
-          img.onload = () => {
-            const aspect = img.width / img.height;
-            addImageElement(b64, aspect);
-          };
-          img.onerror = () => {
-            console.warn("Failed to load image for aspect ratio, using default 1:1");
-            addImageElement(b64, 1);
-          };
-          img.src = b64;
+          for (const b64 of b64s) {
+            await new Promise<void>((resolve) => {
+              const img = new Image();
+              img.onload = () => {
+                const aspect = img.width / img.height;
+                addImageElement(b64, aspect);
+                resolve();
+              };
+              img.onerror = () => {
+                addImageElement(b64, 1);
+                resolve();
+              };
+              img.src = b64;
+            });
+          }
+          toast.success(`تم إدراج ${b64s.length} صورة في الكانفس`);
         }
       }
     } catch (err) {
       console.error(err);
-      toast.error("فشل تحميل الصورة");
+      toast.error("فشل تحميل الصور");
     }
   };
 

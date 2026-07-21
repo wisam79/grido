@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { User, ShieldCheck, Lock, Key, Loader2 } from "lucide-react";
 import { KeyboardShortcutsDialog } from "@/components/editor/keyboard-shortcuts-dialog";
 import { WindowResizeHandles } from "@/components/editor/window-resize-handles";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
@@ -206,12 +207,13 @@ export default function App() {
   }
 
   return (
-    <div 
-      className={cn(
-        "h-screen flex flex-col overflow-hidden font-cairo bg-background",
-      )}
-      dir="rtl"
-    >
+    <TooltipProvider delayDuration={300}>
+      <div 
+        className={cn(
+          "h-screen flex flex-col overflow-hidden font-cairo bg-background",
+        )}
+        dir="rtl"
+      >
       {!isMaximized && <WindowResizeHandles />}
       {/* الرأس */}
       <header
@@ -467,5 +469,6 @@ export default function App() {
       <SonnerToaster position="top-center" duration={4000} richColors />
       <KeyboardShortcutsDialog />
     </div>
+    </TooltipProvider>
   );
 }

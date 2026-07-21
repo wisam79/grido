@@ -28,11 +28,9 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     const { elements, slots, history, historyIndex } = get() as HistoryCross;
     const newHistory = history.slice(0, historyIndex + 1);
 
-    // نحن لا نستخدم JSON.stringify هنا لتجنب مشاكل المعالجة البطيئة (CPU Bottleneck).
-    // الثقة مبنية على أن استدعاء pushHistory يتم فقط عند حدوث تغيير فعلي في التطبيق (مثل انتهاء النقل أو التحجيم).
     newHistory.push({
-      elements: structuredClone(elements),
-      slots: structuredClone(slots),
+      elements: elements.map((el) => ({ ...el })),
+      slots: slots.map((s) => ({ ...s })),
     });
     
     if (newHistory.length > 20) newHistory.shift();
@@ -44,8 +42,8 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     if (historyIndex <= 0) return;
     const prev = history[historyIndex - 1];
     set({
-      elements: structuredClone(prev.elements),
-      slots: structuredClone(prev.slots),
+      elements: prev.elements.map((el) => ({ ...el })),
+      slots: prev.slots.map((s) => ({ ...s })),
       historyIndex: historyIndex - 1,
       selectedId: null,
       selectedIds: [],
@@ -58,8 +56,8 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     if (historyIndex >= history.length - 1) return;
     const next = history[historyIndex + 1];
     set({
-      elements: structuredClone(next.elements),
-      slots: structuredClone(next.slots),
+      elements: next.elements.map((el) => ({ ...el })),
+      slots: next.slots.map((s) => ({ ...s })),
       historyIndex: historyIndex + 1,
       selectedId: null,
       selectedIds: [],

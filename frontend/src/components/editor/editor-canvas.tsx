@@ -218,49 +218,69 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
+    const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) return;
 
     try {
       setIsLoading(true);
-      // قراءة الملف المسحوب وتحويله إلى Base64
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
+      const uploadedSrcs: string[] = [];
+      for (const file of files) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
 
-      // حفظ الصورة محلياً في مجلد Media (نفس آلية OpenFile)
-      const src = await SaveImageFromBase64(dataUrl);
-      if (!src) return;
+        const src = await SaveImageFromBase64(dataUrl);
+        if (src) {
+          uploadedSrcs.push(src);
+        }
+      }
+
+      if (uploadedSrcs.length === 0) return;
 
       if (mode === "collage") {
-        const slotId = (e.target as HTMLElement).closest("[data-slot-id]")?.getAttribute("data-slot-id");
-        if (collageTemplate?.physicalLayout) {
-          // Auto-fill all slots for ID templates and grids to prevent "only first cell printed" bug
-          fillAllSlots(src);
-        } else if (slotId) {
-          setSlotImage(slotId, src);
+        const targetSlotId = (e.target as HTMLElement).closest("[data-slot-id]")?.getAttribute("data-slot-id");
+        if (collageTemplate?.physicalLayout && uploadedSrcs[0]) {
+          fillAllSlots(uploadedSrcs[0]);
+        } else if (targetSlotId && uploadedSrcs[0]) {
+          setSlotImage(targetSlotId, uploadedSrcs[0]);
+          let srcIdx = 1;
+          const currentSlots = useEditorStore.getState().slots;
+          for (const s of currentSlots) {
+            if (s.id !== targetSlotId && !s.imageSrc && srcIdx < uploadedSrcs.length) {
+              setSlotImage(s.id, uploadedSrcs[srcIdx++]);
+            }
+          }
         } else {
-          const emptySlot = slots.find((s) => !s.imageSrc);
-          if (emptySlot) {
-            setSlotImage(emptySlot.id, src);
-          } else if (slots[0]) {
-            setSlotImage(slots[0].id, src);
+          let srcIdx = 0;
+          const currentSlots = useEditorStore.getState().slots;
+          for (const s of currentSlots) {
+            if (!s.imageSrc && srcIdx < uploadedSrcs.length) {
+              setSlotImage(s.id, uploadedSrcs[srcIdx++]);
+            }
+          }
+          if (srcIdx === 0 && currentSlots[0] && uploadedSrcs[0]) {
+            setSlotImage(currentSlots[0].id, uploadedSrcs[0]);
           }
         }
       } else {
-        const img = new Image();
-        img.onload = () => {
-          const aspect = img.width / img.height;
-          addImageElement(src, aspect);
-        };
-        img.onerror = () => {
-          console.warn("Failed to load dropped image for aspect ratio, using default 1:1");
-          addImageElement(src, 1);
-        };
-        img.src = src;
+        for (const src of uploadedSrcs) {
+          await new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              const aspect = img.width / img.height;
+              addImageElement(src, aspect);
+              resolve();
+            };
+            img.onerror = () => {
+              addImageElement(src, 1);
+              resolve();
+            };
+            img.src = src;
+          });
+        }
       }
     } catch (err) {
       console.error("Drop file error:", err);

@@ -59,10 +59,11 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
     if (node && image) {
       if (hasFilters) {
         try {
-          const stage = node.getStage();
-          const exportRatio = stage ? (useEditorStore.getState().canvasWidth / stage.width()) : 4;
+          // استخدام دقة عرض الشاشة العادية أثناء التعديل
+          let ratio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
+          ratio = Math.max(1.5, Math.min(2, ratio));
           node.cache({
-            pixelRatio: Math.max(2, exportRatio)
+            pixelRatio: ratio
           });
         } catch (err) {
           console.warn("Failed to cache collage image", err);
@@ -84,7 +85,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }
       }
     };
-  }, [image, hasFilters, width, height, filter, brightness, contrast, saturation, zoom, dragX, dragY]);
+  }, [image, hasFilters, width, height, filter, brightness, contrast, saturation]);
 
   if (!image) return null;
 

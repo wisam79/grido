@@ -12,10 +12,11 @@ import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/stage-context";
 import { usePrintLayout } from "@/hooks/use-print-layout";
 import { cn } from "@/lib/utils";
-import { Printer, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
+import { Printer, ZoomIn, ZoomOut, Loader2, Info } from "lucide-react";
 import { SheetPreview } from "./print/print-preview";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { ExportPrintSheet } from "../../../wailsjs/go/handlers/PrintHandler";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
@@ -65,6 +66,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   })));
   const [zoom, setZoom] = useState(1);
   const [previewImageSrc, setPreviewImageSrc] = useState<string>("");
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -74,7 +76,25 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   }, [open]);
 
   useEffect(() => {
-    if (open && stageRef.current) {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onOpenChange(false);
+      } else if (e.key === "Enter" && !isExporting && previewImageSrc) {
+        e.preventDefault();
+        handlePrint();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, isExporting, previewImageSrc]);
+
+  useEffect(() => {
+    if (open && mode === "collage") {
+      setPreviewImageSrc("collage-active");
+      return;
+    }
+    if (open && stageRef.current && mode === "single") {
       const timer = setTimeout(() => {
         const stage = stageRef.current!;
         const transformers = stage.find('Transformer');
@@ -84,7 +104,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           const targetWidth = 400;
           const pRatio = Math.min(1, targetWidth / stage.width());
 
-          // إخفاء الشبكة والأعمدة ومقابض التحكم مؤقتاً قبل التقاط المعاينة والطباعة لكي لا تظهر في المخرج المطبوع
           transformers.forEach((tr: any) => tr.hide());
           gridLayers.forEach((gl: any) => gl.hide());
           columnsLayers.forEach((cl: any) => cl.hide());
@@ -100,20 +119,15 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         } catch (err) {
           console.error("Failed to generate print preview image:", err);
         } finally {
-          // استعادة الشبكة والأعمدة ومقابض التحكم في جميع الأحوال لضمان عدم اختفائها من المحرر
           transformers.forEach((tr: any) => tr.show());
           gridLayers.forEach((gl: any) => gl.show());
           columnsLayers.forEach((cl: any) => cl.show());
           stage.batchDraw();
         }
-      }, 300);
+      }, 50);
       return () => clearTimeout(timer);
     } else if (!open) {
-      // [FIX #8] حفظ مرجع الـ timer لإلغائه عند تغيير الـ dependencies بسرعة
-      const clearTimer = setTimeout(() => {
-        setPreviewImageSrc("");
-      }, 0);
-      return () => clearTimeout(clearTimer);
+      setPreviewImageSrc("");
     }
   }, [open, stageRef, elements, slots, backgroundColor, mode, canvasWidth, printSettings]);
 
@@ -135,8 +149,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     canvasHeight,
     mode,
   });
-
-  const [isExporting, setIsExporting] = useState(false);
 
   const handlePrint = async () => {
     setIsExporting(true);
@@ -174,19 +186,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         const offsetX = mMM + Math.max(0, availableWidthMM - gridWidth) / 2;
         const offsetY = mMM + Math.max(0, availableHeightMM - gridHeight) / 2;
 
-        // Preload image dimensions to prevent extreme slowness in nested loops
-        const imgSizeCache: Record<string, { w: number, h: number }> = {};
-        const uniqueImageSrcs = Array.from(new Set(slots.filter(s => s.imageSrc).map(s => s.imageSrc!)));
-        
-        await Promise.all(uniqueImageSrcs.map(async (src) => {
-          imgSizeCache[src] = await new Promise<{ w: number, h: number }>((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-            img.onerror = () => resolve({ w: 100, h: 100 });
-            img.src = src;
-          });
-        }));
-
         // Loop over the requested copies on the paper
         for (let i = 0; i < actualCopies; i++) {
           const col = i % cols;
@@ -214,43 +213,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           for (const slot of slots) {
             if (!slot.imageSrc) continue;
 
-            const imgSize = imgSizeCache[slot.imageSrc] || { w: 100, h: 100 };
-
             const slotW_MM = slot.w * availWMM - gapMM_cell;
             const slotH_MM = slot.h * availHMM - gapMM_cell;
             const slotX_MM = blockXMM + marginMM_cell + slot.x * availWMM + gapMM_cell / 2;
             const slotY_MM = blockYMM + marginMM_cell + slot.y * availHMM + gapMM_cell / 2;
-
-            const imgAspect = imgSize.w / imgSize.h;
             const slotAspect = (slot.w * canvasWidth) / (slot.h * canvasHeight);
-            
-            let sw = imgSize.w;
-            let sh = imgSize.h;
-
-            if (imgAspect > slotAspect) {
-              sw = imgSize.h * slotAspect;
-            } else {
-              sh = imgSize.w / slotAspect;
-            }
-
-            const zoomVal = slot.zoom || 1;
-            const dragXVal = slot.dragX || 0;
-            const dragYVal = slot.dragY || 0;
-
-            sw = sw / zoomVal;
-            sh = sh / zoomVal;
-
-            const defaultSx = imgAspect > slotAspect ? (imgSize.w - sw) / 2 : 0;
-            const defaultSy = imgAspect > slotAspect ? 0 : (imgSize.h - sh) / 2;
-
-            const maxDragX = (imgSize.w - sw) / 2;
-            const maxDragY = (imgSize.h - sh) / 2;
-
-            const dragXClamped = Math.max(-maxDragX, Math.min(maxDragX, dragXVal));
-            const dragYClamped = Math.max(-maxDragY, Math.min(maxDragY, dragYVal));
-
-            const sx = defaultSx + dragXClamped;
-            const sy = defaultSy + dragYClamped;
 
             items.push(domain.PrintItem.createFrom({
               imageSrc: slot.imageSrc,
@@ -262,13 +229,16 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               brightness: slot.brightness ?? 100,
               contrast: slot.contrast ?? 100,
               saturation: slot.saturation ?? 100,
-              cropX: sx,
-              cropY: sy,
-              cropW: sw,
-              cropH: sh,
+              slotAspect: slotAspect,
+              zoom: slot.zoom || 1,
+              dragX: slot.dragX || 0,
+              dragY: slot.dragY || 0,
               cornerRadiusMM: radiusMM,
               borderWidthMM: borderWMM,
               borderColor: borderColor,
+              flipX: slot.flipX,
+              flipY: slot.flipY,
+              rotation: slot.rotation,
             }));
           }
         }
@@ -307,10 +277,21 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
           stage.batchDraw();
 
-          canvasDataUrl = stage.toDataURL({
+          const exportCanvas = stage.toCanvas({
             pixelRatio: targetPixelRatio,
-            mimeType: "image/png",
           });
+
+          const blob = await new Promise<Blob | null>((resolve) => {
+            exportCanvas.toBlob(resolve, "image/png");
+          });
+
+          if (blob) {
+            canvasDataUrl = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+          }
         } finally {
           transformers.forEach((tr: any) => tr.show());
           gridLayers.forEach((gl: any) => gl.show());
@@ -318,7 +299,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
           previouslyCached.forEach((img: any) => {
             img.clearCache();
-            const screenRatio = Math.max(2, canvasWidth / stage.width());
+            let screenRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
+            screenRatio = Math.max(1.5, Math.min(2, screenRatio));
             img.cache({ pixelRatio: screenRatio });
           });
 
@@ -401,13 +383,30 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             doc.write(result.htmlDoc);
             doc.close();
 
-            setTimeout(() => {
-              iframe.contentWindow?.focus();
-              iframe.contentWindow?.print();
-              setTimeout(() => {
-                document.body.removeChild(iframe);
-              }, 1000);
-            }, 500);
+            let hasPrinted = false;
+            const triggerPrint = () => {
+              if (hasPrinted) return;
+              hasPrinted = true;
+              try {
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
+              } finally {
+                setTimeout(() => {
+                  if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                  }
+                }, 1000);
+              }
+            };
+
+            const img = doc.querySelector("img");
+            if (img && !img.complete) {
+              img.onload = triggerPrint;
+              img.onerror = triggerPrint;
+              setTimeout(triggerPrint, 1500);
+            } else {
+              setTimeout(triggerPrint, 300);
+            }
           }
         }
         toast.success("تم توليد ورقة الطباعة بنجاح");
@@ -476,15 +475,25 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   )}
                 </span>
                 <div className="flex items-center gap-1.5 bg-muted/50 p-0.5 rounded-lg border border-border/30">
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-7 w-7 p-0 cursor-pointer hover:bg-background">
-                    <ZoomOut className="w-3.5 h-3.5" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-7 w-7 p-0 cursor-pointer hover:bg-background">
+                        <ZoomOut className="w-3.5 h-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">تصغير المعاينة</TooltipContent>
+                  </Tooltip>
                   <span className="text-[10px] w-12 text-center font-mono font-bold select-none text-muted-foreground">
                     {Math.round(zoom * 100)}%
                   </span>
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-7 w-7 p-0 cursor-pointer hover:bg-background">
-                    <ZoomIn className="w-3.5 h-3.5" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-7 w-7 p-0 cursor-pointer hover:bg-background">
+                        <ZoomIn className="w-3.5 h-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">تكبير المعاينة</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
 

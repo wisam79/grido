@@ -76,15 +76,10 @@ export const URLImage = React.memo(function URLImage({
       const isLargeImage = image.width * image.height > 1000000;
       if (hasFilters || isLargeImage) {
         try {
-          const stage = node.getStage();
-          const stageW = stage ? stage.width() : 0;
-          const exportRatio = stageW > 0 ? (useEditorStore.getState().canvasWidth / stageW) : 4;
-          let ratio = Math.max(2, exportRatio);
-          
-          // حماية إضافية ضد قيم غير محدودة أو NaN أو كبيرة جداً قد تسبب انهيار الرندرة واختفاء الكانفس
-          if (!isFinite(ratio) || isNaN(ratio) || ratio > 8) {
-            ratio = 2;
-          }
+          // استخدام دقة عرض الشاشة العادية أثناء التعديل لمنع استهلاك الذاكرة وتجميد التطبيق
+          // سيتم رفع الدقة تلقائياً عند التصدير والطباعة في export-utils و print-dialog
+          let ratio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
+          ratio = Math.max(1.5, Math.min(2, ratio));
           
           node.clearCache();
           node.cache({

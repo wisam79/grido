@@ -17,6 +17,13 @@ type PrintItem struct {
 	CornerRadiusMM float64 `json:"cornerRadiusMM"`
 	BorderWidthMM  float64 `json:"borderWidthMM"`
 	BorderColor    string  `json:"borderColor"`
+	FlipX          bool    `json:"flipX,omitempty"`
+	FlipY          bool    `json:"flipY,omitempty"`
+	Rotation       float64 `json:"rotation,omitempty"`
+	SlotAspect     float64 `json:"slotAspect,omitempty"`
+	Zoom           float64 `json:"zoom,omitempty"`
+	DragX          float64 `json:"dragX,omitempty"`
+	DragY          float64 `json:"dragY,omitempty"`
 }
 
 type PrintRequest struct {

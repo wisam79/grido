@@ -99,6 +99,9 @@ export interface CanvasSlot {
   zoom?: number;
   dragX?: number;
   dragY?: number;
+  flipX?: boolean;
+  flipY?: boolean;
+  rotation?: number;
   originalImageSrc?: string;
 }
 

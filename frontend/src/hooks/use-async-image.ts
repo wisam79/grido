@@ -6,28 +6,21 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
 
   useEffect(() => {
     if (!src) {
-      const timer = setTimeout(() => {
-        setImage(undefined);
-        setStatus("failed");
-      }, 0);
-      return () => clearTimeout(timer);
+      setImage(undefined);
+      setStatus("failed");
+      return;
     }
+
+    let isCurrent = true;
+    setStatus("loading");
 
     const img = new Image();
     if (crossOrigin) {
       img.crossOrigin = crossOrigin;
     }
-    
-    let isCurrent = true;
-    const timer2 = setTimeout(() => {
-      setStatus("loading");
-    }, 0);
 
-    // Set src after setting onload to capture cached images correctly
     img.onload = () => {
       if (!isCurrent) return;
-      
-      // Use asynchronous decoding to prevent main thread blocking during Konva draw
       if (typeof img.decode === "function") {
         img.decode()
           .then(() => {
@@ -35,8 +28,7 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
             setImage(img);
             setStatus("loaded");
           })
-          .catch((err) => {
-            console.warn("Async image decode failed, falling back to sync draw:", err);
+          .catch(() => {
             if (!isCurrent) return;
             setImage(img);
             setStatus("loaded");
@@ -58,7 +50,6 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
 
     return () => {
       isCurrent = false;
-      clearTimeout(timer2);
     };
   }, [src, crossOrigin]);
 

@@ -46,11 +46,21 @@ export async function exportCanvas(
 
       stageRef.batchDraw();
 
-      dataUrl = stageRef.toDataURL({
-        pixelRatio: targetPixelRatio, // تصدير بالدقة الأصلية الكاملة للكانفس
-        mimeType: format === "png" ? "image/png" : "image/jpeg",
-        quality: quality
+      const exportCanvas = stageRef.toCanvas({
+        pixelRatio: targetPixelRatio,
       });
+
+      const blob = await new Promise<Blob | null>((resolve) => {
+        exportCanvas.toBlob(resolve, format === "png" ? "image/png" : "image/jpeg", quality);
+      });
+
+      if (blob) {
+        dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
     } catch (e) {
       console.error("Failed to export via Konva Stage, falling back to manual canvas:", e);
     } finally {
@@ -61,9 +71,16 @@ export async function exportCanvas(
       
       // استعادة الكاش بدقة الشاشة لتوفير الذاكرة
       previouslyCached.forEach((img: any) => {
-        img.clearCache();
-        const screenRatio = Math.max(2, canvasWidth / stageRef.width());
-        img.cache({ pixelRatio: screenRatio });
+        try {
+          if (img && typeof img.clearCache === "function") {
+            img.clearCache();
+            let screenRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
+            screenRatio = Math.max(1.5, Math.min(2, screenRatio));
+            img.cache({ pixelRatio: screenRatio });
+          }
+        } catch (e) {
+          // الإبقاء على سلامة التطبيق في حال تم حظر كاش العناصر التي ألغي تثبيتها
+        }
       });
 
       stageRef.batchDraw();

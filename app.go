@@ -42,7 +42,7 @@ func (a *App) shutdown(_ context.Context) {
 }
 
 var imageFilters = []runtime.FileFilter{
-	{DisplayName: "Images (*.png;*.jpg;*.jpeg)", Pattern: "*.png;*.jpg;*.jpeg"},
+	{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp"},
 }
 
 var saveFilters = []runtime.FileFilter{
@@ -127,6 +127,70 @@ func (a *App) OpenFile() (string, error) {
 	}
 
 	return "/local-image/" + newName, nil
+}
+
+func (a *App) OpenMultipleFiles() ([]string, error) {
+	defer runtime.WindowShow(a.ctx)
+
+	filePaths, err := runtime.OpenMultipleFilesDialog(a.ctx, runtime.OpenDialogOptions{
+		Title:   "Select Images",
+		Filters: imageFilters,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("open multiple dialog: %w", err)
+	}
+	if len(filePaths) == 0 {
+		return []string{}, nil
+	}
+
+	var results []string
+	mediaDir := getMediaDir()
+
+	for _, filePath := range filePaths {
+		stat, err := os.Stat(filePath)
+		if err != nil || stat.Size() > maxFileSize {
+			continue
+		}
+
+		srcFile, err := os.Open(filePath)
+		if err != nil {
+			continue
+		}
+
+		buf := make([]byte, 512)
+		n, err := srcFile.Read(buf)
+		if err != nil && err != io.EOF {
+			srcFile.Close()
+			continue
+		}
+
+		detectedType := http.DetectContentType(buf[:n])
+		if !strings.HasPrefix(detectedType, "image/") {
+			srcFile.Close()
+			continue
+		}
+
+		_, _ = srcFile.Seek(0, io.SeekStart)
+
+		newName := fmt.Sprintf("img_%d_%s", time.Now().UnixNano(), filepath.Base(filePath))
+		newPath := filepath.Join(mediaDir, newName)
+
+		destFile, err := os.OpenFile(newPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			srcFile.Close()
+			continue
+		}
+
+		_, copyErr := io.Copy(destFile, srcFile)
+		destFile.Close()
+		srcFile.Close()
+
+		if copyErr == nil {
+			results = append(results, "/local-image/"+newName)
+		}
+	}
+
+	return results, nil
 }
 
 func decodeBase64Image(base64Data string) ([]byte, string, error) {
