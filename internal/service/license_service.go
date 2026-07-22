@@ -36,6 +36,8 @@ func NewLicenseService(repo domain.LicenseRepository) *LicenseService {
 var (
 	SupabaseURL     = "" // injected via ldflags at build time
 	SupabaseAnonKey = "" // injected via ldflags at build time
+	ModalAIURL      = "" // injected via ldflags at build time
+	ModalAIKey      = "" // injected via ldflags at build time
 )
 
 func init() {
@@ -67,6 +69,12 @@ func init() {
 	}
 	if SupabaseURL == "" || SupabaseAnonKey == "" {
 		slog.Warn("Supabase credentials not configured — set SUPABASE_URL and SUPABASE_ANON_KEY")
+	}
+	if ModalAIURL == "" {
+		ModalAIURL = os.Getenv("MODAL_AI_URL")
+	}
+	if ModalAIKey == "" {
+		ModalAIKey = os.Getenv("MODAL_AI_KEY")
 	}
 }
 

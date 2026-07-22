@@ -17,7 +17,6 @@ import { useShallow } from "zustand/react/shallow";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -153,7 +152,6 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   <span className="text-[9px] text-muted-foreground font-normal">سحب / زوم / تدوير</span>
                 </Label>
                 
-                <TooltipProvider delayDuration={200}>
                   <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-background/80 dark:bg-muted/30 border border-border/40">
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -197,7 +195,6 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       <TooltipContent side="top">تصغير (Zoom Out)</TooltipContent>
                     </Tooltip>
                   </div>
-                </TooltipProvider>
               </div>
 
               {/* نسب القص المجهزة */}

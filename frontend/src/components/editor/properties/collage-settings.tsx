@@ -3,6 +3,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";
 import { Slider } from "@/components/ui/slider";
+import { useRef, useCallback, useEffect } from "react";
 
 // ─── Larger SliderControl built for the left panel ─────────────────────────
 function PanelSlider({
@@ -14,6 +15,7 @@ function PanelSlider({
   step,
   unit,
   onChange,
+  onCommit,
 }: {
   label: string;
   icon: React.ReactNode;
@@ -23,7 +25,52 @@ function PanelSlider({
   step: number;
   unit: string;
   onChange: (v: number) => void;
+  onCommit?: () => void;
 }) {
+  const rafRef = useRef<number | null>(null);
+  const pendingRef = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
+
+  const flushPending = useCallback(() => {
+    if (pendingRef.current !== null) {
+      onChange(pendingRef.current);
+      pendingRef.current = null;
+    }
+    rafRef.current = null;
+  }, [onChange]);
+
+  const handleChange = useCallback((v: number[]) => {
+    pendingRef.current = v[0];
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(flushPending);
+    }
+  }, [flushPending]);
+
+  const handlePointerDown = useCallback(() => {
+    isDraggingRef.current = true;
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (pendingRef.current !== null) {
+      onChange(pendingRef.current);
+      pendingRef.current = null;
+    }
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      onCommit?.();
+    }
+  }, [onChange, onCommit]);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
   return (
     <div className="flex items-center gap-3 w-full h-8 group" dir="rtl">
       {/* Icon & Label */}
@@ -38,7 +85,9 @@ function PanelSlider({
         min={min}
         max={max}
         step={step}
-        onValueChange={(v) => onChange(v[0])}
+        onValueChange={handleChange}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
         className="flex-1 py-1.5"
       />
       
@@ -109,6 +158,7 @@ export function CollageSettings() {
           step={2}
           unit="px"
           onChange={setCollageGap}
+          onCommit={() => useEditorStore.getState().pushHistory()}
         />
         <PanelSlider
           label="الهامش"
@@ -119,6 +169,7 @@ export function CollageSettings() {
           step={2}
           unit="px"
           onChange={setCollageMargin}
+          onCommit={() => useEditorStore.getState().pushHistory()}
         />
         <PanelSlider
           label="الزوايا"
@@ -129,6 +180,7 @@ export function CollageSettings() {
           step={2}
           unit="px"
           onChange={setCollageRadius}
+          onCommit={() => useEditorStore.getState().pushHistory()}
         />
         <PanelSlider
           label="الإطار"
@@ -139,6 +191,7 @@ export function CollageSettings() {
           step={1}
           unit="px"
           onChange={setCollageStrokeWidth}
+          onCommit={() => useEditorStore.getState().pushHistory()}
         />
       </div>
 

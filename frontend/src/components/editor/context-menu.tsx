@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useEditorStore } from "@/lib/editor-store";
 import { 
   Copy, 
@@ -71,26 +72,61 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     onClose();
   };
 
-  const [menuWidth, setMenuWidth] = React.useState(150);
+  const [menuSize, setMenuSize] = React.useState<{ w: number; h: number } | null>(null);
 
   useEffect(() => {
     if (menuRef.current) {
-      setMenuWidth(menuRef.current.offsetWidth || 150);
+      setMenuSize({
+        w: menuRef.current.offsetWidth,
+        h: menuRef.current.offsetHeight
+      });
     }
-  }, [target]);
+  }, [target, position.x, position.y]);
 
-  const menuHeight = 160;
+  const size = menuSize || { w: 150, h: 160 };
 
-  const left = position.x + menuWidth > window.innerWidth ? position.x - menuWidth : position.x;
-  const top = position.y + menuHeight > window.innerHeight ? position.y - menuHeight : position.y;
+  let maxRight = window.innerWidth - 8;
+  let maxBottom = window.innerHeight - 8;
+  let minLeft = 8;
+  let minTop = 8;
 
-  return (
+  const canvasArea = document.getElementById("canvas-area");
+  if (canvasArea) {
+    const rect = canvasArea.getBoundingClientRect();
+    maxRight = Math.min(maxRight, rect.right);
+    maxBottom = Math.min(maxBottom, rect.bottom);
+    minLeft = Math.max(minLeft, rect.left);
+    minTop = Math.max(minTop, rect.top);
+  }
+
+  // Calculate position with flips if it exceeds the available space
+  let left = position.x;
+  let top = position.y;
+  let originX = "left";
+  let originY = "top";
+
+  if (left + size.w > maxRight) {
+    left = position.x - size.w;
+    originX = "right";
+  }
+  if (top + size.h > maxBottom) {
+    top = position.y - size.h;
+    originY = "bottom";
+  }
+
+  // Final clamping to ensure it doesn't go off the left/top edges 
+  left = Math.max(minLeft, Math.min(left, maxRight - size.w));
+  top = Math.max(minTop, Math.min(top, maxBottom - size.h));
+
+  return createPortal(
     <div
       ref={menuRef}
       className="fixed z-[9999] w-auto min-w-[130px] max-w-[220px] bg-card border border-border/50 shadow-2xl rounded-md py-1 text-sm font-cairo overflow-hidden select-none animate-in fade-in-50 zoom-in-95 duration-100"
       style={{
-        left: `${Math.max(8, left)}px`,
-        top: `${Math.max(8, top)}px`,
+        left: `${left}px`,
+        top: `${top}px`,
+        transformOrigin: `${originY} ${originX}`,
+        visibility: menuSize === null ? 'hidden' : 'visible'
       }}
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -158,6 +194,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
         </>
       )}
 
-    </div>
+    </div>,
+    document.body
   );
 }

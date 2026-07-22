@@ -110,25 +110,129 @@ export const EditorCanvas = React.memo(React.forwardRef<
   displayW = Math.max(100 * canvasZoom, displayW);
   displayH = Math.max(100 * canvasZoom, displayH);
 
-  // دعم التقريب بالعجلة (Ctrl + Scroll)
+  const prevZoomRef = useRef(canvasZoom);
+  const zoomPivotRef = useRef<{ deltaX: number, deltaY: number } | null>(null);
+
+  // دعم التقريب بالعجلة (Ctrl + Scroll / Pinch) والسحب بمسطرة المسافة
   useEffect(() => {
+    const spacePressedRef = { current: false };
+    const isPanningRef = { current: false };
+    const node = containerRef.current;
+    if (!node) return;
+
     const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey) {
+      if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        setCanvasZoom((z: number) => Math.min(Math.max(0.1, z + delta), 5));
+        const oldZoom = useEditorStore.getState().canvasZoom;
+        const factor = Math.pow(0.998, e.deltaY);
+        const newZoom = Math.min(Math.max(0.1, oldZoom * factor), 5);
+        
+        if (newZoom !== oldZoom) {
+          if (innerRef.current) {
+            const canvasRect = innerRef.current.getBoundingClientRect();
+            const mouseCanvasX = e.clientX - canvasRect.left;
+            const mouseCanvasY = e.clientY - canvasRect.top;
+            const r = newZoom / oldZoom;
+            zoomPivotRef.current = {
+              deltaX: mouseCanvasX * r - mouseCanvasX,
+              deltaY: mouseCanvasY * r - mouseCanvasY
+            };
+          }
+          setCanvasZoom(newZoom);
+        }
+      } else if (!e.shiftKey) {
+         // التمرير الثنائي باللوحة اللمسية يعمل تلقائياً مع overflow-auto
+         // لا حاجة لتعطيل السلوك الافتراضي هنا
       }
     };
-    const node = containerRef.current;
-    if (node) {
-      node.addEventListener("wheel", handleWheel, { passive: false });
-    }
-    return () => {
-      if (node) {
-        node.removeEventListener("wheel", handleWheel);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (e.target as HTMLElement)?.tagName;
+      if (e.code === "Space" && activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
+        if (!spacePressedRef.current) {
+          spacePressedRef.current = true;
+          node.style.cursor = "grab";
+        }
       }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        spacePressedRef.current = false;
+        node.style.cursor = "";
+      }
+    };
+
+    const handlePointerDown = (e: PointerEvent) => {
+      if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
+        e.preventDefault();
+        isPanningRef.current = true;
+        node.style.cursor = "grabbing";
+      }
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (isPanningRef.current) {
+        e.preventDefault();
+        node.scrollLeft -= e.movementX;
+        node.scrollTop -= e.movementY;
+      }
+    };
+
+    const handlePointerUp = () => {
+      if (isPanningRef.current) {
+        isPanningRef.current = false;
+        node.style.cursor = spacePressedRef.current ? "grab" : "";
+      }
+    };
+
+    node.addEventListener("wheel", handleWheel, { passive: false });
+    node.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      node.removeEventListener("wheel", handleWheel);
+      node.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
     };
   }, [setCanvasZoom]);
+
+  // تطبيق محاذاة التكبير نحو المؤشر أو المنتصف بعد الرندر
+  React.useLayoutEffect(() => {
+    if (canvasZoom !== prevZoomRef.current) {
+      if (containerRef.current && innerRef.current) {
+        const container = containerRef.current;
+        const canvas = innerRef.current;
+        const r = canvasZoom / prevZoomRef.current;
+        
+        let dX = 0;
+        let dY = 0;
+
+        if (zoomPivotRef.current) {
+           dX = zoomPivotRef.current.deltaX;
+           dY = zoomPivotRef.current.deltaY;
+           zoomPivotRef.current = null;
+        } else {
+           const containerRect = container.getBoundingClientRect();
+           const canvasRect = canvas.getBoundingClientRect();
+           const cx = (containerRect.left + containerRect.width / 2) - canvasRect.left;
+           const cy = (containerRect.top + containerRect.height / 2) - canvasRect.top;
+           dX = cx * r - cx;
+           dY = cy * r - cy;
+        }
+        
+        container.scrollLeft += dX;
+        container.scrollTop += dY;
+      }
+      prevZoomRef.current = canvasZoom;
+    }
+  }, [canvasZoom]);
 
   // حساب الأبعاد الفيزيائية بالمليمتر
   const widthMM = useMemo(() => {
@@ -240,29 +344,50 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
       if (uploadedSrcs.length === 0) return;
 
-      if (mode === "collage") {
-        const targetSlotId = (e.target as HTMLElement).closest("[data-slot-id]")?.getAttribute("data-slot-id");
-        if (collageTemplate?.physicalLayout && uploadedSrcs[0]) {
-          fillAllSlots(uploadedSrcs[0]);
+      // قراءة الحالة الحية مباشرة من الـ Store لتجنب مشاكل القيم القديمة (Stale Closure)
+      const freshState = useEditorStore.getState();
+      const freshMode = freshState.mode;
+      const freshSlots = freshState.slots;
+      const freshCollageTemplate = freshState.collageTemplate;
+
+      if (freshMode === "collage" || freshSlots.length > 0) {
+        if (freshMode !== "collage") {
+          freshState.setMode("collage");
+        }
+
+        let targetSlotId: string | null = null;
+        if (innerRef.current) {
+          const rect = innerRef.current.getBoundingClientRect();
+          const relX = (e.clientX - rect.left) / rect.width;
+          const relY = (e.clientY - rect.top) / rect.height;
+
+          const matched = freshSlots.find(
+            (s) => relX >= s.x && relX <= s.x + s.w && relY >= s.y && relY <= s.y + s.h
+          );
+          if (matched) {
+            targetSlotId = matched.id;
+          }
+        }
+
+        if ((freshCollageTemplate?.physicalLayout || freshSlots.length > 1) && uploadedSrcs.length === 1 && uploadedSrcs[0]) {
+          freshState.fillAllSlots(uploadedSrcs[0]);
         } else if (targetSlotId && uploadedSrcs[0]) {
-          setSlotImage(targetSlotId, uploadedSrcs[0]);
+          freshState.setSlotImage(targetSlotId, uploadedSrcs[0]);
           let srcIdx = 1;
-          const currentSlots = useEditorStore.getState().slots;
-          for (const s of currentSlots) {
+          for (const s of freshSlots) {
             if (s.id !== targetSlotId && !s.imageSrc && srcIdx < uploadedSrcs.length) {
-              setSlotImage(s.id, uploadedSrcs[srcIdx++]);
+              freshState.setSlotImage(s.id, uploadedSrcs[srcIdx++]);
             }
           }
         } else {
           let srcIdx = 0;
-          const currentSlots = useEditorStore.getState().slots;
-          for (const s of currentSlots) {
+          for (const s of freshSlots) {
             if (!s.imageSrc && srcIdx < uploadedSrcs.length) {
-              setSlotImage(s.id, uploadedSrcs[srcIdx++]);
+              freshState.setSlotImage(s.id, uploadedSrcs[srcIdx++]);
             }
           }
-          if (srcIdx === 0 && currentSlots[0] && uploadedSrcs[0]) {
-            setSlotImage(currentSlots[0].id, uploadedSrcs[0]);
+          if (srcIdx === 0 && freshSlots[0] && uploadedSrcs[0]) {
+            freshState.setSlotImage(freshSlots[0].id, uploadedSrcs[0]);
           }
         }
       } else {
@@ -541,38 +666,40 @@ export const EditorCanvas = React.memo(React.forwardRef<
       className="absolute inset-0 overflow-auto workspace-grid bg-muted/40"
     >
       <div 
-        className="min-w-full min-h-full flex items-center justify-center p-4 relative"
+        className="min-w-full min-h-full flex p-4"
         onClick={(e) => {
           if (e.target === e.currentTarget) selectElement(null);
         }}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
-      {showRuler && !printMode ? (
-        <div className="relative flex flex-col items-start select-none">
-          {/* Top Row: Unit corner + Horizontal Ruler */}
-          <div className="flex flex-row items-end">
-            <div className="w-6 h-6 bg-card border-b border-l border-border flex items-center justify-center text-[9px] text-muted-foreground/75 font-mono select-none">
-              mm
-            </div>
-            <HorizontalRuler 
-              width={displayW} 
-              mmWidth={widthMM}
-            />
-          </div>
+        <div style={{ margin: "auto" }}>
+          {showRuler && !printMode ? (
+            <div className="relative flex flex-col items-start select-none">
+              {/* Top Row: Unit corner + Horizontal Ruler */}
+              <div className="flex flex-row items-end">
+                <div className="w-6 h-6 bg-card border-b border-l border-border flex items-center justify-center text-[9px] text-muted-foreground/75 font-mono select-none">
+                  mm
+                </div>
+                <HorizontalRuler 
+                  width={displayW} 
+                  mmWidth={widthMM}
+                />
+              </div>
 
-          {/* Bottom Row: Vertical Ruler + Canvas area */}
-          <div className="flex flex-row items-start">
-            <VerticalRuler 
-              height={displayH} 
-              mmHeight={heightMM}
-            />
-            {canvasArea}
-          </div>
+              {/* Bottom Row: Vertical Ruler + Canvas area */}
+              <div className="flex flex-row items-start">
+                <VerticalRuler 
+                  height={displayH} 
+                  mmHeight={heightMM}
+                />
+                {canvasArea}
+              </div>
+            </div>
+          ) : (
+            canvasArea
+          )}
         </div>
-      ) : (
-        canvasArea
-      )}
       </div>
     </div>
   );

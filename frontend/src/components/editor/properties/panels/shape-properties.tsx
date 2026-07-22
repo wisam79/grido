@@ -66,6 +66,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
             step={1}
             unit=""
             onChange={(v) => onUpdate(element.id, { radius: v })}
+            onCommit={() => useEditorStore.getState().pushHistory()}
           />
         )}
         <SliderControl
@@ -77,6 +78,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
           step={0.5}
           unit="px"
           onChange={(v) => onUpdate(element.id, { strokeWidth: v })}
+          onCommit={() => useEditorStore.getState().pushHistory()}
         />
       </div>
     </div>

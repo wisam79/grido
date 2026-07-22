@@ -1,218 +1,130 @@
-# دليل التنفيذ
+# دليل تنفيذ الإصلاحات الحرجة
 
-## 1. إصلاح خط الجودة
+هذا الدليل يحدد شكل الحل، لا يختصر معايير القبول في TASKS.md.
 
-نفذ هذا المسار قبل أي تعديل كبير.
+## 1. فصل الصلاحية الإدارية
 
-الأوامر المرجعية:
+لا تستخدم plan = enterprise كبديل لدور إداري.
 
-```powershell
-cd C:\projects\grido\frontend
-npm run lint
-npm run typecheck
-npm test
-npm run build
-npm run test:e2e
-```
+التنفيذ المقترح:
 
-خطوات التنفيذ:
+1. أضف claim إداري لا يعدله العميل، مثل app_metadata.role = admin، أو جدول admin_users لا يمكن تعديله إلا عبر service role.
+2. أنشئ دالة is_admin تقرأ هذا المصدر فقط وتعمل بـsecurity definer مع search_path مقيد.
+3. غيّر سياسات profiles وlicense_keys لتستدعي is_admin الجديدة.
+4. انقل create-key وextend-license وrevoke-license إلى RPC أو Edge Function تتحقق من الدور.
+5. اجعل Admin Web يقرأ الدور من claim موثوق، وليس من plan في profiles.
 
-1. ابدأ بـ lint لأنه يعطي أخطاء محددة.
-2. عالج `no-empty` في Konva بإزالة catch الفارغ أو تسجيل تحذير خفيف.
-3. عالج `set-state-in-effect` في `print-area.tsx` و`general-settings.tsx` بتحويل القيم المشتقة إلى `useMemo` أو بتأجيل التحديث داخل callback/transition حسب الحاجة.
-4. عالج `react-hooks/refs` في `shared-controls.tsx` باستخدام نمط initialization آمن أو `useMemo`.
-5. نظف imports غير المستخدمة.
-6. بعد نجاح lint شغل typecheck/tests/build.
+اختبارات staging المطلوبة:
 
-ملاحظات:
+- مستخدم free لا يقرأ إلا صفه.
+- مستخدم pro وenterprise لا يقرأان قائمة المستخدمين أو المفاتيح.
+- مدير يقرأ ويدير البيانات المصرح بها.
+- المستخدم لا يغيّر plan أو status أو expires_at أو license_key مباشرة.
 
-- لا تخفض قواعد lint لتخفي المشكلة.
-- أبق `@typescript-eslint/no-explicit-any` كما هو مؤقتًا، لكن افتح مهمة مستقلة لتقليل `any`.
+## 2. تأمين خدمة تحسين الصور
 
-## 2. إصلاح CI
+سر موجود في العميل يعد سراً مكشوفاً؛ لا يكفي نقله إلى متغير Vite.
 
-التعديل المقترح:
+التنفيذ المقترح:
 
-- تحديث Go إلى 1.23.x في workflow.
-- إضافة steps:
+1. دوّر السر في Modal فوراً واحذف default secret من Python.
+2. أنشئ Edge Function تتلقى JWT والصورة أو مرجعها.
+3. تحقق من المستخدم والخطة والحصة اليومية داخل transaction أو RPC ذري.
+4. تحقق من Content-Length وحجم base64 وحجم البكسل بعد فك الصورة.
+5. تستدعي Edge Function Modal بسر محفوظ في environment server-side.
+6. تسجل الاستخدام والنتيجة في جدول ai_usage؛ يستمد dashboard منه البيانات.
 
-```yaml
-- name: Run Go Tests
-  run: go test ./internal/... .
+ضوابط مقترحة:
 
-- name: Lint Frontend
-  working-directory: ./frontend
-  run: npm run lint
-```
+- حد bytes قبل فك base64.
+- حد عرض وارتفاع ومساحة بكسل بعد فك الصورة.
+- rate limit لكل مستخدم وجهاز.
+- timeout وidempotency key للطلب.
+- لا ترجع رسالة استثناء Python الخام للعميل.
 
-لـ e2e:
+## 3. تثبيت RLS
 
-- شغله بعد إصلاح الاختبارات.
-- ابدأ بـ Chromium فقط في CI لتقليل الزمن، ثم أضف Firefox لاحقًا.
+قبل تطبيق migration على الإنتاج:
 
-مشكلة `go test ./...`:
+1. شغّل Supabase محلياً أو على staging.
+2. طبّق migrations من صفر.
+3. أنشئ مستخدمين عاديين ومديراً وحساب enterprise غير إداري.
+4. اختبر SQL/API لكل SELECT وUPDATE وINSERT على profiles وlicense_keys.
+5. اجعل حقول الترخيص قابلة للتعديل فقط من RPC security definer أو service role.
 
-- بعد `npm ci` قد يلتقط Go package داخل `frontend/node_modules`.
-- الحل الأفضل: استخدم packages محددة (`go test . ./internal/...`) أو انقل frontend خارج نطاق Go module، وهذا غير مطلوب الآن.
+لا تعتمد على مقارنة OLD وNEW في policy من دون اختبار Postgres حقيقي. عند الحاجة لمقارنة قيم قبل/بعد استخدم trigger أمني أو امنع صلاحية UPDATE على الأعمدة الحساسة.
 
-## 3. ترقية Vite/esbuild
+## 4. إصلاح E2E وطبقة Wails
 
-لا تستخدم `npm audit fix --force` مباشرة على الفرع الرئيسي.
+المشكلة الحالية ليست فقط في selector؛ wrapper المصدّر موجود دائماً، حتى حين لا توفره mock runtime.
 
-خطوات آمنة:
+التنفيذ:
 
-1. أنشئ فرع ترقية.
-2. ارفع `vite` و`@vitejs/plugin-react` معًا.
-3. راجع `vite.config.ts` لأن المشروع يستخدم Wails وworker بصيغة ES.
-4. شغل:
+1. أنشئ adapter واحداً للـWails يتأكد من window.go.main.App.OpenMultipleFiles قبل النداء.
+2. في Playwright وفر OpenMultipleFiles وOpenFile وجميع bindings المستخدمة.
+3. اجعل اختبار الرفع ينتظر إضافة عنصر إلى store أو ظهور خصائص الصورة، لا مجرد click.
+4. شغّل Chromium في CI. استخدم Firefox كتحقق دوري حتى يستقر زمنه.
 
-```powershell
-npm install
-npm run typecheck
-npm run lint
-npm test
-npm run build
-npm run test:e2e
-npm audit --audit-level=moderate
-```
+## 5. إصلاح autosave وserializer
 
-5. إن ظهرت مشاكل Wails asset server، اختبر `wails dev` و`wails build`.
+التنفيذ:
 
-## 4. بناء serializer موحد
+1. اجعل serializableProjectSelector يعيد كل الحقول التي يعيدها serializeEditorState.
+2. اعتمد stable serialization أو equality مناسباً لتحديد التغيير.
+3. أضف flipX وflipY وrotation إلى CanvasSlotSchema وrepeatMode إلى PrintSettingsSchema.
+4. لا تحفظ بيانات غير معروفة بصمت إن كانت تؤثر في المخرج؛ ارفضها أو رحلها صراحة.
+5. أضف round-trip tests لمسارات JSON وSQLite وautosave.
+6. عند logout استدع LicenseHandler.Logout ثم امسح Zustand فقط إذا نجح أو بعد رسالة خطأ واضحة.
 
-ملف مقترح: `frontend/src/lib/project-serializer.ts`.
+## 6. توحيد معاينة وطباعة الكولاج
 
-مكونات الملف:
+التنفيذ:
 
-- `CURRENT_PROJECT_VERSION = 1`.
-- `ProjectFileSchema`.
-- `serializeEditorState(state)`.
-- `deserializeProjectFile(raw)`.
-- `domainProjectToProjectFile(project)`.
-- `projectFileToDomainProject(file, id, name)`.
-
-قواعد مهمة:
-
-- لا تحفظ دوال أو مكونات React داخل template. احفظ `templateId` و`collageTemplateId` ثم استعدها من القوائم المحلية.
-- لا تستخدم `z.any()` إلا كممر legacy مؤقت.
-- أضف migrations:
-
-```ts
-function migrateProject(raw: unknown): ProjectFileV1 {
-  // legacy without version -> normalize to v1
-}
-```
-
-اختبارات مطلوبة:
-
-- مشروع يحتوي صورة ونص وشكل وshadow وgrid.
-- مشروع كولاج مع gap/margin/radius/stroke.
-- ملف legacy بدون version.
-- ملف مع JSON غير صالح.
-
-## 5. توحيد الطباعة والتصدير
-
-المسار المفضل قصير المدى:
-
-1. استخدم Konva stage لتوليد snapshot نهائي كامل.
-2. أرسل الصورة النهائية إلى Go print service كعنصر واحد متكرر على الورقة.
-3. أبق Go service مسؤولًا عن layout الورقة فقط.
-
-لماذا:
-
-- يقلل فرق التصيير بين browser canvas وGo.
-- يدعم النصوص والأشكال والظلال والمرشحات فورًا.
-- يبسط الاختبارات.
-
-تعديلات Go المطلوبة:
-
-- أضف validation قبل `gg.NewContext`.
-- ضع حدودًا مثل:
-  - DPI بين 72 و600.
-  - paper width/height ضمن نطاق معروف.
-  - `widthPx * heightPx` تحت حد آمن.
-  - عدد العناصر تحت حد آمن.
+1. استخرج حساب block positions وactualCopies والصفوف والأعمدة إلى دالة pure مشتركة.
+2. استخرج crop cover مع zoom وdrag إلى دالة pure مشتركة بين Konva وطلب Go.
+3. اجعل SheetPreview يرسم كل block لا كولاجاً واحداً ممتداً.
+4. مرر collageRadius وcollageStrokeWidth وcollageStrokeColor للمعاينة.
+5. اتخذ قراراً واحداً لفلتر skinGlow: إزالة blur من Go أو تنفيذ مكافئ في المعاينة.
+6. استخدم onafterprint مع timeout احتياطي أطول لإزالة iframe، لا timeout ثابت قصير.
 
 اختبارات:
 
-- snapshot فيه نص فوق صورة.
-- print request بحجم خطر يرجع error.
-- print request بصورة غير موجودة يرجع error واضح.
+- كولاج أصغر من مساحة الورقة.
+- أكثر من نسخة في صفوف وأعمدة.
+- صورة landscape وportrait مع zoom وdrag.
+- زوايا وحدود وفلاتر.
+- مقارنة visual أو pixel مع tolerance موثق.
 
-## 6. إزالة الخلفية
+## 7. أداء Konva وAI
 
-اختر أحد المسارين.
+- لا تغير GridLayer ليستخدم fill أو stroke داخل حلقات الرسم.
+- أي مكون كثيف DOM أو SVG يجب أن يبقى React.memo وأن يحسب المصفوفات بـuseMemo.
+- أبق TooltipProvider واحداً في App.tsx.
+- حمّل MediaPipe ديناميكياً داخل مسار AI.
+- انقل inference إلى Worker؛ يرسل worker progress وresult أو cancelled، ويغلق الموارد دائماً.
+- لا تستخدم setTimeout(..., 0) كبديل لتصميم state صحيح في autosave.
 
-مسار online-first:
+## 8. أوامر التحقق قبل إغلاق أي مرحلة
 
-- أبق `allowLocalModels = false`.
-- أضف UI يوضح أن أول استخدام يحتاج إنترنت.
-- أضف retry/cancel.
-- أضف حد حجم قبل worker.
+من جذر المشروع:
 
-مسار offline:
+    go test . ./internal/...
+    go test -race ./internal/...
+    go vet ./...
+    go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
-- عدل `download-models.cjs` ليحمل ملفات النموذج والruntime.
-- ضعها تحت `frontend/public/models` أو مسار assets مناسب.
-- فعل `env.allowLocalModels = true`.
-- اضبط `env.localModelPath`.
-- وثق حجم التطبيق المتوقع.
+من frontend:
 
-في كلا المسارين:
+    npm run lint
+    npm run typecheck
+    npm test
+    npm run test:coverage
+    npm run build
+    npm run test:e2e
 
-- اكتب contract لرسائل worker.
-- لا ترسل base64 ضخم بلا قياس؛ استخدم Blob/ObjectURL أو downscale.
-- حرر الموارد بعد الاستخدام.
+ومن admin-web:
 
-## 7. إدارة الوسائط
+    npm run lint
+    npm run build
 
-المشكلة الحالية أن التنظيف يبحث في JSON strings ثم يحذف مباشرة.
-
-تنفيذ آمن:
-
-1. أضف جدول `media_refs` أو ملف registry.
-2. عند إضافة صورة، سجل filename وcreatedAt.
-3. عند حفظ مشروع أو autosave، حدث المراجع.
-4. عند التنظيف، انقل الملفات غير المرجعية إلى `MediaTrash`.
-5. احذف نهائيًا بعد فترة سماح.
-
-اختبارات:
-
-- صورة مستخدمة في autosave لا تحذف.
-- صورة مستخدمة في مشروع DB لا تحذف.
-- صورة غير مستخدمة حديثة لا تحذف.
-- صورة غير مستخدمة قديمة تنتقل للحجر ثم تحذف.
-
-## 8. تحسين الأداء
-
-ابدأ بما يعطي أثرًا سريعًا:
-
-- `React.lazy` للحوارات: PrintDialog, ExportDialog, ProjectsDialog.
-- تحميل worker عند أول طلب إزالة خلفية.
-- فصل transformers في chunk مستقل.
-- مراجعة re-render لمكونات الخصائص باستخدام selectors أصغر.
-
-قياس:
-
-- قارن حجم `dist/assets/index...js` قبل/بعد.
-- قارن زمن فتح الصفحة في Playwright.
-- سجل عدد re-renders فقط عند الحاجة باستخدام React Profiler محليًا.
-
-## 9. توثيق الإصدار
-
-أضف لاحقًا:
-
-- `README.md` حقيقي.
-- `docs/release-checklist.md`.
-- `docs/manual-smoke-test.md`.
-
-حد أدنى للـ smoke test:
-
-- فتح التطبيق.
-- إضافة صورة.
-- إضافة نص وشكل.
-- حفظ مشروع في DB.
-- إغلاق وفتح واسترجاع المشروع.
-- تصدير PNG.
-- إنشاء ورقة طباعة.
-- تجربة إزالة الخلفية أو فشلها اللطيف.
+ثم طبّق migration على staging، ونفّذ اختبارات RLS، وابن تطبيق Wails كاملاً قبل الإصدار.

@@ -562,9 +562,10 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	// 🧹 تنظيف المخرجات القديمة (أقدم من 24 ساعة) تلقائياً لتفادي امتلاء القرص
 	if files, err := os.ReadDir(outDir); err == nil {
 		for _, f := range files {
-			if info, err := f.Info(); err == nil {
+			filePath := filepath.Join(outDir, f.Name())
+			if info, err := os.Stat(filePath); err == nil {
 				if time.Since(info.ModTime()) > 24*time.Hour {
-					_ = os.Remove(filepath.Join(outDir, f.Name()))
+					_ = os.Remove(filePath)
 				}
 			}
 		}

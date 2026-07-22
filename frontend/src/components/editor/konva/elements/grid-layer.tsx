@@ -29,43 +29,74 @@ export const GridLayer = React.memo(function GridLayer({
     <FastLayer listening={false} name="grid-layer">
       <Shape
         sceneFunc={(context, shape) => {
-          context.beginPath();
           if (gridType === "lines") {
+            context.strokeStyle = gridColor;
+
+            // 1. Minor lines
+            context.lineWidth = 0.4;
+            context.globalAlpha = gridOpacity;
+            context.beginPath();
             for (let i = 0; i <= numH; i++) {
-              const isMajor = gridSubdivisions > 0 && i % gridSubdivisions === 0;
+              if (gridSubdivisions > 0 && i % gridSubdivisions === 0) continue;
               context.moveTo(0, i * gridSize);
               context.lineTo(displayW, i * gridSize);
-              context.strokeStyle = gridColor;
-              context.lineWidth = isMajor ? 0.8 : 0.4;
-              context.globalAlpha = isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity;
-              context.stroke();
-              context.beginPath();
             }
             for (let j = 0; j <= numW; j++) {
-              const isMajor = gridSubdivisions > 0 && j % gridSubdivisions === 0;
+              if (gridSubdivisions > 0 && j % gridSubdivisions === 0) continue;
               context.moveTo(j * gridSize, 0);
               context.lineTo(j * gridSize, displayH);
-              context.strokeStyle = gridColor;
-              context.lineWidth = isMajor ? 0.8 : 0.4;
-              context.globalAlpha = isMajor ? Math.min(gridOpacity * 2.2, 0.9) : gridOpacity;
-              context.stroke();
+            }
+            context.stroke();
+
+            // 2. Major lines
+            if (gridSubdivisions > 0) {
+              context.lineWidth = 0.8;
+              context.globalAlpha = Math.min(gridOpacity * 2.2, 0.9);
               context.beginPath();
+              for (let i = 0; i <= numH; i += gridSubdivisions) {
+                context.moveTo(0, i * gridSize);
+                context.lineTo(displayW, i * gridSize);
+              }
+              for (let j = 0; j <= numW; j += gridSubdivisions) {
+                context.moveTo(j * gridSize, 0);
+                context.lineTo(j * gridSize, displayH);
+              }
+              context.stroke();
             }
           } else {
             context.fillStyle = gridColor;
+
+            // 1. Minor dots
             context.globalAlpha = gridOpacity;
             context.beginPath();
             for (let i = 0; i <= numH; i++) {
               for (let j = 0; j <= numW; j++) {
                 const isMajor = gridSubdivisions > 0 && (i % gridSubdivisions === 0 || j % gridSubdivisions === 0);
-                const radius = isMajor ? 1.5 : 0.8;
+                if (isMajor) continue;
                 const x = j * gridSize;
                 const y = i * gridSize;
-                context.moveTo(x + radius, y);
-                context.arc(x, y, radius, 0, Math.PI * 2);
+                context.moveTo(x + 0.8, y);
+                context.arc(x, y, 0.8, 0, Math.PI * 2);
               }
             }
             context.fill();
+
+            // 2. Major dots
+            if (gridSubdivisions > 0) {
+              context.globalAlpha = Math.min(gridOpacity * 1.5, 0.9);
+              context.beginPath();
+              for (let i = 0; i <= numH; i++) {
+                for (let j = 0; j <= numW; j++) {
+                  const isMajor = i % gridSubdivisions === 0 || j % gridSubdivisions === 0;
+                  if (!isMajor) continue;
+                  const x = j * gridSize;
+                  const y = i * gridSize;
+                  context.moveTo(x + 1.5, y);
+                  context.arc(x, y, 1.5, 0, Math.PI * 2);
+                }
+              }
+              context.fill();
+            }
           }
         }}
       />

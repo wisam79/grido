@@ -57,6 +57,7 @@ export const CanvasElementSchema = z.object({
   cornerRadius: z.number().optional(),
   globalCompositeOperation: z.string().optional(),
   flipX: z.boolean().optional(),
+  flipY: z.boolean().optional(),
   svgPath: z.string().optional(),
   groupId: z.string().optional(),
 });
@@ -76,6 +77,9 @@ export const CanvasSlotSchema = z.object({
   zoom: z.number().optional(),
   dragX: z.number().optional(),
   dragY: z.number().optional(),
+  flipX: z.boolean().optional(),
+  flipY: z.boolean().optional(),
+  rotation: z.number().optional(),
 });
 
 export const PrintSettingsSchema = z.object({
@@ -89,6 +93,7 @@ export const PrintSettingsSchema = z.object({
   showCutLines: z.boolean(),
   orientation: z.enum(["portrait", "landscape"]),
   fitToPage: z.boolean().optional(),
+  repeatMode: z.enum(["all", "row", "column"]).optional(),
 });
 
 export const PhotoTemplateSchema = z.object({

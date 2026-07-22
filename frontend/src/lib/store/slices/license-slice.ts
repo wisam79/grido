@@ -93,9 +93,10 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
   setAccountModalOpen: (open) => set({ accountModalOpen: open }),
 
   logAiUsage: (record) => {
+    const cryptoId = typeof window !== "undefined" && window.crypto?.randomUUID ? window.crypto.randomUUID() : Date.now().toString(36);
     const newLog: AiUsageRecord = {
       ...record,
-      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      id: `log_${Date.now()}_${cryptoId.slice(0, 8)}`,
       timestamp: new Date().toLocaleString("sv-SE").replace("T", " "),
     };
     const updated = [newLog, ...get().aiUsageLogs];
@@ -181,7 +182,15 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
   },
 
   logoutAccount: async () => {
-    set({ user: null });
+    try {
+      if (typeof LicenseHandler.Logout === "function") {
+        await LicenseHandler.Logout();
+      }
+    } catch (err) {
+      console.error("Failed to execute backend Logout:", err);
+    } finally {
+      set({ user: null });
+    }
   },
 
   isLicenseActive: () => {

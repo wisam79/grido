@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Slider } from "@/components/ui/slider";
 
 export function Row({ label, value }: { label: string; value: string }) {
@@ -19,6 +19,7 @@ export function SliderControl({
   step,
   unit,
   onChange,
+  onCommit,
 }: {
   label: string;
   icon?: React.ReactNode;
@@ -28,7 +29,52 @@ export function SliderControl({
   step: number;
   unit: string;
   onChange: (v: number) => void;
+  onCommit?: (v: number) => void;
 }) {
+  const rafRef = useRef<number | null>(null);
+  const pendingRef = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
+
+  const flushPending = useCallback(() => {
+    if (pendingRef.current !== null) {
+      onChange(pendingRef.current);
+      pendingRef.current = null;
+    }
+    rafRef.current = null;
+  }, [onChange]);
+
+  const handleChange = useCallback((v: number[]) => {
+    pendingRef.current = v[0];
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(flushPending);
+    }
+  }, [flushPending]);
+
+  const handlePointerDown = useCallback(() => {
+    isDraggingRef.current = true;
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (pendingRef.current !== null) {
+      onChange(pendingRef.current);
+      pendingRef.current = null;
+    }
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      onCommit?.(value);
+    }
+  }, [onChange, onCommit, value]);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between items-center">
@@ -46,7 +92,9 @@ export function SliderControl({
         min={min}
         max={max}
         step={step}
-        onValueChange={(v) => onChange(v[0])}
+        onValueChange={handleChange}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
         className="py-1"
       />
     </div>
@@ -74,10 +122,15 @@ export function PopoverColorPicker({
   disabled?: boolean;
   label?: React.ReactNode;
 }) {
+  const colorOnOpenRef = useRef<string | null>(null);
+
   return (
     <Popover onOpenChange={(open) => {
-      if (!open) {
+      if (open) {
+        colorOnOpenRef.current = color;
+      } else if (colorOnOpenRef.current !== null && color !== colorOnOpenRef.current) {
         useEditorStore.getState().pushHistory();
+        colorOnOpenRef.current = null;
       }
     }}>
       <PopoverTrigger asChild>

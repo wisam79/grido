@@ -1,8 +1,7 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import { Image as KonvaImage } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
-import { useEditorStore } from "@/lib/editor-store";
 
 export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   imageSrc,
@@ -85,7 +84,57 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }
       }
     };
-  }, [image, hasFilters, width, height, filter, brightness, contrast, saturation]);
+  }, [image, hasFilters, filter, brightness, contrast, saturation]);
+
+  const { filters, totalBrightness, totalContrast, totalSaturation, totalHue } = useMemo(() => {
+    let b = brightness ?? 100;
+    let c = contrast ?? 100;
+    let s = saturation ?? 100;
+    let h = 0;
+    let sepia = false;
+    let mono = false;
+
+    if (filter === "enhance") {
+      c = (c / 100) * 108;
+      s = (s / 100) * 112;
+      b = (b / 100) * 102;
+    } else if (filter === "skinGlow") {
+      h = 10;
+      s = (s / 100) * 110;
+      c = (c / 100) * 94;
+      b = (b / 100) * 106;
+    } else if (filter === "clarity") {
+      c = (c / 100) * 122;
+      s = (s / 100) * 120;
+      b = (b / 100) * 98;
+    } else if (filter === "lowlight") {
+      b = (b / 100) * 116;
+      c = (c / 100) * 90;
+      s = (s / 100) * 105;
+    } else if (filter === "cinematic") {
+      sepia = true;
+      h = 5;
+      s = (s / 100) * 115;
+      c = (c / 100) * 110;
+      b = (b / 100) * 102;
+    } else if (filter === "monoPro") {
+      mono = true;
+      c = (c / 100) * 125;
+      b = (b / 100) * 102;
+    }
+
+    const fList: any[] = [];
+    if (filter === "skinGlow" && (Konva.Filters as any).SkinGlow) {
+      fList.push((Konva.Filters as any).SkinGlow);
+    }
+    if (mono) fList.push(Konva.Filters.Grayscale);
+    if (sepia) fList.push(Konva.Filters.Sepia);
+    if (b !== 100) fList.push(Konva.Filters.Brighten);
+    if (c !== 100) fList.push(Konva.Filters.Contrast);
+    if (s !== 100 || h !== 0) fList.push(Konva.Filters.HSL);
+
+    return { filters: fList, totalBrightness: b, totalContrast: c, totalSaturation: s, totalHue: h };
+  }, [filter, brightness, contrast, saturation]);
 
   if (!image) return null;
 
@@ -121,52 +170,6 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const sy = Math.round(defaultSy + dragYClamped);
   sw = Math.round(sw);
   sh = Math.round(sh);
-
-  let totalBrightness = brightness ?? 100;
-  let totalContrast = contrast ?? 100;
-  let totalSaturation = saturation ?? 100;
-  let totalHue = 0;
-  let useSepia = false;
-  let useGrayscale = false;
-
-  if (filter === "enhance") {
-    totalContrast = (totalContrast / 100) * 108;
-    totalSaturation = (totalSaturation / 100) * 112;
-    totalBrightness = (totalBrightness / 100) * 102;
-  } else if (filter === "skinGlow") {
-    totalHue = 10;
-    totalSaturation = (totalSaturation / 100) * 110;
-    totalContrast = (totalContrast / 100) * 94;
-    totalBrightness = (totalBrightness / 100) * 106;
-  } else if (filter === "clarity") {
-    totalContrast = (totalContrast / 100) * 122;
-    totalSaturation = (totalSaturation / 100) * 120;
-    totalBrightness = (totalBrightness / 100) * 98;
-  } else if (filter === "lowlight") {
-    totalBrightness = (totalBrightness / 100) * 116;
-    totalContrast = (totalContrast / 100) * 90;
-    totalSaturation = (totalSaturation / 100) * 105;
-  } else if (filter === "cinematic") {
-    useSepia = true;
-    totalHue = 5;
-    totalSaturation = (totalSaturation / 100) * 115;
-    totalContrast = (totalContrast / 100) * 110;
-    totalBrightness = (totalBrightness / 100) * 102;
-  } else if (filter === "monoPro") {
-    useGrayscale = true;
-    totalContrast = (totalContrast / 100) * 125;
-    totalBrightness = (totalBrightness / 100) * 102;
-  }
-
-  const filters: any[] = [];
-  if (filter === "skinGlow" && (Konva.Filters as any).SkinGlow) {
-    filters.push((Konva.Filters as any).SkinGlow);
-  }
-  if (useGrayscale) filters.push(Konva.Filters.Grayscale);
-  if (useSepia) filters.push(Konva.Filters.Sepia);
-  if (totalBrightness !== 100) filters.push(Konva.Filters.Brighten);
-  if (totalContrast !== 100) filters.push(Konva.Filters.Contrast);
-  if (totalSaturation !== 100 || totalHue !== 0) filters.push(Konva.Filters.HSL);
 
   return (
     <KonvaImage

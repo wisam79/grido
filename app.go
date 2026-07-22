@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -17,6 +18,7 @@ import (
 
 	"grido/internal/core/domain"
 	"grido/internal/repository"
+	"grido/internal/service"
 	"grido/internal/utils"
 
 	"github.com/disintegration/imaging"
@@ -63,7 +65,6 @@ func getMediaDir() string {
 const maxFileSize = 50 * 1024 * 1024
 
 func (a *App) OpenFile() (string, error) {
-	defer runtime.WindowShow(a.ctx)
 
 	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:   "Select an Image",
@@ -130,7 +131,6 @@ func (a *App) OpenFile() (string, error) {
 }
 
 func (a *App) OpenMultipleFiles() ([]string, error) {
-	defer runtime.WindowShow(a.ctx)
 
 	filePaths, err := runtime.OpenMultipleFilesDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:   "Select Images",
@@ -224,7 +224,6 @@ func getExtensionFromMime(mimeType string) string {
 }
 
 func (a *App) SaveFile(base64Data string) (string, error) {
-	defer runtime.WindowShow(a.ctx)
 
 	decoded, mimeType, err := decodeBase64Image(base64Data)
 	if err != nil {
@@ -272,7 +271,6 @@ func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
 }
 
 func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayName string, pattern string) (string, error) {
-	defer runtime.WindowShow(a.ctx)
 
 	var decoded []byte
 	var err error
@@ -369,6 +367,10 @@ func (a *App) SaveAutoSave(jsonData string) error {
 	}
 	path := getSavePath()
 	tmpPath := path + ".tmp"
+	
+	// Clean up tmp file on exit. If rename succeeds, this will quietly do nothing because the file no longer exists at tmpPath.
+	defer os.Remove(tmpPath)
+
 	if err := os.WriteFile(tmpPath, []byte(jsonData), 0644); err != nil {
 		return fmt.Errorf("failed to write tmp autosave file: %w", err)
 	}
@@ -600,5 +602,85 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 	}
 
 	return "/local-image/" + newName, nil
+}
+
+func (a *App) EnhanceImageWithAI(base64Image string, token string) (string, error) {
+	// 1. إذا كان المستخدم مسجلاً لدخوله ومفاتيح Supabase متوفرة، نستخدم خادم Edge Function
+	if token != "" && service.SupabaseURL != "" {
+		url := service.SupabaseURL + "/functions/v1/ai-enhance"
+		payload, err := json.Marshal(map[string]string{
+			"image": base64Image,
+		})
+		if err == nil {
+			req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+			if err == nil {
+				req.Header.Set("Authorization", "Bearer "+token)
+				req.Header.Set("Content-Type", "application/json")
+				if service.SupabaseAnonKey != "" {
+					req.Header.Set("apikey", service.SupabaseAnonKey)
+				}
+
+				client := &http.Client{Timeout: 3 * time.Minute}
+				resp, err := client.Do(req)
+				if err == nil && resp.StatusCode == http.StatusOK {
+					body, err := io.ReadAll(resp.Body)
+					resp.Body.Close()
+					if err == nil {
+						return string(body), nil
+					}
+				}
+				if resp != nil {
+					resp.Body.Close()
+				}
+			}
+		}
+	}
+
+	// 2. المسار الاحتياطي الآمن (Direct Go-to-Modal Call):
+	// يتم إجراء الطلب المباشر من الخلفية (Go) بدلاً من متصفح JS، مما يحافظ على سرية المفتاح تماماً وتشفيره داخل الـ Binary
+	modalURL := service.ModalAIURL
+	if modalURL == "" {
+		modalURL = "https://wisamsamir78--grido-ai-upscaler-imageenhancer-enhance.modal.run"
+	}
+	payload, err := json.Marshal(map[string]string{
+		"image": base64Image,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", modalURL, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	if service.ModalAIKey != "" {
+		req.Header.Set("X-Grido-Api-Key", service.ModalAIKey)
+	}
+
+	client := &http.Client{Timeout: 3 * time.Minute}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("خطأ في الاتصال بخادم الذكاء الاصطناعي: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("فشل قراءة الرد من الخادم: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var errRes struct {
+			Error string `json:"error"`
+		}
+		if err := json.Unmarshal(body, &errRes); err == nil && errRes.Error != "" {
+			return "", errors.New(errRes.Error)
+		}
+		return "", fmt.Errorf("فشل خادم الذكاء الاصطناعي: %d", resp.StatusCode)
+	}
+
+	return string(body), nil
 }
 

@@ -86,21 +86,18 @@ export function AccountLicenseModal() {
 
   // Reset errors when modal status changes or tabs toggle
   useEffect(() => {
-    setTimeout(() => {
-      setError(null);
-    }, 0);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setError(null);
   }, [activeTab, authMode, accountModalOpen]);
 
   // Automatically switch tabs if user is logged in
   useEffect(() => {
     if (user && user.plan !== "free" && user.token) {
-      setTimeout(() => {
-        setActiveTab("license");
-      }, 0);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveTab("license");
     } else {
-      setTimeout(() => {
-        setActiveTab("auth");
-      }, 0);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveTab("auth");
     }
   }, [user]);
 
@@ -191,13 +188,11 @@ export function AccountLicenseModal() {
     if (user && user.plan === "trial" && user.expiresAt) {
       const expiry = new Date(user.expiresAt).getTime();
       const diff = expiry - Date.now();
-      setTimeout(() => {
-        setTrialDaysLeft(Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))));
-      }, 0);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTrialDaysLeft(Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))));
     } else {
-      setTimeout(() => {
-        setTrialDaysLeft(0);
-      }, 0);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTrialDaysLeft(0);
     }
   }, [user]);
 

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background Gradient using App Dark Colors (#0f172a to #090d16) -->
+    <linearGradient id="appBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+
+    <!-- App Primary Blue Gradient (#3b82f6 -> #1d4ed8) -->
+    <linearGradient id="appBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+
+    <!-- App Royal Blue Gradient (#1e40af -> #1e3a8a) -->
+    <linearGradient id="appRoyalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+
+    <!-- App Light Accent Blue Gradient (#60a5fa -> #3b82f6) -->
+    <linearGradient id="appLightBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+
+    <!-- Outer Rounded Corner Clip -->
+    <clipPath id="appIconClip">
+      <rect width="1024" height="1024" rx="220" ry="220"/>
+    </clipPath>
+  </defs>
+
+  <!-- Main Container -->
+  <g clip-path="url(#appIconClip)">
+    <!-- App Dark Background -->
+    <rect width="1024" height="1024" fill="url(#appBgGrad)"/>
+
+    <!-- Canvas Print Grid Lines (Subtle App Grid) -->
+    <path d="M 0,256 H 1024 M 0,512 H 1024 M 0,768 H 1024 M 256,0 V 1024 M 512,0 V 1024 M 768,0 V 1024" 
+          stroke="#ffffff" stroke-opacity="0.06" stroke-width="2" fill="none"/>
+
+    <!-- 2x2 Photo Layout Tiles using App Brand Colors -->
+    <!-- Top-Left Tile (#3b82f6 Primary) -->
+    <rect x="160" y="160" width="320" height="320" rx="40" fill="url(#appBlueGrad)"/>
+    
+    <!-- Top-Right Tile (#1e40af Royal Blue) -->
+    <rect x="544" y="160" width="320" height="320" rx="40" fill="url(#appRoyalGrad)"/>
+    
+    <!-- Bottom-Left Tile (#60a5fa Light Blue) -->
+    <rect x="160" y="544" width="320" height="320" rx="40" fill="url(#appLightBlueGrad)"/>
+    
+    <!-- Bottom-Right Tile (#1d4ed8 Deep Primary) -->
+    <rect x="544" y="544" width="320" height="320" rx="40" fill="url(#appBlueGrad)"/>
+
+    <!-- Print Crop Corner Marks in App Accent Blues -->
+    <path d="M 110,200 V 110 H 200" fill="none" stroke="#3b82f6" stroke-width="16" stroke-linecap="round"/>
+    <path d="M 914,200 V 110 H 824" fill="none" stroke="#60a5fa" stroke-width="16" stroke-linecap="round"/>
+    <path d="M 110,824 V 914 H 200" fill="none" stroke="#60a5fa" stroke-width="16" stroke-linecap="round"/>
+    <path d="M 914,824 V 914 H 824" fill="none" stroke="#3b82f6" stroke-width="16" stroke-linecap="round"/>
+  </g>
+
+  <!-- Outer Border in App Dark Border Color -->
+  <rect width="1024" height="1024" rx="220" ry="220" fill="none" stroke="#1e293b" stroke-width="6"/>
+</svg>

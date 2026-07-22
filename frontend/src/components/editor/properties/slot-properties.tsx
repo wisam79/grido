@@ -8,9 +8,9 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-  TooltipProvider,
 } from "@/components/ui/tooltip";
-import { OpenFile, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
+import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
+import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { toast } from "sonner";
 import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
 import { CropDialog } from "../crop-dialog";
@@ -67,7 +67,7 @@ export function SlotProperties({
 
   const handleOpenFile = async () => {
     try {
-      const b64 = await OpenFile();
+      const [b64] = await openImageFileDialog(false);
       if (b64) {
         // قراءة أحدث نسخة من الـ store بعد إغلاق نافذة الملف (لتجنب stale closure)
         const freshStore = useEditorStore.getState();
@@ -236,7 +236,6 @@ export function SlotProperties({
           <div className="space-y-1.5 bg-muted/20 dark:bg-muted/10 p-2.5 rounded-xl border border-border/30">
             <Label className="text-[10px] font-bold text-muted-foreground block text-right">تكرار الصورة في الخلايا</Label>
             <div className="grid grid-cols-3 gap-1.5">
-              <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -278,7 +277,6 @@ export function SlotProperties({
                   </TooltipTrigger>
                   <TooltipContent side="top">تعبئة كافة الخلايا</TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
             </div>
           </div>
 
@@ -392,6 +390,7 @@ export function SlotProperties({
                 onChange={(v) => {
                   onUpdate(slot.id, { zoom: v / 100 });
                 }}
+                onCommit={() => useEditorStore.getState().pushHistory()}
                 unit="%"
               />
               <p className="text-[9px] text-muted-foreground/70 text-right leading-snug">
@@ -442,6 +441,7 @@ export function SlotProperties({
               step={1}
               unit="%"
               onChange={(v) => onUpdate(slot.id, { brightness: v })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
             />
             <SliderControl
               label="التباين"
@@ -451,6 +451,7 @@ export function SlotProperties({
               step={1}
               unit="%"
               onChange={(v) => onUpdate(slot.id, { contrast: v })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
             />
             <SliderControl
               label="التشبع"
@@ -460,6 +461,7 @@ export function SlotProperties({
               step={1}
               unit="%"
               onChange={(v) => onUpdate(slot.id, { saturation: v })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
             />
 
             <Button

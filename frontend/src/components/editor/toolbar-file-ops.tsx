@@ -24,8 +24,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ProjectsDialog } from "./projects-dialog";
-import { OpenFile, OpenMultipleFiles, ClearAutoSave } from "../../../wailsjs/go/main/App";
+import { ClearAutoSave } from "../../../wailsjs/go/main/App";
 import { saveProjectAsJSON } from "./export-utils";
+import { openImageFileDialog } from "@/lib/file-dialog-utils";
 
 interface TooltipBtnProps {
   content: string;
@@ -70,14 +71,7 @@ export function ToolbarFileOps() {
 
   const handleOpenFile = async () => {
     try {
-      let b64s: string[] = [];
-      if (typeof OpenMultipleFiles === "function") {
-        b64s = await OpenMultipleFiles();
-      }
-      if (!b64s || b64s.length === 0) {
-        const single = await OpenFile();
-        if (single) b64s = [single];
-      }
+      const b64s = await openImageFileDialog(true);
 
       if (b64s && b64s.length > 0) {
         const freshState = useEditorStore.getState();
@@ -85,11 +79,15 @@ export function ToolbarFileOps() {
         const freshSlots = freshState.slots;
         const freshSelectedId = freshState.selectedId;
 
-        if (freshMode === "collage") {
+        if (freshMode === "collage" || freshSlots.length > 0) {
+          if (freshMode !== "collage") {
+            freshState.setMode("collage");
+          }
+
           const isPhysical = freshState.collageTemplate?.physicalLayout;
-          if (isPhysical && b64s[0]) {
+          if ((isPhysical || freshSlots.length > 1) && b64s.length === 1 && b64s[0]) {
             freshState.fillAllSlots(b64s[0]);
-            toast.success("تم إدراج الصورة في جميع الخانات");
+            toast.success("تم إدراج الصورة في جميع شبكة الخلايا");
           } else {
             let srcIdx = 0;
             if (freshSelectedId && freshSlots.some((s) => s.id === freshSelectedId) && b64s[0]) {

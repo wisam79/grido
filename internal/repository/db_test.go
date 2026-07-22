@@ -11,8 +11,36 @@ import (
 	"gorm.io/gorm"
 )
 
+func init() {
+	tempDir, _ := os.MkdirTemp("", "grido-test-global-*")
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	os.Setenv("GRIDO_APP_DIR", appDir)
+	os.Setenv("APPDATA", tempDir)
+	os.Setenv("HOME", tempDir)
+	os.Setenv("XDG_CONFIG_HOME", tempDir)
+}
+
 func TestProjectRepository_SaveAndGet(t *testing.T) {
-	// 1. تهيئة قاعدة بيانات في الذاكرة للاختبار
+	tempDir, err := os.MkdirTemp("", "grido-repo-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	origAppData := os.Getenv("APPDATA")
+	origHome := os.Getenv("HOME")
+	origXdg := os.Getenv("XDG_CONFIG_HOME")
+	defer func() {
+		os.Setenv("APPDATA", origAppData)
+		os.Setenv("HOME", origHome)
+		os.Setenv("XDG_CONFIG_HOME", origXdg)
+	}()
+
+	os.Setenv("APPDATA", tempDir)
+	os.Setenv("HOME", tempDir)
+	os.Setenv("XDG_CONFIG_HOME", tempDir)
+
+	// 1. تهيئة قاعدة بيانات في الذاكرة للااختبار
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("failed to connect database: %v", err)
@@ -83,21 +111,24 @@ func TestCleanupUnusedMedia(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDir)
 
+	appDir := filepath.Join(tempDir, "GridoStudio")
+
 	origAppData := os.Getenv("APPDATA")
 	origHome := os.Getenv("HOME")
 	origXdg := os.Getenv("XDG_CONFIG_HOME")
+	origAppDir := os.Getenv("GRIDO_APP_DIR")
 	defer func() {
 		os.Setenv("APPDATA", origAppData)
 		os.Setenv("HOME", origHome)
 		os.Setenv("XDG_CONFIG_HOME", origXdg)
+		os.Setenv("GRIDO_APP_DIR", origAppDir)
 	}()
 
+	appDir = filepath.Join(tempDir, "GridoStudio")
 	os.Setenv("APPDATA", tempDir)
 	os.Setenv("HOME", tempDir)
 	os.Setenv("XDG_CONFIG_HOME", tempDir)
-
-	// تهيئة ميديا
-	appDir := filepath.Join(tempDir, "GridoStudio")
+	os.Setenv("GRIDO_APP_DIR", appDir)
 	mediaDir := filepath.Join(appDir, "Media")
 	trashDir := filepath.Join(appDir, "MediaTrash")
 	_ = os.MkdirAll(mediaDir, 0755)
@@ -111,10 +142,14 @@ func TestCleanupUnusedMedia(t *testing.T) {
 	_ = os.WriteFile(img2, []byte("data2"), 0644)
 	_ = os.WriteFile(img3, []byte("data3"), 0644)
 
-	// جعل تاريخ تعديل image2.jpg قديماً لكي يتم نقله للحجر الصحي
-	oldTime := time.Now().Add(-20 * time.Minute)
-	_ = os.Chtimes(img2, oldTime, oldTime)
-	_ = os.Chtimes(img3, oldTime, oldTime)
+	// جعل تاريخ تعديل image2.jpg قديماً (10 أيام - أكبر من 7 أيام وأقل من 30 يوماً) لكي يتم نقله للحجر الصحي بدون حذفه فوراً
+	oldTime := time.Now().Add(-10 * 24 * time.Hour)
+	if err := os.Chtimes(img2, oldTime, oldTime); err != nil {
+		t.Fatalf("failed to chtimes img2: %v", err)
+	}
+	if err := os.Chtimes(img3, oldTime, oldTime); err != nil {
+		t.Fatalf("failed to chtimes img3: %v", err)
+	}
 
 	// تهيئة DB في الذاكرة
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
@@ -165,7 +200,7 @@ func TestCleanupUnusedMedia(t *testing.T) {
 		t.Error("expected image3.jpg to be moved to trash first")
 	}
 
-	veryOldTime := time.Now().Add(-25 * time.Hour)
+	veryOldTime := time.Now().Add(-35 * 24 * time.Hour)
 	_ = os.Chtimes(trashImg3, veryOldTime, veryOldTime)
 
 	// تشغيل التنظيف مرة أخرى لحذف القديم من الحجر الصحي

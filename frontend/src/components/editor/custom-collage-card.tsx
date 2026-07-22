@@ -16,10 +16,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   activeTemplateId: string | undefined;
   onSaveTemplate: (name: string, cells: any[]) => void;
 }) {
-  const { canvasWidth, canvasHeight, printSettings } = useEditorStore(useShallow((state) => ({
+  const { canvasWidth, canvasHeight, printSettings, collageTemplate } = useEditorStore(useShallow((state) => ({
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
     printSettings: state.printSettings,
+    collageTemplate: state.collageTemplate,
   })));
 
   const [rows, setRows] = useState(2);
@@ -31,9 +32,30 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [saveName, setSaveName] = useState("");
 
+  // مزامنة حالة عناصر التحكم المحلية مع القالب النشط حالياً على الكانفس
+  useEffect(() => {
+    if (collageTemplate) {
+      if (collageTemplate.physicalLayout) {
+        const pl = collageTemplate.physicalLayout;
+        if (pl.rows) setRows(pl.rows);
+        if (pl.cols) setCols(pl.cols);
+        if (pl.type) setPhotoType(pl.type as any);
+        if (pl.align) setGridAlign(pl.align as any);
+      } else if (collageTemplate.cells && collageTemplate.cells.length > 0) {
+        const count = collageTemplate.cells.length;
+        if (count === 4) { setRows(2); setCols(2); }
+        else if (count === 6) { setRows(2); setCols(3); }
+        else if (count === 8) { setRows(2); setCols(4); }
+        else if (count === 9) { setRows(3); setCols(3); }
+        else if (count === 12) { setRows(3); setCols(4); }
+        setPhotoType("stretch");
+      }
+    }
+  }, [collageTemplate]);
+
   const getMaxGridConfig = React.useCallback(() => {
     if (photoType === "stretch") {
-      return { maxRows: 6, maxCols: 6 };
+      return { maxRows: 12, maxCols: 12 };
     }
 
     const W = canvasWidth || 2480;
@@ -79,7 +101,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       wMM = 50;
       hMM = 50;
     } else {
-      return { maxRows: 6, maxCols: 6 };
+      return { maxRows: 12, maxCols: 12 };
     }
 
     const cellW_px = (wMM * dpi) / 25.4;
@@ -98,7 +120,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     const maxCols = Math.max(1, Math.floor((availW + gap + tolerance) / (cellW_px + gap)));
     const maxRows = Math.max(1, Math.floor((availH + gap + tolerance) / (cellH_px + gap)));
 
-    return { maxRows: Math.min(6, maxRows), maxCols: Math.min(6, maxCols) };
+    // رفع الحد الأقصى الاصطناعي ليتناسب مع قياسات الورق الضخمة كـ A3 و A2
+    return { maxRows: Math.min(25, maxRows), maxCols: Math.min(25, maxCols) };
   }, [photoType, canvasWidth, canvasHeight, printSettings.dpi]);
 
   const { maxRows, maxCols } = React.useMemo(() => getMaxGridConfig(), [getMaxGridConfig]);
@@ -329,11 +352,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     }
 
     if (changed) {
-      setTimeout(() => {
+      queueMicrotask(() => {
         setRows(adjustedRows);
         setCols(adjustedCols);
         applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
-      }, 0);
+      });
     }
   }, [photoType, canvasWidth, canvasHeight, rows, cols, getMaxGridConfig, applyCustomCollage, gridAlign]);
 
@@ -466,113 +489,131 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
       {/* Grid Alignment Quick Selector */}
       {photoType !== "stretch" && (
-        <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-bold text-muted-foreground">محاذاة شبكة الخلايا على الورقة</span>
-          
-          <div className="flex items-center justify-center p-3.5 bg-muted/20 border border-border/30 rounded-2xl h-28 relative">
-            {/* Paper outline visual representation */}
-            <div className="w-40 h-20 border border-border/60 bg-card rounded-xl relative flex items-center justify-center shadow-xs">
-              {/* Top-Left */}
-              <button
-                type="button"
-                onClick={() => {
-                  setGridAlign("top-left");
-                  applyCustomCollage(rows, cols, photoType, "top-left");
-                }}
-                className={cn(
-                  "absolute top-1.5 left-1.5 w-6.5 h-6.5 rounded-md border flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-2xs",
-                  gridAlign === "top-left"
-                    ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                    : "border-border/60 bg-background hover:border-primary/30 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                )}
-                title="أعلى اليسار"
-              >
-                <ArrowUpLeft className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Center */}
-              <button
-                type="button"
-                onClick={() => {
-                  setGridAlign("center");
-                  applyCustomCollage(rows, cols, photoType, "center");
-                }}
-                className={cn(
-                  "w-6.5 h-6.5 rounded-md border flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-2xs",
-                  gridAlign === "center"
-                    ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                    : "border-border/60 bg-background hover:border-primary/30 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                )}
-                title="توسيط في المنتصف"
-              >
-                <Crosshair className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Top-Right */}
-              <button
-                type="button"
-                onClick={() => {
-                  setGridAlign("top-right");
-                  applyCustomCollage(rows, cols, photoType, "top-right");
-                }}
-                className={cn(
-                  "absolute top-1.5 right-1.5 w-6.5 h-6.5 rounded-md border flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-2xs",
-                  gridAlign === "top-right"
-                    ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                    : "border-border/60 bg-background hover:border-primary/30 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                )}
-                title="أعلى اليمين"
-              >
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Bottom-Left */}
-              <button
-                type="button"
-                onClick={() => {
-                  setGridAlign("bottom-left");
-                  applyCustomCollage(rows, cols, photoType, "bottom-left");
-                }}
-                className={cn(
-                  "absolute bottom-1.5 left-1.5 w-6.5 h-6.5 rounded-md border flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-2xs",
-                  gridAlign === "bottom-left"
-                    ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                    : "border-border/60 bg-background hover:border-primary/30 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                )}
-                title="أسفل اليسار"
-              >
-                <ArrowDownLeft className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Bottom-Right */}
-              <button
-                type="button"
-                onClick={() => {
-                  setGridAlign("bottom-right");
-                  applyCustomCollage(rows, cols, photoType, "bottom-right");
-                }}
-                className={cn(
-                  "absolute bottom-1.5 right-1.5 w-6.5 h-6.5 rounded-md border flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-2xs",
-                  gridAlign === "bottom-right"
-                    ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                    : "border-border/60 bg-background hover:border-primary/30 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                )}
-                title="أسفل اليمين"
-              >
-                <ArrowDownRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+        <div className="flex flex-col gap-2 mt-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-muted-foreground">محاذاة شبكة الخلايا على الورقة</span>
+            <span className="text-[9px] font-medium text-primary/80">
+              {[
+                { value: "center",       label: "توسيط المنتصف" },
+                { value: "top-right",    label: "أعلى اليمين" },
+                { value: "top-left",     label: "أعلى اليسار" },
+                { value: "bottom-right", label: "أسفل اليمين" },
+                { value: "bottom-left",  label: "أسفل اليسار" },
+              ].find(o => o.value === gridAlign)?.label}
+            </span>
           </div>
-          
-          <p className="text-[9px] text-muted-foreground/60 text-center leading-none mt-1">
-            {[
-              { value: "center",       label: "توسيط في المنتصف" },
-              { value: "top-right",    label: "أعلى اليمين" },
-              { value: "top-left",     label: "أعلى اليسار" },
-              { value: "bottom-right", label: "أسفل اليمين" },
-              { value: "bottom-left",  label: "أسفل اليسار" },
-            ].find(o => o.value === gridAlign)?.label}
-          </p>
+
+          <div className="grid grid-cols-3 gap-2 p-2.5 bg-muted/20 border border-border/30 rounded-2xl w-full" style={{ direction: "ltr" }}>
+            {/* Top-Left */}
+            <button
+              type="button"
+              onClick={() => {
+                setGridAlign("top-left");
+                applyCustomCollage(rows, cols, photoType, "top-left");
+              }}
+              title="أعلى اليسار"
+              className={cn(
+                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
+                gridAlign === "top-left"
+                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
+                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <ArrowUpLeft className="w-4.5 h-4.5" />
+            </button>
+
+            {/* Top-Center Spacer */}
+            <div className="h-11 flex items-center justify-center opacity-20 pointer-events-none">
+              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+            </div>
+
+            {/* Top-Right */}
+            <button
+              type="button"
+              onClick={() => {
+                setGridAlign("top-right");
+                applyCustomCollage(rows, cols, photoType, "top-right");
+              }}
+              title="أعلى اليمين"
+              className={cn(
+                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
+                gridAlign === "top-right"
+                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
+                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <ArrowUpRight className="w-4.5 h-4.5" />
+            </button>
+
+            {/* Middle-Left Spacer */}
+            <div className="h-11 flex items-center justify-center opacity-20 pointer-events-none">
+              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+            </div>
+
+            {/* Center */}
+            <button
+              type="button"
+              onClick={() => {
+                setGridAlign("center");
+                applyCustomCollage(rows, cols, photoType, "center");
+              }}
+              title="توسيط المنتصف"
+              className={cn(
+                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
+                gridAlign === "center"
+                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
+                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Crosshair className="w-4.5 h-4.5" />
+            </button>
+
+            {/* Middle-Right Spacer */}
+            <div className="h-11 flex items-center justify-center opacity-20 pointer-events-none">
+              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+            </div>
+
+            {/* Bottom-Left */}
+            <button
+              type="button"
+              onClick={() => {
+                setGridAlign("bottom-left");
+                applyCustomCollage(rows, cols, photoType, "bottom-left");
+              }}
+              title="أسفل اليسار"
+              className={cn(
+                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
+                gridAlign === "bottom-left"
+                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
+                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <ArrowDownLeft className="w-4.5 h-4.5" />
+            </button>
+
+            {/* Bottom-Center Spacer */}
+            <div className="h-11 flex items-center justify-center opacity-20 pointer-events-none">
+              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+            </div>
+
+            {/* Bottom-Right */}
+            <button
+              type="button"
+              onClick={() => {
+                setGridAlign("bottom-right");
+                applyCustomCollage(rows, cols, photoType, "bottom-right");
+              }}
+              title="أسفل اليمين"
+              className={cn(
+                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
+                gridAlign === "bottom-right"
+                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
+                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <ArrowDownRight className="w-4.5 h-4.5" />
+            </button>
+          </div>
         </div>
       )}
 

@@ -4,21 +4,19 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, Image as ImageIcon, LayoutGrid, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 function TooltipBtn({ content, children }: { content: string; children: React.ReactElement }) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent
-          side="top"
-          className="font-cairo text-[10px] py-1 px-2.5 bg-primary text-primary-foreground border-0 shadow-sm rounded font-medium"
-        >
-          {content}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent
+        side="top"
+        className="font-cairo text-[10px] py-1 px-2.5 bg-primary text-primary-foreground border-0 shadow-sm rounded font-medium"
+      >
+        {content}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

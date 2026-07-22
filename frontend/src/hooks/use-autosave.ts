@@ -93,6 +93,18 @@ export function useAutoSave() {
       canvasWidth: useEditorStore.getState().canvasWidth,
       canvasHeight: useEditorStore.getState().canvasHeight,
       backgroundColor: useEditorStore.getState().backgroundColor,
+      template: useEditorStore.getState().template,
+      collageTemplate: useEditorStore.getState().collageTemplate,
+      printSettings: useEditorStore.getState().printSettings,
+      showGrid: useEditorStore.getState().showGrid,
+      gridSize: useEditorStore.getState().gridSize,
+      gridColor: useEditorStore.getState().gridColor,
+      gridOpacity: useEditorStore.getState().gridOpacity,
+      showColumns: useEditorStore.getState().showColumns,
+      columnsCount: useEditorStore.getState().columnsCount,
+      columnsColor: useEditorStore.getState().columnsColor,
+      columnsMargin: useEditorStore.getState().columnsMargin,
+      columnsGutter: useEditorStore.getState().columnsGutter,
       collageGap: useEditorStore.getState().collageGap,
       collageMargin: useEditorStore.getState().collageMargin,
       collageRadius: useEditorStore.getState().collageRadius,
@@ -109,6 +121,18 @@ export function useAutoSave() {
         state.canvasWidth === lastStructuralState.canvasWidth &&
         state.canvasHeight === lastStructuralState.canvasHeight &&
         state.backgroundColor === lastStructuralState.backgroundColor &&
+        state.template === lastStructuralState.template &&
+        state.collageTemplate === lastStructuralState.collageTemplate &&
+        state.printSettings === lastStructuralState.printSettings &&
+        state.showGrid === lastStructuralState.showGrid &&
+        state.gridSize === lastStructuralState.gridSize &&
+        state.gridColor === lastStructuralState.gridColor &&
+        state.gridOpacity === lastStructuralState.gridOpacity &&
+        state.showColumns === lastStructuralState.showColumns &&
+        state.columnsCount === lastStructuralState.columnsCount &&
+        state.columnsColor === lastStructuralState.columnsColor &&
+        state.columnsMargin === lastStructuralState.columnsMargin &&
+        state.columnsGutter === lastStructuralState.columnsGutter &&
         state.collageGap === lastStructuralState.collageGap &&
         state.collageMargin === lastStructuralState.collageMargin &&
         state.collageRadius === lastStructuralState.collageRadius &&
@@ -126,6 +150,18 @@ export function useAutoSave() {
         canvasWidth: state.canvasWidth,
         canvasHeight: state.canvasHeight,
         backgroundColor: state.backgroundColor,
+        template: state.template,
+        collageTemplate: state.collageTemplate,
+        printSettings: state.printSettings,
+        showGrid: state.showGrid,
+        gridSize: state.gridSize,
+        gridColor: state.gridColor,
+        gridOpacity: state.gridOpacity,
+        showColumns: state.showColumns,
+        columnsCount: state.columnsCount,
+        columnsColor: state.columnsColor,
+        columnsMargin: state.columnsMargin,
+        columnsGutter: state.columnsGutter,
         collageGap: state.collageGap,
         collageMargin: state.collageMargin,
         collageRadius: state.collageRadius,

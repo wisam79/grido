@@ -70,6 +70,10 @@ export interface TextElement extends BaseCanvasElement {
   textBgColor?: string;
   lineHeight?: number;
   letterSpacing?: number;
+  stroke?: string;
+  strokeWidth?: number;
+  fontStyle?: "normal" | "italic";
+  textDecoration?: "none" | "underline" | "line-through";
 }
 
 export interface ShapeElement extends BaseCanvasElement {

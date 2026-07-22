@@ -1,45 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { setupWailsMock } from './helpers/wails-mock';
 
 test.describe('Background Removal Smoke Test', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      (window as any).go = {
-        main: {
-          App: {
-            OpenFile: async () => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-            LoadAutoSave: async () => '',
-            SaveAutoSave: async () => {},
-            ClearAutoSave: async () => {},
-            SaveFileDialog: async () => 'success',
-          }
-        },
-        handlers: {
-          ProjectHandler: {
-            SaveProject: async () => 'success',
-            GetAllProjects: async () => [],
-            GetProject: async () => null,
-            DeleteProject: async () => 'success',
-          },
-          LicenseHandler: {
-            GetLicenseStatus: async () => ({
-              id: "mock-user",
-              email: "e2e-test@grido.app",
-              name: "E2E Tester",
-              plan: "pro",
-              status: "active",
-              expiresAt: "2030-01-01T00:00:00Z",
-              token: "mock-token"
-            })
-          }
-        }
-      };
-      (window as any).runtime = {
-        WindowMinimise: () => {},
-        WindowToggleMaximise: () => {},
-        Quit: () => {},
-      };
-    });
+    await setupWailsMock(page);
   });
 
   test('Upload image and expose background removal controls', async ({ page }) => {

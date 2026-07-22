@@ -10,7 +10,8 @@ import { CropDialog } from "../../crop-dialog";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { SaveImageFromBase64, OpenFile } from "../../../../../wailsjs/go/main/App";
+import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
+import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { RefineBgDialog } from "../../refine-bg-dialog";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
@@ -40,6 +41,7 @@ export function ImageAdjustProperties({
         step={1}
         unit="%"
         onChange={(v) => onUpdate(element.id, { brightness: v })}
+        onCommit={() => useEditorStore.getState().pushHistory()}
       />
       <SliderControl
         label="التباين"
@@ -50,6 +52,7 @@ export function ImageAdjustProperties({
         step={1}
         unit="%"
         onChange={(v) => onUpdate(element.id, { contrast: v })}
+        onCommit={() => useEditorStore.getState().pushHistory()}
       />
       <SliderControl
         label="التشبع"
@@ -60,6 +63,7 @@ export function ImageAdjustProperties({
         step={1}
         unit="%"
         onChange={(v) => onUpdate(element.id, { saturation: v })}
+        onCommit={() => useEditorStore.getState().pushHistory()}
       />
       <SliderControl
         label="ضبابية"
@@ -70,6 +74,7 @@ export function ImageAdjustProperties({
         step={0.5}
         unit="px"
         onChange={(v) => onUpdate(element.id, { blur: v })}
+        onCommit={() => useEditorStore.getState().pushHistory()}
       />
 
       {showReset && (
@@ -125,7 +130,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
   const handleOpenFile = async () => {
     try {
-      const b64 = await OpenFile();
+      const [b64] = await openImageFileDialog(false);
       if (b64) {
         const localPath = await SaveImageFromBase64(b64);
         onUpdate(element.id, { imageSrc: localPath });

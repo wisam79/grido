@@ -381,7 +381,7 @@ export default function App() {
       {/* المحتوى الرئيسي */}
       <main className="flex-1 flex overflow-hidden">
         {/* اللوحة اليسرى - القوالب (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[320px] min-w-[320px] max-w-[320px] border-l bg-card flex-col no-print animate-panel-right">
+        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-l bg-card flex-col no-print animate-panel-right">
           <TemplatePanel />
         </aside>
 
@@ -422,7 +422,7 @@ export default function App() {
         </section>
 
         {/* اللوحة اليمنى - الخصائص (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[320px] min-w-[320px] max-w-[320px] border-r bg-card flex-col no-print animate-panel-left">
+        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-r bg-card flex-col no-print animate-panel-left">
           <PropertiesPanel />
         </aside>
       </main>

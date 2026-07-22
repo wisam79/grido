@@ -12,7 +12,7 @@ import { ImageStyleProperties, ImageAdjustProperties } from "./panels/image-prop
 import { TextProperties } from "./panels/text-properties";
 import { ShapeProperties } from "./panels/shape-properties";
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function ElementProperties({
   element,
@@ -52,8 +52,7 @@ export function ElementProperties({
       )}
 
       <div className={cn(element.locked && "pointer-events-none opacity-50 select-none")}>
-        <TooltipProvider delayDuration={150}>
-          <Tabs defaultValue="style" className="w-full">
+        <Tabs defaultValue="style" className="w-full">
             <TabsList className={cn(
               "grid w-full h-10 p-[3px] bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/40 backdrop-blur-xs",
               hasAdjustTab ? "grid-cols-4" : "grid-cols-3"
@@ -140,6 +139,7 @@ export function ElementProperties({
                 step={1}
                 unit="°"
                 onChange={(v) => onUpdate(element.id, { rotation: v })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
               />
               <SliderControl
                 label="الشفافية"
@@ -150,6 +150,7 @@ export function ElementProperties({
                 step={1}
                 unit="%"
                 onChange={(v) => onUpdate(element.id, { opacity: v / 100 })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
               />
               
               <div className="flex items-center gap-2 pt-1">
@@ -246,6 +247,7 @@ export function ElementProperties({
                 step={1}
                 unit="%"
                 onChange={(v) => onUpdate(element.id, { shadowOpacity: v / 100 })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
               />
               
               <SliderControl
@@ -257,6 +259,7 @@ export function ElementProperties({
                 step={1}
                 unit="px"
                 onChange={(v) => onUpdate(element.id, { shadowBlur: v })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
               />
 
               <SliderControl
@@ -268,6 +271,7 @@ export function ElementProperties({
                 step={1}
                 unit="px"
                 onChange={(v) => onUpdate(element.id, { shadowOffsetX: v })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
               />
 
               <SliderControl
@@ -279,6 +283,7 @@ export function ElementProperties({
                 step={1}
                 unit="px"
                 onChange={(v) => onUpdate(element.id, { shadowOffsetY: v })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
               />
             </div>
 
@@ -294,6 +299,7 @@ export function ElementProperties({
                   step={1}
                   unit="px"
                   onChange={(v) => onUpdate(element.id, { cornerRadius: v })}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
                 />
               </div>
             )}
@@ -331,7 +337,6 @@ export function ElementProperties({
             </div>
           </TabsContent>
           </Tabs>
-        </TooltipProvider>
       </div>
     </div>
   );

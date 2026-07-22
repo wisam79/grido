@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Image as KonvaImage } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
-import { ImageElement, useEditorStore } from "@/lib/editor-store";
+import { ImageElement } from "@/lib/editor-store";
 import { getKonvaFilters } from "@/lib/konva-filters";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
@@ -70,65 +70,68 @@ export const URLImage = React.memo(function URLImage({
     (element.blur !== undefined && element.blur > 0)
   );
 
+  const cacheTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filterHash = `${element.filter}|${element.brightness}|${element.contrast}|${element.saturation}|${element.blur}`;
+
   useEffect(() => {
     const node = elementRef.current;
-    if (node && image) {
-      const isLargeImage = image.width * image.height > 1000000;
-      if (hasFilters || isLargeImage) {
-        try {
-          // استخدام دقة عرض الشاشة العادية أثناء التعديل لمنع استهلاك الذاكرة وتجميد التطبيق
-          // سيتم رفع الدقة تلقائياً عند التصدير والطباعة في export-utils و print-dialog
-          let ratio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
-          ratio = Math.max(1.5, Math.min(2, ratio));
-          
-          node.clearCache();
-          node.cache({
-            pixelRatio: ratio
-          });
-        } catch (err) {
-          console.warn("Failed to cache Konva image", err);
-        }
-      } else {
+    if (!node || !image) return;
+
+    const isLargeImage = image.width * image.height > 1000000;
+    if (!hasFilters && !isLargeImage) {
+      try {
+        node.clearCache();
+      } catch (err) {
+        // Ignore
+      }
+      return;
+    }
+
+    if (cacheTimerRef.current) clearTimeout(cacheTimerRef.current);
+    cacheTimerRef.current = setTimeout(() => {
+      if (!elementRef.current) return;
+      const n = elementRef.current;
+      try {
+        let ratio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
+        ratio = Math.max(1.5, Math.min(2, ratio));
+        n.clearCache();
+        n.cache({ pixelRatio: ratio });
+      } catch (err) {
+        console.warn("Failed to cache Konva image", err);
+      }
+    }, 150);
+
+    return () => {
+      if (cacheTimerRef.current) {
+        clearTimeout(cacheTimerRef.current);
+        cacheTimerRef.current = null;
+      }
+      if (node) {
         try {
           node.clearCache();
         } catch (err) {
           // Ignore
         }
       }
-    }
-    return () => {
-      if (node) {
-        try {
-          node.clearCache();
-        } catch (err) {
-          console.warn("Failed to clear Konva image cache", err);
-        }
-      }
     };
   }, [
     image,
     hasFilters,
-    element.width,
-    element.height,
-    displayW,
-    displayH,
     elementRef,
-    element.filter,
-    element.brightness,
-    element.contrast,
-    element.saturation,
-    element.blur,
+    filterHash,
   ]);
 
-  const filterProps = React.useMemo(() => getKonvaFilters({
-    filter: element.filter,
-    brightness: element.brightness,
-    contrast: element.contrast,
-    saturation: element.saturation
-  }), [element.filter, element.brightness, element.contrast, element.saturation]);
-
-  const filters = [...filterProps.filters];
-  if (element.blur && element.blur > 0) filters.push(Konva.Filters.Blur);
+  const { filters, filterProps } = React.useMemo(() => {
+    const res = getKonvaFilters({
+      filter: element.filter,
+      brightness: element.brightness,
+      contrast: element.contrast,
+      saturation: element.saturation
+    });
+    const list = [...res.filters];
+    if (element.blur && element.blur > 0) list.push(Konva.Filters.Blur);
+    return { filters: list, filterProps: res };
+  }, [element.filter, element.brightness, element.contrast, element.saturation, element.blur]);
 
   const flipped = element.flipX === true;
 

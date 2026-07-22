@@ -6,13 +6,17 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
 
   useEffect(() => {
     if (!src) {
-      setImage(undefined);
-      setStatus("failed");
+      queueMicrotask(() => {
+        setImage(undefined);
+        setStatus("failed");
+      });
       return;
     }
 
     let isCurrent = true;
-    setStatus("loading");
+    queueMicrotask(() => {
+      if (isCurrent) setStatus("loading");
+    });
 
     const img = new Image();
     if (crossOrigin) {

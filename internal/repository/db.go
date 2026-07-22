@@ -61,8 +61,8 @@ func InitDB() (*gorm.DB, error) {
 		}
 	}
 
-	// SQLite only supports one concurrent writer. Limit connections to 1 to avoid locking
-	sqlDB.SetMaxOpenConns(1)
+	// إزالة قيد الاتصال الواحد للسماح بالاستفادة القصوى من ميزة القراءة المتزامنة لـ WAL
+	// sqlDB.SetMaxOpenConns(1)
 
 	// الهجرة التلقائية لجداول قاعدة البيانات
 	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{}, &domain.CustomTemplate{})
@@ -319,7 +319,8 @@ type elementJSONStruct struct {
 }
 
 type slotJSONStruct struct {
-	ImageSrc string `json:"imageSrc"`
+	ImageSrc         string `json:"imageSrc"`
+	OriginalImageSrc string `json:"originalImageSrc"`
 }
 
 // collectImageFilenames منطق مساعد مشترك لتجميع أسماء الملفات لتجنب التكرار (DRY)
@@ -347,6 +348,10 @@ func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]b
 					filename := filepath.Base(filepath.Clean(slot.ImageSrc))
 					referenced[filename] = true
 				}
+				if slot.OriginalImageSrc != "" {
+					filename := filepath.Base(filepath.Clean(slot.OriginalImageSrc))
+					referenced[filename] = true
+				}
 			}
 		}
 	}
@@ -368,13 +373,13 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 			Elements []elementJSONStruct `json:"elements"`
 			Slots    []slotJSONStruct    `json:"slots"`
 		}
-		if err := json.Unmarshal(autosaveBytes, &autosaveData); err != nil {
-			return nil, err
+		if err := json.Unmarshal(autosaveBytes, &autosaveData); err == nil {
+			elemsBytes, _ := json.Marshal(autosaveData.Elements)
+			slotsBytes, _ := json.Marshal(autosaveData.Slots)
+			collectImageFilenames(string(elemsBytes), string(slotsBytes), referencedImages)
+		} else {
+			slog.Warn("Corrupt autosave.json encountered, skipping for cleanup", "error", err)
 		}
-		// تحويل الهياكل الفرعية إلى JSON string لإعادة استخدام دالة collectImageFilenames
-		elemsBytes, _ := json.Marshal(autosaveData.Elements)
-		slotsBytes, _ := json.Marshal(autosaveData.Slots)
-		collectImageFilenames(string(elemsBytes), string(slotsBytes), referencedImages)
 	}
 
 	return referencedImages, nil
@@ -394,18 +399,20 @@ func moveUnreferencedToTrash(mediaDir, trashDir string, referenced map[string]bo
 			continue
 		}
 
-		// تخطي الملفات المعدلة في آخر 15 دقيقة لتجنب نقل الملفات التي لم تحفظ بعد
-		if info, err := f.Info(); err == nil {
-			if time.Since(info.ModTime()) < 15*time.Minute {
+		filename := f.Name()
+		filePath := filepath.Join(mediaDir, filename)
+		// نقل الملفات غير المشار إليها والتي مضى عليها أكثر من 7 أيام للحجر الصحي
+		if info, err := os.Stat(filePath); err == nil {
+			if time.Since(info.ModTime()) < 7*24*time.Hour {
 				continue
 			}
 		}
 
-		filename := f.Name()
 		if !referenced[filename] {
-			filePath := filepath.Join(mediaDir, filename)
 			trashPath := filepath.Join(trashDir, filename)
-			_ = os.Rename(filePath, trashPath)
+			if err := os.Rename(filePath, trashPath); err != nil {
+				slog.Error("Failed to move file to trash", "src", filePath, "dst", trashPath, "error", err)
+			}
 		}
 	}
 }
@@ -421,9 +428,10 @@ func purgeOldTrash(trashDir string) {
 		if f.IsDir() {
 			continue
 		}
-		if info, err := f.Info(); err == nil {
-			if time.Since(info.ModTime()) > 24*time.Hour {
-				_ = os.Remove(filepath.Join(trashDir, f.Name()))
+		filePath := filepath.Join(trashDir, f.Name())
+		if info, err := os.Stat(filePath); err == nil {
+			if time.Since(info.ModTime()) > 30*24*time.Hour {
+				_ = os.Remove(filePath)
 			}
 		}
 	}

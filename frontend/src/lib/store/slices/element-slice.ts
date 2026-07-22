@@ -24,6 +24,7 @@ export interface ElementSlice {
   groupSelectedElements: () => void;
   ungroupSelectedElements: () => void;
   setEditingTextId: (id: string | null) => void;
+  autoFitTextWidth: (id: string, textWidthPx?: number) => void;
 }
 
 export const DEFAULT_ELEMENT_STATE = {
@@ -86,12 +87,21 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
   addTextElement: (text = "نص جديد") => {
     const id = uid();
+    const state = get();
+    const canvasW = state.canvasWidth || 2480;
+
+    // قياس وتناسب عرض مربع النص مع طول النص بدقة لمنع المساحات الفارغة الشاسعة
+    const fontSize = 32;
+    const charWidth = fontSize * 0.9;
+    const estimatedPx = Math.max(160, Math.min(canvasW * 0.6, text.length * charWidth + 60));
+    const initialW = estimatedPx / canvasW;
+
     const newEl: CanvasElement = {
       id,
       type: "text",
-      x: 0.35,
+      x: 0.5 - initialW / 2,
       y: 0.45,
-      width: 0.3,
+      width: initialW,
       height: 0.05,
       rotation: 0,
       opacity: 1,
@@ -107,6 +117,31 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       letterSpacing: 0,
     };
     set((s: any) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
+    get().pushHistory();
+  },
+
+  autoFitTextWidth: (id: string, textWidthPx?: number) => {
+    const el = get().elements.find((x) => x.id === id);
+    if (!el || el.type !== "text") return;
+
+    const canvasW = get().canvasWidth || 2480;
+    let newWidth = el.width;
+
+    if (textWidthPx && textWidthPx > 0) {
+      newWidth = Math.min(0.7, Math.max(0.04, (textWidthPx + 40) / canvasW));
+    } else if (typeof document !== "undefined") {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.font = `${el.fontWeight || 400} ${el.fontSize || 32}px ${el.fontFamily || "Cairo"}`;
+        const metrics = ctx.measureText(el.text || "");
+        newWidth = Math.min(0.7, Math.max(0.04, (metrics.width + 50) / canvasW));
+      }
+    }
+
+    set((s: any) => ({
+      elements: s.elements.map((item: any) => (item.id === id ? { ...item, width: newWidth } : item)),
+    }));
     get().pushHistory();
   },
 

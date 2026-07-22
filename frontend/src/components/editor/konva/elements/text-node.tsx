@@ -75,7 +75,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         return () => clearTimeout(timer);
       }
     }
-  }, [element.text, element.fontSize, element.fontFamily, element.textAlign, element.color, element.width, element.id, displayH, element.height, elementRef, onChange]);
+  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, displayH, element.height, elementRef, onChange]);
 
   const flipped = element.flipX === true;
   const w = element.width * displayW;
@@ -106,11 +106,18 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       onDblClick={onDblClick}
       onDblTap={onDblClick}
       fontSize={element.fontSize ? element.fontSize * (displayW / canvasWidth) : 16}
-      fontWeight={element.fontWeight ? String(element.fontWeight) : "normal"}
+      fontStyle={[
+        element.fontStyle === "italic" ? "italic" : "",
+        element.fontWeight ? String(element.fontWeight) : "400",
+      ].filter(Boolean).join(" ")}
       {...getFillProps(element, w, h)}
       fontFamily={element.fontFamily || "sans-serif"}
       align={element.textAlign || "center"}
       lineHeight={element.lineHeight ?? 1.2}
+      letterSpacing={element.letterSpacing ? element.letterSpacing * (displayW / canvasWidth) : 0}
+      stroke={element.strokeWidth ? (element.stroke || "#000000") : undefined}
+      strokeWidth={element.strokeWidth ? element.strokeWidth * (displayW / canvasWidth) : undefined}
+      textDecoration={element.textDecoration || ""}
       draggable={!element.locked && isSelected}
       onDragStart={onDragStart}
       dragBoundFunc={dragBoundFunc}

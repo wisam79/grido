@@ -3,6 +3,18 @@ import type { CollageTemplate } from './types';
 
 export const COLLAGE_TEMPLATES: CollageTemplate[] = [
   {
+    id: "collage-4",
+    name: "أربع صور (2×2)",
+    slots: 4,
+    cells: [
+      { x: 0, y: 0, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { x: 0, y: 0.5, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0.5, w: 0.5, h: 0.5 },
+    ],
+    icon: Grid2x2,
+  },
+  {
     id: "collage-6v-row",
     name: "ست صور سطر واحد (1×6)",
     slots: 6,
@@ -44,18 +56,6 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.5, y: 0.5, w: 0.5, h: 0.5 },
     ],
     icon: LayoutGrid,
-  },
-  {
-    id: "collage-4",
-    name: "أربع صور (2×2)",
-    slots: 4,
-    cells: [
-      { x: 0, y: 0, w: 0.5, h: 0.5 },
-      { x: 0.5, y: 0, w: 0.5, h: 0.5 },
-      { x: 0, y: 0.5, w: 0.5, h: 0.5 },
-      { x: 0.5, y: 0.5, w: 0.5, h: 0.5 },
-    ],
-    icon: Grid2x2,
   },
   {
     id: "collage-6",

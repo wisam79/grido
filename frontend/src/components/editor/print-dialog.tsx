@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,11 +12,11 @@ import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/stage-context";
 import { usePrintLayout } from "@/hooks/use-print-layout";
 import { cn } from "@/lib/utils";
-import { Printer, ZoomIn, ZoomOut, Loader2, Info } from "lucide-react";
+import { Printer, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
 import { SheetPreview } from "./print/print-preview";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { ExportPrintSheet } from "../../../wailsjs/go/handlers/PrintHandler";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
@@ -67,6 +67,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [zoom, setZoom] = useState(1);
   const [previewImageSrc, setPreviewImageSrc] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
+  const handlePrintRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (open) {
@@ -82,16 +83,18 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         onOpenChange(false);
       } else if (e.key === "Enter" && !isExporting && previewImageSrc) {
         e.preventDefault();
-        handlePrint();
+        handlePrintRef.current();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, isExporting, previewImageSrc]);
+  }, [open, isExporting, previewImageSrc, onOpenChange]);
 
   useEffect(() => {
     if (open && mode === "collage") {
-      setPreviewImageSrc("collage-active");
+      queueMicrotask(() => {
+        setPreviewImageSrc("collage-active");
+      });
       return;
     }
     if (open && stageRef.current && mode === "single") {
@@ -127,7 +130,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       }, 50);
       return () => clearTimeout(timer);
     } else if (!open) {
-      setPreviewImageSrc("");
+      queueMicrotask(() => {
+        setPreviewImageSrc("");
+      });
     }
   }, [open, stageRef, elements, slots, backgroundColor, mode, canvasWidth, printSettings]);
 
@@ -420,6 +425,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       setIsExporting(false);
     }
   };
+
+  useEffect(() => {
+    handlePrintRef.current = handlePrint;
+  });
 
   const spaceUsedPercent = Math.round(
     ((actualCopies * imageWidthMM * imageHeightMM) /

@@ -1,10 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
+import { SaveImageFromBase64, EnhanceImageWithAI } from "../../wailsjs/go/main/App";
 import { useEditorStore } from "@/lib/editor-store";
-
-export const MODAL_ENDPOINT_URL = "https://wisamsamir78--grido-ai-upscaler-imageenhancer-enhance.modal.run";
-
 // 🌟 حساب الحد اليومي الديناميكي بحسب نوع باقة الحساب وصلاحية الأدمن
 export function getUserDailyLimit(): number {
   try {
@@ -122,35 +119,39 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
         });
       }
 
-      setEnhanceProgress(45);
-      setEnhanceProgressText("ترميم وتوضيح الملامح عبر GPU السحابي...");
+      const loadingMessages = [
+        "جاري إيقاظ خوادم الذكاء الاصطناعي... 💤",
+        "يتم الآن تهيئة معالجات الرسوميات (GPU)... 🚀",
+        "جاري تحميل نماذج الترميم المتقدمة... 🧠",
+        "تتم الآن معالجة تفاصيل الوجه والملامح... ✨",
+        "يتم تحليل البيانات واستعادة البيكسلات المفقودة... 👁️",
+        "جاري إزالة التشويش وتوضيح الخلفية... 🖼️",
+        "نقوم باللمسات الأخيرة وتحسين الجودة... 🎨",
+        "العملية توشك على الانتهاء، شكراً لصبرك... ⏳"
+      ];
 
+      setEnhanceProgress(15);
+      setEnhanceProgressText(loadingMessages[0]);
+
+      let ticks = 0;
       progressTimer = setInterval(() => {
-        setEnhanceProgress((prev) => (prev < 85 ? prev + 5 : prev));
-      }, 350);
+        ticks++;
+        setEnhanceProgress((prev) => (prev < 90 ? prev + 2 : prev));
+        
+        // تغيير الرسالة كل 4 ثواني تقريباً (5 دورات * 800 مللي ثانية)
+        const msgIndex = Math.floor(ticks / 5);
+        if (msgIndex < loadingMessages.length) {
+          setEnhanceProgressText(loadingMessages[msgIndex]);
+        }
+      }, 800);
 
-      const apiResponse = await fetch(MODAL_ENDPOINT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Grido-Api-Key": "grido_sec_ai_v1_98234791283749",
-        },
-        body: JSON.stringify({ image: base64Image }),
-        signal: controller.signal,
-      });
+      const token = user?.token || "";
+      const resultStr = await EnhanceImageWithAI(base64Image, token);
 
       clearInterval(progressTimer);
       clearTimeout(timeoutId);
 
-      if (!apiResponse.ok) {
-        throw new Error(`خطأ من السيرفر: ${apiResponse.statusText}`);
-      }
-
-      const result = await apiResponse.json();
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
+      const result = JSON.parse(resultStr);
 
       if (result.image) {
         setEnhanceProgress(95);
@@ -173,7 +174,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
         const currentUser = useEditorStore.getState().user;
         useEditorStore.getState().logAiUsage({
           email: currentUser?.email || "wisamsamir78@gmail.com",
-          serviceName: "ترميم الوجوه بالذكاء الاصطناعي (GFPGAN v1.4)",
+          serviceName: "ترميم الوجوه بالذكاء الاصطناعي (CodeFormer)",
           source: "Grido Studio Desktop (Windows)",
           durationSec: result.execution_seconds || 2.4,
           costUsd: result.total_cost_usd || 0.001329,

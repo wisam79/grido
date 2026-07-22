@@ -10,6 +10,7 @@ import "@/lib/custom-filters";
 import { KonvaCollageImage } from "./elements/collage-image";
 import { GridLayer } from "./elements/grid-layer";
 import { ColumnsLayer } from "./elements/columns-layer";
+import { EditorTransformer } from "./elements/editor-transformer";
 
 interface KonvaCanvasProps {
   displayW: number;
@@ -72,6 +73,7 @@ export function KonvaCanvas({
     collageStrokeColor,
     backgroundColor,
     canvasWidth,
+    canvasHeight,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
     slots: state.slots,
@@ -103,6 +105,7 @@ export function KonvaCanvas({
     collageStrokeColor: state.collageStrokeColor,
     backgroundColor: state.backgroundColor,
     canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
   })));
   
   const trRef = useRef<any>(null);
@@ -155,6 +158,41 @@ export function KonvaCanvas({
   const handleElementChange = (id: string, patch: Partial<CanvasElement>) => {
     updateElement(id, patch);
   };
+
+  const createElementMouseDown = React.useCallback((elId: string) => (e: any) => {
+    const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
+    if (!isMulti) {
+      const { selectedIds } = useEditorStore.getState();
+      if (!selectedIds.includes(elId)) {
+        selectElement(elId);
+      }
+    } else {
+      toggleElementSelection(elId);
+    }
+  }, [selectElement, toggleElementSelection]);
+
+  const createElementClick = React.useCallback((elId: string) => (e: any) => {
+    const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
+    if (!isMulti) {
+      const { selectedIds } = useEditorStore.getState();
+      if (selectedIds.includes(elId)) {
+        selectElement(elId);
+      }
+    }
+  }, [selectElement]);
+
+  const createElementRef = React.useCallback((elId: string) => ({
+    get current() {
+      return elementsRefs.current[elId];
+    },
+    set current(val: any) {
+      if (val) {
+        elementsRefs.current[elId] = val;
+      } else {
+        delete elementsRefs.current[elId];
+      }
+    }
+  }), []);
 
   return (
     <Stage
@@ -371,7 +409,6 @@ export function KonvaCanvas({
           {sortedElements.map((el) => {
             if (el.visible === false) return null;
 
-            // Off-screen elements culling to speed up Konva rendering
             if (
               el.x > 1.1 ||
               el.y > 1.1 ||
@@ -381,27 +418,8 @@ export function KonvaCanvas({
               return null;
             }
 
-            const handleMouseDown = (e: any) => {
-              const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
-              if (!isMulti) {
-                const { selectedIds } = useEditorStore.getState();
-                if (!selectedIds.includes(el.id)) {
-                  selectElement(el.id);
-                }
-              } else {
-                toggleElementSelection(el.id);
-              }
-            };
-
-            const handleClick = (e: any) => {
-              const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
-              if (!isMulti) {
-                const { selectedIds } = useEditorStore.getState();
-                if (selectedIds.includes(el.id)) {
-                  selectElement(el.id);
-                }
-              }
-            };
+            const handleMouseDown = createElementMouseDown(el.id);
+            const handleClick = createElementClick(el.id);
 
             const elementProps = {
               key: el.id,
@@ -420,18 +438,7 @@ export function KonvaCanvas({
               gridSize,
               altPressedRef,
               getKonvaNode: (id: string) => elementsRefs.current[id],
-              elementRef: {
-                get current() {
-                  return elementsRefs.current[el.id];
-                },
-                set current(val) {
-                  if (val) {
-                    elementsRefs.current[el.id] = val;
-                  } else {
-                    delete elementsRefs.current[el.id];
-                  }
-                }
-              }
+              elementRef: createElementRef(el.id)
             };
 
             if (el.type === "image" && el.imageSrc) {
@@ -454,31 +461,16 @@ export function KonvaCanvas({
           })}
 
           {selectedIds.length > 0 && (
-            <Transformer
-              ref={trRef}
-              anchorSize={10}
-              anchorCornerRadius={5}
-              anchorStroke="#ffffff"
-              anchorStrokeWidth={1.5}
-              anchorFill="#4f46e5"
-              borderStroke="#4f46e5"
-              borderStrokeWidth={1.5}
-              padding={5}
-              rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
-              rotateAnchorOffset={25}
-              enabledAnchors={
-                isText && selectedIds.length === 1
-                  ? ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right"]
-                  : ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"]
-              }
-              boundBoxFunc={(oldBox, newBox) => {
-                if (newBox.width < 5 || newBox.height < 5) {
-                  return oldBox;
-                }
-                return newBox;
-              }}
-
-              onTransformEnd={(e) => {
+            <EditorTransformer
+              trRef={trRef}
+              selectedIds={selectedIds}
+              sortedElements={sortedElements}
+              displayW={displayW}
+              displayH={displayH}
+              canvasWidth={canvasWidth}
+              canvasHeight={canvasHeight}
+              isText={isText}
+              onTransformEnd={() => {
                 if (!trRef.current) return;
                 const nodes = trRef.current.nodes();
                 const patches = nodes.map((node: any) => {
