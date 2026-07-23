@@ -14,13 +14,8 @@ const NAV_LINKS = [
 function Logo() {
   return (
     <a href="#top" className="flex items-center gap-3 group">
-      <div className="relative w-10 h-10">
-        <div className="absolute inset-0 bg-gradient-to-tr from-brand-500 via-sky-500 to-accent-400 rounded-xl shadow-lg shadow-brand-500/30 transition-transform duration-300 group-hover:scale-105" />
-        <div className="absolute inset-[3px] rounded-[9px] bg-ink-900/80 backdrop-blur-sm flex items-center justify-center">
-          <span className="font-display font-black text-lg bg-gradient-to-br from-brand-400 to-accent-400 bg-clip-text text-transparent">
-            G
-          </span>
-        </div>
+      <div className="relative w-10 h-10 overflow-hidden rounded-xl shadow-lg transition-transform duration-300 group-hover:scale-105">
+        <img src="/favicon.png" alt="Grido Logo" className="w-full h-full object-cover" />
       </div>
       <div className="flex flex-col leading-none">
         <span className="text-lg font-extrabold tracking-tight">Grido Studio</span>

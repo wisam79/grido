@@ -12,13 +12,8 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="relative w-9 h-9">
-              <div className="absolute inset-0 bg-gradient-to-tr from-brand-500 via-sky-500 to-accent-400 rounded-xl" />
-              <div className="absolute inset-[3px] rounded-[9px] bg-ink-950 flex items-center justify-center">
-                <span className="font-display font-black text-base bg-gradient-to-br from-brand-400 to-accent-400 bg-clip-text text-transparent">
-                  G
-                </span>
-              </div>
+            <div className="relative w-9 h-9 overflow-hidden rounded-xl">
+              <img src="/favicon.png" alt="Grido Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col leading-none">
               <span className="font-extrabold text-base">Grido Studio</span>
