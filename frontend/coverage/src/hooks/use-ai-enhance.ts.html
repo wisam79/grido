@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">30.35% </span>
+                <span class="strong">28.94% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>34/112</span>
+                <span class='fraction'>33/114</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">31.57% </span>
+                <span class="strong">27.27% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>18/57</span>
+                <span class='fraction'>15/55</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">30.84% </span>
+                <span class="strong">29.35% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>33/107</span>
+                <span class='fraction'>32/109</span>
             </div>
         
             
@@ -276,12 +276,10 @@
 <a name='L211'></a><a href='#L211'>211</a>
 <a name='L212'></a><a href='#L212'>212</a>
 <a name='L213'></a><a href='#L213'>213</a>
-<a name='L214'></a><a href='#L214'>214</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -312,11 +310,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">28x</span>
-<span class="cline-any cline-yes">28x</span>
-<span class="cline-any cline-yes">28x</span>
-<span class="cline-any cline-yes">28x</span>
-<span class="cline-any cline-yes">28x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -401,13 +399,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -422,13 +414,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -491,21 +493,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
+import { SaveImageFromBase64, EnhanceImageWithAI } from "../../wailsjs/go/main/App";
 import { useEditorStore } from "@/lib/editor-store";
-&nbsp;
-export const MODAL_ENDPOINT_URL = "https://wisamsamir78--grido-ai-upscaler-imageenhancer-enhance.modal.run";
-&nbsp;
 // 🌟 حساب الحد اليومي الديناميكي بحسب نوع باقة الحساب وصلاحية الأدمن
 export function getUserDailyLimit(): number {
   try {
     const user = useEditorStore.getState().user;
     
-    // حساب الأدمن (wisamsamir78@gmail.com) أو خطة Enterprise ➔ 50 صورة يومياً!
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (user?.email === "wisamsamir78@gmail.com" || user?.plan === "enterprise") {
+    // خطة Enterprise ➔ 50 صورة يومياً
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (user?.plan === "enterprise") {
 <span class="cstat-no" title="statement not covered" >      return 50;</span>
     }
-    // خطة PRO الاحترافية ➔ 15 صورة يومياً!
+    // خطة PRO الاحترافية ➔ 15 صورة يومياً
     <span class="missing-if-branch" title="else path not taken" >E</span>if (user?.plan === "pro") {
       return 15;
     }
@@ -520,13 +519,13 @@ function getTodayUsageCount(): number {
   try {
     const todayStr = new Date().toISOString().split("T")[0]; // e.g. "2026-07-19"
     const user = useEditorStore.getState().user;
-    const userEmail = user?.email || "wisamsamir78@gmail.com";
+    const userEmail = user?.email || "unknown";
     const logs = useEditorStore.getState().aiUsageLogs || <span class="branch-1 cbranch-no" title="branch not covered" >[];</span>
 &nbsp;
     // تصفية وحساب الطلبات الفعلية المكتملة بنجاح اليوم للحساب الحالي
     const dbCount = logs.filter((log) =&gt; {
       const logDate = log.timestamp ? log.timestamp.substring(0, 10) : <span class="branch-1 cbranch-no" title="branch not covered" >"";</span>
-      const isToday = logDate === todayStr || logDate === todayStr.replace(/-/g, "/");
+      const isToday = logDate === todayStr || <span class="branch-1 cbranch-no" title="branch not covered" >logDate === todayStr.replace(/-/g, "/");</span>
       const isEnhance = log.serviceName &amp;&amp; (log.serviceName.includes("ترميم") || log.serviceName.includes("GFPGAN"));
       const isUser = !log.email || log.email === userEmail;
       return isToday &amp;&amp; isEnhance &amp;&amp; <span class="branch-2 cbranch-no" title="branch not covered" >isUser &amp;&amp; <span class="branch-3 cbranch-no" title="branch not covered" >l</span>og.status === "success";</span>
@@ -613,35 +612,39 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial&lt;any&gt;) =
         });
       }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      setEnhanceProgress(45);</span>
-<span class="cstat-no" title="statement not covered" >      setEnhanceProgressText("ترميم وتوضيح الملامح عبر GPU السحابي...");</span>
+      const loadingMessages = <span class="cstat-no" title="statement not covered" >[</span>
+        "جاري إيقاظ خوادم الذكاء الاصطناعي... 💤",
+        "يتم الآن تهيئة معالجات الرسوميات (GPU)... 🚀",
+        "جاري تحميل نماذج الترميم المتقدمة... 🧠",
+        "تتم الآن معالجة تفاصيل الوجه والملامح... ✨",
+        "يتم تحليل البيانات واستعادة البيكسلات المفقودة... 👁️",
+        "جاري إزالة التشويش وتوضيح الخلفية... 🖼️",
+        "نقوم باللمسات الأخيرة وتحسين الجودة... 🎨",
+        "العملية توشك على الانتهاء، شكراً لصبرك... ⏳"
+      ];
 &nbsp;
+<span class="cstat-no" title="statement not covered" >      setEnhanceProgress(15);</span>
+<span class="cstat-no" title="statement not covered" >      setEnhanceProgressText(loadingMessages[0]);</span>
+&nbsp;
+      let ticks = <span class="cstat-no" title="statement not covered" >0;</span>
 <span class="cstat-no" title="statement not covered" >      progressTimer = setInterval(<span class="fstat-no" title="function not covered" >() =&gt; {</span></span>
-<span class="cstat-no" title="statement not covered" >        setEnhanceProgress(<span class="fstat-no" title="function not covered" >(p</span>rev) =&gt; (<span class="cstat-no" title="statement not covered" >prev &lt; 85 ? prev + 5 : prev))</span>;</span>
-      }, 350);
+<span class="cstat-no" title="statement not covered" >        ticks++;</span>
+<span class="cstat-no" title="statement not covered" >        setEnhanceProgress(<span class="fstat-no" title="function not covered" >(p</span>rev) =&gt; (<span class="cstat-no" title="statement not covered" >prev &lt; 90 ? prev + 2 : prev))</span>;</span>
+        
+        // تغيير الرسالة كل 4 ثواني تقريباً (5 دورات * 800 مللي ثانية)
+        const msgIndex = <span class="cstat-no" title="statement not covered" >Math.floor(ticks / 5);</span>
+<span class="cstat-no" title="statement not covered" >        if (msgIndex &lt; loadingMessages.length) {</span>
+<span class="cstat-no" title="statement not covered" >          setEnhanceProgressText(loadingMessages[msgIndex]);</span>
+        }
+      }, 800);
 &nbsp;
-      const apiResponse = <span class="cstat-no" title="statement not covered" >await fetch(MODAL_ENDPOINT_URL, {</span>
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Grido-Api-Key": "grido_sec_ai_v1_98234791283749",
-        },
-        body: JSON.stringify({ image: base64Image }),
-        signal: controller.signal,
-      });
+      const token = <span class="cstat-no" title="statement not covered" >user?.token || "";</span>
+      const resultStr = <span class="cstat-no" title="statement not covered" >await EnhanceImageWithAI(base64Image, token, dailyLimit);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      clearInterval(progressTimer);</span>
 <span class="cstat-no" title="statement not covered" >      clearTimeout(timeoutId);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      if (!apiResponse.ok) {</span>
-<span class="cstat-no" title="statement not covered" >        throw new Error(`خطأ من السيرفر: ${apiResponse.statusText}`);</span>
-      }
-&nbsp;
-      const result = <span class="cstat-no" title="statement not covered" >await apiResponse.json();</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >      if (result.error) {</span>
-<span class="cstat-no" title="statement not covered" >        throw new Error(result.error);</span>
-      }
+      const result = <span class="cstat-no" title="statement not covered" >JSON.parse(resultStr);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      if (result.image) {</span>
 <span class="cstat-no" title="statement not covered" >        setEnhanceProgress(95);</span>
@@ -663,8 +666,8 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial&lt;any&gt;) =
         // 🌟 2. توثيق وتسجيل الطلب في سجلات تدقيق قاعدة البيانات الحية
         const currentUser = <span class="cstat-no" title="statement not covered" >useEditorStore.getState().user;</span>
 <span class="cstat-no" title="statement not covered" >        useEditorStore.getState().logAiUsage({</span>
-          email: currentUser?.email || "wisamsamir78@gmail.com",
-          serviceName: "ترميم الوجوه بالذكاء الاصطناعي (GFPGAN v1.4)",
+          email: currentUser?.email || "unknown",
+          serviceName: "ترميم الوجوه بالذكاء الاصطناعي (CodeFormer)",
           source: "Grido Studio Desktop (Windows)",
           durationSec: result.execution_seconds || 2.4,
           costUsd: result.total_cost_usd || 0.001329,
@@ -709,7 +712,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial&lt;any&gt;) =
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-21T18:23:19.378Z
+                at 2026-07-23T13:49:52.394Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25.45% </span>
+                <span class="strong">23.72% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>14/55</span>
+                <span class='fraction'>14/59</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">26.31% </span>
+                <span class="strong">21.73% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/19</span>
+                <span class='fraction'>5/23</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">24.52% </span>
+                <span class="strong">22.8% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>13/53</span>
+                <span class='fraction'>13/57</span>
             </div>
         
             
@@ -384,7 +384,12 @@
 <a name='L319'></a><a href='#L319'>319</a>
 <a name='L320'></a><a href='#L320'>320</a>
 <a name='L321'></a><a href='#L321'>321</a>
-<a name='L322'></a><a href='#L322'>322</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -397,20 +402,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -435,6 +426,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -446,6 +443,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -455,6 +453,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -717,7 +727,8 @@ import { CropDialog } from "../../crop-dialog";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { SaveImageFromBase64, OpenFile } from "../../../../../wailsjs/go/main/App";
+import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
+import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { RefineBgDialog } from "../../refine-bg-dialog";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
@@ -747,6 +758,7 @@ export function <span class="fstat-no" title="function not covered" >ImageAdjust
         step={1}
         unit="%"
         onChange={<span class="fstat-no" title="function not covered" >(v</span>) =&gt; <span class="cstat-no" title="statement not covered" >onUpdate(element.id, { brightness: v })}</span>
+        onCommit={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >u</span>seEditorStore.getState().pushHistory()}</span>
       /&gt;
       &lt;SliderControl
         label="التباين"
@@ -757,6 +769,7 @@ export function <span class="fstat-no" title="function not covered" >ImageAdjust
         step={1}
         unit="%"
         onChange={<span class="fstat-no" title="function not covered" >(v</span>) =&gt; <span class="cstat-no" title="statement not covered" >onUpdate(element.id, { contrast: v })}</span>
+        onCommit={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >u</span>seEditorStore.getState().pushHistory()}</span>
       /&gt;
       &lt;SliderControl
         label="التشبع"
@@ -767,6 +780,7 @@ export function <span class="fstat-no" title="function not covered" >ImageAdjust
         step={1}
         unit="%"
         onChange={<span class="fstat-no" title="function not covered" >(v</span>) =&gt; <span class="cstat-no" title="statement not covered" >onUpdate(element.id, { saturation: v })}</span>
+        onCommit={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >u</span>seEditorStore.getState().pushHistory()}</span>
       /&gt;
       &lt;SliderControl
         label="ضبابية"
@@ -777,6 +791,7 @@ export function <span class="fstat-no" title="function not covered" >ImageAdjust
         step={0.5}
         unit="px"
         onChange={<span class="fstat-no" title="function not covered" >(v</span>) =&gt; <span class="cstat-no" title="statement not covered" >onUpdate(element.id, { blur: v })}</span>
+        onCommit={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >u</span>seEditorStore.getState().pushHistory()}</span>
       /&gt;
 &nbsp;
       {showReset &amp;&amp; (
@@ -832,7 +847,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 &nbsp;
   const handleOpenFile = <span class="fstat-no" title="function not covered" >async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const b64 = <span class="cstat-no" title="statement not covered" >await OpenFile();</span>
+      const [b64] = <span class="cstat-no" title="statement not covered" >await openImageFileDialog(false);</span>
 <span class="cstat-no" title="statement not covered" >      if (b64) {</span>
         const localPath = <span class="cstat-no" title="statement not covered" >await SaveImageFromBase64(b64);</span>
 <span class="cstat-no" title="statement not covered" >        onUpdate(element.id, { imageSrc: localPath });</span>
@@ -1033,7 +1048,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-21T18:23:19.378Z
+                at 2026-07-23T13:49:52.394Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

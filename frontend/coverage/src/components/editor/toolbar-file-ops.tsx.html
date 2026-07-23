@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">15.06% </span>
+                <span class="strong">15.71% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>11/73</span>
+                <span class='fraction'>11/70</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/31</span>
+                <span class='fraction'>0/33</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">15.71% </span>
+                <span class="strong">16.17% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>11/70</span>
+                <span class='fraction'>11/68</span>
             </div>
         
             
@@ -328,8 +328,8 @@
 <a name='L263'></a><a href='#L263'>263</a>
 <a name='L264'></a><a href='#L264'>264</a>
 <a name='L265'></a><a href='#L265'>265</a>
-<a name='L266'></a><a href='#L266'>266</a>
-<a name='L267'></a><a href='#L267'>267</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L266'></a><a href='#L266'>266</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -402,12 +402,6 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -416,6 +410,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -621,8 +619,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ProjectsDialog } from "./projects-dialog";
-import { OpenFile, OpenMultipleFiles, ClearAutoSave } from "../../../wailsjs/go/main/App";
+import { ClearAutoSave } from "../../../wailsjs/go/main/App";
 import { saveProjectAsJSON } from "./export-utils";
+import { openImageFileDialog } from "@/lib/file-dialog-utils";
 &nbsp;
 interface TooltipBtnProps {
   content: string;
@@ -667,13 +666,7 @@ export function ToolbarFileOps() {
 &nbsp;
   const handleOpenFile = <span class="fstat-no" title="function not covered" >async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      let b64s: string[] = <span class="cstat-no" title="statement not covered" >[];</span>
-<span class="cstat-no" title="statement not covered" >      if (typeof OpenMultipleFiles === "function") {</span>
-<span class="cstat-no" title="statement not covered" >        b64s = await OpenMultipleFiles();</span>
-      } else {
-        const single = <span class="cstat-no" title="statement not covered" >await OpenFile();</span>
-<span class="cstat-no" title="statement not covered" >        if (single) <span class="cstat-no" title="statement not covered" >b64s = [single];</span></span>
-      }
+      const b64s = <span class="cstat-no" title="statement not covered" >await openImageFileDialog(true);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      if (b64s &amp;&amp; b64s.length &gt; 0) {</span>
         const freshState = <span class="cstat-no" title="statement not covered" >useEditorStore.getState();</span>
@@ -681,11 +674,15 @@ export function ToolbarFileOps() {
         const freshSlots = <span class="cstat-no" title="statement not covered" >freshState.slots;</span>
         const freshSelectedId = <span class="cstat-no" title="statement not covered" >freshState.selectedId;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        if (freshMode === "collage") {</span>
+<span class="cstat-no" title="statement not covered" >        if (freshMode === "collage" || freshSlots.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >          if (freshMode !== "collage") {</span>
+<span class="cstat-no" title="statement not covered" >            freshState.setMode("collage");</span>
+          }
+&nbsp;
           const isPhysical = <span class="cstat-no" title="statement not covered" >freshState.collageTemplate?.physicalLayout;</span>
-<span class="cstat-no" title="statement not covered" >          if (isPhysical &amp;&amp; b64s[0]) {</span>
+<span class="cstat-no" title="statement not covered" >          if ((isPhysical || freshSlots.length &gt; 1) &amp;&amp; b64s.length === 1 &amp;&amp; b64s[0]) {</span>
 <span class="cstat-no" title="statement not covered" >            freshState.fillAllSlots(b64s[0]);</span>
-<span class="cstat-no" title="statement not covered" >            toast.success("تم إدراج الصورة في جميع الخانات");</span>
+<span class="cstat-no" title="statement not covered" >            toast.success("تم إدراج الصورة في جميع شبكة الخلايا");</span>
           } else {
             let srcIdx = <span class="cstat-no" title="statement not covered" >0;</span>
 <span class="cstat-no" title="statement not covered" >            if (freshSelectedId &amp;&amp; freshSlots.some((s) =&gt; s.id === freshSelectedId) &amp;&amp; b64s[0]) {</span>
@@ -868,7 +865,7 @@ export function ToolbarFileOps() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-21T18:23:19.378Z
+                at 2026-07-23T13:49:52.394Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
