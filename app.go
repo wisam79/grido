@@ -753,3 +753,9 @@ func (a *App) EnhanceImageWithAI(base64Image string, token string, limit int) (s
 	return string(body), nil
 }
 
+func (a *App) CheckForUpdate() (*service.UpdateInfo, error) {
+	updater := service.NewUpdaterService()
+	return updater.CheckForUpdate()
+}
+
+
