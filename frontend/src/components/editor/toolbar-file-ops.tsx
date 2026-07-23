@@ -79,7 +79,7 @@ export function ToolbarFileOps() {
         const freshSlots = freshState.slots;
         const freshSelectedId = freshState.selectedId;
 
-        if (freshMode === "collage" || freshSlots.length > 0) {
+        if (freshMode === "collage") {
           if (freshMode !== "collage") {
             freshState.setMode("collage");
           }
