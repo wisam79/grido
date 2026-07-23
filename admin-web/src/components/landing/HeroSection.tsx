@@ -2,7 +2,7 @@ import { Download, Sparkles, ArrowLeft, Play } from 'lucide-react';
 import { AppMockup } from './AppMockup';
 
 const GITHUB_RELEASE_DOWNLOAD_URL =
-  'https://github.com/wisam79/grido/releases/latest/download/GridoStudio.exe';
+  'https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe';
 
 const STATS = [
   { value: '+50,000', label: 'صورة مُعالَة يومياً', gradient: 'from-brand-400 to-sky-400' },
@@ -34,17 +34,16 @@ export function HeroSection() {
         </div>
 
         {/* Headline */}
-        <h1 className="mt-8 text-center text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.1] font-display">
-          <span className="block text-white">معالجة وطباعة الصور</span>
+        <h1 className="mt-8 text-center text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.15] font-display">
+          <span className="block text-white">تنسيق وتجهيز صور المعاملات</span>
           <span className="mt-2 block bg-clip-text text-transparent bg-gradient-to-r from-brand-400 via-sky-300 to-accent-400">
-            بالذكاء الاصطناعي والدقة الفائقة
+            جاهزة للطباعة والقص في 3 ثوانٍ
           </span>
         </h1>
 
         {/* Subtitle */}
         <p className="mt-6 text-center text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-          المنصة المتكاملة الأولى المصممة خصيصاً لأصحاب الاستوديوهات ومحلات التصوير. إنشاء صور
-          الهوية بمقاسات رسمية، تصميم الكولاج، وترميم الوجوه في ثوانٍ معدودة.
+          برنامج الاستوديو الذكي لتوزيع صور الجوازات والبطاقات الرسمية، تحسين جودة الوجوه، وإنشاء الكولاج بضغطة زر واحدة بدون تعقيدات الفوتوشوب.
         </p>
 
         {/* CTAs */}
