@@ -159,8 +159,8 @@ export default function App() {
             try {
               await activateLicenseKey(lockKey);
               toast.success("تم تفعيل الترخيص بنجاح! شكراً لك.");
-            } catch (err: any) {
-              toast.error(err.message || "فشل تفعيل الترخيص");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "فشل تفعيل الترخيص");
             } finally {
               setLockLoading(false);
             }
@@ -388,7 +388,9 @@ export default function App() {
         {/* الكانفس - الوسط */}
         <section className="flex-1 flex flex-col min-w-0 bg-muted/20 animate-fade-in">
           <div className="flex-1 relative">
-            <EditorCanvas />
+            <ErrorBoundary>
+              <EditorCanvas />
+            </ErrorBoundary>
           </div>
 
           {/* شريط الحالة السفلي */}

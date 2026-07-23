@@ -86,9 +86,9 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.RegisterAccount(name, email, password);
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err: any) {
+    } catch (err) {
       set({ licenseLoading: false });
-      throw new Error(err || "فشل إنشاء الحساب");
+      throw new Error(err instanceof Error ? err.message : "فشل إنشاء الحساب");
     }
   },
 
@@ -98,9 +98,9 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.VerifyOTP(email, otp);
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err: any) {
+    } catch (err) {
       set({ licenseLoading: false });
-      throw new Error(err || "رمز التحقق غير صحيح");
+      throw new Error(err instanceof Error ? err.message : "رمز التحقق غير صحيح");
     }
   },
 
@@ -110,9 +110,9 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.LoginAccount(email, password);
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err: any) {
+    } catch (err) {
       set({ licenseLoading: false });
-      throw new Error(err || "بريد إلكتروني أو كلمة مرور غير صحيحة");
+      throw new Error(err instanceof Error ? err.message : "بريد إلكتروني أو كلمة مرور غير صحيحة");
     }
   },
 
@@ -122,9 +122,9 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.LoginWithGoogle();
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err: any) {
+    } catch (err) {
       set({ licenseLoading: false });
-      throw new Error(err || "فشل تسجيل الدخول بواسطة Google");
+      throw new Error(err instanceof Error ? err.message : "فشل تسجيل الدخول بواسطة Google");
     }
   },
 
@@ -134,9 +134,9 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.ActivateLicenseKey(key);
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err: any) {
+    } catch (err) {
       set({ licenseLoading: false });
-      throw new Error(err || "مفتاح تفعيل غير صالحة أو مستخدم سابقاً");
+      throw new Error(err instanceof Error ? err.message : "مفتاح تفعيل غير صالحة أو مستخدم سابقاً");
     }
   },
 

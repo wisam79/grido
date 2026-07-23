@@ -186,14 +186,14 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
         const remText = ` (المتبقي اليوم: ${Math.max(0, dailyLimit - updatedCount)}/${dailyLimit})`;
         toast.success(`تم ترميم وتحسين دقة الصورة بنجاح ✨${remText}`);
       }
-    } catch (err: any) {
+    } catch (err) {
       if (progressTimer) clearInterval(progressTimer);
       clearTimeout(timeoutId);
       console.error("AI Enhance failed:", err);
-      if (err.name === "AbortError") {
+      if (err instanceof Error && err.name === "AbortError") {
         toast.error("استغرق الطلب وقتاً طويلاً. أعد المحاولة مرة أخرى.");
       } else {
-        toast.error(err.message || "فشل تحسين الصورة بالذكاء الاصطناعي");
+        toast.error(err instanceof Error ? err.message : "فشل تحسين الصورة بالذكاء الاصطناعي");
       }
     } finally {
       setIsEnhancing(false);

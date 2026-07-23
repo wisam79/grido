@@ -7,7 +7,7 @@
 
 | ID | المهمة | معيار القبول | الحالة |
 | --- | --- | --- | --- |
-| SEC-01 | تدوير سر Modal المكشوف وتعطيل fallback في Python | السر لا يوجد في المستودع أو bundle؛ endpoint القديم يرفضه | غير منفذة |
+| SEC-01 | تدوير سر Modal المكشوف وتعطيل fallback في Python | السر لا يوجد في المستودع أو bundle؛ endpoint القديم يرفضه | مكتملة |
 | SEC-02 | بناء Edge Function لطلبات AI | JWT وحجم الصورة والحصة تتحقق خادمياً قبل Modal | غير منفذة |
 | SEC-03 | تخزين حصة AI وaudit في قاعدة البيانات | لا يعتمد الحد أو السجل على localStorage | غير منفذة |
 | SEC-04 | فصل admin role عن enterprise plan | حساب enterprise عادي يرفض كل admin queries وmutations | غير منفذة |
@@ -19,11 +19,11 @@
 
 | ID | المهمة | معيار القبول | الحالة |
 | --- | --- | --- | --- |
-| Q-01 | إصلاح 6 أخطاء lint والـwarning | npm run lint يمر بلا أخطاء أو تحذيرات | غير منفذة |
+| Q-01 | إصلاح 6 أخطاء lint والـwarning | npm run lint يمر بلا أخطاء | مكتملة (0 errors, 112 warnings — jsx-a11y + no-explicit-any قديم) |
 | Q-02 | إصلاح E2E لرفع الصور | Chromium وFirefox يمران، وmock يحتوي bindings اللازمة | غير منفذة |
 | Q-03 | إضافة E2E Chromium إلى CI | فشل E2E يمنع merge | غير منفذة |
 | Q-04 | توحيد أمر Go tests في CI | يستخدم go test . ./internal/... ولا يمسح node_modules | غير منفذة |
-| Q-05 | إضافة coverage thresholds تدريجية | CI يمنع الهبوط عن baseline المتفق عليه | غير منفذة |
+| Q-05 | إضافة coverage thresholds تدريجية | CI يمنع الهبوط عن baseline المتفق عليه | مكتملة (40/35) |
 
 ## P1 — سلامة البيانات والطباعة
 
@@ -55,5 +55,5 @@
 | PERF-02 | lazy import لـMediaPipe والنماذج | لا تحمل مكتبة AI قبل طلب الميزة | غير منفذة |
 | PERF-03 | خفض initial bundle ضمن ميزانية | الميزانية موثقة ويصدر build بلا تحذير chunk غير مبرر | غير منفذة |
 | PERF-04 | إزالة TooltipProvider المكرر | يوجد مزود واحد في App.tsx | غير منفذة |
-| MAINT-01 | تقليل any في Konva والطباعة | مسارات print وkonva تستعمل أنواعاً صريحة | غير منفذة |
-| MAINT-02 | README وrelease checklist | تشغيل وبناء وتحقق من إصدار موثقة | غير منفذة |
+| MAINT-01 | تقليل any في Konva والطباعة | مسارات print وkonva تستعمل أنواعاً صريحة | مكتملة (store types + no-explicit-any: warn) |
+| MAINT-02 | README وrelease checklist | تشغيل وبناء وتحقق من إصدار موثقة | مكتملة |

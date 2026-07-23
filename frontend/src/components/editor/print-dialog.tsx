@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { ExportPrintSheet } from "../../../wailsjs/go/handlers/PrintHandler";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 import { domain } from "../../../wailsjs/go/models";
+import { captureStageDataUrl } from "@/lib/konva-export-utils";
 
 import { useShallow } from "zustand/react/shallow";
 
@@ -256,60 +257,15 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           return;
         }
 
-        const transformers = stage.find('Transformer');
-        const gridLayers = stage.find('.grid-layer');
-        const columnsLayers = stage.find('.columns-layer');
+        const exportDpi = printSettings.dpi || 300;
+        const dpiRatio = exportDpi / 300;
+        const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
+
         let canvasDataUrl: string | null = null;
-
-        const previouslyCached: any[] = [];
         try {
-          transformers.forEach((tr: any) => tr.hide());
-          gridLayers.forEach((gl: any) => gl.hide());
-          columnsLayers.forEach((cl: any) => cl.hide());
-          
-          const exportDpi = printSettings.dpi || 300;
-          const dpiRatio = exportDpi / 300;
-          const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
-
-          const images = stage.find('Image');
-          images.forEach((img: any) => {
-            if (img.isCached()) {
-              previouslyCached.push(img);
-              img.clearCache();
-              img.cache({ pixelRatio: targetPixelRatio });
-            }
-          });
-
-          stage.batchDraw();
-
-          const exportCanvas = stage.toCanvas({
-            pixelRatio: targetPixelRatio,
-          });
-
-          const blob = await new Promise<Blob | null>((resolve) => {
-            exportCanvas.toBlob(resolve, "image/png");
-          });
-
-          if (blob) {
-            canvasDataUrl = await new Promise<string>((resolve) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.readAsDataURL(blob);
-            });
-          }
-        } finally {
-          transformers.forEach((tr: any) => tr.show());
-          gridLayers.forEach((gl: any) => gl.show());
-          columnsLayers.forEach((cl: any) => cl.show());
-
-          previouslyCached.forEach((img: any) => {
-            img.clearCache();
-            let screenRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
-            screenRatio = Math.max(1.5, Math.min(2, screenRatio));
-            img.cache({ pixelRatio: screenRatio });
-          });
-
-          stage.batchDraw();
+          canvasDataUrl = await captureStageDataUrl(stage, targetPixelRatio, "image/png");
+        } catch {
+          canvasDataUrl = null;
         }
 
         if (!canvasDataUrl) {
@@ -419,7 +375,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       } else {
         toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
       }
-    } catch (err: any) {
+    } catch (err) {
       toast.error("حدث خطأ أثناء توليد ورقة الطباعة: " + String(err));
     } finally {
       setIsExporting(false);

@@ -31,13 +31,14 @@ async function getSegmenter() {
 }
 
 if (typeof window !== "undefined") {
-  window.addEventListener("beforeunload", () => {
+  const handleBeforeUnload = () => {
     if (segmenterPromise) {
       segmenterPromise.then((seg) => {
-        try { seg.close(); } catch (e) { /* Ignore errors during unload */ }
+        try { seg.close(); } catch { /* Ignore errors during unload */ }
       }).catch(() => {});
     }
-  });
+  };
+  window.addEventListener("beforeunload", handleBeforeUnload);
 }
 
 export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void) {
@@ -239,9 +240,9 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
         }
       }
 
-    } catch (err: any) {
+    } catch (err) {
       console.error("Background removal failed:", err);
-      let errorMessage = err?.message || String(err);
+      let errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes("fetch") || errorMessage.includes("network")) {
         errorMessage = "فشل تحميل ملفات معالجة الذكاء الاصطناعي.";
       }

@@ -80,13 +80,15 @@ func init() {
 		ModalAIKey = os.Getenv("GRIDO_AI_SECRET_KEY")
 	}
 	if ModalAIKey == "" {
-		ModalAIKey = "grido_sec_ai_live_8f3d9b4c2e1a70562e84d9c0a1b3f5e76812c9d4a0b6f8e235d7c9a1e4f6b802"
+		slog.Warn("ModalAIKey not configured — set MODAL_AI_KEY or GRIDO_AI_SECRET_KEY in .env or via ldflags")
 	}
 }
 
 var sharedClient = &http.Client{Timeout: 10 * time.Second}
 
 const maxResponseSize = 5 * 1024 * 1024 // 5 MB limit for HTTP responses
+
+var ErrUnauthorized = errors.New("unauthorized")
 
 // Supabase Auth Payloads
 type SupabaseAuthRequest struct {
@@ -142,6 +144,9 @@ func (s *LicenseService) fetchProfile(token, userID string) (*SupabaseProfile, e
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, fmt.Errorf("failed to fetch profile: %w", ErrUnauthorized)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to fetch profile, status: %d", resp.StatusCode)
 	}
@@ -392,25 +397,57 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 	return user, nil
 }
 
-func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
-	if SupabaseURL == "" {
-		return nil, errors.New("بيئة التطوير تفتقد لروابط قاعدة البيانات (SUPABASE_URL). يرجى إعداد ملف .env للمصادقة")
-	}
-
-	tokenChan := make(chan string, 1)
-	errChan := make(chan error, 1)
-
-	// Start listener on a fixed port 34567
-	listener, err := net.Listen("tcp", "127.0.0.1:34567")
+// fetchOAuthUserDetails يجلب بيانات المستخدم من Supabase بعد نجاح OAuth
+func (s *LicenseService) fetchOAuthUserDetails(accessToken string) (userID, email, fullName string, err error) {
+	userReq, err := http.NewRequest("GET", SupabaseURL+"/auth/v1/user", nil)
 	if err != nil {
-		return nil, fmt.Errorf("المنفذ 34567 مشغول، يرجى التأكد من عدم تشغيل محاولة تسجيل دخول أخرى: %w", err)
+		return "", "", "", err
+	}
+	userReq.Header.Set("apikey", SupabaseAnonKey)
+	userReq.Header.Set("Authorization", "Bearer "+accessToken)
+
+	userResp, err := sharedClient.Do(userReq)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to fetch user details: %w", err)
+	}
+	defer userResp.Body.Close()
+
+	if userResp.StatusCode != http.StatusOK {
+		return "", "", "", fmt.Errorf("failed to get user, status: %d", userResp.StatusCode)
 	}
 
-	mux := http.NewServeMux()
+	var supabaseUser struct {
+		ID       string `json:"id"`
+		Email    string `json:"email"`
+		UserMeta struct {
+			Name string `json:"full_name"`
+		} `json:"user_metadata"`
+	}
+	if err := json.NewDecoder(io.LimitReader(userResp.Body, maxResponseSize)).Decode(&supabaseUser); err != nil {
+		return "", "", "", err
+	}
 
-	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, `
+	return supabaseUser.ID, supabaseUser.Email, supabaseUser.UserMeta.Name, nil
+}
+
+// fetchProfileWithRetry يحاول جلب بيانات الحساب الشخصي مع إعادة المحاولة
+func (s *LicenseService) fetchProfileWithRetry(token, userID string, maxRetries int) (*SupabaseProfile, error) {
+	var prof *SupabaseProfile
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		time.Sleep(time.Duration(200*(i+1)) * time.Millisecond)
+		prof, err = s.fetchProfile(token, userID)
+		if err == nil {
+			break
+		}
+	}
+	if prof == nil {
+		return nil, errors.New("فشل جلب بيانات الحساب الشخصي من السيرفر")
+	}
+	return prof, nil
+}
+
+const oauthCallbackHTML = `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -445,11 +482,29 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
     </script>
 </body>
 </html>
-`)
+`
+
+func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
+	if SupabaseURL == "" {
+		return nil, errors.New("بيئة التطوير تفتقد لروابط قاعدة البيانات (SUPABASE_URL). يرجى إعداد ملف .env للمصادقة")
+	}
+
+	tokenChan := make(chan string, 1)
+	errChan := make(chan error, 1)
+
+	listener, err := net.Listen("tcp", "127.0.0.1:34567")
+	if err != nil {
+		return nil, fmt.Errorf("المنفذ 34567 مشغول، يرجى التأكد من عدم تشغيل محاولة تسجيل دخول أخرى: %w", err)
+	}
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, oauthCallbackHTML)
 	})
 
 	mux.HandleFunc("/exchange", func(w http.ResponseWriter, r *http.Request) {
-		// Verify Origin
 		origin := r.Header.Get("Origin")
 		if origin != "https://grido.cloud-ip.cc" && origin != "http://127.0.0.1:34567" && origin != "http://localhost:34567" && origin != "" {
 			slog.Warn("Blocked OAuth exchange from untrusted origin", "origin", origin)
@@ -486,9 +541,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	srv := &http.Server{
-		Handler: mux,
-	}
+	srv := &http.Server{Handler: mux}
 
 	go func() {
 		if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
@@ -502,7 +555,6 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	var oauthBody string
 	select {
 	case oauthBody = <-tokenChan:
-		// Success
 	case err := <-errChan:
 		_ = srv.Shutdown(context.Background())
 		return nil, fmt.Errorf("خطأ في الخادم المحلي: %w", err)
@@ -524,55 +576,25 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	}
 	refreshToken := values.Get("refresh_token")
 
-	userReq, err := http.NewRequest("GET", SupabaseURL+"/auth/v1/user", nil)
+	userID, userEmail, userName, err := s.fetchOAuthUserDetails(accessToken)
 	if err != nil {
 		return nil, err
 	}
-	userReq.Header.Set("apikey", SupabaseAnonKey)
-	userReq.Header.Set("Authorization", "Bearer "+accessToken)
 
-	userResp, err := sharedClient.Do(userReq)
+	prof, err := s.fetchProfileWithRetry(accessToken, userID, 3)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch user details: %w", err)
-	}
-	defer userResp.Body.Close()
-
-	if userResp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get user, status: %d", userResp.StatusCode)
-	}
-
-	var supabaseUser struct {
-		ID       string `json:"id"`
-		Email    string `json:"email"`
-		UserMeta struct {
-			Name string `json:"full_name"`
-		} `json:"user_metadata"`
-	}
-	if err := json.NewDecoder(io.LimitReader(userResp.Body, maxResponseSize)).Decode(&supabaseUser); err != nil {
 		return nil, err
 	}
 
-	var prof *SupabaseProfile
-	for i := 0; i < 3; i++ {
-		time.Sleep(time.Duration(200*(i+1)) * time.Millisecond)
-		prof, err = s.fetchProfile(accessToken, supabaseUser.ID)
-		if err == nil {
-			break
-		}
-	}
-	if prof == nil {
-		return nil, errors.New("فشل جلب بيانات الحساب الشخصي من السيرفر")
-	}
-
-	name := supabaseUser.UserMeta.Name
+	name := userName
 	if name == "" {
-		name = supabaseUser.Email
+		name = userEmail
 	}
 
 	userProfile := &domain.UserProfile{
-		ID:           supabaseUser.ID,
+		ID:           userID,
 		Name:         name,
-		Email:        supabaseUser.Email,
+		Email:        userEmail,
 		Plan:         prof.Plan,
 		Token:        accessToken,
 		RefreshToken: refreshToken,
@@ -666,7 +688,7 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 	}
 
 	prof, err := s.fetchProfile(local.Token, local.ID)
-	if err != nil && strings.Contains(err.Error(), "401") {
+	if err != nil && errors.Is(err, ErrUnauthorized) {
 		if refreshErr := s.refreshTokenIfNeeded(local); refreshErr == nil {
 			prof, err = s.fetchProfile(local.Token, local.ID)
 		}
@@ -681,7 +703,7 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 		if saveErr := s.repo.Save(local); saveErr != nil {
 			slog.Error("Failed to save updated license profile", "error", saveErr)
 		}
-	} else if strings.Contains(err.Error(), "401") {
+	} else if errors.Is(err, ErrUnauthorized) {
 		_ = s.repo.Clear()
 		return &domain.UserProfile{Plan: "free", Status: "none"}, nil
 	}

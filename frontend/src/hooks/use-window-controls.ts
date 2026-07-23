@@ -6,27 +6,27 @@ export function useWindowControls() {
   const [isFocused, setIsFocused] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const handleResize = () => {
-        const isMax =
-          window.outerWidth >= window.screen.availWidth &&
-          window.outerHeight >= window.screen.availHeight;
-        setIsMaximized(isMax);
-      };
-      window.addEventListener("resize", handleResize);
-      handleResize();
+    if (typeof window === "undefined") return;
 
-      const handleFocus = () => setIsFocused(true);
-      const handleBlur = () => setIsFocused(false);
-      window.addEventListener("focus", handleFocus);
-      window.addEventListener("blur", handleBlur);
+    const handleResize = () => {
+      const isMax =
+        window.outerWidth >= window.screen.availWidth &&
+        window.outerHeight >= window.screen.availHeight;
+      setIsMaximized(isMax);
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize();
 
-      return () => {
-        window.removeEventListener("resize", handleResize);
-        window.removeEventListener("focus", handleFocus);
-        window.removeEventListener("blur", handleBlur);
-      };
-    }
+    const handleFocus = () => setIsFocused(true);
+    const handleBlur = () => setIsFocused(false);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("blur", handleBlur);
+    };
   }, []);
 
   const handleMinimize = () => WindowMinimise();

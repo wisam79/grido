@@ -37,3 +37,12 @@ diff.patch
 frontend/wailsjs/
 frontend/coverage/
 
+# Agent config (contains API keys — use env vars instead)
+opencode.json
+
+# Third-party build artifacts
+build/windows/installer/CodeFormer-temp/
+
+# Scratch / workspace
+scratch/
+

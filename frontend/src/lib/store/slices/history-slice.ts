@@ -1,7 +1,8 @@
 import { StateCreator } from "zustand";
+import { CanvasElement, CanvasSlot, HistoryEntry } from "../types";
 
 export interface HistorySlice {
-  history: { elements: any[]; slots: any[] }[];
+  history: HistoryEntry[];
   historyIndex: number;
   pushHistory: () => void;
   undo: () => void;
@@ -9,13 +10,13 @@ export interface HistorySlice {
 }
 
 export const DEFAULT_HISTORY_STATE = {
-  history: [{ elements: [] as any[], slots: [] as any[] }],
+  history: [{ elements: [] as CanvasElement[], slots: [] as CanvasSlot[] }],
   historyIndex: 0,
 };
 
 type HistoryCross = HistorySlice & {
-  elements: any[];
-  slots: any[];
+  elements: CanvasElement[];
+  slots: CanvasSlot[];
   selectedId: string | null;
   selectedIds: string[];
   editingTextId: string | null;

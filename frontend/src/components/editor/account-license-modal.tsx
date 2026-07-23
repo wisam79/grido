@@ -97,8 +97,8 @@ export function AccountLicenseModal() {
       await loginWithGoogle();
       toast.success("تم تسجيل الدخول وتفعيل حسابك عبر Google بنجاح!");
       setAccountModalOpen(false);
-    } catch (err: any) {
-      const errMsg = typeof err === "string" ? err : (err?.message || "فشلت عملية تسجيل الدخول عبر Google.");
+    } catch (err) {
+      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشلت عملية تسجيل الدخول عبر Google.");
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -132,8 +132,8 @@ export function AccountLicenseModal() {
           setActiveTab("license");
         }
       }
-    } catch (err: any) {
-      const errMsg = typeof err === "string" ? err : (err?.message || "فشلت العملية، يرجى التحقق من المدخلات.");
+    } catch (err) {
+      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشلت العملية، يرجى التحقق من المدخلات.");
       if (errMsg.includes("تم إنشاء الحساب بنجاح")) {
         toast.success(errMsg);
         setAuthMode("login");
@@ -155,8 +155,8 @@ export function AccountLicenseModal() {
       await activateLicenseKey(licenseKey);
       toast.success("تهانينا! تم تفعيل مفتاح الترخيص بنجاح، وترقية حسابك إلى باقة Pro الاحترافية.");
       setAccountModalOpen(false);
-    } catch (err: any) {
-      const errMsg = typeof err === "string" ? err : (err?.message || "مفتاح الترخيص غير صالح. يرجى التحقق من الصيغة.");
+    } catch (err) {
+      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "مفتاح الترخيص غير صالح. يرجى التحقق من الصيغة.");
       setError(errMsg);
       toast.error(errMsg);
     } finally {

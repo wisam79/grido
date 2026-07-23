@@ -111,6 +111,11 @@ export interface CanvasSlot {
 
 export type EditorMode = "single" | "collage";
 
+export interface HistoryEntry {
+  elements: CanvasElement[];
+  slots: CanvasSlot[];
+}
+
 export interface PrintSettings {
   paperId: string;
   paperWidthMM: number;

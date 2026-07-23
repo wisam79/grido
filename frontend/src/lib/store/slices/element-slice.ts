@@ -75,7 +75,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       saturation: 100,
       blur: 0,
     };
-    set((s: any) => ({
+    set((s) => ({
       elements: [...s.elements, newEl],
       selectedId: id,
       selectedIds: [id],
@@ -116,7 +116,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       lineHeight: 1.2,
       letterSpacing: 0,
     };
-    set((s: any) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
+    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
     get().pushHistory();
   },
 
@@ -139,8 +139,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       }
     }
 
-    set((s: any) => ({
-      elements: s.elements.map((item: any) => (item.id === id ? { ...item, width: newWidth } : item)),
+    set((s) => ({
+      elements: s.elements.map((item: CanvasElement) => (item.id === id ? { ...item, width: newWidth } : item)),
     }));
     get().pushHistory();
   },
@@ -169,14 +169,14 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       radius: 8,
       svgPath,
     };
-    set((s: any) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
+    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
     get().pushHistory();
   },
 
   updateElement: (id, patch) => {
-    set((s: any) => {
+    set((s) => {
       const nextElements = s.elements.map((el: CanvasElement) =>
-        el.id === id ? { ...el, ...patch } : el,
+        el.id === id ? { ...el, ...patch } as CanvasElement : el,
       );
       const targetEl = nextElements.find((e: CanvasElement) => e.id === id);
       const isImg = targetEl && targetEl.type === "image";
@@ -189,10 +189,10 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   },
 
   updateElements: (patches) => {
-    set((s: any) => {
+    set((s) => {
       const nextElements = s.elements.map((el: CanvasElement) => {
         const patchObj = patches.find((p) => p.id === el.id);
-        return patchObj ? { ...el, ...patchObj.patch } : el;
+        return patchObj ? { ...el, ...patchObj.patch } as CanvasElement : el;
       });
       const imageSrcPatch = patches.find(
         (p) => (p.patch as Partial<ImageElement>).imageSrc && s.elements.find((e: CanvasElement) => e.id === p.id)?.type === "image",
@@ -205,7 +205,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   },
 
   removeElement: (id) => {
-    set((s: any) => ({
+    set((s) => ({
       elements: s.elements.filter((el: CanvasElement) => el.id !== id),
       selectedId: s.selectedId === id ? null : s.selectedId,
       // [FIX #4] تنظيف selectedIds أيضاً لمنع الإشارة لعنصر محذوف
@@ -215,7 +215,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   },
 
   removeElements: (ids) => {
-    set((s: any) => ({
+    set((s) => ({
       elements: s.elements.filter((el: CanvasElement) => !ids.includes(el.id)),
       selectedId: ids.includes(s.selectedId || "") ? null : s.selectedId,
       selectedIds: s.selectedIds.filter((id: string) => !ids.includes(id)),
@@ -235,7 +235,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       y: Math.min(el.y + 0.05, 0.9),
       zIndex: (get().elements.length + 1) * 10,
     };
-    set((s: any) => ({ elements: [...s.elements, copy], selectedId: newId, selectedIds: [newId] }));
+    set((s) => ({ elements: [...s.elements, copy], selectedId: newId, selectedIds: [newId] }));
     get().pushHistory();
   },
 
@@ -312,7 +312,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   },
 
   toggleElementSelection: (id) => {
-    set((s: any) => {
+    set((s) => {
       const el = s.elements.find((e: CanvasElement) => e.id === id);
       if (!el) return {};
 
@@ -350,7 +350,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     const newGroupId = `group-${Date.now()}`;
 
-    set((s: any) => ({
+    set((s) => ({
       elements: s.elements.map((el: CanvasElement) =>
         selectedIds.includes(el.id) ? { ...el, groupId: newGroupId } : el,
       ),
@@ -368,7 +368,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     if (groupIdsToUngroup.length === 0) return;
 
-    set((s: any) => ({
+    set((s) => ({
       elements: s.elements.map((el: CanvasElement) =>
         el.groupId && groupIdsToUngroup.includes(el.groupId)
           ? { ...el, groupId: undefined }

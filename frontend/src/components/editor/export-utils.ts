@@ -3,6 +3,7 @@ import { ImageElement, useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { buildCSSFilter } from "@/lib/utils";
 import { serializeEditorState } from "@/lib/project-serializer";
+import { captureStageDataUrl } from "@/lib/konva-export-utils";
 
 // تصدير الكانفس الحالي كصورة PNG/JPG
 // يقبل stageRef كمعامل بدلاً من قراءته من Zustand مباشرة
@@ -23,67 +24,16 @@ export async function exportCanvas(
   // محاولة التصدير مباشرةً من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
   if (stageRef) {
     let dataUrl: string | null = null;
-    const transformers = stageRef.find('Transformer');
-    const gridLayers = stageRef.find('.grid-layer');
-    const columnsLayers = stageRef.find('.columns-layer');
-    const previouslyCached: any[] = [];
     try {
-      // إخفاء مقابض التحكم وطبقات الشبكة والأعمدة مؤقتاً قبل التصدير لمنع ظهورها في الصورة النهائية
-      transformers.forEach((tr: any) => tr.hide());
-      gridLayers.forEach((gl: any) => gl.hide());
-      columnsLayers.forEach((cl: any) => cl.hide());
-
-      // إعادة بناء كاش الصور المفلترة بدقة التصدير لضمان عدم انخفاض الجودة
       const targetPixelRatio = canvasWidth / stageRef.width();
-      const images = stageRef.find('Image');
-      images.forEach((img: any) => {
-        if (img.isCached()) {
-          previouslyCached.push(img);
-          img.clearCache();
-          img.cache({ pixelRatio: targetPixelRatio });
-        }
-      });
-
-      stageRef.batchDraw();
-
-      const exportCanvas = stageRef.toCanvas({
-        pixelRatio: targetPixelRatio,
-      });
-
-      const blob = await new Promise<Blob | null>((resolve) => {
-        exportCanvas.toBlob(resolve, format === "png" ? "image/png" : "image/jpeg", quality);
-      });
-
-      if (blob) {
-        dataUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-      }
+      dataUrl = await captureStageDataUrl(
+        stageRef,
+        targetPixelRatio,
+        format === "png" ? "image/png" : "image/jpeg",
+        quality,
+      );
     } catch (e) {
       console.error("Failed to export via Konva Stage, falling back to manual canvas:", e);
-    } finally {
-      // ضمان استعادة جميع الطبقات حتى عند حدوث خطأ غير متوقع
-      transformers.forEach((tr: any) => tr.show());
-      gridLayers.forEach((gl: any) => gl.show());
-      columnsLayers.forEach((cl: any) => cl.show());
-      
-      // استعادة الكاش بدقة الشاشة لتوفير الذاكرة
-      previouslyCached.forEach((img: any) => {
-        try {
-          if (img && typeof img.clearCache === "function") {
-            img.clearCache();
-            let screenRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-            screenRatio = Math.max(1.5, Math.min(2, screenRatio));
-            img.cache({ pixelRatio: screenRatio });
-          }
-        } catch (e) {
-          // الإبقاء على سلامة التطبيق في حال تم حظر كاش العناصر التي ألغي تثبيتها
-        }
-      });
-
-      stageRef.batchDraw();
     }
 
     if (dataUrl) {

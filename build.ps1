@@ -18,7 +18,9 @@ if (Test-Path $envPath) {
 }
 
 if ($modalAiKey -eq "") {
-    $modalAiKey = "grido_sec_ai_live_8f3d9b4c2e1a70562e84d9c0a1b3f5e76812c9d4a0b6f8e235d7c9a1e4f6b802"
+    Write-Host "ERROR: MODAL_AI_KEY / GRIDO_AI_SECRET_KEY not found in .env or environment." -ForegroundColor Red
+    Write-Host "Set it in .env (see .env.example) or as an environment variable before building." -ForegroundColor Yellow
+    exit 1
 }
 
 $appVersion = (git describe --tags --abbrev=0 2>$null)

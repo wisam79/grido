@@ -305,128 +305,86 @@ type processedCache struct {
 	access map[processedKey]time.Time
 }
 
-// loadAndProcessImage يقوم بفتح الصورة ومعالجة ألوانها وأبعادها مع إدارة الذاكرة بنظام LRU
-func (s *PrintService) loadAndProcessImage(
-	item domain.PrintItem,
-	dpi int,
-	imgCache *imageCache,
-	procCache *processedCache,
-) (image.Image, error) {
-	filePath := resolveLocalPath(item.ImageSrc)
-	targetW := int(math.Round(mmToPx(item.W, dpi)))
-	targetH := int(math.Round(mmToPx(item.H, dpi)))
-
-	cacheKey := filePath
+// computeImageCacheKey يحسب مفتاح كاش للصورة (مع تجنب Hash كامل لـ Base64 الضخمة)
+func computeImageCacheKey(filePath string) string {
 	if strings.HasPrefix(filePath, "data:image/") {
-		// تلافي عمل Hash لسلسلة Base64 ضخمة قد تكون بحجم عشرات الميجابايت
 		if len(filePath) > 1024 {
 			h := sha256.New()
 			h.Write([]byte(filePath[:512]))
 			h.Write([]byte(filePath[len(filePath)-512:]))
-			cacheKey = fmt.Sprintf("b64_%x_len%d", h.Sum(nil), len(filePath))
-		} else {
-			cacheKey = fmt.Sprintf("b64_%x", sha256.Sum256([]byte(filePath)))
+			return fmt.Sprintf("b64_%x_len%d", h.Sum(nil), len(filePath))
 		}
+		return fmt.Sprintf("b64_%x", sha256.Sum256([]byte(filePath)))
 	}
+	return filePath
+}
 
-	pKey := processedKey{
-		filePath:   cacheKey,
-		brightness: item.Brightness,
-		contrast:   item.Contrast,
-		saturation: item.Saturation,
-		filter:     item.Filter,
-		targetW:    targetW,
-		targetH:    targetH,
-		cropX:      item.CropX,
-		cropY:      item.CropY,
-		cropW:      item.CropW,
-		cropH:      item.CropH,
-		flipX:      item.FlipX,
-		flipY:      item.FlipY,
-		rotation:   item.Rotation,
-		slotAspect: item.SlotAspect,
-		zoom:       item.Zoom,
-		dragX:      item.DragX,
-		dragY:      item.DragY,
-	}
-
-	procCache.mu.RLock()
-	cached, ok := procCache.images[pKey]
-	procCache.mu.RUnlock()
-
-	if ok {
-		procCache.mu.Lock()
-		procCache.access[pKey] = time.Now()
-		procCache.mu.Unlock()
-		return cached, nil
-	}
-
-	var img image.Image
-	var err error
-	
+// loadRawImage يفتح الصورة من ملف أو Base64 مع كاش LRU
+func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image.Image, error) {
 	imgCache.mu.RLock()
 	cachedRaw, ok := imgCache.images[cacheKey]
 	imgCache.mu.RUnlock()
 
 	if ok {
-		img = cachedRaw
 		imgCache.mu.Lock()
 		imgCache.access[cacheKey] = time.Now()
 		imgCache.mu.Unlock()
+		return cachedRaw, nil
+	}
+
+	var img image.Image
+	var err error
+
+	if strings.HasPrefix(filePath, "data:image/") {
+		commaIdx := strings.Index(filePath, ",")
+		if commaIdx == -1 {
+			return nil, fmt.Errorf("invalid base64 image format")
+		}
+		b64Data := filePath[commaIdx+1:]
+		data, err := base64.StdEncoding.DecodeString(b64Data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode base64 image: %w", err)
+		}
+		img, err = imaging.Decode(bytes.NewReader(data))
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode image from base64 data: %w", err)
+		}
 	} else {
-		if strings.HasPrefix(filePath, "data:image/") {
-			commaIdx := strings.Index(filePath, ",")
-			if commaIdx == -1 {
-				return nil, fmt.Errorf("invalid base64 image format")
-			}
-			b64Data := filePath[commaIdx+1:]
-			data, err := base64.StdEncoding.DecodeString(b64Data)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decode base64 image: %w", err)
-			}
-			img, err = imaging.Decode(bytes.NewReader(data))
-			if err != nil {
-				return nil, fmt.Errorf("failed to decode image from base64 data: %w", err)
-			}
-		} else {
-			img, err = imaging.Open(filePath)
-			if err != nil {
-				return nil, fmt.Errorf("failed to open image %s: %w", filepath.Base(filePath), err)
+		img, err = imaging.Open(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open image %s: %w", filepath.Base(filePath), err)
+		}
+	}
+
+	imgCache.mu.Lock()
+	if len(imgCache.images) >= 8 {
+		var oldestKey string
+		var oldestTime time.Time
+		first := true
+		for k := range imgCache.images {
+			t := imgCache.access[k]
+			if first || t.Before(oldestTime) {
+				oldestTime = t
+				oldestKey = k
+				first = false
 			}
 		}
-
-		imgCache.mu.Lock()
-		if len(imgCache.images) >= 8 {
-			var oldestKey string
-			var oldestTime time.Time
-			first := true
-			for k := range imgCache.images {
-				t := imgCache.access[k]
-				if first || t.Before(oldestTime) {
-					oldestTime = t
-					oldestKey = k
-					first = false
-				}
-			}
-			delete(imgCache.images, oldestKey)
-			delete(imgCache.access, oldestKey)
-		}
-		imgCache.images[cacheKey] = img
-		imgCache.access[cacheKey] = time.Now()
-		imgCache.mu.Unlock()
+		delete(imgCache.images, oldestKey)
+		delete(imgCache.access, oldestKey)
 	}
+	imgCache.images[cacheKey] = img
+	imgCache.access[cacheKey] = time.Now()
+	imgCache.mu.Unlock()
 
-	if targetW <= 0 {
-		targetW = 1
-	}
-	if targetH <= 0 {
-		targetH = 1
-	}
+	return img, nil
+}
 
-	cropX := item.CropX
-	cropY := item.CropY
-	cropW := item.CropW
-	cropH := item.CropH
+// computeCropFromSlot يحسب منطقة الاقتصاص بناءً على نسبة الخانة والزوم والسحب
+func computeCropFromSlot(item domain.PrintItem, img image.Image) (cropX, cropY, cropW, cropH float64) {
+	cropX = item.CropX
+	cropY = item.CropY
+	cropW = item.CropW
+	cropH = item.CropH
 
 	if (cropW <= 0 || cropH <= 0) && item.SlotAspect > 0 {
 		imgW := float64(img.Bounds().Dx())
@@ -471,6 +429,13 @@ func (s *PrintService) loadAndProcessImage(
 		cropH = sh
 	}
 
+	return cropX, cropY, cropW, cropH
+}
+
+// applyImageProcessing يطبق التحجيم والاقتصاص والمرشحات على الصورة
+func applyImageProcessing(img image.Image, item domain.PrintItem, targetW, targetH int) image.Image {
+	cropX, cropY, cropW, cropH := computeCropFromSlot(item, img)
+
 	if cropW > 0 && cropH > 0 {
 		rect := image.Rect(
 			int(math.Round(cropX)),
@@ -481,16 +446,14 @@ func (s *PrintService) loadAndProcessImage(
 		img = imaging.Crop(img, rect)
 	}
 
-	// Resize first to reduce pixel count before expensive color/filter operations
-	var resizedImg image.Image
 	bounds := img.Bounds()
+	var resizedImg image.Image
 	if bounds.Dx() == targetW && bounds.Dy() == targetH {
 		resizedImg = img
 	} else {
 		resizedImg = imaging.Resize(img, targetW, targetH, imaging.Lanczos)
 	}
 
-	// Apply adjustments and filters on the much smaller resized image
 	adjustedImg := applyColorAdjustments(resizedImg, item.Brightness, item.Contrast, item.Saturation)
 	processedImg := applyFilter(adjustedImg, item.Filter)
 	if item.FlipX {
@@ -502,6 +465,68 @@ func (s *PrintService) loadAndProcessImage(
 	if item.Rotation != 0 {
 		processedImg = imaging.Rotate(processedImg, item.Rotation, color.Transparent)
 	}
+
+	return processedImg
+}
+
+// loadAndProcessImage يقوم بفتح الصورة ومعالجة ألوانها وأبعادها مع إدارة الذاكرة بنظام LRU
+func (s *PrintService) loadAndProcessImage(
+	item domain.PrintItem,
+	dpi int,
+	imgCache *imageCache,
+	procCache *processedCache,
+) (image.Image, error) {
+	filePath := resolveLocalPath(item.ImageSrc)
+	targetW := int(math.Round(mmToPx(item.W, dpi)))
+	targetH := int(math.Round(mmToPx(item.H, dpi)))
+
+	cacheKey := computeImageCacheKey(filePath)
+
+	pKey := processedKey{
+		filePath:   cacheKey,
+		brightness: item.Brightness,
+		contrast:   item.Contrast,
+		saturation: item.Saturation,
+		filter:     item.Filter,
+		targetW:    targetW,
+		targetH:    targetH,
+		cropX:      item.CropX,
+		cropY:      item.CropY,
+		cropW:      item.CropW,
+		cropH:      item.CropH,
+		flipX:      item.FlipX,
+		flipY:      item.FlipY,
+		rotation:   item.Rotation,
+		slotAspect: item.SlotAspect,
+		zoom:       item.Zoom,
+		dragX:      item.DragX,
+		dragY:      item.DragY,
+	}
+
+	procCache.mu.RLock()
+	cached, ok := procCache.images[pKey]
+	procCache.mu.RUnlock()
+
+	if ok {
+		procCache.mu.Lock()
+		procCache.access[pKey] = time.Now()
+		procCache.mu.Unlock()
+		return cached, nil
+	}
+
+	img, err := loadRawImage(filePath, cacheKey, imgCache)
+	if err != nil {
+		return nil, err
+	}
+
+	if targetW <= 0 {
+		targetW = 1
+	}
+	if targetH <= 0 {
+		targetH = 1
+	}
+
+	processedImg := applyImageProcessing(img, item, targetW, targetH)
 
 	procCache.mu.Lock()
 	if len(procCache.images) >= 16 {
