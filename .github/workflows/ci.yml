@@ -63,7 +63,7 @@ jobs:
         run: go test . ./internal/...
 
       - name: Build Wails App
-        run: wails build -platform windows/amd64
+        run: wails build -platform windows/amd64 -nsis -ldflags "-X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.GRIDO_AI_SECRET_KEY }}"
 
       - name: Sign Windows Executable (Code Signing)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

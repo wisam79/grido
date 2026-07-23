@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { X, RefreshCw } from "lucide-react";
 import { OpenFile, SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
@@ -14,6 +14,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
 >(function EditorCanvas({ printMode = false }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  const hRulerWrapperRef = useRef<HTMLDivElement>(null);
+  const vRulerWrapperRef = useRef<HTMLDivElement>(null);
+
   // Cached DOM refs for ruler cursors — avoids getElementById on every mousemove
   const hRulerCursorRef = useRef<SVGLineElement | null>(null);
   const vRulerCursorRef = useRef<SVGLineElement | null>(null);
@@ -130,11 +133,11 @@ export const EditorCanvas = React.memo(React.forwardRef<
     const applyZoom = () => {
       rafId = null;
       if (pendingZoom === null) return;
-      const oldZoom = useEditorStore.getState().canvasZoom;
+      
       const newZoom = pendingZoom;
       pendingZoom = null;
 
-      if (newZoom !== oldZoom) {
+      if (newZoom !== useEditorStore.getState().canvasZoom) {
         if (innerRef.current) {
           const canvasRect = innerRef.current.getBoundingClientRect();
           zoomPivotRef.current = {
@@ -157,9 +160,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
         lastWheelClientX = e.clientX;
         lastWheelClientY = e.clientY;
 
-        const oldZoom = useEditorStore.getState().canvasZoom;
-        const factor = Math.pow(0.998, e.deltaY);
-        const newZoom = Math.min(Math.max(0.1, oldZoom * factor), 5);
+        const baseZoom = pendingZoom !== null ? pendingZoom : useEditorStore.getState().canvasZoom;
+        const factor = Math.exp(-e.deltaY * 0.003);
+        const newZoom = Math.min(Math.max(0.1, baseZoom * factor), 5);
 
         // Coalesce multiple wheel events into a single rAF callback
         pendingZoom = newZoom;
@@ -273,6 +276,39 @@ export const EditorCanvas = React.memo(React.forwardRef<
     if (template) return template.heightMM;
     return (canvasHeight / (printSettings?.dpi || 300)) * 25.4;
   }, [template, canvasHeight, printSettings]);
+
+  // مزامنة موضع المساطر المثبتة على حواف الشاشة مع موقع الكانفاس الحقيقي
+  const updateRulerPositions = useCallback(() => {
+    if (!showRuler || printMode) return;
+    if (!containerRef.current || !innerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const canvasRect = innerRef.current.getBoundingClientRect();
+
+    const relX = canvasRect.left - containerRect.left;
+    const relY = canvasRect.top - containerRect.top;
+
+    if (hRulerWrapperRef.current) {
+      hRulerWrapperRef.current.style.transform = `translateX(${relX}px)`;
+    }
+    if (vRulerWrapperRef.current) {
+      vRulerWrapperRef.current.style.transform = `translateY(${relY}px)`;
+    }
+  }, [showRuler, printMode]);
+
+  useEffect(() => {
+    updateRulerPositions();
+  }, [updateRulerPositions, displayW, displayH, canvasZoom, mode, containerSize]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      updateRulerPositions();
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [updateRulerPositions]);
 
   // تتبع الفأرة بالنسبة للكانفاس (تحديث مباشر للـ DOM لتفادي إعادة رندرة React الثقيلة على كل بكسل)
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -694,48 +730,52 @@ export const EditorCanvas = React.memo(React.forwardRef<
   );
 
   return (
-    <div
-      ref={(node) => {
-        (containerRef as any).current = node;
-        if (typeof ref === "function") ref(node);
-        else if (ref) (ref as any).current = node;
-      }}
-      className="absolute inset-0 overflow-auto workspace-grid bg-muted/40"
-    >
-      <div 
-        className="min-w-full min-h-full flex p-4"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) selectElement(null);
-        }}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
-        <div style={{ margin: "auto" }}>
-          {showRuler && !printMode ? (
-            <div className="relative flex flex-col items-start select-none">
-              {/* Top Row: Unit corner + Horizontal Ruler */}
-              <div className="flex flex-row items-end">
-                <div className="w-6 h-6 bg-card border-b border-l border-border flex items-center justify-center text-[9px] text-muted-foreground/75 font-mono select-none">
-                  mm
-                </div>
-                <HorizontalRuler 
-                  width={displayW} 
-                  mmWidth={widthMM}
-                />
-              </div>
-
-              {/* Bottom Row: Vertical Ruler + Canvas area */}
-              <div className="flex flex-row items-start">
-                <VerticalRuler 
-                  height={displayH} 
-                  mmHeight={heightMM}
-                />
-                {canvasArea}
-              </div>
+    <div className="absolute inset-0 flex flex-col bg-muted/40 overflow-hidden select-none">
+      {/* Top Ruler Bar */}
+      {showRuler && !printMode && (
+        <div className="flex h-6 w-full bg-card border-b border-border z-20 shrink-0">
+          <div className="w-6 h-6 shrink-0 bg-card border-b border-l border-border flex items-center justify-center text-[9px] text-muted-foreground/75 font-mono select-none z-30">
+            mm
+          </div>
+          <div className="flex-1 overflow-hidden relative">
+            <div ref={hRulerWrapperRef} className="absolute top-0 left-0">
+              <HorizontalRuler width={displayW} mmWidth={widthMM} />
             </div>
-          ) : (
-            canvasArea
-          )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Side Ruler Bar */}
+        {showRuler && !printMode && (
+          <div className="w-6 h-full bg-card border-l border-border z-20 shrink-0 overflow-hidden relative">
+            <div ref={vRulerWrapperRef} className="absolute top-0 left-0">
+              <VerticalRuler height={displayH} mmHeight={heightMM} />
+            </div>
+          </div>
+        )}
+
+        {/* Workspace Canvas Area */}
+        <div
+          ref={(node) => {
+            (containerRef as any).current = node;
+            if (typeof ref === "function") ref(node);
+            else if (ref) (ref as any).current = node;
+          }}
+          className="flex-1 overflow-auto workspace-grid relative"
+        >
+          <div
+            className="min-w-full min-h-full flex p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) selectElement(null);
+            }}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            <div style={{ margin: "auto" }}>
+              {canvasArea}
+            </div>
+          </div>
         </div>
       </div>
     </div>

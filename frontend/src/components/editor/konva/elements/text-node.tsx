@@ -68,11 +68,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     if (node) {
       const actualHeight = node.height() / displayH;
       if (Math.abs(actualHeight - element.height) > 0.005) {
-        // Use a timeout to avoid dispatching action during render cycle
-        const timer = setTimeout(() => {
-          onChange({ height: actualHeight });
-        }, 10);
-        return () => clearTimeout(timer);
+        onChange({ height: actualHeight });
       }
     }
   }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, displayH, element.height, elementRef, onChange]);

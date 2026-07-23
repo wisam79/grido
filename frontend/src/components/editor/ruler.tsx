@@ -5,65 +5,87 @@ interface HorizontalRulerProps {
   mmWidth: number;
 }
 
+function getRulerSteps(pixelsPerMM: number) {
+  // Target minimum distance between labeled ticks in screen pixels (~40px)
+  const minLabelDistancePx = 40;
+  const rawLabelStepMM = minLabelDistancePx / Math.max(pixelsPerMM, 0.001);
+
+  const niceSteps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+  const labelStep = niceSteps.find((s) => s >= rawLabelStepMM) || 1000;
+
+  // Calculate sub-tick step
+  let subStep = 1;
+  if (labelStep >= 100) subStep = labelStep / 5;
+  else if (labelStep >= 50) subStep = 10;
+  else if (labelStep >= 20) subStep = 5;
+  else if (labelStep >= 10) subStep = 1;
+  else if (labelStep >= 5) subStep = 1;
+  else subStep = 1;
+
+  // Medium tick step (halfway mark between labels)
+  const midStep = labelStep / 2;
+
+  return { labelStep, subStep, midStep };
+}
+
 export const HorizontalRuler = React.memo(function HorizontalRuler({ width, mmWidth }: HorizontalRulerProps) {
   const ticks = useMemo(() => {
+    if (!width || !mmWidth || width <= 0 || mmWidth <= 0) return [];
     const pixelsPerMM = width / mmWidth;
-    const items = [];
-    let step = 1;
-    if (pixelsPerMM < 1.2) {
-      step = 10;
-    } else if (pixelsPerMM < 2.5) {
-      step = 5;
-    }
+    const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerMM);
 
-    for (let i = 0; i <= mmWidth; i += step) {
+    const items = [];
+    for (let i = 0; i <= mmWidth; i += subStep) {
       const x = i * pixelsPerMM;
-      if (i % 10 === 0) {
+      const isLabel = Math.abs(i % labelStep) < 0.001 || Math.abs((i % labelStep) - labelStep) < 0.001;
+      const isMid = !isLabel && (Math.abs(i % midStep) < 0.001 || Math.abs((i % midStep) - midStep) < 0.001);
+
+      if (isLabel) {
         items.push(
-          <g key={`h-10-${i}`}>
-            <line 
-              x1={x} 
-              y1={8} 
-              x2={x} 
-              y2={24} 
-              stroke="currentColor" 
-              className="stroke-muted-foreground/60" 
-              strokeWidth={1} 
+          <g key={`h-lbl-${i}`}>
+            <line
+              x1={x}
+              y1={8}
+              x2={x}
+              y2={24}
+              stroke="currentColor"
+              className="stroke-muted-foreground/60"
+              strokeWidth={1}
             />
-            <text 
-              x={x + 2} 
-              y={8} 
-              fontSize={7} 
+            <text
+              x={x + 2}
+              y={8}
+              fontSize={7}
               className="fill-muted-foreground font-mono font-medium select-none"
             >
-              {i}
+              {Math.round(i)}
             </text>
           </g>
         );
-      } else if (i % 5 === 0) {
+      } else if (isMid) {
         items.push(
-          <line 
-            key={`h-5-${i}`} 
-            x1={x} 
-            y1={14} 
-            x2={x} 
-            y2={24} 
-            stroke="currentColor" 
-            className="stroke-muted-foreground/45" 
-            strokeWidth={1} 
+          <line
+            key={`h-mid-${i}`}
+            x1={x}
+            y1={14}
+            x2={x}
+            y2={24}
+            stroke="currentColor"
+            className="stroke-muted-foreground/45"
+            strokeWidth={1}
           />
         );
       } else {
         items.push(
-          <line 
-            key={`h-1-${i}`} 
-            x1={x} 
-            y1={18} 
-            x2={x} 
-            y2={24} 
-            stroke="currentColor" 
-            className="stroke-muted-foreground/30" 
-            strokeWidth={1} 
+          <line
+            key={`h-sub-${i}`}
+            x1={x}
+            y1={18}
+            x2={x}
+            y2={24}
+            stroke="currentColor"
+            className="stroke-muted-foreground/30"
+            strokeWidth={1}
           />
         );
       }
@@ -72,20 +94,20 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({ width, mmWi
   }, [width, mmWidth]);
 
   return (
-    <svg 
-      width={width} 
-      height={24} 
+    <svg
+      width={width}
+      height={24}
       className="bg-card text-card-foreground overflow-hidden border-b border-border"
     >
       {ticks}
-      <line 
+      <line
         id="h-ruler-cursor"
-        x1={0} 
-        y1={0} 
-        x2={0} 
-        y2={24} 
-        stroke="#3b82f6" 
-        strokeWidth={1.5} 
+        x1={0}
+        y1={0}
+        x2={0}
+        y2={24}
+        stroke="#3b82f6"
+        strokeWidth={1.5}
         strokeDasharray="2,2"
         style={{ display: "none" }}
       />
@@ -100,65 +122,64 @@ interface VerticalRulerProps {
 
 export const VerticalRuler = React.memo(function VerticalRuler({ height, mmHeight }: VerticalRulerProps) {
   const ticks = useMemo(() => {
+    if (!height || !mmHeight || height <= 0 || mmHeight <= 0) return [];
     const pixelsPerMM = height / mmHeight;
-    const items = [];
-    let step = 1;
-    if (pixelsPerMM < 1.2) {
-      step = 10;
-    } else if (pixelsPerMM < 2.5) {
-      step = 5;
-    }
+    const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerMM);
 
-    for (let i = 0; i <= mmHeight; i += step) {
+    const items = [];
+    for (let i = 0; i <= mmHeight; i += subStep) {
       const y = i * pixelsPerMM;
-      if (i % 10 === 0) {
+      const isLabel = Math.abs(i % labelStep) < 0.001 || Math.abs((i % labelStep) - labelStep) < 0.001;
+      const isMid = !isLabel && (Math.abs(i % midStep) < 0.001 || Math.abs((i % midStep) - midStep) < 0.001);
+
+      if (isLabel) {
         items.push(
-          <g key={`v-10-${i}`}>
-            <line 
-              x1={8} 
-              y1={y} 
-              x2={24} 
-              y2={y} 
-              stroke="currentColor" 
-              className="stroke-muted-foreground/60" 
-              strokeWidth={1} 
+          <g key={`v-lbl-${i}`}>
+            <line
+              x1={8}
+              y1={y}
+              x2={24}
+              y2={y}
+              stroke="currentColor"
+              className="stroke-muted-foreground/60"
+              strokeWidth={1}
             />
-            <text 
-              x={6} 
-              y={y + 3} 
-              fontSize={7} 
+            <text
+              x={6}
+              y={y + 3}
+              fontSize={7}
               className="fill-muted-foreground font-mono font-medium select-none text-right"
               transform={`rotate(-90, 6, ${y})`}
               textAnchor="middle"
             >
-              {i}
+              {Math.round(i)}
             </text>
           </g>
         );
-      } else if (i % 5 === 0) {
+      } else if (isMid) {
         items.push(
-          <line 
-            key={`v-5-${i}`} 
-            x1={14} 
-            y1={y} 
-            x2={24} 
-            y2={y} 
-            stroke="currentColor" 
-            className="stroke-muted-foreground/45" 
-            strokeWidth={1} 
+          <line
+            key={`v-mid-${i}`}
+            x1={14}
+            y1={y}
+            x2={24}
+            y2={y}
+            stroke="currentColor"
+            className="stroke-muted-foreground/45"
+            strokeWidth={1}
           />
         );
       } else {
         items.push(
-          <line 
-            key={`v-1-${i}`} 
-            x1={18} 
-            y1={y} 
-            x2={24} 
-            y2={y} 
-            stroke="currentColor" 
-            className="stroke-muted-foreground/30" 
-            strokeWidth={1} 
+          <line
+            key={`v-sub-${i}`}
+            x1={18}
+            y1={y}
+            x2={24}
+            y2={y}
+            stroke="currentColor"
+            className="stroke-muted-foreground/30"
+            strokeWidth={1}
           />
         );
       }
@@ -167,20 +188,20 @@ export const VerticalRuler = React.memo(function VerticalRuler({ height, mmHeigh
   }, [height, mmHeight]);
 
   return (
-    <svg 
-      width={24} 
-      height={height} 
+    <svg
+      width={24}
+      height={height}
       className="bg-card text-card-foreground overflow-hidden border-l border-border"
     >
       {ticks}
-      <line 
+      <line
         id="v-ruler-cursor"
-        x1={0} 
-        y1={0} 
-        x2={24} 
-        y2={0} 
-        stroke="#3b82f6" 
-        strokeWidth={1.5} 
+        x1={0}
+        y1={0}
+        x2={24}
+        y2={0}
+        stroke="#3b82f6"
+        strokeWidth={1.5}
         strokeDasharray="2,2"
         style={{ display: "none" }}
       />

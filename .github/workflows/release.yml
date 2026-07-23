@@ -1,0 +1,69 @@
+name: Build & Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+          
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Build Wails App
+        run: wails build -platform windows/amd64 -nsis -ldflags "-X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.GRIDO_AI_SECRET_KEY }}"
+
+      - name: Prepare Executable Assets
+        shell: powershell
+        run: |
+          if (Test-Path "build\bin\Grido Studio.exe") {
+            Copy-Item "build\bin\Grido Studio.exe" "build\bin\GridoStudio.exe"
+          }
+          if (Test-Path "build\bin\Grido Studio-amd64-installer.exe") {
+            Copy-Item "build\bin\Grido Studio-amd64-installer.exe" "build\bin\GridoStudio-installer.exe"
+          }
+
+      - name: Create GitHub Release & Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/bin/GridoStudio.exe
+            build/bin/Grido Studio.exe
+            build/bin/GridoStudio-installer.exe
+          draft: false
+          prerelease: false
+          name: Grido Studio Release ${{ github.ref_name }}
+          body: |
+            ## 🚀 Grido Studio Release
+            - النسخة الفورية المبنية تلقائياً لنظام الويندوز.
+            - يتضمن أحدث خوارزميات المعالجة والطباعة بالذكاء الاصطناعي.
+            - يشمل نسخة Portable وملف تثبيت Installer.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

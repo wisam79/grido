@@ -52,8 +52,8 @@
 }
 
 :root {
-  --font-cairo: 'IBM Plex Sans Arabic', 'Inter', system-ui, sans-serif;
-  --font-tajawal: 'IBM Plex Sans Arabic', 'Inter', system-ui, sans-serif;
+  --font-cairo: 'IBM Plex Sans Arabic', 'Cairo', 'Inter', system-ui, sans-serif;
+  --font-tajawal: 'IBM Plex Sans Arabic', 'Tajawal', 'Inter', system-ui, sans-serif;
   --radius: 0.5rem;
   
   /* Beidar Light Mode Visual Identity */

@@ -20,6 +20,14 @@ wails dev
 wails build
 ```
 
+### البناء التلقائي عبر GitHub Actions (CI/CD)
+يتم بناء التطبيق وتصدير الإصدارات آلياً عند إضافة Tag جديد. لضمان عمل كافة ميزات التطبيق (الذكاء الاصطناعي، التحقق من التراخيص)، يجب إضافة المتغيرات البيئية التالية في **GitHub Repository Secrets**:
+- `SUPABASE_URL`: رابط مشروع Supabase الخاص بك.
+- `SUPABASE_ANON_KEY`: مفتاح الواجهة البرمجية العام لـ Supabase.
+- `GRIDO_AI_SECRET_KEY`: مفتاح مصادقة خادم الذكاء الاصطناعي (Modal AI).
+- `WINDOWS_CERTIFICATE_BASE64` (اختياري): لتوقيع البرنامج برمجياً (Code Signing).
+- `WINDOWS_CERTIFICATE_PASSWORD` (اختياري): كلمة مرور شهادة التوقيع.
+
 ---
 
 ## 🧠 استراتيجية الذكاء الاصطناعي لعزل الخلفية (AI Background Removal Strategy)
