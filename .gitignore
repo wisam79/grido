@@ -35,3 +35,5 @@ Thumbs.db
 .env.*
 diff.patch
 frontend/wailsjs/
+frontend/coverage/
+
