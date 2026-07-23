@@ -66,6 +66,9 @@ func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 
 	latestTag := strings.TrimPrefix(ghRelease.TagName, "v")
 	currentTag := strings.TrimPrefix(AppVersion, "v")
+	if currentTag == "dev" || currentTag == "" {
+		currentTag = "0.0.0"
+	}
 
 	hasUpdate := isVersionGreater(latestTag, currentTag)
 
