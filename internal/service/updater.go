@@ -28,25 +28,34 @@ func NewUpdaterService() *UpdaterService {
 
 func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/wisam79/grido/releases/latest", nil)
+
+	// 1. محاولة الاستعلام أولاً من خادم الوكيل الخاص بـ Grido (الذي يمتلك صلاحية الوصول للمستودع الخاص)
+	versionURL := "https://grido.cloud-ip.cc/api/version"
+	req, err := http.NewRequest("GET", versionURL, nil)
 	if err != nil {
-		return &UpdateInfo{
-			HasUpdate:      false,
-			CurrentVersion: AppVersion,
-			LatestVersion:  AppVersion,
-			DownloadURL:    "https://grido.cloud-ip.cc/api/download",
-		}, nil
+		req, _ = http.NewRequest("GET", "https://api.github.com/repos/wisam79/grido/releases/latest", nil)
 	}
 	req.Header.Set("User-Agent", "GridoStudio-Desktop")
 
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		return &UpdateInfo{
-			HasUpdate:      false,
-			CurrentVersion: AppVersion,
-			LatestVersion:  AppVersion,
-			DownloadURL:    "https://grido.cloud-ip.cc/api/download",
-		}, nil
+		// احتياطي ثانٍ للاتصال بمستودع GitHub المباشر
+		reqDirect, _ := http.NewRequest("GET", "https://api.github.com/repos/wisam79/grido/releases/latest", nil)
+		reqDirect.Header.Set("User-Agent", "GridoStudio-Desktop")
+		respDirect, errDirect := client.Do(reqDirect)
+		if errDirect == nil && respDirect.StatusCode == http.StatusOK {
+			resp = respDirect
+		} else {
+			if respDirect != nil {
+				respDirect.Body.Close()
+			}
+			return &UpdateInfo{
+				HasUpdate:      false,
+				CurrentVersion: AppVersion,
+				LatestVersion:  AppVersion,
+				DownloadURL:    "https://grido.cloud-ip.cc/api/download",
+			}, nil
+		}
 	}
 	defer resp.Body.Close()
 
