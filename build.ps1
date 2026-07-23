@@ -21,6 +21,11 @@ if ($modalAiKey -eq "") {
     $modalAiKey = "grido_sec_ai_live_8f3d9b4c2e1a70562e84d9c0a1b3f5e76812c9d4a0b6f8e235d7c9a1e4f6b802"
 }
 
-$ldflags = "-s -w -X grido/internal/service.SupabaseURL=$supabaseUrl -X grido/internal/service.SupabaseAnonKey=$supabaseAnonKey -X grido/internal/service.ModalAIKey=$modalAiKey"
+$appVersion = (git describe --tags --abbrev=0 2>$null)
+if (-not $appVersion) {
+    $appVersion = "v1.0.2"
+}
+
+$ldflags = "-s -w -X grido/internal/service.AppVersion=$appVersion -X grido/internal/service.SupabaseURL=$supabaseUrl -X grido/internal/service.SupabaseAnonKey=$supabaseAnonKey -X grido/internal/service.ModalAIKey=$modalAiKey"
 
 wails build -nsis -clean -upx -ldflags $ldflags

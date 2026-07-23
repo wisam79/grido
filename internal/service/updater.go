@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// AppVersion يتم حقنها تلقائياً أثناء البناء أو تعيينها كإصدار افتراضي
-var AppVersion = "1.0.2"
+// AppVersion يتم حقنها تلقائياً ديناميكياً عند البناء عبر ldflags (مثل -X grido/internal/service.AppVersion=v1.0.2)
+var AppVersion = "dev"
 
 type UpdateInfo struct {
 	HasUpdate      bool   `json:"has_update"`

@@ -45,7 +45,7 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       - name: Build Wails App & NSIS Installer
-        run: wails build -platform windows/amd64 -nsis -ldflags "-X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.GRIDO_AI_SECRET_KEY }}"
+        run: wails build -platform windows/amd64 -nsis -ldflags "-X grido/internal/service.AppVersion=${{ github.ref_name }} -X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.GRIDO_AI_SECRET_KEY }}"
 
       - name: Prepare Executable Assets
         shell: powershell
