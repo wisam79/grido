@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Download, Menu, X } from 'lucide-react';
 
-const GITHUB_RELEASE_DOWNLOAD_URL =
-  'https://github.com/wisam79/grido/releases/latest/download/GridoStudio.exe';
+const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const NAV_LINKS = [
   { href: '#features', label: 'المميزات' },

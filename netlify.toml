@@ -2,9 +2,15 @@
   base = "admin-web"
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
 
 [build.environment]
   GIT_SUBMODULES = "false"
+
+[[redirects]]
+  from = "/api/download"
+  to = "/.netlify/functions/download"
+  status = 200
 
 [[redirects]]
   from = "/*"

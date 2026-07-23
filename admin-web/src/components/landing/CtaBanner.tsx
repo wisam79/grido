@@ -1,7 +1,6 @@
 import { Download, Check } from 'lucide-react';
 
-const GITHUB_RELEASE_DOWNLOAD_URL =
-  'https://github.com/wisam79/grido/releases/latest/download/GridoStudio.exe';
+const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const CHECKS = ['مجاني بالكامل', 'بدون تسجيل', 'تحديثات تلقائية'];
 

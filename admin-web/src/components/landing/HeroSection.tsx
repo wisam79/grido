@@ -1,8 +1,7 @@
 import { Download, Sparkles, ArrowLeft, Play } from 'lucide-react';
 import { AppMockup } from './AppMockup';
 
-const GITHUB_RELEASE_DOWNLOAD_URL =
-  'https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe';
+const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const STATS = [
   { value: '+50,000', label: 'صورة مُعالَة يومياً', gradient: 'from-brand-400 to-sky-400' },
