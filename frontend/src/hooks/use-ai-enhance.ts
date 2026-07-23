@@ -193,7 +193,8 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
       if (err instanceof Error && err.name === "AbortError") {
         toast.error("استغرق الطلب وقتاً طويلاً. أعد المحاولة مرة أخرى.");
       } else {
-        toast.error(err instanceof Error ? err.message : "فشل تحسين الصورة بالذكاء الاصطناعي");
+        const errorMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل تحسين الصورة بالذكاء الاصطناعي");
+        toast.error(errorMsg);
       }
     } finally {
       setIsEnhancing(false);
