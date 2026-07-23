@@ -21,23 +21,20 @@ export const handler: Handler = async () => {
     );
 
     if (!releaseRes.ok) {
-      // إذا كان التوكن غير موجود أو تم الوصول للحد وكان الريبو عاماً، نحاول التوجيه المباشر
       return {
         statusCode: 302,
         headers: {
-          Location: `https://github.com/${repoOwner}/${repoName}/releases/latest/download/GridoStudio-installer.exe`,
+          Location: `https://github.com/${repoOwner}/${repoName}/releases/latest`,
         },
       };
     }
 
     const releaseData = await releaseRes.json();
-    
-    // 1. إعطاء الأولوية المطلقة لملف المثبت (NSIS Installer)
+
+    // 2. البحث عن ملف المثبت أو الملف التنفيذي
     let asset = releaseData.assets?.find((a: any) =>
       a.name.toLowerCase().includes('installer')
     );
-
-    // 2. خيار احتياطي في حال عدم وجود المثبت فقط
     if (!asset) {
       asset = releaseData.assets?.find((a: any) =>
         a.name.toLowerCase().endsWith('.exe')
@@ -51,7 +48,8 @@ export const handler: Handler = async () => {
       };
     }
 
-    // 2. طلب تحميل ملف الـ binary باستخدام API url والتوكن المشفر للسيرفر
+    // 3. طلب موقع التحميل المباشر مع ضبط redirect: 'manual' للحصول على التوجيه المباشر (AWS S3)
+    // يتفادى هذا قيد حجم استجابة Netlify (6MB Limit) ويحقق سرعة تحكم وتحميل قصوى للمستخدم
     const assetHeaders: Record<string, string> = {
       'User-Agent': 'Grido-Netlify-Proxy',
       'Accept': 'application/octet-stream',
@@ -60,37 +58,28 @@ export const handler: Handler = async () => {
       assetHeaders['Authorization'] = `token ${token}`;
     }
 
-    const binaryRes = await fetch(asset.url, { headers: assetHeaders, redirect: 'follow' });
+    const binaryRes = await fetch(asset.url, {
+      headers: assetHeaders,
+      redirect: 'manual',
+    });
 
-    if (binaryRes.status === 302 || binaryRes.status === 301) {
-      const redirectUrl = binaryRes.headers.get('location');
-      if (redirectUrl) {
-        return {
-          statusCode: 302,
-          headers: { Location: redirectUrl },
-        };
-      }
-    }
-
-    if (!binaryRes.ok) {
+    const redirectUrl = binaryRes.headers.get('location');
+    if (redirectUrl) {
       return {
-        statusCode: binaryRes.status,
-        body: JSON.stringify({ error: 'فشل تحميل ملف المثبت من خادم GitHub' }),
+        statusCode: 302,
+        headers: {
+          Location: redirectUrl,
+          'Cache-Control': 'no-cache',
+        },
       };
     }
 
-    const arrayBuffer = await binaryRes.arrayBuffer();
-    const base64Content = Buffer.from(arrayBuffer).toString('base64');
-
+    // إذا لم يُرجع GitHub توجيه 302، نكتفي بالتوجيه لصفحة الـ Release الرسمية
     return {
-      statusCode: 200,
+      statusCode: 302,
       headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${asset.name || 'GridoStudio-installer.exe'}"`,
-        'Cache-Control': 'public, max-age=3600',
+        Location: asset.browser_download_url || `https://github.com/${repoOwner}/${repoName}/releases/latest`,
       },
-      body: base64Content,
-      isBase64Encoded: true,
     };
   } catch (err: any) {
     return {
