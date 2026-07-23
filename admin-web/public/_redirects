@@ -1,1 +1,3 @@
-/*  /index.html  200
+/api/download  /.netlify/functions/download  200
+/api/version   /.netlify/functions/version   200
+/*             /index.html                    200
