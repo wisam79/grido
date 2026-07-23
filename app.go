@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -10,10 +11,12 @@ import (
 	"image"
 	"image/png"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"grido/internal/core/domain"
@@ -24,6 +27,38 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+type aiRateEntry struct {
+	count    int
+	resetDay string
+}
+
+type aiRateLimiter struct {
+	mu    sync.Mutex
+	usage map[string]*aiRateEntry
+}
+
+var aiLimiter = &aiRateLimiter{
+	usage: make(map[string]*aiRateEntry),
+}
+
+func (l *aiRateLimiter) checkAndIncrement(key string, limit int) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	today := time.Now().Format("2006-01-02")
+	entry, exists := l.usage[key]
+	if !exists || entry.resetDay != today {
+		entry = &aiRateEntry{count: 0, resetDay: today}
+		l.usage[key] = entry
+	}
+
+	if entry.count >= limit {
+		return fmt.Errorf("تم تجاوز الحد اليومي لاستخدام الذكاء الاصطناعي (%d صورة/يومياً). يتجدد الرصيد غداً", limit)
+	}
+	entry.count++
+	return nil
+}
 
 type App struct {
 	ctx context.Context
@@ -144,16 +179,26 @@ func (a *App) OpenMultipleFiles() ([]string, error) {
 	}
 
 	var results []string
+	var skippedNames []string
 	mediaDir := getMediaDir()
 
 	for _, filePath := range filePaths {
 		stat, err := os.Stat(filePath)
-		if err != nil || stat.Size() > maxFileSize {
+		if err != nil {
+			skippedNames = append(skippedNames, filepath.Base(filePath))
+			slog.Warn("Skipped file in multi-select: stat error", "file", filepath.Base(filePath), "error", err)
+			continue
+		}
+		if stat.Size() > maxFileSize {
+			skippedNames = append(skippedNames, filepath.Base(filePath))
+			slog.Warn("Skipped file in multi-select: exceeds size limit", "file", filepath.Base(filePath), "size", stat.Size())
 			continue
 		}
 
 		srcFile, err := os.Open(filePath)
 		if err != nil {
+			skippedNames = append(skippedNames, filepath.Base(filePath))
+			slog.Warn("Skipped file in multi-select: open error", "file", filepath.Base(filePath), "error", err)
 			continue
 		}
 
@@ -161,12 +206,16 @@ func (a *App) OpenMultipleFiles() ([]string, error) {
 		n, err := srcFile.Read(buf)
 		if err != nil && err != io.EOF {
 			srcFile.Close()
+			skippedNames = append(skippedNames, filepath.Base(filePath))
+			slog.Warn("Skipped file in multi-select: read error", "file", filepath.Base(filePath), "error", err)
 			continue
 		}
 
 		detectedType := http.DetectContentType(buf[:n])
 		if !strings.HasPrefix(detectedType, "image/") {
 			srcFile.Close()
+			skippedNames = append(skippedNames, filepath.Base(filePath))
+			slog.Warn("Skipped file in multi-select: not an image", "file", filepath.Base(filePath), "detected", detectedType)
 			continue
 		}
 
@@ -178,6 +227,8 @@ func (a *App) OpenMultipleFiles() ([]string, error) {
 		destFile, err := os.OpenFile(newPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			srcFile.Close()
+			skippedNames = append(skippedNames, filepath.Base(filePath))
+			slog.Warn("Skipped file in multi-select: dest create error", "file", filepath.Base(filePath), "error", err)
 			continue
 		}
 
@@ -187,7 +238,14 @@ func (a *App) OpenMultipleFiles() ([]string, error) {
 
 		if copyErr == nil {
 			results = append(results, "/local-image/"+newName)
+		} else {
+			skippedNames = append(skippedNames, filepath.Base(filePath))
+			slog.Warn("Skipped file in multi-select: copy error", "file", filepath.Base(filePath), "error", copyErr)
 		}
+	}
+
+	if len(skippedNames) > 0 {
+		slog.Warn("Some files were skipped during multi-select", "skipped", skippedNames, "total", len(filePaths), "loaded", len(results))
 	}
 
 	return results, nil
@@ -604,7 +662,17 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 	return "/local-image/" + newName, nil
 }
 
-func (a *App) EnhanceImageWithAI(base64Image string, token string) (string, error) {
+func (a *App) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
+	// 🔒 Backend rate limit: cap AI enhance calls per user per day
+	rateKey := "anonymous"
+	if token != "" {
+		tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))[:16]
+		rateKey = tokenHash
+	}
+	if err := aiLimiter.checkAndIncrement(rateKey, limit); err != nil {
+		return "", err
+	}
+
 	// 1. إذا كان المستخدم مسجلاً لدخوله ومفاتيح Supabase متوفرة، نستخدم خادم Edge Function
 	if token != "" && service.SupabaseURL != "" {
 		url := service.SupabaseURL + "/functions/v1/ai-enhance"
@@ -622,14 +690,15 @@ func (a *App) EnhanceImageWithAI(base64Image string, token string) (string, erro
 
 				client := &http.Client{Timeout: 3 * time.Minute}
 				resp, err := client.Do(req)
-				if err == nil && resp.StatusCode == http.StatusOK {
-					body, err := io.ReadAll(resp.Body)
-					resp.Body.Close()
-					if err == nil {
-						return string(body), nil
+				if err == nil {
+					defer resp.Body.Close()
+					if resp.StatusCode == http.StatusOK {
+						body, readErr := io.ReadAll(resp.Body)
+						if readErr == nil {
+							return string(body), nil
+						}
 					}
-				}
-				if resp != nil {
+				} else if resp != nil {
 					resp.Body.Close()
 				}
 			}

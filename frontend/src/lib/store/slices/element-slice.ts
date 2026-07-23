@@ -228,7 +228,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     if (!el) return;
     const newId = uid();
     const copy: CanvasElement = {
-      ...JSON.parse(JSON.stringify(el)),
+      ...el,
       id: newId,
       groupId: undefined,
       x: Math.min(el.x + 0.05, 0.9),
@@ -264,7 +264,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       }
 
       const copy: CanvasElement = {
-        ...JSON.parse(JSON.stringify(el)),
+        ...el,
         id: newId,
         groupId: newGroupId,
         x: Math.min(el.x + 0.05, 0.9),

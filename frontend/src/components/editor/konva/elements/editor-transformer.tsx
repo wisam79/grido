@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from "react";
-import { Transformer as KonvaTransformer, Group, Rect, Text, Line } from "react-konva";
+import React, { useEffect, useState } from "react";
+import { Transformer as KonvaTransformer, Group, Rect, Text } from "react-konva";
 import Konva from "konva";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 

@@ -2,7 +2,7 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { PopoverColorPicker, SliderControl } from "../../shared-controls";
-import { Square, Sparkles } from "lucide-react";
+import { Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TextStrokeControlsProps {

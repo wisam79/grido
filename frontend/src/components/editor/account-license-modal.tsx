@@ -90,17 +90,6 @@ export function AccountLicenseModal() {
     setError(null);
   }, [activeTab, authMode, accountModalOpen]);
 
-  // Automatically switch tabs if user is logged in
-  useEffect(() => {
-    if (user && user.plan !== "free" && user.token) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveTab("license");
-    } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveTab("auth");
-    }
-  }, [user]);
-
   const handleGoogleLogin = async () => {
     setLoadingGoogle(true);
     setError(null);
@@ -191,7 +180,6 @@ export function AccountLicenseModal() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTrialDaysLeft(Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))));
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTrialDaysLeft(0);
     }
   }, [user]);

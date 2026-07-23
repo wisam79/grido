@@ -224,7 +224,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
 
                   const user = useEditorStore.getState().user;
                   useEditorStore.getState().logAiUsage({
-                    email: user?.email || "wisamsamir78@gmail.com",
+                    email: user?.email || "unknown",
                     serviceName: "عزل الخلفية الذكي (AI Background Removal)",
                     source: "Grido Studio Desktop (Windows)",
                     durationSec: 1.8,

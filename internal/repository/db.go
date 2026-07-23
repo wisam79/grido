@@ -61,8 +61,14 @@ func InitDB() (*gorm.DB, error) {
 		}
 	}
 
-	// إزالة قيد الاتصال الواحد للسماح بالاستفادة القصوى من ميزة القراءة المتزامنة لـ WAL
-	// sqlDB.SetMaxOpenConns(1)
+	// SQLite serializes writes even in WAL mode. Allowing unlimited connections
+	// causes "database is locked" errors when the background cleanup goroutine,
+	// project saves, and license checks write concurrently. A single writer
+	// connection with a pool of idle readers avoids lock contention while still
+	// permitting concurrent reads under WAL.
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetConnMaxLifetime(0)
 
 	// الهجرة التلقائية لجداول قاعدة البيانات
 	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{}, &domain.CustomTemplate{})
@@ -109,19 +115,14 @@ func NewLicenseRepository(db *gorm.DB) domain.LicenseRepository {
 }
 
 func (r *licenseRepositoryImpl) Save(profile *domain.UserProfile) error {
-	// Extract token to save securely
-	token := profile.Token
-	refreshToken := profile.RefreshToken
-	
-	// Save to DB (Token field will still be saved if it's there, but we can blank it)
-	profile.Token = ""
+	// Token and RefreshToken have gorm:"-" so GORM never persists them to the DB.
+	// The previous code mutated profile.Token on a shared pointer to blank it before
+	// saving, which was racy when two goroutines called Save concurrently on the same
+	// profile. That mutation is unnecessary because GORM already ignores the field.
 	err := r.db.Save(profile).Error
-	
-	// Restore token for the runtime
-	profile.Token = token
 
 	if err == nil {
-		if saveErr := utils.SaveEncryptedToken(token, refreshToken); saveErr != nil {
+		if saveErr := utils.SaveEncryptedToken(profile.Token, profile.RefreshToken); saveErr != nil {
 			slog.Error("Failed to save encrypted token", "error", saveErr)
 		}
 		if signErr := utils.SaveLicenseSignature(profile); signErr != nil {

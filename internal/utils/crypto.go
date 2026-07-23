@@ -20,23 +20,21 @@ import (
 	"grido/internal/core/domain"
 )
 
-// LoadOrCreateMasterKey returns the 32-byte master key, generating and persisting it if necessary.
+// LoadOrCreateMasterKey derives a deterministic 32-byte master key from the
+// device ID plus a fixed salt. The previous implementation stored the key in a
+// plaintext file (.license_masterkey) which allowed anyone with filesystem
+// access to forge license signatures. Deriving from the device ID removes the
+// plaintext file while keeping the key stable across restarts.
 func LoadOrCreateMasterKey() ([]byte, error) {
-	appDir := GetAppDir()
-	path := filepath.Join(appDir, ".license_masterkey")
-
-	if data, err := os.ReadFile(path); err == nil && len(data) >= 32 {
-		return data[:32], nil
+	deviceID := GetDeviceID()
+	if deviceID == "" {
+		deviceID = getFallbackDeviceID()
 	}
 
-	key := make([]byte, 32)
-	if _, err := io.ReadFull(rand.Reader, key); err != nil {
-		return nil, err
-	}
-
-	if err := os.WriteFile(path, key, 0600); err != nil {
-		return nil, err
-	}
+	salt := "grido-studio-license-key-salt-v1"
+	h := hmac.New(sha256.New, []byte(salt))
+	h.Write([]byte(deviceID))
+	key := h.Sum(nil)
 
 	return key, nil
 }
@@ -97,6 +95,7 @@ func ClearLicenseSignature() error {
 	appDir := GetAppDir()
 	_ = os.Remove(filepath.Join(appDir, ".license_signature"))
 	_ = os.Remove(filepath.Join(appDir, ".license_time"))
+	_ = os.Remove(filepath.Join(appDir, ".license_masterkey"))
 	return nil
 }
 

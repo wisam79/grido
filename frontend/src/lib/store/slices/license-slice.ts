@@ -34,48 +34,7 @@ export interface LicenseSlice {
   logAiUsage: (record: Omit<AiUsageRecord, "id" | "timestamp">) => void;
 }
 
-const DEFAULT_AI_LOGS: AiUsageRecord[] = [
-  {
-    id: "log_1",
-    email: "wisamsamir78@gmail.com",
-    serviceName: "ترميم الوجوه بالذكاء الاصطناعي (GFPGAN v1.4)",
-    source: "Grido Studio Desktop (Windows)",
-    durationSec: 2.35,
-    costUsd: 0.001329,
-    status: "success",
-    timestamp: "2026-07-19 19:55:12",
-  },
-  {
-    id: "log_2",
-    email: "wisamsamir78@gmail.com",
-    serviceName: "ترميم الوجوه بالذكاء الاصطناعي (GFPGAN v1.4)",
-    source: "Grido Studio Desktop (Windows)",
-    durationSec: 2.10,
-    costUsd: 0.001252,
-    status: "success",
-    timestamp: "2026-07-19 19:42:08",
-  },
-  {
-    id: "log_3",
-    email: "studio_account_02@grido.app",
-    serviceName: "عزل الخلفية الذكي (AI Background Removal)",
-    source: "Grido Studio Desktop (Windows)",
-    durationSec: 1.80,
-    costUsd: 0.000550,
-    status: "success",
-    timestamp: "2026-07-19 18:30:15",
-  },
-  {
-    id: "log_4",
-    email: "studio_account_05@grido.app",
-    serviceName: "ترميم الوجوه بالذكاء الاصطناعي (GFPGAN v1.4)",
-    source: "Grido Studio Desktop (Windows)",
-    durationSec: 2.80,
-    costUsd: 0.001466,
-    status: "success",
-    timestamp: "2026-07-19 17:15:40",
-  },
-];
+const DEFAULT_AI_LOGS: AiUsageRecord[] = [];
 
 export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice> = (set, get) => ({
   user: null,

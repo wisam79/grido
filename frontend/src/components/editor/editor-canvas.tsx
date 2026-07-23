@@ -14,6 +14,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
 >(function EditorCanvas({ printMode = false }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  // Cached DOM refs for ruler cursors — avoids getElementById on every mousemove
+  const hRulerCursorRef = useRef<SVGLineElement | null>(null);
+  const vRulerCursorRef = useRef<SVGLineElement | null>(null);
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -111,7 +114,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
   displayH = Math.max(100 * canvasZoom, displayH);
 
   const prevZoomRef = useRef(canvasZoom);
-  const zoomPivotRef = useRef<{ deltaX: number, deltaY: number } | null>(null);
+  const zoomPivotRef = useRef<{ pctX: number, pctY: number, screenX: number, screenY: number } | null>(null);
 
   // دعم التقريب بالعجلة (Ctrl + Scroll / Pinch) والسحب بمسطرة المسافة
   useEffect(() => {
@@ -120,32 +123,53 @@ export const EditorCanvas = React.memo(React.forwardRef<
     const node = containerRef.current;
     if (!node) return;
 
-    const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        const oldZoom = useEditorStore.getState().canvasZoom;
-        const factor = Math.pow(0.998, e.deltaY);
-        const newZoom = Math.min(Math.max(0.1, oldZoom * factor), 5);
-        
-        if (newZoom !== oldZoom) {
-          if (innerRef.current) {
-            const canvasRect = innerRef.current.getBoundingClientRect();
-            const mouseCanvasX = e.clientX - canvasRect.left;
-            const mouseCanvasY = e.clientY - canvasRect.top;
-            const r = newZoom / oldZoom;
-            zoomPivotRef.current = {
-              deltaX: mouseCanvasX * r - mouseCanvasX,
-              deltaY: mouseCanvasY * r - mouseCanvasY
-            };
-          }
-          setCanvasZoom(newZoom);
+    // --- rAF throttling for wheel zoom (fixes high-frequency wheel events) ---
+    let pendingZoom: number | null = null;
+    let rafId: number | null = null;
+
+    const applyZoom = () => {
+      rafId = null;
+      if (pendingZoom === null) return;
+      const oldZoom = useEditorStore.getState().canvasZoom;
+      const newZoom = pendingZoom;
+      pendingZoom = null;
+
+      if (newZoom !== oldZoom) {
+        if (innerRef.current) {
+          const canvasRect = innerRef.current.getBoundingClientRect();
+          zoomPivotRef.current = {
+            pctX: (lastWheelClientX - canvasRect.left) / canvasRect.width,
+            pctY: (lastWheelClientY - canvasRect.top) / canvasRect.height,
+            screenX: lastWheelClientX,
+            screenY: lastWheelClientY
+          };
         }
-      } else if (!e.shiftKey) {
-         // التمرير الثنائي باللوحة اللمسية يعمل تلقائياً مع overflow-auto
-         // لا حاجة لتعطيل السلوك الافتراضي هنا
+        setCanvasZoom(newZoom);
       }
     };
 
+    let lastWheelClientX = 0;
+    let lastWheelClientY = 0;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        lastWheelClientX = e.clientX;
+        lastWheelClientY = e.clientY;
+
+        const oldZoom = useEditorStore.getState().canvasZoom;
+        const factor = Math.pow(0.998, e.deltaY);
+        const newZoom = Math.min(Math.max(0.1, oldZoom * factor), 5);
+
+        // Coalesce multiple wheel events into a single rAF callback
+        pendingZoom = newZoom;
+        if (rafId === null) {
+          rafId = requestAnimationFrame(applyZoom);
+        }
+      }
+    };
+
+    // --- Keyboard handlers (attached to window) ---
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeTag = (e.target as HTMLElement)?.tagName;
       if (e.code === "Space" && activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
@@ -163,11 +187,15 @@ export const EditorCanvas = React.memo(React.forwardRef<
       }
     };
 
+    // --- Panning: attach pointermove only while actively panning (fixes #4) ---
     const handlePointerDown = (e: PointerEvent) => {
       if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
         e.preventDefault();
         isPanningRef.current = true;
         node.style.cursor = "grabbing";
+        // Only attach pointermove listener when panning actually starts
+        window.addEventListener("pointermove", handlePointerMove);
+        window.addEventListener("pointerup", handlePointerUp, { once: true });
       }
     };
 
@@ -180,18 +208,16 @@ export const EditorCanvas = React.memo(React.forwardRef<
     };
 
     const handlePointerUp = () => {
-      if (isPanningRef.current) {
-        isPanningRef.current = false;
-        node.style.cursor = spacePressedRef.current ? "grab" : "";
-      }
+      isPanningRef.current = false;
+      node.style.cursor = spacePressedRef.current ? "grab" : "";
+      // Detach pointermove when panning ends (avoids per-frame overhead otherwise)
+      window.removeEventListener("pointermove", handlePointerMove);
     };
 
     node.addEventListener("wheel", handleWheel, { passive: false });
     node.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
 
     return () => {
       node.removeEventListener("wheel", handleWheel);
@@ -200,6 +226,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, [setCanvasZoom]);
 
@@ -209,26 +236,28 @@ export const EditorCanvas = React.memo(React.forwardRef<
       if (containerRef.current && innerRef.current) {
         const container = containerRef.current;
         const canvas = innerRef.current;
-        const r = canvasZoom / prevZoomRef.current;
         
-        let dX = 0;
-        let dY = 0;
-
         if (zoomPivotRef.current) {
-           dX = zoomPivotRef.current.deltaX;
-           dY = zoomPivotRef.current.deltaY;
+           const { pctX, pctY, screenX, screenY } = zoomPivotRef.current;
+           const newCanvasRect = canvas.getBoundingClientRect();
+           
+           const currentScreenX = newCanvasRect.left + pctX * newCanvasRect.width;
+           const currentScreenY = newCanvasRect.top + pctY * newCanvasRect.height;
+           
+           container.scrollLeft += (currentScreenX - screenX);
+           container.scrollTop += (currentScreenY - screenY);
+           
            zoomPivotRef.current = null;
         } else {
+           // For button zooming, we try to keep it centered if possible
+           const r = canvasZoom / prevZoomRef.current;
            const containerRect = container.getBoundingClientRect();
            const canvasRect = canvas.getBoundingClientRect();
            const cx = (containerRect.left + containerRect.width / 2) - canvasRect.left;
            const cy = (containerRect.top + containerRect.height / 2) - canvasRect.top;
-           dX = cx * r - cx;
-           dY = cy * r - cy;
+           container.scrollLeft += (cx * r - cx);
+           container.scrollTop += (cy * r - cy);
         }
-        
-        container.scrollLeft += dX;
-        container.scrollTop += dY;
       }
       prevZoomRef.current = canvasZoom;
     }
@@ -252,13 +281,21 @@ export const EditorCanvas = React.memo(React.forwardRef<
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    const hCursor = document.getElementById("h-ruler-cursor");
+    // Lazy-lookup the ruler cursor elements once, then reuse the cached refs
+    if (!hRulerCursorRef.current) {
+      hRulerCursorRef.current = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
+    }
+    if (!vRulerCursorRef.current) {
+      vRulerCursorRef.current = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
+    }
+
+    const hCursor = hRulerCursorRef.current;
     if (hCursor) {
       hCursor.setAttribute("x1", x.toString());
       hCursor.setAttribute("x2", x.toString());
       hCursor.style.display = "block";
     }
-    const vCursor = document.getElementById("v-ruler-cursor");
+    const vCursor = vRulerCursorRef.current;
     if (vCursor) {
       vCursor.setAttribute("y1", y.toString());
       vCursor.setAttribute("y2", y.toString());
@@ -267,9 +304,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
   };
 
   const handleCanvasMouseLeave = () => {
-    const hCursor = document.getElementById("h-ruler-cursor");
+    const hCursor = hRulerCursorRef.current;
     if (hCursor) hCursor.style.display = "none";
-    const vCursor = document.getElementById("v-ruler-cursor");
+    const vCursor = vRulerCursorRef.current;
     if (vCursor) vCursor.style.display = "none";
   };
 

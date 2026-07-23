@@ -7,11 +7,11 @@ export function getUserDailyLimit(): number {
   try {
     const user = useEditorStore.getState().user;
     
-    // حساب الأدمن (wisamsamir78@gmail.com) أو خطة Enterprise ➔ 50 صورة يومياً!
-    if (user?.email === "wisamsamir78@gmail.com" || user?.plan === "enterprise") {
+    // خطة Enterprise ➔ 50 صورة يومياً
+    if (user?.plan === "enterprise") {
       return 50;
     }
-    // خطة PRO الاحترافية ➔ 15 صورة يومياً!
+    // خطة PRO الاحترافية ➔ 15 صورة يومياً
     if (user?.plan === "pro") {
       return 15;
     }
@@ -26,7 +26,7 @@ function getTodayUsageCount(): number {
   try {
     const todayStr = new Date().toISOString().split("T")[0]; // e.g. "2026-07-19"
     const user = useEditorStore.getState().user;
-    const userEmail = user?.email || "wisamsamir78@gmail.com";
+    const userEmail = user?.email || "unknown";
     const logs = useEditorStore.getState().aiUsageLogs || [];
 
     // تصفية وحساب الطلبات الفعلية المكتملة بنجاح اليوم للحساب الحالي
@@ -146,7 +146,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
       }, 800);
 
       const token = user?.token || "";
-      const resultStr = await EnhanceImageWithAI(base64Image, token);
+      const resultStr = await EnhanceImageWithAI(base64Image, token, dailyLimit);
 
       clearInterval(progressTimer);
       clearTimeout(timeoutId);
@@ -173,7 +173,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
         // 🌟 2. توثيق وتسجيل الطلب في سجلات تدقيق قاعدة البيانات الحية
         const currentUser = useEditorStore.getState().user;
         useEditorStore.getState().logAiUsage({
-          email: currentUser?.email || "wisamsamir78@gmail.com",
+          email: currentUser?.email || "unknown",
           serviceName: "ترميم الوجوه بالذكاء الاصطناعي (CodeFormer)",
           source: "Grido Studio Desktop (Windows)",
           durationSec: result.execution_seconds || 2.4,

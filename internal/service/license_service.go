@@ -204,7 +204,38 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 		return nil, errors.New("حدث خطأ غير متوقع أثناء التسجيل")
 	}
 
-	return nil, errors.New("يرجى تفعيل الحساب باستخدام الكود المرسل لبريدك الإلكتروني")
+	// User.ID is present — registration succeeded with a session (email confirmation disabled)
+	if authRes.AccessToken != "" {
+		prof, err := s.fetchProfile(authRes.AccessToken, authRes.User.ID)
+		if err == nil {
+			name := email
+			if n, ok := authRes.User.UserMeta["name"].(string); ok && n != "" {
+				name = n
+			}
+			user := &domain.UserProfile{
+				ID:           authRes.User.ID,
+				Name:         name,
+				Email:        email,
+				Plan:         prof.Plan,
+				Token:        authRes.AccessToken,
+				RefreshToken: authRes.RefreshToken,
+				CreatedAt:    time.Now(),
+				ExpiresAt:    prof.ExpiresAt,
+				LicenseKey:   prof.LicenseKey,
+				Status:       prof.Status,
+				UpdatedAt:    time.Now(),
+			}
+			if err := s.repo.Clear(); err != nil {
+				slog.Warn("Failed to clear repo after registration", "error", err)
+			}
+			if err := s.repo.Save(user); err != nil {
+				return nil, fmt.Errorf("failed to save local session: %w", err)
+			}
+			return user, nil
+		}
+	}
+
+	return nil, errors.New("تم إنشاء الحساب بنجاح. يرجى تسجيل الدخول للمتابعة")
 }
 
 func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, error) {

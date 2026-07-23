@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { Stage, Layer, Transformer, Group, Rect, Text } from "react-konva";
+import { Stage, Layer, Group, Rect, Text } from "react-konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/stage-context";
 import { URLImage, KonvaTextElement, KonvaShapeElement } from "./konva-elements";
@@ -23,7 +23,7 @@ interface KonvaCanvasProps {
   onContextMenu?: (e: any) => void;
 }
 
-export function KonvaCanvas({
+export const KonvaCanvas = React.memo(function KonvaCanvas({
   displayW,
   displayH,
   sortedElements,
@@ -515,4 +515,4 @@ export function KonvaCanvas({
       )}
     </Stage>
   );
-}
+})

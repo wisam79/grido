@@ -37,6 +37,14 @@ vi.mock('@mediapipe/tasks-vision', () => {
   };
 });
 
+// Wrap renders in TooltipProvider since the element uses Radix Tooltips.
+// This must be a module-level import so vitest transforms it as TSX.
+import { TooltipProvider } from '../src/components/ui/tooltip';
+
+const wrapWithTooltip = (ui: React.ReactElement) => (
+  <TooltipProvider delayDuration={0}>{ui}</TooltipProvider>
+);
+
 describe('ElementProperties - Main Thread Background Removal', () => {
   let ElementProperties: any;
 
@@ -94,7 +102,7 @@ describe('ElementProperties - Main Thread Background Removal', () => {
 
   it('should run background removal on main thread and update element src on success', async () => {
     const onUpdateMock = vi.fn();
-    render(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />);
+    render(wrapWithTooltip(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />));
     
     const removeBgBtn = screen.getByTitle(/عزل الخلفية/);
     
@@ -114,7 +122,7 @@ describe('ElementProperties - Main Thread Background Removal', () => {
 
   it('should handle cancel button click and reset loading UI', async () => {
     const onUpdateMock = vi.fn();
-    render(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />);
+    render(wrapWithTooltip(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />));
     
     const removeBgBtn = screen.getByTitle(/عزل الخلفية/);
     
