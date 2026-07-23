@@ -1,7 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
-import { LogFrontendError } from "../../../wailsjs/go/main/App";
+import { LogFrontendError } from "../../wailsjs/go/main/App";
 
 interface Props {
   children?: ReactNode;
