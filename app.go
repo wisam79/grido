@@ -758,4 +758,10 @@ func (a *App) CheckForUpdate() (*service.UpdateInfo, error) {
 	return updater.CheckForUpdate()
 }
 
+func (a *App) DownloadAndInstallUpdate(url string) error {
+	updater := service.NewUpdaterService()
+	return updater.DownloadAndInstall(a.ctx, url)
+}
+
+
 

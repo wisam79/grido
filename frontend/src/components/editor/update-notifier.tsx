@@ -8,14 +8,17 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Download, ArrowUpCircle } from "lucide-react";
-import { CheckForUpdate } from "../../../wailsjs/go/main/App";
+import { Sparkles, Download, ArrowUpCircle, Loader2 } from "lucide-react";
+import { CheckForUpdate, DownloadAndInstallUpdate } from "../../../wailsjs/go/main/App";
 import { service } from "../../../wailsjs/go/models";
-import { BrowserOpenURL } from "../../../wailsjs/runtime/runtime";
+import { EventsOn, EventsOff } from "../../../wailsjs/runtime/runtime";
 
 export function UpdateNotifier() {
   const [updateInfo, setUpdateInfo] = useState<service.UpdateInfo | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -30,24 +33,37 @@ export function UpdateNotifier() {
         console.warn("Failed to check for updates:", err);
       });
 
+    const unsubscribe = EventsOn("update-progress", (p: number) => {
+      setProgress(p);
+    });
+
     return () => {
       isMounted = false;
+      if (typeof EventsOff === "function") {
+        EventsOff("update-progress");
+      }
     };
   }, []);
 
   if (!updateInfo || !isOpen) return null;
 
-  const handleDownload = () => {
-    const url = updateInfo.download_url || "https://grido.cloud-ip.cc/api/download";
-    if (typeof BrowserOpenURL === "function") {
-      BrowserOpenURL(url);
-    } else {
-      window.open(url, "_blank");
+  const handleStartUpdate = async () => {
+    setIsDownloading(true);
+    setError(null);
+    setProgress(0);
+
+    try {
+      const url = updateInfo.download_url || "https://grido.cloud-ip.cc/api/download";
+      await DownloadAndInstallUpdate(url);
+    } catch (err: any) {
+      console.error("Failed to update:", err);
+      setError(err?.message || "حدث خطأ أثناء تحميل وتثبيت التحديث.");
+      setIsDownloading(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => !isDownloading && setIsOpen(open)}>
       <DialogContent
         className="max-w-sm bg-background border border-border shadow-lg rounded-xl p-5 dir-rtl"
         dir="rtl"
@@ -77,7 +93,7 @@ export function UpdateNotifier() {
             </Badge>
           </div>
 
-          {updateInfo.release_notes && (
+          {updateInfo.release_notes && !isDownloading && (
             <div className="border-t border-border/40 pt-2 space-y-1">
               <span className="text-[11px] font-medium text-foreground block">ملاحظات التحديث:</span>
               <div className="bg-background rounded p-2 text-[11px] text-muted-foreground max-h-28 overflow-y-auto leading-normal whitespace-pre-wrap font-sans border border-border/40">
@@ -85,23 +101,55 @@ export function UpdateNotifier() {
               </div>
             </div>
           )}
+
+          {isDownloading && (
+            <div className="border-t border-border/40 pt-3 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-medium text-foreground">
+                  {progress >= 100 ? "جاري التثبيت وإعادة التشغيل..." : "جاري تحميل التحديث..."}
+                </span>
+                <span className="font-mono text-primary font-bold">{progress}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2 overflow-hidden border border-border/40">
+                <div
+                  className="bg-primary h-full transition-all duration-300 rounded-full"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="p-2 text-[11px] text-red-500 bg-red-500/10 rounded border border-red-500/20">
+              {error}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 pt-1">
-          <Button
-            onClick={handleDownload}
-            className="flex-1 h-9 text-xs font-bold gap-1.5"
-          >
-            <Download className="w-3.5 h-3.5" />
-            تحميل التحديث
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => setIsOpen(false)}
-            className="h-9 px-3 text-xs text-muted-foreground hover:bg-muted"
-          >
-            إغلاق
-          </Button>
+          {!isDownloading ? (
+            <>
+              <Button
+                onClick={handleStartUpdate}
+                className="flex-1 h-9 text-xs font-bold gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                تثبيت التحديث الآن
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setIsOpen(false)}
+                className="h-9 px-3 text-xs text-muted-foreground hover:bg-muted"
+              >
+                إغلاق
+              </Button>
+            </>
+          ) : (
+            <div className="flex items-center justify-center w-full py-1 text-xs text-muted-foreground gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <span>سيتم إغلاق التطبيق وتطبيق التحديث تلقائياً...</span>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
