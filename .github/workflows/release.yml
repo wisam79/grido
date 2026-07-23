@@ -45,16 +45,19 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       - name: Build Wails App & NSIS Installer
-        run: wails build -platform windows/amd64 -nsis -ldflags "-X grido/internal/service.AppVersion=${{ github.ref_name }} -X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.GRIDO_AI_SECRET_KEY }}"
+        run: wails build -platform windows/amd64 -nsis -ldflags "-X 'grido/internal/service.AppVersion=${{ github.ref_name }}' -X 'grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }}' -X 'grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }}' -X 'grido/internal/service.ModalAIKey=${{ secrets.GRIDO_AI_SECRET_KEY }}'"
 
       - name: Prepare Executable Assets
         shell: powershell
         run: |
+          Get-ChildItem -Path "build\bin"
           if (Test-Path "build\bin\Grido Studio.exe") {
             Copy-Item "build\bin\Grido Studio.exe" "build\bin\GridoStudio.exe"
           }
-          if (Test-Path "build\bin\Grido Studio-amd64-installer.exe") {
-            Copy-Item "build\bin\Grido Studio-amd64-installer.exe" "build\bin\GridoStudio-installer.exe"
+          $installer = Get-ChildItem -Path "build\bin\*installer*.exe" | Select-Object -First 1
+          if ($installer) {
+            Copy-Item $installer.FullName "build\bin\GridoStudio-installer.exe"
+            Copy-Item $installer.FullName "build\bin\Grido Studio Setup.exe"
           }
 
       - name: Create GitHub Release & Upload Asset
@@ -64,6 +67,7 @@ jobs:
             build/bin/GridoStudio.exe
             build/bin/Grido Studio.exe
             build/bin/GridoStudio-installer.exe
+            build/bin/Grido Studio Setup.exe
           draft: false
           prerelease: false
           name: Grido Studio Release ${{ github.ref_name }}

@@ -34,6 +34,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { AccountLicenseModal } from "@/components/editor/account-license-modal";
+import { UpdateNotifier } from "@/components/editor/update-notifier";
 import { toast } from "sonner";
 import { User, ShieldCheck, Lock, Key, Loader2 } from "lucide-react";
 import { KeyboardShortcutsDialog } from "@/components/editor/keyboard-shortcuts-dialog";
@@ -467,6 +468,7 @@ export default function App() {
       </ErrorBoundary>
 
       <AccountLicenseModal />
+      <UpdateNotifier />
 
       <SonnerToaster position="top-center" duration={4000} richColors />
       <KeyboardShortcutsDialog />

@@ -28,6 +28,6 @@ if (-not $appVersion) {
     $appVersion = "v1.0.2"
 }
 
-$ldflags = "-s -w -X grido/internal/service.AppVersion=$appVersion -X grido/internal/service.SupabaseURL=$supabaseUrl -X grido/internal/service.SupabaseAnonKey=$supabaseAnonKey -X grido/internal/service.ModalAIKey=$modalAiKey"
+$ldflags = "-s -w -X 'grido/internal/service.AppVersion=$appVersion' -X 'grido/internal/service.SupabaseURL=$supabaseUrl' -X 'grido/internal/service.SupabaseAnonKey=$supabaseAnonKey' -X 'grido/internal/service.ModalAIKey=$modalAiKey'"
 
 wails build -nsis -clean -upx -ldflags $ldflags
