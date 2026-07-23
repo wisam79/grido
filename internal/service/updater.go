@@ -173,7 +173,10 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	tmpFile.Close()
 
 	// Launch installer silently and exit
-	cmd := exec.Command(tmpFile.Name(), "/S")
+	// We use PowerShell's Start-Process to automatically trigger the UAC (Administrator) prompt
+	// because exec.Command directly fails with "requires elevation" (Error 740) on Windows.
+	cmdArgs := fmt.Sprintf("Start-Process -FilePath '%s' -ArgumentList '/S' -Verb RunAs", tmpFile.Name())
+	cmd := exec.Command("powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", cmdArgs)
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to launch installer: %w", err)
 	}

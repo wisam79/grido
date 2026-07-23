@@ -57,7 +57,8 @@ export function UpdateNotifier() {
       await DownloadAndInstallUpdate(url);
     } catch (err: any) {
       console.error("Failed to update:", err);
-      setError(err?.message || "حدث خطأ أثناء تحميل وتثبيت التحديث.");
+      const errMsg = typeof err === 'string' ? err : (err?.message || "حدث خطأ أثناء تحميل وتثبيت التحديث.");
+      setError(errMsg);
       setIsDownloading(false);
     }
   };
@@ -129,13 +130,30 @@ export function UpdateNotifier() {
         <div className="flex items-center gap-2 pt-1">
           {!isDownloading ? (
             <>
-              <Button
-                onClick={handleStartUpdate}
-                className="flex-1 h-9 text-xs font-bold gap-1.5"
-              >
-                <Download className="w-3.5 h-3.5" />
-                تثبيت التحديث الآن
-              </Button>
+              {!error ? (
+                <Button
+                  onClick={handleStartUpdate}
+                  className="flex-1 h-9 text-xs font-bold gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  تثبيت التحديث الآن
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => {
+                    const url = updateInfo.download_url || "https://grido.cloud-ip.cc/api/download";
+                    if (typeof BrowserOpenURL === "function") {
+                      BrowserOpenURL(url);
+                    } else {
+                      window.open(url, "_blank");
+                    }
+                  }}
+                  className="flex-1 h-9 text-xs font-bold gap-1.5 bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  تحميل يدوي (عبر المتصفح)
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 onClick={() => setIsOpen(false)}
