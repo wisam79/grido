@@ -135,7 +135,13 @@ func (pw *progressWriter) Write(p []byte) (int, error) {
 
 func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL string) error {
 	if downloadURL == "" {
-		downloadURL = "https://grido.cloud-ip.cc/api/download"
+		// Append ?type=portable to get the raw executable instead of the installer
+		downloadURL = "https://grido.cloud-ip.cc/api/download?type=portable"
+	} else {
+		// If custom URL is provided, try to append it if it's the default domain
+		if strings.Contains(downloadURL, "grido.cloud-ip.cc/api/download") && !strings.Contains(downloadURL, "type=") {
+			downloadURL += "?type=portable"
+		}
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
@@ -154,10 +160,11 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		return fmt.Errorf("server returned status: %s", resp.Status)
 	}
 
-	tmpFile, err := os.CreateTemp("", "GridoStudio-Setup-*.exe")
+	tmpFile, err := os.CreateTemp("", "GridoStudio-Update-*.exe")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
+	defer os.Remove(tmpFile.Name()) // Clean up if something fails
 	defer tmpFile.Close()
 
 	pw := &progressWriter{
@@ -172,19 +179,44 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 
 	tmpFile.Close()
 
-	// Launch installer silently and exit
-	// We use PowerShell's Start-Process to automatically trigger the UAC (Administrator) prompt
-	// because exec.Command directly fails with "requires elevation" (Error 740) on Windows.
-	cmdArgs := fmt.Sprintf("Start-Process -FilePath '%s' -ArgumentList '/S' -Verb RunAs", tmpFile.Name())
-	cmd := exec.Command("powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", cmdArgs)
+	// Rename-Replace Update Mechanism
+	exePath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	oldPath := exePath + ".old.exe"
+	
+	// 1. Rename the currently running executable
+	if err := os.Rename(exePath, oldPath); err != nil {
+		// If rename fails (e.g. Access Denied in Program Files), fallback to PowerShell elevate
+		cmdArgs := fmt.Sprintf("Start-Process -FilePath '%s' -ArgumentList '/S' -Verb RunAs", tmpFile.Name())
+		cmd := exec.Command("powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", cmdArgs)
+		if errStart := cmd.Start(); errStart != nil {
+			return fmt.Errorf("failed to replace executable (access denied) and fallback failed: %v", err)
+		}
+		wailsruntime.EventsEmit(ctx, "update-progress", 100)
+		time.Sleep(500 * time.Millisecond)
+		os.Exit(0)
+		return nil
+	}
+
+	// 2. Move the downloaded file to the original executable path
+	if err := os.Rename(tmpFile.Name(), exePath); err != nil {
+		// If move fails, try to restore the original executable
+		os.Rename(oldPath, exePath)
+		return fmt.Errorf("failed to apply update: %w", err)
+	}
+
+	// 3. Relaunch the new executable and exit
+	cmd := exec.Command(exePath)
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to launch installer: %w", err)
+		return fmt.Errorf("failed to restart application: %w", err)
 	}
 
 	wailsruntime.EventsEmit(ctx, "update-progress", 100)
 	time.Sleep(500 * time.Millisecond)
 	os.Exit(0)
-
 	return nil
 }
 

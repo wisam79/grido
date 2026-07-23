@@ -1,9 +1,10 @@
 import type { Handler } from '@netlify/functions';
 
-export const handler: Handler = async () => {
+export const handler: Handler = async (event) => {
   const token = process.env.GITHUB_TOKEN;
   const repoOwner = 'wisam79';
   const repoName = 'grido';
+  const downloadType = event.queryStringParameters?.type || 'installer';
 
   try {
     const headers: Record<string, string> = {
@@ -32,9 +33,19 @@ export const handler: Handler = async () => {
     const releaseData = await releaseRes.json();
 
     // 2. البحث عن ملف المثبت أو الملف التنفيذي
-    let asset = releaseData.assets?.find((a: any) =>
-      a.name.toLowerCase().includes('installer')
-    );
+    let asset;
+    
+    if (downloadType === 'portable') {
+      asset = releaseData.assets?.find((a: any) => 
+        a.name.toLowerCase() === 'grido studio.exe' || 
+        (!a.name.toLowerCase().includes('installer') && !a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe'))
+      );
+    } else {
+      asset = releaseData.assets?.find((a: any) =>
+        a.name.toLowerCase().includes('installer') || a.name.toLowerCase().includes('setup')
+      );
+    }
+
     if (!asset) {
       asset = releaseData.assets?.find((a: any) =>
         a.name.toLowerCase().endsWith('.exe')
