@@ -1,9 +1,11 @@
 # download-models.ps1
 # تنزيل نموذج جوجل MediaPipe وملفات WASM لتشغيل ميزة قص الخلفية محلياً 100% بدون إنترنت
 
-$PublicDir = "c:\projects\grido\frontend\public"
-$ModelsDir = "$PublicDir\models"
-$WasmDir = "$PublicDir\wasm"
+# تحديد المسار بالنسبة لمكان تشغيل السكريبت
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$PublicDir = Join-Path $ScriptDir "..\public"
+$ModelsDir = Join-Path $PublicDir "models"
+$WasmDir = Join-Path $PublicDir "wasm"
 
 # إنشاء المجلدات إذا لم تكن موجودة
 if (!(Test-Path $ModelsDir)) {
