@@ -23,6 +23,13 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error in ErrorBoundary:", error, errorInfo);
+    // Send it to the backend log
+    try {
+      const { LogFrontendError } = require("../../../wailsjs/go/main/App");
+      LogFrontendError("error", `React ErrorBoundary: ${error.message}`, error.stack + "\n\nComponent Stack:\n" + errorInfo.componentStack);
+    } catch(e) {
+      console.error("Failed to log to backend:", e);
+    }
   }
 
   private handleReset = () => {

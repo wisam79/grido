@@ -481,6 +481,24 @@ export function AccountLicenseModal() {
                     <span>شراء ترخيص</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
+
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { ExportSupportLogs } = require("../../../../wailsjs/go/main/App");
+                        const path = await ExportSupportLogs();
+                        if (path) {
+                          toast.success(`تم حفظ السجلات بنجاح في: ${path}`);
+                        }
+                      } catch (e: any) {
+                        toast.error(e?.message || "فشل تصدير السجلات");
+                      }
+                    }}
+                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <span>تصدير السجلات</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  </button>
                 </div>
               </div>
             )}

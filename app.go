@@ -92,14 +92,71 @@ func (a *App) cleanupOldExecutables() {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	service.InitLogger()
 	go a.cleanupOldExecutables()
 }
 
 func (a *App) shutdown(_ context.Context) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	a.ctx = ctx
+	// ... clean up resources ...
 }
+
+func (a *App) LogFrontendError(level, message, stackTrace string) {
+	if service.GlobalLogger == nil {
+		return
+	}
+	switch level {
+	case "info":
+		service.GlobalLogger.Info(message, "source", "frontend", "stack", stackTrace)
+	case "warn":
+		service.GlobalLogger.Warn(message, "source", "frontend", "stack", stackTrace)
+	case "error":
+		service.GlobalLogger.Error(message, "source", "frontend", "stack", stackTrace)
+	default:
+		service.GlobalLogger.Error(message, "source", "frontend", "stack", stackTrace)
+	}
+}
+
+func (a *App) ExportSupportLogs() (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get config dir: %w", err)
+	}
+	logDir := filepath.Join(configDir, "GridoStudio", "logs")
+	
+	// Create a temp zip file
+	tempZip, err := os.CreateTemp("", "grido_logs_*.zip")
+	if err != nil {
+		return "", err
+	}
+	defer tempZip.Close()
+	
+	// Implementation of zip creation can be done via shell command for simplicity or zip package
+	// Actually let's just copy the current log file path and ask the user to save it.
+	
+	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		DefaultFilename: "grido_support_logs.zip",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Zip Files (*.zip)", Pattern: "*.zip"},
+		},
+		Title: "تصدير سجلات الأخطاء",
+	})
+	
+	if err != nil || savePath == "" {
+		return "", nil // user cancelled
+	}
+	
+	// To simplify, we will just copy the main log file to the destination, and rename it .log or .zip
+	// Let's actually zip the log directory.
+	err = service.ZipDirectory(logDir, savePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to zip logs: %w", err)
+	}
+	
+	return savePath, nil
+}
+
+// Write the ZipDirectory helper directly inside app.go if needed, but better in service.
+// Let's call service.ZipDirectory.
 
 var imageFilters = []runtime.FileFilter{
 	{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp"},

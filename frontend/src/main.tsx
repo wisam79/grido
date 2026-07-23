@@ -3,6 +3,21 @@ import {createRoot} from 'react-dom/client'
 import './index.css'
 import App from './App'
 import { ErrorBoundary } from './components/error-boundary'
+import { LogFrontendError } from '../wailsjs/go/main/App'
+
+// Global error handlers to catch unhandled exceptions and send them to the Go logger
+window.onerror = function (message, source, lineno, colno, error) {
+  const stack = error?.stack || '';
+  LogFrontendError("error", `Uncaught Error: ${message}`, stack).catch(console.error);
+  return false;
+};
+
+window.addEventListener('unhandledrejection', function (event) {
+  const error = event.reason;
+  const message = error?.message || String(error);
+  const stack = error?.stack || '';
+  LogFrontendError("error", `Unhandled Promise Rejection: ${message}`, stack).catch(console.error);
+});
 
 // Removed canvas prototype override as it was polluting the global namespace and causing memory leaks (CRIT-FE-3)
 
