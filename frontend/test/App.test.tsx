@@ -12,6 +12,13 @@ vi.mock('../wailsjs/go/main/App', () => ({
   LoadAutoSave: vi.fn(() => Promise.resolve('')),
   SaveAutoSave: vi.fn(() => Promise.resolve()),
   ClearAutoSave: vi.fn(() => Promise.resolve()),
+  CheckForUpdate: vi.fn(() => Promise.resolve({ has_update: false, version: '', release_notes: '' })),
+  DownloadAndInstallUpdate: vi.fn(() => Promise.resolve()),
+  ExportSupportLogs: vi.fn(() => Promise.resolve('')),
+  LogFrontendError: vi.fn(() => Promise.resolve()),
+  GetCustomTemplates: vi.fn(() => Promise.resolve([])),
+  SaveCustomTemplate: vi.fn(() => Promise.resolve()),
+  DeleteCustomTemplate: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock Wails runtime functions
@@ -19,6 +26,8 @@ vi.mock('../wailsjs/runtime/runtime', () => ({
   WindowMinimise: vi.fn(),
   WindowToggleMaximise: vi.fn(),
   Quit: vi.fn(),
+  EventsOn: vi.fn(() => () => {}),
+  EventsOff: vi.fn(),
 }));
 
 // Mock ProjectHandler functions
