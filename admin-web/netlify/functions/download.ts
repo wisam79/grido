@@ -32,10 +32,17 @@ export const handler: Handler = async () => {
 
     const releaseData = await releaseRes.json();
     
-    // البحث عن ملف المثبت
-    const asset = releaseData.assets?.find((a: any) =>
-      a.name.toLowerCase().includes('installer') || a.name.toLowerCase().includes('gridostudio')
+    // 1. إعطاء الأولوية المطلقة لملف المثبت (NSIS Installer)
+    let asset = releaseData.assets?.find((a: any) =>
+      a.name.toLowerCase().includes('installer')
     );
+
+    // 2. خيار احتياطي في حال عدم وجود المثبت فقط
+    if (!asset) {
+      asset = releaseData.assets?.find((a: any) =>
+        a.name.toLowerCase().endsWith('.exe')
+      );
+    }
 
     if (!asset) {
       return {
