@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, Download, ArrowUpCircle, Loader2 } from "lucide-react";
 import { CheckForUpdate, DownloadAndInstallUpdate } from "../../../wailsjs/go/main/App";
 import { service } from "../../../wailsjs/go/models";
-import { EventsOn, EventsOff } from "../../../wailsjs/runtime/runtime";
+import { EventsOn, EventsOff, BrowserOpenURL } from "../../../wailsjs/runtime/runtime";
 
 export function UpdateNotifier() {
   const [updateInfo, setUpdateInfo] = useState<service.UpdateInfo | null>(null);
