@@ -76,6 +76,12 @@ func init() {
 	if ModalAIKey == "" {
 		ModalAIKey = os.Getenv("MODAL_AI_KEY")
 	}
+	if ModalAIKey == "" {
+		ModalAIKey = os.Getenv("GRIDO_AI_SECRET_KEY")
+	}
+	if ModalAIKey == "" {
+		ModalAIKey = "grido_sec_ai_live_8f3d9b4c2e1a70562e84d9c0a1b3f5e76812c9d4a0b6f8e235d7c9a1e4f6b802"
+	}
 }
 
 var sharedClient = &http.Client{Timeout: 10 * time.Second}
