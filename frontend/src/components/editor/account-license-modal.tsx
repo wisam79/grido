@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ExportSupportLogs } from "../../../../wailsjs/go/main/App";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,7 +31,6 @@ import {
   LogOut,
   ShieldCheck,
   ShieldAlert,
-  Sparkles,
   ExternalLink,
 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
@@ -85,6 +85,7 @@ export function AccountLicenseModal() {
 
   // Reset errors when modal status changes or tabs toggle
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setError(null);
   }, [activeTab, authMode, accountModalOpen]);
 
@@ -175,8 +176,10 @@ export function AccountLicenseModal() {
     if (user && user.plan === "trial" && user.expiresAt) {
       const expiry = new Date(user.expiresAt).getTime();
       const diff = expiry - Date.now();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTrialDaysLeft(Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))));
     } else {
+       
       setTrialDaysLeft(0);
     }
   }, [user]);
@@ -485,7 +488,6 @@ export function AccountLicenseModal() {
                   <button
                     onClick={async () => {
                       try {
-                        const { ExportSupportLogs } = require("../../../../wailsjs/go/main/App");
                         const path = await ExportSupportLogs();
                         if (path) {
                           toast.success(`تم حفظ السجلات بنجاح في: ${path}`);

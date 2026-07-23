@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { LogFrontendError } from "../../../wailsjs/go/main/App";
 
 interface Props {
   children?: ReactNode;
@@ -25,7 +26,6 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error("Uncaught error in ErrorBoundary:", error, errorInfo);
     // Send it to the backend log
     try {
-      const { LogFrontendError } = require("../../../wailsjs/go/main/App");
       LogFrontendError("error", `React ErrorBoundary: ${error.message}`, error.stack + "\n\nComponent Stack:\n" + errorInfo.componentStack);
     } catch(e) {
       console.error("Failed to log to backend:", e);
