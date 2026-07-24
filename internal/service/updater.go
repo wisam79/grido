@@ -7,10 +7,11 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
+	"unsafe"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -136,13 +137,7 @@ func (pw *progressWriter) Write(p []byte) (int, error) {
 
 func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL string) error {
 	if downloadURL == "" {
-		// Append ?type=portable to get the raw executable instead of the installer
-		downloadURL = "https://grido.cloud-ip.cc/api/download?type=portable"
-	} else {
-		// If custom URL is provided, try to append it if it's the default domain
-		if strings.Contains(downloadURL, "grido.cloud-ip.cc/api/download") && !strings.Contains(downloadURL, "type=") {
-			downloadURL += "?type=portable"
-		}
+		downloadURL = "https://grido.cloud-ip.cc/api/download"
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
@@ -161,73 +156,65 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		return fmt.Errorf("server returned status: %s", resp.Status)
 	}
 
-	tmpFile, err := os.CreateTemp("", "GridoStudio-Update-*.exe")
-	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
+	tempDir := filepath.Join(os.TempDir(), "grido-updates")
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		return fmt.Errorf("failed to create temp dir: %w", err)
 	}
-	defer os.Remove(tmpFile.Name()) // Clean up if something fails
-	defer tmpFile.Close()
+
+	installerPath := filepath.Join(tempDir, "GridoStudio-Setup-Update.exe")
+	_ = os.Remove(installerPath)
+
+	out, err := os.Create(installerPath)
+	if err != nil {
+		return fmt.Errorf("failed to create installer file: %w", err)
+	}
 
 	pw := &progressWriter{
 		total: resp.ContentLength,
 		ctx:   ctx,
 	}
 
-	mw := io.MultiWriter(tmpFile, pw)
+	mw := io.MultiWriter(out, pw)
 	if _, err := io.Copy(mw, resp.Body); err != nil {
+		out.Close()
 		return fmt.Errorf("failed to save update file: %w", err)
 	}
-
-	tmpFile.Close()
-
-	// Rename-Replace Update Mechanism
-	exePath, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
-	}
-
-	oldPath := exePath + ".old.exe"
-	
-	// 1. Rename the currently running executable
-	if err := os.Rename(exePath, oldPath); err != nil {
-		// If rename fails (e.g. Access Denied in Program Files), fallback to PowerShell elevate
-		scriptPath := filepath.Join(os.TempDir(), "grido_update.ps1")
-		scriptContent := fmt.Sprintf(`
-Start-Sleep -Seconds 2
-Move-Item -Path '%s' -Destination '%s' -Force
-Start-Process -FilePath '%s'
-Remove-Item -Path $PSCommandPath -Force
-`, tmpFile.Name(), exePath, exePath)
-		
-		os.WriteFile(scriptPath, []byte(scriptContent), 0666)
-
-		cmdArgs := fmt.Sprintf("Start-Process powershell -ArgumentList '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File ''%s''' -Verb RunAs", scriptPath)
-		cmd := exec.Command("powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", cmdArgs)
-		if errStart := cmd.Start(); errStart != nil {
-			return fmt.Errorf("failed to replace executable (access denied) and fallback failed: %v", err)
-		}
-		wailsruntime.EventsEmit(ctx, "update-progress", 100)
-		time.Sleep(500 * time.Millisecond)
-		os.Exit(0)
-		return nil
-	}
-
-	// 2. Move the downloaded file to the original executable path
-	if err := os.Rename(tmpFile.Name(), exePath); err != nil {
-		// If move fails, try to restore the original executable
-		os.Rename(oldPath, exePath)
-		return fmt.Errorf("failed to apply update: %w", err)
-	}
-
-	// 3. Relaunch the new executable and exit
-	cmd := exec.Command(exePath)
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to restart application: %w", err)
-	}
+	out.Close()
 
 	wailsruntime.EventsEmit(ctx, "update-progress", 100)
-	time.Sleep(500 * time.Millisecond)
+
+	// Execute NSIS installer with Administrator elevation and silent mode (/S)
+	if err := runAsAdmin(installerPath, "/S"); err != nil {
+		return fmt.Errorf("failed to launch installer: %w", err)
+	}
+
+	time.Sleep(1 * time.Second)
 	os.Exit(0)
+	return nil
+}
+
+func runAsAdmin(exePath string, args string) error {
+	shell32 := syscall.NewLazyDLL("shell32.dll")
+	shellExecute := shell32.NewProc("ShellExecuteW")
+
+	verb, _ := syscall.UTF16PtrFromString("runas")
+	exe, _ := syscall.UTF16PtrFromString(exePath)
+	params, _ := syscall.UTF16PtrFromString(args)
+	dir, _ := syscall.UTF16PtrFromString(filepath.Dir(exePath))
+
+	ret, _, _ := shellExecute.Call(
+		0,
+		uintptr(unsafe.Pointer(verb)),
+		uintptr(unsafe.Pointer(exe)),
+		uintptr(unsafe.Pointer(params)),
+		uintptr(unsafe.Pointer(dir)),
+		1,
+	)
+
+	if ret <= 32 {
+		return fmt.Errorf("ShellExecute failed with code %d", ret)
+	}
+
 	return nil
 }
 
