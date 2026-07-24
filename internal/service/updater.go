@@ -185,10 +185,11 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 
 	// Execute NSIS installer with Administrator elevation and silent mode (/S)
 	if err := runAsAdmin(installerPath, "/S"); err != nil {
-		return fmt.Errorf("failed to launch installer: %w", err)
+		return fmt.Errorf("فشل تشغيل مثبت التحديث كمسؤول: %w", err)
 	}
 
-	time.Sleep(1 * time.Second)
+	// إغلاق التطبيق فورياً حتى يتم تحرير أقفال الملفات و Single-Instance Mutex قبل أن يستبدل المثبت الملفات
+	time.Sleep(200 * time.Millisecond)
 	os.Exit(0)
 	return nil
 }
