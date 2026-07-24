@@ -55,9 +55,9 @@ export function UpdateNotifier() {
     try {
       const url = updateInfo.download_url || "https://grido.cloud-ip.cc/api/download";
       await DownloadAndInstallUpdate(url);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to update:", err);
-      const errMsg = typeof err === 'string' ? err : (err?.message || "حدث خطأ أثناء تحميل وتثبيت التحديث.");
+      const errMsg = typeof err === 'string' ? err : (err instanceof Error ? err.message : "حدث خطأ أثناء تحميل وتثبيت التحديث.");
       setError(errMsg);
       setIsDownloading(false);
     }

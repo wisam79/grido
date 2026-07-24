@@ -68,32 +68,9 @@ func NewApp() *App {
 	return &App{}
 }
 
-func (a *App) cleanupOldExecutables() {
-	exePath, err := os.Executable()
-	if err != nil {
-		return
-	}
-	dir := filepath.Dir(exePath)
-
-	// Wait a moment for the old process to fully exit
-	time.Sleep(1 * time.Second)
-
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return
-	}
-
-	for _, file := range files {
-		if !file.IsDir() && filepath.Ext(file.Name()) == ".exe" && len(file.Name()) > 8 && file.Name()[len(file.Name())-8:] == ".old.exe" {
-			os.Remove(filepath.Join(dir, file.Name()))
-		}
-	}
-}
-
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	service.InitLogger()
-	go a.cleanupOldExecutables()
 }
 
 func (a *App) shutdown(_ context.Context) {
