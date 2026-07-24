@@ -91,10 +91,10 @@ Section
 
     !insertmacro wails.webview2runtime
 
-    # Force kill running app instances to release file lock before overwriting
-    ExecWait 'taskkill /F /IM "GridoStudio.exe" /T'
-    ExecWait 'taskkill /F /IM "Grido Studio.exe" /T'
-    ExecWait 'taskkill /F /IM "grido.exe" /T'
+    # Force kill running app instances silently without opening black command prompt windows
+    nsExec::ExecToStack 'taskkill /F /IM "GridoStudio.exe" /T'
+    nsExec::ExecToStack 'taskkill /F /IM "Grido Studio.exe" /T'
+    nsExec::ExecToStack 'taskkill /F /IM "grido.exe" /T'
     Sleep 1000
 
     # Clean up legacy binaries if present to avoid dual-binary confusion
