@@ -338,41 +338,71 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 		return nil, errors.New("البريد الإلكتروني ورمز التحقق مطلوبان")
 	}
 
-	payload, err := json.Marshal(SupabaseVerifyRequest{
-		Type:  "signup",
-		Email: email,
-		Token: token,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/verify", bytes.NewBuffer(payload))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("apikey", SupabaseAnonKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := sharedClient.Do(req)
-	if err != nil {
-		slog.Error("Network error during OTP verification", "error", err, "email", email)
-		return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
-		slog.Error("Supabase verify OTP error", "status", resp.StatusCode, "body", string(body), "email", email)
-		if errMsg := parseSupabaseError(body); errMsg != "" {
-			return nil, errors.New(errMsg)
+	// Extract token if user pasted a full magic link URL
+	if strings.Contains(token, "token=") || strings.Contains(token, "token_hash=") {
+		var tokenParam string
+		if strings.Contains(token, "token=") {
+			tokenParam = "token="
+		} else {
+			tokenParam = "token_hash="
 		}
-		return nil, errors.New("رمز التحقق غير صحيح أو منتهي الصلاحية")
+		parts := strings.Split(token, tokenParam)
+		if len(parts) > 1 {
+			val := parts[1]
+			if idx := strings.IndexAny(val, "&/#?"); idx != -1 {
+				val = val[:idx]
+			}
+			token = strings.TrimSpace(val)
+		}
 	}
 
+	verifyTypes := []string{"signup", "email", "magiclink"}
+	var lastErr error
 	var authRes SupabaseAuthResponse
-	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&authRes); err != nil {
-		return nil, err
+
+	for _, vType := range verifyTypes {
+		payload, err := json.Marshal(SupabaseVerifyRequest{
+			Type:  vType,
+			Email: email,
+			Token: token,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/verify", bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("apikey", SupabaseAnonKey)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := sharedClient.Do(req)
+		if err != nil {
+			slog.Error("Network error during OTP verification", "error", err, "email", email)
+			return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
+		}
+
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+		resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			if err := json.Unmarshal(body, &authRes); err == nil && authRes.GetUserID() != "" {
+				lastErr = nil
+				break
+			}
+		}
+
+		slog.Warn("Supabase verify attempt failed", "type", vType, "status", resp.StatusCode, "body", string(body))
+		if errMsg := parseSupabaseError(body); errMsg != "" {
+			lastErr = errors.New(errMsg)
+		} else {
+			lastErr = errors.New("رمز التحقق غير صحيح أو منتهي الصلاحية")
+		}
+	}
+
+	if lastErr != nil {
+		return nil, lastErr
 	}
 
 	userID := authRes.GetUserID()
