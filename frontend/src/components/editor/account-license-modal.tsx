@@ -49,6 +49,7 @@ export function AccountLicenseModal() {
     logoutAccount,
     isLicenseActive,
     verifyOTP,
+    resendOTP,
   } = useEditorStore(
     useShallow((state) => ({
       user: state.user,
@@ -61,6 +62,7 @@ export function AccountLicenseModal() {
       logoutAccount: state.logoutAccount,
       isLicenseActive: state.isLicenseActive,
       verifyOTP: state.verifyOTP,
+      resendOTP: state.resendOTP,
     }))
   );
 
@@ -79,9 +81,20 @@ export function AccountLicenseModal() {
   const [licenseKey, setLicenseKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+
+  // Countdown timer for OTP resend button
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // Reset errors when modal status changes or tabs toggle
   useEffect(() => {
@@ -105,25 +118,49 @@ export function AccountLicenseModal() {
     }
   };
 
+  const handleResendOTP = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || resendCooldown > 0) return;
+    setResending(true);
+    setError(null);
+    try {
+      if (typeof resendOTP === "function") {
+        await resendOTP(cleanEmail);
+      }
+      toast.success("تم إعادة إرسال كود التحقق بنجاح إلى بريدك الإلكتروني.");
+      setResendCooldown(60);
+    } catch (err: any) {
+      const errMsg = typeof err === "string" ? err : (err?.message || "فشل إعادة إرسال رمز التحقق.");
+      setError(errMsg);
+      toast.error(errMsg);
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+    const cleanOtp = otpCode.trim();
+
     try {
       if (showOtp) {
-        await verifyOTP(email, otpCode);
+        await verifyOTP(cleanEmail, cleanOtp);
         toast.success("تم تأكيد الحساب وتسجيل الدخول بنجاح!");
         setShowOtp(false);
         setActiveTab("license");
       } else {
         let profile;
         if (authMode === "login") {
-          profile = await loginAccount(email, password);
+          profile = await loginAccount(cleanEmail, password);
         } else {
-          profile = await registerAccount(name, email, password);
+          profile = await registerAccount(cleanName, cleanEmail, password);
         }
         
-        if (profile.status === "pending_otp") {
+        if (profile && profile.status === "pending_otp") {
           setShowOtp(true);
           toast.info("تم إرسال كود التحقق المكون من 6 أرقام إلى بريدك الإلكتروني.");
         } else {
@@ -133,7 +170,16 @@ export function AccountLicenseModal() {
       }
     } catch (err) {
       const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشلت العملية، يرجى التحقق من المدخلات.");
-      if (errMsg.includes("تم إنشاء الحساب بنجاح")) {
+      
+      if (errMsg.includes("تأكيد") || errMsg.includes("Email not confirmed") || errMsg.includes("pending_otp")) {
+        setShowOtp(true);
+        setError(null);
+        toast.info("البريد الإلكتروني بحاجة لتأكيد. يرجى إدخال كود التحقق (OTP) الخاص بك.");
+      } else if (errMsg.includes("مسجل بالفعل") || errMsg.includes("already registered")) {
+        setAuthMode("login");
+        setError("هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.");
+        toast.info("هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.");
+      } else if (errMsg.includes("تم إنشاء الحساب بنجاح")) {
         toast.success(errMsg);
         setAuthMode("login");
         setError(null);
@@ -151,7 +197,7 @@ export function AccountLicenseModal() {
     setLoading(true);
     setError(null);
     try {
-      await activateLicenseKey(licenseKey);
+      await activateLicenseKey(licenseKey.trim());
       toast.success("تم تفعيل مفتاح الترخيص بنجاح!");
       setAccountModalOpen(false);
     } catch (err) {
@@ -179,7 +225,6 @@ export function AccountLicenseModal() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTrialDaysLeft(Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))));
     } else {
-       
       setTrialDaysLeft(0);
     }
   }, [user]);
@@ -262,7 +307,7 @@ export function AccountLicenseModal() {
                 </div>
               )}
               {showOtp ? (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-xs font-medium">كود التحقق (OTP)</Label>
                   <div className="relative">
                     <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -280,11 +325,44 @@ export function AccountLicenseModal() {
                   <p className="text-[10px] text-muted-foreground text-center">
                     تم إرسال الكود إلى {email}
                   </p>
-                  <div className="text-center">
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-9 text-xs font-bold" 
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      "تأكيد الكود وتسجيل الدخول"
+                    )}
+                  </Button>
+
+                  <div className="flex items-center justify-between text-[11px] pt-1 border-t border-border/40 mt-2">
                     <button
                       type="button"
-                      onClick={() => setShowOtp(false)}
-                      className="text-[10px] text-primary hover:underline"
+                      onClick={handleResendOTP}
+                      disabled={resending || resendCooldown > 0}
+                      className="text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline"
+                    >
+                      {resending ? (
+                        <span className="flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin inline" /> جاري الإرسال...
+                        </span>
+                      ) : resendCooldown > 0 ? (
+                        `إعادة الإرسال بعد (${resendCooldown} ث)`
+                      ) : (
+                        "إعادة إرسال كود التحقق"
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowOtp(false);
+                        setError(null);
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
                     >
                       تغيير البريد
                     </button>

@@ -90,3 +90,25 @@ func TestLicenseService_CheckStatus_Offline(t *testing.T) {
 	}
 }
 
+func TestParseSupabaseError(t *testing.T) {
+	tests := []struct {
+		json     string
+		expected string
+	}{
+		{`{"msg":"Invalid login credentials"}`, "البريد الإلكتروني أو كلمة المرور غير صحيحة"},
+		{`{"message":"User already registered"}`, "هذا البريد الإلكتروني مسجل بالفعل. يمكنك تسجيل الدخول مباشرة"},
+		{`{"error_description":"Email not confirmed"}`, "البريد الإلكتروني بحاجة لتأكيد. يرجى إدخال كود التحقق (OTP) الخاص بك"},
+		{`{"error":"over_email_send_rate_limit"}`, "تم تجاوز حد إرسال الطلبات المسموح به. يرجى الانتظار بضع دقائق ثم المحاولة مجدداً"},
+		{`{"msg":"Password should be at least 6 characters"}`, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"},
+		{`{"error_description":"Token is invalid or has expired"}`, "رمز التحقق غير صحيح أو منتهي الصلاحية"},
+	}
+
+	for _, tt := range tests {
+		result := parseSupabaseError([]byte(tt.json))
+		if result != tt.expected {
+			t.Errorf("parseSupabaseError(%s) = %q; want %q", tt.json, result, tt.expected)
+		}
+	}
+}
+
+

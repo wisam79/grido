@@ -26,6 +26,7 @@ export interface LicenseSlice {
   registerAccount: (name: string, email: string, password: string) => Promise<UserProfile>;
   loginAccount: (email: string, password: string) => Promise<UserProfile>;
   verifyOTP: (email: string, otp: string) => Promise<UserProfile>;
+  resendOTP: (email: string) => Promise<UserProfile>;
   loginWithGoogle: () => Promise<UserProfile>;
   activateLicenseKey: (key: string) => Promise<UserProfile>;
   logoutAccount: () => Promise<void>;
@@ -101,6 +102,23 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     } catch (err) {
       set({ licenseLoading: false });
       throw new Error(err instanceof Error ? err.message : "رمز التحقق غير صحيح");
+    }
+  },
+
+  resendOTP: async (email) => {
+    set({ licenseLoading: true });
+    try {
+      let profile;
+      if (typeof (LicenseHandler as any).ResendOTP === "function") {
+        profile = await (LicenseHandler as any).ResendOTP(email);
+      } else {
+        profile = { email, status: "pending_otp" } as UserProfile;
+      }
+      set({ licenseLoading: false });
+      return profile;
+    } catch (err) {
+      set({ licenseLoading: false });
+      throw new Error(err instanceof Error ? err.message : "فشل إعادة إرسال رمز التحقق");
     }
   },
 

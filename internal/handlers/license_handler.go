@@ -21,6 +21,10 @@ func (h *LicenseHandler) VerifyOTP(email, token string) (*domain.UserProfile, er
 	return h.service.VerifyOTP(email, token)
 }
 
+func (h *LicenseHandler) ResendOTP(email string) (*domain.UserProfile, error) {
+	return h.service.ResendOTP(email)
+}
+
 func (h *LicenseHandler) LoginAccount(email, password string) (*domain.UserProfile, error) {
 	return h.service.Login(email, password)
 }

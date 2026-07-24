@@ -61,6 +61,16 @@ vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
     role: 'user',
     token: 'test-token'
   })),
+  ResendOTP: vi.fn((email: string) => Promise.resolve({
+    id: 'test-id',
+    name: 'Test User',
+    email: email || 'test@example.com',
+    plan: 'trial',
+    status: 'pending_otp',
+    expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
+    hardwareId: 'test-hw-id',
+    role: 'user'
+  })),
 }));
 
 // Mock KonvaCanvas to avoid loading canvas/konva dependencies in test

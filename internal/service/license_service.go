@@ -115,6 +115,13 @@ type SupabaseAuthResponse struct {
 	Msg string `json:"msg,omitempty"` // for error messages
 }
 
+func (r *SupabaseAuthResponse) GetUserID() string {
+	if r.User.ID != "" {
+		return r.User.ID
+	}
+	return r.ID
+}
+
 // Supabase REST Profile Payload
 type SupabaseProfile struct {
 	Plan       string    `json:"plan"`
@@ -127,6 +134,32 @@ type SupabaseProfile struct {
 type LicenseKeyRequest struct {
 	PKey      string `json:"p_key"`
 	PDeviceID string `json:"p_device_id"`
+}
+
+func (s *LicenseService) ensureProfileViaRPC(token string) (*SupabaseProfile, error) {
+	req, err := http.NewRequest("POST", SupabaseURL+"/rest/v1/rpc/ensure_profile_exists", bytes.NewBuffer([]byte("{}")))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("apikey", SupabaseAnonKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := sharedClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("rpc ensure_profile_exists status: %d", resp.StatusCode)
+	}
+
+	var prof SupabaseProfile
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&prof); err != nil {
+		return nil, err
+	}
+	return &prof, nil
 }
 
 func (s *LicenseService) fetchProfile(token, userID string) (*SupabaseProfile, error) {
@@ -156,14 +189,20 @@ func (s *LicenseService) fetchProfile(token, userID string) (*SupabaseProfile, e
 		return nil, err
 	}
 	if len(profiles) == 0 {
+		// Try fallback RPC to ensure profile exists
+		profRPC, errRPC := s.ensureProfileViaRPC(token)
+		if errRPC == nil && profRPC != nil {
+			return profRPC, nil
+		}
 		return nil, errors.New("profile not found")
 	}
 
 	return &profiles[0], nil
 }
 
-// Safe wrapper to handle API requests
 func (s *LicenseService) Register(name, email, password string) (*domain.UserProfile, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	name = strings.TrimSpace(name)
 	if email == "" || password == "" {
 		return nil, errors.New("البريد الإلكتروني وكلمة المرور مطلوبة")
 	}
@@ -189,16 +228,18 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 
 	resp, err := sharedClient.Do(req)
 	if err != nil {
-		return nil, errors.New("خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت")
+		slog.Error("Network error during registration", "error", err, "email", email)
+		return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+		slog.Error("Supabase signup error", "status", resp.StatusCode, "body", string(body), "email", email)
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}
-		return nil, fmt.Errorf("server returned status: %d", resp.StatusCode)
+		return nil, fmt.Errorf("فشل التسجيل (رمز الخطأ: %d)", resp.StatusCode)
 	}
 
 	var authRes SupabaseAuthResponse
@@ -206,26 +247,24 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 		return nil, err
 	}
 
-	if authRes.User.ID == "" {
-		if authRes.ID != "" {
-			// This means email confirmation is required.
-			// Return a dummy profile with "pending_otp" status to let the frontend know to show the OTP screen.
-			return &domain.UserProfile{Email: email, Status: "pending_otp"}, nil
-		}
-		return nil, errors.New("حدث خطأ غير متوقع أثناء التسجيل")
+	userID := authRes.GetUserID()
+	if userID == "" {
+		return &domain.UserProfile{Email: email, Status: "pending_otp"}, nil
 	}
 
 	// User.ID is present — registration succeeded with a session (email confirmation disabled)
 	if authRes.AccessToken != "" {
-		prof, err := s.fetchProfile(authRes.AccessToken, authRes.User.ID)
+		prof, err := s.fetchProfileWithRetry(authRes.AccessToken, userID, 3)
 		if err == nil {
-			name := email
+			displayName := email
 			if n, ok := authRes.User.UserMeta["name"].(string); ok && n != "" {
-				name = n
+				displayName = n
+			} else if name != "" {
+				displayName = name
 			}
 			user := &domain.UserProfile{
-				ID:           authRes.User.ID,
-				Name:         name,
+				ID:           userID,
+				Name:         displayName,
 				Email:        email,
 				Plan:         prof.Plan,
 				Token:        authRes.AccessToken,
@@ -246,10 +285,52 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 		}
 	}
 
-	return nil, errors.New("تم إنشاء الحساب بنجاح. يرجى تسجيل الدخول للمتابعة")
+	return &domain.UserProfile{Email: email, Status: "pending_otp"}, nil
+}
+
+func (s *LicenseService) ResendOTP(email string) (*domain.UserProfile, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	if email == "" {
+		return nil, errors.New("البريد الإلكتروني مطلوب لإعادة الإرسال")
+	}
+
+	payload, err := json.Marshal(map[string]string{
+		"type":  "signup",
+		"email": email,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/resend", bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("apikey", SupabaseAnonKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := sharedClient.Do(req)
+	if err != nil {
+		slog.Error("Network error during OTP resend", "error", err, "email", email)
+		return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+		slog.Error("Supabase resend OTP error", "status", resp.StatusCode, "body", string(body), "email", email)
+		if errMsg := parseSupabaseError(body); errMsg != "" {
+			return nil, errors.New(errMsg)
+		}
+		return nil, errors.New("فشل إعادة إرسال كود التحقق. يرجى المحاولة لاحقاً")
+	}
+
+	return &domain.UserProfile{Email: email, Status: "pending_otp"}, nil
 }
 
 func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	token = strings.TrimSpace(token)
 	if email == "" || token == "" {
 		return nil, errors.New("البريد الإلكتروني ورمز التحقق مطلوبان")
 	}
@@ -272,12 +353,14 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 
 	resp, err := sharedClient.Do(req)
 	if err != nil {
-		return nil, errors.New("خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت")
+		slog.Error("Network error during OTP verification", "error", err, "email", email)
+		return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+		slog.Error("Supabase verify OTP error", "status", resp.StatusCode, "body", string(body), "email", email)
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}
@@ -289,7 +372,12 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 		return nil, err
 	}
 
-	prof, err := s.fetchProfile(authRes.AccessToken, authRes.User.ID)
+	userID := authRes.GetUserID()
+	if userID == "" {
+		return nil, errors.New("رمز التحقق غير مكتمل")
+	}
+
+	prof, err := s.fetchProfileWithRetry(authRes.AccessToken, userID, 3)
 	if err != nil {
 		return nil, errors.New("فشل جلب بيانات الحساب الشخصي")
 	}
@@ -300,7 +388,7 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 	}
 
 	user := &domain.UserProfile{
-		ID:           authRes.User.ID,
+		ID:           userID,
 		Name:         name,
 		Email:        email,
 		Plan:         prof.Plan,
@@ -323,6 +411,7 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 }
 
 func (s *LicenseService) Login(email, password string) (*domain.UserProfile, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
 	if email == "" || password == "" {
 		return nil, errors.New("البريد الإلكتروني وكلمة المرور مطلوبة")
 	}
@@ -347,13 +436,18 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 
 	resp, err := sharedClient.Do(req)
 	if err != nil {
-		return nil, errors.New("خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت")
+		slog.Error("Network error during login", "error", err, "email", email)
+		return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+		slog.Error("Supabase login error", "status", resp.StatusCode, "body", string(body), "email", email)
 		if errMsg := parseSupabaseError(body); errMsg != "" {
+			if strings.Contains(errMsg, "تأكيد") || strings.Contains(string(body), "Email not confirmed") {
+				return &domain.UserProfile{Email: email, Status: "pending_otp"}, errors.New(errMsg)
+			}
 			return nil, errors.New(errMsg)
 		}
 		return nil, errors.New("البريد الإلكتروني أو كلمة المرور غير صحيحة")
@@ -364,9 +458,14 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 		return nil, err
 	}
 
-	prof, err := s.fetchProfile(authRes.AccessToken, authRes.User.ID)
+	userID := authRes.GetUserID()
+	if userID == "" {
+		return nil, errors.New("لم يتم العثور على معرف المستخدم في استجابة الخادم")
+	}
+
+	prof, err := s.fetchProfileWithRetry(authRes.AccessToken, userID, 3)
 	if err != nil {
-		return nil, errors.New("فشل جلب بيانات الحساب الشخصي")
+		return nil, errors.New("فشل جلب بيانات الحساب الشخصي من السيرفر")
 	}
 
 	name := email
@@ -375,7 +474,7 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 	}
 
 	user := &domain.UserProfile{
-		ID:           authRes.User.ID,
+		ID:           userID,
 		Name:         name,
 		Email:        email,
 		Plan:         prof.Plan,
@@ -515,7 +614,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 		if origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 		} else {
-			w.Header().Set("Access-Control-Allow-Origin", "https://grido.cloud-ip.cc")
+			w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:34567")
 		}
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -549,7 +648,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 		}
 	}()
 
-	authURL := fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=https://grido.cloud-ip.cc/callback", SupabaseURL)
+	authURL := fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=http://127.0.0.1:34567/callback", SupabaseURL)
 	_ = utils.OpenBrowser(authURL)
 
 	var oauthBody string
@@ -641,7 +740,7 @@ func (s *LicenseService) ActivateKey(key string) (*domain.UserProfile, error) {
 
 	resp, err := sharedClient.Do(req)
 	if err != nil {
-		return nil, errors.New("خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت")
+		return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
 	}
 	defer resp.Body.Close()
 
@@ -756,23 +855,43 @@ func (s *LicenseService) Logout() error {
 	return s.repo.Clear()
 }
 
-
 func parseSupabaseError(body []byte) string {
 	var data map[string]interface{}
 	if err := json.Unmarshal(body, &data); err != nil {
 		return ""
 	}
+
+	var rawMsg string
 	if msg, ok := data["msg"].(string); ok && msg != "" {
-		return msg
+		rawMsg = msg
+	} else if msg, ok := data["message"].(string); ok && msg != "" {
+		rawMsg = msg
+	} else if desc, ok := data["error_description"].(string); ok && desc != "" {
+		rawMsg = desc
+	} else if errStr, ok := data["error"].(string); ok && errStr != "" {
+		rawMsg = errStr
 	}
-	if msg, ok := data["message"].(string); ok && msg != "" {
-		return msg
-	}
-	if desc, ok := data["error_description"].(string); ok && desc != "" {
-		return desc
-	}
-	if err, ok := data["error"].(string); ok && err != "" {
-		return err
+
+	lower := strings.ToLower(rawMsg)
+	switch {
+	case strings.Contains(lower, "invalid login credentials") || strings.Contains(lower, "invalid_credentials"):
+		return "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+	case strings.Contains(lower, "user already registered") || strings.Contains(lower, "already_registered") || strings.Contains(lower, "user_already_exists"):
+		return "هذا البريد الإلكتروني مسجل بالفعل. يمكنك تسجيل الدخول مباشرة"
+	case strings.Contains(lower, "email not confirmed") || strings.Contains(lower, "email_not_confirmed"):
+		return "البريد الإلكتروني بحاجة لتأكيد. يرجى إدخال كود التحقق (OTP) الخاص بك"
+	case strings.Contains(lower, "over_email_send_rate_limit") || strings.Contains(lower, "rate limit exceeded") || strings.Contains(lower, "too many requests"):
+		return "تم تجاوز حد إرسال الطلبات المسموح به. يرجى الانتظار بضع دقائق ثم المحاولة مجدداً"
+	case strings.Contains(lower, "password should be at least") || strings.Contains(lower, "weak_password"):
+		return "كلمة المرور يجب أن تكون 6 أحرف على الأقل"
+	case strings.Contains(lower, "token has expired") || strings.Contains(lower, "token is invalid") || strings.Contains(lower, "invalid_grant") || strings.Contains(lower, "otp_expired"):
+		return "رمز التحقق غير صحيح أو منتهي الصلاحية"
+	case strings.Contains(lower, "signup_disabled"):
+		return "تسجيل الحسابات الجديدة متوقف مؤقتاً في الوقت الحالي"
+	case strings.Contains(lower, "jwt expired") || strings.Contains(lower, "token_expired"):
+		return "انتهت صلاحية جلسة تسجيل الدخول، يرجى إعادة تسجيل الدخول"
+	case rawMsg != "":
+		return rawMsg
 	}
 	return ""
 }

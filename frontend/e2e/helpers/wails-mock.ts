@@ -36,7 +36,16 @@ export async function setupWailsMock(page: Page) {
             expiresAt: "2030-01-01T00:00:00Z",
             token: "mock-token"
           }),
-          Logout: async () => 'success'
+          Logout: async () => 'success',
+          ResendOTP: async (email: string) => ({
+            id: "mock-user",
+            email: email || "e2e-test@grido.app",
+            name: "E2E Tester",
+            plan: "trial",
+            status: "pending_otp",
+            expiresAt: "2030-01-01T00:00:00Z",
+            token: "mock-token"
+          })
         },
         PrintHandler: {
           ExportPrintSheet: async () => ({ success: true, imagePath: 'mock.png' })
