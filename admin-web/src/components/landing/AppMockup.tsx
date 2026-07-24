@@ -70,40 +70,40 @@ export function AppMockup() {
       <div className="relative rounded-2xl overflow-hidden border border-[#3a3a3a] bg-[#1e1e1e] shadow-2xl shadow-black/70 transition-transform duration-500 group-hover:-translate-y-1">
         <div className="bg-[#1e1e1e] text-neutral-200 text-xs select-none font-sans text-right" dir="rtl">
           {/* Windows Title Bar */}
-          <div className="h-11 bg-[#252528] border-b border-[#3a3a3a] px-4 flex items-center justify-between text-neutral-300">
-            <div className="flex items-center gap-3">
+          <div className="h-10 sm:h-11 bg-[#252528] border-b border-[#3a3a3a] px-3 sm:px-4 flex items-center justify-between text-neutral-300">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-rose-500/80 hover:bg-rose-500 cursor-pointer" />
-                <div className="w-3 h-3 rounded-full bg-amber-500/80 hover:bg-amber-500 cursor-pointer" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500/80 hover:bg-emerald-500 cursor-pointer" />
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-rose-500/80 hover:bg-rose-500 cursor-pointer" />
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-500/80 hover:bg-amber-500 cursor-pointer" />
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-500/80 hover:bg-emerald-500 cursor-pointer" />
               </div>
-              <div className="h-4 w-px bg-[#3a3a3a] mx-1" />
-              <div className="flex items-center gap-2 text-neutral-400">
+              <div className="h-4 w-px bg-[#3a3a3a] mx-0.5 sm:mx-1 hidden sm:block" />
+              <div className="hidden sm:flex items-center gap-2 text-neutral-400">
                 <span className="text-sm">☀️</span>
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
               </div>
             </div>
 
             {/* Mode Selector matching Grido App */}
-            <div className="flex items-center bg-[#18181b] p-1 rounded-xl border border-[#3a3a3a]">
-              <button className="px-4 py-1 rounded-lg bg-brand-500 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-md shadow-brand-500/30">
-                <LayoutGrid className="w-3.5 h-3.5" />
+            <div className="flex items-center bg-[#18181b] p-0.5 sm:p-1 rounded-xl border border-[#3a3a3a]">
+              <button className="px-2.5 sm:px-4 py-0.5 sm:py-1 rounded-lg bg-brand-500 text-white font-bold text-[10px] sm:text-[11px] flex items-center gap-1 shadow-md shadow-brand-500/30">
+                <LayoutGrid className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>كولاج</span>
               </button>
-              <button className="px-4 py-1 rounded-lg hover:text-white text-neutral-400 text-[11px] flex items-center gap-1.5 transition-colors">
-                <Crop className="w-3.5 h-3.5" />
+              <button className="px-2.5 sm:px-4 py-0.5 sm:py-1 rounded-lg hover:text-white text-neutral-400 text-[10px] sm:text-[11px] flex items-center gap-1 transition-colors">
+                <Crop className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>تعديل حر</span>
               </button>
             </div>
 
             {/* App Brand Header */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-md bg-brand-500 flex items-center justify-center text-white font-black text-[10px]">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md bg-brand-500 flex items-center justify-center text-white font-black text-[9px] sm:text-[10px]">
                   G
                 </div>
-                <span className="font-extrabold text-white text-sm">Grido Studio</span>
-                <span className="text-neutral-500 text-[10px]">| استوديو الهوية</span>
+                <span className="font-extrabold text-white text-xs sm:text-sm">Grido Studio</span>
+                <span className="text-neutral-500 text-[10px] hidden sm:inline">| استوديو الهوية</span>
               </div>
               <div className="h-4 w-px bg-[#3a3a3a] hidden sm:block" />
               <div className="hidden sm:flex items-center gap-1.5 text-neutral-400">
@@ -118,7 +118,7 @@ export function AppMockup() {
           </div>
 
           {/* Body: 3-column layout (#2d2d2d sidebar, #09090b canvas) */}
-          <div className="flex h-[360px] sm:h-[440px] md:h-[520px] relative overflow-hidden bg-[#18181b]">
+          <div className="flex h-[340px] sm:h-[440px] md:h-[520px] relative overflow-hidden bg-[#18181b]">
             {/* Right sidebar (properties - #2d2d2d) */}
             <aside className="w-64 bg-[#2d2d2d] border-l border-[#3a3a3a] p-3.5 overflow-y-auto space-y-4 flex-shrink-0 hidden md:block">
               <div className="flex items-center justify-between p-2 rounded-xl bg-[#1e1e1e] border border-[#3a3a3a]">
@@ -203,28 +203,28 @@ export function AppMockup() {
 
             {/* Center canvas (#09090b dot workspace) */}
             <div className="flex-1 flex flex-col relative bg-[#09090b] overflow-hidden">
-              <div className="flex-1 relative flex items-center justify-center bg-[#09090b]">
+              <div className="flex-1 relative flex items-center justify-center bg-[#09090b] p-3 sm:p-4">
                 <div
                   className="absolute inset-0 opacity-25"
                   style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '24px 24px' }}
                 />
-                <div className="absolute top-0 inset-x-0 h-5 border-b border-[#3a3a3a]/40 flex items-center justify-between text-[8px] text-neutral-500 font-mono px-8 select-none z-10 bg-[#09090b]/80">
-                  <span>200</span><span>180</span><span>160</span><span>140</span><span>120</span><span>100</span><span>80</span><span>60</span><span>40</span><span>20</span><span>0</span>
+                <div className="absolute top-0 inset-x-0 h-5 border-b border-[#3a3a3a]/40 flex items-center justify-between text-[8px] text-neutral-500 font-mono px-4 sm:px-8 select-none z-10 bg-[#09090b]/80">
+                  <span>200</span><span className="hidden xs:inline">180</span><span>140</span><span className="hidden xs:inline">100</span><span>60</span><span>0</span>
                 </div>
                 <div className="absolute top-0 right-0 bottom-0 w-3 bg-[#18181b] border-l border-[#3a3a3a]/40 flex flex-col items-center">
                   <div className="w-1.5 h-24 bg-neutral-700/50 rounded-full mt-10" />
                 </div>
 
                 {/* A4 paper sheet with passport grid */}
-                <div className="w-[380px] h-[520px] bg-white rounded-sm shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] pt-2.5 pb-2 px-2.5 relative flex flex-col justify-start z-10">
-                  <div className="grid grid-cols-6 gap-1.5 p-1 bg-white rounded-sm border border-neutral-200">
+                <div className="w-[230px] sm:w-[320px] md:w-[380px] bg-white rounded-sm shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] pt-2 pb-1.5 px-2 relative flex flex-col justify-start z-10">
+                  <div className="grid grid-cols-6 gap-1 p-0.5 sm:p-1 bg-white rounded-sm border border-neutral-200">
                     {[1, 2, 3, 4, 5, 6].map((idx) => (
                       <div key={idx} className="aspect-[3/4] overflow-hidden relative border border-neutral-300 rounded-[1px]">
                         <img src={PASSPORT_IMG} alt="" className="w-full h-full object-cover block" loading="lazy" />
                       </div>
                     ))}
                   </div>
-                  <div className="absolute bottom-4 left-0 right-0 text-center text-[9px] text-neutral-400 font-mono select-none pointer-events-none">
+                  <div className="mt-3 text-center text-[8px] sm:text-[9px] text-neutral-400 font-mono select-none pointer-events-none truncate">
                     Grido Studio - A4 Canvas Paper (210 × 297 mm)
                   </div>
                 </div>
