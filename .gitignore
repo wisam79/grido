@@ -37,6 +37,13 @@ diff.patch
 frontend/wailsjs/
 frontend/coverage/
 
+# Environment variables (secrets)
+.env
+.env.*
+diff.patch
+frontend/wailsjs/
+frontend/coverage/
+
 # Agent config (contains API keys — use env vars instead)
 opencode.json
 
@@ -45,4 +52,8 @@ build/windows/installer/CodeFormer-temp/
 
 # Scratch / workspace
 scratch/
-
+*.whl
+docaligner_extracted/
+scratch_transcript.txt
+package.json
+package-lock.json

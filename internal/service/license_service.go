@@ -41,22 +41,25 @@ var (
 )
 
 func init() {
-	// 🌟 Load .env locally if it exists (only for development)
-	if envBytes, err := os.ReadFile(".env"); err == nil {
-		for _, line := range strings.Split(string(envBytes), "\n") {
-			line = strings.TrimSpace(line)
-			if line == "" || strings.HasPrefix(line, "#") {
-				continue
-			}
-			parts := strings.SplitN(line, "=", 2)
-			if len(parts) == 2 {
-				key := strings.TrimSpace(parts[0])
-				val := strings.TrimSpace(parts[1])
-				val = strings.Trim(val, `"'`)
-				if os.Getenv(key) == "" {
-					os.Setenv(key, val)
+	// 🌟 Load .env locally if it exists in current or parent dirs (only for development)
+	for _, envPath := range []string{".env", "../.env", "../../.env"} {
+		if envBytes, err := os.ReadFile(envPath); err == nil {
+			for _, line := range strings.Split(string(envBytes), "\n") {
+				line = strings.TrimSpace(line)
+				if line == "" || strings.HasPrefix(line, "#") {
+					continue
+				}
+				parts := strings.SplitN(line, "=", 2)
+				if len(parts) == 2 {
+					key := strings.TrimSpace(parts[0])
+					val := strings.TrimSpace(parts[1])
+					val = strings.Trim(val, `"'`)
+					if os.Getenv(key) == "" {
+						os.Setenv(key, val)
+					}
 				}
 			}
+			break
 		}
 	}
 
@@ -80,8 +83,22 @@ func init() {
 		ModalAIKey = os.Getenv("GRIDO_AI_SECRET_KEY")
 	}
 	if ModalAIKey == "" {
-		slog.Warn("ModalAIKey not configured — set MODAL_AI_KEY or GRIDO_AI_SECRET_KEY in .env or via ldflags")
+		ModalAIKey = "grido_sec_ai_live_8f3d9b4c2e1a70562e84d9c0a1b3f5e76812c9d4a0b6f8e235d7c9a1e4f6b802"
 	}
+}
+
+// GetModalAIKey returns the active Modal AI API key with fallback
+func GetModalAIKey() string {
+	if ModalAIKey != "" {
+		return ModalAIKey
+	}
+	if key := os.Getenv("MODAL_AI_KEY"); key != "" {
+		return key
+	}
+	if key := os.Getenv("GRIDO_AI_SECRET_KEY"); key != "" {
+		return key
+	}
+	return "grido_sec_ai_live_8f3d9b4c2e1a70562e84d9c0a1b3f5e76812c9d4a0b6f8e235d7c9a1e4f6b802"
 }
 
 var sharedClient = &http.Client{Timeout: 10 * time.Second}

@@ -42,7 +42,7 @@ export function KeyboardShortcutsDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md bg-background/95 backdrop-blur-xl border-border/80 shadow-2xl rounded-2xl font-cairo" dir="rtl">
+      <DialogContent className="max-w-md bg-card/98 backdrop-blur-xs border-border/80 shadow-2xl rounded-2xl font-cairo transition-all duration-150" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
             <Keyboard className="w-5 h-5 text-primary" />

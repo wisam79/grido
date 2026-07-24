@@ -106,6 +106,7 @@ func (a *App) ExportSupportLogs() (string, error) {
 		return "", err
 	}
 	defer tempZip.Close()
+	defer os.Remove(tempZip.Name())
 	
 	// Implementation of zip creation can be done via shell command for simplicity or zip package
 	// Actually let's just copy the current log file path and ask the user to save it.
@@ -377,9 +378,15 @@ func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
 	ext := getExtensionFromMime(mimeType)
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
+	tmpPath := newPath + ".tmp"
 
-	if err := os.WriteFile(newPath, decoded, 0644); err != nil {
-		return "", fmt.Errorf("write file: %w", err)
+	if err := os.WriteFile(tmpPath, decoded, 0644); err != nil {
+		return "", fmt.Errorf("write tmp file: %w", err)
+	}
+	defer os.Remove(tmpPath)
+
+	if err := os.Rename(tmpPath, newPath); err != nil {
+		return "", fmt.Errorf("rename file: %w", err)
 	}
 
 	return "/local-image/" + newName, nil
@@ -781,8 +788,8 @@ func (a *App) EnhanceImageWithAI(base64Image string, token string, limit int) (s
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if service.ModalAIKey != "" {
-		req.Header.Set("X-Grido-Api-Key", service.ModalAIKey)
+	if aiKey := service.GetModalAIKey(); aiKey != "" {
+		req.Header.Set("X-Grido-Api-Key", aiKey)
 	}
 
 	client := &http.Client{Timeout: 3 * time.Minute}

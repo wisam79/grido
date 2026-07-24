@@ -4,9 +4,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
   Sparkles, RefreshCw, Sun, Contrast, Droplet, 
-  EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2
+  EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine
 } from "lucide-react";
 import { CropDialog } from "../../crop-dialog";
+import { DocumentScannerDialog } from "../../document-scanner";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -102,8 +103,49 @@ export function ImageAdjustProperties({
 
 export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps) {
   const [cropOpen, setCropOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
   const [refineOpen, setRefineOpen] = useState(false);
+
+  const handleScannerSave = async (processedBase64: string) => {
+    try {
+      const localPath = await SaveImageFromBase64(processedBase64);
+
+      const img = new Image();
+      img.onload = () => {
+        const width = img.width;
+        const height = img.height;
+        img.onload = null;
+        img.onerror = null;
+        if (!isMountedRef.current) return;
+
+        const docAspect = width / height;
+        const state = useEditorStore.getState();
+        const canvasRatio = state.canvasWidth / state.canvasHeight;
+        const newHeight = (element.width * canvasRatio) / docAspect;
+
+        onUpdate(element.id, {
+          imageSrc: localPath,
+          height: newHeight,
+        });
+
+        state.setLastEditedImageAspect(docAspect);
+        useEditorStore.getState().pushHistory();
+        toast.success("تم استعدال وعزل المستند بنجاح!");
+      };
+      img.onerror = () => {
+        img.onload = null;
+        img.onerror = null;
+        onUpdate(element.id, { imageSrc: localPath });
+        useEditorStore.getState().pushHistory();
+        toast.success("تم استعدال وعزل المستند بنجاح!");
+      };
+      img.src = localPath;
+    } catch (err) {
+      console.error(err);
+      toast.error("فشل حفظ المستند المستعدل");
+    }
+  };
   const {
     isRemovingBg,
     bgProgress,
@@ -152,51 +194,73 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           </Label>
         </div>
         
-        {/* زر عزل الخلفية الذكي */}
+        {/* زر عزل الخلفية الذكي (Hero Action) */}
         <Button
           variant={isRemovingBg ? "destructive" : "outline"}
           className={cn(
-            "w-full flex items-center justify-center gap-2 h-10.5 rounded-xl transition-all duration-300 cursor-pointer active:scale-[0.98] group font-extrabold text-xs shadow-xs",
-            !isRemovingBg && "bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:border-emerald-500/50"
+            "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground",
+            isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
           title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية الذكي للذكاء الاصطناعي"}
         >
           {isRemovingBg ? (
-            <>
-              <X className="w-4 h-4 group-hover:scale-110 transition-transform text-destructive-foreground" />
+            <div className="flex items-center gap-2.5">
+              <X className="w-4 h-4 text-destructive-foreground group-hover:scale-110 transition-transform shrink-0" />
               <span>إلغاء العملية الحالية</span>
-            </>
+            </div>
           ) : (
             <>
-              <Sparkles className="w-4 h-4 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 text-emerald-500" />
-              <span className="flex items-center gap-1.5">
-                عزل الخلفية الذكي
-                {!isLicenseActive && (
-                  <span className="text-[8px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider scale-95 shadow-xs">PRO</span>
-                )}
-              </span>
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+                <span>عزل الخلفية الذكي</span>
+              </div>
+              {!isLicenseActive ? (
+                <span className="text-[8.5px] bg-primary text-primary-foreground font-black px-1.5 py-0.5 rounded-md tracking-wider uppercase">
+                  PRO
+                </span>
+              ) : (
+                <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
+                  AI
+                </span>
+              )}
             </>
           )}
         </Button>
 
-        {/* زر تحسين الجودة والوضوح */}
+        {/* زر تحسين الجودة والوضوح (AI Enhance) */}
         <Button
           variant="outline"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "w-full flex items-center justify-between px-3.5 h-10.5 rounded-xl transition-all duration-300 cursor-pointer active:scale-[0.98] group font-extrabold text-xs bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-violet-500/10 hover:from-indigo-500/20 hover:to-violet-500/20 border-indigo-500/30 text-indigo-700 dark:text-indigo-300 hover:border-indigo-500/50 shadow-xs",
+            "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(element)}
           title={`تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
         >
-          <div className="flex items-center gap-2">
-            <Wand2 className="w-4 h-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-300 text-indigo-500" />
-            <span>تحسين الجودة والوضوح ✨</span>
+          <div className="flex items-center gap-2.5">
+            <Wand2 className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+            <span>تحسين الجودة والوضوح</span>
           </div>
-          <span className="text-[9.5px] bg-indigo-500/15 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-extrabold shadow-2xs font-mono">
+          <span className="text-[9.5px] bg-primary/20 border border-primary/40 text-primary px-2 py-0.5 rounded-md font-extrabold font-mono">
             {remainingQuota}/{dailyLimit} اليوم
+          </span>
+        </Button>
+
+        {/* زر ماسح وتقويم المستندات الذكي (Doc Scanner) */}
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground"
+          onClick={() => setScannerOpen(true)}
+          title="مسح وتقويم حواف المستند وإزالة المنظور المائل"
+        >
+          <div className="flex items-center gap-2.5">
+            <ScanLine className="w-4 h-4 text-primary group-hover:scale-115 transition-transform duration-300 shrink-0" />
+            <span>ماسح وتقويم المستند</span>
+          </div>
+          <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
+            تلقائي
           </span>
         </Button>
 
@@ -205,21 +269,21 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           <Button
             variant="outline"
             size="sm"
-            className="h-10 rounded-xl border-border/60 hover:border-primary/50 hover:bg-accent/60 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs shadow-2xs group"
+            className="h-9.5 rounded-xl border-border/50 hover:border-border bg-muted/20 hover:bg-muted/50 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 font-bold text-xs group text-foreground/90 shadow-2xs"
             onClick={() => setCropOpen(true)}
             title="قص وتدوير الصورة"
           >
-            <Scissors className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+            <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
             <span>قص وتدوير</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-10 rounded-xl border-border/60 hover:border-primary/50 hover:bg-accent/60 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs shadow-2xs group"
+            className="h-9.5 rounded-xl border-border/50 hover:border-border bg-muted/20 hover:bg-muted/50 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 font-bold text-xs group text-foreground/90 shadow-2xs"
             onClick={handleOpenFile}
             title="تغيير الصورة"
           >
-            <ImagePlus className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+            <ImagePlus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
             <span>تغيير الصورة</span>
           </Button>
         </div>
@@ -227,11 +291,11 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         {element.originalImageSrc && (
           <Button
             variant="outline"
-            className="w-full mt-1.5 h-9 text-[11px] font-bold transition-all gap-2 flex items-center justify-center cursor-pointer rounded-xl border-border/50 hover:bg-muted/60"
+            className="w-full mt-0.5 h-9 text-xs font-bold transition-all duration-200 flex items-center justify-start px-3.5 gap-2.5 cursor-pointer rounded-xl border-border/50 hover:border-border bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group"
             onClick={() => setRefineOpen(true)}
           >
-            <Paintbrush className="w-3.5 h-3.5 text-muted-foreground" />
-            تعديل يدوي وحواف
+            <Paintbrush className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+            <span>تعديل يدوي وحواف</span>
           </Button>
         )}
 
@@ -307,6 +371,15 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               toast.error("فشل حفظ الصورة المقصوصة محلياً");
             }
           }}
+        />
+      )}
+
+      {element.imageSrc && (
+        <DocumentScannerDialog
+          open={scannerOpen}
+          onOpenChange={setScannerOpen}
+          imageSrc={element.imageSrc}
+          onSave={handleScannerSave}
         />
       )}
 
