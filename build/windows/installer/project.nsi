@@ -1,4 +1,4 @@
-﻿Unicode true
+Unicode true
 
 ####
 ## Wails NSIS Installer Script for Grido Studio
@@ -73,6 +73,11 @@ ShowInstDetails show
 
 Function .onInit
    !insertmacro wails.checkArchitecture
+FunctionEnd
+
+Function .onInstSuccess
+   IfSilent 0 +2
+       Exec '"$INSTDIR\${PRODUCT_EXECUTABLE}"'
 FunctionEnd
 
 Function CreateDesktopShortcut
