@@ -1,4 +1,4 @@
-Unicode true
+﻿Unicode true
 
 ####
 ## Wails NSIS Installer Script for Grido Studio
