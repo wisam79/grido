@@ -8,7 +8,8 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
   });
 
   test('Open app, upload image, and save project', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
 
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
 
