@@ -9,7 +9,6 @@ test.describe('Background Removal Smoke Test', () => {
 
   test('Upload image and expose background removal controls', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
 
     await page.getByTitle('وضع التعديل الحر').click();
     await page.getByTitle('رفع صورة جديدة').click();

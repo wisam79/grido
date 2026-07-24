@@ -9,7 +9,6 @@ test.describe('Collage Mode and Filters E2E', () => {
 
   test('Switch to collage mode and apply an official template', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
 
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
     await page.getByTitle('وضع الكولاج').click();
