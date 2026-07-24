@@ -118,7 +118,7 @@ export function AppMockup() {
           </div>
 
           {/* Body: 3-column layout (#2d2d2d sidebar, #09090b canvas) */}
-          <div className="flex h-[520px] relative overflow-hidden bg-[#18181b]">
+          <div className="flex h-[360px] sm:h-[440px] md:h-[520px] relative overflow-hidden bg-[#18181b]">
             {/* Right sidebar (properties - #2d2d2d) */}
             <aside className="w-64 bg-[#2d2d2d] border-l border-[#3a3a3a] p-3.5 overflow-y-auto space-y-4 flex-shrink-0 hidden md:block">
               <div className="flex items-center justify-between p-2 rounded-xl bg-[#1e1e1e] border border-[#3a3a3a]">

@@ -27,7 +27,7 @@ export function HeroSection() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
             </span>
             <span>الجيل الجديد لبرامج الاستوديو والطباعة الفورية</span>
-            <span className="text-brand-400 font-semibold">v2.5</span>
+            <span className="text-brand-400 font-semibold">v1.0.37</span>
             <ArrowLeft className="w-3.5 h-3.5 text-neutral-500 transition-transform group-hover:-translate-x-1 group-hover:text-brand-400" />
           </a>
         </div>

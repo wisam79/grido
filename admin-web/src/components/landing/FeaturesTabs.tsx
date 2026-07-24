@@ -73,7 +73,7 @@ export function FeaturesTabs() {
         </div>
 
         {/* Tab navigation */}
-        <div className="flex items-center justify-center gap-2 mb-10 flex-wrap">
+        <div className="flex items-center justify-start sm:justify-center gap-2 mb-8 sm:mb-10 overflow-x-auto pb-2 w-full no-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -81,14 +81,14 @@ export function FeaturesTabs() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${
+                className={`px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 shrink-0 ${
                   isActive
                     ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30'
                     : 'bg-white/5 hover:bg-white/10 text-neutral-400'
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                {tab.label}
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{tab.label}</span>
               </button>
             );
           })}

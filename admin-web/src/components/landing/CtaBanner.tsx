@@ -20,15 +20,15 @@ export function CtaBanner() {
           />
 
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs mb-6">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>v2.5.0 - متوافق مع Windows 10 & 11 (64-bit)</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs mb-6 max-w-full">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <span className="truncate">v1.0.37 - متوافق مع Windows 10 & 11 (64-bit)</span>
             </div>
 
-            <h2 className="text-3xl sm:text-5xl font-black mb-5 font-display">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-5 font-display">
               جاهز لتطوير أداء استوديو الصور الخاص بك؟
             </h2>
-            <p className="text-neutral-300 text-lg max-w-2xl mx-auto mb-8">
+            <p className="text-neutral-300 text-base sm:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
               حمل النسخة المجانية الآن وابدأ في تجربة أسرع وأحدث طريقة لقص وطباعة الصور بالذكاء الاصطناعي.
             </p>
 
@@ -44,10 +44,10 @@ export function CtaBanner() {
                 <span>تحميل البرنامج للويندوز (.exe)</span>
               </a>
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-2 sm:pt-0">
                 {CHECKS.map((check) => (
                   <span key={check} className="inline-flex items-center gap-1.5 text-xs text-neutral-300">
-                    <Check className="w-4 h-4 text-emerald-400" />
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
                     {check}
                   </span>
                 ))}

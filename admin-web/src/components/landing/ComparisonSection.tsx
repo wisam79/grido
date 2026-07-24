@@ -53,44 +53,64 @@ export function ComparisonSection() {
           </p>
         </div>
 
-        {/* Comparison Table / Cards */}
+        {/* Comparison Desktop Table & Mobile Cards */}
         <div className="rounded-3xl border border-white/15 bg-ink-950/80 backdrop-blur-md overflow-hidden shadow-2xl">
-          {/* Table Header */}
-          <div className="grid grid-cols-12 bg-white/[0.03] border-b border-white/10 p-5 md:p-6 text-sm font-bold text-neutral-300">
-            <div className="col-span-5 md:col-span-4 flex items-center gap-2 text-white">
+          {/* Table Header (Desktop) */}
+          <div className="hidden md:grid grid-cols-12 bg-white/[0.03] border-b border-white/10 p-6 text-sm font-bold text-neutral-300">
+            <div className="col-span-4 flex items-center gap-2 text-white">
               <ShieldCheck className="w-4 h-4 text-brand-400" />
               <span>الميزة / المعيار</span>
             </div>
-            <div className="col-span-4 md:col-span-4 text-center text-brand-400 font-extrabold text-base flex items-center justify-center gap-1.5 bg-brand-500/10 py-2 rounded-xl border border-brand-500/20">
+            <div className="col-span-4 text-center text-brand-400 font-extrabold text-base flex items-center justify-center gap-1.5 bg-brand-500/10 py-2 rounded-xl border border-brand-500/20">
               <Sparkles className="w-4 h-4 text-brand-400" />
               <span>Grido Studio</span>
             </div>
-            <div className="col-span-3 md:col-span-4 text-center text-neutral-400 py-2">
+            <div className="col-span-4 text-center text-neutral-400 py-2">
               <span>الطريقة التقليدية</span>
             </div>
           </div>
 
-          {/* Table Rows */}
-          <div className="divide-y divide-white/5">
+          {/* Rows (Desktop Grid & Mobile Stacked Cards) */}
+          <div className="divide-y divide-white/10">
             {COMPARISON_ROWS.map((row, idx) => (
-              <div
-                key={idx}
-                className={`grid grid-cols-12 p-4 md:p-6 items-center text-xs md:text-sm transition-colors hover:bg-white/[0.02] ${
-                  row.highlight ? 'bg-brand-500/[0.02]' : ''
-                }`}
-              >
-                <div className="col-span-5 md:col-span-4 font-bold text-white pr-2">
-                  {row.feature}
+              <div key={idx} className="p-4 sm:p-6 transition-colors hover:bg-white/[0.02]">
+                {/* Desktop Grid Layout */}
+                <div className="hidden md:grid grid-cols-12 items-center text-sm">
+                  <div className="col-span-4 font-bold text-white pr-2">
+                    {row.feature}
+                  </div>
+                  <div className="col-span-4 text-center font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 py-3 px-3 rounded-xl flex items-center justify-center gap-2 mx-4 shadow-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <span>{row.grido}</span>
+                  </div>
+                  <div className="col-span-4 text-center text-neutral-400 py-2 px-2 flex items-center justify-center gap-1.5">
+                    <XCircle className="w-4 h-4 text-rose-500/70 flex-shrink-0" />
+                    <span>{row.traditional}</span>
+                  </div>
                 </div>
 
-                <div className="col-span-4 md:col-span-4 text-center font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 py-3 px-2 rounded-xl flex items-center justify-center gap-2 mx-1 md:mx-4 shadow-xs">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>{row.grido}</span>
-                </div>
-
-                <div className="col-span-3 md:col-span-4 text-center text-neutral-400 py-2 px-2 flex items-center justify-center gap-1.5">
-                  <XCircle className="w-4 h-4 text-rose-500/70 flex-shrink-0 hidden sm:inline-block" />
-                  <span>{row.traditional}</span>
+                {/* Mobile Responsive Stacked Card */}
+                <div className="md:hidden space-y-3">
+                  <div className="font-extrabold text-white text-sm flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-brand-400 shrink-0" />
+                    <span>{row.feature}</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-2 text-xs font-bold text-emerald-300">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-[10px] text-emerald-400/70 uppercase block font-mono mb-0.5">Grido Studio</span>
+                        <span>{row.grido}</span>
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-start gap-2 text-xs text-neutral-400">
+                      <XCircle className="w-4 h-4 text-rose-400/80 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-[10px] text-neutral-500 uppercase block font-mono mb-0.5">الطريقة التقليدية</span>
+                        <span>{row.traditional}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
