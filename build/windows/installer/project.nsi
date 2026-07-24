@@ -68,7 +68,8 @@ LangString DESC_CreateDesktopShortcut ${LANG_ENGLISH} "Create Desktop Shortcut"
 # Product Details
 Name "${INFO_PRODUCTNAME}"
 OutFile "..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe"
-InstallDir "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
+InstallDir "$PROGRAMFILES64\${INFO_PRODUCTNAME}"
+InstallDirRegKey HKLM "Software\${INFO_PRODUCTNAME}" "Install_Dir"
 ShowInstDetails show
 
 Function .onInit
@@ -88,6 +89,10 @@ Section
     !insertmacro wails.setShellContext
 
     !insertmacro wails.webview2runtime
+
+    # Force kill running app instances to release file lock before overwriting
+    ExecWait 'taskkill /F /IM "${PRODUCT_EXECUTABLE}" /T'
+    Sleep 1000
 
     SetOutPath $INSTDIR
 
