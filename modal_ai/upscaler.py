@@ -186,13 +186,13 @@ class ImageEnhancer:
             face_helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
             face_helper.align_warp_face()
 
-            w = 0.7 # Fidelity weight (0.7 for maximum fidelity to original image features)
+            w = 0.7 # 🌟 Fidelity weight (0.7 preserves natural skin texture per project rules)
 
             for idx, cropped_face in enumerate(face_helper.cropped_faces):
-                # 🌟 إصلاح الإضاءة وإزالة الظلال باستخدام CLAHE
+                # 🌟 إصلاح الإضاءة الهادئ بدون تشويه الألوان
                 lab = cv2.cvtColor(cropped_face, cv2.COLOR_BGR2LAB)
                 l, a, b = cv2.split(lab)
-                clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+                clahe = cv2.createCLAHE(clipLimit=1.2, tileGridSize=(8, 8))
                 cl = clahe.apply(l)
                 limg = cv2.merge((cl, a, b))
                 fixed_cropped_face = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
@@ -203,14 +203,17 @@ class ImageEnhancer:
 
                 try:
                     with torch.no_grad():
-                        output = self.net(cropped_face_t, w=w, adain=True)[0]
+                        # adain=False يمنع فلتر التنعيم الاصطناعي والتلوين الشمعي/الكارتوني
+                        output = self.net(cropped_face_t, w=w, adain=False)[0]
                         restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                     del output
                 except Exception as error:
                     print(f'\tFailed inference for CodeFormer: {error}')
                     restored_face = tensor2img(cropped_face_t, rgb2bgr=True, min_max=(-1, 1))
 
-                restored_face = restored_face.astype('uint8')
+                # دمج 85% من الوجه المرمم مع 15% من الوجه الأصلي لضمان الحفاظ الكلي على ملامح الشخص وملمس الجلد الطبيعي
+                restored_face = (restored_face.astype(np.float32) * 0.85 + cropped_face.astype(np.float32) * 0.15).astype(np.uint8)
+
                 face_helper.add_restored_face(restored_face, cropped_face)
 
             # upsample the background using FP16 Autocast for speed and VRAM savings

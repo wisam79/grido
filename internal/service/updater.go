@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -190,7 +191,17 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	// 1. Rename the currently running executable
 	if err := os.Rename(exePath, oldPath); err != nil {
 		// If rename fails (e.g. Access Denied in Program Files), fallback to PowerShell elevate
-		cmdArgs := fmt.Sprintf("Start-Process -FilePath '%s' -ArgumentList '/S' -Verb RunAs", tmpFile.Name())
+		scriptPath := filepath.Join(os.TempDir(), "grido_update.ps1")
+		scriptContent := fmt.Sprintf(`
+Start-Sleep -Seconds 2
+Move-Item -Path '%s' -Destination '%s' -Force
+Start-Process -FilePath '%s'
+Remove-Item -Path $PSCommandPath -Force
+`, tmpFile.Name(), exePath, exePath)
+		
+		os.WriteFile(scriptPath, []byte(scriptContent), 0666)
+
+		cmdArgs := fmt.Sprintf("Start-Process powershell -ArgumentList '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File ''%s''' -Verb RunAs", scriptPath)
 		cmd := exec.Command("powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", cmdArgs)
 		if errStart := cmd.Start(); errStart != nil {
 			return fmt.Errorf("failed to replace executable (access denied) and fallback failed: %v", err)

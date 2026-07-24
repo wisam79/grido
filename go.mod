@@ -8,6 +8,7 @@ require (
 	github.com/wailsapp/wails/v2 v2.12.0
 	golang.org/x/sync v0.22.0
 	golang.org/x/sys v0.47.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.2
 )
@@ -46,5 +47,4 @@ require (
 	golang.org/x/image v0.44.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
