@@ -43,7 +43,7 @@ export function PropertiesPanel() {
   }, [updateElement]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-card select-none">
       <ScrollArea className="flex-1">
         <div className="p-3 pb-8 space-y-4">
           {/* خصائص العنصر المحدد */}

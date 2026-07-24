@@ -86,7 +86,7 @@ export function TemplatePanel() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background border-l border-border/40 select-none">
+    <div className="flex flex-col h-full bg-card select-none">
       {/* Scrollable Sidebar Content */}
       <ScrollArea className="flex-1">
         <div className="p-3 pb-8 space-y-4">
