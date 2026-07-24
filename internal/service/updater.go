@@ -29,7 +29,15 @@ type UpdateInfo struct {
 
 type UpdaterService struct{}
 
+// CleanupTempUpdates يقوم بتنظيف مجلد التحديثات المؤقتة فورياً لتفادي تراكم ملفات المثبتات
+func CleanupTempUpdates() {
+	tempDir := filepath.Join(os.TempDir(), "grido-updates")
+	_ = os.RemoveAll(tempDir)
+}
+
 func NewUpdaterService() *UpdaterService {
+	// تنظيف ملفات التحديث المهجورة في الخلفية فور بدء التشغيل
+	go CleanupTempUpdates()
 	return &UpdaterService{}
 }
 
