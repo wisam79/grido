@@ -79,7 +79,7 @@ FunctionEnd
 
 Function .onInstSuccess
    IfSilent 0 +2
-       Exec 'explorer.exe "$INSTDIR\${PRODUCT_EXECUTABLE}"'
+       ExecShell "open" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 FunctionEnd
 
 Function CreateDesktopShortcut
