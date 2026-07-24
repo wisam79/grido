@@ -29,10 +29,30 @@ type UpdateInfo struct {
 
 type UpdaterService struct{}
 
-// CleanupTempUpdates يقوم بتنظيف مجلد التحديثات المؤقتة فورياً لتفادي تراكم ملفات المثبتات
+// CleanupTempUpdates يقوم بتنظيف كافّة ملفات والمثبتات المؤقتة الخاصة بـ Grido في مجلد Temp
 func CleanupTempUpdates() {
-	tempDir := filepath.Join(os.TempDir(), "grido-updates")
-	_ = os.RemoveAll(tempDir)
+	tempDir := os.TempDir()
+
+	// 1. تنظيف مجلد grido-updates المخصص
+	subDir := filepath.Join(tempDir, "grido-updates")
+	_ = os.RemoveAll(subDir)
+
+	// 2. مسح كافّة ملفات المثبتات والسكريبتات المهجورة التي تبدأ بـ GridoStudio- أو grido_ أو grido-
+	entries, err := os.ReadDir(tempDir)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		name := entry.Name()
+		lowerName := strings.ToLower(name)
+		if strings.HasPrefix(lowerName, "gridostudio-") ||
+			strings.HasPrefix(lowerName, "grido_") ||
+			strings.HasPrefix(lowerName, "grido-") {
+			fullPath := filepath.Join(tempDir, name)
+			_ = os.RemoveAll(fullPath)
+		}
+	}
 }
 
 func NewUpdaterService() *UpdaterService {
