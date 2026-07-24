@@ -49,4 +49,10 @@ func (h *LicenseHandler) Logout() (string, error) {
 	return "success", nil
 }
 
-
+func (h *LicenseHandler) ResetPassword(email string) (string, error) {
+	err := h.service.ResetPassword(email)
+	if err != nil {
+		return "", err
+	}
+	return "success", nil
+}

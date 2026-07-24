@@ -7,27 +7,53 @@ import { useEditorStore } from '../src/lib/editor-store';
 // Mock Wails backend functions
 vi.mock('../wailsjs/go/main/App', () => ({
   OpenFile: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
+  OpenMultipleFiles: vi.fn(() => Promise.resolve(['data:image/png;base64,mocked'])),
   SaveFile: vi.fn(() => Promise.resolve('success')),
   SaveFileDialog: vi.fn(() => Promise.resolve('success')),
+  SaveImageFromBase64: vi.fn(() => Promise.resolve('success')),
   LoadAutoSave: vi.fn(() => Promise.resolve('')),
   SaveAutoSave: vi.fn(() => Promise.resolve()),
   ClearAutoSave: vi.fn(() => Promise.resolve()),
-  CheckForUpdate: vi.fn(() => Promise.resolve({ has_update: false, version: '', release_notes: '' })),
+  CheckForUpdate: vi.fn(() => Promise.resolve({ has_update: false, current_version: 'v1.0.0', latest_version: 'v1.0.0', download_url: '', release_notes: '' })),
   DownloadAndInstallUpdate: vi.fn(() => Promise.resolve()),
   ExportSupportLogs: vi.fn(() => Promise.resolve('')),
   LogFrontendError: vi.fn(() => Promise.resolve()),
   GetCustomTemplates: vi.fn(() => Promise.resolve([])),
   SaveCustomTemplate: vi.fn(() => Promise.resolve()),
   DeleteCustomTemplate: vi.fn(() => Promise.resolve()),
+  ApplyMaskToImage: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
+  EnhanceImageWithAI: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
 }));
 
 // Mock Wails runtime functions
 vi.mock('../wailsjs/runtime/runtime', () => ({
   WindowMinimise: vi.fn(),
   WindowToggleMaximise: vi.fn(),
+  WindowIsMaximised: vi.fn(() => Promise.resolve(false)),
+  WindowMaximise: vi.fn(),
+  WindowUnmaximise: vi.fn(),
+  WindowGetSize: vi.fn(() => Promise.resolve({ w: 1024, h: 768 })),
+  WindowSetSize: vi.fn(),
+  WindowGetPosition: vi.fn(() => Promise.resolve({ x: 0, y: 0 })),
+  WindowSetPosition: vi.fn(),
+  WindowSetTitle: vi.fn(),
   Quit: vi.fn(),
   EventsOn: vi.fn(() => () => {}),
+  EventsOnMultiple: vi.fn(() => () => {}),
   EventsOff: vi.fn(),
+  EventsOffAll: vi.fn(),
+  EventsOnce: vi.fn(),
+  EventsEmit: vi.fn(),
+  BrowserOpenURL: vi.fn(),
+  OnFileDrop: vi.fn(),
+  OnFileDropOff: vi.fn(),
+  LogPrint: vi.fn(),
+  LogTrace: vi.fn(),
+  LogDebug: vi.fn(),
+  LogInfo: vi.fn(),
+  LogWarning: vi.fn(),
+  LogError: vi.fn(),
+  LogFatal: vi.fn(),
 }));
 
 // Mock ProjectHandler functions
@@ -38,8 +64,30 @@ vi.mock('../wailsjs/go/handlers/ProjectHandler', () => ({
   DeleteProject: vi.fn(() => Promise.resolve('success')),
 }));
 
+// Mock BackupHandler functions
+vi.mock('../wailsjs/go/handlers/BackupHandler', () => ({
+  ExportBackup: vi.fn(() => Promise.resolve('C:/mock/backup.zip')),
+  ImportBackup: vi.fn(() => Promise.resolve('success')),
+  ResetLibrary: vi.fn(() => Promise.resolve('success')),
+  Startup: vi.fn(() => Promise.resolve()),
+}));
+
+// Mock PrintHandler functions
+vi.mock('../wailsjs/go/handlers/PrintHandler', () => ({
+  ExportPrintSheet: vi.fn(() => Promise.resolve({ success: true, imagePath: 'mock.png' })),
+}));
+
 // Mock LicenseHandler functions
 vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
+  ActivateLicenseKey: vi.fn(() => Promise.resolve({
+    id: 'test-id',
+    name: 'Test User',
+    email: 'test@example.com',
+    plan: 'pro',
+    status: 'active',
+    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+    token: 'test-token'
+  })),
   GetLicenseStatus: vi.fn(() => Promise.resolve({
     id: 'test-id',
     name: 'Test User',
@@ -50,16 +98,33 @@ vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
     hardwareId: 'test-hw-id',
     role: 'user'
   })),
-  VerifyOTP: vi.fn(() => Promise.resolve({
+  LoginAccount: vi.fn(() => Promise.resolve({
     id: 'test-id',
     name: 'Test User',
     email: 'test@example.com',
     plan: 'pro',
     status: 'active',
     expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
-    hardwareId: 'test-hw-id',
-    role: 'user',
     token: 'test-token'
+  })),
+  LoginWithGoogle: vi.fn(() => Promise.resolve({
+    id: 'test-id',
+    name: 'Test User',
+    email: 'test@example.com',
+    plan: 'pro',
+    status: 'active',
+    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+    token: 'test-token'
+  })),
+  Logout: vi.fn(() => Promise.resolve('success')),
+  RegisterAccount: vi.fn((name: string, email: string) => Promise.resolve({
+    id: 'test-id',
+    name: name || 'Test User',
+    email: email || 'test@example.com',
+    plan: 'trial',
+    status: 'pending_otp',
+    expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
+    token: ''
   })),
   ResendOTP: vi.fn((email: string) => Promise.resolve({
     id: 'test-id',
@@ -70,6 +135,18 @@ vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
     expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
     hardwareId: 'test-hw-id',
     role: 'user'
+  })),
+  ResetPassword: vi.fn(() => Promise.resolve('success')),
+  VerifyOTP: vi.fn(() => Promise.resolve({
+    id: 'test-id',
+    name: 'Test User',
+    email: 'test@example.com',
+    plan: 'pro',
+    status: 'active',
+    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+    hardwareId: 'test-hw-id',
+    role: 'user',
+    token: 'test-token'
   })),
 }));
 

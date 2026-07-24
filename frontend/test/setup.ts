@@ -28,16 +28,85 @@ Object.defineProperty(window, 'go', {
   value: {
     main: {
       App: {
-        LoadAutoSave: () => Promise.resolve(""),
-        SaveAutoSave: () => Promise.resolve(),
+        ApplyMaskToImage: () => Promise.resolve(''),
+        CheckForUpdate: () => Promise.resolve({ has_update: false, current_version: 'v1.0.0', latest_version: 'v1.0.0', download_url: '', release_notes: '' }),
         ClearAutoSave: () => Promise.resolve(),
-        SaveImageFromBase64: () => Promise.resolve(""),
-        OpenFile: () => Promise.resolve(""),
-        SaveFile: () => Promise.resolve(),
-        SaveFileDialog: () => Promise.resolve(""),
-        EnhanceImage: () => Promise.resolve("")
+        DeleteCustomTemplate: () => Promise.resolve(),
+        DownloadAndInstallUpdate: () => Promise.resolve(),
+        EnhanceImageWithAI: () => Promise.resolve(''),
+        ExportSupportLogs: () => Promise.resolve(''),
+        GetCustomTemplates: () => Promise.resolve([]),
+        LoadAutoSave: () => Promise.resolve(''),
+        LogFrontendError: () => Promise.resolve(),
+        OpenFile: () => Promise.resolve(''),
+        OpenMultipleFiles: () => Promise.resolve([]),
+        SaveAutoSave: () => Promise.resolve(),
+        SaveCustomTemplate: () => Promise.resolve(),
+        SaveFile: () => Promise.resolve(''),
+        SaveFileDialog: () => Promise.resolve(''),
+        SaveImageFromBase64: () => Promise.resolve(''),
+      }
+    },
+    handlers: {
+      ProjectHandler: {
+        SaveProject: () => Promise.resolve('success'),
+        GetAllProjects: () => Promise.resolve([]),
+        GetProject: () => Promise.resolve(null),
+        DeleteProject: () => Promise.resolve('success'),
+      },
+      BackupHandler: {
+        ExportBackup: () => Promise.resolve(''),
+        ImportBackup: () => Promise.resolve('success'),
+        ResetLibrary: () => Promise.resolve('success'),
+      },
+      PrintHandler: {
+        ExportPrintSheet: () => Promise.resolve({ success: true, imagePath: '' }),
+      },
+      LicenseHandler: {
+        ActivateLicenseKey: () => Promise.resolve({}),
+        GetLicenseStatus: () => Promise.resolve({}),
+        LoginAccount: () => Promise.resolve({}),
+        LoginWithGoogle: () => Promise.resolve({}),
+        Logout: () => Promise.resolve('success'),
+        RegisterAccount: () => Promise.resolve({}),
+        ResendOTP: () => Promise.resolve({}),
+        ResetPassword: () => Promise.resolve('success'),
+        VerifyOTP: () => Promise.resolve({}),
       }
     }
+  },
+  writable: true
+});
+
+Object.defineProperty(window, 'runtime', {
+  value: {
+    EventsOnMultiple: () => () => {},
+    EventsOn: () => () => {},
+    EventsOff: () => {},
+    EventsOffAll: () => {},
+    EventsOnce: () => {},
+    EventsEmit: () => {},
+    BrowserOpenURL: () => {},
+    WindowMinimise: () => {},
+    WindowToggleMaximise: () => {},
+    WindowIsMaximised: () => false,
+    WindowMaximise: () => {},
+    WindowUnmaximise: () => {},
+    WindowGetSize: async () => ({ w: 1024, h: 768 }),
+    WindowSetSize: () => {},
+    WindowGetPosition: async () => ({ x: 0, y: 0 }),
+    WindowSetPosition: () => {},
+    WindowSetTitle: () => {},
+    Quit: () => {},
+    OnFileDrop: () => {},
+    OnFileDropOff: () => {},
+    LogPrint: () => {},
+    LogTrace: () => {},
+    LogDebug: () => {},
+    LogInfo: () => {},
+    LogWarning: () => {},
+    LogError: () => {},
+    LogFatal: () => {},
   },
   writable: true
 });

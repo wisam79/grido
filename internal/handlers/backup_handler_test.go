@@ -1,14 +1,26 @@
 package handlers
 
 import (
+	"os"
+	"path/filepath"
+	"testing"
+
 	"grido/internal/core/domain"
 	"grido/internal/repository"
 	"grido/internal/service"
-	"testing"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+func init() {
+	tempDir, _ := os.MkdirTemp("", "grido-test-handlers-global-*")
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	os.Setenv("GRIDO_APP_DIR", appDir)
+	os.Setenv("APPDATA", tempDir)
+	os.Setenv("HOME", tempDir)
+	os.Setenv("XDG_CONFIG_HOME", tempDir)
+}
 
 func TestBackupHandler_ExportAndImport(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})

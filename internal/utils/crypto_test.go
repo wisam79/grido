@@ -9,6 +9,15 @@ import (
 	"grido/internal/core/domain"
 )
 
+func init() {
+	tempDir, _ := os.MkdirTemp("", "grido-test-utils-global-*")
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	os.Setenv("GRIDO_APP_DIR", appDir)
+	os.Setenv("APPDATA", tempDir)
+	os.Setenv("HOME", tempDir)
+	os.Setenv("XDG_CONFIG_HOME", tempDir)
+}
+
 func TestLoadOrCreateMasterKey(t *testing.T) {
 	// Cleanup any existing master key to ensure clean test
 	keyPath := filepath.Join(GetAppDir(), ".license_masterkey")
@@ -131,5 +140,37 @@ func TestTimeVerification(t *testing.T) {
 	future := now.Add(1 * time.Hour)
 	if !VerifyTime(future) {
 		t.Error("Expected future time to be verified successfully")
+	}
+}
+
+func TestSaveAndLoadEncryptedToken(t *testing.T) {
+	_ = ClearEncryptedToken()
+	defer ClearEncryptedToken()
+
+	token := "mock_access_token_123"
+	refreshToken := "mock_refresh_token_456"
+
+	err := SaveEncryptedToken(token, refreshToken)
+	if err != nil {
+		t.Fatalf("SaveEncryptedToken failed: %v", err)
+	}
+
+	loadedToken, loadedRefresh, err := LoadEncryptedToken()
+	if err != nil {
+		t.Fatalf("LoadEncryptedToken failed: %v", err)
+	}
+
+	if loadedToken != token {
+		t.Errorf("Expected token %q, got %q", token, loadedToken)
+	}
+	if loadedRefresh != refreshToken {
+		t.Errorf("Expected refresh token %q, got %q", refreshToken, loadedRefresh)
+	}
+
+	// Test clearing
+	_ = ClearEncryptedToken()
+	_, _, err = LoadEncryptedToken()
+	if err == nil {
+		t.Error("Expected error loading cleared token, got nil")
 	}
 }

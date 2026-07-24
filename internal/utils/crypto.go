@@ -15,10 +15,26 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"grido/internal/core/domain"
 )
+
+// writeSecureFile writes data to a temporary file first and renames it atomically
+// to prevent file corruption in case of unexpected crashes.
+func writeSecureFile(path string, data []byte) error {
+	tmpPath := path + ".tmp"
+	defer func() {
+		_ = os.Remove(tmpPath)
+	}()
+
+	if err := os.WriteFile(tmpPath, data, 0600); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpPath, path)
+}
 
 // LoadOrCreateMasterKey derives a deterministic 32-byte master key from the
 // device ID plus a fixed salt. The previous implementation stored the key in a
@@ -41,6 +57,10 @@ func LoadOrCreateMasterKey() ([]byte, error) {
 
 // ComputeProfileSignature computes a HMAC-SHA256 signature for the user profile.
 func ComputeProfileSignature(profile *domain.UserProfile) (string, error) {
+	if profile == nil || profile.ID == "" {
+		return "", errors.New("invalid profile for signature computation")
+	}
+
 	key, err := LoadOrCreateMasterKey()
 	if err != nil {
 		return "", err
@@ -65,12 +85,15 @@ func SaveLicenseSignature(profile *domain.UserProfile) error {
 	}
 
 	path := filepath.Join(GetAppDir(), ".license_signature")
-	return os.WriteFile(path, []byte(sig), 0600)
+	return writeSecureFile(path, []byte(sig))
 }
 
 // VerifyLicenseSignature checks if the local signature matches the profile.
 func VerifyLicenseSignature(profile *domain.UserProfile) bool {
-	if profile == nil || profile.ID == "" || profile.Plan == "free" {
+	if profile == nil || profile.ID == "" {
+		return false
+	}
+	if profile.Plan == "free" {
 		return true // Free/null profiles don't need verification
 	}
 
@@ -99,14 +122,24 @@ func ClearLicenseSignature() error {
 	return nil
 }
 
-// UpdateLastTime records the last known time to prevent system clock rollback.
+// UpdateLastTime records the last known time signed with HMAC to prevent clock rollback tampering.
 func UpdateLastTime(t time.Time) error {
+	key, err := LoadOrCreateMasterKey()
+	if err != nil {
+		return err
+	}
+
+	unixStr := strconv.FormatInt(t.Unix(), 10)
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte(unixStr))
+	sigHex := hex.EncodeToString(mac.Sum(nil))
+
+	payload := fmt.Sprintf("%s|%s", unixStr, sigHex)
 	path := filepath.Join(GetAppDir(), ".license_time")
-	val := strconv.FormatInt(t.Unix(), 10)
-	return os.WriteFile(path, []byte(val), 0600)
+	return writeSecureFile(path, []byte(payload))
 }
 
-// VerifyTime returns false if system clock rollback is detected.
+// VerifyTime returns false if system clock rollback is detected or time file is tampered with.
 func VerifyTime(t time.Time) bool {
 	path := filepath.Join(GetAppDir(), ".license_time")
 	data, err := os.ReadFile(path)
@@ -114,9 +147,36 @@ func VerifyTime(t time.Time) bool {
 		return true // No previous run time stored yet
 	}
 
-	lastUnix, err := strconv.ParseInt(string(data), 10, 64)
+	parts := strings.Split(string(data), "|")
+	if len(parts) != 2 {
+		// Fallback for legacy plaintext time format if present
+		lastUnix, err := strconv.ParseInt(strings.TrimSpace(string(data)), 10, 64)
+		if err != nil {
+			return false
+		}
+		return t.Unix() >= lastUnix-300
+	}
+
+	unixStr := parts[0]
+	storedSigHex := parts[1]
+
+	key, err := LoadOrCreateMasterKey()
 	if err != nil {
-		return true
+		return false
+	}
+
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte(unixStr))
+	expectedSig := hex.EncodeToString(mac.Sum(nil))
+
+	if !hmac.Equal([]byte(expectedSig), []byte(storedSigHex)) {
+		slog.Warn("License time integrity check failed")
+		return false
+	}
+
+	lastUnix, err := strconv.ParseInt(unixStr, 10, 64)
+	if err != nil {
+		return false
 	}
 
 	// Allow 5 minutes maximum drift (in case of small sync adjustments)
@@ -166,7 +226,7 @@ func SaveEncryptedToken(accessToken, refreshToken string) error {
 
 	ciphertext := gcm.Seal(nonce, nonce, payload, nil)
 	path := filepath.Join(GetAppDir(), ".license_token")
-	return os.WriteFile(path, ciphertext, 0600)
+	return writeSecureFile(path, ciphertext)
 }
 
 // LoadEncryptedToken reads and decrypts the tokens from .license_token
@@ -204,7 +264,7 @@ func LoadEncryptedToken() (string, string, error) {
 
 	var pair encryptedTokenPair
 	if err := json.Unmarshal(plaintext, &pair); err != nil {
-		// Fallback for backward compatibility if the stored token is raw plaintext
+		// Fallback for backward compatibility if the stored token is raw token string
 		return string(plaintext), "", nil
 	}
 
@@ -216,3 +276,4 @@ func ClearEncryptedToken() error {
 	path := filepath.Join(GetAppDir(), ".license_token")
 	return os.Remove(path)
 }
+

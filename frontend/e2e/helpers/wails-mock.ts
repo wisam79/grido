@@ -89,6 +89,7 @@ export async function setupWailsMock(page: Page) {
             expiresAt: "2030-01-01T00:00:00Z",
             token: ""
           }),
+          ResetPassword: async (email: string) => 'success',
           VerifyOTP: async (email: string) => ({
             id: "mock-user",
             email: email || "e2e-test@grido.app",
@@ -98,6 +99,11 @@ export async function setupWailsMock(page: Page) {
             expiresAt: "2030-01-01T00:00:00Z",
             token: "mock-token"
           })
+        },
+        BackupHandler: {
+          ExportBackup: async () => 'C:/mock/backup.zip',
+          ImportBackup: async () => 'success',
+          ResetLibrary: async () => 'success',
         },
         PrintHandler: {
           ExportPrintSheet: async () => ({ success: true, imagePath: 'mock.png' })
@@ -118,6 +124,10 @@ export async function setupWailsMock(page: Page) {
       WindowIsMaximised: () => false,
       WindowMaximise: () => {},
       WindowUnmaximise: () => {},
+      WindowGetSize: async () => ({ w: 1024, h: 768 }),
+      WindowSetSize: () => {},
+      WindowGetPosition: async () => ({ x: 0, y: 0 }),
+      WindowSetPosition: () => {},
       WindowSetTitle: () => {},
       Quit: () => {},
       OnFileDrop: () => {},

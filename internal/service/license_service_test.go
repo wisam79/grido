@@ -1,14 +1,26 @@
 package service
 
 import (
-	"grido/internal/core/domain"
-	"grido/internal/repository"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"grido/internal/core/domain"
+	"grido/internal/repository"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+func init() {
+	tempDir, _ := os.MkdirTemp("", "grido-test-service-global-*")
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	os.Setenv("GRIDO_APP_DIR", appDir)
+	os.Setenv("APPDATA", tempDir)
+	os.Setenv("HOME", tempDir)
+	os.Setenv("XDG_CONFIG_HOME", tempDir)
+}
 
 func TestLicenseService_CheckStatus(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})

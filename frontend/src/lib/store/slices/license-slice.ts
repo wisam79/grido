@@ -30,6 +30,7 @@ export interface LicenseSlice {
   loginWithGoogle: () => Promise<UserProfile>;
   activateLicenseKey: (key: string) => Promise<UserProfile>;
   logoutAccount: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   isLicenseActive: () => boolean;
   
   logAiUsage: (record: Omit<AiUsageRecord, "id" | "timestamp">) => void;
@@ -108,12 +109,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
   resendOTP: async (email) => {
     set({ licenseLoading: true });
     try {
-      let profile;
-      if (typeof (LicenseHandler as any).ResendOTP === "function") {
-        profile = await (LicenseHandler as any).ResendOTP(email);
-      } else {
-        profile = { email, status: "pending_otp" } as UserProfile;
-      }
+      const profile = await LicenseHandler.ResendOTP(email);
       set({ licenseLoading: false });
       return profile;
     } catch (err) {
@@ -158,6 +154,17 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     }
   },
 
+  resetPassword: async (email) => {
+    set({ licenseLoading: true });
+    try {
+      await LicenseHandler.ResetPassword(email);
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "فشل إرسال رابط إعادة تعيين كلمة المرور");
+    } finally {
+      set({ licenseLoading: false });
+    }
+  },
+
   logoutAccount: async () => {
     try {
       if (typeof LicenseHandler.Logout === "function") {
@@ -178,7 +185,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
         return true;
       }
     } else if (user.plan === "trial") {
-      if (new Date(user.expiresAt).getTime() > Date.now()) {
+      if (user.status === "active" && new Date(user.expiresAt).getTime() > Date.now()) {
         return true;
       }
     }

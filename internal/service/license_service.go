@@ -86,7 +86,7 @@ func init() {
 
 var sharedClient = &http.Client{Timeout: 10 * time.Second}
 
-const maxResponseSize = 5 * 1024 * 1024 // 5 MB limit for HTTP responses
+const maxResponseSize = 64 * 1024 // 64 KB limit for HTTP responses
 
 var ErrUnauthorized = errors.New("unauthorized")
 
@@ -208,6 +208,9 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 	}
 	if len(password) < 6 {
 		return nil, errors.New("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
+	}
+	if len(password) > 128 {
+		return nil, errors.New("كلمة المرور يجب أن لا تتجاوز 128 حرفاً")
 	}
 
 	payload, err := json.Marshal(SupabaseAuthRequest{
@@ -418,6 +421,9 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 	if len(password) < 6 {
 		return nil, errors.New("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
 	}
+	if len(password) > 128 {
+		return nil, errors.New("كلمة المرور يجب أن لا تتجاوز 128 حرفاً")
+	}
 
 	payload, err := json.Marshal(SupabaseAuthRequest{
 		Email:    email,
@@ -446,7 +452,7 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 		slog.Error("Supabase login error", "status", resp.StatusCode, "body", string(body), "email", email)
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			if strings.Contains(errMsg, "تأكيد") || strings.Contains(string(body), "Email not confirmed") {
-				return &domain.UserProfile{Email: email, Status: "pending_otp"}, errors.New(errMsg)
+				return nil, errors.New(errMsg) // Wails will just pass the error string
 			}
 			return nil, errors.New(errMsg)
 		}
@@ -534,10 +540,12 @@ func (s *LicenseService) fetchProfileWithRetry(token, userID string, maxRetries 
 	var prof *SupabaseProfile
 	var err error
 	for i := 0; i < maxRetries; i++ {
-		time.Sleep(time.Duration(200*(i+1)) * time.Millisecond)
 		prof, err = s.fetchProfile(token, userID)
 		if err == nil {
 			break
+		}
+		if i < maxRetries-1 {
+			time.Sleep(time.Duration(200*(i+1)) * time.Millisecond)
 		}
 	}
 	if prof == nil {
@@ -605,17 +613,13 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 
 	mux.HandleFunc("/exchange", func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if origin != "https://grido.cloud-ip.cc" && origin != "http://127.0.0.1:34567" && origin != "http://localhost:34567" && origin != "" {
+		if origin == "" || (origin != "https://grido.cloud-ip.cc" && origin != "http://127.0.0.1:34567" && origin != "http://localhost:34567") {
 			slog.Warn("Blocked OAuth exchange from untrusted origin", "origin", origin)
 			http.Error(w, "Forbidden Origin", http.StatusForbidden)
 			return
 		}
 
-		if origin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-		} else {
-			w.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:34567")
-		}
+		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
@@ -835,6 +839,10 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+			local.RefreshToken = ""
+			_ = s.repo.Save(local)
+		}
 		return fmt.Errorf("failed to refresh token: status %d", resp.StatusCode)
 	}
 
@@ -852,7 +860,51 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 }
 
 func (s *LicenseService) Logout() error {
+	local, err := s.repo.Get()
+	if err == nil && local != nil && local.Token != "" {
+		req, _ := http.NewRequest("POST", SupabaseURL+"/auth/v1/logout", nil)
+		req.Header.Set("apikey", SupabaseAnonKey)
+		req.Header.Set("Authorization", "Bearer "+local.Token)
+		_, _ = sharedClient.Do(req)
+	}
 	return s.repo.Clear()
+}
+
+func (s *LicenseService) ResetPassword(email string) error {
+	email = strings.TrimSpace(strings.ToLower(email))
+	if email == "" {
+		return errors.New("البريد الإلكتروني مطلوب")
+	}
+
+	payload, err := json.Marshal(map[string]string{
+		"email": email,
+	})
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/recover", bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("apikey", SupabaseAnonKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := sharedClient.Do(req)
+	if err != nil {
+		return errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+		if errMsg := parseSupabaseError(body); errMsg != "" {
+			return errors.New(errMsg)
+		}
+		return errors.New("فشل إرسال رابط إعادة تعيين كلمة المرور")
+	}
+
+	return nil
 }
 
 func parseSupabaseError(body []byte) string {

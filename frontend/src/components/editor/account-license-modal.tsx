@@ -47,6 +47,7 @@ export function AccountLicenseModal() {
     registerAccount,
     activateLicenseKey,
     logoutAccount,
+    resetPassword,
     isLicenseActive,
     verifyOTP,
     resendOTP,
@@ -60,6 +61,7 @@ export function AccountLicenseModal() {
       registerAccount: state.registerAccount,
       activateLicenseKey: state.activateLicenseKey,
       logoutAccount: state.logoutAccount,
+      resetPassword: state.resetPassword,
       isLicenseActive: state.isLicenseActive,
       verifyOTP: state.verifyOTP,
       resendOTP: state.resendOTP,
@@ -69,7 +71,7 @@ export function AccountLicenseModal() {
   // Form states
   const [activeTab, setActiveTab] = useState<"auth" | "license">(() => {
     const user = useEditorStore.getState().user;
-    if (user && user.plan !== "free" && user.token) {
+    if (user && user.token) {
       return "license";
     }
     return "auth";
@@ -187,6 +189,25 @@ export function AccountLicenseModal() {
         setError(errMsg);
         toast.error(errMsg);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      toast.error("يرجى إدخال البريد الإلكتروني أولاً لإرسال رابط إعادة التعيين.");
+      return;
+    }
+    setLoading(true);
+    try {
+      if (typeof resetPassword === "function") {
+        await resetPassword(cleanEmail);
+        toast.success("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "فشل إرسال رابط إعادة التعيين.");
     } finally {
       setLoading(false);
     }
@@ -402,7 +423,19 @@ export function AccountLicenseModal() {
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-medium">كلمة المرور</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-medium">كلمة المرور</Label>
+                      {authMode === "login" && (
+                        <button
+                          type="button"
+                          onClick={handleResetPassword}
+                          disabled={loading}
+                          className="text-[10px] text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline"
+                        >
+                          نسيت كلمة المرور؟
+                        </button>
+                      )}
+                    </div>
                     <div className="relative">
                       <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                       <Input
