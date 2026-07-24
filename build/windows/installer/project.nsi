@@ -6,7 +6,7 @@ Unicode true
 
 !define INFO_PRODUCTNAME "Grido Studio"
 !define INFO_COMPANYNAME "Grido Studio"
-!define PRODUCT_EXECUTABLE "Grido Studio.exe"
+!define PRODUCT_EXECUTABLE "GridoStudio.exe"
 
 !include "wails_tools.nsh"
 
@@ -92,11 +92,13 @@ Section
     !insertmacro wails.webview2runtime
 
     # Force kill running app instances to release file lock before overwriting
+    ExecWait 'taskkill /F /IM "GridoStudio.exe" /T'
     ExecWait 'taskkill /F /IM "Grido Studio.exe" /T'
     ExecWait 'taskkill /F /IM "grido.exe" /T'
     Sleep 1000
 
-    # Clean up legacy grido.exe binary if present to avoid dual-binary confusion
+    # Clean up legacy binaries if present to avoid dual-binary confusion
+    Delete "$INSTDIR\Grido Studio.exe"
     Delete "$INSTDIR\grido.exe"
 
     SetOutPath $INSTDIR
