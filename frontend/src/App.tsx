@@ -87,11 +87,16 @@ export default function App() {
 
   useEffect(() => {
     const check = async () => {
-      const profile = await checkLicenseStatus();
-      if (!profile || !profile.token) {
-        setAccountModalOpen(true);
+      try {
+        const profile = await checkLicenseStatus();
+        if (!profile || !profile.token) {
+          setAccountModalOpen(true);
+        }
+      } catch (err) {
+        console.error("Failed to check license status during init:", err);
+      } finally {
+        setIsInitializing(false);
       }
-      setIsInitializing(false);
     };
     check();
 
