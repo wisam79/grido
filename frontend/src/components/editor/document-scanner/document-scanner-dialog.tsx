@@ -15,7 +15,6 @@ import {
   RefreshCw,
   Check,
   Eye,
-  Info,
   Maximize2,
   FileText,
   CreditCard,

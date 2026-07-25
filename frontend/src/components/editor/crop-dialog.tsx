@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Cropper, ReactCropperElement } from "react-cropper";
 import "cropperjs/dist/cropper.css";
-import { Scissors, Maximize2, RotateCw, ZoomIn, ZoomOut, Info, RotateCcw, RefreshCw, Check, Sparkles } from "lucide-react";
+import { Scissors, Maximize2, RotateCw, ZoomIn, ZoomOut, RotateCcw, RefreshCw, Check, Sparkles } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import {
