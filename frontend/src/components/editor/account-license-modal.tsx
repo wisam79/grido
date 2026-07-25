@@ -48,10 +48,12 @@ export function AccountLicenseModal() {
     activateLicenseKey,
     logoutAccount,
     resetPassword,
+    verifyRecoveryOTP,
     isLicenseActive,
     verifyOTP,
     resendOTP,
   } = useEditorStore(
+
     useShallow((state) => ({
       user: state.user,
       accountModalOpen: state.accountModalOpen,
