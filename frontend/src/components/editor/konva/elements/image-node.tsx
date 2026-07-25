@@ -106,13 +106,6 @@ export const URLImage = React.memo(function URLImage({
         clearTimeout(cacheTimerRef.current);
         cacheTimerRef.current = null;
       }
-      if (node) {
-        try {
-          node.clearCache();
-        } catch (err) {
-          // Ignore
-        }
-      }
     };
   }, [
     image,

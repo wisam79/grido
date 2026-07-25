@@ -75,15 +75,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }
       }
     }
-    return () => {
-      if (node) {
-        try {
-          node.clearCache();
-        } catch (err) {
-          console.warn("Failed to clear collage image cache", err);
-        }
-      }
-    };
+    return () => {};
   }, [image, hasFilters, filter, brightness, contrast, saturation]);
 
   const { filters, totalBrightness, totalContrast, totalSaturation, totalHue } = useMemo(() => {

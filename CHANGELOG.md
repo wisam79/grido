@@ -5,6 +5,12 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.38] - 2026-07-25
+
+### Fixed
+- Canvas filter disappearance flash during element movement resolved by preserving atomic node cache in `image-node.tsx` and `collage-image.tsx`
+- Brevo SMTP transactional authentication and email verification integration hardened
+
 ## [Unreleased]
 
 ### Security
