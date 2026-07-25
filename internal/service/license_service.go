@@ -988,16 +988,21 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 
 		resp, err := sharedClient.Do(req)
 		if err != nil {
+			slog.Error("Network error verifying OTP", "error", err, "type", vType)
 			return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
 		}
 
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 		resp.Body.Close()
 
+		slog.Info("Supabase Verify OTP response", "type", vType, "status", resp.StatusCode, "body", string(body))
+
 		if resp.StatusCode == http.StatusOK {
 			if err := json.NewDecoder(bytes.NewReader(body)).Decode(&authRes); err == nil && authRes.AccessToken != "" {
 				lastErr = nil
 				break
+			} else {
+				slog.Error("Failed to decode auth response or missing access token", "error", err, "body", string(body))
 			}
 		}
 
@@ -1009,6 +1014,7 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 	}
 
 	if lastErr != nil {
+		slog.Error("All OTP verify types failed", "lastErr", lastErr)
 		return nil, lastErr
 	}
 
@@ -1025,12 +1031,14 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 
 	updateResp, err := sharedClient.Do(updateReq)
 	if err != nil {
+		slog.Error("Network error updating password", "error", err)
 		return nil, errors.New("فشل تحديث كلمة المرور الجديدة")
 	}
 	defer updateResp.Body.Close()
 
 	if updateResp.StatusCode != http.StatusOK {
 		updateBody, _ := io.ReadAll(io.LimitReader(updateResp.Body, maxResponseSize))
+		slog.Error("Supabase update password failed", "status", updateResp.StatusCode, "body", string(updateBody))
 		if errMsg := parseSupabaseError(updateBody); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}

@@ -50,7 +50,7 @@ export function DocumentScannerDialog({
   const [isHoveringCorner, setIsHoveringCorner] = useState<number | null>(null);
   const [loupePos, setLoupePos] = useState<{ x: number; y: number } | null>(null);
   const [aspect, setAspect] = useState<AspectRatioOption>("free");
-  const [filter, setFilter] = useState<FilterType>("magic");
+  const [filter, setFilter] = useState<FilterType>("original");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
 
@@ -537,20 +537,6 @@ export function DocumentScannerDialog({
               </Label>
               <div className="grid grid-cols-1 gap-1.5">
                 <Button
-                  variant={filter === "magic" ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-bold justify-start px-3 gap-2 cursor-pointer transition-all border-border/50",
-                    filter === "magic" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
-                  )}
-                  onClick={() => handleFilterChange("magic")}
-                  title="ماسح ضوئي ذكي وتبييض الورقة"
-                >
-                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  <span>ماسح ضوئي ذكي (Magic)</span>
-                </Button>
-
-                <Button
                   variant={filter === "original" ? "default" : "outline"}
                   size="sm"
                   className={cn(
@@ -562,6 +548,20 @@ export function DocumentScannerDialog({
                 >
                   <FileText className="w-3.5 h-3.5 shrink-0" />
                   <span>الألوان الأصلية</span>
+                </Button>
+
+                <Button
+                  variant={filter === "magic" ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "h-8.5 rounded-xl text-[11px] font-bold justify-start px-3 gap-2 cursor-pointer transition-all border-border/50",
+                    filter === "magic" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
+                  )}
+                  onClick={() => handleFilterChange("magic")}
+                  title="ماسح ضوئي ذكي وتبييض الورقة"
+                >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span>ماسح ضوئي ذكي (Magic)</span>
                 </Button>
 
                 <Button
