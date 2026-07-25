@@ -215,7 +215,7 @@ export function AccountLicenseModal() {
         toast.success("تم إرسال كود استعادة كلمة المرور (OTP) إلى بريدك الإلكتروني.");
       }
     } catch (err: any) {
-      const errMsg = err?.message || "فشل إرسال كود استعادة كلمة المرور.";
+      const errMsg = typeof err === "string" ? err : (err?.message || "فشل إرسال كود استعادة كلمة المرور.");
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -247,7 +247,7 @@ export function AccountLicenseModal() {
         setActiveTab("license");
       }
     } catch (err: any) {
-      const errMsg = err?.message || "فشل تعيين كلمة المرور الجديدة. تحقق من كود الاستعادة والبيانات.";
+      const errMsg = typeof err === "string" ? err : (err?.message || "فشل تعيين كلمة المرور الجديدة. تحقق من كود الاستعادة والبيانات.");
       setError(errMsg);
       toast.error(errMsg);
     } finally {
