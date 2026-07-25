@@ -72,7 +72,9 @@ Object.defineProperty(window, 'go', {
         ResendOTP: () => Promise.resolve({}),
         ResetPassword: () => Promise.resolve('success'),
         VerifyOTP: () => Promise.resolve({}),
+        VerifyRecoveryOTP: () => Promise.resolve({}),
       }
+
     }
   },
   writable: true

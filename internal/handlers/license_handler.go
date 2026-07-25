@@ -56,3 +56,7 @@ func (h *LicenseHandler) ResetPassword(email string) (string, error) {
 	}
 	return "success", nil
 }
+
+func (h *LicenseHandler) VerifyRecoveryOTP(email, token, newPassword string) (*domain.UserProfile, error) {
+	return h.service.VerifyRecoveryOTP(email, token, newPassword)
+}

@@ -137,7 +137,19 @@ vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
     role: 'user'
   })),
   ResetPassword: vi.fn(() => Promise.resolve('success')),
+  VerifyRecoveryOTP: vi.fn(() => Promise.resolve({
+    id: 'test-id',
+    name: 'Test User',
+    email: 'test@example.com',
+    plan: 'pro',
+    status: 'active',
+    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+    hardwareId: 'test-hw-id',
+    role: 'user',
+    token: 'test-jwt-token'
+  })),
   VerifyOTP: vi.fn(() => Promise.resolve({
+
     id: 'test-id',
     name: 'Test User',
     email: 'test@example.com',

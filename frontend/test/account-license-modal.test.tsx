@@ -18,6 +18,7 @@ vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
   LoginWithGoogle: vi.fn(),
   ActivateLicenseKey: vi.fn(),
   ResetPassword: vi.fn(),
+  VerifyRecoveryOTP: vi.fn(),
   Logout: vi.fn(),
 }));
 

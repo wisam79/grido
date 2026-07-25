@@ -90,7 +90,17 @@ export async function setupWailsMock(page: Page) {
             token: ""
           }),
           ResetPassword: async (email: string) => 'success',
+          VerifyRecoveryOTP: async (email: string) => ({
+            id: "mock-user",
+            email: email || "e2e-test@grido.app",
+            name: "E2E Tester",
+            plan: "pro",
+            status: "active",
+            expiresAt: "2030-01-01T00:00:00Z",
+            token: "mock-token-123"
+          }),
           VerifyOTP: async (email: string) => ({
+
             id: "mock-user",
             email: email || "e2e-test@grido.app",
             name: "E2E Tester",

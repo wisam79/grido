@@ -62,6 +62,7 @@ export function AccountLicenseModal() {
       activateLicenseKey: state.activateLicenseKey,
       logoutAccount: state.logoutAccount,
       resetPassword: state.resetPassword,
+      verifyRecoveryOTP: state.verifyRecoveryOTP,
       isLicenseActive: state.isLicenseActive,
       verifyOTP: state.verifyOTP,
       resendOTP: state.resendOTP,
@@ -88,6 +89,9 @@ export function AccountLicenseModal() {
   const [error, setError] = useState<string | null>(null);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [showRecoveryOtp, setShowRecoveryOtp] = useState(false);
+  const [recoveryOtp, setRecoveryOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   // Countdown timer for OTP resend button
   useEffect(() => {
@@ -197,21 +201,58 @@ export function AccountLicenseModal() {
   const handleResetPassword = async () => {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail) {
-      toast.error("يرجى إدخال البريد الإلكتروني أولاً لإرسال رابط إعادة التعيين.");
+      toast.error("يرجى إدخال البريد الإلكتروني أولاً لإرسال كود الاستعادة.");
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       if (typeof resetPassword === "function") {
         await resetPassword(cleanEmail);
-        toast.success("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.");
+        setShowRecoveryOtp(true);
+        toast.success("تم إرسال كود استعادة كلمة المرور (OTP) إلى بريدك الإلكتروني.");
       }
     } catch (err: any) {
-      toast.error(err?.message || "فشل إرسال رابط إعادة التعيين.");
+      const errMsg = err?.message || "فشل إرسال كود استعادة كلمة المرور.";
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleVerifyRecovery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanOtp = recoveryOtp.trim();
+    const cleanNewPassword = newPassword.trim();
+
+    if (!cleanEmail || !cleanOtp || !cleanNewPassword) {
+      toast.error("جميع الحقول مطلوبة.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      if (typeof verifyRecoveryOTP === "function") {
+        await verifyRecoveryOTP(cleanEmail, cleanOtp, cleanNewPassword);
+        toast.success("تم تعيين كلمة المرور الجديدة وتسجيل الدخول بنجاح!");
+        setShowRecoveryOtp(false);
+        setRecoveryOtp("");
+        setNewPassword("");
+        setActiveTab("license");
+      }
+    } catch (err: any) {
+      const errMsg = err?.message || "فشل تعيين كلمة المرور الجديدة. تحقق من كود الاستعادة والبيانات.";
+      setError(errMsg);
+      toast.error(errMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -320,16 +361,30 @@ export function AccountLicenseModal() {
 
           {/* 🔑 تبويب الدخول/التسجيل */}
           <TabsContent value="auth" className="mt-3 space-y-3">
-            <form onSubmit={handleAuth} className="space-y-3">
-              {error && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                  <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-                  <span>{error}</span>
+            {showRecoveryOtp ? (
+              <form onSubmit={handleVerifyRecovery} className="space-y-3">
+                {error && (
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
+                    <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">البريد الإلكتروني</Label>
+                  <div className="relative">
+                    <Mail className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="name@example.com"
+                      className="pr-8 h-9 text-xs"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
                 </div>
-              )}
-              {showOtp ? (
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium">كود التحقق (OTP)</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">كود الاستعادة (OTP)</Label>
                   <div className="relative">
                     <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                     <Input
@@ -338,172 +393,243 @@ export function AccountLicenseModal() {
                       maxLength={6}
                       className="pr-8 h-9 text-xs tracking-widest text-center font-mono"
                       required
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value)}
+                      value={recoveryOtp}
+                      onChange={(e) => setRecoveryOtp(e.target.value)}
                       dir="ltr"
                     />
                   </div>
                   <p className="text-[10px] text-muted-foreground text-center">
-                    تم إرسال الكود إلى {email}
+                    أدخل كود الاستعادة المكون من 6 أرقام المرسل إلى {email}
                   </p>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full h-9 text-xs font-bold" 
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      "تأكيد الكود وتسجيل الدخول"
-                    )}
-                  </Button>
-
-                  <div className="flex items-center justify-between text-[11px] pt-1 border-t border-border/40 mt-2">
-                    <button
-                      type="button"
-                      onClick={handleResendOTP}
-                      disabled={resending || resendCooldown > 0}
-                      className="text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline"
-                    >
-                      {resending ? (
-                        <span className="flex items-center gap-1">
-                          <Loader2 className="w-3 h-3 animate-spin inline" /> جاري الإرسال...
-                        </span>
-                      ) : resendCooldown > 0 ? (
-                        `إعادة الإرسال بعد (${resendCooldown} ث)`
-                      ) : (
-                        "إعادة إرسال كود التحقق"
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowOtp(false);
-                        setError(null);
-                      }}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      تغيير البريد
-                    </button>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">كلمة المرور الجديدة</Label>
+                  <div className="relative">
+                    <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      className="pr-8 h-9 text-xs"
+                      required
+                      minLength={6}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
                   </div>
                 </div>
-              ) : (
-                <>
-                  {authMode === "register" && (
-                    <div className="space-y-1">
-                      <Label className="text-xs font-medium">الاسم الكامل</Label>
-                      <div className="relative">
-                        <User className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                        <Input
-                          placeholder="الاسم"
-                          className="pr-8 h-9 text-xs"
-                          required
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                        />
-                      </div>
+                <Button 
+                  type="submit" 
+                  className="w-full h-9 text-xs font-bold" 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    "حفظ كلمة المرور الجديدة وتسجيل الدخول"
+                  )}
+                </Button>
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRecoveryOtp(false);
+                      setError(null);
+                    }}
+                    className="text-[11px] text-muted-foreground hover:text-foreground font-medium"
+                  >
+                    إلغاء والعودة لتسجيل الدخول
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <form onSubmit={handleAuth} className="space-y-3">
+                  {error && (
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
+                      <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                      <span>{error}</span>
                     </div>
                   )}
+                  {showOtp ? (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">كود التحقق (OTP)</Label>
+                      <div className="relative">
+                        <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="123456"
+                          maxLength={6}
+                          className="pr-8 h-9 text-xs tracking-widest text-center font-mono"
+                          required
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value)}
+                          dir="ltr"
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        تم إرسال الكود إلى {email}
+                      </p>
 
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium">البريد الإلكتروني</Label>
-                    <div className="relative">
-                      <Mail className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="name@example.com"
-                        className="pr-8 h-9 text-xs"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full h-9 text-xs font-bold" 
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          "تأكيد الكود وتسجيل الدخول"
+                        )}
+                      </Button>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-medium">كلمة المرور</Label>
-                      {authMode === "login" && (
+                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-border/40 mt-2">
                         <button
                           type="button"
-                          onClick={handleResetPassword}
-                          disabled={loading}
-                          className="text-[10px] text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline"
+                          onClick={handleResendOTP}
+                          disabled={resending || resendCooldown > 0}
+                          className="text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline"
                         >
-                          نسيت كلمة المرور؟
+                          {resending ? (
+                            <span className="flex items-center gap-1">
+                              <Loader2 className="w-3 h-3 animate-spin inline" /> جاري الإرسال...
+                            </span>
+                          ) : resendCooldown > 0 ? (
+                            `إعادة الإرسال بعد (${resendCooldown} ث)`
+                          ) : (
+                            "إعادة إرسال كود التحقق"
+                          )}
                         </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowOtp(false);
+                            setError(null);
+                          }}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          تغيير البريد
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {authMode === "register" && (
+                        <div className="space-y-1">
+                          <Label className="text-xs font-medium">الاسم الكامل</Label>
+                          <div className="relative">
+                            <User className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                            <Input
+                              placeholder="الاسم"
+                              className="pr-8 h-9 text-xs"
+                              required
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                            />
+                          </div>
+                        </div>
                       )}
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        className="pr-8 h-9 text-xs"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                    </div>
-                  </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full h-9 text-xs font-bold" 
-                    disabled={loading || loadingGoogle}
-                  >
-                    {loading ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : authMode === "login" ? (
-                      "تسجيل الدخول"
-                    ) : (
-                      "إنشاء حساب"
-                    )}
-                  </Button>
-
-                  <div className="relative flex py-1 items-center">
-                    <div className="flex-grow border-t border-border/40"></div>
-                    <span className="flex-shrink mx-2 text-[10px] text-muted-foreground">أو</span>
-                    <div className="flex-grow border-t border-border/40"></div>
-                  </div>
-
-                  <Button 
-                    type="button"
-                    onClick={handleGoogleLogin}
-                    variant="outline"
-                    className="w-full h-9 text-xs font-medium gap-2 border-border"
-                    disabled={loading || loadingGoogle}
-                  >
-                    {loadingGoogle ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <>
-                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
-                          <path
-                            fill="#EA4335"
-                            d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.69 5.69 0 0 1 8.24 12.8a5.69 5.69 0 0 1 5.751-5.714c1.47 0 2.824.509 3.89 1.527l3.076-3.076C19.11 3.793 15.932 2.4 12.24 2.4a9.6 9.6 0 0 0-9.6 9.6c0 5.302 4.298 9.6 9.6 9.6c5.8 0 9.69-4.08 9.69-9.873c0-.622-.057-1.12-.132-1.44H12.24Z"
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium">البريد الإلكتروني</Label>
+                        <div className="relative">
+                          <Mail className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                          <Input
+                            type="email"
+                            placeholder="name@example.com"
+                            className="pr-8 h-9 text-xs"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                           />
-                        </svg>
-                        <span>متابعة باستخدام Google</span>
-                      </>
-                    )}
-                  </Button>
-                </>
-              )}
-            </form>
+                        </div>
+                      </div>
 
-            <div className="text-center pt-1">
-              <button
-                type="button"
-                onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
-                className="text-[11px] text-primary hover:underline font-medium"
-              >
-                {authMode === "login" ? "إنشاء حساب جديد" : "لديك حساب بالفعل؟ تسجيل الدخول"}
-              </button>
-            </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-medium">كلمة المرور</Label>
+                          {authMode === "login" && (
+                            <button
+                              type="button"
+                              onClick={handleResetPassword}
+                              disabled={loading}
+                              className="text-[10px] text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline"
+                            >
+                              نسيت كلمة المرور؟
+                            </button>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            className="pr-8 h-9 text-xs"
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <Button 
+                        type="submit" 
+                        className="w-full h-9 text-xs font-bold" 
+                        disabled={loading || loadingGoogle}
+                      >
+                        {loading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : authMode === "login" ? (
+                          "تسجيل الدخول"
+                        ) : (
+                          "إنشاء حساب"
+                        )}
+                      </Button>
+
+                      <div className="relative flex py-1 items-center">
+                        <div className="flex-grow border-t border-border/40"></div>
+                        <span className="flex-shrink mx-2 text-[10px] text-muted-foreground">أو</span>
+                        <div className="flex-grow border-t border-border/40"></div>
+                      </div>
+
+                      <Button 
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        variant="outline"
+                        className="w-full h-9 text-xs font-medium gap-2 border-border"
+                        disabled={loading || loadingGoogle}
+                      >
+                        {loadingGoogle ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+                              <path
+                                fill="#EA4335"
+                                d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.69 5.69 0 0 1 8.24 12.8a5.69 5.69 0 0 1 5.751-5.714c1.47 0 2.824.509 3.89 1.527l3.076-3.076C19.11 3.793 15.932 2.4 12.24 2.4a9.6 9.6 0 0 0-9.6 9.6c0 5.302 4.298 9.6 9.6 9.6c5.8 0 9.69-4.08 9.69-9.873c0-.622-.057-1.12-.132-1.44H12.24Z"
+                              />
+                            </svg>
+                            <span>متابعة باستخدام Google</span>
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </form>
+
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
+                    className="text-[11px] text-primary hover:underline font-medium"
+                  >
+                    {authMode === "login" ? "إنشاء حساب جديد" : "لديك حساب بالفعل؟ تسجيل الدخول"}
+                  </button>
+                </div>
+              </>
+            )}
           </TabsContent>
+
 
           {/* 🏷️ تبويب تفعيل الترخيص */}
           <TabsContent value="license" className="mt-3 space-y-3">

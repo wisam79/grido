@@ -954,6 +954,119 @@ func (s *LicenseService) ResetPassword(email string) error {
 	return nil
 }
 
+func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*domain.UserProfile, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	token = strings.TrimSpace(token)
+	newPassword = strings.TrimSpace(newPassword)
+	if email == "" || token == "" || newPassword == "" {
+		return nil, errors.New("جميع الحقول مطلوبة")
+	}
+	if len(newPassword) < 6 {
+		return nil, errors.New("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
+	}
+
+	verifyTypes := []string{"recovery", "magiclink", "signup", "email"}
+	var lastErr error
+	var authRes SupabaseAuthResponse
+
+	for _, vType := range verifyTypes {
+		payload, err := json.Marshal(SupabaseVerifyRequest{
+			Type:  vType,
+			Email: email,
+			Token: token,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/verify", bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("apikey", SupabaseAnonKey)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := sharedClient.Do(req)
+		if err != nil {
+			return nil, errors.New("تعذر الاتصال بخوادم Grido. يرجى التحقق من اتصال الإنترنت")
+		}
+
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+		resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			if err := json.NewDecoder(bytes.NewReader(body)).Decode(&authRes); err == nil && authRes.AccessToken != "" {
+				lastErr = nil
+				break
+			}
+		}
+
+		if errMsg := parseSupabaseError(body); errMsg != "" {
+			lastErr = errors.New(errMsg)
+		} else {
+			lastErr = errors.New("كود الاستعادة غير صحيح أو منتهي الصلاحية")
+		}
+	}
+
+	if lastErr != nil {
+		return nil, lastErr
+	}
+
+	updatePayload, _ := json.Marshal(map[string]string{
+		"password": newPassword,
+	})
+	updateReq, err := http.NewRequest("PUT", SupabaseURL+"/auth/v1/user", bytes.NewBuffer(updatePayload))
+	if err != nil {
+		return nil, err
+	}
+	updateReq.Header.Set("apikey", SupabaseAnonKey)
+	updateReq.Header.Set("Content-Type", "application/json")
+	updateReq.Header.Set("Authorization", "Bearer "+authRes.AccessToken)
+
+	updateResp, err := sharedClient.Do(updateReq)
+	if err != nil {
+		return nil, errors.New("فشل تحديث كلمة المرور الجديدة")
+	}
+	defer updateResp.Body.Close()
+
+	if updateResp.StatusCode != http.StatusOK {
+		updateBody, _ := io.ReadAll(io.LimitReader(updateResp.Body, maxResponseSize))
+		if errMsg := parseSupabaseError(updateBody); errMsg != "" {
+			return nil, errors.New(errMsg)
+		}
+		return nil, errors.New("تعذر تغيير كلمة المرور")
+	}
+
+	userID := authRes.GetUserID()
+	prof, err := s.fetchProfileWithRetry(authRes.AccessToken, userID, 3)
+	if err != nil {
+		prof = &SupabaseProfile{Plan: "trial", Status: "active"}
+	}
+
+	displayName := email
+	if n, ok := authRes.User.UserMeta["name"].(string); ok && n != "" {
+		displayName = n
+	}
+
+	profile := &domain.UserProfile{
+		ID:         userID,
+		Email:      email,
+		Name:       displayName,
+		Plan:       prof.Plan,
+		Status:     prof.Status,
+		ExpiresAt:  prof.ExpiresAt,
+		LicenseKey: prof.LicenseKey,
+		Token:      authRes.AccessToken,
+	}
+
+
+	if err := s.repo.Save(profile); err != nil {
+		slog.Error("Failed to persist user profile after password reset", "error", err)
+	}
+
+	return profile, nil
+}
+
 func parseSupabaseError(body []byte) string {
 	var data map[string]interface{}
 	if err := json.Unmarshal(body, &data); err != nil {

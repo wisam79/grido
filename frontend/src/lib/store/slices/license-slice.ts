@@ -31,6 +31,7 @@ export interface LicenseSlice {
   activateLicenseKey: (key: string) => Promise<UserProfile>;
   logoutAccount: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  verifyRecoveryOTP: (email: string, token: string, newPassword: string) => Promise<UserProfile>;
   isLicenseActive: () => boolean;
   
   logAiUsage: (record: Omit<AiUsageRecord, "id" | "timestamp">) => void;
@@ -164,6 +165,19 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       set({ licenseLoading: false });
     }
   },
+
+  verifyRecoveryOTP: async (email, token, newPassword) => {
+    set({ licenseLoading: true });
+    try {
+      const profile = await LicenseHandler.VerifyRecoveryOTP(email, token, newPassword);
+      set({ user: profile, licenseLoading: false });
+      return profile;
+    } catch (err) {
+      set({ licenseLoading: false });
+      throw new Error(err instanceof Error ? err.message : "فشل تعيين كلمة المرور الجديدة");
+    }
+  },
+
 
   logoutAccount: async () => {
     try {

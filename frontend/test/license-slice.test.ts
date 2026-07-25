@@ -11,6 +11,7 @@ vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
   LoginWithGoogle: vi.fn(),
   ActivateLicenseKey: vi.fn(),
   ResetPassword: vi.fn(),
+  VerifyRecoveryOTP: vi.fn(),
   Logout: vi.fn(),
 }));
 
@@ -173,6 +174,17 @@ describe('LicenseSlice Tests', () => {
     await useEditorStore.getState().resetPassword('reset@example.com');
     expect(LicenseHandler.ResetPassword).toHaveBeenCalledWith('reset@example.com');
   });
+
+  it('verifyRecoveryOTP calls LicenseHandler.VerifyRecoveryOTP and updates user', async () => {
+    const mockUser = { id: 'usr_rec', email: 'rec@example.com', plan: 'pro', status: 'active', expiresAt: '2027-01-01T00:00:00Z', token: 'token123' } as any;
+    vi.mocked(LicenseHandler.VerifyRecoveryOTP).mockResolvedValueOnce(mockUser);
+
+    const profile = await useEditorStore.getState().verifyRecoveryOTP('rec@example.com', '123456', 'newpass123');
+    expect(LicenseHandler.VerifyRecoveryOTP).toHaveBeenCalledWith('rec@example.com', '123456', 'newpass123');
+    expect(profile).toEqual(mockUser);
+    expect(useEditorStore.getState().user).toEqual(mockUser);
+  });
+
 
   it('logoutAccount calls LicenseHandler.Logout and clears user', async () => {
     useEditorStore.setState({
