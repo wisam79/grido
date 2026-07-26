@@ -1,5 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HexColorPicker } from "react-colorful";
+import { BACKGROUND_COLORS } from "@/lib/templates";
+import { PaintBucket } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useEditorStore } from "@/lib/editor-store";
 
 export function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -31,9 +37,16 @@ export function SliderControl({
   onChange: (v: number) => void;
   onCommit?: (v: number) => void;
 }) {
+  const [localValue, setLocalValue] = useState(value);
   const rafRef = useRef<number | null>(null);
   const pendingRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setLocalValue(value);
+    }
+  }, [value]);
 
   const flushPending = useCallback(() => {
     if (pendingRef.current !== null) {
@@ -44,7 +57,9 @@ export function SliderControl({
   }, [onChange]);
 
   const handleChange = useCallback((v: number[]) => {
-    pendingRef.current = v[0];
+    const newVal = v[0];
+    setLocalValue(newVal);
+    pendingRef.current = newVal;
     if (!rafRef.current) {
       rafRef.current = requestAnimationFrame(flushPending);
     }
@@ -55,7 +70,7 @@ export function SliderControl({
   }, []);
 
   const handlePointerUp = useCallback(() => {
-    const finalValue = pendingRef.current ?? value;
+    const finalValue = pendingRef.current ?? localValue;
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -68,7 +83,7 @@ export function SliderControl({
       isDraggingRef.current = false;
       onCommit?.(finalValue);
     }
-  }, [onChange, onCommit, value]);
+  }, [onChange, onCommit, localValue]);
 
   useEffect(() => {
     return () => {
@@ -84,12 +99,12 @@ export function SliderControl({
           <span className="text-xs font-semibold">{label}</span>
         </div>
         <span className="text-xs text-foreground/80 font-mono font-semibold">
-          {value}
+          {localValue}
           {unit}
         </span>
       </div>
       <Slider
-        value={[value]}
+        value={[localValue]}
         min={min}
         max={max}
         step={step}
@@ -101,14 +116,6 @@ export function SliderControl({
     </div>
   );
 }
-
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { HexColorPicker } from "react-colorful";
-import { BACKGROUND_COLORS } from "@/lib/templates";
-import { PaintBucket } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-import { useEditorStore } from "@/lib/editor-store";
 
 export function PopoverColorPicker({
   color,
@@ -191,7 +198,6 @@ export function ColorWheelPicker({
   const handleHexInput = (val: string) => {
     setInputValue(val);
     
-    // تنظيف المدخلات وتدقيقها
     let cleanVal = val.trim();
     if (cleanVal === "transparent") {
       onChange("transparent");
@@ -202,7 +208,6 @@ export function ColorWheelPicker({
       cleanVal = "#" + cleanVal;
     }
 
-    // التحقق من صحة كود HEX (3 أو 6 خانات)
     const isValidHex = /^#([0-9A-F]{3}){1,2}$/i.test(cleanVal);
     if (isValidHex) {
       onChange(cleanVal.toUpperCase());
@@ -213,7 +218,6 @@ export function ColorWheelPicker({
 
   return (
     <div className="p-3.5 bg-card rounded-2xl border border-border/60 mt-2 flex flex-col gap-3.5 w-full shadow-sm animate-in fade-in duration-200">
-      {/* منتقي الألوان الاحترافي */}
       <div className="custom-color-picker w-full">
         <HexColorPicker
           color={isTransparent ? "#ffffff" : color}
@@ -225,9 +229,7 @@ export function ColorWheelPicker({
         />
       </div>
 
-      {/* حقل الإدخال وزر الشفافية */}
       <div className="flex items-center gap-2">
-        {/* زر الشفافية */}
         <button
           onClick={() => {
             setInputValue("transparent");
@@ -244,7 +246,6 @@ export function ColorWheelPicker({
           <PaintBucket className="w-4 h-4" />
         </button>
 
-        {/* حقل إدخال كود HEX */}
         <div className="flex-1 flex items-center gap-2 bg-background border border-border/60 rounded-lg px-2.5 h-9 shadow-inner focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
           <span className="text-xs font-bold text-muted-foreground/60 select-none">HEX:</span>
           <input
@@ -273,11 +274,9 @@ export function ColorWheelPicker({
         </div>
       </div>
 
-      {/* قائمة الألوان السريعة */}
       <div className="space-y-2 pt-2 border-t border-border/20">
         <span className="text-xs font-bold text-muted-foreground block">ألوان سريعة</span>
         <div className="grid grid-cols-9 gap-1.5">
-          {/* خيار شفاف مسبق */}
           <button
             onClick={() => {
               setInputValue("transparent");
@@ -300,7 +299,6 @@ export function ColorWheelPicker({
             />
           </button>
 
-          {/* الألوان الجاهزة */}
           {BACKGROUND_COLORS.map((bg) => {
             const isActive = color.toUpperCase() === bg.value.toUpperCase();
             return (

@@ -57,28 +57,29 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
     const node = imageRef.current;
     if (node && image) {
       if (hasFilters) {
-        try {
-          const stageScale = node.getStage()?.scaleX() || 1;
-          const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-          // لا تستخدم أبعاد صورة الطباعة الأصلية كحجم cache داخل المحرر.
-          const ratio = Math.max(0.1, Math.min(2, stageScale * devicePixelRatio));
-          node.clearCache();
-          node.cache({
-            pixelRatio: ratio
-          });
-        } catch (err) {
-          console.warn("Failed to cache collage image", err);
+        if (!node.isCached()) {
+          try {
+            const stageScale = node.getStage()?.scaleX() || 1;
+            const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
+            const ratio = Math.max(1.5, Math.min(3, stageScale * devicePixelRatio * 1.5));
+            node.cache({
+              pixelRatio: ratio
+            });
+          } catch (err) {
+            console.warn("Failed to cache collage image", err);
+          }
         }
       } else {
-        try {
-          node.clearCache();
-        } catch (err) {
-          // Ignore
+        if (node.isCached()) {
+          try {
+            node.clearCache();
+          } catch (err) {
+            // Ignore
+          }
         }
       }
     }
-    return () => {};
-  }, [image, hasFilters, filter, brightness, contrast, saturation]);
+  }, [image, hasFilters]);
 
   const { filters, totalBrightness, totalContrast, totalSaturation, totalHue } = useMemo(() => {
     let b = brightness ?? 100;

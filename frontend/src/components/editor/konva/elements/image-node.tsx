@@ -69,37 +69,37 @@ export const URLImage = React.memo(function URLImage({
     (element.saturation !== undefined && element.saturation !== 100) ||
     (element.blur !== undefined && element.blur > 0)
   );
-  const filterHash = `${element.filter}|${element.brightness}|${element.contrast}|${element.saturation}|${element.blur}`;
 
   useEffect(() => {
     const node = elementRef.current;
     if (!node || !image) return;
 
     if (!hasFilters) {
-      try {
-        node.clearCache();
-      } catch (err) {
-        // Ignore
+      if (node.isCached()) {
+        try {
+          node.clearCache();
+        } catch (err) {
+          // Ignore
+        }
       }
       return;
     }
 
-    try {
-      const stageScale = node.getStage()?.scaleX() || 1;
-      const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-      // أبعاد العقدة هنا من مساحة العمل الأصلية (قد تكون آلاف البكسلات).
-      // نكاشها بدقة العرض الفعلية، بدلاً من إنشاء cache بحجم الصورة الأصلية.
-      const ratio = Math.max(0.1, Math.min(2, stageScale * devicePixelRatio));
-      node.clearCache();
-      node.cache({ pixelRatio: ratio });
-    } catch (err) {
-      console.warn("Failed to cache Konva image", err);
+    // تجنب إعادة إنشاء VRAM cache مع كل حركة بالسلايدر إذا كانت العقدة تحتوي كاش بالفعل
+    if (!node.isCached()) {
+      try {
+        const stageScale = node.getStage()?.scaleX() || 1;
+        const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
+        const ratio = Math.max(1.5, Math.min(3, stageScale * devicePixelRatio * 1.5));
+        node.cache({ pixelRatio: ratio });
+      } catch (err) {
+        console.warn("Failed to cache Konva image", err);
+      }
     }
   }, [
     image,
     hasFilters,
     elementRef,
-    filterHash,
     element.width,
     element.height,
   ]);
