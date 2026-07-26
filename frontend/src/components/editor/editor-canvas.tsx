@@ -117,6 +117,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
   displayH = Math.max(100 * canvasZoom, displayH);
 
   const prevZoomRef = useRef(canvasZoom);
+  const prevCanvasRectRef = useRef<DOMRect | null>(null);
   const zoomPivotRef = useRef<{ pctX: number, pctY: number, screenX: number, screenY: number } | null>(null);
 
   // دعم التقريب بالعجلة (Ctrl + Scroll / Pinch) والسحب بمسطرة المسافة
@@ -140,6 +141,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       if (newZoom !== useEditorStore.getState().canvasZoom) {
         if (innerRef.current) {
           const canvasRect = innerRef.current.getBoundingClientRect();
+          prevCanvasRectRef.current = canvasRect;
           zoomPivotRef.current = {
             pctX: (lastWheelClientX - canvasRect.left) / canvasRect.width,
             pctY: (lastWheelClientY - canvasRect.top) / canvasRect.height,
@@ -252,14 +254,14 @@ export const EditorCanvas = React.memo(React.forwardRef<
            
            zoomPivotRef.current = null;
         } else {
-           // For button zooming, we try to keep it centered if possible
-           const r = canvasZoom / prevZoomRef.current;
-           const containerRect = container.getBoundingClientRect();
            const canvasRect = canvas.getBoundingClientRect();
-           const cx = (containerRect.left + containerRect.width / 2) - canvasRect.left;
-           const cy = (containerRect.top + containerRect.height / 2) - canvasRect.top;
-           container.scrollLeft += (cx * r - cx);
-           container.scrollTop += (cy * r - cy);
+           const newCenterX = canvasRect.left + canvasRect.width / 2;
+           const newCenterY = canvasRect.top + canvasRect.height / 2;
+           const containerRect = container.getBoundingClientRect();
+           const viewportCenterX = containerRect.left + containerRect.width / 2;
+           const viewportCenterY = containerRect.top + containerRect.height / 2;
+           container.scrollLeft += (newCenterX - viewportCenterX);
+           container.scrollTop += (newCenterY - viewportCenterY);
         }
       }
       prevZoomRef.current = canvasZoom;

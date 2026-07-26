@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Image as KonvaImage } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
@@ -16,8 +16,8 @@ export const URLImage = React.memo(function URLImage({
   onClick,
   onTap, 
   onChange, 
-  displayW, 
-  displayH, 
+  canvasWidth, 
+  canvasHeight, 
   setActiveGuides, 
   elementRef, 
   snapToGrid, 
@@ -36,8 +36,8 @@ export const URLImage = React.memo(function URLImage({
     onDragEnd,
   } = useKonvaDrag({
     element,
-    displayW,
-    displayH,
+    canvasWidth,
+    canvasHeight,
     snapToGrid,
     gridSize,
     altPressedRef,
@@ -69,16 +69,13 @@ export const URLImage = React.memo(function URLImage({
     (element.saturation !== undefined && element.saturation !== 100) ||
     (element.blur !== undefined && element.blur > 0)
   );
-
-  const cacheTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterHash = `${element.filter}|${element.brightness}|${element.contrast}|${element.saturation}|${element.blur}`;
 
   useEffect(() => {
     const node = elementRef.current;
     if (!node || !image) return;
 
-    const isLargeImage = image.width * image.height > 1000000;
-    if (!hasFilters && !isLargeImage) {
+    if (!hasFilters) {
       try {
         node.clearCache();
       } catch (err) {
@@ -87,31 +84,24 @@ export const URLImage = React.memo(function URLImage({
       return;
     }
 
-    if (cacheTimerRef.current) clearTimeout(cacheTimerRef.current);
-    cacheTimerRef.current = setTimeout(() => {
-      if (!elementRef.current) return;
-      const n = elementRef.current;
-      try {
-        let ratio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
-        ratio = Math.max(1.5, Math.min(2, ratio));
-        n.clearCache();
-        n.cache({ pixelRatio: ratio });
-      } catch (err) {
-        console.warn("Failed to cache Konva image", err);
-      }
-    }, 150);
-
-    return () => {
-      if (cacheTimerRef.current) {
-        clearTimeout(cacheTimerRef.current);
-        cacheTimerRef.current = null;
-      }
-    };
+    try {
+      const stageScale = node.getStage()?.scaleX() || 1;
+      const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
+      // أبعاد العقدة هنا من مساحة العمل الأصلية (قد تكون آلاف البكسلات).
+      // نكاشها بدقة العرض الفعلية، بدلاً من إنشاء cache بحجم الصورة الأصلية.
+      const ratio = Math.max(0.1, Math.min(2, stageScale * devicePixelRatio));
+      node.clearCache();
+      node.cache({ pixelRatio: ratio });
+    } catch (err) {
+      console.warn("Failed to cache Konva image", err);
+    }
   }, [
     image,
     hasFilters,
     elementRef,
     filterHash,
+    element.width,
+    element.height,
   ]);
 
   const { filters, filterProps } = React.useMemo(() => {
@@ -132,15 +122,16 @@ export const URLImage = React.memo(function URLImage({
     <KonvaImage
       ref={elementRef}
       image={image}
-      x={flipped ? (element.x + element.width) * displayW : element.x * displayW}
-      y={element.y * displayH}
-      width={element.width * displayW}
-      height={element.height * displayH}
+      x={flipped ? (element.x + element.width) * canvasWidth : element.x * canvasWidth}
+      y={element.y * canvasHeight}
+      width={element.width * canvasWidth}
+      height={element.height * canvasHeight}
       scaleX={flipped ? -1 : 1}
       rotation={element.rotation}
       opacity={element.opacity}
       visible={element.visible !== false}
       id={element.id}
+      perfectDrawEnabled={false}
       globalCompositeOperation={element.globalCompositeOperation as any || "source-over"}
       shadowColor={element.shadowColor}
       shadowBlur={element.shadowBlur || 0}

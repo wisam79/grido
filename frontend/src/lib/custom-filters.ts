@@ -6,55 +6,62 @@ if (typeof Konva !== "undefined" && Konva.Filters) {
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
+    const len = width * height;
 
-    // ذاكرة وسيطة لقراءة البيكسلات الأصلية دون تغيير أثناء المعالجة
-    const buffer = new Uint8ClampedArray(data);
-
-    // دالة تحقق ذكية ومحسنة لتحديد ما إذا كان البيكسل يمثل لون بشرة بشرية (Human Skin-Tone Heuristics)
-    function isSkinColor(r: number, g: number, b: number): boolean {
-      if (r <= 95 || g <= 40 || b <= 20 || r <= g || r <= b) {
-        return false;
-      }
-      const min = g < b ? g : b;
-      return r - min > 15 && r - g > 15;
-    }
-
-    // حساب مسبق لعلامة لون البشرة لكل البيكسلات لمنع العمليات المكررة
-    const isSkin = new Uint8Array(width * height);
-    for (let i = 0; i < width * height; i++) {
+    // حساب مسبق لعلامة لون البشرة — Uint8Array بدلاً من Uint8Array كامل
+    const isSkin = new Uint8Array(len);
+    let skinCount = 0;
+    for (let i = 0; i < len; i++) {
       const idx = i * 4;
-      if (isSkinColor(buffer[idx], buffer[idx + 1], buffer[idx + 2])) {
-        isSkin[i] = 1;
+      const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+      if (r > 95 && g > 40 && b > 20 && r > g && r > b) {
+        const min = g < b ? g : b;
+        if (r - min > 15 && r - g > 15) {
+          isSkin[i] = 1;
+          skinCount++;
+        }
       }
     }
 
-    // تطبيق فلتر التنعيم الانتقائي (Selective Box Blur) باستخدام الحسابات المسبقة وتقسيم الأعداد الصحيحة السريع
+    // إذا كانت البيكسلات القليلة جداً، لا داعي للمعالجة
+    if (skinCount < len * 0.01) return;
+
+    // نسخة مصغرة — RGB فقط (3 قنوات بدلاً من 4) لتوفير 25% من الذاكرة
+    const rgbBuffer = new Uint8Array(len * 3);
+    for (let i = 0; i < len; i++) {
+      const idx = i * 4;
+      const bufIdx = i * 3;
+      rgbBuffer[bufIdx] = data[idx];
+      rgbBuffer[bufIdx + 1] = data[idx + 1];
+      rgbBuffer[bufIdx + 2] = data[idx + 2];
+    }
+
+    // تطبيق فلتر التنعيم الانتقائي (Selective Box Blur)
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
         const i = y * width + x;
-        if (isSkin[i] === 1) {
-          const idx = i * 4;
-          let sumR = 0, sumG = 0, sumB = 0, count = 0;
+        if (isSkin[i] === 0) continue;
 
-          // فحص النطاق المحيط 3x3
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              const ni = (y + dy) * width + (x + dx);
-              if (isSkin[ni] === 1) {
-                const nIdx = ni * 4;
-                sumR += buffer[nIdx];
-                sumG += buffer[nIdx + 1];
-                sumB += buffer[nIdx + 2];
-                count++;
-              }
+        const idx = i * 4;
+        let sumR = 0, sumG = 0, sumB = 0, count = 0;
+
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const ni = (y + dy) * width + (x + dx);
+            if (isSkin[ni] === 1) {
+              const nBufIdx = ni * 3;
+              sumR += rgbBuffer[nBufIdx];
+              sumG += rgbBuffer[nBufIdx + 1];
+              sumB += rgbBuffer[nBufIdx + 2];
+              count++;
             }
           }
+        }
 
-          if (count > 0) {
-            data[idx] = (sumR / count) | 0;
-            data[idx + 1] = (sumG / count) | 0;
-            data[idx + 2] = (sumB / count) | 0;
-          }
+        if (count > 0) {
+          data[idx] = (sumR / count) | 0;
+          data[idx + 1] = (sumG / count) | 0;
+          data[idx + 2] = (sumB / count) | 0;
         }
       }
     }

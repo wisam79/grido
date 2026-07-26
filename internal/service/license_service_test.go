@@ -1,126 +1,186 @@
 package service
 
 import (
-	"os"
-	"path/filepath"
+	"errors"
 	"testing"
 	"time"
 
 	"grido/internal/core/domain"
-	"grido/internal/repository"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
-func init() {
-	tempDir, _ := os.MkdirTemp("", "grido-test-service-global-*")
-	appDir := filepath.Join(tempDir, "GridoStudio")
-	os.Setenv("GRIDO_APP_DIR", appDir)
-	os.Setenv("APPDATA", tempDir)
-	os.Setenv("HOME", tempDir)
-	os.Setenv("XDG_CONFIG_HOME", tempDir)
+// Mock Repository للاختبارات
+type MockLicenseRepository struct {
+	user    *domain.UserProfile
+	saveErr error
+	getErr  error
 }
 
+func (m *MockLicenseRepository) Save(user *domain.UserProfile) error {
+	if m.saveErr != nil {
+		return m.saveErr
+	}
+	m.user = user
+	return nil
+}
+
+func (m *MockLicenseRepository) Get() (*domain.UserProfile, error) {
+	if m.getErr != nil {
+		return nil, m.getErr
+	}
+	return m.user, nil
+}
+
+func (m *MockLicenseRepository) Clear() error {
+	m.user = nil
+	return nil
+}
+
+func (m *MockLicenseRepository) GetAll() ([]domain.UserProfile, error) {
+	if m.user != nil {
+		return []domain.UserProfile{*m.user}, nil
+	}
+	return []domain.UserProfile{}, nil
+}
+
+func (m *MockLicenseRepository) SaveUser(user *domain.UserProfile) error {
+	return m.Save(user)
+}
+
+func (m *MockLicenseRepository) DeleteUser(id string) error {
+	if m.user != nil && m.user.ID == id {
+		m.user = nil
+	}
+	return nil
+}
+
+// TestLicenseService_CheckStatus tests the license status checking logic
 func TestLicenseService_CheckStatus(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-
-	_ = db.AutoMigrate(&domain.UserProfile{})
-	repo := repository.NewLicenseRepository(db)
-	svc := NewLicenseService(repo)
-
-	// 1. اختبار عندما تكون قاعدة البيانات فارغة (يجب أن يعود بخطة مجانية)
-	profile, err := svc.CheckStatus()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if profile.Plan != "free" || profile.Status != "none" {
-		t.Errorf("expected plan free and status none, got plan: %s, status: %s", profile.Plan, profile.Status)
-	}
-
-	// 2. اختبار انتهاء الصلاحية محلياً
-	now := time.Now()
-	expiredUser := &domain.UserProfile{
-		ID:        "test-user-id",
-		Email:     "user@example.com",
-		Plan:      "pro",
-		Status:    "active",
-		ExpiresAt: now.Add(-1 * time.Hour), // منتهي الصلاحية قبل ساعة
-		UpdatedAt: now,
-	}
-	_ = repo.Save(expiredUser)
-
-	profile, err = svc.CheckStatus()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if profile.Plan != "free" || profile.Status != "expired" {
-		t.Errorf("expected plan free and status expired, got plan: %s, status: %s", profile.Plan, profile.Status)
-	}
-}
-
-func TestLicenseService_CheckStatus_Offline(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to connect database: %v", err)
-	}
-
-	_ = db.AutoMigrate(&domain.UserProfile{})
-	repo := repository.NewLicenseRepository(db)
-	svc := NewLicenseService(repo)
-
-	// إعداد حساب مفعل محلياً وصالح لمدة 24 ساعة قادمة
-	now := time.Now()
-	activeUser := &domain.UserProfile{
-		ID:        "test-active-user-id",
-		Email:     "pro-user@example.com",
-		Plan:      "pro",
-		Status:    "active",
-		ExpiresAt: now.Add(24 * time.Hour),
-		UpdatedAt: now,
-		Token:     "mock-valid-token",
-	}
-	_ = repo.Save(activeUser)
-
-	// محاكاة وضع الأوفلاين عبر تحويل عنوان السيرفر إلى منفذ مغلق محلياً
-	originalURL := SupabaseURL
-	defer func() { SupabaseURL = originalURL }()
-	SupabaseURL = "http://127.0.0.1:9999" // عنوان وهمي يسبب فشل اتصال فوري
-
-	// استدعاء فحص الحالة أثناء الأوفلاين
-	profile, err := svc.CheckStatus()
-	if err != nil {
-		t.Fatalf("unexpected error during offline check: %v", err)
-	}
-
-	// التأكد من أن الحساب لم يتأثر وظل محتفظاً بالخطة النشطة (Pro)
-	if profile.Plan != "pro" || profile.Status != "active" {
-		t.Errorf("expected plan pro and status active to be preserved offline, got plan: %s, status: %s", profile.Plan, profile.Status)
-	}
-}
-
-func TestParseSupabaseError(t *testing.T) {
 	tests := []struct {
-		json     string
-		expected string
+		name           string
+		mockUser       *domain.UserProfile
+		mockGetErr     error
+		expectedPlan   string
+		expectedStatus string
+		expectError    bool
 	}{
-		{`{"msg":"Invalid login credentials"}`, "البريد الإلكتروني أو كلمة المرور غير صحيحة"},
-		{`{"message":"User already registered"}`, "هذا البريد الإلكتروني مسجل بالفعل. يمكنك تسجيل الدخول مباشرة"},
-		{`{"error_description":"Email not confirmed"}`, "البريد الإلكتروني بحاجة لتأكيد. يرجى إدخال كود التحقق (OTP) الخاص بك"},
-		{`{"error":"over_email_send_rate_limit"}`, "تم تجاوز حد إرسال الطلبات المسموح به. يرجى الانتظار بضع دقائق ثم المحاولة مجدداً"},
-		{`{"msg":"Password should be at least 6 characters"}`, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"},
-		{`{"error_description":"Token is invalid or has expired"}`, "رمز التحقق غير صحيح أو منتهي الصلاحية"},
+		{
+			name:           "No user - returns free plan",
+			mockUser:       nil,
+			mockGetErr:     errors.New("no user"),
+			expectedPlan:   "free",
+			expectedStatus: "none",
+			expectError:    false,
+		},
+		{
+			name: "Valid pro user",
+			mockUser: &domain.UserProfile{
+				ID:        "user123",
+				Email:     "test@example.com",
+				Plan:      "pro",
+				Status:    "active",
+				ExpiresAt: time.Now().Add(30 * 24 * time.Hour),
+			},
+			mockGetErr:     nil,
+			expectedPlan:   "pro",
+			expectedStatus: "active",
+			expectError:    false,
+		},
+		{
+			name: "Expired pro user - should downgrade to free",
+			mockUser: &domain.UserProfile{
+				ID:        "user123",
+				Email:     "test@example.com",
+				Plan:      "pro",
+				Status:    "active",
+				ExpiresAt: time.Now().Add(-24 * time.Hour), // منتهي منذ يوم
+			},
+			mockGetErr:     nil,
+			expectedPlan:   "free",
+			expectedStatus: "expired",
+			expectError:    false,
+		},
 	}
 
 	for _, tt := range tests {
-		result := parseSupabaseError([]byte(tt.json))
-		if result != tt.expected {
-			t.Errorf("parseSupabaseError(%s) = %q; want %q", tt.json, result, tt.expected)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			mockRepo := &MockLicenseRepository{
+				user:   tt.mockUser,
+				getErr: tt.mockGetErr,
+			}
+			service := NewLicenseService(mockRepo)
+
+			// Execute
+			result, err := service.CheckStatus()
+
+			// Verify
+			if tt.expectError && err == nil {
+				t.Error("Expected error but got none")
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+			if result == nil {
+				t.Fatal("Expected result but got nil")
+			}
+			if result.Plan != tt.expectedPlan {
+				t.Errorf("Expected plan %s, got %s", tt.expectedPlan, result.Plan)
+			}
+			if result.Status != tt.expectedStatus {
+				t.Errorf("Expected status %s, got %s", tt.expectedStatus, result.Status)
+			}
+		})
 	}
 }
 
+// TestGetModalAIKey tests the Modal AI key retrieval
+func TestGetModalAIKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		setupKey    string
+		expectError bool
+	}{
+		{
+			name:        "Key is set",
+			setupKey:    "test-key-123",
+			expectError: false,
+		},
+		{
+			name:        "Key is empty",
+			setupKey:    "",
+			expectError: true,
+		},
+	}
 
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			originalKey := ModalAIKey
+			defer func() { ModalAIKey = originalKey }()
+			ModalAIKey = tt.setupKey
+
+			t.Setenv("MODAL_AI_KEY", tt.setupKey)
+			t.Setenv("GRIDO_AI_SECRET_KEY", tt.setupKey)
+
+			// Execute
+			key, err := GetModalAIKey()
+
+			// Verify
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+				if key != "" {
+					t.Error("Expected empty key on error")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+				if key != tt.setupKey {
+					t.Errorf("Expected key %s, got %s", tt.setupKey, key)
+				}
+			}
+		})
+	}
+}

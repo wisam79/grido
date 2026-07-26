@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Transformer as KonvaTransformer, Group, Rect, Text } from "react-konva";
 import Konva from "konva";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
@@ -7,10 +7,9 @@ interface EditorTransformerProps {
   trRef: React.RefObject<Konva.Transformer | null>;
   selectedIds: string[];
   sortedElements: CanvasElement[];
-  displayW: number;
-  displayH: number;
   canvasWidth: number;
   canvasHeight: number;
+  stageScale: number;
   isText: boolean;
   onTransformEnd: (e: any) => void;
 }
@@ -19,21 +18,14 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   trRef,
   selectedIds,
   sortedElements,
-  displayW,
-  displayH,
   canvasWidth,
   canvasHeight,
+  stageScale,
   isText,
   onTransformEnd,
 }: EditorTransformerProps) {
-  const [transformInfo, setTransformInfo] = useState<{
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-    rotation: number;
-    active: boolean;
-  } | null>(null);
+  const badgeRef = React.useRef<any>(null);
+  const textRef = React.useRef<any>(null);
 
   const printSettings = useEditorStore((state) => state.printSettings);
   const dpi = printSettings?.dpi || 300;
@@ -46,25 +38,31 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     if (!transformer) return;
 
     const updateInfo = () => {
-      const box = transformer.getClientRect();
-      if (!box || box.width === 0) return;
-
       const node = transformer.nodes()[0];
-      const rotation = node ? Math.round(node.rotation() % 360) : 0;
+      if (!node) return;
+
+      // قراءة مباشرة من الـ node — هو أصلاً في الفضاء المنطقي للكانفاس
+      const nodeW = node.width() * node.scaleX();
+      const nodeH = node.height() * node.scaleY();
+      const nodeX = node.x();
+      const nodeY = node.y();
+
+      const rotation = Math.round(node.rotation() % 360);
       const normalizedRot = rotation < 0 ? rotation + 360 : rotation;
 
       // حساب الأبعاد بالملم (mm) للطباعة الاحترافية
-      const wMM = Math.round((box.width / displayW) * (canvasWidth / dpi) * 25.4);
-      const hMM = Math.round((box.height / displayH) * (canvasHeight / dpi) * 25.4);
+      const wMM = Math.round((nodeW / canvasWidth) * (canvasWidth / dpi) * 25.4);
+      const hMM = Math.round((nodeH / canvasHeight) * (canvasHeight / dpi) * 25.4);
 
-      setTransformInfo({
-        x: box.x + box.width / 2,
-        y: box.y - 28,
-        w: wMM,
-        h: hMM,
-        rotation: normalizedRot,
-        active: true,
-      });
+      if (badgeRef.current && textRef.current) {
+        badgeRef.current.visible(true);
+        badgeRef.current.position({
+          x: nodeX + nodeW / 2,
+          y: nodeY - (28 / stageScale)
+        });
+        textRef.current.text(`${wMM} × ${hMM} mm ${normalizedRot > 0 ? `(${normalizedRot}°)` : ""}`);
+        badgeRef.current.getLayer()?.batchDraw();
+      }
     };
 
     const handleTransformStart = () => {
@@ -76,7 +74,10 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     };
 
     const handleTransformEndInternal = () => {
-      setTransformInfo((prev) => (prev ? { ...prev, active: false } : null));
+      if (badgeRef.current) {
+        badgeRef.current.visible(false);
+        badgeRef.current.getLayer()?.batchDraw();
+      }
     };
 
     transformer.on("transformstart dragstart", handleTransformStart);
@@ -88,7 +89,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       transformer.off("transform dragmove", handleTransform);
       transformer.off("transformend dragend", handleTransformEndInternal);
     };
-  }, [trRef, displayW, displayH, canvasWidth, canvasHeight, dpi]);
+  }, [trRef, canvasWidth, canvasHeight, dpi, stageScale]);
 
   // تخصيص مظهر المحابث (Anchors) بنمط Figma المحترف
   const primaryColor = isLocked ? "#f59e0b" : "#2563eb";
@@ -147,34 +148,39 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         onTransformEnd={onTransformEnd}
       />
 
-      {/* شريط الأبعاد والزاوية الحية (Figma-Style Dimension Badge) عند التحريك أو التكبير والتصغير */}
-      {transformInfo && transformInfo.active && (
-        <Group x={transformInfo.x} y={Math.max(10, transformInfo.y)} listening={false}>
-          <Rect
-            x={-60}
-            y={0}
-            width={120}
-            height={22}
-            fill="#1e293b"
-            cornerRadius={6}
-            shadowColor="#000000"
-            shadowBlur={6}
-            shadowOpacity={0.3}
-            shadowOffsetY={2}
-          />
-          <Text
-            x={-60}
-            y={5}
-            width={120}
-            text={`${transformInfo.w} × ${transformInfo.h} mm ${transformInfo.rotation > 0 ? `(${transformInfo.rotation}°)` : ""}`}
-            fontSize={11}
-            fontFamily="Cairo, sans-serif"
-            fontStyle="bold"
-            fill="#ffffff"
-            align="center"
-          />
-        </Group>
-      )}
+      {/* شريط الأبعاد والزاوية الحية (Figma-Style Dimension Badge) - مخفي افتراضياً ويظهر عند التعديل فقط */}
+      <Group 
+        ref={badgeRef}
+        visible={false}
+        scaleX={1 / stageScale}
+        scaleY={1 / stageScale}
+        listening={false}
+      >
+        <Rect
+          x={-60}
+          y={0}
+          width={120}
+          height={22}
+          fill="#1e293b"
+          cornerRadius={6}
+          shadowColor="#000000"
+          shadowBlur={6}
+          shadowOpacity={0.3}
+          shadowOffsetY={2}
+        />
+        <Text
+          ref={textRef}
+          x={-60}
+          y={5}
+          width={120}
+          text=""
+          fontSize={11}
+          fontFamily="Cairo, sans-serif"
+          fontStyle="bold"
+          fill="#ffffff"
+          align="center"
+        />
+      </Group>
     </React.Fragment>
   );
 });

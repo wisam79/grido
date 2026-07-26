@@ -55,6 +55,7 @@ export function SliderControl({
   }, []);
 
   const handlePointerUp = useCallback(() => {
+    const finalValue = pendingRef.current ?? value;
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -65,7 +66,7 @@ export function SliderControl({
     }
     if (isDraggingRef.current) {
       isDraggingRef.current = false;
-      onCommit?.(value);
+      onCommit?.(finalValue);
     }
   }, [onChange, onCommit, value]);
 

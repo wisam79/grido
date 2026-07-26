@@ -1,16 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { useEditorStore } from "@/lib/editor-store";
-import { FilesetResolver, ImageSegmenter } from "@mediapipe/tasks-vision";
+import type { ImageSegmenter } from "@mediapipe/tasks-vision";
 import { toast } from "sonner";
 import { ApplyMaskToImage } from "../../wailsjs/go/main/App";
 
 // [FIX #3] تخزين الـ Promise نفسها (لا النتيجة) لمنع race condition عند استدعاءات متزامنة
 let segmenterPromise: Promise<ImageSegmenter> | null = null;
+let visionModulePromise: Promise<typeof import("@mediapipe/tasks-vision")> | null = null;
+
+function loadVisionModule() {
+  if (!visionModulePromise) {
+    visionModulePromise = import("@mediapipe/tasks-vision");
+  }
+  return visionModulePromise;
+}
 
 async function getSegmenter() {
   if (!segmenterPromise) {
     const baseUrl = window.location.origin;
     segmenterPromise = (async () => {
+      // MediaPipe كبير الحجم ولا يلزم عند فتح المحرر؛ يُحمّل فقط عند طلب العزل.
+      const { FilesetResolver, ImageSegmenter } = await loadVisionModule();
       const vision = await FilesetResolver.forVisionTasks(`${baseUrl}/wasm`);
       return ImageSegmenter.createFromOptions(vision, {
         baseOptions: {
@@ -200,9 +210,9 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
             if (!isCancelled && maskBytes) {
               // تحويل مصفوفة Uint8Array إلى Base64 بسرعة البرق باستخدام كتل (Chunks) لتفادي تجاوز الحد الأقصى للمكدس
               const CHUNK_SIZE = 0x8000; // 32768
-              const chunks = [];
+              const chunks: string[] = [];
               for (let i = 0; i < maskBytes.length; i += CHUNK_SIZE) {
-                chunks.push(String.fromCharCode.apply(null, Array.from(maskBytes.subarray(i, i + CHUNK_SIZE))));
+                chunks.push(String.fromCharCode(...maskBytes.subarray(i, i + CHUNK_SIZE)));
               }
               const b64Mask = btoa(chunks.join(""));
 

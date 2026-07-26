@@ -5,8 +5,8 @@ import { KonvaEventObject } from "konva/lib/Node";
 
 interface UseKonvaDragProps {
   element: CanvasElement;
-  displayW: number;
-  displayH: number;
+  canvasWidth: number;
+  canvasHeight: number;
   snapToGrid?: boolean;
   gridSize?: number;
   altPressedRef: React.RefObject<boolean>;
@@ -16,8 +16,8 @@ interface UseKonvaDragProps {
 
 export function useKonvaDrag({
   element,
-  displayW,
-  displayH,
+  canvasWidth,
+  canvasHeight,
   snapToGrid,
   gridSize,
   altPressedRef,
@@ -66,10 +66,10 @@ export function useKonvaDrag({
       xAbs = Math.round(xAbs / gridSize) * gridSize;
       yAbs = Math.round(yAbs / gridSize) * gridSize;
     } else {
-      const x = xAbs / displayW;
-      const y = yAbs / displayH;
-      const thresholdX = 5 / displayW;
-      const thresholdY = 5 / displayH;
+      const x = xAbs / canvasWidth;
+      const y = yAbs / canvasHeight;
+      const thresholdX = 5 / canvasWidth;
+      const thresholdY = 5 / canvasHeight;
       const targets = snapTargetsRef.current || {
         vTargets: [{ value: 0.5, origin: "canvas" }],
         hTargets: [{ value: 0.5, origin: "canvas" }]
@@ -84,8 +84,8 @@ export function useKonvaDrag({
         thresholdX,
         thresholdY
       );
-      xAbs = snapResult.x * displayW;
-      yAbs = snapResult.y * displayH;
+      xAbs = snapResult.x * canvasWidth;
+      yAbs = snapResult.y * canvasHeight;
     }
     return { x: xAbs, y: yAbs };
   };
@@ -126,10 +126,10 @@ export function useKonvaDrag({
         prevGuidesRef.current = [];
       }
     } else {
-      const x = e.target.x() / displayW;
-      const y = e.target.y() / displayH;
-      const thresholdX = 5 / displayW;
-      const thresholdY = 5 / displayH;
+      const x = e.target.x() / canvasWidth;
+      const y = e.target.y() / canvasHeight;
+      const thresholdX = 5 / canvasWidth;
+      const thresholdY = 5 / canvasHeight;
       const targets = snapTargetsRef.current || {
         vTargets: [{ value: 0.5, origin: "canvas" }],
         hTargets: [{ value: 0.5, origin: "canvas" }]
@@ -182,12 +182,12 @@ export function useKonvaDrag({
         if (node) {
           const el = currentElements.find((x) => x.id === id) || element;
           const flipped = el.flipX === true;
-          const rawX = node.x() / displayW;
+          const rawX = node.x() / canvasWidth;
           return {
             id,
             patch: {
               x: flipped ? rawX - el.width : rawX,
-              y: node.y() / displayH,
+              y: node.y() / canvasHeight,
             },
           };
         }

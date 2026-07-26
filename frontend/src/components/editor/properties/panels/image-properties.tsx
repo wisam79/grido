@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { ImageElement, useEditorStore } from "@/lib/editor-store";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -6,16 +6,18 @@ import {
   Sparkles, RefreshCw, Sun, Contrast, Droplet, 
   EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine
 } from "lucide-react";
-import { CropDialog } from "../../crop-dialog";
-import { DocumentScannerDialog } from "../../document-scanner";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
-import { RefineBgDialog } from "../../refine-bg-dialog";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
+
+// أدوات الصور الثقيلة لا تُحمّل إلا عند فتحها، بدلاً من تأخير المحرر عند البدء.
+const CropDialog = lazy(() => import("../../crop-dialog").then((module) => ({ default: module.CropDialog })));
+const DocumentScannerDialog = lazy(() => import("../../document-scanner").then((module) => ({ default: module.DocumentScannerDialog })));
+const RefineBgDialog = lazy(() => import("../../refine-bg-dialog").then((module) => ({ default: module.RefineBgDialog })));
 interface ImagePropertiesProps {
   element: ImageElement;
   onUpdate: (id: string, patch: Partial<ImageElement>) => void;
@@ -330,8 +332,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
       </div>
 
-      {element.imageSrc && (
-        <CropDialog
+      {element.imageSrc && cropOpen && (
+        <Suspense fallback={null}>
+          <CropDialog
           open={cropOpen}
           onOpenChange={setCropOpen}
           imageSrc={element.imageSrc}
@@ -371,20 +374,24 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               toast.error("فشل حفظ الصورة المقصوصة محلياً");
             }
           }}
-        />
+          />
+        </Suspense>
       )}
 
-      {element.imageSrc && (
-        <DocumentScannerDialog
+      {element.imageSrc && scannerOpen && (
+        <Suspense fallback={null}>
+          <DocumentScannerDialog
           open={scannerOpen}
           onOpenChange={setScannerOpen}
           imageSrc={element.imageSrc}
           onSave={handleScannerSave}
-        />
+          />
+        </Suspense>
       )}
 
-      {element.imageSrc && element.originalImageSrc && (
-        <RefineBgDialog
+      {element.imageSrc && element.originalImageSrc && refineOpen && (
+        <Suspense fallback={null}>
+          <RefineBgDialog
           open={refineOpen}
           onOpenChange={setRefineOpen}
           element={element}
@@ -392,7 +399,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             onUpdate(element.id, { imageSrc: newImageSrc });
             useEditorStore.getState().pushHistory();
           }}
-        />
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ interface CachedImageNode {
   clearCache: () => void;
   cache: (opts: { pixelRatio: number }) => void;
   isCached: () => boolean;
+  getStage: () => Pick<Konva.Stage, "scaleX"> | null;
 }
 
 interface KonvaNodeLike {
@@ -11,9 +12,12 @@ interface KonvaNodeLike {
   show: () => void;
 }
 
-function getScreenPixelRatio(): number {
+function getScreenPixelRatio(node: CachedImageNode): number {
   const screenRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-  return Math.max(1.5, Math.min(2, screenRatio));
+  // مساحة Konva تستخدم إحداثيات الطباعة ثم تُصغّر للعرض. إعادة الكاش
+  // بنسبة DPR فقط بعد التصدير كانت تنشئ canvases ضخمة بلا فائدة.
+  const stageScale = node.getStage()?.scaleX() || 1;
+  return Math.max(0.1, Math.min(2, stageScale * screenRatio));
 }
 
 function restoreScreenCache(previouslyCached: CachedImageNode[]): void {
@@ -21,7 +25,7 @@ function restoreScreenCache(previouslyCached: CachedImageNode[]): void {
     try {
       if (img && typeof img.clearCache === "function") {
         img.clearCache();
-        img.cache({ pixelRatio: getScreenPixelRatio() });
+        img.cache({ pixelRatio: getScreenPixelRatio(img) });
       }
     } catch {
       // الإبقاء على سلامة التطبيق في حال تم حظر كاش العناصر التي ألغي تثبيتها

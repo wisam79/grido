@@ -82,23 +82,24 @@ func init() {
 	if ModalAIKey == "" {
 		ModalAIKey = os.Getenv("GRIDO_AI_SECRET_KEY")
 	}
+	// 🔒 إزالة المفتاح الافتراضي المكشوف - يجب تعيينه في .env أو عبر ldflags
 	if ModalAIKey == "" {
-		ModalAIKey = "grido_sec_ai_live_8f3d9b4c2e1a70562e84d9c0a1b3f5e76812c9d4a0b6f8e235d7c9a1e4f6b802"
+		slog.Warn("MODAL_AI_KEY not configured - AI features will be disabled")
 	}
 }
 
-// GetModalAIKey returns the active Modal AI API key with fallback
-func GetModalAIKey() string {
+// GetModalAIKey returns the active Modal AI API key or error if not configured
+func GetModalAIKey() (string, error) {
 	if ModalAIKey != "" {
-		return ModalAIKey
+		return ModalAIKey, nil
 	}
 	if key := os.Getenv("MODAL_AI_KEY"); key != "" {
-		return key
+		return key, nil
 	}
 	if key := os.Getenv("GRIDO_AI_SECRET_KEY"); key != "" {
-		return key
+		return key, nil
 	}
-	return "grido_sec_ai_live_8f3d9b4c2e1a70562e84d9c0a1b3f5e76812c9d4a0b6f8e235d7c9a1e4f6b802"
+	return "", errors.New("MODAL_AI_KEY is required but not configured. Please set it in .env or via ldflags")
 }
 
 var sharedClient = &http.Client{Timeout: 10 * time.Second}
@@ -615,6 +616,9 @@ const oauthCallbackHTML = `
     </div>
     <script>
         const hash = window.location.hash;
+        const searchParams = new URLSearchParams(window.location.search);
+        const errorDesc = searchParams.get('error_description') || searchParams.get('error');
+
         if (hash) {
             fetch('/exchange', {
                 method: 'POST',
@@ -630,6 +634,8 @@ const oauthCallbackHTML = `
             }).catch(e => {
                 document.getElementById("msg").innerHTML = 'حدث خطأ أثناء المصادقة.';
             });
+        } else if (errorDesc) {
+            document.getElementById("msg").innerText = 'فشلت عملية المصادقة: ' + decodeURIComponent(errorDesc.replace(/\+/g, ' '));
         } else {
             document.getElementById("msg").innerHTML = 'الرابط غير صحيح أو منتهي الصلاحية.';
         }
@@ -660,13 +666,23 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 
 	mux.HandleFunc("/exchange", func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if origin == "" || (origin != "https://grido.cloud-ip.cc" && origin != "http://127.0.0.1:34567" && origin != "http://localhost:34567") {
+
+		// 🔒 السماح بنطاقات المصادقة المعتمدة ومحلياً للرنتايم
+		allowedOrigins := map[string]bool{
+			"http://127.0.0.1:34567":    true,
+			"http://localhost:34567":    true,
+			"https://grido.cloud-ip.cc": true,
+		}
+		
+		if origin != "" && !allowedOrigins[origin] {
 			slog.Warn("Blocked OAuth exchange from untrusted origin", "origin", origin)
 			http.Error(w, "Forbidden Origin", http.StatusForbidden)
 			return
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", origin)
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
@@ -699,21 +715,23 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 		}
 	}()
 
-	authURL := fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=http://127.0.0.1:34567/callback", SupabaseURL)
+	authURL := fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=%s", SupabaseURL, url.QueryEscape("http://127.0.0.1:34567/callback"))
 	_ = utils.OpenBrowser(authURL)
+
+	// 🔒 تحسين timeout handling مع إغلاق صحيح للـ server
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	defer srv.Shutdown(context.Background())
 
 	var oauthBody string
 	select {
 	case oauthBody = <-tokenChan:
+		// نجح
 	case err := <-errChan:
-		_ = srv.Shutdown(context.Background())
 		return nil, fmt.Errorf("خطأ في الخادم المحلي: %w", err)
-	case <-time.After(2 * time.Minute):
-		_ = srv.Shutdown(context.Background())
-		return nil, errors.New("انتهى وقت تسجيل الدخول (2 دقيقة)")
+	case <-ctx.Done():
+		return nil, errors.New("انتهى وقت تسجيل الدخول (2 دقيقة). يرجى المحاولة مرة أخرى")
 	}
-
-	_ = srv.Shutdown(context.Background())
 
 	values, err := url.ParseQuery(oauthBody)
 	if err != nil {

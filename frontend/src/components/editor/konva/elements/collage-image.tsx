@@ -58,9 +58,11 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
     if (node && image) {
       if (hasFilters) {
         try {
-          // استخدام دقة عرض الشاشة العادية أثناء التعديل
-          let ratio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
-          ratio = Math.max(1.5, Math.min(2, ratio));
+          const stageScale = node.getStage()?.scaleX() || 1;
+          const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
+          // لا تستخدم أبعاد صورة الطباعة الأصلية كحجم cache داخل المحرر.
+          const ratio = Math.max(0.1, Math.min(2, stageScale * devicePixelRatio));
+          node.clearCache();
           node.cache({
             pixelRatio: ratio
           });
@@ -212,6 +214,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
       width={width}
       height={height}
       cornerRadius={cornerRadius}
+      perfectDrawEnabled={false}
       filters={filters}
       brightness={totalBrightness !== 100 ? (totalBrightness - 100) / 100 : 0}
       contrast={totalContrast !== 100 ? totalContrast - 100 : 0}

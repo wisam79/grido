@@ -34,79 +34,98 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   onContextMenu
 }: KonvaCanvasProps) {
   const wheelTimeoutRef = useRef<any>(null);
+  const slotZoomFrameRef = useRef<number | null>(null);
+  const pendingSlotZoomsRef = useRef(new Map<string, number>());
 
   useEffect(() => {
+    const pendingSlotZooms = pendingSlotZoomsRef.current;
     return () => {
       if (wheelTimeoutRef.current) {
         clearTimeout(wheelTimeoutRef.current);
       }
+      if (slotZoomFrameRef.current !== null) {
+        cancelAnimationFrame(slotZoomFrameRef.current);
+      }
+      pendingSlotZooms.clear();
     };
   }, []);
-  const {
-    mode,
-    slots,
-    selectedId,
-    selectedIds,
-    selectElement,
-    toggleElementSelection,
-    updateElement,
-    updateSlot,
-    pushHistory,
-    showGrid,
-    gridSize,
-    gridColor,
-    gridOpacity,
-    gridSubdivisions,
-    gridType,
-    snapToGrid,
-    showColumns,
-    columnsCount,
-    columnsColor,
-    columnsMargin,
-    columnsGutter,
-    collageGap,
-    collageMargin,
-    collageTemplate,
-    collageRadius,
-    collageShowCutLines,
-    collageStrokeWidth,
-    collageStrokeColor,
-    backgroundColor,
-    canvasWidth,
-    canvasHeight,
-  } = useEditorStore(useShallow((state) => ({
-    mode: state.mode,
-    slots: state.slots,
-    selectedId: state.selectedId,
-    selectedIds: state.selectedIds,
-    selectElement: state.selectElement,
-    toggleElementSelection: state.toggleElementSelection,
-    updateElement: state.updateElement,
-    updateSlot: state.updateSlot,
-    pushHistory: state.pushHistory,
-    showGrid: state.showGrid,
-    gridSize: state.gridSize,
-    gridColor: state.gridColor,
-    gridOpacity: state.gridOpacity,
-    gridSubdivisions: state.gridSubdivisions,
-    gridType: state.gridType,
-    snapToGrid: state.snapToGrid,
-    showColumns: state.showColumns,
-    columnsCount: state.columnsCount,
-    columnsColor: state.columnsColor,
-    columnsMargin: state.columnsMargin,
-    columnsGutter: state.columnsGutter,
-    collageGap: state.collageGap,
-    collageMargin: state.collageMargin,
-    collageTemplate: state.collageTemplate,
-    collageRadius: state.collageRadius,
-    collageShowCutLines: state.collageShowCutLines,
-    collageStrokeWidth: state.collageStrokeWidth,
-    collageStrokeColor: state.collageStrokeColor,
-    backgroundColor: state.backgroundColor,
-    canvasWidth: state.canvasWidth,
-    canvasHeight: state.canvasHeight,
+  // تقسيم الاشتراكات لمنع إعادة رسم كاملة عند تغيير جزء واحد
+  const mode = useEditorStore(useShallow((s) => s.mode));
+  const canvasWidth = useEditorStore(useShallow((s) => s.canvasWidth));
+  const canvasHeight = useEditorStore(useShallow((s) => s.canvasHeight));
+  const backgroundColor = useEditorStore(useShallow((s) => s.backgroundColor));
+  const selectedId = useEditorStore(useShallow((s) => s.selectedId));
+  const selectedIds = useEditorStore(useShallow((s) => s.selectedIds));
+  const snapToGrid = useEditorStore(useShallow((s) => s.snapToGrid));
+
+  // وظائف — لا تتغير أبداً، آمنة بدون useShallow
+  const selectElement = useEditorStore((s) => s.selectElement);
+  const toggleElementSelection = useEditorStore((s) => s.toggleElementSelection);
+  const updateElement = useEditorStore((s) => s.updateElement);
+  const updateSlot = useEditorStore((s) => s.updateSlot);
+  const pushHistory = useEditorStore((s) => s.pushHistory);
+
+  // عجلة الفأرة قد تطلق عشرات الأحداث في الإطار الواحد. نجمع تعديلات قص
+  // الصورة ونرسل تحديث Zustand واحداً فقط لكل إطار مرئي.
+  const handleSlotWheel = React.useCallback((slot: { id: string; imageSrc?: string; zoom?: number }, e: any) => {
+    if (!slot.imageSrc || useEditorStore.getState().selectedId !== slot.id) return;
+
+    e.evt.preventDefault();
+    const pendingZoom = pendingSlotZoomsRef.current.get(slot.id);
+    const currentZoom = pendingZoom ?? slot.zoom ?? 1;
+    const step = e.evt.deltaY < 0 ? 0.05 : -0.05;
+    pendingSlotZoomsRef.current.set(slot.id, Math.min(3, Math.max(1, currentZoom + step)));
+
+    if (slotZoomFrameRef.current === null) {
+      slotZoomFrameRef.current = requestAnimationFrame(() => {
+        slotZoomFrameRef.current = null;
+        for (const [slotId, zoom] of pendingSlotZoomsRef.current) {
+          updateSlot(slotId, { zoom });
+        }
+        pendingSlotZoomsRef.current.clear();
+      });
+    }
+
+    if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+    wheelTimeoutRef.current = setTimeout(() => {
+      pushHistory();
+      wheelTimeoutRef.current = null;
+    }, 500);
+  }, [pushHistory, updateSlot]);
+
+  // إعدادات الشبكة — تتغير معاً
+  const grid = useEditorStore(useShallow((s) => ({
+    showGrid: s.showGrid,
+    gridSize: s.gridSize,
+    gridColor: s.gridColor,
+    gridOpacity: s.gridOpacity,
+    gridSubdivisions: s.gridSubdivisions,
+    gridType: s.gridType,
   })));
+  const { showGrid, gridSize, gridColor, gridOpacity, gridSubdivisions, gridType } = grid;
+
+  // إعدادات الأعمدة — تتغير معاً
+  const columns = useEditorStore(useShallow((s) => ({
+    showColumns: s.showColumns,
+    columnsCount: s.columnsCount,
+    columnsColor: s.columnsColor,
+    columnsMargin: s.columnsMargin,
+    columnsGutter: s.columnsGutter,
+  })));
+  const { showColumns, columnsCount, columnsColor, columnsMargin, columnsGutter } = columns;
+
+  // إعدادات الكولاج — تتغير معاً
+  const collage = useEditorStore(useShallow((s) => ({
+    slots: s.slots,
+    collageGap: s.collageGap,
+    collageMargin: s.collageMargin,
+    collageTemplate: s.collageTemplate,
+    collageRadius: s.collageRadius,
+    collageShowCutLines: s.collageShowCutLines,
+    collageStrokeWidth: s.collageStrokeWidth,
+    collageStrokeColor: s.collageStrokeColor,
+  })));
+  const { slots, collageGap, collageMargin, collageTemplate, collageRadius, collageShowCutLines, collageStrokeWidth, collageStrokeColor } = collage;
   
   const trRef = useRef<any>(null);
   const elementsRefs = useRef<Record<string, any>>({});
@@ -133,20 +152,40 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     };
   }, []);
 
+  // إرفاق المحول بالعناصر المحددة — يعتمد فقط على التحديد والوضع
+  // لا يعتمد على sortedElements لتجنب إعادة الإرفاق أثناء/بعد التحويل
+  const transformingRef = useRef(false);
   useEffect(() => {
     if (trRef.current) {
       if (selectedIds.length > 0 && mode === "single") {
         const nodes = selectedIds
           .map((id) => elementsRefs.current[id])
           .filter(Boolean);
-        trRef.current.nodes(nodes);
-        trRef.current.getLayer().batchDraw();
+        // لا تعيد إرفاق العقد أثناء تحويل نشط لتجنب قطع التحويل البصري
+        if (!transformingRef.current) {
+          trRef.current.nodes(nodes);
+          trRef.current.getLayer().batchDraw();
+        }
       } else {
         trRef.current.nodes([]);
         trRef.current.getLayer().batchDraw();
       }
     }
-  }, [selectedIds, sortedElements, mode]);
+  }, [selectedIds, mode]);
+
+  // تتبع حالة التحويل النشط لمنع إعادة إرفاق العقد أثناء السحب
+  useEffect(() => {
+    const transformer = trRef.current;
+    if (!transformer) return;
+    const onStart = () => { transformingRef.current = true; };
+    const onEnd = () => { transformingRef.current = false; };
+    transformer.on("transformstart", onStart);
+    transformer.on("transformend", onEnd);
+    return () => {
+      transformer.off("transformstart", onStart);
+      transformer.off("transformend", onEnd);
+    };
+  }, []);
 
   const handleStageMouseDown = (e: any) => {
     const isBackgroundOrEmpty = e.target === e.target.getStage() || e.target.hasName("bg-rect");
@@ -194,14 +233,15 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     }
   }), []);
 
-  return (
+return (
     <Stage
       width={displayW}
       height={displayH}
+      scaleX={displayW / canvasWidth}
+      scaleY={displayH / canvasHeight}
       onMouseDown={handleStageMouseDown}
       onTouchStart={handleStageMouseDown}
       onContextMenu={(e) => {
-        // Prevent native context menu on the canvas
         e.evt.preventDefault();
         onContextMenu?.(e);
       }}
@@ -211,8 +251,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       <Layer>
         <Rect
           name="bg-rect"
-          width={displayW}
-          height={displayH}
+          width={canvasWidth}
+          height={canvasHeight}
           fill={backgroundColor === "transparent" ? undefined : backgroundColor}
         />
       </Layer>
@@ -226,8 +266,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
           gridOpacity={gridOpacity}
           gridSubdivisions={gridSubdivisions}
           gridType={gridType}
-          displayW={displayW}
-          displayH={displayH}
+          displayW={canvasWidth}
+          displayH={canvasHeight}
         />
       )}
 
@@ -239,8 +279,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
           columnsGutter={columnsGutter}
           columnsCount={columnsCount}
           columnsColor={columnsColor}
-          displayW={displayW}
-          displayH={displayH}
+          displayW={canvasWidth}
+          displayH={canvasHeight}
         />
       )}
 
@@ -248,15 +288,14 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       {mode === "collage" && (
         <Layer>
           {slots.map((slot) => {
-            const scale = displayW / canvasWidth;
             const hasPhysical = collageTemplate?.physicalLayout;
-            const margin = hasPhysical ? 0 : collageMargin * scale;
-            const gap = hasPhysical ? 0 : collageGap * scale;
-            const radius = collageRadius * scale;
-            const borderW = collageStrokeWidth * scale;
+            const margin = hasPhysical ? 0 : collageMargin;
+            const gap = hasPhysical ? 0 : collageGap;
+            const radius = collageRadius;
+            const borderW = collageStrokeWidth;
 
-            const availW = displayW - 2 * margin;
-            const availH = displayH - 2 * margin;
+            const availW = canvasWidth - 2 * margin;
+            const availH = canvasHeight - 2 * margin;
 
             const left = margin + slot.x * availW + gap / 2;
             const top = margin + slot.y * availH + gap / 2;
@@ -275,8 +314,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
                     width={width}
                     height={height}
                     stroke="#ff0000"
-                    strokeWidth={1 * scale}
-                    dash={[4 * scale, 4 * scale]}
+                    strokeWidth={1}
+                    dash={[4, 4]}
                     listening={false}
                   />
                 )}
@@ -292,26 +331,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
                   onTouchEnd={() => handleSlotClick?.(slot.id)}
                   onDblClick={() => handleSlotDblClick?.(slot.id)}
                   onDblTap={() => handleSlotDblClick?.(slot.id)}
-                  onWheel={(e) => {
-                    if (slot.imageSrc && selectedId === slot.id) {
-                      e.evt.preventDefault();
-                      const currentZoom = slot.zoom ?? 1;
-                      const delta = e.evt.deltaY;
-                      let newZoom = currentZoom;
-                      if (delta < 0) {
-                        newZoom = Math.min(3.0, currentZoom + 0.05);
-                      } else {
-                        newZoom = Math.max(1.0, currentZoom - 0.05);
-                      }
-                      updateSlot(slot.id, { zoom: newZoom });
-                      
-                      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
-                      wheelTimeoutRef.current = setTimeout(() => {
-                        pushHistory();
-                        wheelTimeoutRef.current = null;
-                      }, 500);
-                    }
-                  }}
+                  onWheel={(e) => handleSlotWheel(slot, e)}
                 >
                   {slot.imageSrc ? (
                     <KonvaCollageImage
@@ -338,7 +358,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
                     />
                   ) : (
                     // Placeholder background & text
-                    <Group>
+                    <Group listening={false}>
                       <Rect
                         x={0}
                         y={0}
@@ -349,20 +369,20 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
                       />
                       <Text
                         text="+"
-                        fontSize={32 * scale}
+                        fontSize={32}
                         fill="#9ca3af"
                         x={0}
-                        y={height / 2 - 25 * scale}
+                        y={height / 2 - 25}
                         width={width}
                         align="center"
                       />
                       <Text
                         text="انقر للإضافة"
-                        fontSize={12 * scale}
+                        fontSize={12}
                         fill="#9ca3af"
                         fontFamily="Cairo, sans-serif"
                         x={0}
-                        y={height / 2 + 10 * scale}
+                        y={height / 2 + 10}
                         width={width}
                         align="center"
                       />
@@ -430,8 +450,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
               onClick: handleClick,
               onTap: handleClick,
               onChange: (patch: Partial<CanvasElement>) => handleElementChange(el.id, patch),
-              displayW,
-              displayH,
+              canvasWidth,
+              canvasHeight,
               allElements: sortedElements,
               setActiveGuides,
               snapToGrid,
@@ -465,10 +485,9 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
               trRef={trRef}
               selectedIds={selectedIds}
               sortedElements={sortedElements}
-              displayW={displayW}
-              displayH={displayH}
               canvasWidth={canvasWidth}
               canvasHeight={canvasHeight}
+              stageScale={displayW / canvasWidth}
               isText={isText}
               onTransformEnd={() => {
                 if (!trRef.current) return;
@@ -482,25 +501,39 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
                   const sy = node.scaleY();
                   const isNowFlipped = sx < 0;
                   const absScaleX = Math.abs(sx);
+                  const absScaleY = Math.abs(sy);
+
+                  const newW = node.width() * absScaleX;
+                  const newH = node.height() * absScaleY;
+
+                  // Konva يغيّر scale بشكل مباشر أثناء التحويل. أعده إلى 1
+                  // بعد نقل النتيجة إلى width/height، وإلا ستبقى الصورة مكبرة
+                  // مرتين عند أول إعادة رسم لاحقة أو سيتضخم كاش الفلاتر.
+                  node.width(newW);
+                  if (el.type === "text") {
+                    node.fontSize?.(Math.max(6, Math.round((el.fontSize || 16) * absScaleY)));
+                  } else {
+                    node.height(newH);
+                  }
                   node.scaleX(isNowFlipped ? -1 : 1);
                   node.scaleY(1);
 
-                  const newWidth = (node.width() * absScaleX) / displayW;
-                  const rawX = node.x() / displayW;
+                  const newWidth = newW / canvasWidth;
+                  const rawX = node.x() / canvasWidth;
 
                   const patch: Partial<CanvasElement> = {
                     x: isNowFlipped ? rawX - newWidth : rawX,
-                    y: node.y() / displayH,
+                    y: node.y() / canvasHeight,
                     width: newWidth,
                     rotation: node.rotation(),
                     flipX: isNowFlipped,
                   };
 
                   if (el.type === "text") {
-                    patch.height = node.height() / displayH;
-                    (patch as any).fontSize = Math.max(6, Math.round((el.fontSize || 16) * Math.abs(sy)));
+                    patch.height = node.height() / canvasHeight;
+                    (patch as any).fontSize = Math.max(6, Math.round((el.fontSize || 16) * absScaleY));
                   } else {
-                    patch.height = (node.height() * Math.abs(sy)) / displayH;
+                    patch.height = newH / canvasHeight;
                   }
 
                   return { id, patch };
@@ -508,6 +541,17 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
 
                 useEditorStore.getState().updateElements(patches);
                 useEditorStore.getState().pushHistory();
+
+                // إعادة إرفاق المحول بعد انتهاء التحويل لتحديث العقد بالقيم الجديدة
+                requestAnimationFrame(() => {
+                  if (trRef.current && selectedIds.length > 0) {
+                    const updatedNodes = selectedIds
+                      .map((sid) => elementsRefs.current[sid])
+                      .filter(Boolean);
+                    trRef.current.nodes(updatedNodes);
+                    trRef.current.getLayer()?.batchDraw();
+                  }
+                });
               }}
             />
           )}

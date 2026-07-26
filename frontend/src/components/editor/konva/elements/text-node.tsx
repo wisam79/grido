@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Text as KonvaText } from "react-konva";
 import Konva from "konva";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
@@ -14,8 +14,8 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   onClick,
   onTap, 
   onChange, 
-  displayW, 
-  displayH, 
+  canvasWidth: stageCanvasWidth, 
+  canvasHeight,
   setActiveGuides, 
   elementRef, 
   snapToGrid, 
@@ -36,8 +36,8 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     onDragEnd,
   } = useKonvaDrag({
     element,
-    displayW,
-    displayH,
+    canvasWidth: stageCanvasWidth,
+    canvasHeight,
     snapToGrid,
     gridSize,
     altPressedRef,
@@ -63,32 +63,40 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   }, [elementRef, element.opacity, element.flipX, editingTextId, element.id]);
   
   // Sync auto height back to store so bounding boxes and overlays stay perfect
+  // استخدام ref لمنع الحلقة الدائرية — نتوقف عن التحديث إذا كان الارتفاع الجديد مطابقاً
+  const lastSetHeightRef = useRef<number | null>(null);
   useEffect(() => {
     const node = elementRef.current;
     if (node) {
-      const actualHeight = node.height() / displayH;
+      const actualHeight = node.height() / canvasHeight;
+      // تجاهل إذا كان الارتفاع المحسوب مطابقاً لما قامنا بتعيينه سابقاً
+      if (lastSetHeightRef.current !== null && Math.abs(actualHeight - lastSetHeightRef.current) < 0.001) {
+        return;
+      }
       if (Math.abs(actualHeight - element.height) > 0.005) {
+        lastSetHeightRef.current = actualHeight;
         onChange({ height: actualHeight });
       }
     }
-  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, displayH, element.height, elementRef, onChange]);
+  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight, elementRef, onChange]);
 
   const flipped = element.flipX === true;
-  const w = element.width * displayW;
-  const h = element.height * displayH;
+  const w = element.width * stageCanvasWidth;
+  const h = element.height * canvasHeight;
 
   return (
     <KonvaText
       ref={elementRef}
       text={element.text || ""}
-      x={flipped ? (element.x + element.width) * displayW : element.x * displayW}
-      y={element.y * displayH}
+      x={flipped ? (element.x + element.width) * stageCanvasWidth : element.x * stageCanvasWidth}
+      y={element.y * canvasHeight}
       width={w}
       scaleX={flipped ? -1 : 1}
       rotation={element.rotation}
       opacity={editingTextId === element.id ? 0 : element.opacity}
       visible={element.visible !== false}
       id={element.id}
+      perfectDrawEnabled={false}
       globalCompositeOperation={element.globalCompositeOperation as any || "source-over"}
       shadowColor={element.shadowColor}
       shadowBlur={element.shadowBlur || 0}
@@ -101,7 +109,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       onTap={onTap}
       onDblClick={onDblClick}
       onDblTap={onDblClick}
-      fontSize={element.fontSize ? element.fontSize * (displayW / canvasWidth) : 16}
+      fontSize={element.fontSize || 16}
       fontStyle={[
         element.fontStyle === "italic" ? "italic" : "",
         element.fontWeight ? String(element.fontWeight) : "400",
@@ -110,9 +118,9 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       fontFamily={element.fontFamily || "sans-serif"}
       align={element.textAlign || "center"}
       lineHeight={element.lineHeight ?? 1.2}
-      letterSpacing={element.letterSpacing ? element.letterSpacing * (displayW / canvasWidth) : 0}
+      letterSpacing={element.letterSpacing || 0}
       stroke={element.strokeWidth ? (element.stroke || "#000000") : undefined}
-      strokeWidth={element.strokeWidth ? element.strokeWidth * (displayW / canvasWidth) : undefined}
+      strokeWidth={element.strokeWidth || undefined}
       textDecoration={element.textDecoration || ""}
       draggable={!element.locked && isSelected}
       onDragStart={onDragStart}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { 
@@ -13,15 +13,16 @@ import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { toast } from "sonner";
 import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
-import { CropDialog } from "../crop-dialog";
 import { SliderControl } from "./shared-controls";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
-import { RefineBgDialog } from "../refine-bg-dialog";
 import { Switch } from "@/components/ui/switch";
+
+const CropDialog = lazy(() => import("../crop-dialog").then((module) => ({ default: module.CropDialog })));
+const RefineBgDialog = lazy(() => import("../refine-bg-dialog").then((module) => ({ default: module.RefineBgDialog })));
 
 export function SlotProperties({
   slot,
@@ -399,8 +400,9 @@ export function SlotProperties({
             </div>
           )}
 
-          {slot.imageSrc && (
-            <CropDialog
+          {slot.imageSrc && cropOpen && (
+            <Suspense fallback={null}>
+              <CropDialog
               open={cropOpen}
               onOpenChange={setCropOpen}
               imageSrc={slot.imageSrc}
@@ -414,11 +416,13 @@ export function SlotProperties({
                   toast.error("فشل حفظ الصورة المقصوصة محلياً");
                 }
               }}
-            />
+              />
+            </Suspense>
           )}
 
-          {slot.imageSrc && slot.originalImageSrc && (
-            <RefineBgDialog
+          {slot.imageSrc && slot.originalImageSrc && refineOpen && (
+            <Suspense fallback={null}>
+              <RefineBgDialog
               open={refineOpen}
               onOpenChange={setRefineOpen}
               element={slot}
@@ -426,7 +430,8 @@ export function SlotProperties({
                 onUpdate(slot.id, { imageSrc: newImageSrc });
                 useEditorStore.getState().pushHistory();
               }}
-            />
+              />
+            </Suspense>
           )}
         </TabsContent>
 

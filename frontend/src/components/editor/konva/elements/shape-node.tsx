@@ -20,8 +20,8 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   onClick,
   onTap, 
   onChange, 
-  displayW, 
-  displayH, 
+  canvasWidth, 
+  canvasHeight, 
   setActiveGuides, 
   elementRef, 
   snapToGrid, 
@@ -30,8 +30,8 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   getKonvaNode 
 }: ElementProps) {
   const element = _element as ShapeElement;
-  const w = element.width * displayW;
-  const h = element.height * displayH;
+  const w = element.width * canvasWidth;
+  const h = element.height * canvasHeight;
   const flipped = element.flipX === true;
   const hasAnimatedRef = React.useRef(false);
 
@@ -42,8 +42,8 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     onDragEnd,
   } = useKonvaDrag({
     element,
-    displayW,
-    displayH,
+    canvasWidth,
+    canvasHeight,
     snapToGrid,
     gridSize,
     altPressedRef,
@@ -70,8 +70,8 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
 
   const shapeProps = {
     ref: elementRef,
-    x: flipped ? (element.x + element.width) * displayW : element.x * displayW,
-    y: element.y * displayH,
+    x: flipped ? (element.x + element.width) * canvasWidth : element.x * canvasWidth,
+    y: element.y * canvasHeight,
     width: w,
     height: h,
     scaleX: flipped ? -1 : 1,
@@ -79,6 +79,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     opacity: element.opacity,
     visible: element.visible !== false,
     id: element.id,
+    perfectDrawEnabled: false,
     globalCompositeOperation: element.globalCompositeOperation as any || "source-over",
     shadowColor: element.shadowColor,
     shadowBlur: element.shadowBlur || 0,

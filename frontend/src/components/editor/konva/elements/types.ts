@@ -9,8 +9,8 @@ export interface ElementProps {
   onClick: (e: KonvaEventObject<MouseEvent>) => void;
   onTap: (e: KonvaEventObject<TouchEvent>) => void;
   onChange: (patch: Partial<CanvasElement>) => void;
-  displayW: number;
-  displayH: number;
+  canvasWidth: number;
+  canvasHeight: number;
   allElements: CanvasElement[];
   setActiveGuides: (guides: any[]) => void;
   elementRef: React.MutableRefObject<any>;
@@ -24,8 +24,8 @@ export interface ElementProps {
 export const propsAreEqual = (prev: ElementProps, next: ElementProps) => {
   return prev.element === next.element &&
          prev.isSelected === next.isSelected &&
-         prev.displayW === next.displayW &&
-         prev.displayH === next.displayH &&
+         prev.canvasWidth === next.canvasWidth &&
+         prev.canvasHeight === next.canvasHeight &&
          prev.snapToGrid === next.snapToGrid &&
          prev.gridSize === next.gridSize;
 };

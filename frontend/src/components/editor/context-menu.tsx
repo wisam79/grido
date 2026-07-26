@@ -27,6 +27,7 @@ interface ContextMenuProps {
 
 export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const focusIndexRef = React.useRef(0);
   const {
     duplicateElement,
     duplicateElements,
@@ -52,10 +53,38 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     };
   }, [onClose]);
 
-  // Handle ESC key
+  // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      const menu = menuRef.current;
+      if (!menu) return;
+      const items = menu.querySelectorAll<HTMLElement>("[role='menuitem']");
+      if (items.length === 0) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const next = (focusIndexRef.current + 1) % items.length;
+        focusIndexRef.current = next;
+        items[next]?.focus();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const prev = (focusIndexRef.current - 1 + items.length) % items.length;
+        focusIndexRef.current = prev;
+        items[prev]?.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        focusIndexRef.current = 0;
+        items[0]?.focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        const last = items.length - 1;
+        focusIndexRef.current = last;
+        items[last]?.focus();
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
@@ -81,6 +110,8 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
         h: menuRef.current.offsetHeight
       });
     }
+    // إعادة تعيين فهرس التركيز عند تغير الهدف
+    focusIndexRef.current = 0;
   }, [target, position.x, position.y]);
 
   const size = menuSize || { w: 150, h: 160 };
@@ -121,7 +152,10 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-[9999] w-auto min-w-[130px] max-w-[220px] bg-card border border-border/50 shadow-2xl rounded-md py-1 text-sm font-cairo overflow-hidden select-none animate-in fade-in-50 zoom-in-95 duration-100"
+      role="menu"
+      tabIndex={-1}
+      aria-label="قائمة السياق"
+      className="fixed z-[9999] w-auto min-w-[130px] max-w-[220px] bg-card border border-border/50 shadow-2xl rounded-md py-1 text-sm font-cairo overflow-hidden select-none animate-in fade-in-50 zoom-in-95 duration-100 outline-none"
       style={{
         left: `${left}px`,
         top: `${top}px`,
@@ -133,7 +167,9 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       {target.type === "element" && target.id && (
         <>
           <button
-            className="w-full text-right px-3 py-1.5 hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer"
+            role="menuitem"
+            tabIndex={-1}
+            className="w-full text-right px-3 py-1.5 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
             onClick={() => handleAction(() => {
               const { selectedIds } = useEditorStore.getState();
               if (selectedIds.length > 1) {
@@ -148,7 +184,9 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
           </button>
           
           <button
-            className="w-full text-right px-3 py-1.5 hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer"
+            role="menuitem"
+            tabIndex={-1}
+            className="w-full text-right px-3 py-1.5 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
             onClick={() => handleAction(() => bringToFront(target.id!))}
           >
             <ArrowUpToLine className="w-4 h-4 shrink-0" />
@@ -156,17 +194,21 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
           </button>
           
           <button
-            className="w-full text-right px-3 py-1.5 hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer"
+            role="menuitem"
+            tabIndex={-1}
+            className="w-full text-right px-3 py-1.5 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
             onClick={() => handleAction(() => sendToBack(target.id!))}
           >
             <ArrowDownToLine className="w-4 h-4 shrink-0" />
             <span>إرسال للخلف</span>
           </button>
 
-          <div className="h-px bg-border/50 my-1 mx-2" />
+          <div className="h-px bg-border/50 my-1 mx-2" role="separator" />
           
           <button
-            className="w-full text-right px-3 py-1.5 hover:bg-destructive/10 text-destructive flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer"
+            role="menuitem"
+            tabIndex={-1}
+            className="w-full text-right px-3 py-1.5 hover:bg-destructive/10 focus:bg-destructive/10 text-destructive flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
             onClick={() => handleAction(() => {
               const { selectedIds, removeElements } = useEditorStore.getState();
               if (selectedIds.length > 1) {
@@ -185,7 +227,9 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       {target.type === "slot" && target.id && (
         <>
           <button
-            className="w-full text-right px-3 py-1.5 hover:bg-destructive/10 text-destructive flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer"
+            role="menuitem"
+            tabIndex={-1}
+            className="w-full text-right px-3 py-1.5 hover:bg-destructive/10 focus:bg-destructive/10 text-destructive flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
             onClick={() => handleActionWithHistory(() => updateSlot(target.id!, { imageSrc: undefined, originalImageSrc: undefined }))}
           >
             <Eraser className="w-4 h-4 shrink-0" />

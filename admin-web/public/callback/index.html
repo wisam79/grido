@@ -44,11 +44,17 @@
     </div>
 
     <script>
-        // التقاط الـ Token من الرابط (URL Fragment) وإرساله إلى التطبيق المحلي (Wails)
+        // التقاط الـ Token أو الخطأ من الرابط وإرساله إلى التطبيق المحلي (Wails)
         const hash = window.location.hash;
+        const searchParams = new URLSearchParams(window.location.search);
+        const errorDesc = searchParams.get('error_description') || searchParams.get('error');
+
         if (hash) {
             // توجيه المتصفح إلى السيرفر المحلي المؤقت المفتوح بواسطة تطبيق Go
-            window.location.href = 'http://localhost:34567/callback' + hash;
+            window.location.href = 'http://127.0.0.1:34567/callback' + hash;
+        } else if (errorDesc) {
+            document.getElementById('msg').innerText = 'فشلت عملية المصادقة!';
+            document.querySelector('p').innerText = 'السبب: ' + decodeURIComponent(errorDesc.replace(/\+/g, ' '));
         } else {
             document.getElementById('msg').innerText = 'خطأ في المصادقة!';
             document.querySelector('p').innerText = 'لم يتم العثور على رمز الوصول في الرابط.';

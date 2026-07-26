@@ -78,7 +78,8 @@ export function useAutoSave() {
       if (typeof window !== "undefined" && (window as any).requestIdleCallback) {
         (window as any).requestIdleCallback(() => runSave(), { timeout: 1000 });
       } else {
-        setTimeout(runSave, 0);
+        // debounce سبق أن انتظر توقف التفاعل؛ لا نضيف مهمة صفّية إضافية.
+        runSave();
       }
     };
 

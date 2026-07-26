@@ -788,7 +788,7 @@ func (a *App) EnhanceImageWithAI(base64Image string, token string, limit int) (s
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if aiKey := service.GetModalAIKey(); aiKey != "" {
+	if aiKey, err := service.GetModalAIKey(); err == nil && aiKey != "" {
 		req.Header.Set("X-Grido-Api-Key", aiKey)
 	}
 

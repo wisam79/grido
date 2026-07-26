@@ -1,5 +1,5 @@
 import React from "react";
-import { FastLayer, Rect } from "react-konva";
+import { FastLayer, Shape } from "react-konva";
 
 export const ColumnsLayer = React.memo(function ColumnsLayer({
   showColumns,
@@ -7,8 +7,8 @@ export const ColumnsLayer = React.memo(function ColumnsLayer({
   columnsGutter,
   columnsCount,
   columnsColor,
-  displayW,
-  displayH
+  displayW: canvasWidth,
+  displayH: canvasHeight
 }: {
   showColumns: boolean;
   columnsMargin: number;
@@ -20,27 +20,21 @@ export const ColumnsLayer = React.memo(function ColumnsLayer({
 }) {
   if (!showColumns) return null;
 
-  const cols = [];
-  const availW = displayW - 2 * columnsMargin;
+  const availW = canvasWidth - 2 * columnsMargin;
   const colW = (availW - (columnsCount - 1) * columnsGutter) / columnsCount;
 
-  for (let i = 0; i < columnsCount; i++) {
-    const xPos = columnsMargin + i * (colW + columnsGutter);
-    cols.push(
-      <Rect
-        key={`col-${i}`}
-        x={xPos}
-        y={0}
-        width={colW}
-        height={displayH}
-        fill={columnsColor}
-      />
-    );
-  }
-
   return (
-    <FastLayer listening={false} name="columns-layer">
-      {cols}
+    <FastLayer listening={false} name="columns-layer" hitStrokeWidth={0}>
+      <Shape
+        sceneFunc={(context, _shape) => {
+          context.fillStyle = columnsColor;
+          for (let i = 0; i < columnsCount; i++) {
+            const xPos = columnsMargin + i * (colW + columnsGutter);
+            context.fillRect(xPos, 0, colW, canvasHeight);
+          }
+          context.closePath();
+        }}
+      />
     </FastLayer>
   );
 });
