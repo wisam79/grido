@@ -57,17 +57,16 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
     const node = imageRef.current;
     if (node && image) {
       if (hasFilters) {
-        if (!node.isCached()) {
-          try {
-            const stageScale = node.getStage()?.scaleX() || 1;
-            const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-            const ratio = Math.max(1.5, Math.min(3, stageScale * devicePixelRatio * 1.5));
-            node.cache({
-              pixelRatio: ratio
-            });
-          } catch (err) {
-            console.warn("Failed to cache collage image", err);
-          }
+        try {
+          const stageScale = node.getStage()?.scaleX() || 1;
+          const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
+          const ratio = Math.max(1.5, Math.min(3, stageScale * devicePixelRatio * 1.5));
+          node.clearCache();
+          node.cache({
+            pixelRatio: ratio
+          });
+        } catch (err) {
+          console.warn("Failed to cache collage image", err);
         }
       } else {
         if (node.isCached()) {
@@ -79,7 +78,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }
       }
     }
-  }, [image, hasFilters]);
+  }, [image, hasFilters, width, height]);
 
   const { filters, totalBrightness, totalContrast, totalSaturation, totalHue } = useMemo(() => {
     let b = brightness ?? 100;

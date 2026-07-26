@@ -85,16 +85,14 @@ export const URLImage = React.memo(function URLImage({
       return;
     }
 
-    // تجنب إعادة إنشاء VRAM cache مع كل حركة بالسلايدر إذا كانت العقدة تحتوي كاش بالفعل
-    if (!node.isCached()) {
-      try {
-        const stageScale = node.getStage()?.scaleX() || 1;
-        const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-        const ratio = Math.max(1.5, Math.min(3, stageScale * devicePixelRatio * 1.5));
-        node.cache({ pixelRatio: ratio });
-      } catch (err) {
-        console.warn("Failed to cache Konva image", err);
-      }
+    try {
+      const stageScale = node.getStage()?.scaleX() || 1;
+      const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
+      const ratio = Math.max(1.5, Math.min(3, stageScale * devicePixelRatio * 1.5));
+      node.clearCache();
+      node.cache({ pixelRatio: ratio });
+    } catch (err) {
+      console.warn("Failed to cache Konva image", err);
     }
   }, [
     image,
@@ -127,6 +125,7 @@ export const URLImage = React.memo(function URLImage({
       width={element.width * canvasWidth}
       height={element.height * canvasHeight}
       scaleX={flipped ? -1 : 1}
+      scaleY={1}
       rotation={element.rotation}
       opacity={element.opacity}
       visible={element.visible !== false}

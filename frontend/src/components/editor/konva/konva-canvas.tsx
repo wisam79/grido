@@ -92,7 +92,6 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       wheelTimeoutRef.current = null;
     }, 500);
   }, [pushHistory, updateSlot]);
-
   // إعدادات الشبكة — تتغير معاً
   const grid = useEditorStore(useShallow((s) => ({
     showGrid: s.showGrid,
@@ -126,17 +125,15 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     collageStrokeColor: s.collageStrokeColor,
   })));
   const { slots, collageGap, collageMargin, collageTemplate, collageRadius, collageShowCutLines, collageStrokeWidth, collageStrokeColor } = collage;
-  
+
   const trRef = useRef<any>(null);
   const elementsRefs = useRef<Record<string, any>>({});
   const altPressedRef = useRef(false);
-  // استخدام StageContext بدلاً من Zustand لتجنب مشاكل GC
   const stageContextRef = useStageRef();
-  
+
   const selectedEl = sortedElements.find((e) => e.id === selectedId);
   const isText = selectedEl?.type === "text";
 
-  // Handle caching logic for main image (Single Mode)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Alt") altPressedRef.current = true;
@@ -152,28 +149,25 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     };
   }, []);
 
-  // إرفاق المحول بالعناصر المحددة — يعتمد فقط على التحديد والوضع
-  // لا يعتمد على sortedElements لتجنب إعادة الإرفاق أثناء/بعد التحويل
   const transformingRef = useRef(false);
   useEffect(() => {
-    if (trRef.current) {
-      if (selectedIds.length > 0 && mode === "single") {
+    if (trRef.current && mode === "single") {
+      if (selectedIds.length > 0) {
         const nodes = selectedIds
           .map((id) => elementsRefs.current[id])
           .filter(Boolean);
-        // لا تعيد إرفاق العقد أثناء تحويل نشط لتجنب قطع التحويل البصري
         if (!transformingRef.current) {
           trRef.current.nodes(nodes);
-          trRef.current.getLayer().batchDraw();
+          trRef.current.forceUpdate();
+          trRef.current.getLayer()?.batchDraw();
         }
       } else {
         trRef.current.nodes([]);
-        trRef.current.getLayer().batchDraw();
+        trRef.current.getLayer()?.batchDraw();
       }
     }
-  }, [selectedIds, mode]);
+  }, [selectedIds, mode, sortedElements]);
 
-  // تتبع حالة التحويل النشط لمنع إعادة إرفاق العقد أثناء السحب
   useEffect(() => {
     const transformer = trRef.current;
     if (!transformer) return;
@@ -549,6 +543,7 @@ return (
                       .map((sid) => elementsRefs.current[sid])
                       .filter(Boolean);
                     trRef.current.nodes(updatedNodes);
+                    trRef.current.forceUpdate();
                     trRef.current.getLayer()?.batchDraw();
                   }
                 });
@@ -559,4 +554,4 @@ return (
       )}
     </Stage>
   );
-})
+});
