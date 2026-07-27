@@ -21,6 +21,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
   const hRulerCursorRef = useRef<SVGLineElement | null>(null);
   const vRulerCursorRef = useRef<SVGLineElement | null>(null);
+  const lastDblClickRef = useRef<number>(0);
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -333,45 +334,68 @@ export const EditorCanvas = React.memo(React.forwardRef<
     if (vCursor) vCursor.style.display = "none";
   };
 
-  const handleDoubleClick = async (el: CanvasElement) => {
-    if (printMode) return;
-    if (el.type === "image") {
-      try {
-        setIsLoading(true);
-        const b64 = await OpenFile();
-        if (b64) {
-          updateElement(el.id, { imageSrc: b64 });
-          pushHistory();
-        }
-      } catch (err) {
-        console.error("Open file error:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    } else if (el.type === "text") {
-      setEditingTextId(el.id);
-    }
-  };
+   const handleDoubleClick = async (el: CanvasElement) => {
+     if (printMode || isLoading) return;
+     if (el.type === "image") {
+       try {
+         setIsLoading(true);
+         const b64 = await OpenFile();
+         if (b64) {
+           const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+           let srcToUse = b64;
+           if (isWailsDesktop && b64.startsWith("data:image/")) {
+             try {
+               const localPath = await SaveImageFromBase64(b64);
+               if (localPath) srcToUse = localPath;
+             } catch (e) {
+               console.error("Failed to save image locally:", e);
+             }
+           }
+           updateElement(el.id, { imageSrc: srcToUse });
+           pushHistory();
+         }
+       } catch (err) {
+         console.error("Open file error:", err);
+       } finally {
+         setIsLoading(false);
+       }
+     } else if (el.type === "text") {
+       setEditingTextId(el.id);
+     }
+   };
 
   const handleSlotClick = (slotId: string) => {
     if (printMode) return;
     selectElement(slotId);
   };
 
-  const handleSlotDblClick = async (slotId: string) => {
-    if (printMode) return;
-    try {
-      setIsLoading(true);
-      const b64 = await OpenFile();
-      if (b64) {
-        useEditorStore.getState().setSlotImage(slotId, b64);
-      }
-    } catch (err) {
-      console.error("Open file error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const handleSlotDblClick = async (slotId: string) => {
+      if (printMode || isLoading) return;
+      const now = Date.now();
+      if (now - lastDblClickRef.current < 200) return;
+      lastDblClickRef.current = now;
+     try {
+       setIsLoading(true);
+       const b64 = await OpenFile();
+       if (b64) {
+         const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+         let srcToUse = b64;
+         if (isWailsDesktop && b64.startsWith("data:image/")) {
+           try {
+             const localPath = await SaveImageFromBase64(b64);
+             if (localPath) srcToUse = localPath;
+           } catch (e) {
+             console.error("Failed to save image locally:", e);
+           }
+         }
+         useEditorStore.getState().setSlotImage(slotId, srcToUse);
+       }
+     } catch (err) {
+       console.error("Open file error:", err);
+     } finally {
+       setIsLoading(false);
+     }
+   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -446,23 +470,29 @@ export const EditorCanvas = React.memo(React.forwardRef<
             freshState.setSlotImage(freshSlots[0].id, uploadedSrcs[0]);
           }
         }
-      } else {
-        for (const src of uploadedSrcs) {
-          await new Promise<void>((resolve) => {
-            const img = new Image();
-            img.onload = () => {
-              const aspect = img.width / img.height;
-              addImageElement(src, aspect);
-              resolve();
-            };
-            img.onerror = () => {
-              addImageElement(src, 1);
-              resolve();
-            };
-            img.src = src;
-          });
-        }
-      }
+       } else {
+         for (const src of uploadedSrcs) {
+           await new Promise<void>((resolve) => {
+             const img = new Image();
+             img.onload = () => {
+               const aspect = img.width / img.height;
+               img.onload = null;
+               img.onerror = null;
+               img.src = "";
+               addImageElement(src, aspect);
+               resolve();
+             };
+             img.onerror = () => {
+               img.onload = null;
+               img.onerror = null;
+               img.src = "";
+               addImageElement(src, 1);
+               resolve();
+             };
+             img.src = src;
+           });
+         }
+       }
     } catch (err) {
       console.error("Drop file error:", err);
     } finally {
@@ -604,21 +634,35 @@ export const EditorCanvas = React.memo(React.forwardRef<
             >
               <X className="w-3.5 h-3.5" />
             </button>
-            <button
-              className="absolute top-1 left-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  const src = await OpenFile();
-                  if (src) {
-                    setSlotImage(selectedSlot.id, src);
-                  }
-                } catch (err) {
-                  console.error("Replace image error:", err);
-                }
-              }}
-              title="استبدال"
-            >
+             <button
+               className="absolute top-1 left-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
+               onClick={async (e) => {
+                 e.stopPropagation();
+                 if (isLoading) return;
+                 try {
+                   setIsLoading(true);
+                   const b64 = await OpenFile();
+                   if (b64) {
+                     const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+                     let srcToUse = b64;
+                     if (isWailsDesktop && b64.startsWith("data:image/")) {
+                       try {
+                         const localPath = await SaveImageFromBase64(b64);
+                         if (localPath) srcToUse = localPath;
+                       } catch (e) {
+                         console.error("Failed to save image locally:", e);
+                       }
+                     }
+                     setSlotImage(selectedSlot.id, srcToUse);
+                   }
+                 } catch (err) {
+                   console.error("Replace image error:", err);
+                 } finally {
+                   setIsLoading(false);
+                 }
+               }}
+               title="استبدال"
+             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>

@@ -100,7 +100,6 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               onClick={() => handleSlotClick?.(slot.id)}
               onTouchEnd={() => handleSlotClick?.(slot.id)}
               onDblClick={() => handleSlotDblClick?.(slot.id)}
-              onDblTap={() => handleSlotDblClick?.(slot.id)}
               onWheel={(e) => handleSlotWheel(slot, e)}
             >
               {slot.imageSrc ? (
@@ -124,7 +123,6 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                     pushHistory();
                   }}
                   onClick={() => handleSlotClick?.(slot.id)}
-                  onDblClick={() => handleSlotDblClick?.(slot.id)}
                 />
               ) : (
                 // Placeholder background & text
@@ -137,8 +135,6 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                     fill="#f3f4f6"
                     cornerRadius={radius}
                     onClick={() => handleSlotClick?.(slot.id)}
-                    onDblClick={() => handleSlotDblClick?.(slot.id)}
-                    onDblTap={() => handleSlotDblClick?.(slot.id)}
                   />
                   <Text
                     text="+"

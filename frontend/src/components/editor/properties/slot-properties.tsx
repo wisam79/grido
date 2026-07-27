@@ -41,9 +41,10 @@ export function SlotProperties({
     canvasHeight: state.canvasHeight,
     printSettings: state.printSettings,
   })));
-  const [cropOpen, setCropOpen] = useState(false);
-  const [refineOpen, setRefineOpen] = useState(false);
-  const [autoFill, setAutoFill] = useState(() => {
+   const [cropOpen, setCropOpen] = useState(false);
+   const [refineOpen, setRefineOpen] = useState(false);
+   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
+   const [autoFill, setAutoFill] = useState(() => {
     return localStorage.getItem("grido_auto_fill_grid") !== "false";
   });
   
@@ -66,21 +67,34 @@ export function SlotProperties({
     handleEnhance,
   } = useAiEnhance(onUpdate);
 
-  const handleOpenFile = async () => {
-    try {
-      const [b64] = await openImageFileDialog(false);
-      if (b64) {
-        // قراءة أحدث نسخة من الـ store بعد إغلاق نافذة الملف (لتجنب stale closure)
-        const freshStore = useEditorStore.getState();
-        freshStore.setSlotImage(slot.id, b64);
-        if (autoFill) {
-          freshStore.fillAllSlots(b64, slot.id);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+   const handleOpenFile = async () => {
+     if (isFileDialogOpen) return;
+     setIsFileDialogOpen(true);
+     try {
+       const [b64] = await openImageFileDialog(false);
+       if (b64) {
+         const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+         let srcToUse = b64;
+         if (isWailsDesktop && b64.startsWith("data:image/")) {
+           try {
+             const localPath = await SaveImageFromBase64(b64);
+             if (localPath) srcToUse = localPath;
+           } catch (e) {
+             console.error("Failed to save image locally:", e);
+           }
+         }
+         const freshStore = useEditorStore.getState();
+         freshStore.setSlotImage(slot.id, srcToUse);
+         if (autoFill) {
+           freshStore.fillAllSlots(srcToUse, slot.id);
+         }
+       }
+     } catch (err) {
+       console.error(err);
+     } finally {
+       setIsFileDialogOpen(false);
+     }
+   };
 
   const handleFillAll = () => {
     if (slot.imageSrc) {

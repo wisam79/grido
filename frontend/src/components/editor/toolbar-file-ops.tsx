@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ProjectsDialog } from "./projects-dialog";
-import { ClearAutoSave } from "../../../wailsjs/go/main/App";
+import { ClearAutoSave, SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 import { saveProjectAsJSON } from "./export-utils";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 
@@ -50,6 +50,7 @@ function TooltipBtn({ content, children }: TooltipBtnProps) {
 export function ToolbarFileOps() {
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
 
   const {
     mode,
@@ -70,6 +71,8 @@ export function ToolbarFileOps() {
   );
 
   const handleOpenFile = async () => {
+    if (isFileDialogOpen) return;
+    setIsFileDialogOpen(true);
     try {
       const b64s = await openImageFileDialog(true);
 
@@ -79,55 +82,93 @@ export function ToolbarFileOps() {
         const freshSlots = freshState.slots;
         const freshSelectedId = freshState.selectedId;
 
+        const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+
         if (freshMode === "collage") {
           if (freshMode !== "collage") {
             freshState.setMode("collage");
           }
 
+          let localPaths: string[] = [];
+          if (isWailsDesktop) {
+            for (const b64 of b64s) {
+              if (b64.startsWith("data:image/")) {
+                try {
+                  const localPath = await SaveImageFromBase64(b64);
+                  if (localPath) localPaths.push(localPath);
+                } catch (e) {
+                  console.error("Failed to save image locally:", e);
+                  localPaths.push(b64);
+                }
+              } else {
+                localPaths.push(b64);
+              }
+            }
+          } else {
+            localPaths = b64s;
+          }
+
           const isPhysical = freshState.collageTemplate?.physicalLayout;
-          if ((isPhysical || freshSlots.length > 1) && b64s.length === 1 && b64s[0]) {
-            freshState.fillAllSlots(b64s[0]);
+          if ((isPhysical || freshSlots.length > 1) && localPaths.length === 1 && localPaths[0]) {
+            freshState.fillAllSlots(localPaths[0]);
             toast.success("تم إدراج الصورة في جميع شبكة الخلايا");
           } else {
             let srcIdx = 0;
-            if (freshSelectedId && freshSlots.some((s) => s.id === freshSelectedId) && b64s[0]) {
-              freshState.setSlotImage(freshSelectedId, b64s[0]);
+            if (freshSelectedId && freshSlots.some((s) => s.id === freshSelectedId) && localPaths[0]) {
+              freshState.setSlotImage(freshSelectedId, localPaths[0]);
               srcIdx = 1;
             }
             for (const s of freshSlots) {
-              if (s.id !== freshSelectedId && !s.imageSrc && srcIdx < b64s.length) {
-                freshState.setSlotImage(s.id, b64s[srcIdx++]);
+              if (s.id !== freshSelectedId && !s.imageSrc && srcIdx < localPaths.length) {
+                freshState.setSlotImage(s.id, localPaths[srcIdx++]);
               }
             }
-            if (srcIdx === 0 && freshSlots[0] && b64s[0]) {
-              freshState.setSlotImage(freshSlots[0].id, b64s[0]);
+            if (srcIdx === 0 && freshSlots[0] && localPaths[0]) {
+              freshState.setSlotImage(freshSlots[0].id, localPaths[0]);
             }
-            toast.success(`تم استيراد ${b64s.length} صورة بنجاح`);
+            toast.success(`تم استيراد ${localPaths.length} صورة بنجاح`);
           }
         } else {
           for (const b64 of b64s) {
-            await new Promise<void>((resolve) => {
-              const img = new Image();
-              img.onload = () => {
-                const aspect = img.width / img.height;
-                addImageElement(b64, aspect);
-                resolve();
-              };
-              img.onerror = () => {
-                addImageElement(b64, 1);
-                resolve();
-              };
-              img.src = b64;
-            });
+            let srcToUse = b64;
+            if (isWailsDesktop && b64.startsWith("data:image/")) {
+              try {
+                const localPath = await SaveImageFromBase64(b64);
+                if (localPath) srcToUse = localPath;
+              } catch (e) {
+                console.error("Failed to save image locally:", e);
+              }
+            }
+             await new Promise<void>((resolve) => {
+               const img = new Image();
+               img.onload = () => {
+                 const aspect = img.width / img.height;
+                 img.onload = null;
+                 img.onerror = null;
+                 img.src = "";
+                 addImageElement(srcToUse, aspect);
+                 resolve();
+               };
+               img.onerror = () => {
+                 img.onload = null;
+                 img.onerror = null;
+                 img.src = "";
+                 addImageElement(srcToUse, 1);
+                 resolve();
+               };
+               img.src = b64;
+             });
           }
           toast.success(`تم إدراج ${b64s.length} صورة في الكانفس`);
         }
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("فشل تحميل الصور");
-    }
-  };
+     } catch (err) {
+       console.error(err);
+       toast.error("فشل تحميل الصور");
+     } finally {
+       setIsFileDialogOpen(false);
+     }
+   };
 
   const handleSaveProject = () => {
     saveProjectAsJSON();

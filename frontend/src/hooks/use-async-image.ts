@@ -54,6 +54,9 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
 
     return () => {
       isCurrent = false;
+      img.onload = null;
+      img.onerror = null;
+      img.src = "";
     };
   }, [src, crossOrigin]);
 

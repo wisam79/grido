@@ -104,22 +104,24 @@ export function ImageAdjustProperties({
 }
 
 export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps) {
-  const [cropOpen, setCropOpen] = useState(false);
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
-  const [refineOpen, setRefineOpen] = useState(false);
+   const [cropOpen, setCropOpen] = useState(false);
+   const [scannerOpen, setScannerOpen] = useState(false);
+   const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
+   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
+   const [refineOpen, setRefineOpen] = useState(false);
 
   const handleScannerSave = async (processedBase64: string) => {
     try {
       const localPath = await SaveImageFromBase64(processedBase64);
 
       const img = new Image();
-      img.onload = () => {
-        const width = img.width;
-        const height = img.height;
-        img.onload = null;
-        img.onerror = null;
-        if (!isMountedRef.current) return;
+       img.onload = () => {
+         const width = img.width;
+         const height = img.height;
+         img.onload = null;
+         img.onerror = null;
+         img.src = "";
+         if (!isMountedRef.current) return;
 
         const docAspect = width / height;
         const state = useEditorStore.getState();
@@ -135,14 +137,15 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         useEditorStore.getState().pushHistory();
         toast.success("تم استعدال وعزل المستند بنجاح!");
       };
-      img.onerror = () => {
-        img.onload = null;
-        img.onerror = null;
-        onUpdate(element.id, { imageSrc: localPath });
-        useEditorStore.getState().pushHistory();
-        toast.success("تم استعدال وعزل المستند بنجاح!");
-      };
-      img.src = localPath;
+       img.onerror = () => {
+         img.onload = null;
+         img.onerror = null;
+         img.src = "";
+         onUpdate(element.id, { imageSrc: localPath });
+         useEditorStore.getState().pushHistory();
+         toast.success("تم استعدال وعزل المستند بنجاح!");
+       };
+       img.src = localPath;
     } catch (err) {
       console.error(err);
       toast.error("فشل حفظ المستند المستعدل");
@@ -172,19 +175,23 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
     };
   }, []);
 
-  const handleOpenFile = async () => {
-    try {
-      const [b64] = await openImageFileDialog(false);
-      if (b64) {
-        const localPath = await SaveImageFromBase64(b64);
-        onUpdate(element.id, { imageSrc: localPath });
-        useEditorStore.getState().pushHistory();
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("فشل تغيير الصورة");
-    }
-  };
+   const handleOpenFile = async () => {
+     if (isFileDialogOpen) return;
+     setIsFileDialogOpen(true);
+     try {
+       const [b64] = await openImageFileDialog(false);
+       if (b64) {
+         const localPath = await SaveImageFromBase64(b64);
+         onUpdate(element.id, { imageSrc: localPath });
+         useEditorStore.getState().pushHistory();
+       }
+     } catch (err) {
+       console.error(err);
+       toast.error("فشل تغيير الصورة");
+     } finally {
+       setIsFileDialogOpen(false);
+     }
+   };
 
   return (
     <div className="space-y-3.5 animate-in fade-in duration-200">
@@ -344,13 +351,14 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               // حفظ الصورة المقصوصة محلياً بدلاً من تخزين Base64 في الذاكرة
               const localPath = await SaveImageFromBase64(cropped);
               
-              const img = new Image();
-              img.onload = () => {
-                const width = img.width;
-                const height = img.height;
-                img.onload = null;
-                img.onerror = null;
-                if (!isMountedRef.current) return;
+               const img = new Image();
+               img.onload = () => {
+                 const width = img.width;
+                 const height = img.height;
+                 img.onload = null;
+                 img.onerror = null;
+                 img.src = "";
+                 if (!isMountedRef.current) return;
                 
                 const croppedAspect = width / height;
                 const state = useEditorStore.getState();
@@ -364,11 +372,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 
                 state.setLastEditedImageAspect(croppedAspect);
               };
-              img.onerror = () => {
-                img.onload = null;
-                img.onerror = null;
-              };
-              img.src = cropped;
+               img.onerror = () => {
+                 img.onload = null;
+                 img.onerror = null;
+                 img.src = "";
+               };
+               img.src = cropped;
             } catch (err) {
               console.error("Failed to save cropped image:", err);
               toast.error("فشل حفظ الصورة المقصوصة محلياً");

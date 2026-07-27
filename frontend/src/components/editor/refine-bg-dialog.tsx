@@ -97,67 +97,71 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     };
   }, [open]);
 
-  // Load images
-  useEffect(() => {
-    if (!open || !element.imageSrc) return;
-    const effectiveOriginalSrc = element.originalImageSrc || element.imageSrc;
-    
-    let isCancelled = false;
+   // Load images
+   useEffect(() => {
+     if (!open || !element.imageSrc) return;
+     const effectiveOriginalSrc = element.originalImageSrc || element.imageSrc;
 
-    const loadImages = async () => {
-      try {
-        const origImg = new Image();
-        const curImg = new Image();
+     let isCancelled = false;
+     let origImg: HTMLImageElement | null = null;
+     let curImg: HTMLImageElement | null = null;
 
-        await Promise.all([
-          new Promise((resolve, reject) => {
-            origImg.onload = resolve;
-            origImg.onerror = reject;
-            origImg.src = effectiveOriginalSrc;
-          }),
-          new Promise((resolve, reject) => {
-            curImg.onload = resolve;
-            curImg.onerror = reject;
-            curImg.src = element.imageSrc!;
-          })
-        ]);
+     const loadImages = async () => {
+       try {
+         origImg = new Image();
+         curImg = new Image();
 
-        if (isCancelled) return;
+         await Promise.all([
+           new Promise((resolve, reject) => {
+             origImg!.onload = resolve;
+             origImg!.onerror = reject;
+             origImg!.src = effectiveOriginalSrc;
+           }),
+           new Promise((resolve, reject) => {
+             curImg!.onload = resolve;
+             curImg!.onerror = reject;
+             curImg!.src = element.imageSrc!;
+           })
+         ]);
 
-        // Cache original image data for the Magic Eraser tool
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = origImg.width;
-        tempCanvas.height = origImg.height;
-        const tempCtx = tempCanvas.getContext("2d");
-        if (tempCtx) {
-          tempCtx.drawImage(origImg, 0, 0);
-          originalImageDataRef.current = tempCtx.getImageData(0, 0, origImg.width, origImg.height);
-        }
+         if (isCancelled) return;
 
-        setOriginalImage(origImg);
-        setCurrentImage(curImg);
-        
-        // Reset view
-        setScale(1);
-        setPan({ x: 0, y: 0 });
-      } catch (err) {
-        console.error("Failed to load images for refinement:", err);
-        toast.error("فشل تحميل الصور للتعديل");
-      }
-    };
+         // Cache original image data for the Magic Eraser tool
+         const tempCanvas = document.createElement("canvas");
+         tempCanvas.width = origImg!.width;
+         tempCanvas.height = origImg!.height;
+         const tempCtx = tempCanvas.getContext("2d");
+         if (tempCtx) {
+           tempCtx.drawImage(origImg!, 0, 0);
+           originalImageDataRef.current = tempCtx.getImageData(0, 0, origImg!.width, origImg!.height);
+         }
 
-    loadImages();
-    return () => { 
-      isCancelled = true; 
-      setOriginalImage(null);
-      setCurrentImage(null);
-      originalImageDataRef.current = null;
-      historyRef.current = [];
-      setHistoryLength(0);
-      sharedVisited = null;
-      sharedQueueX = null;
-      sharedQueueY = null;
-    };
+         setOriginalImage(origImg!);
+         setCurrentImage(curImg!);
+
+         // Reset view
+         setScale(1);
+         setPan({ x: 0, y: 0 });
+       } catch (err) {
+         console.error("Failed to load images for refinement:", err);
+         toast.error("فشل تحميل الصور للتعديل");
+       }
+     };
+
+     loadImages();
+     return () => {
+       isCancelled = true;
+       if (origImg) { origImg.onload = null; origImg.onerror = null; origImg.src = ""; }
+       if (curImg) { curImg.onload = null; curImg.onerror = null; curImg.src = ""; }
+       setOriginalImage(null);
+       setCurrentImage(null);
+       originalImageDataRef.current = null;
+       historyRef.current = [];
+       setHistoryLength(0);
+       sharedVisited = null;
+       sharedQueueX = null;
+       sharedQueueY = null;
+     };
   }, [open, element.originalImageSrc, element.imageSrc]);
 
   // Render currentImage onto canvas once loaded
