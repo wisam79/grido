@@ -5,8 +5,10 @@ import { OpenFile, SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 import { SnapGuide } from "@/lib/snap-utils";
 import { KonvaCanvas } from "./konva/konva-canvas";
 import { useShallow } from "zustand/react/shallow";
-import { HorizontalRuler, VerticalRuler } from "./ruler";
-import { ContextMenu, ContextMenuPosition, ContextMenuTarget } from "./context-menu";
+import { ContextMenuPosition, ContextMenuTarget } from "./context-menu";
+import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from "./canvas/canvas-rulers";
+import { TextEditingOverlay } from "./canvas/text-editing-overlay";
+import { CanvasContextMenu } from "./canvas/canvas-context-menu";
 
 export const EditorCanvas = React.memo(React.forwardRef<
   HTMLDivElement,
@@ -17,13 +19,12 @@ export const EditorCanvas = React.memo(React.forwardRef<
   const hRulerWrapperRef = useRef<HTMLDivElement>(null);
   const vRulerWrapperRef = useRef<HTMLDivElement>(null);
 
-  // Cached DOM refs for ruler cursors — avoids getElementById on every mousemove
   const hRulerCursorRef = useRef<SVGLineElement | null>(null);
   const vRulerCursorRef = useRef<SVGLineElement | null>(null);
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [contextMenu, setContextMenu] = useState<{
     position: ContextMenuPosition;
     target: ContextMenuTarget;
@@ -52,7 +53,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
     template,
     printSettings,
     showRuler,
-    fillAllSlots,
     canvasZoom,
     setCanvasZoom,
   } = useEditorStore(useShallow((state) => ({
@@ -78,12 +78,10 @@ export const EditorCanvas = React.memo(React.forwardRef<
     template: state.template,
     printSettings: state.printSettings,
     showRuler: state.showRuler,
-    fillAllSlots: state.fillAllSlots,
     canvasZoom: state.canvasZoom,
     setCanvasZoom: state.setCanvasZoom,
   })));
 
-  // قياس حجم الحاوية لتحجيم الكانفس (مع throttle)
   useEffect(() => {
     if (!containerRef.current) return;
     let rafId: number | null = null;
@@ -103,7 +101,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
     };
   }, []);
 
-  // حساب حجم الكانفس المعروض
   const aspect = canvasWidth / canvasHeight;
   const maxW = (containerSize.w - 32) * canvasZoom;
   const maxH = (containerSize.h - 32) * canvasZoom;
@@ -120,21 +117,19 @@ export const EditorCanvas = React.memo(React.forwardRef<
   const prevCanvasRectRef = useRef<DOMRect | null>(null);
   const zoomPivotRef = useRef<{ pctX: number, pctY: number, screenX: number, screenY: number } | null>(null);
 
-  // دعم التقريب بالعجلة (Ctrl + Scroll / Pinch) والسحب بمسطرة المسافة
   useEffect(() => {
     const spacePressedRef = { current: false };
     const isPanningRef = { current: false };
     const node = containerRef.current;
     if (!node) return;
 
-    // --- rAF throttling for wheel zoom (fixes high-frequency wheel events) ---
     let pendingZoom: number | null = null;
     let rafId: number | null = null;
 
     const applyZoom = () => {
       rafId = null;
       if (pendingZoom === null) return;
-      
+
       const newZoom = pendingZoom;
       pendingZoom = null;
 
@@ -166,7 +161,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
         const factor = Math.exp(-e.deltaY * 0.003);
         const newZoom = Math.min(Math.max(0.1, baseZoom * factor), 5);
 
-        // Coalesce multiple wheel events into a single rAF callback
         pendingZoom = newZoom;
         if (rafId === null) {
           rafId = requestAnimationFrame(applyZoom);
@@ -174,7 +168,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
       }
     };
 
-    // --- Keyboard handlers (attached to window) ---
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeTag = (e.target as HTMLElement)?.tagName;
       if (e.code === "Space" && activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
@@ -192,13 +185,11 @@ export const EditorCanvas = React.memo(React.forwardRef<
       }
     };
 
-    // --- Panning: attach pointermove only while actively panning (fixes #4) ---
     const handlePointerDown = (e: PointerEvent) => {
       if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
         e.preventDefault();
         isPanningRef.current = true;
         node.style.cursor = "grabbing";
-        // Only attach pointermove listener when panning actually starts
         window.addEventListener("pointermove", handlePointerMove);
         window.addEventListener("pointerup", handlePointerUp, { once: true });
       }
@@ -215,7 +206,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
     const handlePointerUp = () => {
       isPanningRef.current = false;
       node.style.cursor = spacePressedRef.current ? "grab" : "";
-      // Detach pointermove when panning ends (avoids per-frame overhead otherwise)
       window.removeEventListener("pointermove", handlePointerMove);
     };
 
@@ -235,23 +225,22 @@ export const EditorCanvas = React.memo(React.forwardRef<
     };
   }, [setCanvasZoom]);
 
-  // تطبيق محاذاة التكبير نحو المؤشر أو المنتصف بعد الرندر
   React.useLayoutEffect(() => {
     if (canvasZoom !== prevZoomRef.current) {
       if (containerRef.current && innerRef.current) {
         const container = containerRef.current;
         const canvas = innerRef.current;
-        
+
         if (zoomPivotRef.current) {
            const { pctX, pctY, screenX, screenY } = zoomPivotRef.current;
            const newCanvasRect = canvas.getBoundingClientRect();
-           
+
            const currentScreenX = newCanvasRect.left + pctX * newCanvasRect.width;
            const currentScreenY = newCanvasRect.top + pctY * newCanvasRect.height;
-           
+
            container.scrollLeft += (currentScreenX - screenX);
            container.scrollTop += (currentScreenY - screenY);
-           
+
            zoomPivotRef.current = null;
         } else {
            const canvasRect = canvas.getBoundingClientRect();
@@ -268,7 +257,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
     }
   }, [canvasZoom]);
 
-  // حساب الأبعاد الفيزيائية بالمليمتر
   const widthMM = useMemo(() => {
     if (template) return template.widthMM;
     return (canvasWidth / (printSettings?.dpi || 300)) * 25.4;
@@ -279,7 +267,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
     return (canvasHeight / (printSettings?.dpi || 300)) * 25.4;
   }, [template, canvasHeight, printSettings]);
 
-  // مزامنة موضع المساطر المثبتة على حواف الشاشة مع موقع الكانفاس الحقيقي
   const updateRulerPositions = useCallback(() => {
     if (!showRuler || printMode) return;
     if (!containerRef.current || !innerRef.current) return;
@@ -312,14 +299,12 @@ export const EditorCanvas = React.memo(React.forwardRef<
     return () => el.removeEventListener("scroll", handleScroll);
   }, [updateRulerPositions]);
 
-  // تتبع الفأرة بالنسبة للكانفاس (تحديث مباشر للـ DOM لتفادي إعادة رندرة React الثقيلة على كل بكسل)
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (printMode) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
-    // Lazy-lookup the ruler cursor elements once, then reuse the cached refs
+
     if (!hRulerCursorRef.current) {
       hRulerCursorRef.current = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
     }
@@ -348,7 +333,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
     if (vCursor) vCursor.style.display = "none";
   };
 
-  // النقر المزدوج لاستبدال الصورة أو تعديل النص
   const handleDoubleClick = async (el: CanvasElement) => {
     if (printMode) return;
     if (el.type === "image") {
@@ -369,13 +353,11 @@ export const EditorCanvas = React.memo(React.forwardRef<
     }
   };
 
-  // النقر على الخلية (للكولاج) - تحديد الخلية فقط
   const handleSlotClick = (slotId: string) => {
     if (printMode) return;
     selectElement(slotId);
   };
 
-  // النقر المزدوج على الخلية (للكولاج) - إضافة أو تغيير الصورة
   const handleSlotDblClick = async (slotId: string) => {
     if (printMode) return;
     try {
@@ -419,7 +401,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
       if (uploadedSrcs.length === 0) return;
 
-      // قراءة الحالة الحية مباشرة من الـ Store لتجنب مشاكل القيم القديمة (Stale Closure)
       const freshState = useEditorStore.getState();
       const freshMode = freshState.mode;
       const freshSlots = freshState.slots;
@@ -521,7 +502,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
           <RefreshCw className="w-8 h-8 text-white animate-spin" />
         </div>
       )}
-      {/* Render KonvaCanvas for collage or single modes */}
+
       {(mode === "collage" || (mode === "single" && elements.length > 0)) && (
         <KonvaCanvas
           displayW={displayW}
@@ -535,17 +516,17 @@ export const EditorCanvas = React.memo(React.forwardRef<
             if (printMode) return;
             const evt = e.evt;
             if (!evt) return;
-            
+
             const x = evt.clientX;
             const y = evt.clientY;
 
             let targetType: "element" | "slot" | "canvas" = "canvas";
             let targetId: string | null = null;
-            
+
             const node = e.target;
             const stage = node.getStage();
             const isBackground = node === stage || node.hasName("bg-rect");
-            
+
             if (!isBackground) {
               if (mode === "single") {
                 const elNode = typeof node.findAncestor === 'function' ? (node.findAncestor((n: any) => !!n.id(), true)) : null;
@@ -566,12 +547,12 @@ export const EditorCanvas = React.memo(React.forwardRef<
                 }
               }
             }
-            
+
             if (targetType === "canvas") {
               setContextMenu(null);
               return;
             }
-            
+
             setContextMenu({
               position: { x, y },
               target: { type: targetType, id: targetId }
@@ -580,16 +561,12 @@ export const EditorCanvas = React.memo(React.forwardRef<
         />
       )}
 
-      {/* Context Menu Overlay */}
-      {contextMenu && !printMode && (
-        <ContextMenu
-          position={contextMenu.position}
-          target={contextMenu.target}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
+      <CanvasContextMenu
+        contextMenu={contextMenu}
+        printMode={printMode}
+        onClose={() => setContextMenu(null)}
+      />
 
-      {/* Overlay buttons for Selected Slot in Collage mode */}
       {mode === "collage" && !printMode && (() => {
         const selectedSlot = slots.find((s) => s.id === selectedId);
         if (!selectedSlot || !selectedSlot.imageSrc) return null;
@@ -648,7 +625,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
         );
       })()}
 
-      {/* وضع فارغ: رسالة ترحيب */}
       {mode === "single" && elements.length === 0 && !printMode && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground pointer-events-none">
           <svg className="w-16 h-16 mb-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -660,7 +636,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
         </div>
       )}
 
-      {/* خطوط الإرشاد والمحاذاة المغناطيسية */}
       {!printMode && activeGuides.map((guide, idx) => (
         <div
           key={idx}
@@ -672,96 +647,45 @@ export const EditorCanvas = React.memo(React.forwardRef<
             height: guide.type === "h" ? "1.5px" : "100%",
             borderStyle: "dashed",
             borderWidth: guide.type === "v" ? "0 0 0 1.5px" : "1.5px 0 0 0",
-            borderColor: "#ec4899", // لون زهري لامع لرؤية ممتازة
+            borderColor: "#ec4899",
           }}
         />
       ))}
 
-      {/* التعديل المباشر للنصوص (In-place Text Editing) */}
-      {!printMode && editingTextId && (() => {
-        const textEl = elements.find(e => e.id === editingTextId);
-        if (!textEl || textEl.type !== "text") return null;
-
-        const isArabicText = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(textEl.text || "");
-        const spacingVal = textEl.letterSpacing || 0;
-
-        return (
-          <textarea
-            autoFocus
-            className="absolute z-50 bg-transparent resize-none outline-none border-2 border-primary ring-0 m-0 p-0"
-            style={{
-              left: `${textEl.x * displayW}px`,
-              top: `${textEl.y * displayH}px`,
-              width: `${textEl.width * displayW}px`,
-              height: `${textEl.height * displayH}px`,
-              transform: `rotate(${textEl.rotation || 0}deg)`,
-              transformOrigin: "top left",
-              fontSize: `${(textEl.fontSize || 20) * Math.min(displayW / canvasWidth, displayH / canvasHeight)}px`,
-              fontFamily: textEl.fontFamily || "Arial",
-              fontWeight: textEl.fontWeight || 400,
-              color: textEl.color || "#000000",
-              textAlign: textEl.textAlign || "center",
-              lineHeight: textEl.lineHeight || 1.2,
-              letterSpacing: isArabicText ? "0px" : `${spacingVal}px`,
-              wordSpacing: isArabicText ? `${spacingVal}px` : undefined,
-              padding: "2px", // للتعويض البصري البسيط عن حدود Canvas
-            }}
-            defaultValue={textEl.text}
-            onFocus={(e) => {
-              e.target.select();
-            }}
-            onBlur={(e) => {
-              updateElement(textEl.id, { text: e.target.value });
-              pushHistory();
-              setEditingTextId(null);
-            }}
-            onKeyDown={(e) => {
-              // حفظ عند ضغط Enter (بدون Shift)
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                updateElement(textEl.id, { text: e.currentTarget.value });
-                pushHistory();
-                setEditingTextId(null);
-              }
-              // الخروج بدون حفظ عند ضغط Escape
-              if (e.key === "Escape") {
-                e.preventDefault();
-                setEditingTextId(null);
-              }
-            }}
-          />
-        );
-      })()}
+      <TextEditingOverlay
+        printMode={printMode}
+        editingTextId={editingTextId}
+        elements={elements}
+        displayW={displayW}
+        displayH={displayH}
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+        updateElement={updateElement}
+        pushHistory={pushHistory}
+        setEditingTextId={setEditingTextId}
+      />
     </div>
   );
 
   return (
     <div className="absolute inset-0 flex flex-col bg-muted/40 overflow-hidden select-none">
-      {/* Top Ruler Bar */}
-      {showRuler && !printMode && (
-        <div className="flex h-6 w-full bg-card border-b border-border z-20 shrink-0">
-          <div className="w-6 h-6 shrink-0 bg-card border-b border-l border-border flex items-center justify-center text-[9px] text-muted-foreground/75 font-mono select-none z-30">
-            mm
-          </div>
-          <div className="flex-1 overflow-hidden relative">
-            <div ref={hRulerWrapperRef} className="absolute top-0 left-0">
-              <HorizontalRuler width={displayW} mmWidth={widthMM} />
-            </div>
-          </div>
-        </div>
-      )}
+      <ViewportFixedRulersHeader
+        showRuler={showRuler}
+        printMode={printMode}
+        displayW={displayW}
+        widthMM={widthMM}
+        hRulerWrapperRef={hRulerWrapperRef}
+      />
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Side Ruler Bar */}
-        {showRuler && !printMode && (
-          <div className="w-6 h-full bg-card border-l border-border z-20 shrink-0 overflow-hidden relative">
-            <div ref={vRulerWrapperRef} className="absolute top-0 left-0">
-              <VerticalRuler height={displayH} mmHeight={heightMM} />
-            </div>
-          </div>
-        )}
+        <ViewportFixedRulersSidebar
+          showRuler={showRuler}
+          printMode={printMode}
+          displayH={displayH}
+          heightMM={heightMM}
+          vRulerWrapperRef={vRulerWrapperRef}
+        />
 
-        {/* Workspace Canvas Area */}
         <div
           ref={(node) => {
             (containerRef as any).current = node;
