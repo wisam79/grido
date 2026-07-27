@@ -351,8 +351,8 @@ return (
                       onDblClick={() => handleSlotDblClick?.(slot.id)}
                     />
                   ) : (
-                    // Placeholder background & text
-                    <Group listening={false}>
+                    // Placeholder background & text (تفعيل استجابة الأحداث لإمكانية النقر المزدوج واختيار صورة)
+                    <Group>
                       <Rect
                         x={0}
                         y={0}
@@ -360,6 +360,9 @@ return (
                         height={height}
                         fill="#f3f4f6"
                         cornerRadius={radius}
+                        onClick={() => handleSlotClick?.(slot.id)}
+                        onDblClick={() => handleSlotDblClick?.(slot.id)}
+                        onDblTap={() => handleSlotDblClick?.(slot.id)}
                       />
                       <Text
                         text="+"
@@ -369,6 +372,7 @@ return (
                         y={height / 2 - 25}
                         width={width}
                         align="center"
+                        listening={false}
                       />
                       <Text
                         text="انقر للإضافة"
@@ -379,6 +383,7 @@ return (
                         y={height / 2 + 10}
                         width={width}
                         align="center"
+                        listening={false}
                       />
                     </Group>
                   )}

@@ -55,24 +55,34 @@ async function downloadFonts() {
       const cssBuffer = await fetchUrl(cssUrl, { "User-Agent": userAgent });
       const cssText = cssBuffer.toString("utf8");
 
-      // Extract woff2 URLs and weight matches
-      const blocks = cssText.split("@font-face");
+      // Extract woff2 URLs, weight matches, unicode-range, and subset comments
+      const rawBlocks = cssText.split("@font-face");
       let count = 0;
 
-      for (const block of blocks) {
+      for (let i = 0; i < rawBlocks.length; i++) {
+        const block = rawBlocks[i];
         if (!block.includes("url(")) continue;
+
         const woff2Match = block.match(/url\((https:\/\/[^)]+\.woff2)\)/);
         const weightMatch = block.match(/font-weight:\s*(\d+)/);
         const styleMatch = block.match(/font-style:\s*(\w+)/);
+        const unicodeMatch = block.match(/unicode-range:\s*([^;]+);/);
+
+        // Detect subset comment prior to block if present (e.g. /* arabic */)
+        const prevBlock = i > 0 ? rawBlocks[i - 1] : "";
+        const subsetCommentMatch = prevBlock.match(/\/\*\s*([^*]+)\s*\*\/\s*$/);
+        const subsetName = subsetCommentMatch ? subsetCommentMatch[1].trim().replace(/[^a-zA-Z0-9_-]/g, "_") : `sub_${count}`;
 
         if (woff2Match) {
           const fontUrl = woff2Match[1];
           const weight = weightMatch ? weightMatch[1] : "400";
           const style = styleMatch ? styleMatch[1] : "normal";
-          const cleanFileName = `${font.name.replace(/ /g, "_")}_${weight}.woff2`;
+          const unicodeRange = unicodeMatch ? unicodeMatch[1].trim() : null;
+
+          const cleanFileName = `${font.name.replace(/ /g, "_")}_${weight}_${subsetName}.woff2`;
           const savePath = path.join(fontDir, cleanFileName);
 
-          console.log(`Downloading ${font.name} (${weight})...`);
+          console.log(`Downloading ${font.name} (${weight} - ${subsetName})...`);
           const fontData = await fetchUrl(fontUrl);
           fs.writeFileSync(savePath, fontData);
 
@@ -82,7 +92,7 @@ async function downloadFonts() {
   font-style: ${style};
   font-weight: ${weight};
   font-display: swap;
-  src: url('./assets/fonts/${cleanFileName}') format('woff2');
+  src: url('./assets/fonts/${cleanFileName}') format('woff2');${unicodeRange ? `\n  unicode-range: ${unicodeRange};` : ""}
 }`);
           count++;
         }

@@ -84,10 +84,24 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const w = element.width * stageCanvasWidth;
   const h = element.height * canvasHeight;
 
+  // فحص هل يحتوي النص على أحرف عربية لمنع تقطيع الأحرف المتصلة (Letter Spacing Exploding)
+  const rawText = element.text || "";
+  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(rawText);
+  const spacing = element.letterSpacing || 0;
+
+  let renderText = rawText;
+  let effectiveLetterSpacing = spacing;
+
+  if (isArabic && spacing > 0) {
+    effectiveLetterSpacing = 0; // إلغاء التباعد بين الأحرف لمنع تفكيك وتفجير أحرف الكلمة الواحدة
+    const extraSpaces = " ".repeat(Math.min(6, Math.max(1, Math.round(spacing / 3.5))));
+    renderText = rawText.replace(/ /g, extraSpaces);
+  }
+
   return (
     <KonvaText
       ref={elementRef}
-      text={element.text || ""}
+      text={renderText}
       x={flipped ? (element.x + element.width) * stageCanvasWidth : element.x * stageCanvasWidth}
       y={element.y * canvasHeight}
       width={w}
@@ -118,7 +132,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       fontFamily={element.fontFamily || "sans-serif"}
       align={element.textAlign || "center"}
       lineHeight={element.lineHeight ?? 1.2}
-      letterSpacing={element.letterSpacing || 0}
+      letterSpacing={effectiveLetterSpacing}
       stroke={element.strokeWidth ? (element.stroke || "#000000") : undefined}
       strokeWidth={element.strokeWidth || undefined}
       textDecoration={element.textDecoration || ""}

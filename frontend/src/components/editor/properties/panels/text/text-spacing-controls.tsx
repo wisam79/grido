@@ -11,6 +11,8 @@ export const TextSpacingControls = React.memo(function TextSpacingControls({
   element,
   onUpdate,
 }: TextSpacingControlsProps) {
+  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(element.text || "");
+
   return (
     <div className="space-y-3 pt-1 border-t border-border/20 font-cairo">
       {/* تباعد الأسطر (Line Height) */}
@@ -25,9 +27,9 @@ export const TextSpacingControls = React.memo(function TextSpacingControls({
         onCommit={() => useEditorStore.getState().pushHistory()}
       />
 
-      {/* تباعد الحروف (Letter Spacing) */}
+      {/* تباعد الكلمات/الحروف الذكي (Smart Word/Letter Spacing) */}
       <SliderControl
-        label="تباعد الحروف"
+        label={isArabic ? "تباعد الكلمات (النص العربي)" : "تباعد الحروف"}
         value={element.letterSpacing ?? 0}
         min={-5}
         max={20}

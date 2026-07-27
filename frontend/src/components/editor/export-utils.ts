@@ -179,7 +179,7 @@ export async function exportCanvas(
         ctx.filter = "none";
       } else if (el.type === "text") {
         const fontSize = el.fontSize || 32;
-        ctx.font = `${el.fontWeight || 700} ${fontSize}px Cairo, Tajawal, sans-serif`;
+        ctx.font = `${el.fontWeight || 700} ${fontSize}px ${el.fontFamily || "Cairo, Tajawal, sans-serif"}`;
         ctx.fillStyle = el.color || "#000000";
         ctx.textAlign = (el.textAlign as CanvasTextAlign) || "center";
         ctx.textBaseline = "middle";

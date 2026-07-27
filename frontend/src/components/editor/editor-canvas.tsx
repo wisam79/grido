@@ -682,6 +682,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
         const textEl = elements.find(e => e.id === editingTextId);
         if (!textEl || textEl.type !== "text") return null;
 
+        const isArabicText = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(textEl.text || "");
+        const spacingVal = textEl.letterSpacing || 0;
+
         return (
           <textarea
             autoFocus
@@ -699,7 +702,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
               color: textEl.color || "#000000",
               textAlign: textEl.textAlign || "center",
               lineHeight: textEl.lineHeight || 1.2,
-              letterSpacing: `${textEl.letterSpacing || 0}px`,
+              letterSpacing: isArabicText ? "0px" : `${spacingVal}px`,
+              wordSpacing: isArabicText ? `${spacingVal}px` : undefined,
               padding: "2px", // للتعويض البصري البسيط عن حدود Canvas
             }}
             defaultValue={textEl.text}

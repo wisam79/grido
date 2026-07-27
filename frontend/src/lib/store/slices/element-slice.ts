@@ -110,7 +110,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       fontSize: 32,
       fontWeight: 700,
       color: "#1a1a2e",
-      fontFamily: "'IBM Plex Sans Arabic', Cairo, Tajawal, sans-serif",
+      fontFamily: "\"IBM Plex Sans Arabic\", Cairo, Tajawal, sans-serif",
       textAlign: "center",
       textBgColor: "transparent",
       lineHeight: 1.2,
