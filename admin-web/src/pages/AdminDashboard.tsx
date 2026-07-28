@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import {
   ShieldCheck,
@@ -54,6 +54,16 @@ interface LicenseKey {
   activated_at: string;
 }
 
+interface AiUsageRecord {
+  id: string;
+  user_id: string;
+  used_at: string;
+  image_bytes: number;
+  execution_seconds: number;
+  cost_usd: number;
+  user_email?: string;
+}
+
 export default function AdminDashboard() {
   // Supabase states
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
@@ -68,6 +78,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'users' | 'keys' | 'usage' | 'stats'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [keys, setKeys] = useState<LicenseKey[]>([]);
+  const [aiUsageLogs, setAiUsageLogs] = useState<AiUsageRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -123,12 +134,57 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadDashboardData = useCallback(async () => {
+    if (!supabase) return;
+    setLoading(true);
+    try {
+      // 1. Fetch profiles
+      const { data: profiles, error: errProf } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (errProf) throw errProf;
+      setUsers(profiles || []);
+
+      // 2. Fetch keys
+      const { data: licenseKeys, error: errKeys } = await supabase
+        .from('license_keys')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (errKeys) throw errKeys;
+      setKeys(licenseKeys || []);
+
+      // 3. Fetch real AI usage logs
+      const { data: usageData, error: errUsage } = await supabase
+        .from('ai_usage')
+        .select('*')
+        .order('used_at', { ascending: false })
+        .limit(200);
+
+      if (!errUsage && usageData) {
+        const profileMap = new Map((profiles || []).map((p: UserProfile) => [p.id, p.email]));
+        const mapped: AiUsageRecord[] = usageData.map((item: any) => ({
+          ...item,
+          user_email: profileMap.get(item.user_id) || item.user_id || 'مستخدم غير معروف'
+        }));
+        setAiUsageLogs(mapped);
+      }
+
+    } catch (err: any) {
+      alert('فشل تحديث البيانات: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
+
   // Fetch data on authentication
   useEffect(() => {
     if (isAuthenticated && supabase) {
       loadDashboardData();
     }
-  }, [isAuthenticated, supabase]);
+  }, [isAuthenticated, supabase, loadDashboardData]);
 
   const clearSession = () => {
     localStorage.removeItem('grido_sb_url');
@@ -175,6 +231,7 @@ export default function AdminDashboard() {
       localStorage.setItem('grido_sb_token', data.session?.access_token || '');
       setIsAuthenticated(true);
     } catch (err: any) {
+      console.error('Login error:', err);
       alert('حدث خطأ أثناء الاتصال بالخادم.');
     } finally {
       setLoginLoading(false);
@@ -185,35 +242,6 @@ export default function AdminDashboard() {
     if (confirm('هل ترغب في تسجيل الخروج؟') && supabase) {
       await supabase.auth.signOut();
       clearSession();
-    }
-  };
-
-  const loadDashboardData = async () => {
-    if (!supabase) return;
-    setLoading(true);
-    try {
-      // 1. Fetch profiles
-      const { data: profiles, error: errProf } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (errProf) throw errProf;
-      setUsers(profiles || []);
-
-      // 2. Fetch keys
-      const { data: licenseKeys, error: errKeys } = await supabase
-        .from('license_keys')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (errKeys) throw errKeys;
-      setKeys(licenseKeys || []);
-
-    } catch (err: any) {
-      alert('فشل تحديث البيانات: ' + err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -945,15 +973,17 @@ export default function AdminDashboard() {
         {/* 📊 AI Usage Audit Log Tab */}
         {activeTab === 'usage' && (
           <section className="space-y-6">
-            {/* Metric Cards */}
+            {/* Metric Cards (computed from real logs) */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20 rounded-xl p-4 text-right space-y-1 shadow-xs">
                 <div className="flex items-center gap-1.5 text-violet-600 font-bold text-xs">
                   <DollarSign className="w-4 h-4" />
                   <span>إجمالي تكلفة الاستهلاك ($)</span>
                 </div>
-                <div className="text-xl font-extrabold font-mono text-slate-100">$0.005118</div>
-                <div className="text-[10px] text-slate-400">تكلفة الـ GPU على سيرفر A10G</div>
+                <div className="text-xl font-extrabold font-mono text-slate-100">
+                  ${aiUsageLogs.reduce((sum, r) => sum + (r.cost_usd || 0), 0).toFixed(6)}
+                </div>
+                <div className="text-[10px] text-slate-400">من آخر 200 طلب</div>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1 shadow-xs">
@@ -961,8 +991,8 @@ export default function AdminDashboard() {
                   <Activity className="w-4 h-4" />
                   <span>عدد الطلبات المعالجة</span>
                 </div>
-                <div className="text-xl font-extrabold font-mono text-slate-100">14 طلب</div>
-                <div className="text-[10px] text-slate-400">عمليات معالجة ناجحة 100%</div>
+                <div className="text-xl font-extrabold font-mono text-slate-100">{aiUsageLogs.length} طلب</div>
+                <div className="text-[10px] text-slate-400">آخر 200 عملية معالجة</div>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1 shadow-xs">
@@ -970,8 +1000,12 @@ export default function AdminDashboard() {
                   <Cpu className="w-4 h-4" />
                   <span>متوسط زمن الطلب</span>
                 </div>
-                <div className="text-xl font-extrabold font-mono text-slate-100">2.35 ثانية</div>
-                <div className="text-[10px] text-slate-400">استجابة سريعة جداً</div>
+                <div className="text-xl font-extrabold font-mono text-slate-100">
+                  {aiUsageLogs.length > 0
+                    ? (aiUsageLogs.reduce((s, r) => s + (r.execution_seconds || 0), 0) / aiUsageLogs.length).toFixed(2)
+                    : '0.00'} ثانية
+                </div>
+                <div className="text-[10px] text-slate-400">متوسط زمن المعالجة</div>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1 shadow-xs">
@@ -979,72 +1013,65 @@ export default function AdminDashboard() {
                   <UserCheck className="w-4 h-4" />
                   <span>الحسابات المستهلكة</span>
                 </div>
-                <div className="text-xl font-extrabold font-mono text-slate-100">4 حسابات</div>
+                <div className="text-xl font-extrabold font-mono text-slate-100">
+                  {new Set(aiUsageLogs.map((r) => r.user_id)).size} حساب
+                </div>
                 <div className="text-[10px] text-slate-400">مستخدمي الذكاء الاصطناعي</div>
               </div>
             </div>
 
-            {/* Audit Log Table */}
+            {/* Audit Log Table (real data) */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-xs overflow-hidden">
               <div className="p-4 border-b border-slate-800/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-slate-800/30">
                 <div>
-                  <h3 className="font-extrabold text-xs text-slate-100">سجل تدقيق الطلبات الفوري (Live AI Audit Log)</h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">يتتبع كل طلب معالجة يُنفذ من أي حساب ومصدره وتكلفته بالسنتات</p>
+                  <h3 className="font-extrabold text-xs text-slate-100">سجل تدقيق الطلبات الفعلي (AI Audit Log)</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">يتتبع كل طلب معالجة يُنفذ من أي حساب وتكلفته بالسنتات</p>
                 </div>
+                <button
+                  onClick={loadDashboardData}
+                  disabled={loading}
+                  className="text-[11px] px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold disabled:opacity-50"
+                >
+                  {loading ? '...جاري' : 'تحديث'}
+                </button>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-right border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-800/50 border-b border-slate-800/50 text-[10px] font-extrabold text-slate-500 uppercase">
-                      <th className="p-3.5">بريد الحساب المستهلك</th>
-                      <th className="p-3.5">نوع الخدمة والنموذج</th>
-                      <th className="p-3.5">منصة المصدر</th>
-                      <th className="p-3.5 text-center">الزمن (ثانية)</th>
-                      <th className="p-3.5 text-left">التكلفة الفعلية ($)</th>
-                      <th className="p-3.5 text-center">التاريخ والتوقيت</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/50 font-medium">
-                    <tr className="hover:bg-slate-800/30 transition-colors">
-                      <td className="p-3.5 font-bold font-mono text-slate-100">wisamsamir78@gmail.com</td>
-                      <td className="p-3.5">
-                        <span className="bg-violet-950/60 text-violet-400 border border-violet-800/50 px-2 py-0.5 rounded font-bold text-[10px]">
-                          ترميم الوجوه (GFPGAN v1.4)
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-slate-500 text-[11px]">Grido Studio Desktop (Windows)</td>
-                      <td className="p-3.5 text-center font-mono font-bold text-slate-300">2.35ث</td>
-                      <td className="p-3.5 text-left font-mono font-extrabold text-violet-600">$0.001329</td>
-                      <td className="p-3.5 text-center font-mono text-slate-400 text-[10px]">2026-07-19 19:55:12</td>
-                    </tr>
-                    <tr className="hover:bg-slate-800/30 transition-colors">
-                      <td className="p-3.5 font-bold font-mono text-slate-100">wisamsamir78@gmail.com</td>
-                      <td className="p-3.5">
-                        <span className="bg-violet-950/60 text-violet-400 border border-violet-800/50 px-2 py-0.5 rounded font-bold text-[10px]">
-                          ترميم الوجوه (GFPGAN v1.4)
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-slate-500 text-[11px]">Grido Studio Desktop (Windows)</td>
-                      <td className="p-3.5 text-center font-mono font-bold text-slate-300">2.10ث</td>
-                      <td className="p-3.5 text-left font-mono font-extrabold text-violet-600">$0.001252</td>
-                      <td className="p-3.5 text-center font-mono text-slate-400 text-[10px]">2026-07-19 19:42:08</td>
-                    </tr>
-                    <tr className="hover:bg-slate-800/30 transition-colors">
-                      <td className="p-3.5 font-bold font-mono text-slate-100">studio_account_02@grido.app</td>
-                      <td className="p-3.5">
-                        <span className="bg-indigo-950/60 text-indigo-400 border border-indigo-800/50 px-2 py-0.5 rounded font-bold text-[10px]">
-                          عزل الخلفية الذكي (Background Removal)
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-slate-500 text-[11px]">Grido Studio Desktop (Windows)</td>
-                      <td className="p-3.5 text-center font-mono font-bold text-slate-300">1.80ث</td>
-                      <td className="p-3.5 text-left font-mono font-extrabold text-indigo-600">$0.000550</td>
-                      <td className="p-3.5 text-center font-mono text-slate-400 text-[10px]">2026-07-19 18:30:15</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              {aiUsageLogs.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-xs">لا توجد سجلات استهلاك بعد.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-800/50 border-b border-slate-800/50 text-[10px] font-extrabold text-slate-500 uppercase">
+                        <th className="p-3.5">بريد الحساب</th>
+                        <th className="p-3.5 text-center">حجم الصورة (بايت)</th>
+                        <th className="p-3.5 text-center">الزمن (ثانية)</th>
+                        <th className="p-3.5 text-left">التكلفة ($)</th>
+                        <th className="p-3.5 text-center">التاريخ والتوقيت</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50 font-medium">
+                      {aiUsageLogs.map((r) => (
+                        <tr key={r.id} className="hover:bg-slate-800/30 transition-colors">
+                          <td className="p-3.5 font-bold font-mono text-slate-100">{r.user_email}</td>
+                          <td className="p-3.5 text-center font-mono text-slate-300">
+                            {(r.image_bytes || 0).toLocaleString()}
+                          </td>
+                          <td className="p-3.5 text-center font-mono font-bold text-slate-300">
+                            {(r.execution_seconds || 0).toFixed(2)}ث
+                          </td>
+                          <td className="p-3.5 text-left font-mono font-extrabold text-violet-600">
+                            ${(r.cost_usd || 0).toFixed(6)}
+                          </td>
+                          <td className="p-3.5 text-center font-mono text-slate-400 text-[10px]">
+                            {r.used_at}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </section>
         )}

@@ -66,8 +66,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       height: hPercent,
       rotation: 0,
       opacity: 1,
-      // [FIX #5] استخدام timestamp + عدد العناصر لمنع تصادم zIndex عند الإضافة السريعة
-      zIndex: (state.elements.length + 1) * 10 + Date.now() % 1000,
+      zIndex: (state.elements.length + 1) * 10 + (Date.now() % 100000) + Math.floor(Math.random() * 9),
       imageSrc: src,
       filter: "none",
       brightness: 100,

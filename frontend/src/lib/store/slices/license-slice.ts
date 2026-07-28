@@ -46,7 +46,8 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
   aiUsageLogs: (() => {
     try {
       const saved = localStorage.getItem("grido_ai_usage_logs");
-      return saved ? JSON.parse(saved) : DEFAULT_AI_LOGS;
+      const parsed = saved ? JSON.parse(saved) : DEFAULT_AI_LOGS;
+      return Array.isArray(parsed) ? parsed : DEFAULT_AI_LOGS;
     } catch {
       return DEFAULT_AI_LOGS;
     }

@@ -189,8 +189,8 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   },
 
   setSlotImage: (slotId, src) => {
-    set((s: any) => ({
-      slots: s.slots.map((sl: CanvasSlot) =>
+    set((state) => ({
+      slots: state.slots.map((sl: CanvasSlot) =>
         sl.id === slotId
           ? {
               ...sl,
@@ -208,22 +208,22 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   },
 
   updateSlot: (slotId, patch) => {
-    set((s: any) => ({
-      slots: s.slots.map((sl: CanvasSlot) => (sl.id === slotId ? { ...sl, ...patch } : sl)),
+    set((state) => ({
+      slots: state.slots.map((sl: CanvasSlot) => (sl.id === slotId ? { ...sl, ...patch } : sl)),
     }));
   },
 
   clearSlots: () => {
-    set((s: any) => ({
-      slots: s.slots.map((sl: CanvasSlot) => ({ ...sl, imageSrc: undefined })),
+    set((state) => ({
+      slots: state.slots.map((sl: CanvasSlot) => ({ ...sl, imageSrc: undefined })),
     }));
     get().pushHistory();
   },
 
   fillAllSlots: (src, sourceSlotId) => {
     const targetSlot = sourceSlotId ? get().slots.find((sl) => sl.id === sourceSlotId) : null;
-    set((s: any) => ({
-      slots: s.slots.map((sl: CanvasSlot) => ({
+    set((state) => ({
+      slots: state.slots.map((sl: CanvasSlot) => ({
         ...sl,
         imageSrc: src,
         filter: targetSlot?.filter || "none",
@@ -238,9 +238,9 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   fillRowSlots: (slotId, src) => {
     const targetSlot = get().slots.find((sl) => sl.id === slotId);
     if (!targetSlot) return;
-    set((s: any) => ({
-      slots: s.slots.map((sl: CanvasSlot) =>
-        Math.abs(sl.y - targetSlot.y) < 0.01
+    set((state) => ({
+      slots: state.slots.map((sl: CanvasSlot) =>
+        Math.abs(Math.round(sl.y * 1000) - Math.round(targetSlot.y * 1000)) < 2
           ? {
               ...sl,
               imageSrc: src,
@@ -258,9 +258,9 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   fillColumnSlots: (slotId, src) => {
     const targetSlot = get().slots.find((sl) => sl.id === slotId);
     if (!targetSlot) return;
-    set((s: any) => ({
-      slots: s.slots.map((sl: CanvasSlot) =>
-        Math.abs(sl.x - targetSlot.x) < 0.01
+    set((state) => ({
+      slots: state.slots.map((sl: CanvasSlot) =>
+        Math.abs(Math.round(sl.x * 1000) - Math.round(targetSlot.x * 1000)) < 2
           ? {
               ...sl,
               imageSrc: src,
@@ -275,7 +275,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     get().pushHistory();
   },
 
-  setCollageGap: (gap) =>
+  setCollageGap: (gap) => {
     set((s) => {
       let adjustedSlots = s.slots || [];
       const collageTemplate = s.collageTemplate;
@@ -311,9 +311,11 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         collageGap: gap,
         slots: adjustedSlots,
       };
-    }),
+    });
+    get().pushHistory();
+  },
 
-  setCollageMargin: (margin) =>
+  setCollageMargin: (margin) => {
     set((s) => {
       let adjustedSlots = s.slots || [];
       const collageTemplate = s.collageTemplate;
@@ -349,7 +351,9 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         collageMargin: margin,
         slots: adjustedSlots,
       };
-    }),
+    });
+    get().pushHistory();
+  },
   setCollageRadius: (radius) => set({ collageRadius: radius }),
   setCollageShowCutLines: (show) => set({ collageShowCutLines: show }),
   setCollageStrokeWidth: (width) => set({ collageStrokeWidth: width }),

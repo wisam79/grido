@@ -7,10 +7,16 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+
+	"grido/internal/utils"
 )
 
 func checkSingleInstance() (func(), error) {
-	lockFile := filepath.Join(os.TempDir(), "grido_studio_single_instance.sock")
+	appDir := utils.GetAppDir()
+	if err := os.MkdirAll(appDir, 0755); err != nil {
+		return nil, fmt.Errorf("cannot create app dir: %w", err)
+	}
+	lockFile := filepath.Join(appDir, "grido_studio_inst.lock")
 	ln, err := net.Listen("unix", lockFile)
 	if err != nil {
 		// Try to connect to it to see if it's a stale socket

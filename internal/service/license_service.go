@@ -44,6 +44,7 @@ var (
 func init() {
 	// 🌟 Load .env from the app config directory (only for development)
 	if envBytes, err := os.ReadFile(filepath.Join(utils.GetAppDir(), ".env")); err == nil {
+		envVars := make(map[string]string)
 		for _, line := range strings.Split(string(envBytes), "\n") {
 			line = strings.TrimSpace(line)
 			if line == "" || strings.HasPrefix(line, "#") {
@@ -54,10 +55,24 @@ func init() {
 				key := strings.TrimSpace(parts[0])
 				val := strings.TrimSpace(parts[1])
 				val = strings.Trim(val, `"'`)
-				if os.Getenv(key) == "" {
-					os.Setenv(key, val)
-				}
+				envVars[key] = val
 			}
+		}
+		// Apply env vars to package variables directly (no os.Setenv)
+		if v, ok := envVars["SUPABASE_URL"]; ok && SupabaseURL == "" {
+			SupabaseURL = v
+		}
+		if v, ok := envVars["SUPABASE_ANON_KEY"]; ok && SupabaseAnonKey == "" {
+			SupabaseAnonKey = v
+		}
+		if v, ok := envVars["MODAL_AI_URL"]; ok && ModalAIURL == "" {
+			ModalAIURL = v
+		}
+		if v, ok := envVars["MODAL_AI_KEY"]; ok && ModalAIKey == "" {
+			ModalAIKey = v
+		}
+		if v, ok := envVars["GRIDO_AI_SECRET_KEY"]; ok && ModalAIKey == "" {
+			ModalAIKey = v
 		}
 	}
 
@@ -1011,7 +1026,7 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 		resp.Body.Close()
 
-		slog.Info("Supabase Verify OTP response", "type", vType, "status", resp.StatusCode, "body", string(body))
+		slog.Debug("Supabase Verify OTP response", "type", vType, "status", resp.StatusCode)
 
 		if resp.StatusCode == http.StatusOK {
 			if err := json.NewDecoder(bytes.NewReader(body)).Decode(&authRes); err == nil && authRes.AccessToken != "" {

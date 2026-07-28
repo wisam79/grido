@@ -11,6 +11,7 @@ import (
 	"grido/internal/service"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"gorm.io/gorm"
 )
 
 type App struct {
@@ -21,13 +22,13 @@ type App struct {
 	autosaveSvc *service.AutosaveService
 }
 
-func NewApp() *App {
+func NewApp(db *gorm.DB) *App {
 	mediaSvc := service.NewMediaService()
 	return &App{
 		mediaSvc:    mediaSvc,
 		aiSvc:       service.NewAIService(),
 		imageProc:   service.NewImageProcessorService(mediaSvc),
-		autosaveSvc: service.NewAutosaveService(),
+		autosaveSvc: service.NewAutosaveService(db),
 	}
 }
 
@@ -90,10 +91,6 @@ var imageFilters = []runtime.FileFilter{
 var saveFilters = []runtime.FileFilter{
 	{DisplayName: "PNG Image (*.png)", Pattern: "*.png"},
 	{DisplayName: "JPEG Image (*.jpg;*.jpeg)", Pattern: "*.jpg;*.jpeg"},
-}
-
-func getMediaDir() string {
-	return service.NewMediaService().GetMediaDir()
 }
 
 func (a *App) OpenFile() (string, error) {

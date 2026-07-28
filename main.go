@@ -81,7 +81,7 @@ func main() {
 		}
 	}
 
-	app := NewApp()
+	app := NewApp(db)
 
 	err = wails.Run(&options.App{
 		Title:       "Grido Studio",
@@ -102,7 +102,7 @@ func main() {
 					if strings.HasPrefix(filename, "print_") {
 						baseDir = filepath.Join(utils.GetAppDir(), "Exports")
 					} else {
-						baseDir = getMediaDir()
+						baseDir = app.mediaSvc.GetMediaDir()
 					}
 					absPath := filepath.Join(baseDir, filename)
 
@@ -157,8 +157,13 @@ func main() {
 		OnStartup: func(ctx context.Context) {
 			// استعادة موضع النافذة وحالة التكبير عند بدء التشغيل
 			if state, err := loadWindowState(); err == nil {
-				if state.X != 0 || state.Y != 0 {
-					wailsruntime.WindowSetPosition(ctx, state.X, state.Y)
+				// تجاهل المواقع خارج الشاشة (بعد تغيير الدقة أو نقل Monitor)
+				const maxScreenSize = 50000
+				if state.X > -maxScreenSize && state.X < maxScreenSize &&
+					state.Y > -maxScreenSize && state.Y < maxScreenSize {
+					if state.X != 0 || state.Y != 0 {
+						wailsruntime.WindowSetPosition(ctx, state.X, state.Y)
+					}
 				}
 				if state.Max {
 					wailsruntime.WindowMaximise(ctx)

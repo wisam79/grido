@@ -56,7 +56,7 @@ export const handler: Handler = async () => {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ error: err.message || 'Server error' }),
+      body: JSON.stringify({ error: 'Server error fetching version' }),
     };
   }
 };

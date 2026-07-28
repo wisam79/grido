@@ -74,6 +74,9 @@ func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
+		if resp != nil {
+			resp.Body.Close()
+		}
 		// احتياطي ثانٍ للاتصال بمستودع GitHub المباشر
 		reqDirect, _ := http.NewRequest("GET", "https://api.github.com/repos/wisam79/grido/releases/latest", nil)
 		reqDirect.Header.Set("User-Agent", "GridoStudio-Desktop")
@@ -174,7 +177,8 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	}
 	req.Header.Set("User-Agent", "GridoStudio-Desktop")
 
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{Timeout: 5 * time.Minute}
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to download update: %w", err)
 	}

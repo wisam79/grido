@@ -6,14 +6,17 @@ import (
 	"path/filepath"
 
 	"grido/internal/core/domain"
-	"grido/internal/repository"
 	"grido/internal/utils"
+
+	"gorm.io/gorm"
 )
 
-type AutosaveService struct{}
+type AutosaveService struct {
+	db *gorm.DB
+}
 
-func NewAutosaveService() *AutosaveService {
-	return &AutosaveService{}
+func NewAutosaveService(db *gorm.DB) *AutosaveService {
+	return &AutosaveService{db: db}
 }
 
 func (s *AutosaveService) GetSavePath() string {
@@ -22,35 +25,23 @@ func (s *AutosaveService) GetSavePath() string {
 }
 
 func (s *AutosaveService) SaveCustomTemplate(name string, slots int, cellsJSON string) (domain.CustomTemplate, error) {
-	db, err := repository.InitDB()
-	if err != nil {
-		return domain.CustomTemplate{}, err
-	}
 	tmpl := domain.CustomTemplate{
 		Name:  name,
 		Slots: slots,
 		Cells: domain.JSONText(cellsJSON),
 	}
-	result := db.Create(&tmpl)
+	result := s.db.Create(&tmpl)
 	return tmpl, result.Error
 }
 
 func (s *AutosaveService) GetCustomTemplates() ([]domain.CustomTemplate, error) {
-	db, err := repository.InitDB()
-	if err != nil {
-		return nil, err
-	}
 	var templates []domain.CustomTemplate
-	result := db.Find(&templates)
+	result := s.db.Find(&templates)
 	return templates, result.Error
 }
 
 func (s *AutosaveService) DeleteCustomTemplate(id uint) error {
-	db, err := repository.InitDB()
-	if err != nil {
-		return err
-	}
-	result := db.Delete(&domain.CustomTemplate{}, id)
+	result := s.db.Delete(&domain.CustomTemplate{}, id)
 	return result.Error
 }
 

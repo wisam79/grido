@@ -38,6 +38,7 @@ export const handler: Handler = async (event) => {
     if (downloadType === 'portable') {
       asset = releaseData.assets?.find((a: any) => 
         a.name.toLowerCase() === 'grido studio.exe' || 
+        a.name.toLowerCase() === 'gridostudio.exe' ||
         (!a.name.toLowerCase().includes('installer') && !a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe'))
       );
     } else {
@@ -95,7 +96,7 @@ export const handler: Handler = async (event) => {
   } catch (err: any) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message || 'خطأ غير متوقع في خادم Netlify' }),
+      body: JSON.stringify({ error: 'خطأ غير متوقع في خادم Netlify' }),
     };
   }
 };

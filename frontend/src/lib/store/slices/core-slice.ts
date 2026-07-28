@@ -241,10 +241,10 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
 
   loadProject: (project: ProjectFileV1, projectId: string | null = null) => {
     const restoredTemplate = project.template
-      ? (PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) as PhotoTemplate | undefined) || (project.template as unknown as PhotoTemplate)
+      ? (PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) as PhotoTemplate | undefined) || null
       : null;
     const restoredCollageTemplate = project.collageTemplate
-      ? (COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate?.id) as CollageTemplate | undefined) || (project.collageTemplate as unknown as CollageTemplate)
+      ? (COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate?.id) as CollageTemplate | undefined) || null
       : null;
 
     set({

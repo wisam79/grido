@@ -117,7 +117,7 @@ SectionEnd
 Section "uninstall"
     !insertmacro wails.setShellContext
 
-    RMDir /r "$AppData\${PRODUCT_EXECUTABLE}"
+    RMDir /r "$AppData\GridoStudio"
 
     RMDir /r $INSTDIR
 
