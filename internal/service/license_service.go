@@ -42,8 +42,12 @@ var (
 )
 
 func init() {
-	// 🌟 Load .env from the app config directory (only for development)
-	if envBytes, err := os.ReadFile(filepath.Join(utils.GetAppDir(), ".env")); err == nil {
+	// 🌟 Load .env from the app config directory or current directory (for development)
+	envPath := filepath.Join(utils.GetAppDir(), ".env")
+	if _, err := os.Stat(envPath); err != nil {
+		envPath = ".env"
+	}
+	if envBytes, err := os.ReadFile(envPath); err == nil {
 		envVars := make(map[string]string)
 		for _, line := range strings.Split(string(envBytes), "\n") {
 			line = strings.TrimSpace(line)

@@ -240,6 +240,17 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
   },
 
   loadProject: (project: ProjectFileV1, projectId: string | null = null) => {
+    if (!project || typeof project !== "object") {
+      console.error("[loadProject] Invalid project payload provided");
+      return;
+    }
+    const validWidth = typeof project.canvasWidth === "number" && project.canvasWidth > 0 && project.canvasWidth <= 20000
+      ? project.canvasWidth
+      : 2480;
+    const validHeight = typeof project.canvasHeight === "number" && project.canvasHeight > 0 && project.canvasHeight <= 20000
+      ? project.canvasHeight
+      : 3508;
+
     const restoredTemplate = project.template
       ? (PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) as PhotoTemplate | undefined) || null
       : null;
@@ -250,8 +261,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     set({
       projectId,
       mode: project.mode || "single",
-      canvasWidth: project.canvasWidth,
-      canvasHeight: project.canvasHeight,
+      canvasWidth: validWidth,
+      canvasHeight: validHeight,
       backgroundColor: project.backgroundColor || "#FFFFFF",
       elements: (project.elements || []) as CanvasElement[],
       slots: (project.slots && project.slots.length > 0 ? project.slots : (project.mode === "collage" ? generateInitialSlots() : [])) as CanvasSlot[],

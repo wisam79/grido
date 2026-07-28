@@ -153,6 +153,10 @@ func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
 	return a.mediaSvc.SaveImageFromBase64(base64Data)
 }
 
+func (a *App) GetImageDimensions(localPath string) (service.ImageDimensions, error) {
+	return a.mediaSvc.GetImageDimensions(localPath)
+}
+
 func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayName string, pattern string) (string, error) {
 	var decoded []byte
 	var err error

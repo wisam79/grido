@@ -32,6 +32,8 @@ type PrintRequest struct {
 	DPI             int         `json:"dpi"`
 	BackgroundColor string      `json:"backgroundColor"`
 	ShowCutLines    bool        `json:"showCutLines"`
+	ColorSpace      string      `json:"colorSpace,omitempty"`    // "sRGB" or "CMYK"
+	ExportFormat    string      `json:"exportFormat,omitempty"`  // "png", "jpeg", "tiff"
 	CutLines        []CutLine   `json:"cutLines"`
 	Items           []PrintItem `json:"items"`
 }

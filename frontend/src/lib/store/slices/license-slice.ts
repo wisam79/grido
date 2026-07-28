@@ -90,9 +90,10 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.RegisterAccount(name, email, password);
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err) {
+    } catch (err: unknown) {
       set({ licenseLoading: false });
-      throw new Error(err instanceof Error ? err.message : "فشل إنشاء الحساب");
+      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل إنشاء الحساب");
+      throw new Error(msg);
     }
   },
 
@@ -102,9 +103,10 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.VerifyOTP(email, otp);
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err) {
+    } catch (err: unknown) {
       set({ licenseLoading: false });
-      throw new Error(err instanceof Error ? err.message : "رمز التحقق غير صحيح");
+      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "رمز التحقق غير صحيح");
+      throw new Error(msg);
     }
   },
 
@@ -114,9 +116,10 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.ResendOTP(email);
       set({ licenseLoading: false });
       return profile;
-    } catch (err) {
+    } catch (err: unknown) {
       set({ licenseLoading: false });
-      throw new Error(err instanceof Error ? err.message : "فشل إعادة إرسال رمز التحقق");
+      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل إعادة إرسال رمز التحقق");
+      throw new Error(msg);
     }
   },
 
@@ -126,9 +129,10 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.LoginAccount(email, password);
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err) {
+    } catch (err: unknown) {
       set({ licenseLoading: false });
-      throw new Error(err instanceof Error ? err.message : "بريد إلكتروني أو كلمة مرور غير صحيحة");
+      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "بريد إلكتروني أو كلمة مرور غير صحيحة");
+      throw new Error(msg);
     }
   },
 
@@ -138,9 +142,10 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.LoginWithGoogle();
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err) {
+    } catch (err: unknown) {
       set({ licenseLoading: false });
-      throw new Error(err instanceof Error ? err.message : "فشل تسجيل الدخول بواسطة Google");
+      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل تسجيل الدخول بواسطة Google");
+      throw new Error(msg);
     }
   },
 
@@ -150,9 +155,10 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.ActivateLicenseKey(key);
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err) {
+    } catch (err: unknown) {
       set({ licenseLoading: false });
-      throw new Error(err instanceof Error ? err.message : "مفتاح تفعيل غير صالحة أو مستخدم سابقاً");
+      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "مفتاح تفعيل غير صالحة أو مستخدم سابقاً");
+      throw new Error(msg);
     }
   },
 
@@ -160,8 +166,9 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     set({ licenseLoading: true });
     try {
       await LicenseHandler.ResetPassword(email);
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "فشل إرسال رابط إعادة تعيين كلمة المرور");
+    } catch (err: unknown) {
+      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل إرسال رابط إعادة تعيين كلمة المرور");
+      throw new Error(msg);
     } finally {
       set({ licenseLoading: false });
     }
@@ -173,9 +180,10 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       const profile = await LicenseHandler.VerifyRecoveryOTP(email, token, newPassword);
       set({ user: profile, licenseLoading: false });
       return profile;
-    } catch (err) {
+    } catch (err: unknown) {
       set({ licenseLoading: false });
-      throw new Error(err instanceof Error ? err.message : "فشل تعيين كلمة المرور الجديدة");
+      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل تعيين كلمة المرور الجديدة");
+      throw new Error(msg);
     }
   },
 

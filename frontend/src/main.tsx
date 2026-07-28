@@ -38,6 +38,7 @@ if (typeof window !== "undefined" && !(window as any).go) {
     main: {
       App: {
         OpenFile: async () => mockImage,
+        GetImageDimensions: async () => ({ width: 800, height: 600 }),
         LoadAutoSave: async () => "",
         SaveAutoSave: async () => {},
         ClearAutoSave: async () => {},

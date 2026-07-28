@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { X, RefreshCw } from "lucide-react";
-import { OpenFile, SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
+import { OpenFile, SaveImageFromBase64, GetImageDimensions } from "../../../wailsjs/go/main/App";
 import { SnapGuide } from "@/lib/snap-utils";
 import { KonvaCanvas } from "./konva/konva-canvas";
 import { useShallow } from "zustand/react/shallow";
@@ -472,25 +472,27 @@ export const EditorCanvas = React.memo(React.forwardRef<
         }
        } else {
          for (const src of uploadedSrcs) {
-           await new Promise<void>((resolve) => {
-             const img = new Image();
-             img.onload = () => {
-               const aspect = img.width / img.height;
-               img.onload = null;
-               img.onerror = null;
-               img.src = "";
-               addImageElement(src, aspect);
-               resolve();
-             };
-             img.onerror = () => {
-               img.onload = null;
-               img.onerror = null;
-               img.src = "";
-               addImageElement(src, 1);
-               resolve();
-             };
-             img.src = src;
-           });
+           let aspect = 1;
+           try {
+             if (typeof GetImageDimensions === "function") {
+               const dims = await GetImageDimensions(src);
+               if (dims && dims.width > 0 && dims.height > 0) {
+                 aspect = dims.width / dims.height;
+               }
+             }
+           } catch {
+             // Fallback if GetImageDimensions fails or in dev web mode
+             try {
+               const res = await fetch(src);
+               const blob = await res.blob();
+               const bitmap = await createImageBitmap(blob);
+               aspect = bitmap.width / bitmap.height;
+               bitmap.close();
+             } catch {
+               aspect = 1;
+             }
+           }
+           addImageElement(src, aspect);
          }
        }
     } catch (err) {

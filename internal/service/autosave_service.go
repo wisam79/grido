@@ -66,9 +66,20 @@ func (s *AutosaveService) SaveAutoSave(jsonData string) error {
 
 	defer os.Remove(tmpPath)
 
-	if err := os.WriteFile(tmpPath, []byte(jsonData), 0644); err != nil {
+	f, err := os.Create(tmpPath)
+	if err != nil {
+		return fmt.Errorf("failed to create tmp autosave file: %w", err)
+	}
+	if _, err := f.Write([]byte(jsonData)); err != nil {
+		f.Close()
 		return fmt.Errorf("failed to write tmp autosave file: %w", err)
 	}
+	if err := f.Sync(); err != nil {
+		f.Close()
+		return fmt.Errorf("failed to sync tmp autosave file: %w", err)
+	}
+	f.Close()
+
 	return os.Rename(tmpPath, path)
 }
 

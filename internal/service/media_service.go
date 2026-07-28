@@ -4,6 +4,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"log/slog"
 	"net/http"
@@ -12,6 +16,9 @@ import (
 	"strings"
 	"time"
 
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/webp"
+
 	"grido/internal/utils"
 )
 
@@ -19,10 +26,41 @@ const MaxFileSize = 50 * 1024 * 1024 // 50MB
 
 var ErrInvalidBase64 = errors.New("invalid base64 payload")
 
+type ImageDimensions struct {
+	Width  int `json:"width"`
+	Height int `json:"height"`
+}
+
 type MediaService struct{}
 
 func NewMediaService() *MediaService {
 	return &MediaService{}
+}
+
+func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, error) {
+	mediaDir := s.GetMediaDir()
+	filename := filepath.Base(filepath.Clean(strings.TrimPrefix(localPath, "/local-image/")))
+	fullPath := filepath.Join(mediaDir, filename)
+
+	resolved, err := filepath.EvalSymlinks(fullPath)
+	if err != nil {
+		resolved = fullPath
+	}
+	if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(mediaDir)) {
+		return ImageDimensions{}, fmt.Errorf("invalid path: outside media directory")
+	}
+
+	f, err := os.Open(resolved)
+	if err != nil {
+		return ImageDimensions{}, fmt.Errorf("open image file: %w", err)
+	}
+	defer f.Close()
+
+	cfg, _, err := image.DecodeConfig(f)
+	if err != nil {
+		return ImageDimensions{}, fmt.Errorf("decode image config: %w", err)
+	}
+	return ImageDimensions{Width: cfg.Width, Height: cfg.Height}, nil
 }
 
 func (s *MediaService) GetMediaDir() string {

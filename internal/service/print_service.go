@@ -9,6 +9,7 @@ import (
 	"hash/crc32"
 	"image"
 	"image/color"
+	"image/jpeg"
 	"log/slog"
 	"math"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/image/tiff"
 	"golang.org/x/sync/errgroup"
 
 	"grido/internal/core/domain"
@@ -26,6 +28,72 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
 )
+
+// ConvertRGBAtoCMYK converts an image.Image to an image.CMYK instance
+func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
+	bounds := src.Bounds()
+	w, h := bounds.Dx(), bounds.Dy()
+	cmykImg := image.NewCMYK(image.Rect(0, 0, w, h))
+
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			r, g, b, _ := src.At(x, y).RGBA()
+			r8, g8, b8 := uint8(r>>8), uint8(g>>8), uint8(b>>8)
+
+			cmykColor := color.CMYKModel.Convert(color.RGBA{R: r8, G: g8, B: b8, A: 255}).(color.CMYK)
+			cmykImg.SetCMYK(x, y, cmykColor)
+		}
+	}
+	return cmykImg
+}
+
+// ApplyPureBlackCutLines enforces pure black (C:0 M:0 Y:0 K:255) for cut lines in CMYK space
+func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
+	if !req.ShowCutLines || len(req.CutLines) == 0 {
+		return
+	}
+
+	lineWidth := mmToPx(0.25, req.DPI)
+	if lineWidth < 1.0 {
+		lineWidth = 1.0
+	}
+
+	bounds := cmykImg.Bounds()
+	maxW, maxH := bounds.Dx(), bounds.Dy()
+	pureBlack := color.CMYK{C: 0, M: 0, Y: 0, K: 255}
+
+	for _, line := range req.CutLines {
+		x1 := int(math.Round(mmToPx(line.X1, req.DPI)))
+		y1 := int(math.Round(mmToPx(line.Y1, req.DPI)))
+		x2 := int(math.Round(mmToPx(line.X2, req.DPI)))
+		y2 := int(math.Round(mmToPx(line.Y2, req.DPI)))
+
+		halfW := int(math.Round(lineWidth / 2.0))
+		if halfW < 1 {
+			halfW = 1
+		}
+
+		if x1 == x2 { // Vertical cut line
+			for y := math.Max(0, float64(y1)); y <= math.Min(float64(maxH-1), float64(y2)); y++ {
+				for dx := -halfW; dx <= halfW; dx++ {
+					px := x1 + dx
+					if px >= 0 && px < maxW {
+						cmykImg.SetCMYK(px, int(y), pureBlack)
+					}
+				}
+			}
+		} else if y1 == y2 { // Horizontal cut line
+			for x := math.Max(0, float64(x1)); x <= math.Min(float64(maxW-1), float64(x2)); x++ {
+				for dy := -halfW; dy <= halfW; dy++ {
+					py := y1 + dy
+					if py >= 0 && py < maxH {
+						cmykImg.SetCMYK(int(x), py, pureBlack)
+					}
+				}
+			}
+		}
+	}
+}
 
 type PrintService struct{}
 
@@ -69,7 +137,18 @@ func resolveLocalPath(src string) string {
 	if strings.HasPrefix(src, "/local-image/") {
 		filename := filepath.Base(filepath.Clean(strings.TrimPrefix(src, "/local-image/")))
 		appDir := utils.GetAppDir()
-		return filepath.Join(appDir, "Media", filename)
+		mediaDir := filepath.Join(appDir, "Media")
+		fullPath := filepath.Join(mediaDir, filename)
+
+		resolved, err := filepath.EvalSymlinks(fullPath)
+		if err != nil {
+			return fullPath
+		}
+		if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(mediaDir)) {
+			slog.Warn("Blocked path traversal attempt in resolveLocalPath", "path", src)
+			return ""
+		}
+		return resolved
 	}
 	return src
 }
@@ -597,26 +676,63 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	}
 
 	baseName := fmt.Sprintf("print_%d", time.Now().UnixNano())
-	pngPath := filepath.Join(outDir, baseName+".png")
-	htmlPath := filepath.Join(outDir, baseName+".html")
+	isCMYK := strings.EqualFold(req.ColorSpace, "cmyk")
 
-	var buf bytes.Buffer
-	err := dc.EncodePNG(&buf)
-	if err != nil {
-		return "", "", err
-	}
+	var imageName string
+	var imagePath string
 
-	pngData := buf.Bytes()
-	if updatedData, err := setPngDPI(pngData, req.DPI); err == nil {
-		pngData = updatedData
+	if isCMYK {
+		cmykImg := ConvertRGBAtoCMYK(dc.Image())
+		ApplyPureBlackCutLines(cmykImg, req)
+
+		if strings.EqualFold(req.ExportFormat, "jpeg") || strings.EqualFold(req.ExportFormat, "jpg") {
+			imageName = baseName + ".jpg"
+			imagePath = filepath.Join(outDir, imageName)
+			f, err := os.Create(imagePath)
+			if err != nil {
+				return "", "", fmt.Errorf("create cmyk jpeg: %w", err)
+			}
+			defer f.Close()
+			if err := jpeg.Encode(f, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
+				return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
+			}
+		} else {
+			// Default format for CMYK is TIFF
+			imageName = baseName + ".tif"
+			imagePath = filepath.Join(outDir, imageName)
+			f, err := os.Create(imagePath)
+			if err != nil {
+				return "", "", fmt.Errorf("create cmyk tiff: %w", err)
+			}
+			defer f.Close()
+			if err := tiff.Encode(f, cmykImg, &tiff.Options{Compression: tiff.Deflate}); err != nil {
+				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
+			}
+		}
 	} else {
-		slog.Warn("Failed to set PNG DPI", "error", err)
+		// sRGB PNG
+		imageName = baseName + ".png"
+		imagePath = filepath.Join(outDir, imageName)
+		var buf bytes.Buffer
+		err := dc.EncodePNG(&buf)
+		if err != nil {
+			return "", "", err
+		}
+
+		pngData := buf.Bytes()
+		if updatedData, err := setPngDPI(pngData, req.DPI); err == nil {
+			pngData = updatedData
+		} else {
+			slog.Warn("Failed to set PNG DPI", "error", err)
+		}
+
+		err = os.WriteFile(imagePath, pngData, 0644)
+		if err != nil {
+			return "", "", err
+		}
 	}
 
-	err = os.WriteFile(pngPath, pngData, 0644)
-	if err != nil {
-		return "", "", err
-	}
+	htmlPath := filepath.Join(outDir, baseName+".html")
 
 	// إنتاج ملف HTML لضمان طباعة دقيقة للمليمترات عبر متصفح الويب (يتجاهل عارض الصور الافتراضي للويندوز)
 	htmlContent := fmt.Sprintf(`<!DOCTYPE html>
@@ -644,7 +760,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 <body onload="setTimeout(() => { window.print(); window.close(); }, 500)">
   <img src="/local-image/%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, baseName+".png")
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageName)
 
 	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 
@@ -674,7 +790,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 <body>
   <img src="/local-image/%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, baseName+".png")
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageName)
 
 	return htmlPath, selfContainedHTML, nil
 }

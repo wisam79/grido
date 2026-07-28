@@ -48,13 +48,13 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     };
   }, []);
 
-  const mode = useEditorStore(useShallow((s) => s.mode));
-  const canvasWidth = useEditorStore(useShallow((s) => s.canvasWidth));
-  const canvasHeight = useEditorStore(useShallow((s) => s.canvasHeight));
-  const backgroundColor = useEditorStore(useShallow((s) => s.backgroundColor));
-  const selectedId = useEditorStore(useShallow((s) => s.selectedId));
+  const mode = useEditorStore((s) => s.mode);
+  const canvasWidth = useEditorStore((s) => s.canvasWidth);
+  const canvasHeight = useEditorStore((s) => s.canvasHeight);
+  const backgroundColor = useEditorStore((s) => s.backgroundColor);
+  const selectedId = useEditorStore((s) => s.selectedId);
   const selectedIds = useEditorStore(useShallow((s) => s.selectedIds));
-  const snapToGrid = useEditorStore(useShallow((s) => s.snapToGrid));
+  const snapToGrid = useEditorStore((s) => s.snapToGrid);
 
   const selectElement = useEditorStore((s) => s.selectElement);
   const toggleElementSelection = useEditorStore((s) => s.toggleElementSelection);

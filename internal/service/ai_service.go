@@ -62,7 +62,10 @@ func NewAIService() *AIService {
 	return &AIService{}
 }
 
-const defaultModalAIURL = "https://wisamsamir78--grido-ai-upscaler-imageenhancer-enhance.modal.run"
+const (
+	maxAIResponseSize = 50 * 1024 * 1024 // 50MB max AI response
+	defaultModalAIURL = "https://wisamsamir78--grido-ai-upscaler-imageenhancer-enhance.modal.run"
+)
 
 func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
 	rateKey := "anonymous"
@@ -94,13 +97,13 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 				if err == nil {
 					if resp.StatusCode == http.StatusOK {
 						defer resp.Body.Close()
-						body, readErr := io.ReadAll(resp.Body)
+						body, readErr := io.ReadAll(io.LimitReader(resp.Body, maxAIResponseSize))
 						if readErr == nil {
 							GlobalAIRateLimiter.Increment(rateKey)
 							return string(body), nil
 						}
 					} else {
-						body, _ := io.ReadAll(resp.Body)
+						body, _ := io.ReadAll(io.LimitReader(resp.Body, maxAIResponseSize))
 						resp.Body.Close()
 						// Log Supabase error and fall through to Modal
 						fmt.Printf("Supabase AI error (status %d): %s\n", resp.StatusCode, string(body))
@@ -140,7 +143,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxAIResponseSize))
 	if err != nil {
 		return "", fmt.Errorf("فشل قراءة الرد من الخادم: %w", err)
 	}

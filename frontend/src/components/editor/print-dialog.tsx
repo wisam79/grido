@@ -66,6 +66,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     collageStrokeColor: state.collageStrokeColor,
   })));
   const [zoom, setZoom] = useState(1);
+  const [colorSpace, setColorSpace] = useState<"sRGB" | "CMYK">("sRGB");
   const [previewImageSrc, setPreviewImageSrc] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
   const handlePrintRef = useRef<() => void>(() => {});
@@ -324,6 +325,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         dpi: printSettings.dpi,
         backgroundColor: backgroundColor || "#FFFFFF",
         showCutLines: printSettings.showCutLines && actualCopies > 1,
+        colorSpace: colorSpace,
+        exportFormat: colorSpace === "CMYK" ? "tiff" : "png",
         cutLines,
         items,
       }));
@@ -412,16 +415,41 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               </div>
             </div>
             
-            {/* Borderless Toggle */}
-            <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/40">
-              <Switch 
-                id="borderless-mode" 
-                checked={printSettings.marginMM === 0}
-                onCheckedChange={(checked) => setPrintSettings({ marginMM: checked ? 0 : 5 })}
-              />
-              <Label htmlFor="borderless-mode" className="text-xs cursor-pointer select-none">
-                طباعة بدون هوامش (ملء الورقة)
-              </Label>
+            {/* Color Space & Borderless Toggle */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/40 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setColorSpace("sRGB")}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer",
+                    colorSpace === "sRGB" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  sRGB (شاشات)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setColorSpace("CMYK")}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer",
+                    colorSpace === "CMYK" ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  CMYK (مطابع)
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/40">
+                <Switch 
+                  id="borderless-mode" 
+                  checked={printSettings.marginMM === 0}
+                  onCheckedChange={(checked) => setPrintSettings({ marginMM: checked ? 0 : 5 })}
+                />
+                <Label htmlFor="borderless-mode" className="text-xs cursor-pointer select-none">
+                  طباعة بدون هوامش (ملء الورقة)
+                </Label>
+              </div>
             </div>
           </div>
         </DialogHeader>
