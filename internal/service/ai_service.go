@@ -62,6 +62,8 @@ func NewAIService() *AIService {
 	return &AIService{}
 }
 
+const defaultModalAIURL = "https://wisamsamir78--grido-ai-upscaler-imageenhancer-enhance.modal.run"
+
 func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
 	rateKey := "anonymous"
 	if token != "" {
@@ -110,8 +112,9 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 		}
 	}
 
-	if ModalAIURL == "" {
-		return "", fmt.Errorf("AI service URL not configured (set MODAL_AI_URL)")
+	modalURL := ModalAIURL
+	if modalURL == "" {
+		modalURL = defaultModalAIURL
 	}
 	payload, err := json.Marshal(map[string]string{
 		"image": base64Image,
@@ -120,7 +123,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", ModalAIURL, bytes.NewBuffer(payload))
+	req, err := http.NewRequest("POST", modalURL, bytes.NewBuffer(payload))
 	if err != nil {
 		return "", err
 	}
