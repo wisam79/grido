@@ -19,3 +19,7 @@ func OpenBrowser(targetURL string) error {
 	}
 	return exec.Command("rundll32", "url.dll,FileProtocolHandler", targetURL).Start()
 }
+
+func OpenFolder(folderPath string) error {
+	return exec.Command("explorer", folderPath).Start()
+}

@@ -680,6 +680,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 
 	var imageName string
 	var imagePath string
+	var htmlImageName string
 
 	if isCMYK {
 		cmykImg := ConvertRGBAtoCMYK(dc.Image())
@@ -709,9 +710,24 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
 			}
 		}
+
+		// 🌟 Save a browser-compatible PNG for HTML print window preview (browsers cannot decode TIFF in <img> tags)
+		htmlImageName = baseName + "_preview.png"
+		htmlImagePath := filepath.Join(outDir, htmlImageName)
+		var buf bytes.Buffer
+		if err := dc.EncodePNG(&buf); err == nil {
+			pngData := buf.Bytes()
+			if updatedData, err := setPngDPI(pngData, req.DPI); err == nil {
+				pngData = updatedData
+			}
+			_ = os.WriteFile(htmlImagePath, pngData, 0644)
+		} else {
+			htmlImageName = imageName
+		}
 	} else {
 		// sRGB PNG
 		imageName = baseName + ".png"
+		htmlImageName = imageName
 		imagePath = filepath.Join(outDir, imageName)
 		var buf bytes.Buffer
 		err := dc.EncodePNG(&buf)
@@ -760,7 +776,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 <body onload="setTimeout(() => { window.print(); window.close(); }, 500)">
   <img src="/local-image/%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageName)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, htmlImageName)
 
 	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 
@@ -790,7 +806,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 <body>
   <img src="/local-image/%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageName)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, htmlImageName)
 
 	return htmlPath, selfContainedHTML, nil
 }

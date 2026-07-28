@@ -9,6 +9,7 @@ import (
 
 	"grido/internal/core/domain"
 	"grido/internal/service"
+	"grido/internal/utils"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/gorm"
@@ -235,4 +236,10 @@ func (a *App) CheckForUpdate() (*service.UpdateInfo, error) {
 func (a *App) DownloadAndInstallUpdate(url string) error {
 	updater := service.NewUpdaterService()
 	return updater.DownloadAndInstall(a.ctx, url)
+}
+
+func (a *App) OpenExportsFolder() error {
+	outDir := filepath.Join(utils.GetAppDir(), "Exports")
+	_ = os.MkdirAll(outDir, 0755)
+	return utils.OpenFolder(outDir)
 }

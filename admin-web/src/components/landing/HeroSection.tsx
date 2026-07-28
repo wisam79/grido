@@ -1,4 +1,4 @@
-import { Download, Sparkles, ArrowLeft, Play } from 'lucide-react';
+import { Download, Sparkles, ArrowLeft } from 'lucide-react';
 import { AppMockup } from './AppMockup';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
@@ -27,7 +27,7 @@ export function HeroSection() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
             </span>
             <span>الجيل الجديد لبرامج الاستوديو والطباعة الفورية</span>
-            <span className="text-brand-400 font-semibold">v1.0.37</span>
+            <span className="text-brand-400 font-semibold">v1.2.1</span>
             <ArrowLeft className="w-3.5 h-3.5 text-neutral-500 transition-transform group-hover:-translate-x-1 group-hover:text-brand-400" />
           </a>
         </div>
@@ -42,7 +42,7 @@ export function HeroSection() {
 
         {/* Subtitle */}
         <p className="mt-6 text-center text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-          برنامج الاستوديو الذكي لتوزيع صور الجوازات والبطاقات الرسمية، تحسين جودة الوجوه، وإنشاء الكولاج بضغطة زر واحدة بدون تعقيدات الفوتوشوب.
+          برنامج الاستوديو الذكي لتوزيع صور الجوازات والبطاقات الرسمية، دعم ألوان CMYK، تحسين جودة الوجوه، وإنشاء الكولاج بضغطة زر واحدة بدون تعقيدات الفوتوشوب.
         </p>
 
         {/* CTAs */}
@@ -51,18 +51,21 @@ export function HeroSection() {
             href={GITHUB_RELEASE_DOWNLOAD_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="group w-full sm:w-auto flex items-center justify-center gap-2.5 bg-gradient-to-r from-brand-500 to-sky-500 hover:from-brand-400 hover:to-sky-400 text-white px-7 py-3.5 rounded-xl font-semibold shadow-lg shadow-brand-500/30 transition-all hover:shadow-brand-500/50 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
-            aria-label="تحميل نسخة الويندوز المجانية"
+            className="group w-full sm:w-auto flex items-center justify-center gap-2.5 bg-gradient-to-r from-brand-500 to-sky-500 hover:from-brand-400 hover:to-sky-400 text-white px-7 py-3.5 rounded-xl font-semibold shadow-lg shadow-brand-500/30 transition-all hover:shadow-brand-500/50 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer"
+            aria-label="تحميل ملف التثبيت (Setup Installer)"
           >
             <Download className="w-5 h-5 transition-transform group-hover:translate-y-0.5" />
-            <span>تحميل نسخة الويندوز المجانية</span>
+            <span>تحميل ملف التثبيت (Setup Installer)</span>
           </a>
           <a
-            href="#demo"
-            className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-7 py-3.5 rounded-xl font-medium backdrop-blur-sm transition-all hover:border-white/20"
+            href="/api/download?type=portable"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-7 py-3.5 rounded-xl font-medium backdrop-blur-sm transition-all hover:border-white/20 cursor-pointer"
+            aria-label="تحميل النسخة المحمولة (Portable EXE)"
           >
-            <Play className="w-4 h-4 text-brand-400 fill-brand-400" />
-            <span>استكشاف المميزات</span>
+            <Download className="w-4 h-4 text-sky-400" />
+            <span>نسخة محمولة (Portable EXE)</span>
           </a>
         </div>
 

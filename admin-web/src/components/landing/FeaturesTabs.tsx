@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Crop, LayoutGrid, Wand2, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Crop, LayoutGrid, Wand2, Printer, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 
-type TabId = 'id' | 'collage' | 'ai';
+type TabId = 'id' | 'collage' | 'ai' | 'cmyk';
 
 const TABS: { id: TabId; label: string; icon: typeof Crop; accent: string }[] = [
   { id: 'id', label: 'صور الهوية والرسميات', icon: Crop, accent: 'brand' },
   { id: 'collage', label: 'تصميم الكولاج والشبكات', icon: LayoutGrid, accent: 'sky' },
   { id: 'ai', label: 'ترميم الوجوه (AI)', icon: Wand2, accent: 'amber' },
+  { id: 'cmyk', label: 'ألوان المطابع (CMYK)', icon: Printer, accent: 'emerald' },
 ];
 
 const TAB_CONTENT: Record<
@@ -50,6 +51,19 @@ const TAB_CONTENT: Record<
       'يعالج النواقص والإضاءة الضعيفة في الصور القديمة أو الملتقطة بالهواتف، ويمنحك نتائج ناعمة ودقيقة مع الحفاظ التام على ملامح الشخصية الأصلية (Fidelity w=0.7).',
     points: ['معالجة مزدوجة Dual-Pipeline مخصصة للهوية', 'تحسين الإضاءة والظلال التلقائي (CLAHE)', 'الحفاظ على ملامح الوجه الأصلية دقيقة 100%'],
     pointColor: 'text-amber-400',
+  },
+  cmyk: {
+    badge: 'تصدير TIFF CMYK احترافي للمطابع التجارية',
+    badgeIcon: Printer,
+    title: 'دعم نمط الألوان CMYK والأسود الخالص (K=100%)',
+    description:
+      'تحويل دقيق لقنوات الألوان sRGB ➔ CMYK يضمن تطابق الألوان المطبوعة مع الشاشة، مع فرض الأسود الخالص على خطوط التقطيع لضمان أقصى حدة أثناء القص.',
+    points: [
+      'تحويل ألوان حقيقي (Cyan, Magenta, Yellow, Key)',
+      'تصدير بصيغة TIFF و JPEG للمطابع المباشرة',
+      'منع تلطخ وتداخل أحبار القص بفرض K=100%',
+    ],
+    pointColor: 'text-emerald-400',
   },
 };
 

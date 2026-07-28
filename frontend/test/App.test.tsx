@@ -23,6 +23,7 @@ vi.mock('../wailsjs/go/main/App', () => ({
   DeleteCustomTemplate: vi.fn(() => Promise.resolve()),
   ApplyMaskToImage: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
   EnhanceImageWithAI: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
+  OpenExportsFolder: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock Wails runtime functions

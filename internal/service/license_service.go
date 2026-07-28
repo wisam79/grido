@@ -124,6 +124,7 @@ var sharedClient = &http.Client{Timeout: 10 * time.Second}
 const maxResponseSize = 64 * 1024 // 64 KB limit for HTTP responses
 
 var ErrUnauthorized = errors.New("unauthorized")
+var ErrInvalidRefreshToken = errors.New("invalid refresh token")
 
 // Supabase Auth Payloads
 type SupabaseAuthRequest struct {
@@ -874,8 +875,17 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 
 	prof, err := s.fetchProfile(local.Token, local.ID)
 	if err != nil && errors.Is(err, ErrUnauthorized) {
-		if refreshErr := s.refreshTokenIfNeeded(local); refreshErr == nil {
+		refreshErr := s.refreshTokenIfNeeded(local)
+		if refreshErr == nil {
 			prof, err = s.fetchProfile(local.Token, local.ID)
+		} else if errors.Is(refreshErr, ErrInvalidRefreshToken) {
+			slog.Warn("Session refresh token revoked or invalid, clearing session", "error", refreshErr)
+			_ = s.repo.Clear()
+			return &domain.UserProfile{Plan: "free", Status: "none"}, nil
+		} else {
+			// Temporary network connection error upon waking from PC sleep -> retain cached local session
+			slog.Warn("Token refresh failed due to network/transient error, retaining cached session", "error", refreshErr)
+			return local, nil
 		}
 	}
 
@@ -888,17 +898,16 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 		if saveErr := s.repo.Save(local); saveErr != nil {
 			slog.Error("Failed to save updated license profile", "error", saveErr)
 		}
-	} else if errors.Is(err, ErrUnauthorized) {
-		_ = s.repo.Clear()
-		return &domain.UserProfile{Plan: "free", Status: "none"}, nil
+		return local, nil
 	}
 
+	// For network errors during fetchProfile, retain cached local session from disk
 	return local, nil
 }
 
 func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 	if local.RefreshToken == "" {
-		return errors.New("no refresh token available")
+		return ErrInvalidRefreshToken
 	}
 
 	payload, err := json.Marshal(map[string]string{
@@ -907,23 +916,42 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=refresh_token", bytes.NewBuffer(payload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("apikey", SupabaseAnonKey)
-	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := sharedClient.Do(req)
-	if err != nil {
-		return err
+	var resp *http.Response
+	var lastErr error
+
+	// Retry up to 3 times with backoff for network adapter recovery after PC sleep/idle
+	for attempt := 0; attempt < 3; attempt++ {
+		if attempt > 0 {
+			time.Sleep(time.Duration(attempt*500) * time.Millisecond)
+		}
+
+		req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=refresh_token", bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("apikey", SupabaseAnonKey)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, lastErr = sharedClient.Do(req)
+		if lastErr == nil {
+			break
+		}
+	}
+
+	if lastErr != nil {
+		return lastErr
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+		slog.Warn("Failed to refresh token", "status", resp.StatusCode, "body", string(body))
+
 		if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
 			local.RefreshToken = ""
 			_ = s.repo.Save(local)
+			return ErrInvalidRefreshToken
 		}
 		return fmt.Errorf("failed to refresh token: status %d", resp.StatusCode)
 	}
@@ -931,6 +959,10 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 	var authRes SupabaseAuthResponse
 	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseSize)).Decode(&authRes); err != nil {
 		return err
+	}
+
+	if authRes.AccessToken == "" {
+		return errors.New("empty access token in refresh response")
 	}
 
 	local.Token = authRes.AccessToken
