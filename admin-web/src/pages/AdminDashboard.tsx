@@ -385,7 +385,7 @@ export default function AdminDashboard() {
 
   if (checkingSession) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-800/50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
       </div>
     );
@@ -485,9 +485,9 @@ export default function AdminDashboard() {
 
   // 📊 Dashboard View
   return (
-    <div className="min-h-screen flex flex-col md:flex-row" dir="rtl">
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-950" dir="rtl">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-slate-900 text-slate-200 flex flex-col shrink-0 border-l border-slate-800">
+      <aside className="w-full md:w-64 bg-slate-900 text-slate-200 flex flex-col shrink-0 border-l border-slate-700/50">
         <div className="p-6 border-b border-slate-800 flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-lg shadow-md shadow-blue-500/10">
@@ -571,17 +571,17 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-y-auto space-y-6">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-extrabold text-slate-800">
+              <h2 className="text-lg font-extrabold text-slate-100">
                 {activeTab === 'users' && 'إدارة المشتركين والحسابات'}
                 {activeTab === 'keys' && 'إدارة وتوليد مفاتيح الترخيص'}
                 {activeTab === 'usage' && 'سجل وتدقيق استهلاك الذكاء الاصطناعي على السيرفر (AI Audit & Cost Log)'}
                 {activeTab === 'stats' && 'إحصائيات وقراءات خادم الترخيص'}
               </h2>
               <div className="relative group">
-                <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-pointer" />
+                <Info className="w-4 h-4 text-slate-400 hover:text-slate-400 cursor-pointer" />
                 <div className="absolute right-0 top-6 hidden group-hover:block w-72 bg-slate-800 text-white text-[10px] p-2.5 rounded-lg shadow-lg z-50 leading-relaxed text-right font-normal">
                   تقوم هذه اللوحة بالتواصل المباشر والمؤمن مع قاعدة بيانات Supabase سحابياً. يتم التحقق من صحة الجلسة باستخدام بروتوكولات الأمان. التعديل هنا ينعكس فوراً وتلقائياً على أجهزة العملاء المشغلين لتطبيق سطح المكتب دون الحاجة لتحديث البرنامج.
                 </div>
@@ -598,7 +598,7 @@ export default function AdminDashboard() {
             {activeTab === 'users' && (
               <button
                 onClick={handleExportCSV}
-                className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer text-slate-700"
+                className="px-3 py-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800/50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer text-slate-300"
                 title="تصدير القائمة الحالية لملف CSV"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -608,7 +608,7 @@ export default function AdminDashboard() {
             <button
               onClick={loadDashboardData}
               disabled={loading}
-              className="px-3.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800/50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span>تحديث البيانات</span>
@@ -629,7 +629,7 @@ export default function AdminDashboard() {
                   placeholder="ابحث بالاسم، البريد الإلكتروني أو الترخيص..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pr-9 pl-4 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full pr-9 pl-4 py-2 border border-slate-800 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-900"
                 />
               </div>
 
@@ -637,7 +637,7 @@ export default function AdminDashboard() {
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value as any)}
-                className="py-2 px-3 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none cursor-pointer text-slate-700 font-semibold"
+                className="py-2 px-3 border border-slate-800 rounded-lg text-xs bg-slate-900 focus:outline-none cursor-pointer text-slate-300 font-semibold"
               >
                 <option value="all">كل الاشتراكات</option>
                 <option value="pro">باقات PRO / المدفوعة</option>
@@ -650,7 +650,7 @@ export default function AdminDashboard() {
               <select
                 value={sortOption}
                 onChange={e => setSortOption(e.target.value as any)}
-                className="py-2 px-3 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none cursor-pointer text-slate-700 font-semibold"
+                className="py-2 px-3 border border-slate-800 rounded-lg text-xs bg-slate-900 focus:outline-none cursor-pointer text-slate-300 font-semibold"
               >
                 <option value="newest">الأحدث تسجيلاً</option>
                 <option value="oldest">الأقدم تسجيلاً</option>
@@ -658,11 +658,11 @@ export default function AdminDashboard() {
               </select>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xs">
               <div className="overflow-x-auto text-right text-xs">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100 text-[10px] text-slate-500 font-bold">
+                    <tr className="bg-slate-800/50 border-b border-slate-800/50 text-[10px] text-slate-500 font-bold">
                       <th className="p-3">المشترك</th>
                       <th className="p-3">نوع الباقة</th>
                       <th className="p-3">تاريخ انتهاء الصلاحية</th>
@@ -679,29 +679,29 @@ export default function AdminDashboard() {
                       </tr>
                     ) : (
                       filteredUsers.map(u => (
-                        <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                        <tr key={u.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                           <td className="p-3">
-                            <div className="font-bold text-slate-800">{u.name || 'مستخدم غير معروف'}</div>
-                            <div className="text-[10px] text-slate-505 font-mono mt-0.5 flex items-center gap-1">
+                            <div className="font-bold text-slate-100">{u.name || 'مستخدم غير معروف'}</div>
+                            <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-1">
                               <Mail className="w-3 h-3 text-slate-400" />
                               {u.email}
                             </div>
                           </td>
                           <td className="p-3">
                             {u.plan === 'pro' && (
-                              <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded-full font-bold text-[9px]">PRO احترافي</span>
+                              <span className="bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">PRO احترافي</span>
                             )}
                             {u.plan === 'enterprise' && (
-                              <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full font-bold text-[9px]">Enterprise مؤسسات</span>
+                              <span className="bg-indigo-950/60 text-indigo-400 border border-indigo-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">Enterprise مؤسسات</span>
                             )}
                             {u.plan === 'trial' && (
-                              <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full font-bold text-[9px]">تجريبي (Trial)</span>
+                              <span className="bg-amber-950/60 text-amber-400 border border-amber-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">تجريبي (Trial)</span>
                             )}
                             {u.plan !== 'pro' && u.plan !== 'enterprise' && u.plan !== 'trial' && (
-                              <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full font-bold text-[9px]">مجاني (Free)</span>
+<span className="bg-slate-700 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-bold text-[9px]">مجاني (Free)</span>
                             )}
                           </td>
-                          <td className="p-3 font-mono text-[11px] text-slate-600">
+                          <td className="p-3 font-mono text-[11px] text-slate-400">
                             {u.expires_at ? (
                               <span className="flex items-center gap-1">
                                 <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -713,7 +713,7 @@ export default function AdminDashboard() {
                           </td>
                           <td className="p-3">
                             {u.license_key ? (
-                              <code className="bg-slate-100 text-indigo-600 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] select-all">
+                              <code className="bg-slate-800 text-indigo-600 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] select-all">
                                 {u.license_key}
                               </code>
                             ) : (
@@ -724,21 +724,21 @@ export default function AdminDashboard() {
                             <div className="inline-flex items-center gap-1.5 justify-center">
                               <button
                                 onClick={() => setSelectedUser(u)}
-                                className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                                className="p-1.5 bg-slate-800/50 hover:bg-slate-800 text-slate-500 hover:text-slate-300 rounded-lg border border-slate-800 transition-colors cursor-pointer"
                                 title="عرض التفاصيل الكاملة"
                               >
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleExtendLicense(u.id, 1)}
-                                className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-400 rounded-lg transition-colors cursor-pointer"
                                 title="تمديد +1 شهر"
                               >
                                 <CalendarPlus className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleExtendLicense(u.id, 12)}
-                                className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-400 rounded-lg transition-colors cursor-pointer"
                                 title="تمديد +1 سنة"
                               >
                                 <CalendarDays className="w-3.5 h-3.5" />
@@ -746,7 +746,7 @@ export default function AdminDashboard() {
                               {(u.plan === 'pro' || u.plan === 'enterprise') && (
                                 <button
                                   onClick={() => handleRevokeLicense(u.id)}
-                                  className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1.5 bg-red-950/60 hover:bg-red-900/60 text-red-400 rounded-lg transition-colors cursor-pointer"
                                   title="إلغاء الترخيص وإرجاعه للمجاني"
                                 >
                                   <UserMinus className="w-3.5 h-3.5" />
@@ -769,20 +769,20 @@ export default function AdminDashboard() {
           <section className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Key generator form */}
-              <form onSubmit={handleGenerateKey} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4 text-right">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <form onSubmit={handleGenerateKey} className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 text-right">
+                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-indigo-600" />
                   توليد مفتاح ترخيص Pro جديد
                 </h3>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">نوع الباقة</label>
+                  <label className="text-xs font-semibold text-slate-300">نوع الباقة</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setGenPlan('pro')}
                       className={`py-2 text-xs font-bold rounded-lg border-2 transition-all cursor-pointer ${
-                        genPlan === 'pro' ? 'border-indigo-600 bg-indigo-55 text-indigo-600' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        genPlan === 'pro' ? 'border-indigo-600 bg-indigo-55 text-indigo-600' : 'border-slate-800 hover:bg-slate-800/50 text-slate-400'
                       }`}
                     >
                       PRO احترافي
@@ -791,7 +791,7 @@ export default function AdminDashboard() {
                       type="button"
                       onClick={() => setGenPlan('enterprise')}
                       className={`py-2 text-xs font-bold rounded-lg border-2 transition-all cursor-pointer ${
-                        genPlan === 'enterprise' ? 'border-indigo-600 bg-indigo-55 text-indigo-600' : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        genPlan === 'enterprise' ? 'border-indigo-600 bg-indigo-55 text-indigo-600' : 'border-slate-800 hover:bg-slate-800/50 text-slate-400'
                       }`}
                     >
                       Enterprise للمؤسسات
@@ -800,11 +800,11 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">مدة الصلاحية</label>
+                  <label className="text-xs font-semibold text-slate-300">مدة الصلاحية</label>
                   <select
                     value={genDuration}
                     onChange={e => setGenDuration(e.target.value)}
-                    className="w-full py-2 border border-slate-200 rounded-lg text-xs bg-white px-2 focus:outline-none"
+                    className="w-full py-2 border border-slate-800 rounded-lg text-xs bg-slate-900 px-2 focus:outline-none"
                   >
                     <option value="1">1 شهر (30 يوم)</option>
                     <option value="3">3 أشهر (90 يوم)</option>
@@ -824,22 +824,22 @@ export default function AdminDashboard() {
               </form>
 
               {/* Display generated key */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-center items-center text-center space-y-4">
-                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-center items-center text-center space-y-4">
+                <div className="p-3 bg-indigo-950/60 text-indigo-400 rounded-full border border-indigo-800/50">
                   <Key className="w-8 h-8" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-800">مفتاح الترخيص المولد سحابياً</h4>
+                  <h4 className="text-xs font-bold text-slate-100">مفتاح الترخيص المولد سحابياً</h4>
                   <p className="text-[10px] text-slate-500 mt-1">انسخ الكود وأرسله للعميل لتفعيل اشتراكه على أي جهاز</p>
                 </div>
 
                 {generatedKey ? (
                   <div className="w-full space-y-2.5">
-                    <div className="w-full bg-slate-50 border border-slate-200 p-3 rounded-lg flex items-center justify-between font-mono font-bold text-sm tracking-wide text-indigo-600 select-all">
+                    <div className="w-full bg-slate-800/50 border border-slate-800 p-3 rounded-lg flex items-center justify-between font-mono font-bold text-sm tracking-wide text-indigo-600 select-all">
                       <span>{generatedKey}</span>
                       <button
                         onClick={handleCopyKey}
-                        className="p-1 hover:bg-slate-200 rounded-md text-slate-500 transition-colors cursor-pointer"
+                        className="p-1 hover:bg-slate-700 rounded-md text-slate-500 transition-colors cursor-pointer"
                         title="نسخ"
                       >
                         <Copy className="w-4 h-4" />
@@ -847,7 +847,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full h-14 bg-slate-50/40 border border-dashed border-slate-200 rounded-lg flex items-center justify-center text-xs text-slate-400">
+                  <div className="w-full h-14 bg-slate-800/30 border border-dashed border-slate-800 rounded-lg flex items-center justify-center text-xs text-slate-400">
                     سيظهر المفتاح هنا بعد التوليد
                   </div>
                 )}
@@ -857,7 +857,7 @@ export default function AdminDashboard() {
             {/* List of keys */}
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
-                <h3 className="text-xs font-bold text-slate-800">سجل مفاتيح التراخيص المولدة</h3>
+                <h3 className="text-xs font-bold text-slate-100">سجل مفاتيح التراخيص المولدة</h3>
                 
                 <div className="flex items-center gap-2">
                   <div className="relative max-w-xs">
@@ -867,14 +867,14 @@ export default function AdminDashboard() {
                       placeholder="ابحث عن مفتاح..."
                       value={keySearchQuery}
                       onChange={e => setKeySearchQuery(e.target.value)}
-                      className="pr-7 pl-3 py-1 border border-slate-200 rounded-lg text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white w-40"
+                      className="pr-7 pl-3 py-1 border border-slate-800 rounded-lg text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-900 w-40"
                     />
                   </div>
 
                   <select
                     value={keyStatusFilter}
                     onChange={e => setKeyStatusFilter(e.target.value as any)}
-                    className="py-1 px-2 border border-slate-200 rounded-lg text-[10px] bg-white focus:outline-none cursor-pointer text-slate-600 font-semibold"
+                    className="py-1 px-2 border border-slate-800 rounded-lg text-[10px] bg-slate-900 focus:outline-none cursor-pointer text-slate-400 font-semibold"
                   >
                     <option value="all">كل الحالات</option>
                     <option value="unused">غير مستخدم</option>
@@ -884,11 +884,11 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto text-right text-xs">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-100 text-[10px] text-slate-500 font-bold">
+                      <tr className="bg-slate-800/50 border-b border-slate-800/50 text-[10px] text-slate-500 font-bold">
                         <th className="p-3">مفتاح الترخيص</th>
                         <th className="p-3">نوع الباقة</th>
                         <th className="p-3">مدة الصلاحية</th>
@@ -905,27 +905,27 @@ export default function AdminDashboard() {
                         </tr>
                       ) : (
                         filteredKeys.map(k => (
-                          <tr key={k.key} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                          <tr key={k.key} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                             <td className="p-3">
-                              <code className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono font-bold select-all">{k.key}</code>
+                              <code className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono font-bold select-all">{k.key}</code>
                             </td>
                             <td className="p-3">
                               <span className={`font-bold ${k.plan === 'pro' ? 'text-emerald-600' : 'text-indigo-600'}`}>
                                 {k.plan.toUpperCase()}
                               </span>
                             </td>
-                            <td className="p-3 font-semibold text-slate-600">
+                            <td className="p-3 font-semibold text-slate-400">
                               {k.duration_months === 120 ? 'مدى الحياة' : `${k.duration_months} شهر`}
                             </td>
                             <td className="p-3">
                               {k.status === 'unused' && (
-                                <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-sm font-semibold text-[9px]">غير مستخدم</span>
+                                <span className="bg-blue-950/60 text-blue-400 px-1.5 py-0.5 rounded-sm font-semibold text-[9px]">غير مستخدم</span>
                               )}
                               {k.status === 'used' && (
-                                <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-sm font-semibold text-[9px]">تم تفعيله</span>
+                                <span className="bg-emerald-950/60 text-emerald-400 px-1.5 py-0.5 rounded-sm font-semibold text-[9px]">تم تفعيله</span>
                               )}
                               {k.status !== 'unused' && k.status !== 'used' && (
-                                <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded-sm font-semibold text-[9px]">ملغي</span>
+                                <span className="bg-red-950/60 text-red-400 px-1.5 py-0.5 rounded-sm font-semibold text-[9px]">ملغي</span>
                               )}
                             </td>
                             <td className="p-3 text-slate-500 font-mono text-[10px]">
@@ -952,43 +952,43 @@ export default function AdminDashboard() {
                   <DollarSign className="w-4 h-4" />
                   <span>إجمالي تكلفة الاستهلاك ($)</span>
                 </div>
-                <div className="text-xl font-extrabold font-mono text-slate-800">$0.005118</div>
+                <div className="text-xl font-extrabold font-mono text-slate-100">$0.005118</div>
                 <div className="text-[10px] text-slate-400">تكلفة الـ GPU على سيرفر A10G</div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-right space-y-1 shadow-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1 shadow-xs">
                 <div className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs">
                   <Activity className="w-4 h-4" />
                   <span>عدد الطلبات المعالجة</span>
                 </div>
-                <div className="text-xl font-extrabold font-mono text-slate-800">14 طلب</div>
+                <div className="text-xl font-extrabold font-mono text-slate-100">14 طلب</div>
                 <div className="text-[10px] text-slate-400">عمليات معالجة ناجحة 100%</div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-right space-y-1 shadow-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1 shadow-xs">
                 <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs">
                   <Cpu className="w-4 h-4" />
                   <span>متوسط زمن الطلب</span>
                 </div>
-                <div className="text-xl font-extrabold font-mono text-slate-800">2.35 ثانية</div>
+                <div className="text-xl font-extrabold font-mono text-slate-100">2.35 ثانية</div>
                 <div className="text-[10px] text-slate-400">استجابة سريعة جداً</div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-right space-y-1 shadow-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1 shadow-xs">
                 <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs">
                   <UserCheck className="w-4 h-4" />
                   <span>الحسابات المستهلكة</span>
                 </div>
-                <div className="text-xl font-extrabold font-mono text-slate-800">4 حسابات</div>
+                <div className="text-xl font-extrabold font-mono text-slate-100">4 حسابات</div>
                 <div className="text-[10px] text-slate-400">مستخدمي الذكاء الاصطناعي</div>
               </div>
             </div>
 
             {/* Audit Log Table */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-              <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-slate-50/50">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-xs overflow-hidden">
+              <div className="p-4 border-b border-slate-800/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-slate-800/30">
                 <div>
-                  <h3 className="font-extrabold text-xs text-slate-800">سجل تدقيق الطلبات الفوري (Live AI Audit Log)</h3>
+                  <h3 className="font-extrabold text-xs text-slate-100">سجل تدقيق الطلبات الفوري (Live AI Audit Log)</h3>
                   <p className="text-[10px] text-slate-400 mt-0.5">يتتبع كل طلب معالجة يُنفذ من أي حساب ومصدره وتكلفته بالسنتات</p>
                 </div>
               </div>
@@ -996,7 +996,7 @@ export default function AdminDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-right border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-extrabold text-slate-500 uppercase">
+                    <tr className="bg-slate-800/50 border-b border-slate-800/50 text-[10px] font-extrabold text-slate-500 uppercase">
                       <th className="p-3.5">بريد الحساب المستهلك</th>
                       <th className="p-3.5">نوع الخدمة والنموذج</th>
                       <th className="p-3.5">منصة المصدر</th>
@@ -1005,40 +1005,40 @@ export default function AdminDashboard() {
                       <th className="p-3.5 text-center">التاريخ والتوقيت</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
-                    <tr className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3.5 font-bold font-mono text-slate-800">wisamsamir78@gmail.com</td>
+                  <tbody className="divide-y divide-slate-800/50 font-medium">
+                    <tr className="hover:bg-slate-800/30 transition-colors">
+                      <td className="p-3.5 font-bold font-mono text-slate-100">wisamsamir78@gmail.com</td>
                       <td className="p-3.5">
-                        <span className="bg-violet-50 text-violet-600 border border-violet-100 px-2 py-0.5 rounded font-bold text-[10px]">
+                        <span className="bg-violet-950/60 text-violet-400 border border-violet-800/50 px-2 py-0.5 rounded font-bold text-[10px]">
                           ترميم الوجوه (GFPGAN v1.4)
                         </span>
                       </td>
                       <td className="p-3.5 text-slate-500 text-[11px]">Grido Studio Desktop (Windows)</td>
-                      <td className="p-3.5 text-center font-mono font-bold text-slate-700">2.35ث</td>
+                      <td className="p-3.5 text-center font-mono font-bold text-slate-300">2.35ث</td>
                       <td className="p-3.5 text-left font-mono font-extrabold text-violet-600">$0.001329</td>
                       <td className="p-3.5 text-center font-mono text-slate-400 text-[10px]">2026-07-19 19:55:12</td>
                     </tr>
-                    <tr className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3.5 font-bold font-mono text-slate-800">wisamsamir78@gmail.com</td>
+                    <tr className="hover:bg-slate-800/30 transition-colors">
+                      <td className="p-3.5 font-bold font-mono text-slate-100">wisamsamir78@gmail.com</td>
                       <td className="p-3.5">
-                        <span className="bg-violet-50 text-violet-600 border border-violet-100 px-2 py-0.5 rounded font-bold text-[10px]">
+                        <span className="bg-violet-950/60 text-violet-400 border border-violet-800/50 px-2 py-0.5 rounded font-bold text-[10px]">
                           ترميم الوجوه (GFPGAN v1.4)
                         </span>
                       </td>
                       <td className="p-3.5 text-slate-500 text-[11px]">Grido Studio Desktop (Windows)</td>
-                      <td className="p-3.5 text-center font-mono font-bold text-slate-700">2.10ث</td>
+                      <td className="p-3.5 text-center font-mono font-bold text-slate-300">2.10ث</td>
                       <td className="p-3.5 text-left font-mono font-extrabold text-violet-600">$0.001252</td>
                       <td className="p-3.5 text-center font-mono text-slate-400 text-[10px]">2026-07-19 19:42:08</td>
                     </tr>
-                    <tr className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3.5 font-bold font-mono text-slate-800">studio_account_02@grido.app</td>
+                    <tr className="hover:bg-slate-800/30 transition-colors">
+                      <td className="p-3.5 font-bold font-mono text-slate-100">studio_account_02@grido.app</td>
                       <td className="p-3.5">
-                        <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded font-bold text-[10px]">
+                        <span className="bg-indigo-950/60 text-indigo-400 border border-indigo-800/50 px-2 py-0.5 rounded font-bold text-[10px]">
                           عزل الخلفية الذكي (Background Removal)
                         </span>
                       </td>
                       <td className="p-3.5 text-slate-500 text-[11px]">Grido Studio Desktop (Windows)</td>
-                      <td className="p-3.5 text-center font-mono font-bold text-slate-700">1.80ث</td>
+                      <td className="p-3.5 text-center font-mono font-bold text-slate-300">1.80ث</td>
                       <td className="p-3.5 text-left font-mono font-extrabold text-indigo-600">$0.000550</td>
                       <td className="p-3.5 text-center font-mono text-slate-400 text-[10px]">2026-07-19 18:30:15</td>
                     </tr>
@@ -1053,40 +1053,40 @@ export default function AdminDashboard() {
         {activeTab === 'stats' && (
           <section className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
                 <Users className="w-5 h-5 text-indigo-600" />
                 <div className="text-[10px] text-slate-500 font-semibold">إجمالي المسجلين</div>
-                <div className="text-xl font-bold font-mono text-slate-800">{totalUsers}</div>
+                <div className="text-xl font-bold font-mono text-slate-100">{totalUsers}</div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
                 <UserCheck className="w-5 h-5 text-emerald-500" />
                 <div className="text-[10px] text-slate-500 font-semibold">تراخيص Pro مفعّلة</div>
-                <div className="text-xl font-bold font-mono text-slate-800">{activePro}</div>
+                <div className="text-xl font-bold font-mono text-slate-100">{activePro}</div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
                 <Clock className="w-5 h-5 text-amber-500" />
                 <div className="text-[10px] text-slate-500 font-semibold">أعضاء النسخ التجريبية</div>
-                <div className="text-xl font-bold font-mono text-slate-800">{activeTrial}</div>
+                <div className="text-xl font-bold font-mono text-slate-100">{activeTrial}</div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
                 <ShieldAlert className="w-5 h-5 text-red-500" />
                 <div className="text-[10px] text-slate-500 font-semibold">اشتراكات منتهية الصلاحية</div>
-                <div className="text-xl font-bold font-mono text-slate-800">{expiredUsers}</div>
+                <div className="text-xl font-bold font-mono text-slate-100">{expiredUsers}</div>
               </div>
             </div>
 
             {/* 📊 Visual Breakdown Cards */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 text-right space-y-5 shadow-xs">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-right space-y-5 shadow-xs">
               <div>
-                <h3 className="text-xs font-extrabold text-slate-800">توزيع خطط المشتركين ونسب الاشتراك</h3>
+                <h3 className="text-xs font-extrabold text-slate-100">توزيع خطط المشتركين ونسب الاشتراك</h3>
                 <p className="text-[10px] text-slate-400 mt-1">توزيع نسبي لحسابات العملاء النشطة والتجريبية والمجانية</p>
               </div>
 
               {/* Progress Segmented Bar */}
-              <div className="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex flex-row-reverse">
+              <div className="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden flex flex-row-reverse">
                 <div style={{ width: `${proPct}%` }} className="bg-emerald-500 transition-all" title={`PRO: ${proPct}%`} />
                 <div style={{ width: `${entPct}%` }} className="bg-indigo-500 transition-all" title={`Enterprise: ${entPct}%`} />
                 <div style={{ width: `${trialPct}%` }} className="bg-amber-500 transition-all" title={`Trial: ${trialPct}%`} />
@@ -1100,7 +1100,7 @@ export default function AdminDashboard() {
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
                     <span>خطة PRO احترافية</span>
                   </div>
-                  <div className="text-sm font-bold text-slate-800 font-mono pr-4">
+                  <div className="text-sm font-bold text-slate-100 font-mono pr-4">
                     {proCount} <span className="text-[10px] text-slate-400 font-normal">({proPct}%)</span>
                   </div>
                 </div>
@@ -1110,7 +1110,7 @@ export default function AdminDashboard() {
                     <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
                     <span>خطة المؤسسات</span>
                   </div>
-                  <div className="text-sm font-bold text-slate-800 font-mono pr-4">
+                  <div className="text-sm font-bold text-slate-100 font-mono pr-4">
                     {entCount} <span className="text-[10px] text-slate-400 font-normal">({entPct}%)</span>
                   </div>
                 </div>
@@ -1120,7 +1120,7 @@ export default function AdminDashboard() {
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
                     <span>فترة تجريبية</span>
                   </div>
-                  <div className="text-sm font-bold text-slate-800 font-mono pr-4">
+                  <div className="text-sm font-bold text-slate-100 font-mono pr-4">
                     {trialCount} <span className="text-[10px] text-slate-400 font-normal">({trialPct}%)</span>
                   </div>
                 </div>
@@ -1130,7 +1130,7 @@ export default function AdminDashboard() {
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block" />
                     <span>خطة مجانية</span>
                   </div>
-                  <div className="text-sm font-bold text-slate-800 font-mono pr-4">
+                  <div className="text-sm font-bold text-slate-100 font-mono pr-4">
                     {freeCount} <span className="text-[10px] text-slate-400 font-normal">({freePct}%)</span>
                   </div>
                 </div>
@@ -1141,21 +1141,21 @@ export default function AdminDashboard() {
         {/* 👤 Subscriber Details Modal */}
         {selectedUser && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50" dir="rtl">
-            <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden text-right flex flex-col max-h-[90vh]">
+            <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-right flex flex-col max-h-[90vh]">
               {/* Header */}
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div className="p-4 border-b border-slate-800/50 flex items-center justify-between bg-slate-800/50">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                  <div className="p-1.5 bg-indigo-950/60 text-indigo-400 rounded-lg">
                     <Users className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-xs text-slate-800">تفاصيل حساب المشترك</h3>
+                    <h3 className="font-extrabold text-xs text-slate-100">تفاصيل حساب المشترك</h3>
                     <p className="text-[9px] text-slate-400 font-mono mt-0.5">{selectedUser.id}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedUser(null)}
-                  className="p-1 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                  className="p-1 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-400 transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1164,44 +1164,44 @@ export default function AdminDashboard() {
               {/* Body */}
               <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
                 {/* Profile Card */}
-                <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl space-y-3">
+                <div className="bg-slate-800/50 border border-slate-800/50 p-4 rounded-xl space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 font-bold text-[10px]">الاسم الكامل</span>
-                    <span className="font-bold text-slate-800 text-sm">{selectedUser.name || 'غير معروف'}</span>
+                    <span className="font-bold text-slate-100 text-sm">{selectedUser.name || 'غير معروف'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 font-bold text-[10px]">البريد الإلكتروني</span>
-                    <span className="font-mono text-slate-700 select-all">{selectedUser.email}</span>
+                    <span className="font-mono text-slate-300 select-all">{selectedUser.email}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 font-bold text-[10px]">الباقة الحالية</span>
                     <span>
                       {selectedUser.plan === 'pro' && (
-                        <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded-full font-bold text-[9px]">PRO احترافي</span>
+                        <span className="bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">PRO احترافي</span>
                       )}
                       {selectedUser.plan === 'enterprise' && (
-                        <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full font-bold text-[9px]">Enterprise مؤسسات</span>
+                        <span className="bg-indigo-950/60 text-indigo-400 border border-indigo-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">Enterprise مؤسسات</span>
                       )}
                       {selectedUser.plan === 'trial' && (
-                        <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full font-bold text-[9px]">تجريبي (Trial)</span>
+                        <span className="bg-amber-950/60 text-amber-400 border border-amber-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">تجريبي (Trial)</span>
                       )}
                       {selectedUser.plan !== 'pro' && selectedUser.plan !== 'enterprise' && selectedUser.plan !== 'trial' && (
-                        <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full font-bold text-[9px]">مجاني (Free)</span>
+                        <span className="bg-slate-800 text-slate-400 border border-slate-800 px-2 py-0.5 rounded-full font-bold text-[9px]">مجاني (Free)</span>
                       )}
                     </span>
                   </div>
                 </div>
 
                 {/* License Card */}
-                <div className="border border-slate-200 p-4 rounded-xl space-y-3">
-                  <h4 className="font-bold text-slate-800 border-b border-slate-100 pb-1.5 text-[11px] flex items-center gap-1.5 text-slate-500">
+                <div className="border border-slate-800 p-4 rounded-xl space-y-3">
+                  <h4 className="font-bold text-slate-100 border-b border-slate-800/50 pb-1.5 text-[11px] flex items-center gap-1.5 text-slate-400">
                     <Key className="w-3.5 h-3.5" />
                     بيانات الترخيص والتفعيل
                   </h4>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 font-bold text-[10px]">كود الترخيص النشط</span>
                     {selectedUser.license_key ? (
-                      <code className="bg-slate-100 text-indigo-600 px-2 py-0.5 rounded font-mono font-bold select-all text-[10px]">
+                      <code className="bg-slate-800 text-indigo-400 px-2 py-0.5 rounded font-mono font-bold select-all text-[10px]">
                         {selectedUser.license_key}
                       </code>
                     ) : (
@@ -1210,7 +1210,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 font-bold text-[10px]">تاريخ انتهاء الترخيص</span>
-                    <span className="font-mono text-slate-700">
+                    <span className="font-mono text-slate-300">
                       {selectedUser.expires_at ? new Date(selectedUser.expires_at).toLocaleString('ar-SA') : '—'}
                     </span>
                   </div>
@@ -1218,9 +1218,9 @@ export default function AdminDashboard() {
                     <span className="text-slate-400 font-bold text-[10px]">حالة الترخيص السحابية</span>
                     <span>
                       {selectedUser.status === 'active' ? (
-                        <span className="text-emerald-600 font-bold">● نشط ومفعّل</span>
+                        <span className="text-emerald-400 font-bold">● نشط ومفعّل</span>
                       ) : selectedUser.status === 'expired' ? (
-                        <span className="text-red-500 font-bold">● منتهي الصلاحية</span>
+                        <span className="text-red-400 font-bold">● منتهي الصلاحية</span>
                       ) : (
                         <span className="text-slate-400">● لا يوجد ترخيص</span>
                       )}
@@ -1229,21 +1229,21 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Metadata Card */}
-                <div className="border border-slate-100 p-4 rounded-xl space-y-3 bg-slate-50/50">
-                  <h4 className="font-bold text-slate-800 border-b border-slate-100 pb-1.5 text-[11px] flex items-center gap-1.5 text-slate-500">
+                <div className="border border-slate-800/50 p-4 rounded-xl space-y-3 bg-slate-800/30">
+                  <h4 className="font-bold text-slate-100 border-b border-slate-800/50 pb-1.5 text-[11px] flex items-center gap-1.5 text-slate-400">
                     <Calendar className="w-3.5 h-3.5" />
                     تواريخ النظام
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-[10px]">
                     <div>
                       <span className="block text-slate-400 font-bold">تاريخ التسجيل</span>
-                      <span className="font-mono text-slate-700 block mt-1">
+                      <span className="font-mono text-slate-300 block mt-1">
                         {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleString('ar-SA') : '—'}
                       </span>
                     </div>
                     <div>
                       <span className="block text-slate-400 font-bold">آخر تحديث للبيانات</span>
-                      <span className="font-mono text-slate-700 block mt-1">
+                      <span className="font-mono text-slate-300 block mt-1">
                         {selectedUser.updated_at ? new Date(selectedUser.updated_at).toLocaleString('ar-SA') : '—'}
                       </span>
                     </div>
@@ -1252,7 +1252,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Actions Footer */}
-              <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+              <div className="p-4 border-t border-slate-800/50 bg-slate-800/50 flex justify-between items-center">
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => {
@@ -1286,7 +1286,7 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   onClick={() => setSelectedUser(null)}
-                  className="px-3.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-[10px] font-bold cursor-pointer transition-colors text-slate-600"
+                  className="px-3.5 py-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800/50 rounded-lg text-[10px] font-bold cursor-pointer transition-colors text-slate-400"
                 >
                   إغلاق
                 </button>
