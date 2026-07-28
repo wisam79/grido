@@ -1,24 +1,35 @@
 import { useEffect, useState } from 'react';
-import { Download, Menu, X } from 'lucide-react';
+import { Download, Menu, X, Sparkles } from 'lucide-react';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const NAV_LINKS = [
   { href: '#features', label: 'المميزات' },
-  { href: '#demo', label: 'معاينة الأداء' },
+  { href: '#demo', label: 'مقارنة الأداء' },
   { href: '#benefits', label: 'لماذا Grido' },
   { href: '#faq', label: 'الأسئلة الشائعة' },
 ];
 
-function Logo() {
+function AnimatedLogo() {
   return (
-    <a href="#top" className="flex items-center gap-3 group">
-      <div className="relative w-10 h-10 overflow-hidden rounded-xl shadow-lg transition-transform duration-300 group-hover:scale-105">
-        <img src="/favicon.png" alt="Grido Logo" className="w-full h-full object-cover" />
+    <a href="#top" className="flex items-center gap-3 group select-none relative">
+      {/* Clean Official Logo Image without any glow or drop shadow */}
+      <div className="relative w-9 h-9 flex items-center justify-center">
+        <img
+          src="/favicon.png"
+          alt="Grido Logo"
+          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+        />
       </div>
+
       <div className="flex flex-col leading-none">
-        <span className="text-lg font-extrabold tracking-tight">Grido Studio</span>
-        <span className="mt-0.5 text-[10px] font-medium tracking-[0.2em] text-brand-400 uppercase">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xl font-bold font-display text-white tracking-tight group-hover:text-brand-300 transition-colors">
+            Grido Studio
+          </span>
+          <Sparkles className="w-3.5 h-3.5 text-cyan-400/80" />
+        </div>
+        <span className="mt-1 text-[9px] font-semibold text-brand-400">
           استوديو الصور الذكي
         </span>
       </div>
@@ -41,41 +52,44 @@ export function Header() {
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'border-b border-white/10 bg-ink-950/80 backdrop-blur-lg'
-          : 'border-b border-transparent bg-transparent'
+          ? 'bg-[#0b1120]/90 backdrop-blur-md shadow-lg shadow-black/40 border-b border-white/10'
+          : 'bg-transparent border-b border-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-5 sm:px-6">
-        <div className="h-16 sm:h-20 flex items-center justify-between">
-          <Logo />
+        <div className="h-20 flex items-center justify-between">
+          <AnimatedLogo />
 
-          <nav className="hidden md:flex items-center gap-1">
+          {/* Clean nav links with hover indicator line */}
+          <nav className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="px-4 py-2 text-sm font-medium text-neutral-300 rounded-lg hover:text-white hover:bg-white/5 transition-colors"
+                className="text-sm font-semibold text-neutral-300 hover:text-cyan-300 transition-colors relative py-1 group/link"
               >
-                {link.label}
+                <span>{link.label}</span>
+                <span className="absolute bottom-0 inset-x-0 h-0.5 bg-gradient-to-r from-brand-500 to-cyan-400 scale-x-0 group-hover/link:scale-x-100 transition-transform origin-right" />
               </a>
             ))}
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* Clean download button */}
             <a
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-ink-950 text-sm font-semibold shadow-lg shadow-black/20 transition-all hover:bg-neutral-100 hover:shadow-brand-500/20 active:scale-95"
-              aria-label="تحميل البرنامج للويندوز"
+              className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-sm font-bold font-display shadow-lg shadow-brand-500/30 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer relative overflow-hidden group/btn"
+              aria-label="تحميل البرنامج"
             >
-              <Download className="w-4 h-4" />
-              <span>تحميل البرنامج</span>
+              <Download className="w-4 h-4 text-white relative z-10" />
+              <span className="relative z-10">تحميل البرنامج</span>
             </a>
 
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white"
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-[#121826] text-white"
               aria-label="القائمة"
               aria-expanded={menuOpen}
             >
@@ -93,7 +107,7 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="px-4 py-3 text-sm font-medium text-neutral-200 rounded-lg hover:bg-white/5 transition-colors"
+                  className="px-4 py-3 text-sm font-semibold text-neutral-200 hover:bg-white/5 transition-colors"
                 >
                   {link.label}
                 </a>
@@ -102,7 +116,7 @@ export function Header() {
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white text-ink-950 text-sm font-semibold"
+                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-500 text-white font-bold text-sm"
               >
                 <Download className="w-4 h-4" />
                 تحميل البرنامج

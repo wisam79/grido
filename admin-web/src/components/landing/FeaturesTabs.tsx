@@ -161,13 +161,49 @@ export function FeaturesTabs() {
               {activeTab === 'ai' && (
                 <div className="flex items-center gap-3 w-full max-w-sm">
                   <div className="flex-1 aspect-[3/4] bg-neutral-900 rounded-xl border border-rose-500/30 overflow-hidden relative shadow-md">
-                    <img src={PASSPORT_IMG} alt="" className="w-full h-full object-cover blur-xs grayscale" loading="lazy" />
-                    <div className="absolute bottom-2 inset-x-0 text-center bg-black/70 py-1 text-[9px] text-rose-300 font-bold">قبل التحسين</div>
+                    <img src={PASSPORT_IMG} alt="" className="w-full h-full object-cover blur-[1.5px] grayscale opacity-70" loading="lazy" />
+                    <div className="absolute bottom-2 inset-x-0 text-center bg-black/80 py-1 text-[9px] text-rose-300 font-bold">قبل التحسين (صورة قديمة)</div>
                   </div>
                   <ArrowRight className="w-6 h-6 text-neutral-500 rotate-180 flex-shrink-0" />
-                  <div className="flex-1 aspect-[3/4] bg-neutral-900 rounded-xl border border-emerald-500/50 overflow-hidden relative shadow-lg shadow-emerald-500/10">
-                    <img src={PASSPORT_IMG} alt="" className="w-full h-full object-cover" loading="lazy" />
-                    <div className="absolute bottom-2 inset-x-0 text-center bg-emerald-600/80 py-1 text-[9px] text-white font-extrabold">بعد التحسين AI (HD)</div>
+                  <div className="flex-1 aspect-[3/4] bg-neutral-900 rounded-xl border border-emerald-500/50 overflow-hidden relative shadow-lg shadow-emerald-500/20">
+                    <img src={PASSPORT_IMG} alt="" className="w-full h-full object-cover contrast-[1.08]" loading="lazy" />
+                    <div className="absolute bottom-2 inset-x-0 text-center bg-emerald-600/90 py-1 text-[9px] text-white font-extrabold flex items-center justify-center gap-1">
+                      <Sparkles className="w-3 h-3 text-emerald-200" />
+                      <span>CodeFormer HD</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'cmyk' && (
+                <div className="w-full max-w-sm space-y-3">
+                  <div className="p-4 rounded-2xl bg-neutral-900 border border-emerald-500/30">
+                    <div className="text-xs font-bold text-emerald-400 mb-3 flex items-center justify-between">
+                      <span>قنوات ألوان المطابع المباشرة</span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-[10px]">TIFF 300DPI</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-mono">
+                      <div className="p-2 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-bold">
+                        <div className="text-sm">C</div>
+                        <div>Cyan</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-fuchsia-500/20 border border-fuchsia-400/40 text-fuchsia-300 font-bold">
+                        <div className="text-sm">M</div>
+                        <div>Magenta</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-yellow-500/20 border border-yellow-400/40 text-yellow-300 font-bold">
+                        <div className="text-sm">Y</div>
+                        <div>Yellow</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-neutral-800 border border-neutral-600 text-white font-bold">
+                        <div className="text-sm">K</div>
+                        <div>Key 100%</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-neutral-950 border border-white/10 text-[11px] text-neutral-400 flex items-center justify-between">
+                    <span>خطوط التقطيع لأسلحة التقصي:</span>
+                    <span className="font-mono text-emerald-400 font-bold">Black K=100% (No Bleed)</span>
                   </div>
                 </div>
               )}

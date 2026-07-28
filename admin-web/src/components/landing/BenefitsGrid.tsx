@@ -1,91 +1,75 @@
-import { Cpu, Printer, FileCheck, Lock, Gauge, Layers } from 'lucide-react';
+import { Monitor, Edit3, ShieldCheck, Zap, Image } from 'lucide-react';
 
 const BENEFITS = [
   {
-    icon: Cpu,
-    title: 'سرعة ومعالجة محلية 100%',
-    description: 'تتم جميع العمليات والقص والحسابات مباشرة على جهازك بسرعة فائقة وبدون الحاجة لانتظار الرفع عبر الإنترنت للحفاظ على خصوصية الصور.',
-    accent: 'brand',
-    span: 'md:col-span-2',
+    icon: Monitor,
+    title: 'يدعم كل الأجهزة',
+    description: 'يعمل على جميع إصدارات ويندوز خفيف ولا يستهلك موارد عالية.',
   },
   {
-    icon: Printer,
-    title: 'توافق تام مع الطابعات',
-    description: 'تصدير وطباعة مباشرة بأبعاد ومقاسات دقيقة بالميليمتر مطابقة للواقع لتجنب إهدار الورق والحبر.',
-    accent: 'sky',
-    span: '',
+    icon: Edit3,
+    title: 'سهولة الاستخدام',
+    description: 'واجهة بسيطة تناسب الجميع بدون الحاجة لخبرة تقنية.',
   },
   {
-    icon: FileCheck,
-    title: 'دعم الخطوط العربية',
-    description: 'واجهة عربية بسيطة ومريحة تدعم كافة الخطوط والأبعاد لتسهيل العمل على الموظفين داخل الاستوديو.',
-    accent: 'cyan',
-    span: '',
+    icon: ShieldCheck,
+    title: 'جودة احترافية',
+    description: 'تحسين تلقائي لجودة الوجه وتوازن الألوان والإضاءة.',
   },
   {
-    icon: Lock,
-    title: 'خصوصية وأمان تام',
-    description: 'لا يتم رفع أي صورة إلى الإنترنت. كل المعالجة تتم محلياً على جهازك الخاص.',
-    accent: 'emerald',
-    span: '',
+    icon: Zap,
+    title: 'توفير الوقت والجهد',
+    description: 'أتمتة كاملة في توزيع الصور والقص والحفظ بضغطة واحدة.',
   },
   {
-    icon: Gauge,
-    title: 'أداء فائق السرعة',
-    description: 'محرك معالجة محسّن يتعامل مع آلاف الصور في وقت قياسي بدون تأخير.',
-    accent: 'amber',
-    span: '',
+    icon: Image,
+    title: 'جاهز للطباعة فوراً',
+    description: 'إعدادات احترافية تدعم CMYK و Dpi عالية تناسب جميع المطبوعات.',
   },
 ];
 
-const ACCENT_STYLES: Record<string, { iconBg: string; iconColor: string; border: string; glow: string }> = {
-  brand: { iconBg: 'bg-brand-500/10', iconColor: 'text-brand-400', border: 'hover:border-brand-500/50', glow: 'bg-brand-500/10' },
-  sky: { iconBg: 'bg-sky-500/10', iconColor: 'text-sky-400', border: 'hover:border-sky-500/50', glow: 'bg-sky-500/10' },
-  cyan: { iconBg: 'bg-cyan-500/10', iconColor: 'text-cyan-400', border: 'hover:border-cyan-500/50', glow: 'bg-cyan-500/10' },
-  emerald: { iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-400', border: 'hover:border-emerald-500/50', glow: 'bg-emerald-500/10' },
-  amber: { iconBg: 'bg-amber-500/10', iconColor: 'text-amber-400', border: 'hover:border-amber-500/50', glow: 'bg-amber-500/10' },
-};
-
 export function BenefitsGrid() {
   return (
-    <section id="benefits" className="relative py-24 border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-5 sm:px-6">
-        <div className="max-w-3xl mx-auto text-center mb-14">
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-brand-400">لماذا Grido</span>
-          <h2 className="mt-3 text-3xl sm:text-5xl font-black font-display">لماذا يختار المحترفون Grido Studio؟</h2>
-          <p className="mt-4 text-neutral-400 text-lg">صمم خصيصاً ليحل مشاكل الاستوديوهات اليومية بسرعة وكفاءة.</p>
-        </div>
+    <section id="benefits" className="relative py-20 border-t border-white/10 bg-[#0b1120] overflow-hidden">
+      {/* Decorative Wave Vector SVG Background */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-10" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 0 100 Q 350 0 700 100 T 1400 100" fill="none" stroke="rgba(34,211,238,0.5)" strokeWidth="2" />
+        <path d="M 0 180 Q 350 80 700 180 T 1400 180" fill="none" stroke="rgba(37,99,235,0.5)" strokeWidth="1.5" />
+      </svg>
 
-        {/* Bento grid */}
-        <div className="grid md:grid-cols-3 gap-4 text-right">
+      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 text-center">
+        <h2 className="text-3xl sm:text-5xl font-black font-display text-white mb-14">
+          لماذا <span className="text-brand-400">Grido Studio</span> ؟
+        </h2>
+
+        {/* 5 Cards Row matching exact reference mockup design with decorative SVG icon rings */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
           {BENEFITS.map((benefit) => {
             const Icon = benefit.icon;
-            const accent = ACCENT_STYLES[benefit.accent];
             return (
               <div
                 key={benefit.title}
-                className={`group relative overflow-hidden p-7 rounded-2xl bg-ink-800/50 border border-white/10 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 ${accent.border} ${benefit.span}`}
+                className="p-7 rounded-2xl bg-[#121826] border border-white/10 backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-brand-500/50 shadow-xl flex flex-col items-center justify-between text-center group relative overflow-hidden"
               >
-                <div className={`absolute -top-8 -right-8 w-28 h-28 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${accent.glow}`} />
-                <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110 ${accent.iconBg} border border-white/10`}>
-                  <Icon className={`w-6 h-6 ${accent.iconColor}`} />
+                {/* Decorative Icon Glow & Inner SVG Ring */}
+                <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-brand-500/20 to-cyan-500/10 border border-brand-400/40 flex items-center justify-center mb-6 shadow-md shadow-brand-500/20 transition-transform group-hover:scale-110">
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 64 64">
+                    <circle cx="32" cy="32" r="30" fill="none" stroke="rgba(34,211,238,0.2)" strokeWidth="1" strokeDasharray="4 4" />
+                  </svg>
+                  <Icon className="w-7 h-7 text-cyan-400 relative z-10" />
                 </div>
-                <h3 className="relative text-lg font-bold mb-2">{benefit.title}</h3>
-                <p className="relative text-neutral-400 text-sm leading-relaxed">{benefit.description}</p>
+
+                <div>
+                  <h3 className="text-lg font-bold font-display text-white mb-3">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-[#A1A1AA] text-xs leading-relaxed font-sans">
+                    {benefit.description}
+                  </p>
+                </div>
               </div>
             );
           })}
-
-          {/* Feature highlight card */}
-          <div className="relative overflow-hidden p-7 rounded-2xl bg-gradient-to-br from-brand-500/15 to-sky-500/10 border border-brand-500/30 backdrop-blur-sm flex flex-col justify-between">
-            <Layers className="w-8 h-8 text-brand-400 mb-4" />
-            <div>
-              <h3 className="text-lg font-bold mb-2">حلول متكاملة في مكان واحد</h3>
-              <p className="text-neutral-300 text-sm leading-relaxed">
-                من قص الهوية إلى الكولاج والترميم بالذكاء الاصطناعي — كل ما يحتاجه استوديو الصور في تطبيق واحد.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </section>

@@ -2,79 +2,117 @@
 
 @theme inline {
   --font-sans: 'IBM Plex Sans Arabic', system-ui, sans-serif;
-  --font-display: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-display: 'Cairo', 'IBM Plex Sans Arabic', system-ui, sans-serif;
 
-  /* Grido Studio Dark Theme Palette (Soft Neutral Gray + Royal Blue Accent) */
-  --color-ink-950: #121316;
-  --color-ink-900: #18191c;
-  --color-ink-800: #25262a;
-  --color-ink-700: #33353b;
+  /* Target Navy Theme Palette from Reference Mockup (#0B1120 & #121826) */
+  --color-ink-950: #0b1120;
+  --color-ink-900: #121826;
+  --color-ink-800: #1a2336;
+  --color-ink-700: #26344e;
 
-  --color-brand-600: #2563eb;
-  --color-brand-500: #3b82f6;
-  --color-brand-400: #60a5fa;
-  --color-brand-300: #93c5fd;
+  --color-brand-600: #1d4ed8;
+  --color-brand-500: #2563eb;
+  --color-brand-400: #3b82f6;
+  --color-brand-300: #60a5fa;
 
   --color-accent-400: #22d3ee;
+  --color-accent-500: #06b6d4;
 }
 
 * {
-  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: 'Cairo', 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
 }
 
 body {
-  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
   margin: 0;
   min-height: 100vh;
-  background-color: var(--color-ink-950);
-  color: #f5f5f5;
+  background-color: #0b1120;
+  color: #ffffff;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
-/* Respect reduced motion preferences */
+/* Scroll reveal animations */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(30px) scale(0.98);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.is-revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Logo subtle breathing glow animation */
+@keyframes logo-glow {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.3)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.45)); transform: scale(1.03); }
+}
+
+.animate-logo-glow {
+  animation: logo-glow 4s ease-in-out infinite;
+}
+
+/* Laser Scan Line animation */
+@keyframes laser-scan {
+  0% { transform: translateY(-100%); opacity: 0.2; }
+  50% { opacity: 0.85; }
+  100% { transform: translateY(500px); opacity: 0.2; }
+}
+
+.animate-laser-scan {
+  animation: laser-scan 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Rotating SVG aperture rings */
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-rotate-slow {
+  animation: rotate-slow 25s linear infinite;
+}
+
+.animate-rotate-reverse {
+  animation: rotate-slow 35s linear infinite reverse;
+}
+
+/* 3D Perspective tilt for app window mockup */
+.perspective-container {
+  perspective: 1200px;
+}
+
+.perspective-mockup {
+  transform: rotateY(-12deg) rotateX(6deg) rotateZ(1deg);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+}
+
+.perspective-container:hover .perspective-mockup {
+  transform: rotateY(-4deg) rotateX(2deg) rotateZ(0deg) scale(1.01);
+}
+
+/* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
+  .perspective-mockup { transform: none !important; }
+  .reveal-on-scroll { opacity: 1 !important; transform: none !important; }
 }
 
-/* Marquee animation for logo strip */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-.animate-marquee {
-  animation: marquee 28s linear infinite;
-}
-
-/* Slow float for decorative elements */
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-14px); }
-}
-.animate-float-slow {
-  animation: float-slow 7s ease-in-out infinite;
-}
-
-/* Smooth scroll for anchor links */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Custom selection matching Grido brand */
-::selection {
-  background-color: rgba(59, 130, 246, 0.35);
-  color: #fff;
-}
-
-/* Thin scrollbar matching Grido app style */
+/* Custom scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+::-webkit-scrollbar-track { background: #0b1120; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(37, 99, 235, 0.5); }
