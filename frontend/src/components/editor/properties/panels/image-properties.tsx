@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { ImageElement, useEditorStore } from "@/lib/editor-store";
+import { useRenderQuality } from "@/lib/render-quality";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
@@ -44,7 +45,9 @@ export function ImageAdjustProperties({
         step={1}
         unit="%"
         onChange={(v) => onUpdate(element.id, { brightness: v })}
-        onCommit={() => useEditorStore.getState().pushHistory()}
+        onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+        onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+        onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
       />
       <SliderControl
         label="التباين"
@@ -55,7 +58,9 @@ export function ImageAdjustProperties({
         step={1}
         unit="%"
         onChange={(v) => onUpdate(element.id, { contrast: v })}
-        onCommit={() => useEditorStore.getState().pushHistory()}
+        onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+        onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+        onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
       />
       <SliderControl
         label="التشبع"
@@ -66,7 +71,9 @@ export function ImageAdjustProperties({
         step={1}
         unit="%"
         onChange={(v) => onUpdate(element.id, { saturation: v })}
-        onCommit={() => useEditorStore.getState().pushHistory()}
+        onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+        onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+        onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
       />
       <SliderControl
         label="ضبابية"
@@ -77,7 +84,9 @@ export function ImageAdjustProperties({
         step={0.5}
         unit="px"
         onChange={(v) => onUpdate(element.id, { blur: v })}
-        onCommit={() => useEditorStore.getState().pushHistory()}
+        onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+        onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+        onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
       />
 
       {showReset && (

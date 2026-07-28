@@ -139,37 +139,21 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     };
   }, []);
 
-  const transformingRef = useRef(false);
   useEffect(() => {
     if (trRef.current && mode === "single") {
       if (selectedIds.length > 0) {
         const nodes = selectedIds
           .map((id) => elementsRefs.current[id])
           .filter(Boolean);
-        if (!transformingRef.current) {
-          trRef.current.nodes(nodes);
-          trRef.current.forceUpdate();
-          trRef.current.getLayer()?.batchDraw();
-        }
+        trRef.current.nodes(nodes);
+        trRef.current.forceUpdate();
+        trRef.current.getLayer()?.batchDraw();
       } else {
         trRef.current.nodes([]);
         trRef.current.getLayer()?.batchDraw();
       }
     }
   }, [selectedIds, mode, sortedElements]);
-
-  useEffect(() => {
-    const transformer = trRef.current;
-    if (!transformer) return;
-    const onStart = () => { transformingRef.current = true; };
-    const onEnd = () => { transformingRef.current = false; };
-    transformer.on("transformstart", onStart);
-    transformer.on("transformend", onEnd);
-    return () => {
-      transformer.off("transformstart", onStart);
-      transformer.off("transformend", onEnd);
-    };
-  }, []);
 
   const handleStageMouseDown = (e: any) => {
     const isBackgroundOrEmpty = e.target === e.target.getStage() || e.target.hasName("bg-rect");
@@ -178,9 +162,9 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     }
   };
 
-  const handleElementChange = (id: string, patch: Partial<CanvasElement>) => {
+  const handleElementChange = React.useCallback((id: string, patch: Partial<CanvasElement>) => {
     updateElement(id, patch);
-  };
+  }, [updateElement]);
 
   const createElementMouseDown = React.useCallback((elId: string) => (e: any) => {
     const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;

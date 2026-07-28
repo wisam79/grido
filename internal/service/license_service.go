@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -41,25 +42,22 @@ var (
 )
 
 func init() {
-	// 🌟 Load .env locally if it exists in current or parent dirs (only for development)
-	for _, envPath := range []string{".env", "../.env", "../../.env"} {
-		if envBytes, err := os.ReadFile(envPath); err == nil {
-			for _, line := range strings.Split(string(envBytes), "\n") {
-				line = strings.TrimSpace(line)
-				if line == "" || strings.HasPrefix(line, "#") {
-					continue
-				}
-				parts := strings.SplitN(line, "=", 2)
-				if len(parts) == 2 {
-					key := strings.TrimSpace(parts[0])
-					val := strings.TrimSpace(parts[1])
-					val = strings.Trim(val, `"'`)
-					if os.Getenv(key) == "" {
-						os.Setenv(key, val)
-					}
+	// 🌟 Load .env from the app config directory (only for development)
+	if envBytes, err := os.ReadFile(filepath.Join(utils.GetAppDir(), ".env")); err == nil {
+		for _, line := range strings.Split(string(envBytes), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				val := strings.TrimSpace(parts[1])
+				val = strings.Trim(val, `"'`)
+				if os.Getenv(key) == "" {
+					os.Setenv(key, val)
 				}
 			}
-			break
 		}
 	}
 
@@ -1075,14 +1073,15 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 	}
 
 	profile := &domain.UserProfile{
-		ID:         userID,
-		Email:      email,
-		Name:       displayName,
-		Plan:       prof.Plan,
-		Status:     prof.Status,
-		ExpiresAt:  prof.ExpiresAt,
-		LicenseKey: prof.LicenseKey,
-		Token:      authRes.AccessToken,
+		ID:           userID,
+		Email:        email,
+		Name:         displayName,
+		Plan:         prof.Plan,
+		Status:       prof.Status,
+		ExpiresAt:    prof.ExpiresAt,
+		LicenseKey:   prof.LicenseKey,
+		Token:        authRes.AccessToken,
+		RefreshToken: authRes.RefreshToken,
 	}
 
 

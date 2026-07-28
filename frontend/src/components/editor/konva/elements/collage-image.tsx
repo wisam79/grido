@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useMemo } from "react";
 import { Image as KonvaImage } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
-import Konva from "konva";
+import { getKonvaFilters } from "@/lib/konva-filters";
+import { useRenderQuality } from "@/lib/render-quality";
 
 export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   imageSrc,
@@ -41,94 +42,44 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const [image] = useAsyncImage(imageSrc);
   const imageRef = useRef<any>(null);
   const accumulatedDrag = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
+  const isDraggingFilter = useRenderQuality((s) => s.isDraggingFilter);
 
   useEffect(() => {
     accumulatedDrag.current = { dragX, dragY };
   }, [dragX, dragY]);
 
-  const hasFilters = !!(
-    (filter && filter !== "none") ||
-    (brightness !== undefined && brightness !== 100) ||
-    (contrast !== undefined && contrast !== 100) ||
-    (saturation !== undefined && saturation !== 100)
-  );
+  const filterResult = useMemo(() => getKonvaFilters({
+    filter, brightness, contrast, saturation
+  }), [filter, brightness, contrast, saturation]);
+
+  const hasFilters = filterResult.filters.length > 0;
 
   useEffect(() => {
     const node = imageRef.current;
-    if (node && image) {
-      if (hasFilters) {
+    if (!node || !image) return;
+
+    if (!hasFilters) {
+      if (node.isCached()) {
         try {
-          const stageScale = node.getStage()?.scaleX() || 1;
-          const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-          const ratio = Math.max(1.5, Math.min(3, stageScale * devicePixelRatio * 1.5));
           node.clearCache();
-          node.cache({
-            pixelRatio: ratio
-          });
         } catch (err) {
-          console.warn("Failed to cache collage image", err);
-        }
-      } else {
-        if (node.isCached()) {
-          try {
-            node.clearCache();
-          } catch (err) {
-            // Ignore
-          }
+          // Ignore
         }
       }
-    }
-  }, [image, hasFilters, width, height]);
-
-  const { filters, totalBrightness, totalContrast, totalSaturation, totalHue } = useMemo(() => {
-    let b = brightness ?? 100;
-    let c = contrast ?? 100;
-    let s = saturation ?? 100;
-    let h = 0;
-    let sepia = false;
-    let mono = false;
-
-    if (filter === "enhance") {
-      c = (c / 100) * 108;
-      s = (s / 100) * 112;
-      b = (b / 100) * 102;
-    } else if (filter === "skinGlow") {
-      h = 10;
-      s = (s / 100) * 110;
-      c = (c / 100) * 94;
-      b = (b / 100) * 106;
-    } else if (filter === "clarity") {
-      c = (c / 100) * 122;
-      s = (s / 100) * 120;
-      b = (b / 100) * 98;
-    } else if (filter === "lowlight") {
-      b = (b / 100) * 116;
-      c = (c / 100) * 90;
-      s = (s / 100) * 105;
-    } else if (filter === "cinematic") {
-      sepia = true;
-      h = 5;
-      s = (s / 100) * 115;
-      c = (c / 100) * 110;
-      b = (b / 100) * 102;
-    } else if (filter === "monoPro") {
-      mono = true;
-      c = (c / 100) * 125;
-      b = (b / 100) * 102;
+      return;
     }
 
-    const fList: any[] = [];
-    if (filter === "skinGlow" && (Konva.Filters as any).SkinGlow) {
-      fList.push((Konva.Filters as any).SkinGlow);
+    try {
+      const stageScale = node.getStage()?.scaleX() || 1;
+      const ratio = isDraggingFilter
+        ? Math.max(0.25, Math.min(0.5, stageScale * 0.3))
+        : Math.max(0.5, Math.min(1.5, stageScale * 1.2));
+      node.clearCache();
+      node.cache({ pixelRatio: ratio });
+    } catch (err) {
+      console.warn("Failed to cache collage image", err);
     }
-    if (mono) fList.push(Konva.Filters.Grayscale);
-    if (sepia) fList.push(Konva.Filters.Sepia);
-    if (b !== 100) fList.push(Konva.Filters.Brighten);
-    if (c !== 100) fList.push(Konva.Filters.Contrast);
-    if (s !== 100 || h !== 0) fList.push(Konva.Filters.HSL);
-
-    return { filters: fList, totalBrightness: b, totalContrast: c, totalSaturation: s, totalHue: h };
-  }, [filter, brightness, contrast, saturation]);
+  }, [image, hasFilters, isDraggingFilter]);
 
   if (!image) return null;
 
@@ -215,13 +166,11 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
       height={height}
       cornerRadius={cornerRadius}
       perfectDrawEnabled={false}
-      filters={filters}
-      brightness={totalBrightness !== 100 ? (totalBrightness - 100) / 100 : 0}
-      contrast={totalContrast !== 100 ? totalContrast - 100 : 0}
-      {...({
-        hue: totalHue,
-        saturation: totalSaturation !== 100 ? Math.log2(Math.max(1, totalSaturation) / 100) : 0
-      } as any)}
+      filters={filterResult.filters}
+      brightness={filterResult.brightness}
+      contrast={filterResult.contrast}
+      hue={(filterResult as any).hue}
+      saturation={(filterResult as any).saturation}
       onClick={onClick}
       onTap={onClick}
       onDblClick={onDblClick}
@@ -241,5 +190,6 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
          prev.dragX === next.dragX &&
          prev.dragY === next.dragY &&
          prev.draggable === next.draggable &&
+         prev.cornerRadius === next.cornerRadius &&
          prev.onDblClick === next.onDblClick;
 });

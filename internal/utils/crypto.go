@@ -18,6 +18,9 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/hkdf"
+	"golang.org/x/crypto/pbkdf2"
+
 	"grido/internal/core/domain"
 )
 
@@ -36,6 +39,32 @@ func writeSecureFile(path string, data []byte) error {
 	return os.Rename(tmpPath, path)
 }
 
+// deriveKey derives a 32-byte key using PBKDF2 with 600,000 iterations.
+func deriveKey(deviceID, salt string) []byte {
+	return pbkdf2.Key([]byte(deviceID), []byte(salt), 600_000, 32, sha256.New)
+}
+
+// deriveEncryptionKey derives a 32-byte AES-GCM key from the device ID.
+func deriveEncryptionKey(deviceID string) []byte {
+	salt := "grido-encryption-key-salt-v2"
+	master := deriveKey(deviceID, salt)
+	// HKDF-expand to produce the final encryption key, separated from signing
+	r := hkdf.Expand(sha256.New, master, []byte("encryption-key"))
+	out := make([]byte, 32)
+	_, _ = io.ReadFull(r, out)
+	return out
+}
+
+// deriveSigningKey derives a 32-byte HMAC key from the device ID.
+func deriveSigningKey(deviceID string) []byte {
+	salt := "grido-signing-key-salt-v2"
+	master := deriveKey(deviceID, salt)
+	r := hkdf.Expand(sha256.New, master, []byte("signing-key"))
+	out := make([]byte, 32)
+	_, _ = io.ReadFull(r, out)
+	return out
+}
+
 // LoadOrCreateMasterKey derives a deterministic 32-byte master key from the
 // device ID plus a fixed salt. The previous implementation stored the key in a
 // plaintext file (.license_masterkey) which allowed anyone with filesystem
@@ -47,12 +76,7 @@ func LoadOrCreateMasterKey() ([]byte, error) {
 		deviceID = getFallbackDeviceID()
 	}
 
-	salt := "grido-studio-license-key-salt-v1"
-	h := hmac.New(sha256.New, []byte(salt))
-	h.Write([]byte(deviceID))
-	key := h.Sum(nil)
-
-	return key, nil
+	return deriveKey(deviceID, "grido-license-master-key-v2"), nil
 }
 
 // ComputeProfileSignature computes a HMAC-SHA256 signature for the user profile.
@@ -61,10 +85,11 @@ func ComputeProfileSignature(profile *domain.UserProfile) (string, error) {
 		return "", errors.New("invalid profile for signature computation")
 	}
 
-	key, err := LoadOrCreateMasterKey()
-	if err != nil {
-		return "", err
+	deviceID := GetDeviceID()
+	if deviceID == "" {
+		deviceID = getFallbackDeviceID()
 	}
+	key := deriveSigningKey(deviceID)
 
 	// Message is constructed from vital licensing fields.
 	msg := fmt.Sprintf("%s|%s|%s|%d", profile.ID, profile.Plan, profile.Status, profile.ExpiresAt.Unix())
@@ -124,10 +149,11 @@ func ClearLicenseSignature() error {
 
 // UpdateLastTime records the last known time signed with HMAC to prevent clock rollback tampering.
 func UpdateLastTime(t time.Time) error {
-	key, err := LoadOrCreateMasterKey()
-	if err != nil {
-		return err
+	deviceID := GetDeviceID()
+	if deviceID == "" {
+		deviceID = getFallbackDeviceID()
 	}
+	key := deriveSigningKey(deviceID)
 
 	unixStr := strconv.FormatInt(t.Unix(), 10)
 	mac := hmac.New(sha256.New, key)
@@ -149,21 +175,18 @@ func VerifyTime(t time.Time) bool {
 
 	parts := strings.Split(string(data), "|")
 	if len(parts) != 2 {
-		// Fallback for legacy plaintext time format if present
-		lastUnix, err := strconv.ParseInt(strings.TrimSpace(string(data)), 10, 64)
-		if err != nil {
-			return false
-		}
-		return t.Unix() >= lastUnix-300
+		slog.Warn("License time file has invalid format — failing closed")
+		return false
 	}
 
 	unixStr := parts[0]
 	storedSigHex := parts[1]
 
-	key, err := LoadOrCreateMasterKey()
-	if err != nil {
-		return false
+	deviceID := GetDeviceID()
+	if deviceID == "" {
+		deviceID = getFallbackDeviceID()
 	}
+	key := deriveSigningKey(deviceID)
 
 	mac := hmac.New(sha256.New, key)
 	mac.Write([]byte(unixStr))
@@ -204,10 +227,11 @@ func SaveEncryptedToken(accessToken, refreshToken string) error {
 		return err
 	}
 
-	key, err := LoadOrCreateMasterKey()
-	if err != nil {
-		return err
+	deviceID := GetDeviceID()
+	if deviceID == "" {
+		deviceID = getFallbackDeviceID()
 	}
+	key := deriveEncryptionKey(deviceID)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -237,10 +261,11 @@ func LoadEncryptedToken() (string, string, error) {
 		return "", "", err
 	}
 
-	key, err := LoadOrCreateMasterKey()
-	if err != nil {
-		return "", "", err
+	deviceID := GetDeviceID()
+	if deviceID == "" {
+		deviceID = getFallbackDeviceID()
 	}
+	key := deriveEncryptionKey(deviceID)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {

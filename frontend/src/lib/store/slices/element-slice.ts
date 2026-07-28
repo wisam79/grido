@@ -190,12 +190,14 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
   updateElements: (patches) => {
     set((s) => {
+      const patchMap = new Map(patches.map((p) => [p.id, p.patch]));
       const nextElements = s.elements.map((el: CanvasElement) => {
-        const patchObj = patches.find((p) => p.id === el.id);
-        return patchObj ? { ...el, ...patchObj.patch } as CanvasElement : el;
+        const patch = patchMap.get(el.id);
+        return patch ? { ...el, ...patch } as CanvasElement : el;
       });
+      const imageIds = new Set(s.elements.filter((e: CanvasElement) => e.type === "image").map((e) => e.id));
       const imageSrcPatch = patches.find(
-        (p) => (p.patch as Partial<ImageElement>).imageSrc && s.elements.find((e: CanvasElement) => e.id === p.id)?.type === "image",
+        (p) => imageIds.has(p.id) && (p.patch as Partial<ImageElement>).imageSrc,
       ) as { id: string; patch: Partial<ImageElement> } | undefined;
       return {
         elements: nextElements,

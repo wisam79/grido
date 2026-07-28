@@ -4,6 +4,7 @@ import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { ImageElement } from "@/lib/editor-store";
 import { getKonvaFilters } from "@/lib/konva-filters";
+import { useRenderQuality } from "@/lib/render-quality";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import "@/lib/custom-filters";
@@ -28,6 +29,7 @@ export const URLImage = React.memo(function URLImage({
   const element = _element as ImageElement;
   const [image] = useAsyncImage(element.imageSrc || "");
   const hasAnimatedRef = React.useRef(false);
+  const isDraggingFilter = useRenderQuality((s) => s.isDraggingFilter);
 
   const {
     onDragStart,
@@ -62,13 +64,20 @@ export const URLImage = React.memo(function URLImage({
     }
   }, [elementRef, element.opacity, element.flipX]);
 
-  const hasFilters = !!(
-    element.filter ||
-    (element.brightness !== undefined && element.brightness !== 100) ||
-    (element.contrast !== undefined && element.contrast !== 100) ||
-    (element.saturation !== undefined && element.saturation !== 100) ||
-    (element.blur !== undefined && element.blur > 0)
-  );
+  const { filters, filterProps } = React.useMemo(() => {
+    const res = getKonvaFilters({
+      filter: element.filter,
+      brightness: element.brightness,
+      contrast: element.contrast,
+      saturation: element.saturation
+    });
+    if (element.blur && element.blur > 0) {
+      res.filters.push(Konva.Filters.Blur);
+    }
+    return { filters: res.filters, filterProps: res };
+  }, [element.filter, element.brightness, element.contrast, element.saturation, element.blur]);
+
+  const hasFilters = filters.length > 0;
 
   useEffect(() => {
     const node = elementRef.current;
@@ -87,32 +96,15 @@ export const URLImage = React.memo(function URLImage({
 
     try {
       const stageScale = node.getStage()?.scaleX() || 1;
-      const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-      const ratio = Math.max(1.5, Math.min(3, stageScale * devicePixelRatio * 1.5));
+      const ratio = isDraggingFilter
+        ? Math.max(0.25, Math.min(0.5, stageScale * 0.3))
+        : Math.max(0.5, Math.min(1.5, stageScale * 1.2));
       node.clearCache();
       node.cache({ pixelRatio: ratio });
     } catch (err) {
       console.warn("Failed to cache Konva image", err);
     }
-  }, [
-    image,
-    hasFilters,
-    elementRef,
-    element.width,
-    element.height,
-  ]);
-
-  const { filters, filterProps } = React.useMemo(() => {
-    const res = getKonvaFilters({
-      filter: element.filter,
-      brightness: element.brightness,
-      contrast: element.contrast,
-      saturation: element.saturation
-    });
-    const list = [...res.filters];
-    if (element.blur && element.blur > 0) list.push(Konva.Filters.Blur);
-    return { filters: list, filterProps: res };
-  }, [element.filter, element.brightness, element.contrast, element.saturation, element.blur]);
+  }, [image, hasFilters, elementRef, isDraggingFilter]);
 
   const flipped = element.flipX === true;
 
@@ -146,10 +138,8 @@ export const URLImage = React.memo(function URLImage({
       brightness={filterProps.brightness}
       contrast={filterProps.contrast}
       blurRadius={element.blur || 0}
-      {...({
-        hue: filterProps.hue,
-        saturation: filterProps.saturation
-      } as any)}
+      hue={(filterProps as any).hue}
+      saturation={(filterProps as any).saturation}
       draggable={!element.locked && isSelected}
       onDragStart={onDragStart}
       dragBoundFunc={dragBoundFunc}

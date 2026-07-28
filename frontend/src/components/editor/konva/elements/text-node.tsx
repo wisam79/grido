@@ -65,6 +65,8 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   // Sync auto height back to store so bounding boxes and overlays stay perfect
   // استخدام ref لمنع الحلقة الدائرية — نتوقف عن التحديث إذا كان الارتفاع الجديد مطابقاً
   const lastSetHeightRef = useRef<number | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   useEffect(() => {
     const node = elementRef.current;
     if (node) {
@@ -75,10 +77,10 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       }
       if (Math.abs(actualHeight - element.height) > 0.005) {
         lastSetHeightRef.current = actualHeight;
-        onChange({ height: actualHeight });
+        onChangeRef.current({ height: actualHeight });
       }
     }
-  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight, elementRef, onChange]);
+  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight, elementRef]);
 
   const flipped = element.flipX === true;
   const w = element.width * stageCanvasWidth;

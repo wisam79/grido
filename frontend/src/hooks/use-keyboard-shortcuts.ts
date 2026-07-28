@@ -64,7 +64,7 @@ export function useKeyboardShortcuts() {
   // --- Arrows (Nudging) & Paste via native events ---
   // نحتفظ بأسهم التحريك هنا لدعم ميزة ضغط الزر المستمر والتجميع للسجل (Debounced pushHistory)
   useEffect(() => {
-    let nudgeTimeout: any = null;
+    let nudgeTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -72,6 +72,14 @@ export function useKeyboardShortcuts() {
 
       const { selectedIds } = useEditorStore.getState();
       
+      // Escape = Clear selection and stop editing
+      if (e.key === "Escape") {
+        const { setEditingTextId, selectElement } = useEditorStore.getState();
+        setEditingTextId(null);
+        selectElement(null);
+        return;
+      }
+
       // Arrow Keys = Nudging selected elements
       if (selectedIds.length > 0 && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         e.preventDefault();

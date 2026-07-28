@@ -30,8 +30,8 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     const newHistory = history.slice(0, historyIndex + 1);
 
     newHistory.push({
-      elements: elements.map((el) => ({ ...el })),
-      slots: slots.map((s) => ({ ...s })),
+      elements: elements.map((el) => structuredClone(el)),
+      slots: slots.map((s) => structuredClone(s)),
     });
     
     if (newHistory.length > 20) newHistory.shift();
@@ -43,8 +43,8 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     if (historyIndex <= 0) return;
     const prev = history[historyIndex - 1];
     set({
-      elements: prev.elements.map((el) => ({ ...el })),
-      slots: prev.slots.map((s) => ({ ...s })),
+      elements: prev.elements.map((el) => structuredClone(el)),
+      slots: prev.slots.map((s) => structuredClone(s)),
       historyIndex: historyIndex - 1,
       selectedId: null,
       selectedIds: [],
@@ -57,8 +57,8 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     if (historyIndex >= history.length - 1) return;
     const next = history[historyIndex + 1];
     set({
-      elements: next.elements.map((el) => ({ ...el })),
-      slots: next.slots.map((s) => ({ ...s })),
+      elements: next.elements.map((el) => structuredClone(el)),
+      slots: next.slots.map((s) => structuredClone(s)),
       historyIndex: historyIndex + 1,
       selectedId: null,
       selectedIds: [],

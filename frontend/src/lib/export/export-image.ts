@@ -174,6 +174,16 @@ export async function exportCanvas(
     slots,
   } = useEditorStore.getState();
 
+  // Memory guard: ~311MB buffer at 7200×10800 (24×36" @ 300 DPI)
+  const pixelCount = canvasWidth * canvasHeight;
+  if (pixelCount > 50_000_000) {
+    console.warn(
+      `Export aborted: canvas ${canvasWidth}×${canvasHeight} = ${pixelCount}px ` +
+      `exceeds 50MP limit (≈200MB buffer). Reduce canvas size or DPI.`
+    );
+    return null;
+  }
+
   // محاولة التصدير مباشرةً من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
   if (stageRef) {
     let dataUrl: string | null = null;

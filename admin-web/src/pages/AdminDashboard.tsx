@@ -218,56 +218,34 @@ export default function AdminDashboard() {
   };
 
   // Operations
-  const handleExtendLicense = async (emailAddress: string, months: number) => {
+  const handleExtendLicense = async (userUUID: string, months: number) => {
     if (!supabase) return;
     try {
-      const userProfile = users.find(u => u.email === emailAddress);
-      if (!userProfile) return;
-
-      let currentExpiry = new Date();
-      if (userProfile.plan !== 'free' && userProfile.expires_at) {
-        const exp = new Date(userProfile.expires_at);
-        if (exp > new Date()) {
-          currentExpiry = exp;
-        }
-      }
-
-      currentExpiry.setMonth(currentExpiry.getMonth() + months);
-
       const { error } = await supabase
-        .from('profiles')
-        .update({
-          plan: 'pro',
-          status: 'active',
-          expires_at: currentExpiry.toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('email', emailAddress);
+        .rpc('admin_extend_license', {
+          p_user_id: userUUID,
+          p_additional_months: months,
+        });
 
       if (error) throw error;
-      alert(`تم تمديد صلاحية حساب (${emailAddress}) بمقدار ${months} شهر بنجاح.`);
+      alert(`تم تمديد صلاحية الحساب بمقدار ${months} شهر بنجاح.`);
       loadDashboardData();
     } catch (err: any) {
       alert('فشلت عملية التمديد: ' + err.message);
     }
   };
 
-  const handleRevokeLicense = async (emailAddress: string) => {
+  const handleRevokeLicense = async (userUUID: string) => {
     if (!supabase) return;
-    if (confirm(`هل أنت متأكد من سحب ترخيص الحساب (${emailAddress})؟ سيعود حسابه فوراً للباقة المجانية.`)) {
+    if (confirm(`هل أنت متأكد من سحب ترخيص هذا الحساب؟ سيعود فوراً للباقة المجانية.`)) {
       try {
         const { error } = await supabase
-          .from('profiles')
-          .update({
-            plan: 'free',
-            status: 'none',
-            expires_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('email', emailAddress);
+          .rpc('admin_revoke_license', {
+            p_user_id: userUUID,
+          });
 
         if (error) throw error;
-        alert(`تم إلغاء ترخيص الحساب (${emailAddress}) بنجاح.`);
+        alert(`تم إلغاء الترخيص بنجاح.`);
         loadDashboardData();
       } catch (err: any) {
         alert('فشل سحب الترخيص: ' + err.message);
@@ -311,27 +289,16 @@ export default function AdminDashboard() {
     if (!supabase) return;
 
     const duration = parseInt(genDuration, 10);
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let block1 = '';
-    let block2 = '';
-    for (let i = 0; i < 4; i++) {
-      block1 += characters.charAt(Math.floor(Math.random() * characters.length));
-      block2 += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    const key = `GRIDO-${genPlan.toUpperCase()}-${block1}-${block2}`;
 
     try {
-      const { error } = await supabase
-        .from('license_keys')
-        .insert({
-          key,
-          plan: genPlan,
-          duration_months: duration,
-          status: 'unused'
+      const { data, error } = await supabase
+        .rpc('admin_create_license_key', {
+          p_plan: genPlan,
+          p_duration_months: duration,
         });
 
       if (error) throw error;
-      setGeneratedKey(key);
+      setGeneratedKey(data as string);
       alert('تم توليد مفتاح ترخيص وإدراجه سحابياً بنجاح!');
       loadDashboardData();
     } catch (err: any) {
@@ -763,14 +730,14 @@ export default function AdminDashboard() {
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => handleExtendLicense(u.email, 1)}
+                                onClick={() => handleExtendLicense(u.id, 1)}
                                 className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors cursor-pointer"
                                 title="تمديد +1 شهر"
                               >
                                 <CalendarPlus className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => handleExtendLicense(u.email, 12)}
+                                onClick={() => handleExtendLicense(u.id, 12)}
                                 className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors cursor-pointer"
                                 title="تمديد +1 سنة"
                               >
@@ -778,7 +745,7 @@ export default function AdminDashboard() {
                               </button>
                               {(u.plan === 'pro' || u.plan === 'enterprise') && (
                                 <button
-                                  onClick={() => handleRevokeLicense(u.email)}
+                                  onClick={() => handleRevokeLicense(u.id)}
                                   className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors cursor-pointer"
                                   title="إلغاء الترخيص وإرجاعه للمجاني"
                                 >
@@ -1289,7 +1256,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => {
-                      handleExtendLicense(selectedUser.email, 1);
+                      handleExtendLicense(selectedUser.id, 1);
                       setSelectedUser(null);
                     }}
                     className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-[10px] font-bold border-0 shadow-sm shadow-blue-500/10 cursor-pointer transition-colors"
@@ -1298,7 +1265,7 @@ export default function AdminDashboard() {
                   </button>
                   <button
                     onClick={() => {
-                      handleExtendLicense(selectedUser.email, 12);
+                      handleExtendLicense(selectedUser.id, 12);
                       setSelectedUser(null);
                     }}
                     className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-[10px] font-bold border-0 shadow-sm shadow-blue-500/10 cursor-pointer transition-colors"
@@ -1308,7 +1275,7 @@ export default function AdminDashboard() {
                   {(selectedUser.plan === 'pro' || selectedUser.plan === 'enterprise') && (
                     <button
                       onClick={() => {
-                        handleRevokeLicense(selectedUser.email);
+                        handleRevokeLicense(selectedUser.id);
                         setSelectedUser(null);
                       }}
                       className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors"

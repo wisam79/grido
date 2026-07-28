@@ -42,8 +42,10 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
   createElementClick,
   createElementRef,
 }: KonvaSingleLayerProps) {
-  const selectedEl = sortedElements.find((e) => selectedIds.includes(e.id));
-  const isText = selectedEl?.type === "text";
+  const isText = selectedIds.length > 0 && selectedIds.every((id) => {
+    const el = sortedElements.find((e) => e.id === id);
+    return el?.type === "text";
+  });
 
   return (
     <Layer>

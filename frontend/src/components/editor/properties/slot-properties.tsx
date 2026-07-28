@@ -13,6 +13,7 @@ import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { toast } from "sonner";
 import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
+import { useRenderQuality } from "@/lib/render-quality";
 import { SliderControl } from "./shared-controls";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
@@ -460,7 +461,9 @@ export function SlotProperties({
               step={1}
               unit="%"
               onChange={(v) => onUpdate(slot.id, { brightness: v })}
-              onCommit={() => useEditorStore.getState().pushHistory()}
+              onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+              onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+              onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
             />
             <SliderControl
               label="التباين"
@@ -470,7 +473,9 @@ export function SlotProperties({
               step={1}
               unit="%"
               onChange={(v) => onUpdate(slot.id, { contrast: v })}
-              onCommit={() => useEditorStore.getState().pushHistory()}
+              onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+              onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+              onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
             />
             <SliderControl
               label="التشبع"
@@ -480,7 +485,9 @@ export function SlotProperties({
               step={1}
               unit="%"
               onChange={(v) => onUpdate(slot.id, { saturation: v })}
-              onCommit={() => useEditorStore.getState().pushHistory()}
+              onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+              onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+              onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
             />
 
             <Button

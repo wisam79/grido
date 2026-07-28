@@ -26,6 +26,8 @@ export function SliderControl({
   unit,
   onChange,
   onCommit,
+  onDragStart,
+  onDragEnd,
 }: {
   label: string;
   icon?: React.ReactNode;
@@ -36,6 +38,8 @@ export function SliderControl({
   unit: string;
   onChange: (v: number) => void;
   onCommit?: (v: number) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }) {
   const [localValue, setLocalValue] = useState(value);
   const rafRef = useRef<number | null>(null);
@@ -67,7 +71,8 @@ export function SliderControl({
 
   const handlePointerDown = useCallback(() => {
     isDraggingRef.current = true;
-  }, []);
+    onDragStart?.();
+  }, [onDragStart]);
 
   const handlePointerUp = useCallback(() => {
     const finalValue = pendingRef.current ?? localValue;
@@ -82,8 +87,9 @@ export function SliderControl({
     if (isDraggingRef.current) {
       isDraggingRef.current = false;
       onCommit?.(finalValue);
+      onDragEnd?.();
     }
-  }, [onChange, onCommit, localValue]);
+  }, [onChange, onCommit, onDragEnd, localValue]);
 
   useEffect(() => {
     return () => {

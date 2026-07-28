@@ -87,6 +87,11 @@ export function useKonvaDrag({
       xAbs = snapResult.x * canvasWidth;
       yAbs = snapResult.y * canvasHeight;
     }
+    const elW = element.width * canvasWidth;
+    const elH = element.height * canvasHeight;
+    const margin = 0.25;
+    xAbs = Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - elW, xAbs));
+    yAbs = Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - elH, yAbs));
     return { x: xAbs, y: yAbs };
   };
 
