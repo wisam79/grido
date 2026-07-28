@@ -76,7 +76,7 @@ export function HeroSection() {
                 className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-white/20 bg-[#121826]/90 backdrop-blur-md text-xs font-semibold text-neutral-200 transition-all hover:border-cyan-400/60 shadow-md"
               >
                 <span className="px-2 py-0.5 rounded-full bg-brand-500 text-white font-extrabold text-[11px]">
-                  v1.2.2
+                  v1.2.3
                 </span>
                 <span className="text-neutral-300 font-medium">الإصدار الجديد متوفر</span>
                 <span className="text-cyan-400 font-bold">| 3 ثوانٍ</span>

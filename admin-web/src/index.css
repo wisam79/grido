@@ -21,51 +21,40 @@
 
 * {
   font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  box-sizing: border-box;
 }
 
 h1, h2, h3, h4, h5, h6, .font-display {
   font-family: 'Cairo', 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
 }
 
-body {
+html, body {
   font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
   margin: 0;
+  padding: 0;
   min-height: 100vh;
   background-color: #0b1120;
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  width: 100%;
 }
 
-/* Scroll reveal animations */
-.reveal-on-scroll {
-  opacity: 0;
-  transform: translateY(30px) scale(0.98);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+/* Hide scrollbar for clean mobile horizontal scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-.reveal-on-scroll.is-revealed {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
-/* Logo subtle breathing glow animation */
-@keyframes logo-glow {
-  0%, 100% { filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.3)); transform: scale(1); }
-  50% { filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.45)); transform: scale(1.03); }
-}
-
-.animate-logo-glow {
-  animation: logo-glow 4s ease-in-out infinite;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Laser Scan Line animation */
 @keyframes laser-scan {
   0% { transform: translateY(-100%); opacity: 0.2; }
   50% { opacity: 0.85; }
-  100% { transform: translateY(500px); opacity: 0.2; }
+  100% { transform: translateY(400px); opacity: 0.2; }
 }
 
 .animate-laser-scan {
@@ -86,19 +75,34 @@ body {
   animation: rotate-slow 35s linear infinite reverse;
 }
 
-/* 3D Perspective tilt for app window mockup */
-.perspective-container {
-  perspective: 1200px;
+/* 3D Perspective tilt - Active only on desktop lg+ screens to prevent mobile overflow */
+@media (min-width: 1024px) {
+  .perspective-container {
+    perspective: 1200px;
+  }
+
+  .perspective-mockup {
+    transform: rotateY(-12deg) rotateX(6deg) rotateZ(1deg);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-style: preserve-3d;
+  }
+
+  .perspective-container:hover .perspective-mockup {
+    transform: rotateY(-4deg) rotateX(2deg) rotateZ(0deg) scale(1.01);
+  }
 }
 
-.perspective-mockup {
-  transform: rotateY(-12deg) rotateX(6deg) rotateZ(1deg);
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  transform-style: preserve-3d;
+/* Scroll reveal animations */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(24px) scale(0.98);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
-.perspective-container:hover .perspective-mockup {
-  transform: rotateY(-4deg) rotateX(2deg) rotateZ(0deg) scale(1.01);
+.reveal-on-scroll.is-revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 /* Respect reduced motion */
@@ -111,7 +115,7 @@ body {
   .reveal-on-scroll { opacity: 1 !important; transform: none !important; }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar for desktop */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: #0b1120; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 999px; }

@@ -36,7 +36,7 @@ export function CtaBanner() {
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs mb-6 max-w-full">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-ping" />
-              <span className="truncate">v1.2.2 - متوافق مع Windows 10 & 11 (64-bit)</span>
+              <span className="truncate">v1.2.3 - متوافق مع Windows 10 & 11 (64-bit)</span>
             </div>
 
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-5 font-display text-white">
