@@ -32,11 +32,13 @@ export function AppMockup() {
         className="pointer-events-none absolute -bottom-8 -left-8 w-[500px] h-[400px] bg-gradient-to-tr from-brand-500/20 via-indigo-600/15 to-transparent rounded-full blur-[110px] opacity-80"
       />
 
-      {/* 3D Perspective Tilted Window Frame matching Real Grido Studio App */}
-      <div
-        className="perspective-mockup relative rounded-2xl overflow-hidden border border-white/20 bg-[#1e1e1e] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95)] text-right w-full ring-1 ring-white/10"
-        dir="rtl"
-      >
+      {/* Scrollable Wrapper for Mobile Devices */}
+      <div className="w-full overflow-x-auto overflow-y-hidden no-scrollbar pb-4 -mb-4">
+        {/* 3D Perspective Tilted Window Frame matching Real Grido Studio App */}
+        <div
+          className="perspective-mockup relative rounded-2xl overflow-hidden border border-white/20 bg-[#1e1e1e] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95)] text-right w-full min-w-[768px] ring-1 ring-white/10"
+          dir="rtl"
+        >
         {/* Top App Titlebar */}
         <div className="h-11 bg-[#242424] border-b border-white/10 px-3 flex items-center justify-between text-neutral-300 text-xs">
           {/* Left Controls & Status */}
@@ -326,6 +328,7 @@ export function AppMockup() {
             </div>
           </aside>
         </div>
+      </div>
       </div>
     </div>
   );
