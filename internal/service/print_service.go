@@ -993,15 +993,6 @@ func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
 	return result, nil
 }
 
-func encodePowershell(script string) string {
-	var b bytes.Buffer
-	for _, r := range script {
-		b.WriteByte(byte(r))
-		b.WriteByte(byte(r >> 8))
-	}
-	return base64.StdEncoding.EncodeToString(b.Bytes())
-}
-
 // PrintNative launches the OS native Win32 print dialog for a generated file on disk
 func (s *PrintService) PrintNative(filePath string) error {
 	if filePath == "" {
