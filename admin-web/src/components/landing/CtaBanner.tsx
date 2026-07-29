@@ -10,11 +10,11 @@ export function CtaBanner() {
       {/* Soft Ambient Studio Glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[650px] h-[200px] sm:h-[350px] bg-sky-500/20 rounded-full blur-[120px] sm:blur-[160px]"
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[200px] sm:h-[300px] bg-sky-500/10 rounded-full blur-[120px] sm:blur-[160px]"
       />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-6 sm:p-12 md:p-14 text-center border border-sky-400/30 bg-gradient-to-b from-[#1e2536]/95 to-[#141923]/95 backdrop-blur-md shadow-[0_0_50px_rgba(56,189,248,0.2)]">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-6 sm:p-12 md:p-14 text-center border border-sky-400/20 bg-gradient-to-b from-[#1e2536]/95 to-[#141923]/95 backdrop-blur-md shadow-xl">
           {/* Subtle Studio Blueprint Grid Overlay */}
           <div
             className="absolute inset-0 opacity-15 pointer-events-none"
@@ -24,14 +24,14 @@ export function CtaBanner() {
           <div className="relative z-10 space-y-4 sm:space-y-6">
             {/* Version Badge */}
             <div>
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-sky-500/15 border border-sky-400/30 text-sky-300 text-[10px] sm:text-xs font-bold shadow-md">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/20 text-sky-300 text-[10px] sm:text-xs font-bold shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                 <span>الإصدار v1.2.3 • متوافق مع أجهزة الويندوز (64-bit)</span>
               </span>
             </div>
 
             {/* Headline */}
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black font-display text-white leading-snug sm:leading-tight drop-shadow-[0_2px_15px_rgba(56,189,248,0.3)]">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black font-display text-white leading-snug sm:leading-tight">
               جاهز لتطوير أداء استوديو الصور الخاص بك؟
             </h2>
 
@@ -46,7 +46,7 @@ export function CtaBanner() {
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto group flex items-center justify-center gap-2.5 bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-extrabold font-display text-xs sm:text-sm shadow-[0_0_25px_rgba(56,189,248,0.5)] border border-sky-300/40 transition-all active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto group flex items-center justify-center gap-2.5 bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-extrabold font-display text-xs sm:text-sm shadow-md shadow-brand-500/20 border border-sky-300/30 transition-all active:scale-95 cursor-pointer"
                 aria-label="تحميل البرنامج للويندوز المباشر"
               >
                 <Download className="w-4 h-4 text-white shrink-0 group-hover:translate-y-0.5 transition-transform" />

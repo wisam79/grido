@@ -82,18 +82,18 @@ export function FeaturesTabs() {
       {/* Subtle Studio Blue Backdrop Glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[750px] h-[250px] sm:h-[450px] bg-sky-500/15 rounded-full blur-[120px] sm:blur-[180px]"
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[700px] h-[250px] sm:h-[400px] bg-sky-500/8 rounded-full blur-[120px] sm:blur-[170px]"
       />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16 relative z-20">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-sky-300 text-[11px] sm:text-xs font-bold mb-4 shadow-xl">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/20 text-sky-300 text-[11px] sm:text-xs font-bold mb-4 shadow-md">
             <Sparkles className="w-3.5 h-3.5 text-sky-400" />
             <span>المميزات الرئيسية</span>
           </span>
-          <h2 className="text-2xl sm:text-5xl lg:text-6xl font-black font-display text-white mb-4 sm:mb-6 tracking-tight drop-shadow-2xl">
-            استكشف قوة <span className="bg-clip-text text-transparent bg-gradient-to-l from-sky-400 via-brand-300 to-indigo-300 drop-shadow-[0_2px_15px_rgba(56,189,248,0.35)]">Grido Studio</span>
+          <h2 className="text-2xl sm:text-5xl lg:text-6xl font-black font-display text-white mb-4 sm:mb-6 tracking-tight">
+            استكشف قوة <span className="bg-clip-text text-transparent bg-gradient-to-l from-sky-400 via-brand-300 to-indigo-300 drop-shadow-[0_1px_8px_rgba(56,189,248,0.18)]">Grido Studio</span>
           </h2>
           <p className="text-slate-300 text-sm sm:text-lg font-sans leading-relaxed max-w-2xl mx-auto font-medium">
             محرك معالجة احترافي يجمع بين أدوات التصميم العالمية والذكاء الاصطناعي لتسريع إنتاجية استوديو الصور الخاص بك.
@@ -102,7 +102,7 @@ export function FeaturesTabs() {
 
         {/* Elevated Floating Tabs */}
         <div className="flex justify-center mb-8 sm:mb-16 relative z-20">
-          <div className="p-1.5 sm:p-2 rounded-2xl sm:rounded-[2rem] bg-[#1e2536]/90 backdrop-blur-xl border border-sky-400/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto justify-start sm:justify-center">
+          <div className="p-1.5 sm:p-2 rounded-2xl sm:rounded-[2rem] bg-[#1e2536]/80 backdrop-blur-xl border border-sky-400/20 shadow-lg flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto justify-start sm:justify-center">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -112,7 +112,7 @@ export function FeaturesTabs() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-3.5 py-2.5 sm:px-6 sm:py-3.5 rounded-xl sm:rounded-[1.5rem] font-bold font-display text-xs sm:text-sm transition-all duration-500 flex items-center gap-2 shrink-0 cursor-pointer relative overflow-hidden group ${
                     isActive
-                      ? 'bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 text-white shadow-[0_0_25px_rgba(56,189,248,0.45)] scale-[1.02] border border-sky-300/40'
+                      ? 'bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 text-white shadow-md shadow-brand-500/20 scale-[1.02] border border-sky-300/30'
                       : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'
                   }`}
                 >

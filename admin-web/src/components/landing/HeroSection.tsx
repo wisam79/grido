@@ -33,12 +33,12 @@ export function HeroSection() {
       {/* Desktop Blue Glow (Hidden on Mobile to Prevent Overflow) */}
       <div
         aria-hidden
-        className="hidden sm:block pointer-events-none absolute top-10 right-0 w-[650px] h-[550px] bg-gradient-to-l from-brand-600/25 via-blue-600/15 to-transparent rounded-full blur-[140px] opacity-80"
+        className="hidden sm:block pointer-events-none absolute top-10 right-0 w-[500px] h-[450px] bg-gradient-to-l from-brand-600/15 via-blue-600/10 to-transparent rounded-full blur-[120px] opacity-50"
       />
       {/* Mobile Subtle Center Glow */}
       <div
         aria-hidden
-        className="sm:hidden pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[240px] h-[240px] bg-brand-500/20 rounded-full blur-[80px]"
+        className="sm:hidden pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[200px] h-[200px] bg-brand-500/10 rounded-full blur-[60px]"
       />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
@@ -50,9 +50,9 @@ export function HeroSection() {
             <div>
               <a
                 href="#features"
-                className="inline-flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border border-sky-400/30 bg-[#1e293b]/80 backdrop-blur-md text-[10px] sm:text-xs font-semibold text-slate-200 transition-all hover:border-sky-400/60 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
+                className="inline-flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border border-sky-400/20 bg-[#1e293b]/70 backdrop-blur-md text-[10px] sm:text-xs font-semibold text-slate-200 transition-all hover:border-sky-400/40 shadow-xs"
               >
-                <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-brand-500 to-sky-400 text-white font-extrabold text-[10px] sm:text-[11px] shadow-sm">
+                <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-brand-500 to-sky-400 text-white font-extrabold text-[10px] sm:text-[11px] shadow-xs">
                   v1.2.3
                 </span>
                 <span className="text-slate-200 font-medium">الإصدار الجديد متوفر</span>
@@ -62,8 +62,8 @@ export function HeroSection() {
 
             {/* Headline */}
             <h1 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black leading-snug sm:leading-[1.25] font-display">
-              <span className="block text-white drop-shadow-md">تنسيق وتجهيز صور المعاملات</span>
-              <span className="mt-1.5 sm:mt-2 block bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-brand-300 to-indigo-300 drop-shadow-[0_2px_15px_rgba(56,189,248,0.35)]">
+              <span className="block text-white">تنسيق وتجهيز صور المعاملات</span>
+              <span className="mt-1.5 sm:mt-2 block bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-brand-300 to-indigo-300 drop-shadow-[0_1px_6px_rgba(56,189,248,0.18)]">
                 جاهزة للطباعة والقص في 3 ثوان
               </span>
             </h1>
@@ -79,7 +79,7 @@ export function HeroSection() {
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white px-5 sm:px-6 py-3.5 rounded-xl font-extrabold font-display text-xs sm:text-sm shadow-[0_0_25px_rgba(59,130,246,0.45)] border border-sky-300/30 transition-all active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white px-5 sm:px-6 py-3.5 rounded-xl font-extrabold font-display text-xs sm:text-sm shadow-md shadow-brand-500/20 border border-sky-300/20 transition-all active:scale-95 cursor-pointer"
                 aria-label="تحميل ملف التثبيت (Setup)"
               >
                 <Download className="w-4 h-4 text-white shrink-0" />
@@ -89,7 +89,7 @@ export function HeroSection() {
                 href="/api/download?type=portable"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#242936] hover:bg-[#2d3548] border border-sky-400/20 text-slate-200 hover:text-white px-4 sm:px-5 py-3.5 rounded-xl font-bold font-display text-xs sm:text-sm backdrop-blur-md transition-all cursor-pointer shadow-sm"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#242936] hover:bg-[#2d3548] border border-sky-400/15 text-slate-200 hover:text-white px-4 sm:px-5 py-3.5 rounded-xl font-bold font-display text-xs sm:text-sm backdrop-blur-md transition-all cursor-pointer shadow-xs"
                 aria-label="نسخة محمولة (Portable)"
               >
                 <Download className="w-4 h-4 text-sky-400 shrink-0" />
@@ -102,7 +102,7 @@ export function HeroSection() {
               {TRUST_TAGS.map((tag) => {
                 const Icon = tag.icon;
                 return (
-                  <span key={tag.label} className="inline-flex items-center gap-1.5 bg-[#1e293b]/70 sm:bg-transparent px-2.5 py-1 sm:p-0 rounded-lg border border-sky-400/20 sm:border-0">
+                  <span key={tag.label} className="inline-flex items-center gap-1.5 bg-[#1e293b]/50 sm:bg-transparent px-2.5 py-1 sm:p-0 rounded-lg border border-sky-400/10 sm:border-0">
                     <Icon className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                     <span>{tag.label}</span>
                   </span>
@@ -119,7 +119,7 @@ export function HeroSection() {
             </div>
 
             {/* Mobile Native Feature Showcase Card (Phone) */}
-            <div className="sm:hidden w-full rounded-2xl bg-[#1e293b]/90 border border-sky-400/30 p-3.5 shadow-[0_0_30px_rgba(14,165,233,0.15)] space-y-3 relative overflow-hidden">
+            <div className="sm:hidden w-full rounded-2xl bg-[#1e293b]/80 border border-sky-400/20 p-3.5 shadow-xl space-y-3 relative overflow-hidden">
               <div className="flex items-center justify-between text-xs border-b border-white/10 pb-2.5">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500/90" />
@@ -127,7 +127,7 @@ export function HeroSection() {
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/90" />
                   <span className="mr-1.5 font-mono text-[10px] text-white font-bold">Grido Studio Mobile</span>
                 </div>
-                <span className="text-[9px] font-mono text-sky-300 bg-sky-500/20 px-2 py-0.5 rounded border border-sky-400/30 font-bold shadow-xs">
+                <span className="text-[9px] font-mono text-sky-300 bg-sky-500/15 px-2 py-0.5 rounded border border-sky-400/20 font-bold shadow-xs">
                   ⚡ 3 ثوانٍ
                 </span>
               </div>
