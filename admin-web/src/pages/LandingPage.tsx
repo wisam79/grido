@@ -131,10 +131,10 @@ export default function LandingPage() {
           href={GITHUB_RELEASE_DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-6 left-6 z-50 flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-400 text-white font-extrabold font-display text-sm shadow-lg shadow-black/40 transition-all hover:scale-105 active:scale-95 border border-blue-400/30 backdrop-blur-md animate-bounce-slow"
+          className="fixed bottom-5 left-5 z-50 flex items-center gap-2.5 px-5 py-3 sm:px-6 sm:py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white font-extrabold font-display text-xs sm:text-sm shadow-[0_0_30px_rgba(56,189,248,0.5)] transition-all hover:scale-105 active:scale-95 border border-sky-300/40 backdrop-blur-md"
           aria-label="تحميل مباشر الآن"
         >
-          <Download className="w-4 h-4 text-white" />
+          <Download className="w-4 h-4 text-white shrink-0" />
           <span>تحميل Grido Studio</span>
         </a>
       )}
