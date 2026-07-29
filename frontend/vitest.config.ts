@@ -29,12 +29,14 @@ export default defineConfig({
         '**/coverage/**',
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
+        '**/svg-paths.ts',
+        '**/vision_bundle*',
       ],
       thresholds: {
-        statements: 35,
-        branches: 28,
-        functions: 35,
-        lines: 35
+        statements: 50,
+        branches: 45,
+        functions: 50,
+        lines: 50
       }
     },
   },
