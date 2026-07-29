@@ -34,6 +34,7 @@ type PrintRequest struct {
 	ShowCutLines    bool        `json:"showCutLines"`
 	ColorSpace      string      `json:"colorSpace,omitempty"`    // "sRGB" or "CMYK"
 	ExportFormat    string      `json:"exportFormat,omitempty"`  // "png", "jpeg", "tiff"
+	Orientation     string      `json:"orientation,omitempty"`   // "portrait" or "landscape"
 	CutLines        []CutLine   `json:"cutLines"`
 	Items           []PrintItem `json:"items"`
 }

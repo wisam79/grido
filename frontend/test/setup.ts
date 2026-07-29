@@ -60,7 +60,8 @@ Object.defineProperty(window, 'go', {
         ResetLibrary: () => Promise.resolve('success'),
       },
       PrintHandler: {
-        ExportPrintSheet: () => Promise.resolve({ success: true, imagePath: '' }),
+        ExportPrintSheet: () => Promise.resolve({ success: true, imagePath: '', filePath: '/tmp/sheet.png' }),
+        PrintNative: () => Promise.resolve({ success: true, filePath: '/tmp/sheet.png' }),
       },
       LicenseHandler: {
         ActivateLicenseKey: () => Promise.resolve({}),

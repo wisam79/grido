@@ -116,7 +116,8 @@ export async function setupWailsMock(page: Page) {
           ResetLibrary: async () => 'success',
         },
         PrintHandler: {
-          ExportPrintSheet: async () => ({ success: true, imagePath: 'mock.png' })
+          ExportPrintSheet: async () => ({ success: true, imagePath: 'mock.png', filePath: 'C:/mock/sheet.png' }),
+          PrintNative: async () => ({ success: true, filePath: 'C:/mock/sheet.png' })
         }
       }
     };

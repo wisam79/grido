@@ -145,69 +145,154 @@ export default function App() {
 
   if (!isLicenseActive) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl text-right p-6 font-cairo select-none" dir="rtl">
-        <div className="w-full max-w-md bg-card/60 backdrop-blur-xl border border-border/40 p-8 rounded-2xl shadow-2xl space-y-6 text-center">
-          <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
-            <Lock className="w-10 h-10" />
-          </div>
-          
-          <div className="space-y-2">
-            <h1 className="text-xl font-extrabold text-foreground">النسخة مقفلة</h1>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              انتهت الفترة التجريبية. يرجى التفعيل.
-            </p>
-          </div>
-
-          <form onSubmit={async (e) => {
-            e.preventDefault();
-            if (!lockKey) return;
-            setLockLoading(true);
-            try {
-              await activateLicenseKey(lockKey);
-              toast.success("تم تفعيل الترخيص بنجاح! شكراً لك.");
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "فشل تفعيل الترخيص");
-            } finally {
-              setLockLoading(false);
-            }
-          }} className="space-y-4 text-right">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">أدخل مفتاح الترخيص</label>
-              <div className="relative">
-                <Key className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
-                <input
-                  type="text"
-                  required
-                  placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
-                  value={lockKey}
-                  onChange={(e) => setLockKey(e.target.value)}
-                  className="w-full pr-9 pl-4 py-2 text-xs border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase text-foreground"
-                />
-              </div>
+      <div 
+        className="h-screen flex flex-col overflow-hidden font-cairo bg-background select-none" 
+        dir="rtl"
+      >
+        {!isMaximized && <WindowResizeHandles />}
+        {/* الرأس الموحد للنافذة */}
+        <header
+          className={`border-b bg-card/90 backdrop-blur-md no-print title-bar-draggable select-none transition-opacity duration-200 ${
+            !isFocused ? "opacity-75" : ""
+          }`}
+          onDoubleClick={handleMaximize}
+        >
+          <div className="flex items-center justify-between px-4 py-2 relative">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 animate-pulse" />
+              <h1 className="text-xs font-bold text-foreground/80">
+                Grido Studio | تفعيل الترخيص
+              </h1>
             </div>
 
-            <Button type="submit" className="w-full h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border-0 font-bold text-xs" disabled={lockLoading}>
-              {lockLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "تفعيل الترخيص الفوري"
-              )}
-            </Button>
-          </form>
-
-          <div className="border-t border-border/40 pt-4 flex flex-col gap-2">
-            <Button variant="outline" className="w-full text-xs font-semibold h-9 cursor-pointer" onClick={() => setAccountModalOpen(true)}>
-              إدارة الحساب
-            </Button>
-            
-            {user && user.token && (
-              <Button variant="ghost" className="w-full text-xs text-red-500 hover:bg-red-500/5 h-9 cursor-pointer" onClick={() => logoutAccount()}>
-                تسجيل الخروج
+            <div className="flex items-center gap-2 title-bar-controls">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
+                title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
+              >
+                {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
               </Button>
-            )}
+
+              <div className="w-px h-5 bg-border mx-1" />
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMinimize}
+                className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
+                title="تصغير"
+              >
+                <Minus className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMaximize}
+                className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
+                title={isMaximized ? "استعادة" : "تكبير"}
+              >
+                {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Square className="w-3 h-3" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClose}
+                className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white"
+                title="إغلاق"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
+        </header>
+
+        {/* شاشة التفعيل المركزية */}
+        <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-right p-6">
+          <div className="w-full max-w-md bg-card border border-border/60 p-8 rounded-2xl shadow-2xl space-y-6 text-center">
+            <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
+              <Lock className="w-10 h-10" />
+            </div>
+            
+            <div className="space-y-2">
+              <h1 className="text-xl font-extrabold text-foreground">النسخة مقفلة</h1>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                انتهت الفترة التجريبية. يرجى إدخال مفتاح التفعيل للمتابعة.
+              </p>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!lockKey) return;
+              setLockLoading(true);
+              try {
+                await activateLicenseKey(lockKey);
+                toast.success("تم تفعيل الترخيص بنجاح! شكراً لك.");
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "فشل تفعيل الترخيص");
+              } finally {
+                setLockLoading(false);
+              }
+            }} className="space-y-4 text-right">
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-semibold text-foreground">أدخل مفتاح الترخيص</label>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText();
+                        if (text) {
+                          setLockKey(text.trim().toUpperCase());
+                          toast.success("تم لصق المفتاح من الحافظة");
+                        }
+                      } catch {
+                        toast.error("يرجى لصق المفتاح يدوياً");
+                      }
+                    }}
+                    className="text-[10px] text-primary hover:underline font-medium cursor-pointer"
+                  >
+                    لصق من الحافظة 📋
+                  </button>
+                </div>
+                <div className="relative">
+                  <Key className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
+                    value={lockKey}
+                    onChange={(e) => setLockKey(e.target.value.toUpperCase())}
+                    className="w-full pr-9 pl-4 py-2 text-xs border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase text-foreground"
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer shadow-xs" disabled={lockLoading}>
+                {lockLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "تفعيل الترخيص الفوري"
+                )}
+              </Button>
+            </form>
+
+            <div className="border-t border-border/40 pt-4 flex flex-col gap-2">
+              <Button variant="outline" className="w-full text-xs font-semibold h-9 cursor-pointer" onClick={() => setAccountModalOpen(true)}>
+                إدارة الحساب
+              </Button>
+              
+              {user && user.token && (
+                <Button variant="ghost" className="w-full text-xs text-red-500 hover:bg-red-500/5 h-9 cursor-pointer" onClick={() => logoutAccount()}>
+                  تسجيل الخروج
+                </Button>
+              )}
+            </div>
+          </div>
+          <AccountLicenseModal />
         </div>
-        <AccountLicenseModal />
       </div>
     );
   }

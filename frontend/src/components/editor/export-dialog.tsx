@@ -31,7 +31,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const [loading, setLoading] = useState(false);
   const [batchExport, setBatchExport] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [bleedMM, setBleedMM] = useState(3);
+  const [bleedMM, setBleedMM] = useState(0);
   const [showCropMarks, setShowCropMarks] = useState(false);
   const stageRef = useStageRef();
   const { template, canvasWidth, canvasHeight, mode, printSettings, slots } = useEditorStore(useShallow((state) => ({

@@ -6,8 +6,20 @@ import {
   Trash2, 
   ArrowUpToLine, 
   ArrowDownToLine, 
-  Eraser 
+  Eraser,
+  Sparkles,
+  Wand2,
+  ImagePlus,
+  Rows,
+  Columns,
+  LayoutGrid,
+  Loader2
 } from "lucide-react";
+import { openImageFileDialog } from "@/lib/file-dialog-utils";
+import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
+import { useBgRemoval } from "@/hooks/use-bg-removal";
+import { useAiEnhance } from "@/hooks/use-ai-enhance";
+import type { ImageElement, CanvasSlot, CanvasElement } from "@/lib/store/types";
 
 export interface ContextMenuPosition {
   x: number;
@@ -35,8 +47,23 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     bringToFront,
     sendToBack,
     updateSlot,
+    updateElement,
+    setSlotImage,
     pushHistory,
+    slots,
+    elements
   } = useEditorStore();
+
+  const onUpdateSlot = (id: string, patch: Partial<CanvasSlot>) => {
+    updateSlot(id, patch);
+  };
+
+  const onUpdateElement = (id: string, patch: Partial<CanvasElement>) => {
+    updateElement(id, patch);
+  };
+
+  const { isRemovingBg, handleRemoveBg } = useBgRemoval(target.type === "slot" ? onUpdateSlot : onUpdateElement);
+  const { isEnhancing, handleEnhance, remainingQuota } = useAiEnhance(target.type === "slot" ? onUpdateSlot : onUpdateElement);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -46,7 +73,6 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       }
     };
     
-    // Use capture phase to ensure it triggers before other handlers
     document.addEventListener("mousedown", handleClickOutside, true);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside, true);
@@ -110,11 +136,10 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
         h: menuRef.current.offsetHeight
       });
     }
-    // إعادة تعيين فهرس التركيز عند تغير الهدف
     focusIndexRef.current = 0;
   }, [target, position.x, position.y]);
 
-  const size = menuSize || { w: 150, h: 160 };
+  const size = menuSize || { w: 190, h: 280 };
 
   let maxRight = window.innerWidth - 8;
   let maxBottom = window.innerHeight - 8;
@@ -130,7 +155,6 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     minTop = Math.max(minTop, rect.top);
   }
 
-  // Calculate position with flips if it exceeds the available space
   let left = position.x;
   let top = position.y;
   let originX = "left";
@@ -145,7 +169,6 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     originY = "bottom";
   }
 
-  // Final clamping to ensure it doesn't go off the left/top edges 
   left = Math.max(minLeft, Math.min(left, maxRight - size.w));
   top = Math.max(minTop, Math.min(top, maxBottom - size.h));
 
@@ -154,8 +177,8 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       ref={menuRef}
       role="menu"
       tabIndex={-1}
-      aria-label="قائمة السياق"
-      className="fixed z-[9999] w-auto min-w-[130px] max-w-[220px] bg-card border border-border/50 shadow-2xl rounded-md py-1 text-sm font-cairo overflow-hidden select-none animate-in fade-in-50 zoom-in-95 duration-100 outline-none"
+      aria-label="قائمة السياق الموحدة"
+      className="fixed z-[9999] w-[190px] bg-card/95 backdrop-blur-2xl border border-border/60 shadow-[0_20px_50px_rgba(0,0,0,0.35)] rounded-2xl p-2 text-xs font-cairo overflow-hidden select-none animate-in fade-in-80 zoom-in-95 duration-150 outline-none space-y-1.5"
       style={{
         left: `${left}px`,
         top: `${top}px`,
@@ -164,79 +187,271 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {target.type === "element" && target.id && (
-        <>
-          <button
-            role="menuitem"
-            tabIndex={-1}
-            className="w-full text-right px-3 py-1.5 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
-            onClick={() => handleAction(() => {
-              const { selectedIds } = useEditorStore.getState();
-              if (selectedIds.length > 1) {
-                duplicateElements(selectedIds);
-              } else {
-                duplicateElement(target.id!);
-              }
-            })}
-          >
-            <Copy className="w-4 h-4 shrink-0" />
-            <span>تكرار</span>
-          </button>
-          
-          <button
-            role="menuitem"
-            tabIndex={-1}
-            className="w-full text-right px-3 py-1.5 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
-            onClick={() => handleAction(() => bringToFront(target.id!))}
-          >
-            <ArrowUpToLine className="w-4 h-4 shrink-0" />
-            <span>إحضار للأمام</span>
-          </button>
-          
-          <button
-            role="menuitem"
-            tabIndex={-1}
-            className="w-full text-right px-3 py-1.5 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
-            onClick={() => handleAction(() => sendToBack(target.id!))}
-          >
-            <ArrowDownToLine className="w-4 h-4 shrink-0" />
-            <span>إرسال للخلف</span>
-          </button>
+      {/* 🔹 قائمة العناصر المتحركة على الكانفس */}
+      {target.type === "element" && target.id && (() => {
+        const el = elements.find((e) => e.id === target.id);
+        const imgEl = el?.type === "image" ? (el as ImageElement) : null;
 
-          <div className="h-px bg-border/50 my-1 mx-2" role="separator" />
-          
-          <button
-            role="menuitem"
-            tabIndex={-1}
-            className="w-full text-right px-3 py-1.5 hover:bg-destructive/10 focus:bg-destructive/10 text-destructive flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
-            onClick={() => handleAction(() => {
-              const { selectedIds, removeElements } = useEditorStore.getState();
-              if (selectedIds.length > 1) {
-                removeElements(selectedIds);
-              } else {
-                removeElement(target.id!);
-              }
-            })}
-          >
-            <Trash2 className="w-4 h-4 shrink-0" />
-            <span>حذف</span>
-          </button>
-        </>
-      )}
+        return (
+          <div className="space-y-1.5">
+            {/* قسم الذكاء الاصطناعي إن كان عنصراً صورياً */}
+            {imgEl?.imageSrc && (
+              <>
+                <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+                  معالجة الصور
+                </div>
+                <div className="space-y-0.5">
+                  <button
+                    role="menuitem"
+                    tabIndex={-1}
+                    disabled={isRemovingBg}
+                    className="group w-full text-right px-2.5 py-1.5 hover:bg-purple-500/10 hover:text-purple-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none disabled:opacity-50"
+                    onClick={() => {
+                      handleRemoveBg(imgEl);
+                      onClose();
+                    }}
+                  >
+                    <div className="p-1 rounded-md bg-purple-500/10 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                      {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    </div>
+                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-purple-500 transition-colors">عزل الخلفية (AI)</span>
+                  </button>
 
-      {target.type === "slot" && target.id && (
-        <>
-          <button
-            role="menuitem"
-            tabIndex={-1}
-            className="w-full text-right px-3 py-1.5 hover:bg-destructive/10 focus:bg-destructive/10 text-destructive flex items-center gap-2 transition-colors whitespace-nowrap cursor-pointer outline-none"
-            onClick={() => handleActionWithHistory(() => updateSlot(target.id!, { imageSrc: undefined, originalImageSrc: undefined }))}
-          >
-            <Eraser className="w-4 h-4 shrink-0" />
-            <span>تفريغ الخلية</span>
-          </button>
-        </>
-      )}
+                  <button
+                    role="menuitem"
+                    tabIndex={-1}
+                    disabled={isEnhancing}
+                    className="group w-full text-right px-2.5 py-1.5 hover:bg-amber-500/10 hover:text-amber-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none disabled:opacity-50"
+                    onClick={() => {
+                      handleEnhance(imgEl);
+                      onClose();
+                    }}
+                  >
+                    <div className="p-1 rounded-md bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                      {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                    </div>
+                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-amber-500 transition-colors">ترميم الوجه (AI)</span>
+                  </button>
+                </div>
+                <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent my-1" role="separator" />
+              </>
+            )}
+
+            {/* قسم التحكم بالترتيب */}
+            <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+              التحكم والترتيب
+            </div>
+            <div className="space-y-0.5">
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={() => handleAction(() => {
+                  const { selectedIds } = useEditorStore.getState();
+                  if (selectedIds.length > 1) {
+                    duplicateElements(selectedIds);
+                  } else {
+                    duplicateElement(target.id!);
+                  }
+                })}
+              >
+                <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
+                  <Copy className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">تكرار العنصر</span>
+              </button>
+              
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={() => handleAction(() => bringToFront(target.id!))}
+              >
+                <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
+                  <ArrowUpToLine className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">إحضار للأمام</span>
+              </button>
+              
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={() => handleAction(() => sendToBack(target.id!))}
+              >
+                <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
+                  <ArrowDownToLine className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">إرسال للخلف</span>
+              </button>
+
+              <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent my-1" role="separator" />
+              
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-destructive/10 text-destructive rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={() => handleAction(() => {
+                  const { selectedIds, removeElements } = useEditorStore.getState();
+                  if (selectedIds.length > 1) {
+                    removeElements(selectedIds);
+                  } else {
+                    removeElement(target.id!);
+                  }
+                })}
+              >
+                <div className="p-1 rounded-md bg-destructive/10 text-destructive group-hover:bg-destructive group-hover:text-white transition-colors duration-150 shrink-0">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-extrabold text-[11.5px] leading-tight">حذف العنصر</span>
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 🔹 قائمة خلايا الكولاج */}
+      {target.type === "slot" && target.id && (() => {
+        const state = useEditorStore.getState();
+        const slot = state.slots?.find((s) => s.id === target.id);
+
+        return (
+          <div className="space-y-1.5">
+            {/* قسم إدارة الصورة والذكاء الاصطناعي */}
+            <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+              الصورة والذكاء الاصطناعي
+            </div>
+            <div className="space-y-0.5">
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-blue-500/10 hover:text-blue-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={async () => {
+                  const [b64] = await openImageFileDialog(false);
+                  if (b64) {
+                    let srcToUse = b64;
+                    if (b64.startsWith("data:image/")) {
+                      try {
+                        const localPath = await SaveImageFromBase64(b64);
+                        if (localPath) srcToUse = localPath;
+                      } catch {
+                        // Fallback to original base64 if local save fails
+                      }
+                    }
+                    setSlotImage(target.id!, srcToUse);
+                    onClose();
+                  }
+                }}
+              >
+                <div className="p-1 rounded-md bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                  <ImagePlus className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-blue-500 transition-colors">استبدال الصورة</span>
+              </button>
+
+              {slot?.imageSrc && (
+                <>
+                  <button
+                    role="menuitem"
+                    tabIndex={-1}
+                    disabled={isRemovingBg}
+                    className="group w-full text-right px-2.5 py-1.5 hover:bg-purple-500/10 hover:text-purple-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none disabled:opacity-50"
+                    onClick={() => {
+                      if (slot) {
+                        handleRemoveBg(slot);
+                        onClose();
+                      }
+                    }}
+                  >
+                    <div className="p-1 rounded-md bg-purple-500/10 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                      {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    </div>
+                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-purple-500 transition-colors">عزل الخلفية (AI)</span>
+                  </button>
+
+                  <button
+                    role="menuitem"
+                    tabIndex={-1}
+                    disabled={isEnhancing}
+                    className="group w-full text-right px-2.5 py-1.5 hover:bg-amber-500/10 hover:text-amber-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none disabled:opacity-50"
+                    onClick={() => {
+                      if (slot) {
+                        handleEnhance(slot);
+                        onClose();
+                      }
+                    }}
+                  >
+                    <div className="p-1 rounded-md bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                      {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                    </div>
+                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-amber-500 transition-colors">ترميم الوجه (AI)</span>
+                  </button>
+                </>
+              )}
+
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-rose-500/10 hover:text-rose-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={() => handleActionWithHistory(() => updateSlot(target.id!, { imageSrc: undefined, originalImageSrc: undefined }))}
+              >
+                <div className="p-1 rounded-md bg-rose-500/10 text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                  <Eraser className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-rose-500 transition-colors">تفريغ الخلية</span>
+              </button>
+            </div>
+
+            {/* قسم التعبئة والتكرار الخطي */}
+            {slot?.imageSrc && (
+              <>
+                <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent my-1" />
+
+                <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+                  التعبئة والتكرار
+                </div>
+                <div className="space-y-0.5">
+                  <button
+                    role="menuitem"
+                    tabIndex={-1}
+                    className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    onClick={() => handleActionWithHistory(() => state.fillAllSlots(slot.imageSrc!, target.id!))}
+                  >
+                    <div className="p-1 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">تعبئة الورقة بالكامل</span>
+                  </button>
+
+                  <button
+                    role="menuitem"
+                    tabIndex={-1}
+                    className="group w-full text-right px-2.5 py-1.5 hover:bg-blue-500/10 hover:text-blue-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    onClick={() => handleActionWithHistory(() => state.fillRowSlots(target.id!, slot.imageSrc!))}
+                  >
+                    <div className="p-1 rounded-md bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                      <Rows className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-blue-500 transition-colors">تعبئة الصف الحالي</span>
+                  </button>
+
+                  <button
+                    role="menuitem"
+                    tabIndex={-1}
+                    className="group w-full text-right px-2.5 py-1.5 hover:bg-indigo-500/10 hover:text-indigo-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    onClick={() => handleActionWithHistory(() => state.fillColumnSlots(target.id!, slot.imageSrc!))}
+                  >
+                    <div className="p-1 rounded-md bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                      <Columns className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-indigo-500 transition-colors">تعبئة العمود الحالي</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
     </div>,
     document.body

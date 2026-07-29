@@ -7,12 +7,14 @@ import (
 	"encoding/binary"
 	"fmt"
 	"hash/crc32"
+	"io"
 	"image"
 	"image/color"
 	"image/jpeg"
 	"log/slog"
 	"math"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -35,39 +37,14 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 	w, h := bounds.Dx(), bounds.Dy()
 	cmykImg := image.NewCMYK(image.Rect(0, 0, w, h))
 
-	// Divide into stripes for parallel processing to reduce memory pressure time and improve speed
-	numStripes := runtime.NumCPU()
-	if numStripes < 1 {
-		numStripes = 1
+	for y := range h {
+		for x := range w {
+			r, g, b, _ := src.At(x, y).RGBA()
+			r8, g8, b8 := uint8(r>>8), uint8(g>>8), uint8(b>>8)
+			cmykColor := color.CMYKModel.Convert(color.RGBA{R: r8, G: g8, B: b8, A: 255}).(color.CMYK)
+			cmykImg.SetCMYK(x, y, cmykColor)
+		}
 	}
-	stripeHeight := h / numStripes
-	if stripeHeight == 0 {
-		stripeHeight = h
-		numStripes = 1
-	}
-
-	var wg sync.WaitGroup
-	for i := 0; i < numStripes; i++ {
-		wg.Add(1)
-		go func(stripeIdx int) {
-			defer wg.Done()
-			startY := stripeIdx * stripeHeight
-			endY := startY + stripeHeight
-			if stripeIdx == numStripes-1 {
-				endY = h
-			}
-			for y := startY; y < endY; y++ {
-				for x := 0; x < w; x++ {
-					r, g, b, _ := src.At(x, y).RGBA()
-					r8, g8, b8 := uint8(r>>8), uint8(g>>8), uint8(b>>8)
-
-					cmykColor := color.CMYKModel.Convert(color.RGBA{R: r8, G: g8, B: b8, A: 255}).(color.CMYK)
-					cmykImg.SetCMYK(x, y, cmykColor)
-				}
-			}
-		}(i)
-	}
-	wg.Wait()
 
 	return cmykImg
 }
@@ -387,7 +364,15 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 			continue
 		}
 		filePath := resolveLocalPath(item.ImageSrc)
-		if !strings.HasPrefix(filePath, "data:image/") {
+		if strings.HasPrefix(filePath, "data:image/") {
+			commaIdx := strings.Index(filePath, ",")
+			if commaIdx != -1 {
+				b64Len := len(filePath) - commaIdx - 1
+				if b64Len > 50*1024*1024 {
+					return 0, 0, fmt.Errorf("image data too large: %d bytes max", 50*1024*1024)
+				}
+			}
+		} else {
 			if _, err := os.Stat(filePath); err != nil {
 				return 0, 0, fmt.Errorf("image file does not exist: %s", filepath.Base(filePath))
 			}
@@ -445,11 +430,14 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 			return nil, fmt.Errorf("invalid base64 image format")
 		}
 		b64Data := filePath[commaIdx+1:]
+		if len(b64Data) > 50*1024*1024 {
+			return nil, fmt.Errorf("base64 image data too large: %d bytes (max %d)", len(b64Data), 50*1024*1024)
+		}
 		data, err := base64.StdEncoding.DecodeString(b64Data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode base64 image: %w", err)
 		}
-		img, err = imaging.Decode(bytes.NewReader(data))
+		img, err = imaging.Decode(io.LimitReader(bytes.NewReader(data), 100*1024*1024))
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode image from base64 data: %w", err)
 		}
@@ -778,13 +766,23 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	htmlPath := filepath.Join(outDir, baseName+".html")
 
 	// إنتاج ملف HTML لضمان طباعة دقيقة للمليمترات عبر متصفح الويب (يتجاهل عارض الصور الافتراضي للويندوز)
+	// HTML file for native OS printing (uses file:// absolute path so external apps like mshtml.dll can load the image)
+	absImagePath := filepath.Join(outDir, htmlImageName)
+	fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(absImagePath), " ", "%20")
+	// Determine @page orientation keyword for the CSS
+	pageOrientation := "portrait"
+	if strings.EqualFold(req.Orientation, "landscape") {
+		pageOrientation = "landscape"
+	}
+
 	htmlContent := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <title>طباعة الكولاج - Grido Studio</title>
 <style>
-  body { margin: 0; padding: 0; display: flex; justify-content: center; background: #525659; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-start; background: #525659; }
   img { 
     width: %.2fmm; 
     height: %.2fmm; 
@@ -794,51 +792,54 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
     background: white;
   }
   @media print {
-    body { background: white; }
-    img { box-shadow: none; margin: 0; }
-    @page { margin: 0; size: %.2fmm %.2fmm; }
+    body { background: white; margin: 0; padding: 0; }
+    img { box-shadow: none; margin: 0; padding: 0; }
+    @page { margin: 0; size: %.2fmm %.2fmm %s; }
   }
 </style>
 </head>
-<body onload="setTimeout(() => { window.print(); window.close(); }, 500)">
-  <img src="/local-image/%s" />
+<body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
+  <img src="%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, htmlImageName)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, pageOrientation, fileURI)
 
 	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 
-	// إرسال كود HTML يشير للمسار المحلي بدلاً من ترميز base64 لتفادي استهلاك الذاكرة العالي
+	// HTML مع مسار local-image للعرض داخل WebView2 عبر iframe
 	selfContainedHTML := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <title>طباعة الكولاج - Grido Studio</title>
 <style>
-  body { margin: 0; padding: 0; display: flex; justify-content: center; background: #525659; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: %.2fmm; height: %.2fmm; margin: 0; padding: 0; overflow: hidden; background: white; }
   img { 
-    width: %.2fmm; 
-    height: %.2fmm; 
+    width: 100%%; 
+    height: 100%%; 
     object-fit: contain; 
-    box-shadow: 0 0 10px rgba(0,0,0,0.5); 
-    margin-top: 20px; 
-    background: white;
+    display: block;
   }
   @media print {
-    body { background: white; }
-    img { box-shadow: none; margin: 0; }
-    @page { margin: 0; size: %.2fmm %.2fmm; }
+    html, body { width: %.2fmm; height: %.2fmm; }
+    img { width: 100%%; height: 100%%; }
+    @page { margin: 0; size: %.2fmm %.2fmm %s; }
   }
 </style>
 </head>
 <body>
   <img src="/local-image/%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, htmlImageName)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, pageOrientation, htmlImageName)
 
-	return htmlPath, selfContainedHTML, nil
+	return imagePath, selfContainedHTML, nil
 }
 
 func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, string, error) {
+	// Ensure logical dimensions match orientation (defensive: callers may send raw 210x297 + landscape)
+	if strings.EqualFold(req.Orientation, "landscape") && req.PaperWidthMM < req.PaperHeightMM {
+		req.PaperWidthMM, req.PaperHeightMM = req.PaperHeightMM, req.PaperWidthMM
+	}
 	widthPx, heightPx, err := s.validatePrintRequest(req)
 	if err != nil {
 		return "", "", err
@@ -990,4 +991,51 @@ func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
 	result = append(result, pngData[insertPos:]...)
 
 	return result, nil
+}
+
+func encodePowershell(script string) string {
+	var b bytes.Buffer
+	for _, r := range script {
+		b.WriteByte(byte(r))
+		b.WriteByte(byte(r >> 8))
+	}
+	return base64.StdEncoding.EncodeToString(b.Bytes())
+}
+
+// PrintNative launches the OS native Win32 print dialog for a generated file on disk
+func (s *PrintService) PrintNative(filePath string) error {
+	if filePath == "" {
+		return fmt.Errorf("مسار ملف الطباعة غير صالح")
+	}
+
+	cleanPath := filepath.Clean(filePath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return fmt.Errorf("ملف الطباعة غير موجود: %w", err)
+	}
+
+	if runtime.GOOS == "windows" {
+		ext := strings.ToLower(filepath.Ext(cleanPath))
+		targetPath := cleanPath
+		if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tiff" {
+			// Create a temporary 100% scale HTML file for native mshtml printing
+			htmlPath := cleanPath + ".html"
+			fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(cleanPath), " ", "%20")
+			htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;}html,body{margin:0;padding:0;width:100%%;height:100%%;}img{width:100%%;height:100%%;object-fit:contain;}</style></head><body onload="window.print()"><img src="%s"/></body></html>`, fileURI)
+			_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
+			targetPath = htmlPath
+		}
+
+		cmd := exec.Command("rundll32.exe", "mshtml.dll,PrintHTML", targetPath)
+		if err := cmd.Start(); err != nil {
+			return fmt.Errorf("تعذر إطلاق نافذة طباعة الويندوز: %w", err)
+		}
+		return nil
+	}
+
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
+		cmd := exec.Command("lpr", cleanPath)
+		return cmd.Run()
+	}
+
+	return fmt.Errorf("نظام التشغيل غير مدعوم للطباعة الأصلية")
 }

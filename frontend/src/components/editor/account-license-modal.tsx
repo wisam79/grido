@@ -347,15 +347,13 @@ export function AccountLicenseModal() {
           <TabsList className="grid w-full grid-cols-2 bg-muted p-1 rounded-lg h-9 border border-border/40">
             <TabsTrigger 
               value="auth" 
-              disabled={!!(user && user.token)} 
-              className="text-xs rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-medium"
+              className="text-xs rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-medium cursor-pointer"
             >
               تسجيل الحساب
             </TabsTrigger>
             <TabsTrigger 
               value="license" 
-              disabled={!(user && user.token)} 
-              className="text-xs rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-medium"
+              className="text-xs rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-medium cursor-pointer"
             >
               مفتاح الترخيص
             </TabsTrigger>
@@ -635,62 +633,93 @@ export function AccountLicenseModal() {
 
           {/* 🏷️ تبويب تفعيل الترخيص */}
           <TabsContent value="license" className="mt-3 space-y-3">
-            {user && user.token && (
-              <div className="space-y-3">
-                {user.plan === "pro" || user.plan === "enterprise" ? (
-                  <div className="bg-muted/30 border border-border rounded-lg p-3 text-center space-y-2">
-                    <div className="inline-flex p-2 bg-emerald-500/10 text-emerald-600 rounded-full">
-                      <ShieldCheck className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-foreground">النسخة مفعلة بنجاح</h3>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">الباقة: {user.plan === "pro" ? "Pro احترافي" : "Enterprise"}</p>
-                    </div>
+            <div className="space-y-3">
+              {user && (user.plan === "pro" || user.plan === "enterprise") ? (
+                <div className="bg-muted/30 border border-border rounded-lg p-3 text-center space-y-2">
+                  <div className="inline-flex p-2 bg-emerald-500/10 text-emerald-600 rounded-full">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-foreground">النسخة مفعلة بنجاح</h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">الباقة: {user.plan === "pro" ? "Pro احترافي" : "Enterprise"}</p>
+                  </div>
 
-                    {user.licenseKey && (
-                      <div className="bg-background border border-border/60 rounded p-1.5 text-center text-[10px]">
+                  {user.licenseKey && (
+                    <div className="bg-background border border-border/60 rounded p-1.5 text-center text-[10px] flex items-center justify-between px-3">
+                      <div>
                         <span className="text-muted-foreground ml-1">مفتاح التفعيل:</span>
                         <code className="font-mono text-primary font-bold">{user.licenseKey}</code>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <form onSubmit={handleActivate} className="space-y-3">
-                    {error && (
-                      <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                        <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-                        <span>{error}</span>
-                      </div>
-                    )}
-                    <div className="space-y-1">
-                      <Label className="text-xs font-medium">مفتاح الترخيص (License Key)</Label>
-                      <div className="relative">
-                        <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                        <Input
-                          placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
-                          className="pr-8 h-9 text-xs font-mono uppercase"
-                          required
-                          value={licenseKey}
-                          onChange={(e) => setLicenseKey(e.target.value)}
-                        />
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(user.licenseKey || "");
+                          toast.success("تم نسخ المفتاح إلى الحافظة");
+                        }}
+                        className="text-[10px] text-primary hover:underline font-medium cursor-pointer"
+                      >
+                        نسخ
+                      </button>
                     </div>
+                  )}
+                </div>
+              ) : (
+                <form onSubmit={handleActivate} className="space-y-3">
+                  {error && (
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
+                      <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-xs font-medium">مفتاح الترخيص (License Key)</Label>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const text = await navigator.clipboard.readText();
+                            if (text) {
+                              setLicenseKey(text.trim().toUpperCase());
+                              toast.success("تم لصق المفتاح من الحافظة");
+                            }
+                          } catch {
+                            toast.error("يرجى لصق المفتاح يدوياً");
+                          }
+                        }}
+                        className="text-[10px] text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
+                      >
+                        <span>لصق من الحافظة 📋</span>
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
+                        className="pr-8 h-9 text-xs font-mono uppercase"
+                        required
+                        value={licenseKey}
+                        onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
+                      />
+                    </div>
+                  </div>
 
-                    <Button 
-                      type="submit" 
-                      className="w-full h-9 text-xs font-bold" 
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        "تفعيل مفتاح الترخيص"
-                      )}
-                    </Button>
-                  </form>
-                )}
+                  <Button 
+                    type="submit" 
+                    className="w-full h-9 text-xs font-bold" 
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      "تفعيل مفتاح الترخيص"
+                    )}
+                  </Button>
+                </form>
+              )}
 
-                <div className="flex items-center justify-between border-t border-border/50 pt-2.5 mt-2">
+              <div className="flex items-center justify-between border-t border-border/50 pt-2.5 mt-2">
+                {user && user.token ? (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm" className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2">
@@ -713,36 +742,38 @@ export function AccountLicenseModal() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                ) : (
+                  <div />
+                )}
 
-                  <a
-                    href="https://grido.cloud-ip.cc"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-[11px] text-primary hover:underline"
-                  >
-                    <span>شراء ترخيص</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                <a
+                  href="https://grido.cloud-ip.cc"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-[11px] text-primary hover:underline"
+                >
+                  <span>شراء ترخيص</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
 
-                  <button
-                    onClick={async () => {
-                      try {
-                        const path = await ExportSupportLogs();
-                        if (path) {
-                          toast.success(`تم حفظ السجلات بنجاح في: ${path}`);
-                        }
-                      } catch (e: any) {
-                        toast.error(e?.message || "فشل تصدير السجلات");
+                <button
+                  onClick={async () => {
+                    try {
+                      const path = await ExportSupportLogs();
+                      if (path) {
+                        toast.success(`تم حفظ السجلات بنجاح في: ${path}`);
                       }
-                    }}
-                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <span>تصدير السجلات</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  </button>
-                </div>
+                    } catch (e: any) {
+                      toast.error(e?.message || "فشل تصدير السجلات");
+                    }
+                  }}
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>تصدير السجلات</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
               </div>
-            )}
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>

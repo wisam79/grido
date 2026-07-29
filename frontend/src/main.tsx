@@ -19,7 +19,42 @@ window.addEventListener('unhandledrejection', function (event) {
   LogFrontendError("error", `Unhandled Promise Rejection: ${message}`, stack).catch(console.error);
 });
 
-// Removed canvas prototype override as it was polluting the global namespace and causing memory leaks (CRIT-FE-3)
+// 🚫 حظر تكبير وتصغير واجهة التطبيق بالكامل (Browser Page Zoom) عبر التوجباد أو المفاتيح
+if (typeof window !== 'undefined') {
+  // حظر Ctrl + Wheel للتوجباد المسبب لتكبير النافذة بدلاً من الكانفس
+  window.addEventListener(
+    'wheel',
+    (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
+  // حظر اختصارات المتصفح الافتراضية للتكبير (Ctrl + / Ctrl - / Ctrl 0)
+  window.addEventListener(
+    'keydown',
+    (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0' || e.code === 'NumpadAdd' || e.code === 'NumpadSubtract')
+      ) {
+        const target = e.target as HTMLElement;
+        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+        if (!isInput) {
+          e.preventDefault();
+        }
+      }
+    },
+    { capture: true }
+  );
+
+  // حظر أحداث الايماءات لنوافذ المتصفح
+  window.addEventListener('gesturestart', (e) => e.preventDefault());
+  window.addEventListener('gesturechange', (e) => e.preventDefault());
+  window.addEventListener('gestureend', (e) => e.preventDefault());
+}
 
 import { StageProvider } from './lib/stage-context'
 

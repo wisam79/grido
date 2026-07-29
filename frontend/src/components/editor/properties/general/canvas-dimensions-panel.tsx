@@ -138,6 +138,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     const temp = widthVal;
     setWidthVal(heightVal);
     setHeightVal(temp);
+
+    setPrintSettings({
+      orientation: printSettings.orientation === "portrait" ? "landscape" : "portrait",
+    });
   };
 
   const activePreset = PAPER_SIZES.find((p) => {

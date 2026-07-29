@@ -26,6 +26,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const mouseMoveRafId = useRef<number | null>(null);
+
   const [contextMenu, setContextMenu] = useState<{
     position: ContextMenuPosition;
     target: ContextMenuTarget;
@@ -302,32 +304,42 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (printMode) return;
+    if (mouseMoveRafId.current !== null) return;
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (!hRulerCursorRef.current) {
-      hRulerCursorRef.current = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
-    }
-    if (!vRulerCursorRef.current) {
-      vRulerCursorRef.current = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
-    }
+    mouseMoveRafId.current = requestAnimationFrame(() => {
+      mouseMoveRafId.current = null;
 
-    const hCursor = hRulerCursorRef.current;
-    if (hCursor) {
-      hCursor.setAttribute("x1", x.toString());
-      hCursor.setAttribute("x2", x.toString());
-      hCursor.style.display = "block";
-    }
-    const vCursor = vRulerCursorRef.current;
-    if (vCursor) {
-      vCursor.setAttribute("y1", y.toString());
-      vCursor.setAttribute("y2", y.toString());
-      vCursor.style.display = "block";
-    }
+      if (!hRulerCursorRef.current) {
+        hRulerCursorRef.current = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
+      }
+      if (!vRulerCursorRef.current) {
+        vRulerCursorRef.current = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
+      }
+
+      const hCursor = hRulerCursorRef.current;
+      if (hCursor) {
+        hCursor.setAttribute("x1", x.toString());
+        hCursor.setAttribute("x2", x.toString());
+        hCursor.style.display = "block";
+      }
+      const vCursor = vRulerCursorRef.current;
+      if (vCursor) {
+        vCursor.setAttribute("y1", y.toString());
+        vCursor.setAttribute("y2", y.toString());
+        vCursor.style.display = "block";
+      }
+    });
   };
 
   const handleCanvasMouseLeave = () => {
+    if (mouseMoveRafId.current !== null) {
+      cancelAnimationFrame(mouseMoveRafId.current);
+      mouseMoveRafId.current = null;
+    }
     const hCursor = hRulerCursorRef.current;
     if (hCursor) hCursor.style.display = "none";
     const vCursor = vRulerCursorRef.current;
@@ -406,21 +418,36 @@ export const EditorCanvas = React.memo(React.forwardRef<
     const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith("image/"));
     if (files.length === 0) return;
 
+    const MAX_FILE_SIZE = 50 * 1024 * 1024;
+    const CHUNK_SIZE = 3;
+
     try {
       setIsLoading(true);
       const uploadedSrcs: string[] = [];
-      for (const file of files) {
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(file);
-        });
-
-        const src = await SaveImageFromBase64(dataUrl);
-        if (src) {
-          uploadedSrcs.push(src);
+      for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+        const chunk = files.slice(i, i + CHUNK_SIZE);
+        const results = await Promise.all(chunk.map(async (file) => {
+          if (file.size > MAX_FILE_SIZE) {
+            console.warn(`Skipping oversized file: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`);
+            return null;
+          }
+          try {
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = () => reject(reader.error);
+              reader.readAsDataURL(file);
+            });
+            const src = await SaveImageFromBase64(dataUrl);
+            return src || null;
+          } catch {
+            return null;
+          }
+        }));
+        for (const src of results) {
+          if (src) uploadedSrcs.push(src);
         }
+        await new Promise((r) => setTimeout(r, 0));
       }
 
       if (uploadedSrcs.length === 0) return;

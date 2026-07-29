@@ -18,7 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { ExportPrintSheet } from "../../../wailsjs/go/handlers/PrintHandler";
+import { ExportPrintSheet, PrintNative } from "../../../wailsjs/go/handlers/PrintHandler";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 import { domain } from "../../../wailsjs/go/models";
 import { captureStageDataUrl } from "@/lib/konva-export-utils";
@@ -149,6 +149,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     availableHeightMM,
     effectiveMarginMM,
     dpi,
+    paperWidth,
+    paperHeight,
   } = usePrintLayout({
     template,
     printSettings,
@@ -157,227 +159,223 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     mode,
   });
 
-  const handlePrint = async () => {
-    setIsExporting(true);
+  const buildCollageItems = () => {
+    const items: domain.PrintItem[] = [];
+    const cutLines: domain.CutLine[] = [];
+    const hasPhysical = collageTemplate?.physicalLayout;
+    const marginPx = hasPhysical ? 0 : collageMargin;
+    const gapPx = hasPhysical ? 0 : collageGap;
+    const scalePxToMM = imageWidthMM / canvasWidth;
+    const availWMM = imageWidthMM - 2 * (marginPx * scalePxToMM);
+    const availHMM = imageHeightMM - 2 * (marginPx * scalePxToMM);
+    const gridWidth = cols * imageWidthMM + Math.max(0, cols - 1) * gapMM;
+    const actualRows = Math.ceil(actualCopies / cols);
+    const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
+    const offsetX = effectiveMarginMM + Math.max(0, availableWidthMM - gridWidth) / 2;
+    const offsetY = effectiveMarginMM + Math.max(0, availableHeightMM - gridHeight) / 2;
 
-    try {
-      const paperW = printSettings.orientation === "portrait" ? printSettings.paperWidthMM : printSettings.paperHeightMM;
-      const paperH = printSettings.orientation === "portrait" ? printSettings.paperHeightMM : printSettings.paperWidthMM;
-      const mMM = effectiveMarginMM;
+    for (let i = 0; i < actualCopies; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const blockXMM = offsetX + col * (imageWidthMM + gapMM);
+      const blockYMM = offsetY + row * (imageHeightMM + gapMM);
 
-      const items: domain.PrintItem[] = [];
-      const cutLines: domain.CutLine[] = [];
-
-
-      if (mode === "collage") {
-        // --- 100% Lossless Backend Rendering for Collage ---
-        const hasPhysical = collageTemplate?.physicalLayout;
-        const marginPx = hasPhysical ? 0 : collageMargin;
-        const gapPx = hasPhysical ? 0 : collageGap;
-        const radiusPx = collageRadius;
-        const borderWPx = collageStrokeWidth;
-        const borderColor = collageStrokeColor;
-
-        const scalePxToMM = imageWidthMM / canvasWidth;
-        const marginMM_cell = marginPx * scalePxToMM;
-        const gapMM_cell = gapPx * scalePxToMM;
-        const radiusMM = radiusPx * scalePxToMM;
-        const borderWMM = borderWPx * scalePxToMM;
-
-        const availWMM = imageWidthMM - 2 * marginMM_cell;
-        const availHMM = imageHeightMM - 2 * marginMM_cell;
-
-        const gridWidth = cols * imageWidthMM + Math.max(0, cols - 1) * gapMM;
-        const actualRows = Math.ceil(actualCopies / cols);
-        const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
-        const offsetX = mMM + Math.max(0, availableWidthMM - gridWidth) / 2;
-        const offsetY = mMM + Math.max(0, availableHeightMM - gridHeight) / 2;
-
-        // Loop over the requested copies on the paper
-        for (let i = 0; i < actualCopies; i++) {
-          const col = i % cols;
-          const row = Math.floor(i / cols);
-          const blockXMM = offsetX + col * (imageWidthMM + gapMM);
-          const blockYMM = offsetY + row * (imageHeightMM + gapMM);
-
-          // Build cut lines for the main blocks if requested
-          if (printSettings.showCutLines && actualCopies > 1) {
-            if (i < cols) {
-              const cx = blockXMM - gapMM / 2;
-              if (cx > mMM && cx < paperW - mMM) {
-                 cutLines.push({ x1: cx, y1: mMM, x2: cx, y2: paperH - mMM });
-              }
-            }
-            if (col === 0 && row > 0) {
-              const cy = blockYMM - gapMM / 2;
-              if (cy > mMM && cy < paperH - mMM) {
-                 cutLines.push({ x1: mMM, y1: cy, x2: paperW - mMM, y2: cy });
-              }
-            }
-          }
-
-          // Generate backend print items for each slot inside this block
-          for (const slot of slots) {
-            if (!slot.imageSrc) continue;
-
-            const slotW_MM = slot.w * availWMM - gapMM_cell;
-            const slotH_MM = slot.h * availHMM - gapMM_cell;
-            const slotX_MM = blockXMM + marginMM_cell + slot.x * availWMM + gapMM_cell / 2;
-            const slotY_MM = blockYMM + marginMM_cell + slot.y * availHMM + gapMM_cell / 2;
-            const slotAspect = (slot.w * canvasWidth) / (slot.h * canvasHeight);
-
-            items.push(domain.PrintItem.createFrom({
-              imageSrc: slot.imageSrc,
-              x: slotX_MM,
-              y: slotY_MM,
-              w: slotW_MM,
-              h: slotH_MM,
-              filter: slot.filter || "none",
-              brightness: slot.brightness ?? 100,
-              contrast: slot.contrast ?? 100,
-              saturation: slot.saturation ?? 100,
-              slotAspect: slotAspect,
-              zoom: slot.zoom || 1,
-              dragX: slot.dragX || 0,
-              dragY: slot.dragY || 0,
-              cornerRadiusMM: radiusMM,
-              borderWidthMM: borderWMM,
-              borderColor: borderColor,
-              flipX: slot.flipX,
-              flipY: slot.flipY,
-              rotation: slot.rotation,
-            }));
+      if (printSettings.showCutLines && actualCopies > 1) {
+        if (i < cols) {
+          const cx = blockXMM - gapMM / 2;
+          if (cx > effectiveMarginMM && cx < paperWidth - effectiveMarginMM) {
+            cutLines.push({ x1: cx, y1: effectiveMarginMM, x2: cx, y2: paperHeight - effectiveMarginMM });
           }
         }
-      } else {
-        // --- Single Mode: Capture Canvas ---
-        const stage = stageRef.current;
-        if (!stage) {
-          toast.error("تعذر الوصول إلى محتوى الكانفاس");
-          setIsExporting(false);
-          return;
-        }
-
-        const exportDpi = printSettings.dpi || 300;
-        const dpiRatio = exportDpi / 300;
-        const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
-
-        let canvasDataUrl: string | null = null;
-        try {
-          canvasDataUrl = await captureStageDataUrl(stage, targetPixelRatio, "image/png");
-        } catch {
-          canvasDataUrl = null;
-        }
-
-        if (!canvasDataUrl) {
-          toast.error("تعذر التقاط الكانفاس");
-          setIsExporting(false);
-          return;
-        }
-
-        const localPath = await SaveImageFromBase64(canvasDataUrl);
-        if (!localPath || !localPath.startsWith("/local-image/")) {
-          toast.error("تعذر حفظ الصورة مؤقتاً");
-          setIsExporting(false);
-          return;
-        }
-
-        const gridWidth = cols * imageWidthMM + Math.max(0, cols - 1) * gapMM;
-        const actualRows = Math.ceil(actualCopies / cols);
-        const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
-        const offsetX = mMM + Math.max(0, availableWidthMM - gridWidth) / 2;
-        const offsetY = mMM + Math.max(0, availableHeightMM - gridHeight) / 2;
-
-        for (let i = 0; i < actualCopies; i++) {
-          const col = i % cols;
-          const row = Math.floor(i / cols);
-          const xMM = offsetX + col * (imageWidthMM + gapMM);
-          const yMM = offsetY + row * (imageHeightMM + gapMM);
-          items.push(domain.PrintItem.createFrom({
-            imageSrc: localPath,
-            x: xMM,
-            y: yMM,
-            w: imageWidthMM,
-            h: imageHeightMM,
-            filter: "none",
-            brightness: 100,
-            contrast: 100,
-            saturation: 100,
-          }));
-        }
-
-        if (printSettings.showCutLines && actualCopies > 1) {
-          for (let c = 1; c < cols; c++) {
-            const x = mMM + c * (imageWidthMM + gapMM) - gapMM / 2;
-            cutLines.push({ x1: x, y1: mMM, x2: x, y2: paperH - mMM });
-          }
-          const actualRows = Math.ceil(actualCopies / cols);
-          for (let r = 1; r < actualRows; r++) {
-            const y = mMM + r * (imageHeightMM + gapMM) - gapMM / 2;
-            cutLines.push({ x1: mMM, y1: y, x2: paperW - mMM, y2: y });
+        if (col === 0 && row > 0) {
+          const cy = blockYMM - gapMM / 2;
+          if (cy > effectiveMarginMM && cy < paperHeight - effectiveMarginMM) {
+            cutLines.push({ x1: effectiveMarginMM, y1: cy, x2: paperWidth - effectiveMarginMM, y2: cy });
           }
         }
       }
 
+      for (const slot of slots) {
+        if (!slot.imageSrc) continue;
+        const slotW_MM = slot.w * availWMM - (gapPx * scalePxToMM);
+        const slotH_MM = slot.h * availHMM - (gapPx * scalePxToMM);
+        const slotX_MM = blockXMM + (marginPx * scalePxToMM) + slot.x * availWMM + (gapPx * scalePxToMM) / 2;
+        const slotY_MM = blockYMM + (marginPx * scalePxToMM) + slot.y * availHMM + (gapPx * scalePxToMM) / 2;
+        const slotAspect = (slot.w * canvasWidth) / (slot.h * canvasHeight);
+
+        items.push(domain.PrintItem.createFrom({
+          imageSrc: slot.imageSrc,
+          x: slotX_MM, y: slotY_MM, w: slotW_MM, h: slotH_MM,
+          filter: slot.filter || "none",
+          brightness: slot.brightness ?? 100,
+          contrast: slot.contrast ?? 100,
+          saturation: slot.saturation ?? 100,
+          slotAspect, zoom: slot.zoom || 1,
+          dragX: slot.dragX || 0, dragY: slot.dragY || 0,
+          cornerRadiusMM: collageRadius * scalePxToMM,
+          borderWidthMM: collageStrokeWidth * scalePxToMM,
+          borderColor: collageStrokeColor,
+          flipX: slot.flipX, flipY: slot.flipY, rotation: slot.rotation,
+        }));
+      }
+    }
+    return { items, cutLines };
+  };
+
+  const buildSingleItems = async () => {
+    const items: domain.PrintItem[] = [];
+    const cutLines: domain.CutLine[] = [];
+    const stage = stageRef.current;
+    if (!stage) {
+      toast.error("تعذر الوصول إلى محتوى الكانفاس");
+      return null;
+    }
+
+    const exportDpi = printSettings.dpi || 300;
+    const dpiRatio = exportDpi / 300;
+    const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
+
+    let canvasDataUrl: string | null = null;
+    try {
+      const TIMEOUT_MS = 30000;
+      canvasDataUrl = await Promise.race([
+        captureStageDataUrl(stage, targetPixelRatio, "image/png"),
+        new Promise<null>((_, reject) => setTimeout(() => reject(new Error("Canvas capture timed out")), TIMEOUT_MS)),
+      ]);
+    } catch {
+      canvasDataUrl = null;
+    }
+
+    if (!canvasDataUrl) {
+      toast.error("تعذر التقاط الكانفاس");
+      return null;
+    }
+
+    const localPath = await SaveImageFromBase64(canvasDataUrl);
+    if (!localPath || !localPath.startsWith("/local-image/")) {
+      toast.error("تعذر حفظ الصورة مؤقتاً");
+      return null;
+    }
+
+    const gridWidth = cols * imageWidthMM + Math.max(0, cols - 1) * gapMM;
+    const actualRows = Math.ceil(actualCopies / cols);
+    const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
+    const offsetX = effectiveMarginMM + Math.max(0, availableWidthMM - gridWidth) / 2;
+    const offsetY = effectiveMarginMM + Math.max(0, availableHeightMM - gridHeight) / 2;
+
+    for (let i = 0; i < actualCopies; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      items.push(domain.PrintItem.createFrom({
+        imageSrc: localPath,
+        x: offsetX + col * (imageWidthMM + gapMM),
+        y: offsetY + row * (imageHeightMM + gapMM),
+        w: imageWidthMM, h: imageHeightMM,
+        filter: "none", brightness: 100, contrast: 100, saturation: 100,
+      }));
+    }
+
+    if (printSettings.showCutLines && actualCopies > 1) {
+      for (let c = 1; c < cols; c++) {
+        const x = effectiveMarginMM + c * (imageWidthMM + gapMM) - gapMM / 2;
+        cutLines.push({ x1: x, y1: effectiveMarginMM, x2: x, y2: paperHeight - effectiveMarginMM });
+      }
+      for (let r = 1; r < actualRows; r++) {
+        const y = effectiveMarginMM + r * (imageHeightMM + gapMM) - gapMM / 2;
+        cutLines.push({ x1: effectiveMarginMM, y1: y, x2: paperWidth - effectiveMarginMM, y2: y });
+      }
+    }
+    return { items, cutLines };
+  };
+
+  const handlePrintResult = (result: any) => {
+    if (!result.success) {
+      toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
+      return;
+    }
+
+    if (result.htmlDoc) {
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "none";
+      iframe.style.visibility = "hidden";
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow?.document || iframe.contentDocument;
+      if (doc) {
+        doc.open();
+        doc.write(result.htmlDoc);
+        doc.close();
+
+        let hasPrinted = false;
+        const triggerPrint = () => {
+          if (hasPrinted) return;
+          hasPrinted = true;
+          try {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+          } catch (e) {
+            console.error("Browser print error:", e);
+            if (result.filePath && typeof PrintNative === "function") {
+              PrintNative(result.filePath).catch(console.error);
+            }
+          } finally {
+            setTimeout(() => {
+              if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+              }
+            }, 1000);
+          }
+        };
+
+        const img = doc.querySelector("img");
+        if (img) {
+          if (img.complete) {
+            triggerPrint();
+          } else {
+            img.onload = triggerPrint;
+            img.onerror = triggerPrint;
+            setTimeout(triggerPrint, 500);
+          }
+        } else {
+          triggerPrint();
+        }
+      }
+    } else if (result.filePath && typeof PrintNative === "function") {
+      PrintNative(result.filePath).catch(console.error);
+    }
+
+    toast.success("تم فتح نافذة الطباعة بنجاح");
+    onOpenChange(false);
+  };
+
+  const handlePrint = async () => {
+    setIsExporting(true);
+    try {
+      const buildResult = mode === "collage" ? buildCollageItems() : await buildSingleItems();
+      if (!buildResult) {
+        setIsExporting(false);
+        return;
+      }
+
       const result = await ExportPrintSheet(domain.PrintRequest.createFrom({
-        paperWidthMM: paperW,
-        paperHeightMM: paperH,
+        paperWidthMM: paperWidth,
+        paperHeightMM: paperHeight,
         dpi: printSettings.dpi,
         backgroundColor: backgroundColor || "#FFFFFF",
         showCutLines: printSettings.showCutLines && actualCopies > 1,
         colorSpace: colorSpace,
         exportFormat: colorSpace === "CMYK" ? "tiff" : "png",
-        cutLines,
-        items,
+        orientation: printSettings.orientation || "portrait",
+        cutLines: buildResult.cutLines,
+        items: buildResult.items,
       }));
 
-      if (result.success) {
-        if (result.htmlDoc) {
-          const iframe = document.createElement("iframe");
-          iframe.style.position = "absolute";
-          iframe.style.width = "0";
-          iframe.style.height = "0";
-          iframe.style.border = "none";
-          iframe.style.visibility = "hidden";
-          document.body.appendChild(iframe);
-
-          const doc = iframe.contentWindow?.document || iframe.contentDocument;
-          if (doc) {
-            doc.open();
-            doc.write(result.htmlDoc);
-            doc.close();
-
-            let hasPrinted = false;
-            const triggerPrint = () => {
-              if (hasPrinted) return;
-              hasPrinted = true;
-              try {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-              } finally {
-                setTimeout(() => {
-                  if (document.body.contains(iframe)) {
-                    document.body.removeChild(iframe);
-                  }
-                }, 1000);
-              }
-            };
-
-            const img = doc.querySelector("img");
-            if (img && !img.complete) {
-              img.onload = triggerPrint;
-              img.onerror = triggerPrint;
-              setTimeout(triggerPrint, 1500);
-            } else {
-              setTimeout(triggerPrint, 300);
-            }
-          }
-        }
-        toast.success("تم توليد ورقة الطباعة بنجاح");
-        onOpenChange(false);
-      } else {
-        toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
-      }
+      handlePrintResult(result);
     } catch (err) {
       toast.error("حدث خطأ أثناء توليد ورقة الطباعة: " + String(err));
     } finally {
@@ -496,12 +494,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <div
                   className="bg-white rounded-xs relative border border-slate-200/50 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]"
                   style={{
-                    width: (printSettings.orientation === "portrait"
-                      ? printSettings.paperWidthMM
-                      : printSettings.paperHeightMM) * 2 * zoom,
-                    height: (printSettings.orientation === "portrait"
-                      ? printSettings.paperHeightMM
-                      : printSettings.paperWidthMM) * 2 * zoom,
+                    width: paperWidth * 2 * zoom,
+                    height: paperHeight * 2 * zoom,
                   }}
                 >
                   {/* إطار الهامش التوضيحي (Margin Guides) */}
@@ -541,8 +535,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                       backgroundColor={backgroundColor}
                       previewImageSrc={previewImageSrc}
                       marginMM={effectiveMarginMM}
-                      paperWidthMM={printSettings.orientation === "portrait" ? printSettings.paperWidthMM : printSettings.paperHeightMM}
-                      paperHeightMM={printSettings.orientation === "portrait" ? printSettings.paperHeightMM : printSettings.paperWidthMM}
+                      paperWidthMM={paperWidth}
+                      paperHeightMM={paperHeight}
                       slots={slots}
                       collageGap={collageGap}
                       collageMargin={collageMargin}

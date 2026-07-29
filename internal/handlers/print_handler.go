@@ -30,3 +30,17 @@ func (h *PrintHandler) ExportPrintSheet(req domain.PrintRequest) domain.PrintRes
 		HtmlDoc:  htmlDoc,
 	}
 }
+
+func (h *PrintHandler) PrintNative(filePath string) domain.PrintResult {
+	err := h.printService.PrintNative(filePath)
+	if err != nil {
+		return domain.PrintResult{
+			Success: false,
+			Error:   err.Error(),
+		}
+	}
+	return domain.PrintResult{
+		Success:  true,
+		FilePath: filePath,
+	}
+}
