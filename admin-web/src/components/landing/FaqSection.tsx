@@ -26,10 +26,12 @@ export function FaqSection() {
   const toggleFaq = (index: number) => setOpenFaq(openFaq === index ? null : index);
 
   return (
-    <section id="faq" className="relative py-24 border-t border-white/10 bg-ink-900/40">
+    <section id="faq" className="relative py-24 border-t border-white/10 bg-[#181818] overflow-hidden">
+      {/* Studio Blue Left Ambient Accent Glow */}
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[450px] h-[450px] bg-brand-600/10 rounded-full blur-[160px] pointer-events-none" />
       <div className="max-w-3xl mx-auto px-5 sm:px-6">
         <div className="text-center mb-12">
-          <span className="text-xs font-semibold tracking-[0.2em] uppercase text-brand-400">الدعم</span>
+          <span className="text-xs font-bold text-brand-400">الدعم</span>
           <h2 className="mt-3 text-3xl sm:text-4xl font-black font-display">الأسئلة الشائعة</h2>
           <p className="mt-4 text-neutral-400">إليك الإجابات على أكثر الأسئلة شيوعاً حول برنامج Grido Studio</p>
         </div>
@@ -41,7 +43,7 @@ export function FaqSection() {
               <div
                 key={idx}
                 className={`rounded-2xl overflow-hidden border transition-colors ${
-                  isOpen ? 'border-brand-500/30 bg-brand-500/[0.04]' : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.04]'
+                  isOpen ? 'border-brand-500/40 bg-[#242424]' : 'border-white/10 bg-[#1e1e1e] hover:bg-[#242424]'
                 }`}
               >
                 <button

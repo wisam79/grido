@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Sparkles } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { Header } from '../components/landing/Header';
 import { HeroSection } from '../components/landing/HeroSection';
 import { FeaturesTabs } from '../components/landing/FeaturesTabs';
@@ -69,19 +69,32 @@ export default function LandingPage() {
   return (
     <div
       dir="rtl"
-      className="relative min-h-screen overflow-x-hidden bg-[#0b1120] font-sans text-white selection:bg-brand-500/30"
+      className="relative min-h-screen overflow-x-hidden bg-[#141414] font-sans text-white selection:bg-brand-500/30"
     >
       {/* Top Scroll Progress Bar */}
-      <div className="fixed top-0 inset-x-0 h-1 bg-[#121826] z-[60] pointer-events-none">
+      <div className="fixed top-0 inset-x-0 h-1 bg-[#1e1e1e] z-[60] pointer-events-none">
         <div
-          className="h-full bg-gradient-to-r from-brand-600 via-cyan-400 to-emerald-400 transition-all duration-150 ease-out shadow-[0_0_12px_rgba(34,211,238,0.8)]"
+          className="h-full bg-gradient-to-r from-brand-600 via-blue-500 to-indigo-500 transition-all duration-150 ease-out shadow-[0_0_12px_rgba(59,130,246,0.6)]"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
 
-      {/* Clean background with smooth radial gradients */}
+      {/* Dominant Dark Gray Foundation with Subtle Ambient Accent Glows */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_80%_0%,rgba(59,130,246,0.18),transparent_60%),radial-gradient(50%_40%_at_10%_30%,rgba(34,211,238,0.12),transparent_55%),radial-gradient(55%_45%_at_50%_100%,rgba(56,189,248,0.10),transparent_60%)]" />
+        {/* Deep Charcoal / Neutral Dark Gray Base */}
+        <div className="absolute inset-0 bg-[#121212]" />
+        
+        {/* Subtle grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: 'linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }}
+        />
+        
+        {/* Controlled, soft blue accent glows that don't overpower the gray */}
+        <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_80%_10%,rgba(37,99,235,0.08),transparent_60%),radial-gradient(50%_35%_at_15%_45%,rgba(59,130,246,0.05),transparent_55%),radial-gradient(55%_40%_at_50%_85%,rgba(29,78,216,0.06),transparent_60%)]" />
       </div>
 
       <Header />
@@ -118,12 +131,11 @@ export default function LandingPage() {
           href={GITHUB_RELEASE_DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-6 left-6 z-50 flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-500 text-white font-extrabold font-display text-sm shadow-[0_10px_30px_rgba(37,99,235,0.5)] transition-all hover:scale-105 active:scale-95 border border-cyan-300/40 backdrop-blur-md animate-bounce-slow"
+          className="fixed bottom-6 left-6 z-50 flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-brand-500 hover:bg-brand-400 text-white font-extrabold font-display text-sm shadow-lg shadow-black/40 transition-all hover:scale-105 active:scale-95 border border-blue-400/30 backdrop-blur-md animate-bounce-slow"
           aria-label="تحميل مباشر الآن"
         >
           <Download className="w-4 h-4 text-white" />
           <span>تحميل Grido Studio</span>
-          <Sparkles className="w-4 h-4 text-cyan-200 animate-pulse" />
         </a>
       )}
     </div>

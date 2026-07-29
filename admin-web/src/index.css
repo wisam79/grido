@@ -1,44 +1,44 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: 'IBM Plex Sans Arabic', system-ui, sans-serif;
-  --font-display: 'Cairo', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Target Navy Theme Palette from Reference Mockup (#0B1120 & #121826) */
-  --color-ink-950: #0b1120;
-  --color-ink-900: #121826;
-  --color-ink-800: #1a2336;
-  --color-ink-700: #26344e;
+  /* Grido Studio Dark Neutral Theme Palette (#141414, #1E1E1E, #282828) */
+  --color-ink-950: #141414;
+  --color-ink-900: #1e1e1e;
+  --color-ink-800: #282828;
+  --color-ink-700: #383838;
+  --color-ink-600: #484848;
 
   --color-brand-600: #1d4ed8;
   --color-brand-500: #2563eb;
   --color-brand-400: #3b82f6;
   --color-brand-300: #60a5fa;
 
-  --color-accent-400: #22d3ee;
-  --color-accent-500: #06b6d4;
+  --color-accent-400: #60a5fa;
+  --color-accent-500: #3b82f6;
 }
 
 * {
-  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
   box-sizing: border-box;
 }
 
-h1, h2, h3, h4, h5, h6, .font-display {
-  font-family: 'Cairo', 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
-}
-
 html, body {
-  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: #0b1120;
+  background-color: #141414;
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
   width: 100%;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Hide scrollbar for clean mobile horizontal scroll */
@@ -57,8 +57,27 @@ html, body {
   100% { transform: translateY(400px); opacity: 0.2; }
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
 .animate-laser-scan {
   animation: laser-scan 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Floating CTA Bounce Slow */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s ease-in-out infinite;
 }
 
 /* Rotating SVG aperture rings */
@@ -78,17 +97,17 @@ html, body {
 /* 3D Perspective tilt - Active only on desktop lg+ screens to prevent mobile overflow */
 @media (min-width: 1024px) {
   .perspective-container {
-    perspective: 1200px;
+    perspective: 1400px;
   }
 
   .perspective-mockup {
-    transform: rotateY(-12deg) rotateX(6deg) rotateZ(1deg);
+    transform: rotateY(-4deg) rotateX(2deg) rotateZ(0.5deg);
     transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     transform-style: preserve-3d;
   }
 
   .perspective-container:hover .perspective-mockup {
-    transform: rotateY(-4deg) rotateX(2deg) rotateZ(0deg) scale(1.01);
+    transform: rotateY(0deg) rotateX(0deg) scale(1.01);
   }
 }
 
@@ -115,8 +134,10 @@ html, body {
   .reveal-on-scroll { opacity: 1 !important; transform: none !important; }
 }
 
+
+
 /* Custom scrollbar for desktop */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #0b1120; }
+::-webkit-scrollbar-track { background: #141414; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(37, 99, 235, 0.5); }

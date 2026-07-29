@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Download, Menu, X, Sparkles } from 'lucide-react';
+import { Download, Menu, X } from 'lucide-react';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const NAV_LINKS = [
-  { href: '#features', label: 'المميزات' },
-  { href: '#demo', label: 'مقارنة الأداء' },
+  { href: '#features', label: 'المميزات الذكية' },
+  { href: '#comparison', label: 'مقارنة الأداء' },
   { href: '#benefits', label: 'لماذا Grido' },
+  { href: '#scenarios', label: 'حالات العمل' },
   { href: '#faq', label: 'الأسئلة الشائعة' },
 ];
 
@@ -27,7 +28,6 @@ function AnimatedLogo() {
           <span className="text-xl font-bold font-display text-white tracking-tight group-hover:text-brand-300 transition-colors">
             Grido Studio
           </span>
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400/80" />
         </div>
         <span className="mt-1 text-[9px] font-semibold text-brand-400">
           استوديو الصور الذكي
@@ -52,7 +52,7 @@ export function Header() {
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-[#0b1120]/90 backdrop-blur-md shadow-lg shadow-black/40 border-b border-white/10'
+          ? 'bg-[#181818]/95 backdrop-blur-md shadow-lg shadow-black/50 border-b border-white/10'
           : 'bg-transparent border-b border-transparent'
       }`}
     >
@@ -66,10 +66,10 @@ export function Header() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm font-semibold text-neutral-300 hover:text-cyan-300 transition-colors relative py-1 group/link"
+                className="text-sm font-semibold text-neutral-300 hover:text-blue-400 transition-colors relative py-1 group/link"
               >
                 <span>{link.label}</span>
-                <span className="absolute bottom-0 inset-x-0 h-0.5 bg-gradient-to-r from-brand-500 to-cyan-400 scale-x-0 group-hover/link:scale-x-100 transition-transform origin-right" />
+                <span className="absolute bottom-0 inset-x-0 h-0.5 bg-gradient-to-r from-brand-600 to-blue-400 scale-x-0 group-hover/link:scale-x-100 transition-transform origin-right" />
               </a>
             ))}
           </nav>
@@ -80,7 +80,7 @@ export function Header() {
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-sm font-bold font-display shadow-lg shadow-brand-500/30 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer relative overflow-hidden group/btn"
+              className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-sm font-bold font-display shadow-md border border-blue-400/20 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer relative overflow-hidden group/btn"
               aria-label="تحميل البرنامج"
             >
               <Download className="w-4 h-4 text-white relative z-10" />
@@ -89,7 +89,7 @@ export function Header() {
 
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-[#121826] text-white"
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-[#242424] text-white border border-white/10"
               aria-label="القائمة"
               aria-expanded={menuOpen}
             >
