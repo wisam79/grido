@@ -78,31 +78,31 @@ export function FeaturesTabs() {
   const content = TAB_CONTENT[activeTab];
 
   return (
-    <section id="features" className="relative py-24 border-t border-white/10 bg-[#141414] overflow-hidden">
+    <section id="features" className="relative py-12 sm:py-24 border-t border-white/10 bg-[#141414] overflow-hidden">
       {/* Subtle Studio Blue Backdrop Glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-brand-600/10 rounded-full blur-[170px]"
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[700px] h-[250px] sm:h-[400px] bg-brand-600/10 rounded-full blur-[120px] sm:blur-[170px]"
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
-        <div className="max-w-3xl mx-auto text-center mb-16 relative z-20">
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1c1c1c] border border-white/5 text-brand-400 text-xs font-bold mb-6 shadow-xl">
-            <Sparkles className="w-4 h-4" />
+        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16 relative z-20">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1c1c1c] border border-white/5 text-brand-400 text-[11px] sm:text-xs font-bold mb-4 shadow-xl">
+            <Sparkles className="w-3.5 h-3.5" />
             <span>المميزات الرئيسية</span>
           </span>
-          <h2 className="text-4xl sm:text-6xl font-black font-display text-white mb-6 tracking-tight drop-shadow-2xl">
-            استكشف قوة <span className="bg-clip-text text-transparent bg-gradient-to-l from-blue-400 via-brand-400 to-indigo-400 drop-shadow-lg">Grido Studio</span>
+          <h2 className="text-2xl sm:text-5xl lg:text-6xl font-black font-display text-white mb-4 sm:mb-6 tracking-tight drop-shadow-2xl">
+            استكشف قوة <span className="bg-clip-text text-transparent bg-gradient-to-l from-blue-400 via-brand-400 to-indigo-400">Grido Studio</span>
           </h2>
-          <p className="text-neutral-400 text-lg sm:text-xl font-sans leading-relaxed max-w-2xl mx-auto">
+          <p className="text-neutral-400 text-sm sm:text-lg font-sans leading-relaxed max-w-2xl mx-auto">
             محرك معالجة احترافي يجمع بين أدوات التصميم العالمية والذكاء الاصطناعي لتسريع إنتاجية استوديو الصور الخاص بك.
           </p>
         </div>
 
         {/* Elevated Floating Tabs */}
-        <div className="flex justify-center mb-16 relative z-20">
-          <div className="p-2 rounded-[2rem] bg-[#1a1a1a]/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex items-center gap-1 overflow-x-auto no-scrollbar">
+        <div className="flex justify-center mb-8 sm:mb-16 relative z-20">
+          <div className="p-1.5 sm:p-2 rounded-2xl sm:rounded-[2rem] bg-[#1a1a1a]/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto justify-start sm:justify-center">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -110,7 +110,7 @@ export function FeaturesTabs() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-6 py-3.5 rounded-[1.5rem] font-bold font-display text-xs sm:text-sm transition-all duration-500 flex items-center gap-2.5 shrink-0 cursor-pointer relative overflow-hidden group ${
+                  className={`px-3.5 py-2.5 sm:px-6 sm:py-3.5 rounded-xl sm:rounded-[1.5rem] font-bold font-display text-xs sm:text-sm transition-all duration-500 flex items-center gap-2 shrink-0 cursor-pointer relative overflow-hidden group ${
                     isActive
                       ? 'bg-brand-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)] scale-[1.02] border border-brand-400/50'
                       : 'text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent'
@@ -119,7 +119,7 @@ export function FeaturesTabs() {
                   {isActive && (
                     <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent pointer-events-none" />
                   )}
-                  <Icon className={`w-4 h-4 transition-transform duration-500 relative z-10 ${isActive ? 'scale-110 text-white' : 'text-neutral-400 group-hover:scale-110 group-hover:text-white'}`} />
+                  <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-500 relative z-10 ${isActive ? 'scale-110 text-white' : 'text-neutral-400 group-hover:scale-110 group-hover:text-white'}`} />
                   <span className="relative z-10">{tab.label}</span>
                 </button>
               );
@@ -128,36 +128,35 @@ export function FeaturesTabs() {
         </div>
 
         {/* Studio Canvas App Window Frame */}
-        <div className="relative overflow-hidden rounded-[2rem] bg-[#121212] shadow-[0_0_50px_rgba(0,0,0,0.6)] ring-1 ring-white/10 group/window">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] bg-[#121212] shadow-[0_0_50px_rgba(0,0,0,0.6)] ring-1 ring-white/10 group/window">
           {/* Inner ambient top glow */}
           <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
 
           {/* Top Window Bar (Chrome UI) */}
-          <div className="h-14 bg-gradient-to-b from-[#2a2a2a] to-[#222222] border-b border-white/5 px-6 flex items-center justify-between text-xs text-neutral-400 shadow-inner relative z-10">
-            <div className="flex items-center gap-2.5">
-              <span className="w-3.5 h-3.5 rounded-full bg-[#ff5f56] border border-black/20 shadow-sm inline-block" />
-              <span className="w-3.5 h-3.5 rounded-full bg-[#ffbd2e] border border-black/20 shadow-sm inline-block" />
-              <span className="w-3.5 h-3.5 rounded-full bg-[#27c93f] border border-black/20 shadow-sm inline-block" />
-              <span className="mr-4 font-mono text-[11px] text-neutral-400/80 font-bold hidden sm:inline tracking-wider">
+          <div className="h-10 sm:h-14 bg-gradient-to-b from-[#2a2a2a] to-[#222222] border-b border-white/5 px-4 sm:px-6 flex items-center justify-between text-xs text-neutral-400 shadow-inner relative z-10">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-[#ff5f56] border border-black/20 shadow-sm inline-block" />
+              <span className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-[#ffbd2e] border border-black/20 shadow-sm inline-block" />
+              <span className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-[#27c93f] border border-black/20 shadow-sm inline-block" />
+              <span className="mr-3 font-mono text-[10px] sm:text-[11px] text-neutral-400/80 font-bold hidden sm:inline tracking-wider">
                 Grido Studio WorkSpace — {content.badge}
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-[10px] sm:text-[11px] font-mono">
+            <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-mono">
               <span className="hidden md:flex items-center px-2.5 py-1 rounded-md bg-black/40 border border-white/5 text-neutral-400 shadow-inner">
                 A4 (210 × 297 mm)
               </span>
-              <span className="flex items-center px-2.5 py-1 rounded-md bg-brand-500/10 border border-brand-500/20 text-brand-300 font-bold shadow-inner">
-                300 DPI • RGB/CMYK
+              <span className="flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-brand-500/10 border border-brand-500/20 text-brand-300 font-bold shadow-inner">
+                300 DPI
               </span>
-              <span className="text-neutral-400 font-bold bg-black/40 px-2.5 py-1 rounded-md border border-white/5 shadow-inner">Zoom: 100%</span>
             </div>
           </div>
 
           {/* Main Grid Content */}
-          <div className="p-6 sm:p-10 grid lg:grid-cols-12 gap-8 items-center">
+          <div className="p-4 sm:p-10 grid lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             {/* Visual Interactive Preview Column (7 Cols) */}
-            <div className="lg:col-span-7 bg-[#121212] rounded-2xl border border-white/10 p-5 relative overflow-hidden min-h-[340px] flex items-center justify-center group shadow-inner">
+            <div className="lg:col-span-7 bg-[#121212] rounded-xl sm:rounded-2xl border border-white/10 p-3 sm:p-5 relative overflow-hidden min-h-[260px] sm:min-h-[340px] flex items-center justify-center group shadow-inner">
               {/* Studio Canvas Ruler Markers Overlay */}
               <div className="absolute top-0 inset-x-0 h-4 bg-[#1a1a1a] border-b border-white/10 flex items-center justify-between px-2 text-[8px] font-mono text-neutral-500 select-none">
                 <span>0mm</span>

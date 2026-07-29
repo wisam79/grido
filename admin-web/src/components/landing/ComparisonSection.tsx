@@ -35,26 +35,26 @@ const COMPARISON_ROWS = [
 
 export function ComparisonSection() {
   return (
-    <section id="comparison" className="relative py-28 border-t border-white/5 bg-[#121212] overflow-hidden">
+    <section id="comparison" className="relative py-12 sm:py-28 border-t border-white/5 bg-[#121212] overflow-hidden">
       {/* Premium Dark Gradient Backdrop */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-900/20 via-[#121212] to-[#121212] pointer-events-none" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-5 sm:px-6">
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1c1c1c] border border-white/5 text-brand-400 text-xs font-bold mb-6 shadow-xl">
-            <Sparkles className="w-4 h-4" />
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-20">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#1c1c1c] border border-white/5 text-brand-400 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 shadow-xl">
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>مقارنة الأداء والمقاييس</span>
           </span>
-          <h2 className="text-4xl sm:text-6xl font-black font-display text-white mb-6 tracking-tight">
+          <h2 className="text-2xl sm:text-5xl lg:text-6xl font-black font-display text-white mb-4 sm:mb-6 tracking-tight">
             لماذا يتحول الجميع إلى <span className="bg-clip-text text-transparent bg-gradient-to-l from-blue-400 to-brand-500">Grido Studio</span>؟
           </h2>
-          <p className="text-neutral-400 text-lg sm:text-xl font-sans leading-relaxed">
+          <p className="text-neutral-400 text-sm sm:text-xl font-sans leading-relaxed">
             توقف عن هدر وقتك في المهام الروتينية المتكررة. دع الذكاء الاصطناعي والأتمتة ينجزان العمل في ثوانٍ.
           </p>
         </div>
 
         {/* Feature VS Cards Stack */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {COMPARISON_ROWS.map((row, idx) => {
             const Icon = row.icon;
             return (

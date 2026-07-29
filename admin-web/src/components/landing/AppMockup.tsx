@@ -32,13 +32,11 @@ export function AppMockup() {
         className="pointer-events-none absolute -bottom-8 -left-8 w-[500px] h-[400px] bg-gradient-to-tr from-brand-500/20 via-indigo-600/15 to-transparent rounded-full blur-[110px] opacity-80"
       />
 
-      {/* Scrollable Wrapper for Mobile Devices */}
-      <div className="w-full overflow-x-auto overflow-y-hidden no-scrollbar pb-4 -mb-4">
-        {/* 3D Perspective Tilted Window Frame matching Real Grido Studio App */}
-        <div
-          className="perspective-mockup relative rounded-2xl overflow-hidden border border-white/20 bg-[#1e1e1e] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95)] text-right w-full min-w-[768px] ring-1 ring-white/10"
-          dir="rtl"
-        >
+      {/* 3D Perspective Tilted Window Frame matching Real Grido Studio App */}
+      <div
+        className="perspective-mockup relative rounded-2xl overflow-hidden border border-white/20 bg-[#1e1e1e] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95)] text-right w-full ring-1 ring-white/10"
+        dir="rtl"
+      >
         {/* Top App Titlebar */}
         <div className="h-11 bg-[#242424] border-b border-white/10 px-3 flex items-center justify-between text-neutral-300 text-xs">
           {/* Left Controls & Status */}
@@ -91,7 +89,7 @@ export function AppMockup() {
         {/* Main App Workspace (Left Panel + Center Canvas + Right Panel) */}
         <div className="flex h-[380px] sm:h-[450px] md:h-[500px] relative overflow-hidden bg-[#181818]">
           {/* Left Panel: Properties & Canvas Dimensions */}
-          <aside className="w-48 sm:w-56 bg-[#242424] border-l border-white/10 p-2.5 sm:p-3 space-y-3 flex-shrink-0 text-right overflow-y-auto no-scrollbar text-xs">
+          <aside className="hidden lg:block w-56 bg-[#242424] border-l border-white/10 p-3 space-y-3 flex-shrink-0 text-right overflow-y-auto no-scrollbar text-xs">
             {/* Action Buttons Row */}
             <div className="flex items-center gap-1.5">
               <button className="flex-1 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-400 text-white font-bold flex items-center justify-center gap-1 shadow-md shadow-brand-500/30 text-[11px]">
@@ -241,7 +239,7 @@ export function AppMockup() {
           </div>
 
           {/* Right Panel: Custom Grid & Document Photo Templates */}
-          <aside className="w-48 sm:w-56 bg-[#242424] border-r border-white/10 p-2.5 sm:p-3 space-y-3 flex-shrink-0 text-right overflow-y-auto no-scrollbar text-xs">
+          <aside className="hidden lg:block w-56 bg-[#242424] border-r border-white/10 p-3 space-y-3 flex-shrink-0 text-right overflow-y-auto no-scrollbar text-xs">
             {/* Header: لون خلفية مساحة العمل */}
             <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#2d2d2d] border border-white/10 text-[10px]">
               <div className="w-4 h-4 rounded bg-white border border-neutral-400" />
@@ -328,7 +326,6 @@ export function AppMockup() {
             </div>
           </aside>
         </div>
-      </div>
       </div>
     </div>
   );
