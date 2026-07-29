@@ -44,7 +44,7 @@ describe('CanvasQuickBar Component Tests', () => {
     );
 
     expect(screen.getByText('خلية كولاج')).toBeInTheDocument();
-    expect(screen.getByText('تغير')).toBeInTheDocument();
+    expect(screen.getByText('تغيير')).toBeInTheDocument();
     expect(screen.getByText('كل الورقة')).toBeInTheDocument();
   });
 
