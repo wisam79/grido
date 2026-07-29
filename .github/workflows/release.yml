@@ -55,6 +55,10 @@ jobs:
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
+      - name: Build Frontend for Go Embed
+        working-directory: ./frontend
+        run: npm run build
+
       - name: Run Go Vet & Staticcheck
         run: |
           go install honnef.co/go/tools/cmd/staticcheck@latest
