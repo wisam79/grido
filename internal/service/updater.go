@@ -56,36 +56,32 @@ func CleanupTempUpdates() {
 }
 
 func NewUpdaterService() *UpdaterService {
-	// تنظيف ملفات التحديث المهجورة في الخلفية فور بدء التشغيل
-	go CleanupTempUpdates()
 	return &UpdaterService{}
 }
 
 func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 
-	// 1. محاولة الاستعلام أولاً من خادم الوكيل الخاص بـ Grido (الذي يمتلك صلاحية الوصول للمستودع الخاص)
-	versionURL := "https://grido.cloud-ip.cc/api/version"
-	req, err := http.NewRequest("GET", versionURL, nil)
-	if err != nil {
-		req, _ = http.NewRequest("GET", "https://api.github.com/repos/wisam79/grido/releases/latest", nil)
-	}
-	req.Header.Set("User-Agent", "GridoStudio-Desktop")
+	var resp *http.Response
+	var err error
 
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
+	req, errReq := http.NewRequest("GET", "https://grido.cloud-ip.cc/api/version", nil)
+	if errReq == nil {
+		req.Header.Set("User-Agent", "GridoStudio-Desktop")
+		resp, err = client.Do(req)
+	}
+
+	if errReq != nil || err != nil || resp.StatusCode != http.StatusOK {
 		if resp != nil {
 			resp.Body.Close()
 		}
-		// احتياطي ثانٍ للاتصال بمستودع GitHub المباشر
+		// Fallback to GitHub directly
 		reqDirect, _ := http.NewRequest("GET", "https://api.github.com/repos/wisam79/grido/releases/latest", nil)
 		reqDirect.Header.Set("User-Agent", "GridoStudio-Desktop")
-		respDirect, errDirect := client.Do(reqDirect)
-		if errDirect == nil && respDirect.StatusCode == http.StatusOK {
-			resp = respDirect
-		} else {
-			if respDirect != nil {
-				respDirect.Body.Close()
+		resp, err = client.Do(reqDirect)
+		if err != nil || resp.StatusCode != http.StatusOK {
+			if resp != nil {
+				resp.Body.Close()
 			}
 			return &UpdateInfo{
 				HasUpdate:      false,
@@ -132,10 +128,17 @@ func isVersionGreater(v1, v2 string) bool {
 	if v1 == v2 || v1 == "" {
 		return false
 	}
+
+	// Remove suffixes like -beta, -alpha
+	v1 = strings.Split(v1, "-")[0]
+	v2 = strings.Split(v2, "-")[0]
+
 	var n1, n2, n3 int
 	var m1, m2, m3 int
-	_, _ = fmt.Sscanf(v1, "%d.%d.%d", &n1, &n2, &n3)
-	_, _ = fmt.Sscanf(v2, "%d.%d.%d", &m1, &m2, &m3)
+	
+	// Parse as much as possible, ignoring errors if some parts are missing (e.g. "1.0" instead of "1.0.0")
+	fmt.Sscanf(v1, "%d.%d.%d", &n1, &n2, &n3)
+	fmt.Sscanf(v2, "%d.%d.%d", &m1, &m2, &m3)
 
 	if n1 != m1 {
 		return n1 > m1
@@ -207,7 +210,9 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	}
 
 	mw := io.MultiWriter(out, pw)
-	if _, err := io.Copy(mw, resp.Body); err != nil {
+	const maxInstallerSize = 200 * 1024 * 1024 // 200MB max
+	limitedBody := io.LimitReader(resp.Body, maxInstallerSize)
+	if _, err := io.Copy(mw, limitedBody); err != nil {
 		out.Close()
 		return fmt.Errorf("failed to save update file: %w", err)
 	}

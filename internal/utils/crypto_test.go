@@ -174,3 +174,52 @@ func TestSaveAndLoadEncryptedToken(t *testing.T) {
 		t.Error("Expected error loading cleared token, got nil")
 	}
 }
+
+func TestWriteSecureFile_PowerLoss(t *testing.T) {
+	tmpDir := t.TempDir()
+	targetPath := filepath.Join(tmpDir, "secure_data.bin")
+
+	// Pre-create the file to simulate existing data
+	_ = os.WriteFile(targetPath, []byte("old-data"), 0o600)
+
+	// Write new data securely
+	newData := []byte("new-secure-data")
+	err := writeSecureFile(targetPath, newData)
+	if err != nil {
+		t.Fatalf("writeSecureFile failed: %v", err)
+	}
+
+	// Read it back
+	savedData, err := os.ReadFile(targetPath)
+	if err != nil {
+		t.Fatalf("Failed to read back saved file: %v", err)
+	}
+	if string(savedData) != string(newData) {
+		t.Errorf("Expected %q, got %q", string(newData), string(savedData))
+	}
+
+	// Verify temp file does not exist
+	if _, err := os.Stat(targetPath + ".tmp"); !os.IsNotExist(err) {
+		t.Error("Temp file was not cleaned up")
+	}
+}
+
+func TestVerifyTime_ClockRollback(t *testing.T) {
+	_ = ClearLicenseSignature()
+	defer ClearLicenseSignature()
+
+	now := time.Now()
+	_ = UpdateLastTime(now)
+
+	// Test a subtle rollback of 6 minutes (exceeds 5-minute drift allowance)
+	subtleRollback := now.Add(-6 * time.Minute)
+	if VerifyTime(subtleRollback) {
+		t.Error("Expected verification to fail for a subtle 6-minute rollback")
+	}
+
+	// Test an extreme rollback of 1 year
+	extremeRollback := now.Add(-365 * 24 * time.Hour)
+	if VerifyTime(extremeRollback) {
+		t.Error("Expected verification to fail for a 1-year rollback")
+	}
+}

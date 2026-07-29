@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">23.25% </span>
+                <span class="strong">22.85% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>40/172</span>
+                <span class='fraction'>40/175</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25.8% </span>
+                <span class="strong">25.39% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>16/62</span>
+                <span class='fraction'>16/63</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">23.4% </span>
+                <span class="strong">23.07% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>33/141</span>
+                <span class='fraction'>33/143</span>
             </div>
         
             
@@ -445,7 +445,8 @@
 <a name='L380'></a><a href='#L380'>380</a>
 <a name='L381'></a><a href='#L381'>381</a>
 <a name='L382'></a><a href='#L382'>382</a>
-<a name='L383'></a><a href='#L383'>383</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L383'></a><a href='#L383'>383</a>
+<a name='L384'></a><a href='#L384'>384</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -474,7 +475,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -489,7 +490,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -505,7 +506,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -640,7 +640,9 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -895,8 +897,7 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
       height: hPercent,
       rotation: 0,
       opacity: 1,
-      // [FIX #5] استخدام timestamp + عدد العناصر لمنع تصادم zIndex عند الإضافة السريعة
-      zIndex: (state.elements.length + 1) * 10 + Date.now() % 1000,
+      zIndex: (state.elements.length + 1) * 10 + (Date.now() % 100000) + Math.floor(Math.random() * 9),
       imageSrc: src,
       filter: "none",
       brightness: 100,
@@ -904,7 +905,7 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
       saturation: 100,
       blur: 0,
     };
-<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>: any) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
       elements: [...s.elements, newEl],
       selectedId: id,
       selectedIds: [id],
@@ -939,13 +940,13 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
       fontSize: 32,
       fontWeight: 700,
       color: "#1a1a2e",
-      fontFamily: "'IBM Plex Sans Arabic', Cairo, Tajawal, sans-serif",
+      fontFamily: "\"IBM Plex Sans Arabic\", Cairo, Tajawal, sans-serif",
       textAlign: "center",
       textBgColor: "transparent",
       lineHeight: 1.2,
       letterSpacing: 0,
     };
-    set((s: any) =&gt; ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
+    set((s) =&gt; ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
     get().pushHistory();
   },
 &nbsp;
@@ -968,8 +969,8 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
       }
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>: any) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
-      elements: s.elements.map(<span class="fstat-no" title="function not covered" >(i</span>tem: any) =&gt; (<span class="cstat-no" title="statement not covered" >item.id === id ? { ...item, width: newWidth } : item))</span>,
+<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+      elements: s.elements.map(<span class="fstat-no" title="function not covered" >(i</span>tem: CanvasElement) =&gt; (<span class="cstat-no" title="statement not covered" >item.id === id ? { ...item, width: newWidth } : item))</span>,
     }));
 <span class="cstat-no" title="statement not covered" >    get().pushHistory();</span>
   },
@@ -998,14 +999,14 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
       radius: 8,
       svgPath,
     };
-<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>: any) =&gt; (<span class="cstat-no" title="statement not covered" >{ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }))</span>;</span>
+<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; (<span class="cstat-no" title="statement not covered" >{ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }))</span>;</span>
 <span class="cstat-no" title="statement not covered" >    get().pushHistory();</span>
   },
 &nbsp;
   updateElement: (id, patch) =&gt; {
-    set((s: any) =&gt; {
+    set((s) =&gt; {
       const nextElements = s.elements.map((el: CanvasElement) =&gt;
-        el.id === id ? { ...el, ...patch } : <span class="branch-1 cbranch-no" title="branch not covered" >el,</span>
+        el.id === id ? { ...el, ...patch } as CanvasElement : <span class="branch-1 cbranch-no" title="branch not covered" >el,</span>
       );
       const targetEl = nextElements.find((e: CanvasElement) =&gt; e.id === id);
       const isImg = targetEl &amp;&amp; targetEl.type === "image";
@@ -1018,13 +1019,15 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
   },
 &nbsp;
   updateElements: <span class="fstat-no" title="function not covered" >(p</span>atches) =&gt; {
-<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>: any) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; {</span>
+      const patchMap = <span class="cstat-no" title="statement not covered" >new Map(patches.map(<span class="fstat-no" title="function not covered" >(p</span>) =&gt; <span class="cstat-no" title="statement not covered" >[p.id, p.patch])</span>);</span>
       const nextElements = <span class="cstat-no" title="statement not covered" >s.elements.map(<span class="fstat-no" title="function not covered" >(e</span>l: CanvasElement) =&gt; {</span>
-        const patchObj = <span class="cstat-no" title="statement not covered" >patches.find(<span class="fstat-no" title="function not covered" >(p</span>) =&gt; <span class="cstat-no" title="statement not covered" >p.id === el.id)</span>;</span>
-<span class="cstat-no" title="statement not covered" >        return patchObj ? { ...el, ...patchObj.patch } : el;</span>
+        const patch = <span class="cstat-no" title="statement not covered" >patchMap.get(el.id);</span>
+<span class="cstat-no" title="statement not covered" >        return patch ? { ...el, ...patch } as CanvasElement : el;</span>
       });
+      const imageIds = <span class="cstat-no" title="statement not covered" >new Set(s.elements.filter(<span class="fstat-no" title="function not covered" >(e</span>: CanvasElement) =&gt; <span class="cstat-no" title="statement not covered" >e.type === "image")</span>.map(<span class="fstat-no" title="function not covered" >(e</span>) =&gt; <span class="cstat-no" title="statement not covered" >e.id)</span>);</span>
       const imageSrcPatch = <span class="cstat-no" title="statement not covered" >patches.find(</span>
-<span class="fstat-no" title="function not covered" >        (p</span>) =&gt; (<span class="cstat-no" title="statement not covered" >p.patch as Partial&lt;ImageElement&gt;).imageSrc &amp;&amp; s.elements.find(<span class="fstat-no" title="function not covered" >(e</span>: CanvasElement) =&gt; <span class="cstat-no" title="statement not covered" >e.id === p.id)</span>?.type === "image",</span>
+<span class="fstat-no" title="function not covered" >        (p</span>) =&gt; <span class="cstat-no" title="statement not covered" >imageIds.has(p.id) &amp;&amp; (p.patch as Partial&lt;ImageElement&gt;).imageSrc,</span>
       ) as { id: string; patch: Partial&lt;ImageElement&gt; } | undefined;
 <span class="cstat-no" title="statement not covered" >      return {</span>
         elements: nextElements,
@@ -1034,7 +1037,7 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
   },
 &nbsp;
   removeElement: (id) =&gt; {
-    set((s: any) =&gt; ({
+    set((s) =&gt; ({
       elements: s.elements.filter((el: CanvasElement) =&gt; el.id !== id),
       selectedId: s.selectedId === id ? null : s.selectedId,
       // [FIX #4] تنظيف selectedIds أيضاً لمنع الإشارة لعنصر محذوف
@@ -1044,7 +1047,7 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
   },
 &nbsp;
   removeElements: <span class="fstat-no" title="function not covered" >(i</span>ds) =&gt; {
-<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>: any) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
       elements: s.elements.filter(<span class="fstat-no" title="function not covered" >(e</span>l: CanvasElement) =&gt; <span class="cstat-no" title="statement not covered" >!ids.includes(el.id))</span>,
       selectedId: ids.includes(s.selectedId || "") ? null : s.selectedId,
       selectedIds: s.selectedIds.filter(<span class="fstat-no" title="function not covered" >(i</span>d: string) =&gt; <span class="cstat-no" title="statement not covered" >!ids.includes(id))</span>,
@@ -1064,7 +1067,7 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
       y: Math.min(el.y + 0.05, 0.9),
       zIndex: (get().elements.length + 1) * 10,
     };
-    set((s: any) =&gt; ({ elements: [...s.elements, copy], selectedId: newId, selectedIds: [newId] }));
+    set((s) =&gt; ({ elements: [...s.elements, copy], selectedId: newId, selectedIds: [newId] }));
     get().pushHistory();
   },
 &nbsp;
@@ -1141,7 +1144,7 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
   },
 &nbsp;
   toggleElementSelection: <span class="fstat-no" title="function not covered" >(i</span>d) =&gt; {
-<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>: any) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; {</span>
       const el = <span class="cstat-no" title="statement not covered" >s.elements.find(<span class="fstat-no" title="function not covered" >(e</span>: CanvasElement) =&gt; <span class="cstat-no" title="statement not covered" >e.id === id)</span>;</span>
 <span class="cstat-no" title="statement not covered" >      if (!el) <span class="cstat-no" title="statement not covered" >return {};</span></span>
 &nbsp;
@@ -1179,7 +1182,7 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
 &nbsp;
     const newGroupId = <span class="cstat-no" title="statement not covered" >`group-${Date.now()}`;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>: any) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
       elements: s.elements.map(<span class="fstat-no" title="function not covered" >(e</span>l: CanvasElement) =&gt;
 <span class="cstat-no" title="statement not covered" >        selectedIds.includes(el.id) ? { ...el, groupId: newGroupId } : el,</span>
       ),
@@ -1197,7 +1200,7 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (groupIdsToUngroup.length === 0) <span class="cstat-no" title="statement not covered" >return;</span></span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>: any) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+<span class="cstat-no" title="statement not covered" >    set(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
       elements: s.elements.map(<span class="fstat-no" title="function not covered" >(e</span>l: CanvasElement) =&gt;
 <span class="cstat-no" title="statement not covered" >        el.groupId &amp;&amp; groupIdsToUngroup.includes(el.groupId)</span>
           ? { ...el, groupId: undefined }
@@ -1216,7 +1219,7 @@ export const createElementSlice: StateCreator&lt;ElementCross, [], [], ElementSl
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-23T13:49:52.394Z
+                at 2026-07-29T10:49:56.965Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

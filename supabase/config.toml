@@ -229,12 +229,12 @@ secure_password_change = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
 
-[auth.email.otp]
-enable = true
-# Number of seconds before the email OTP expires (10 minutes).
-expiry = 600
-# Number of characters used in the email OTP.
-length = 6
+# [auth.email.otp]
+# enable = true
+# # Number of seconds before the email OTP expires (10 minutes).
+# expiry = 600
+# # Number of characters used in the email OTP.
+# length = 6
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]

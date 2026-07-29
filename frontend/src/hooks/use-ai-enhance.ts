@@ -22,7 +22,7 @@ export function getUserDailyLimit(): number {
   return 5;
 }
 
-function getTodayUsageCount(): number {
+export function getTodayUsageCount(): number {
   try {
     const todayStr = new Date().toISOString().split("T")[0]; // e.g. "2026-07-19"
     const user = useEditorStore.getState().user;

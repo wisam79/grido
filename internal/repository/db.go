@@ -52,6 +52,7 @@ func InitDB() (*gorm.DB, error) {
 		{"PRAGMA synchronous=NORMAL;", "synchronous=NORMAL"},
 		{"PRAGMA cache_size=-8000;", "cache_size=-8000"},
 		{"PRAGMA temp_store=MEMORY;", "temp_store=MEMORY"},
+		{"PRAGMA wal_autocheckpoint=1000;", "wal_autocheckpoint=1000"},
 		{"PRAGMA mmap_size=268435456;", "mmap_size=268435456"},
 	}
 
@@ -67,8 +68,19 @@ func InitDB() (*gorm.DB, error) {
 	// connection with a pool of idle readers avoids lock contention while still
 	// permitting concurrent reads under WAL.
 	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(1)
-	sqlDB.SetConnMaxLifetime(0)
+	sqlDB.SetMaxIdleConns(2)
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)
+
+	// إضافة healthcheck دوري للاتصال بقاعدة البيانات
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			if sqlDB.Ping() != nil {
+				slog.Error("Database connection lost")
+			}
+		}
+	}()
 
 	// الهجرة التلقائية لجداول قاعدة البيانات
 	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{}, &domain.CustomTemplate{})

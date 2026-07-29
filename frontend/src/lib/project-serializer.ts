@@ -100,11 +100,21 @@ export function deserializeProjectFile(raw: unknown): ProjectFileV1 {
 
 // Map from Domain (DB) to ProjectFile DTO
 export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV1 {
-  const elements = dbProj.elements ? JSON.parse(dbProj.elements) : [];
-  const slots = dbProj.slots ? JSON.parse(dbProj.slots) : [];
-  const template = dbProj.template ? JSON.parse(dbProj.template) : null;
-  const collageTemplate = dbProj.collageTemplate ? JSON.parse(dbProj.collageTemplate) : null;
-  const printSettings = dbProj.printSettings ? JSON.parse(dbProj.printSettings) : undefined;
+	const parseSafely = (data: string | undefined | null, fallback: any) => {
+		if (!data) return fallback;
+		try {
+			return JSON.parse(data);
+		} catch (e) {
+			console.error("Failed to parse project JSON data", e);
+			return fallback;
+		}
+	};
+
+	const elements = parseSafely(dbProj.elements, []);
+	const slots = parseSafely(dbProj.slots, []);
+	const template = parseSafely(dbProj.template, null);
+	const collageTemplate = parseSafely(dbProj.collageTemplate, null);
+	const printSettings = parseSafely(dbProj.printSettings, undefined);
 
   const projectFile: ProjectFileV1 = {
     version: CURRENT_PROJECT_VERSION,

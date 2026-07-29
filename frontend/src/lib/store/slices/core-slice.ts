@@ -258,14 +258,25 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       ? (COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate?.id) as CollageTemplate | undefined) || null
       : null;
 
+    const rawElements = (project.elements || []) as CanvasElement[];
+    const validElements = rawElements.filter(el => {
+      if (!el || typeof el !== "object") return false;
+      if (!["image", "text", "shape"].includes(el.type)) return false;
+      if (!isFinite(el.x) || !isFinite(el.y) || !isFinite(el.width) || !isFinite(el.height)) return false;
+      if (el.width <= 0 || el.height <= 0) return false;
+      return true;
+    });
+
+    const rawSlots = (project.slots && project.slots.length > 0 ? project.slots : (project.mode === "collage" ? generateInitialSlots() : [])) as CanvasSlot[];
+
     set({
       projectId,
       mode: project.mode || "single",
       canvasWidth: validWidth,
       canvasHeight: validHeight,
       backgroundColor: project.backgroundColor || "#FFFFFF",
-      elements: (project.elements || []) as CanvasElement[],
-      slots: (project.slots && project.slots.length > 0 ? project.slots : (project.mode === "collage" ? generateInitialSlots() : [])) as CanvasSlot[],
+      elements: validElements,
+      slots: rawSlots,
       template: restoredTemplate,
       collageTemplate: restoredCollageTemplate,
       printSettings: project.printSettings

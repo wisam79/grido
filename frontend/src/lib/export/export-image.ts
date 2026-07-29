@@ -399,3 +399,138 @@ export async function exportCanvas(
     );
   });
 }
+
+// تصدير خانة واحدة من الكولاج كصورة مستقلة (استخدام في تصدير الدفعات)
+export async function exportSlotCanvas(
+  slotId: string,
+  format: "png" | "jpg" = "png",
+  quality = 0.95
+): Promise<Blob | null> {
+  const { canvasWidth, canvasHeight, slots } = useEditorStore.getState();
+  const slot = slots.find(s => s.id === slotId);
+  if (!slot || !slot.imageSrc) return null;
+
+  try {
+    const img = await loadImage(slot.imageSrc);
+    
+    // Use the actual target width/height of the slot (without margins/gaps for a clean export)
+    // Wait, the slot's aspect ratio on canvas is slot.w * canvasWidth x slot.h * canvasHeight
+    // For maximum quality, we can export at the original image's resolution or the scaled resolution.
+    // Let's export at the scaled resolution relative to canvas to match the main export's density.
+    const exportWidth = Math.max(1, slot.w * canvasWidth);
+    const exportHeight = Math.max(1, slot.h * canvasHeight);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = exportWidth;
+    canvas.height = exportHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    if (format === "jpg") {
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, exportWidth, exportHeight);
+    }
+
+    ctx.save();
+    const filterStr = buildCSSFilter(slot);
+    if (filterStr && filterStr !== "none") {
+      ctx.filter = filterStr;
+    }
+    drawImageCover(ctx, img, 0, 0, exportWidth, exportHeight);
+    ctx.restore();
+
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        async (blob) => {
+          if (blob) {
+            const watermarked = await applyWatermarkIfFree(blob, format, quality);
+            resolve(watermarked);
+          } else {
+            resolve(null);
+          }
+        },
+        format === "png" ? "image/png" : "image/jpeg",
+        quality
+      );
+    });
+  } catch (e) {
+    console.error(`Failed to export slot ${slotId}:`, e);
+    return null;
+  }
+}
+
+// تطبيق منطقة النزيف وعلامات القص
+export async function applyBleedAndCropMarks(
+  blob: Blob,
+  bleedMM: number,
+  showCropMarks: boolean,
+  format: "png" | "jpg" = "png",
+  quality = 0.95,
+  dpi = 300
+): Promise<Blob> {
+  if (bleedMM === 0 && !showCropMarks) return blob;
+
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      
+      const bleedPx = Math.round((bleedMM * dpi) / 25.4);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width + bleedPx * 2;
+      canvas.height = img.height + bleedPx * 2;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(blob);
+        return;
+      }
+
+      // خلفية بيضاء لتغطية منطقة النزيف
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // رسم الصورة الأصلية في المنتصف
+      ctx.drawImage(img, bleedPx, bleedPx);
+
+      // رسم علامات القص
+      if (showCropMarks && bleedPx > 0) {
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = Math.max(1, Math.round(dpi / 150));
+        const markLen = Math.min(bleedPx * 0.8, dpi * 0.2); // طول العلامة
+        const offset = bleedPx;
+        
+        ctx.beginPath();
+        // Top Left
+        ctx.moveTo(offset, 0); ctx.lineTo(offset, markLen);
+        ctx.moveTo(0, offset); ctx.lineTo(markLen, offset);
+        
+        // Top Right
+        ctx.moveTo(canvas.width - offset, 0); ctx.lineTo(canvas.width - offset, markLen);
+        ctx.moveTo(canvas.width, offset); ctx.lineTo(canvas.width - markLen, offset);
+        
+        // Bottom Left
+        ctx.moveTo(offset, canvas.height); ctx.lineTo(offset, canvas.height - markLen);
+        ctx.moveTo(0, canvas.height - offset); ctx.lineTo(markLen, canvas.height - offset);
+        
+        // Bottom Right
+        ctx.moveTo(canvas.width - offset, canvas.height); ctx.lineTo(canvas.width - offset, canvas.height - markLen);
+        ctx.moveTo(canvas.width, canvas.height - offset); ctx.lineTo(canvas.width - markLen, canvas.height - offset);
+        
+        ctx.stroke();
+      }
+
+      canvas.toBlob(
+        (newBlob) => resolve(newBlob || blob),
+        format === "png" ? "image/png" : "image/jpeg",
+        quality
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(blob);
+    };
+    img.src = url;
+  });
+}
+

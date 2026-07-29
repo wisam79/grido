@@ -27,7 +27,11 @@ import {
   DatabaseBackup, 
   Download, 
   Upload, 
-  ShieldAlert 
+  ShieldAlert,
+  Search,
+  ArrowUpDown,
+  Pin,
+  PinOff
 } from "lucide-react";
 import {
   AlertDialog,
@@ -66,6 +70,29 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
   const [importJsonData, setImportJsonData] = useState("");
   const [importMode, setImportMode] = useState<"merge" | "overwrite">("merge");
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+
+  // Search & Sort & Pin states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "name_asc">("date_desc");
+  const [pinnedProjects, setPinnedProjects] = useState<string[]>([]);
+
+  useEffect(() => {
+    const savedPinned = localStorage.getItem("grido_pinned_projects");
+    if (savedPinned) {
+      try {
+        setPinnedProjects(JSON.parse(savedPinned));
+      } catch (e) {}
+    }
+  }, []);
+
+  const togglePin = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setPinnedProjects(prev => {
+      const newPinned = prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id];
+      localStorage.setItem("grido_pinned_projects", JSON.stringify(newPinned));
+      return newPinned;
+    });
+  };
 
   // تحميل قائمة المشاريع عند فتح نافذة الحوار أو الانتقال لتبويب القائمة
   const fetchProjects = async () => {
@@ -240,6 +267,26 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
     }
   };
 
+  const filteredProjects = projectsList
+    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      // Pinned projects always at the top
+      const aPinned = pinnedProjects.includes(a.id);
+      const bPinned = pinnedProjects.includes(b.id);
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+
+      // Sort logic
+      if (sortBy === "date_desc") {
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      } else if (sortBy === "date_asc") {
+        return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+      } else if (sortBy === "name_asc") {
+        return a.name.localeCompare(b.name, "ar-SA");
+      }
+      return 0;
+    });
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -285,9 +332,38 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               </Button>
             </TabsContent>
 
-            <TabsContent value="list" className="space-y-2">
+            <TabsContent value="list" className="space-y-3 py-1">
+              {/* شريط البحث والفرز */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="بحث في المشاريع..."
+                    className="pr-8 h-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="flex bg-muted/30 rounded-md border p-1 h-9">
+                  <button 
+                    onClick={() => setSortBy(sortBy === "date_desc" ? "date_asc" : "date_desc")}
+                    className={`px-2.5 flex items-center justify-center rounded transition-colors ${sortBy.startsWith("date") ? "bg-background shadow-xs text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                    title="الفرز حسب التاريخ"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => setSortBy("name_asc")}
+                    className={`px-2.5 flex items-center justify-center rounded transition-colors ${sortBy.startsWith("name") ? "bg-background shadow-xs text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                    title="الفرز الأبجدي"
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground border rounded-lg bg-muted/10">
                   <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
                   <span className="text-xs">جاري جلب المشاريع...</span>
                 </div>
@@ -295,20 +371,28 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                 <div className="text-center py-10 border-2 border-dashed rounded-lg text-muted-foreground text-sm">
                   لا توجد مشاريع محفوظة حالياً في قاعدة البيانات.
                 </div>
+              ) : filteredProjects.length === 0 ? (
+                <div className="text-center py-10 border border-dashed rounded-lg text-muted-foreground text-sm">
+                  لم يتم العثور على أي مشاريع تطابق بحثك.
+                </div>
               ) : (
-                <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
-                  {projectsList.map((project) => (
+                <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {filteredProjects.map((project) => {
+                    const isPinned = pinnedProjects.includes(project.id);
+                    return (
                     <div
                       key={project.id}
                       onClick={() => handleLoad(project)}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group"
+                      className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden"
                     >
-                      <div className="space-y-1">
-                        <h4 className="font-semibold text-sm text-foreground/90 group-hover:text-primary transition-colors">
+                      {isPinned && <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />}
+                      <div className="space-y-1 pl-2 pr-1">
+                        <h4 className="font-semibold text-sm text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                          {isPinned && <Pin className="w-3 h-3 text-primary fill-primary/20" />}
                           {project.name}
                         </h4>
-                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                          <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px]">
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                             {project.mode === "single" ? "صورة مفردة" : "كولاج مجمع"}
                           </span>
                           <span className="flex items-center gap-1">
@@ -318,16 +402,27 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                         </div>
                       </div>
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => handleDelete(project.id, e)}
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-80 hover:opacity-100"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => togglePin(e, project.id)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          title={isPinned ? "إلغاء التثبيت" : "تثبيت في الأعلى"}
+                        >
+                          {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleDelete(project.id, e)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </TabsContent>

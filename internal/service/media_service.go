@@ -131,7 +131,9 @@ func (s *MediaService) ProcessOpenedFile(filePath string) (string, error) {
 	}
 
 	mediaDir := s.GetMediaDir()
-	ext := filepath.Ext(filePath)
+	
+	// Prevent extension bypass by enforcing extension from MIME type
+	ext := s.GetExtensionFromMime(detectedType)
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
 
@@ -153,7 +155,7 @@ func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string,
 	var skippedNames []string
 	mediaDir := s.GetMediaDir()
 
-	for _, filePath := range filePaths {
+	for i, filePath := range filePaths {
 		stat, err := os.Stat(filePath)
 		if err != nil {
 			skippedNames = append(skippedNames, filepath.Base(filePath))
@@ -192,7 +194,9 @@ func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string,
 
 		_, _ = srcFile.Seek(0, io.SeekStart)
 
-		newName := fmt.Sprintf("img_%d_%s", time.Now().UnixNano(), filepath.Base(filePath))
+		// Prevent extension bypass
+		ext := s.GetExtensionFromMime(detectedType)
+		newName := fmt.Sprintf("img_%d_%d%s", time.Now().UnixNano(), i, ext)
 		newPath := filepath.Join(mediaDir, newName)
 
 		destFile, err := os.OpenFile(newPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
@@ -234,9 +238,22 @@ func (s *MediaService) SaveImageFromBase64(base64Data string) (string, error) {
 	newPath := filepath.Join(mediaDir, newName)
 	tmpPath := newPath + ".tmp"
 
-	if err := os.WriteFile(tmpPath, decoded, 0644); err != nil {
+	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return "", fmt.Errorf("open tmp file: %w", err)
+	}
+	if _, err := f.Write(decoded); err != nil {
+		f.Close()
 		return "", fmt.Errorf("write tmp file: %w", err)
 	}
+	if err := f.Sync(); err != nil {
+		f.Close()
+		return "", fmt.Errorf("sync tmp file: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		return "", fmt.Errorf("close tmp file: %w", err)
+	}
+
 	defer os.Remove(tmpPath)
 
 	if err := os.Rename(tmpPath, newPath); err != nil {

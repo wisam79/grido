@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">78.43% </span>
+                <span class="strong">79.24% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>120/153</span>
+                <span class='fraction'>126/159</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">49.27% </span>
+                <span class="strong">49.29% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>34/69</span>
+                <span class='fraction'>35/71</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">61.53% </span>
+                <span class="strong">64.28% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>8/13</span>
+                <span class='fraction'>9/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">82.39% </span>
+                <span class="strong">83.1% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>117/142</span>
+                <span class='fraction'>123/148</span>
             </div>
         
             
@@ -338,7 +338,18 @@
 <a name='L273'></a><a href='#L273'>273</a>
 <a name='L274'></a><a href='#L274'>274</a>
 <a name='L275'></a><a href='#L275'>275</a>
-<a name='L276'></a><a href='#L276'>276</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a>
+<a name='L281'></a><a href='#L281'>281</a>
+<a name='L282'></a><a href='#L282'>282</a>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -346,10 +357,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -378,6 +399,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -615,17 +637,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useState, useEffect, useRef } from "react";
 import { useEditorStore } from "@/lib/editor-store";
-import { FilesetResolver, ImageSegmenter } from "@mediapipe/tasks-vision";
+import type { ImageSegmenter } from "@mediapipe/tasks-vision";
 import { toast } from "sonner";
 import { ApplyMaskToImage } from "../../wailsjs/go/main/App";
 &nbsp;
 // [FIX #3] تخزين الـ Promise نفسها (لا النتيجة) لمنع race condition عند استدعاءات متزامنة
 let segmenterPromise: Promise&lt;ImageSegmenter&gt; | null = null;
+let visionModulePromise: Promise&lt;typeof import("@mediapipe/tasks-vision")&gt; | null = null;
+&nbsp;
+function loadVisionModule() {
+  <span class="missing-if-branch" title="else path not taken" >E</span>if (!visionModulePromise) {
+    visionModulePromise = import("@mediapipe/tasks-vision");
+  }
+  return visionModulePromise;
+}
 &nbsp;
 async function getSegmenter() {
   <span class="missing-if-branch" title="else path not taken" >E</span>if (!segmenterPromise) {
     const baseUrl = window.location.origin;
     segmenterPromise = (async () =&gt; {
+      // MediaPipe كبير الحجم ولا يلزم عند فتح المحرر؛ يُحمّل فقط عند طلب العزل.
+      const { FilesetResolver, ImageSegmenter } = await loadVisionModule();
       const vision = await FilesetResolver.forVisionTasks(`${baseUrl}/wasm`);
       return ImageSegmenter.createFromOptions(vision, {
         baseOptions: {
@@ -646,13 +678,14 @@ async function getSegmenter() {
 }
 &nbsp;
 <span class="missing-if-branch" title="else path not taken" >E</span>if (typeof window !== "undefined") {
-  window.addEventListener("beforeunload", <span class="fstat-no" title="function not covered" >() =&gt; {</span>
+  const handleBeforeUnload = <span class="fstat-no" title="function not covered" >() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (segmenterPromise) {</span>
 <span class="cstat-no" title="statement not covered" >      segmenterPromise.then(<span class="fstat-no" title="function not covered" >(s</span>eg) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        try { <span class="cstat-no" title="statement not covered" >seg.close(); }</span> catch (e) { /* Ignore errors during unload */ }</span>
+<span class="cstat-no" title="statement not covered" >        try { <span class="cstat-no" title="statement not covered" >seg.close(); }</span> catch { /* Ignore errors during unload */ }</span>
       }).catch(<span class="fstat-no" title="function not covered" >() =&gt; {</span>});
     }
-  });
+  };
+  window.addEventListener("beforeunload", handleBeforeUnload);
 }
 &nbsp;
 export function useBgRemoval(onUpdate: (id: string, patch: Partial&lt;any&gt;) =&gt; void) {
@@ -814,9 +847,9 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial&lt;any&gt;) =
             <span class="missing-if-branch" title="else path not taken" >E</span>if (!isCancelled &amp;&amp; maskBytes) {
               // تحويل مصفوفة Uint8Array إلى Base64 بسرعة البرق باستخدام كتل (Chunks) لتفادي تجاوز الحد الأقصى للمكدس
               const CHUNK_SIZE = 0x8000; // 32768
-              const chunks = [];
+              const chunks: string[] = [];
               for (let i = 0; i &lt; maskBytes.length; i += CHUNK_SIZE) {
-                chunks.push(String.fromCharCode.apply(null, Array.from(maskBytes.subarray(i, i + CHUNK_SIZE))));
+                chunks.push(String.fromCharCode(...maskBytes.subarray(i, i + CHUNK_SIZE)));
               }
               const b64Mask = btoa(chunks.join(""));
 &nbsp;
@@ -854,9 +887,9 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial&lt;any&gt;) =
         }
       }
 &nbsp;
-    } catch (err: any) {
+    } catch (err) {
 <span class="cstat-no" title="statement not covered" >      console.error("Background removal failed:", err);</span>
-      let errorMessage = <span class="cstat-no" title="statement not covered" >err?.message || String(err);</span>
+      let errorMessage = <span class="cstat-no" title="statement not covered" >err instanceof Error ? err.message : String(err);</span>
 <span class="cstat-no" title="statement not covered" >      if (errorMessage.includes("fetch") || errorMessage.includes("network")) {</span>
 <span class="cstat-no" title="statement not covered" >        errorMessage = "فشل تحميل ملفات معالجة الذكاء الاصطناعي.";</span>
       }
@@ -895,7 +928,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial&lt;any&gt;) =
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-23T13:49:52.394Z
+                at 2026-07-29T10:49:56.965Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

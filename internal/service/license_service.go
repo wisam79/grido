@@ -1135,7 +1135,9 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 		RefreshToken: authRes.RefreshToken,
 	}
 
-
+	if err := s.repo.Clear(); err != nil {
+		slog.Warn("Failed to clear repo in VerifyRecoveryOTP", "error", err)
+	}
 	if err := s.repo.Save(profile); err != nil {
 		slog.Error("Failed to persist user profile after password reset", "error", err)
 	}

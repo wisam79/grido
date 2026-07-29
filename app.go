@@ -36,6 +36,8 @@ func NewApp(db *gorm.DB) *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	service.InitLogger()
+	// تنظيف ملفات التحديث المهجورة في الخلفية فور بدء التشغيل
+	go service.CleanupTempUpdates()
 }
 
 func (a *App) shutdown(_ context.Context) {
@@ -59,11 +61,8 @@ func (a *App) LogFrontendError(level, message, stackTrace string) {
 }
 
 func (a *App) ExportSupportLogs() (string, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get config dir: %w", err)
-	}
-	logDir := filepath.Join(configDir, "GridoStudio", "logs")
+	appDir := utils.GetAppDir()
+	logDir := filepath.Join(appDir, "logs")
 
 	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
 		DefaultFilename: "grido_support_logs.zip",
@@ -126,6 +125,10 @@ func (a *App) SaveFile(base64Data string) (string, error) {
 	decoded, mimeType, err := a.mediaSvc.DecodeBase64Image(base64Data)
 	if err != nil {
 		return "", err
+	}
+
+	if int64(len(decoded)) > service.MaxFileSize {
+		return "", fmt.Errorf("file too large: %d bytes (max %d)", len(decoded), service.MaxFileSize)
 	}
 
 	ext := a.mediaSvc.GetExtensionFromMime(mimeType)

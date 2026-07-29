@@ -19,9 +19,19 @@ func ZipDirectory(source, target string) error {
 	archive := zip.NewWriter(zipfile)
 	defer archive.Close()
 
-	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+	return filepath.WalkDir(source, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+
+		// Prevent Symlink attacks (Path Traversal)
+		if info.Mode()&os.ModeSymlink != 0 {
+			return nil // Skip symlinks entirely
 		}
 
 		header, err := zip.FileInfoHeader(info)
@@ -31,6 +41,8 @@ func ZipDirectory(source, target string) error {
 
 		header.Name = strings.TrimPrefix(path, filepath.Dir(source)+"/")
 		header.Name = strings.TrimPrefix(header.Name, filepath.Dir(source)+"\\")
+		// Prevent any path traversal within zip paths
+		header.Name = strings.ReplaceAll(header.Name, "..", "")
 
 		if info.IsDir() {
 			header.Name += "/"

@@ -67,6 +67,12 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
     const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
       img.onload = () => {
         const finish = () => {
+          // Implement LRU-like limit to prevent unbounded memory growth
+          if (imageCache.size >= 200) {
+            const firstKey = imageCache.keys().next().value;
+            if (firstKey) imageCache.delete(firstKey);
+          }
+          
           imageCache.set(cacheKey, img);
           pendingLoads.delete(cacheKey);
           if (isCurrent) {

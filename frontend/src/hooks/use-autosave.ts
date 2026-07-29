@@ -86,90 +86,31 @@ export function useAutoSave() {
     // تأخير فحص وحفظ البيانات بالكامل لثانيتين بعد توقف حركة السحب/التعديل
     const debouncedSave = debounce(handleStateChange, 2000);
 
-    // الاحتفاظ بآخر حالة هيكلية لتقليل فحص التعديلات غير الهيكلية (كالاختيار النشط والمساطر ومقابض التحكم)
-    let lastStructuralState = {
-      elements: useEditorStore.getState().elements,
-      slots: useEditorStore.getState().slots,
-      mode: useEditorStore.getState().mode,
-      canvasWidth: useEditorStore.getState().canvasWidth,
-      canvasHeight: useEditorStore.getState().canvasHeight,
-      backgroundColor: useEditorStore.getState().backgroundColor,
-      template: useEditorStore.getState().template,
-      collageTemplate: useEditorStore.getState().collageTemplate,
-      printSettings: useEditorStore.getState().printSettings,
-      showGrid: useEditorStore.getState().showGrid,
-      gridSize: useEditorStore.getState().gridSize,
-      gridColor: useEditorStore.getState().gridColor,
-      gridOpacity: useEditorStore.getState().gridOpacity,
-      showColumns: useEditorStore.getState().showColumns,
-      columnsCount: useEditorStore.getState().columnsCount,
-      columnsColor: useEditorStore.getState().columnsColor,
-      columnsMargin: useEditorStore.getState().columnsMargin,
-      columnsGutter: useEditorStore.getState().columnsGutter,
-      collageGap: useEditorStore.getState().collageGap,
-      collageMargin: useEditorStore.getState().collageMargin,
-      collageRadius: useEditorStore.getState().collageRadius,
-      collageStrokeWidth: useEditorStore.getState().collageStrokeWidth,
-      collageStrokeColor: useEditorStore.getState().collageStrokeColor,
-    };
+    const getDeps = (state: any) => [
+      state.elements, state.slots, state.mode, state.canvasWidth, state.canvasHeight, state.backgroundColor,
+      state.template, state.collageTemplate, state.printSettings,
+      state.showGrid, state.gridSize, state.gridColor, state.gridOpacity, state.gridSubdivisions,
+      state.showColumns, state.columnsCount, state.columnsColor, state.columnsMargin, state.columnsGutter,
+      state.collageGap, state.collageMargin, state.collageRadius, state.collageStrokeWidth, state.collageStrokeColor,
+      state.showRuler, state.collageShowCutLines
+    ];
+
+    let lastDeps = getDeps(useEditorStore.getState());
 
     const unsubscribe = useEditorStore.subscribe((state) => {
-      // تحقق هل تغير شيء هيكلي فعلياً؟
-      if (
-        state.elements === lastStructuralState.elements &&
-        state.slots === lastStructuralState.slots &&
-        state.mode === lastStructuralState.mode &&
-        state.canvasWidth === lastStructuralState.canvasWidth &&
-        state.canvasHeight === lastStructuralState.canvasHeight &&
-        state.backgroundColor === lastStructuralState.backgroundColor &&
-        state.template === lastStructuralState.template &&
-        state.collageTemplate === lastStructuralState.collageTemplate &&
-        state.printSettings === lastStructuralState.printSettings &&
-        state.showGrid === lastStructuralState.showGrid &&
-        state.gridSize === lastStructuralState.gridSize &&
-        state.gridColor === lastStructuralState.gridColor &&
-        state.gridOpacity === lastStructuralState.gridOpacity &&
-        state.showColumns === lastStructuralState.showColumns &&
-        state.columnsCount === lastStructuralState.columnsCount &&
-        state.columnsColor === lastStructuralState.columnsColor &&
-        state.columnsMargin === lastStructuralState.columnsMargin &&
-        state.columnsGutter === lastStructuralState.columnsGutter &&
-        state.collageGap === lastStructuralState.collageGap &&
-        state.collageMargin === lastStructuralState.collageMargin &&
-        state.collageRadius === lastStructuralState.collageRadius &&
-        state.collageStrokeWidth === lastStructuralState.collageStrokeWidth &&
-        state.collageStrokeColor === lastStructuralState.collageStrokeColor
-      ) {
-        return; // لم يتغير شيء هيكلي (تغير فقط الاختيار selectedId أو غيره)
+      const currentDeps = getDeps(state);
+      
+      let changed = false;
+      for (let i = 0; i < currentDeps.length; i++) {
+        if (currentDeps[i] !== lastDeps[i]) {
+          changed = true;
+          break;
+        }
       }
 
-      // تحديث الحالة المرجعية
-      lastStructuralState = {
-        elements: state.elements,
-        slots: state.slots,
-        mode: state.mode,
-        canvasWidth: state.canvasWidth,
-        canvasHeight: state.canvasHeight,
-        backgroundColor: state.backgroundColor,
-        template: state.template,
-        collageTemplate: state.collageTemplate,
-        printSettings: state.printSettings,
-        showGrid: state.showGrid,
-        gridSize: state.gridSize,
-        gridColor: state.gridColor,
-        gridOpacity: state.gridOpacity,
-        showColumns: state.showColumns,
-        columnsCount: state.columnsCount,
-        columnsColor: state.columnsColor,
-        columnsMargin: state.columnsMargin,
-        columnsGutter: state.columnsGutter,
-        collageGap: state.collageGap,
-        collageMargin: state.collageMargin,
-        collageRadius: state.collageRadius,
-        collageStrokeWidth: state.collageStrokeWidth,
-        collageStrokeColor: state.collageStrokeColor,
-      };
+      if (!changed) return;
 
+      lastDeps = currentDeps;
       debouncedSave(state);
     });
 

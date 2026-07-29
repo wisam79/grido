@@ -3,7 +3,8 @@ import { useEditorStore } from "@/lib/editor-store";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";
 import { Slider } from "@/components/ui/slider";
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 // ─── Larger SliderControl built for the left panel ─────────────────────────
 function PanelSlider({
@@ -231,6 +232,133 @@ export function CollageSettings() {
           className="scale-90"
         />
       </div>
+
+      {/* Batch AI Enhance */}
+      <div className="pt-2 border-t border-border/20">
+        <BatchAiEnhanceButton />
+      </div>
+    </div>
+  );
+}
+
+function BatchAiEnhanceButton() {
+  const { slots, user, updateSlot } = useEditorStore(useShallow((state) => ({
+    slots: state.slots,
+    user: state.user,
+    updateSlot: state.updateSlot,
+  })));
+  
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const isPro = user?.plan === "pro" || user?.plan === "enterprise";
+  
+  const handleBatchEnhance = async () => {
+    if (!isPro) {
+      toast.warning("هذه الميزة متاحة للمشتركين في باقة PRO فقط");
+      return;
+    }
+
+    const validSlots = slots.filter(s => s.imageSrc);
+    if (validSlots.length === 0) {
+      toast.info("لا توجد صور في الكولاج لتحسينها");
+      return;
+    }
+
+    // Dynamic import to avoid circular dependencies if any, though regular import is fine
+    const { SaveImageFromBase64, EnhanceImageWithAI } = await import("../../../../wailsjs/go/main/App");
+    const { getUserDailyLimit, getTodayUsageCount } = await import("@/hooks/use-ai-enhance");
+
+    const dailyLimit = getUserDailyLimit();
+    const dailyCount = getTodayUsageCount();
+    const remainingQuota = Math.max(0, dailyLimit - dailyCount);
+
+    if (remainingQuota < validSlots.length) {
+      toast.warning(`رصيدك المتبقي (${remainingQuota}) لا يكفي لتحسين ${validSlots.length} صور دفعة واحدة.`);
+      return;
+    }
+
+    setIsEnhancing(true);
+    setProgress(0);
+
+    let successCount = 0;
+    for (let i = 0; i < validSlots.length; i++) {
+      const slot = validSlots[i];
+      try {
+        let base64Image = slot.imageSrc!;
+        if (!base64Image.startsWith("data:image/")) {
+          const response = await fetch(base64Image);
+          const blob = await response.blob();
+          base64Image = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+
+        const token = user?.token || "";
+        const resultStr = await EnhanceImageWithAI(base64Image, token, dailyLimit);
+        
+        if (resultStr && resultStr.startsWith("data:image/")) {
+          const localPath = await SaveImageFromBase64(resultStr);
+          updateSlot(slot.id, { 
+            imageSrc: localPath, 
+            originalImageSrc: slot.originalImageSrc || slot.imageSrc 
+          });
+          successCount++;
+        }
+      } catch (err) {
+        console.error(`Failed to enhance slot ${slot.id}:`, err);
+      }
+      setProgress(((i + 1) / validSlots.length) * 100);
+    }
+
+    setIsEnhancing(false);
+    if (successCount > 0) {
+      useEditorStore.getState().pushHistory();
+      toast.success(`تم تحسين ${successCount} صورة بنجاح`);
+    } else {
+      toast.error("فشل تحسين الصور");
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <button
+        onClick={handleBatchEnhance}
+        disabled={isEnhancing}
+        className="w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <div className="flex items-center gap-2.5">
+          <Sparkles className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+          <span>ترميم وتحسين الكولاج بالكامل</span>
+        </div>
+        {!isPro ? (
+          <span className="text-[8.5px] bg-primary text-primary-foreground font-black px-1.5 py-0.5 rounded-md tracking-wider uppercase">
+            PRO
+          </span>
+        ) : (
+          <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
+            AI Batch
+          </span>
+        )}
+      </button>
+
+      {isEnhancing && (
+        <div className="p-2.5 rounded-lg bg-violet-500/[0.05] border border-violet-500/20 space-y-1.5">
+          <div className="flex justify-between items-center text-[9px] font-bold text-violet-600">
+            <span className="animate-pulse">جاري التحسين الذكي للصور...</span>
+            <span className="font-mono">{Math.round(progress)}%</span>
+          </div>
+          <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+            <div 
+              className="bg-gradient-to-r from-violet-600 to-purple-500 h-full transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -292,3 +292,69 @@ func TestMediaService_ProcessMultipleOpenedFiles_EmptySlice(t *testing.T) {
 		t.Errorf("expected 0 results, got %d", len(results))
 	}
 }
+
+func TestMediaService_ProcessMultipleOpenedFiles_ArabicFilenames(t *testing.T) {
+	svc := NewMediaService()
+
+	tmpDir := t.TempDir()
+	file1 := filepath.Join(tmpDir, "صورة عربية 1.png")
+	file2 := filepath.Join(tmpDir, "تجربة.png")
+
+	decoded, err := base64.StdEncoding.DecodeString(validPNGBase64)
+	if err != nil {
+		t.Fatalf("failed to decode test PNG: %v", err)
+	}
+	if err := os.WriteFile(file1, decoded, 0o644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+	if err := os.WriteFile(file2, decoded, 0o644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+
+	paths := []string{file1, file2}
+	results, err := svc.ProcessMultipleOpenedFiles(paths)
+	if err != nil {
+		t.Fatalf("ProcessMultipleOpenedFiles failed: %v", err)
+	}
+	if len(results) != 2 {
+		t.Errorf("expected 2 results, got %d", len(results))
+	}
+
+	for _, path := range results {
+		filename := filepath.Base(filepath.Clean(path))
+		fullPath := filepath.Join(svc.GetMediaDir(), filename)
+		defer os.Remove(fullPath)
+
+		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+			t.Fatalf("processed file does not exist: %s", fullPath)
+		}
+	}
+}
+
+func TestMediaService_SaveImageFromBase64_AtomicWrite(t *testing.T) {
+	svc := NewMediaService()
+
+	b64 := "data:image/png;base64," + validPNGBase64
+
+	path, err := svc.SaveImageFromBase64(b64)
+	if err != nil {
+		t.Fatalf("SaveImageFromBase64 failed: %v", err)
+	}
+	if path == "" {
+		t.Fatal("SaveImageFromBase64 returned empty path")
+	}
+
+	filename := filepath.Base(filepath.Clean(path))
+	fullPath := filepath.Join(svc.GetMediaDir(), filename)
+	defer os.Remove(fullPath)
+
+	// Since we mock atomic write implicitly by just checking the final file exists
+	// We verify that the final file is written correctly and doesn't have .tmp extension
+	if filepath.Ext(filename) == ".tmp" {
+		t.Errorf("Final file should not have .tmp extension, got %s", filename)
+	}
+
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		t.Fatalf("saved final file does not exist: %s", fullPath)
+	}
+}

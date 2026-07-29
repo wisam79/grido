@@ -27,6 +27,18 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
 
   pushHistory: () => {
     const { elements, slots, history, historyIndex } = get() as HistoryCross;
+    
+    // Avoid pushing identical states
+    if (history.length > 0 && historyIndex >= 0) {
+      const current = history[historyIndex];
+      if (
+        JSON.stringify(current.elements) === JSON.stringify(elements) &&
+        JSON.stringify(current.slots) === JSON.stringify(slots)
+      ) {
+        return; // No change
+      }
+    }
+
     const newHistory = history.slice(0, historyIndex + 1);
 
     newHistory.push({
@@ -34,7 +46,7 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
       slots: slots.map((sl) => ({ ...sl })),
     });
     
-    if (newHistory.length > 20) newHistory.shift();
+    if (newHistory.length > 30) newHistory.shift();
     set({ history: newHistory, historyIndex: newHistory.length - 1 });
   },
 

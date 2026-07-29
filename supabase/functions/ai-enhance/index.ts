@@ -1,3 +1,16 @@
+// ============================================================================
+// ⚠️ DEPRECATED ⚠️
+// This Edge Function is no longer used for AI Image Enhancement!
+// Due to the 5-second Execution Timeout limit on Supabase Free Plan, 
+// routing heavy AI tasks through this proxy causes WORKER_RESOURCE_LIMIT errors.
+// 
+// ✨ NEW ARCHITECTURE (Direct-to-Modal):
+// The Grido Studio Go backend now sends the image directly to Modal AI.
+// Modal AI receives the Supabase JWT token and verifies it directly with Supabase,
+// then records the usage quota via the RPC `check_and_record_ai_usage`.
+// See docs/AI_ARCHITECTURE.md for more details.
+// ============================================================================
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -68,7 +81,23 @@ serve(async (req) => {
     const userPlan = profile?.plan || 'free'
     const dailyLimit = PLAN_DAILY_LIMITS[userPlan] || PLAN_DAILY_LIMITS.free
 
-    const body = await req.json()
+    const bodyText = await req.text()
+    if (!bodyText) {
+      return new Response(JSON.stringify({ error: 'Body is empty' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    let body;
+    try {
+      body = JSON.parse(bodyText)
+    } catch (e) {
+      return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
     const imageB64 = body.image
 
     if (!imageB64 || typeof imageB64 !== 'string') {
@@ -86,8 +115,8 @@ serve(async (req) => {
       })
     }
 
-    const secretKey = Deno.env.get('GRIDO_AI_SECRET_KEY')
-    const modalUrl = Deno.env.get('MODAL_AI_URL') || 'https://grido-ai-upscaler--imageenhancer-enhance.modal.run'
+    const secretKey = Deno.env.get('GRIDO_AI_SECRET_KEY') || Deno.env.get('MODAL_API_KEY')
+    const modalUrl = Deno.env.get('MODAL_AI_URL') || 'https://wisamsamir78--grido-ai-upscaler-imageenhancer-enhance.modal.run'
 
     if (!secretKey) {
       console.error('CRITICAL: GRIDO_AI_SECRET_KEY is missing on server environment!')
@@ -104,7 +133,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
         'X-Grido-Api-Key': secretKey
       },
-      body: JSON.stringify({ image: imageB64 })
+      body: bodyText
     })
 
     const modalData = await modalRes.json()

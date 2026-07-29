@@ -58,7 +58,7 @@ app = modal.App("grido-ai-upscaler")
     image=image,
     gpu="A10G",
     scaledown_window=2,
-    secrets=[modal.Secret.from_name("grido-ai-secret")]
+    secrets=[modal.Secret.from_name("grido-ai-secret"), modal.Secret.from_name("supabase-auth")]
 )
 class ImageEnhancer:
     @modal.enter()
@@ -129,22 +129,51 @@ class ImageEnhancer:
         import time
         start_time = time.time()
         try:
-            # 🛡️ حماية السيرفر الـ API عبر مفتاح التوثيق السري (Secret Key Protection)
-            GRIDO_SECRET_KEY = os.environ.get("GRIDO_AI_SECRET_KEY")
-            if not GRIDO_SECRET_KEY:
-                print("CRITICAL: GRIDO_AI_SECRET_KEY environment variable is not set!")
+            # 🛡️ حماية السيرفر عبر توثيق Supabase (Direct JWT Verification)
+            SUPABASE_URL = os.environ.get("SUPABASE_URL")
+            SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
+            
+            if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+                print("CRITICAL: SUPABASE_URL or SUPABASE_ANON_KEY environment variable is not set!")
                 return Response(
-                    content='{"error": "خطأ في تهيئة خادم الذكاء الاصطناعي: المفتاح غير معرّف (500 Internal Server Error)"}',
+                    content='{"error": "خطأ في تهيئة خادم الذكاء الاصطناعي: إعدادات Supabase مفقودة (500)"}',
                     media_type="application/json",
                     status_code=500
                 )
 
-            incoming_key = request.headers.get("X-Grido-Api-Key", "") or request.headers.get("x-grido-api-key", "")
-            
-            if incoming_key != GRIDO_SECRET_KEY:
-                print("Unauthorized access attempt blocked!")
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                print("Unauthorized access attempt blocked! Missing Bearer token.")
                 return Response(
-                    content='{"error": "طلب غير مصرح به: يتطلب مفتاح توثيق Grido Studio (401 Unauthorized)"}',
+                    content='{"error": "طلب غير مصرح به: يتطلب تسجيل الدخول (401 Unauthorized)"}',
+                    media_type="application/json",
+                    status_code=401
+                )
+                
+            jwt_token = auth_header.replace("Bearer ", "")
+            
+            import urllib.request
+            import urllib.error
+            import json
+
+            # Verify user token with Supabase directly
+            try:
+                verify_req = urllib.request.Request(
+                    f"{SUPABASE_URL}/auth/v1/user",
+                    headers={
+                        "Authorization": f"Bearer {jwt_token}",
+                        "apikey": SUPABASE_ANON_KEY
+                    }
+                )
+                with urllib.request.urlopen(verify_req) as response:
+                    user_data = json.loads(response.read().decode())
+                    user_id = user_data.get("id")
+                    if not user_id:
+                        raise ValueError("User ID missing from Supabase response")
+            except Exception as e:
+                print(f"Token verification failed: {e}")
+                return Response(
+                    content='{"error": "طلب غير مصرح به: الجلسة منتهية أو غير صالحة (401)"}',
                     media_type="application/json",
                     status_code=401
                 )
@@ -154,6 +183,7 @@ class ImageEnhancer:
             
             data = await request.json()
             image_b64 = data.get("image", "")
+            daily_limit = data.get("dailyLimit", 2)
             
             if not image_b64:
                 return Response(content='{"error": "الصورة غير موجودة"}', media_type="application/json", status_code=400)
@@ -186,13 +216,13 @@ class ImageEnhancer:
             face_helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
             face_helper.align_warp_face()
 
-            w = 0.7 # 🌟 Fidelity weight (0.7 preserves natural skin texture per project rules)
+            w = 0.85 # 🌟 High fidelity weight (0.85 preserves exact original facial identity & skin texture)
 
             for idx, cropped_face in enumerate(face_helper.cropped_faces):
-                # 🌟 إصلاح الإضاءة الهادئ بدون تشويه الألوان
+                # 🌟 إصلاح الإضاءة الهادئ جداً لمنع التباين الاصطناعي على العينين والحواجب
                 lab = cv2.cvtColor(cropped_face, cv2.COLOR_BGR2LAB)
                 l, a, b = cv2.split(lab)
-                clahe = cv2.createCLAHE(clipLimit=1.2, tileGridSize=(8, 8))
+                clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(8, 8))
                 cl = clahe.apply(l)
                 limg = cv2.merge((cl, a, b))
                 fixed_cropped_face = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
@@ -211,8 +241,8 @@ class ImageEnhancer:
                     print(f'\tFailed inference for CodeFormer: {error}')
                     restored_face = tensor2img(cropped_face_t, rgb2bgr=True, min_max=(-1, 1))
 
-                # دمج 85% من الوجه المرمم مع 15% من الوجه الأصلي لضمان الحفاظ الكلي على ملامح الشخص وملمس الجلد الطبيعي
-                restored_face = (restored_face.astype(np.float32) * 0.85 + cropped_face.astype(np.float32) * 0.15).astype(np.uint8)
+                # دمج 65% من الوجه المرمم مع 35% من الوجه الأصلي لضمان الحفاظ المطلق على ملامح الشخص الحقيقية وملمس الجلد الطبيعي دون تنعيم كارتوني
+                restored_face = (restored_face.astype(np.float32) * 0.65 + cropped_face.astype(np.float32) * 0.35).astype(np.uint8)
 
                 face_helper.add_restored_face(restored_face, cropped_face)
 
@@ -235,6 +265,41 @@ class ImageEnhancer:
             total_cost_usd = round((exec_seconds + 2) * (1.10 / 3600), 6) # شاملة ثانيتي الإغلاق الإضافيتين
             
             print(f"Dual Enhancement (CodeFormer + Real-ESRGAN) completed in {exec_seconds}s. Process Cost: ${cost_usd}, Total Cost: ${total_cost_usd}")
+
+            # 📊 Record usage directly into Supabase via RPC (replaces Edge Function proxy)
+            try:
+                raw_bytes_estimate = int((len(image_b64) * 3) / 4)
+                rpc_payload = json.dumps({
+                    "p_user_id": user_id,
+                    "p_daily_limit": daily_limit,
+                    "p_image_bytes": raw_bytes_estimate,
+                    "p_exec_seconds": exec_seconds,
+                    "p_cost_usd": total_cost_usd
+                }).encode('utf-8')
+                
+                rpc_req = urllib.request.Request(
+                    f"{SUPABASE_URL}/rest/v1/rpc/check_and_record_ai_usage",
+                    data=rpc_payload,
+                    headers={
+                        "Authorization": f"Bearer {jwt_token}",
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    method="POST"
+                )
+                with urllib.request.urlopen(rpc_req) as rpc_res:
+                    pass # Recorded successfully
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode()
+                print(f"RPC Quota error: {err_body}")
+                return Response(
+                    content='{"error": "تم الوصول للحد اليومي المسموح به لاستخدام الذكاء الاصطناعي (429 Quota Exceeded)"}',
+                    media_type="application/json",
+                    status_code=429
+                )
+            except Exception as e:
+                print(f"Failed to record usage in Supabase DB: {e}")
 
             return {
                 "success": True,

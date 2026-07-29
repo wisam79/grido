@@ -35,15 +35,40 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 	w, h := bounds.Dx(), bounds.Dy()
 	cmykImg := image.NewCMYK(image.Rect(0, 0, w, h))
 
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			r, g, b, _ := src.At(x, y).RGBA()
-			r8, g8, b8 := uint8(r>>8), uint8(g>>8), uint8(b>>8)
-
-			cmykColor := color.CMYKModel.Convert(color.RGBA{R: r8, G: g8, B: b8, A: 255}).(color.CMYK)
-			cmykImg.SetCMYK(x, y, cmykColor)
-		}
+	// Divide into stripes for parallel processing to reduce memory pressure time and improve speed
+	numStripes := runtime.NumCPU()
+	if numStripes < 1 {
+		numStripes = 1
 	}
+	stripeHeight := h / numStripes
+	if stripeHeight == 0 {
+		stripeHeight = h
+		numStripes = 1
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < numStripes; i++ {
+		wg.Add(1)
+		go func(stripeIdx int) {
+			defer wg.Done()
+			startY := stripeIdx * stripeHeight
+			endY := startY + stripeHeight
+			if stripeIdx == numStripes-1 {
+				endY = h
+			}
+			for y := startY; y < endY; y++ {
+				for x := 0; x < w; x++ {
+					r, g, b, _ := src.At(x, y).RGBA()
+					r8, g8, b8 := uint8(r>>8), uint8(g>>8), uint8(b>>8)
+
+					cmykColor := color.CMYKModel.Convert(color.RGBA{R: r8, G: g8, B: b8, A: 255}).(color.CMYK)
+					cmykImg.SetCMYK(x, y, cmykColor)
+				}
+			}
+		}(i)
+	}
+	wg.Wait()
+
 	return cmykImg
 }
 
@@ -693,8 +718,9 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			if err != nil {
 				return "", "", fmt.Errorf("create cmyk jpeg: %w", err)
 			}
-			defer f.Close()
-			if err := jpeg.Encode(f, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
+			err = jpeg.Encode(f, cmykImg, &jpeg.Options{Quality: 95})
+			f.Close()
+			if err != nil {
 				return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
 			}
 		} else {
@@ -705,8 +731,9 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			if err != nil {
 				return "", "", fmt.Errorf("create cmyk tiff: %w", err)
 			}
-			defer f.Close()
-			if err := tiff.Encode(f, cmykImg, &tiff.Options{Compression: tiff.Deflate}); err != nil {
+			err = tiff.Encode(f, cmykImg, &tiff.Options{Compression: tiff.Deflate})
+			f.Close()
+			if err != nil {
 				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
 			}
 		}
@@ -897,8 +924,13 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 
 	s.drawCutLines(dc, req)
 
+	imgCache.images = nil
+	procCache.images = nil
 	imgCache = nil
 	procCache = nil
+
+	// Trigger garbage collection manually after heavy memory usage (allocating huge CMYK image and decoding many images)
+	runtime.GC()
 
 	return s.saveOutput(dc, req)
 }
@@ -934,9 +966,22 @@ func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
 	if string(pngData[12:16]) != "IHDR" {
 		return nil, fmt.Errorf("first chunk is not IHDR")
 	}
-	insertPos := 8 + 12 + int(chunkLen)
+	insertPos := 8 + 4 + 4 + int(chunkLen) + 4 // sig + length + type + data + CRC
 	if insertPos > len(pngData) {
 		return nil, fmt.Errorf("corrupt PNG data: insert position out of bounds")
+	}
+	
+	// Check if pHYs already exists right after IHDR
+	if insertPos+8 <= len(pngData) && string(pngData[insertPos+4:insertPos+8]) == "pHYs" {
+		// Replace existing pHYs chunk
+		existingChunkLen := int(binary.BigEndian.Uint32(pngData[insertPos:insertPos+4]))
+		nextChunkPos := insertPos + 4 + 4 + existingChunkLen + 4
+		
+		result := make([]byte, 0, len(pngData)-existingChunkLen+len(physData))
+		result = append(result, pngData[:insertPos]...)
+		result = append(result, physChunk...)
+		result = append(result, pngData[nextChunkPos:]...)
+		return result, nil
 	}
 
 	result := make([]byte, 0, len(pngData)+len(physChunk))

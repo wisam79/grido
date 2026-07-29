@@ -174,6 +174,66 @@ export function TemplatePanel() {
                     </TabsContent>
 
                     <TabsContent value="saved" className="mt-4 focus-visible:outline-hidden">
+                      <div className="flex justify-between items-center mb-3">
+                        <p className="text-[10px] text-muted-foreground">قوالبك المحفوظة للاستخدام المتكرر</p>
+                        <div className="flex gap-2">
+                          <input 
+                            type="file" 
+                            accept=".json" 
+                            id="import-templates" 
+                            className="hidden" 
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                const text = await file.text();
+                                const items = JSON.parse(text);
+                                if (!Array.isArray(items)) throw new Error("Invalid format");
+                                let imported = 0;
+                                for (const item of items) {
+                                  if (item.name && item.cells) {
+                                    await SaveCustomTemplate(item.name, item.cells.length, JSON.stringify(item.cells));
+                                    imported++;
+                                  }
+                                }
+                                toast.success(`تم استيراد ${imported} قالب بنجاح`);
+                                loadTemplates();
+                              } catch (err) {
+                                toast.error("ملف غير صالح للاستيراد");
+                              }
+                              e.target.value = "";
+                            }}
+                          />
+                          <label htmlFor="import-templates" className="h-7 px-2 text-[10px] font-bold rounded-lg border border-border bg-muted/30 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all">
+                            استيراد
+                          </label>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (savedTemplates.length === 0) return toast.info("لا توجد قوالب لتصديرها");
+                              try {
+                                const exportData = savedTemplates.map(t => ({ name: t.name, cells: t.cells }));
+                                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `grido-templates-${Date.now()}.json`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                                toast.success("تم تصدير القوالب بنجاح");
+                              } catch (e) {
+                                toast.error("حدث خطأ أثناء التصدير");
+                              }
+                            }}
+                            className="h-7 px-2 text-[10px] font-bold rounded-lg border border-border bg-muted/30 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all"
+                          >
+                            تصدير الكل
+                          </button>
+                        </div>
+                      </div>
+
                       {savedTemplates.length === 0 ? (
                         <div className="text-[11px] text-muted-foreground text-center py-10 border border-dashed border-border/60 rounded-2xl bg-muted/5">
                           لا توجد قوالب محفوظة بعد. يمكنك إنشاء قالب مخصص وحفظه.
