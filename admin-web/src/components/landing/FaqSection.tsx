@@ -26,14 +26,16 @@ export function FaqSection() {
   const toggleFaq = (index: number) => setOpenFaq(openFaq === index ? null : index);
 
   return (
-    <section id="faq" className="relative py-24 border-t border-white/10 bg-[#181818] overflow-hidden">
+    <section id="faq" className="relative py-12 sm:py-24 border-t border-white/10 bg-gradient-to-b from-[#181818] via-[#1a2130] to-[#181818] overflow-hidden">
       {/* Studio Blue Left Ambient Accent Glow */}
-      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[450px] h-[450px] bg-brand-600/10 rounded-full blur-[160px] pointer-events-none" />
-      <div className="max-w-3xl mx-auto px-5 sm:px-6">
-        <div className="text-center mb-12">
-          <span className="text-xs font-bold text-brand-400">الدعم</span>
-          <h2 className="mt-3 text-3xl sm:text-4xl font-black font-display">الأسئلة الشائعة</h2>
-          <p className="mt-4 text-neutral-400">إليك الإجابات على أكثر الأسئلة شيوعاً حول برنامج Grido Studio</p>
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[300px] sm:w-[450px] h-[300px] sm:h-[450px] bg-sky-500/15 rounded-full blur-[120px] sm:blur-[160px] pointer-events-none" />
+      <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-12">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-sky-300 text-xs font-bold shadow-md">
+            الدعم الفني والأسئلة
+          </span>
+          <h2 className="mt-3 text-2xl sm:text-4xl lg:text-5xl font-black font-display text-white drop-shadow-md">الأسئلة الشائعة</h2>
+          <p className="mt-2.5 text-slate-300 text-xs sm:text-base font-medium">إليك الإجابات على أكثر الأسئلة شيوعاً حول برنامج Grido Studio</p>
         </div>
 
         <div className="space-y-3">
@@ -42,18 +44,20 @@ export function FaqSection() {
             return (
               <div
                 key={idx}
-                className={`rounded-2xl overflow-hidden border transition-colors ${
-                  isOpen ? 'border-brand-500/40 bg-[#242424]' : 'border-white/10 bg-[#1e1e1e] hover:bg-[#242424]'
+                className={`rounded-xl sm:rounded-2xl overflow-hidden border transition-all duration-300 ${
+                  isOpen 
+                    ? 'border-sky-400/60 bg-gradient-to-b from-[#252f44] to-[#1d2638] shadow-[0_0_20px_rgba(56,189,248,0.2)]' 
+                    : 'border-sky-400/20 bg-gradient-to-b from-[#242936] to-[#1c2230] hover:border-sky-400/40 shadow-sm'
                 }`}
               >
                 <button
                   onClick={() => toggleFaq(idx)}
-                  className="w-full p-5 text-right font-semibold text-base flex items-center justify-between gap-4 transition-colors"
+                  className="w-full p-4 sm:p-5 text-right font-bold text-sm sm:text-base flex items-center justify-between gap-4 transition-colors"
                   aria-expanded={isOpen}
                 >
-                  <span className={isOpen ? 'text-white' : 'text-neutral-200'}>{faq.q}</span>
-                  <span className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all ${isOpen ? 'bg-brand-500/20 rotate-180' : 'bg-white/5'}`}>
-                    <ChevronDown className={`w-4 h-4 ${isOpen ? 'text-brand-400' : 'text-neutral-400'}`} />
+                  <span className={isOpen ? 'text-white drop-shadow-xs' : 'text-slate-200'}>{faq.q}</span>
+                  <span className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all ${isOpen ? 'bg-sky-500/20 rotate-180 border border-sky-400/40' : 'bg-white/5 border border-white/10'}`}>
+                    <ChevronDown className={`w-4 h-4 ${isOpen ? 'text-sky-300' : 'text-slate-400'}`} />
                   </span>
                 </button>
                 <div
@@ -61,7 +65,7 @@ export function FaqSection() {
                   style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
                 >
                   <div className="overflow-hidden">
-                    <p className="px-5 pb-5 text-neutral-400 text-sm leading-relaxed">{faq.a}</p>
+                    <p className="px-4 pb-4 sm:px-5 sm:pb-5 text-slate-300 text-xs sm:text-sm leading-relaxed font-sans font-medium">{faq.a}</p>
                   </div>
                 </div>
               </div>

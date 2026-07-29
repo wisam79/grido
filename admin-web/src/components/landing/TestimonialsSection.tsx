@@ -75,36 +75,36 @@ export function TestimonialsSection() {
   const ScenarioIcon = currentScenario.icon;
 
   return (
-    <section id="scenarios" className="relative py-12 sm:py-24 border-t border-white/10 bg-[#141414] overflow-hidden">
+    <section id="scenarios" className="relative py-12 sm:py-24 border-t border-white/10 bg-gradient-to-b from-[#141414] via-[#1a202c] to-[#141414] overflow-hidden">
       {/* Studio Ambient Glow Accent */}
-      <div className="absolute top-1/3 right-1/4 w-[300px] sm:w-[550px] h-[300px] sm:h-[550px] bg-brand-600/10 rounded-full blur-[120px] sm:blur-[160px] pointer-events-none" />
+      <div className="absolute top-1/3 right-1/4 w-[300px] sm:w-[550px] h-[300px] sm:h-[550px] bg-sky-500/15 rounded-full blur-[120px] sm:blur-[160px] pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Title Header */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[11px] sm:text-xs font-extrabold mb-3">
-            <UserCheck className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-sky-300 text-[11px] sm:text-xs font-extrabold mb-3 shadow-md">
+            <UserCheck className="w-3.5 h-3.5 text-sky-400" />
             <span>حالات استخدام واقعية من داخل الاستوديو</span>
           </span>
-          <h2 className="text-2xl sm:text-5xl font-black font-display text-white">
-            كيف يحل <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-400 to-blue-300">Grido Studio</span> مواقف العمل اليومية؟
+          <h2 className="text-2xl sm:text-5xl font-black font-display text-white drop-shadow-md">
+            كيف يحل <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-brand-300 to-indigo-300 drop-shadow-[0_2px_15px_rgba(56,189,248,0.35)]">Grido Studio</span> مواقف العمل اليومية؟
           </h2>
-          <p className="mt-3 text-neutral-400 text-xs sm:text-base max-w-xl mx-auto font-sans leading-relaxed">
+          <p className="mt-3 text-slate-300 text-xs sm:text-base max-w-xl mx-auto font-sans leading-relaxed font-medium">
             مقارنة بين بطء الطرق القديمة وسرعة أتمتة Grido Studio المباشرة داخل استوديوهات التصوير.
           </p>
         </div>
 
         {/* Scenario Selector */}
         <div className="flex justify-center mb-8 sm:mb-10">
-          <div className="p-1.5 rounded-2xl bg-[#1e1e1e] border border-white/10 shadow-xl flex items-center gap-1 max-w-full overflow-x-auto no-scrollbar">
+          <div className="p-1.5 rounded-2xl bg-[#1e2536] border border-sky-400/30 shadow-xl flex items-center gap-1 max-w-full overflow-x-auto no-scrollbar">
             {SCENARIOS.map((sc) => (
               <button
                 key={sc.id}
                 onClick={() => setActiveTab(sc.id)}
                 className={`px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl font-bold font-display text-xs sm:text-sm transition-all duration-300 flex items-center gap-2 shrink-0 cursor-pointer ${
                   activeTab === sc.id
-                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30 scale-[1.02]'
-                    : 'text-neutral-400 hover:text-white hover:bg-white/[0.05]'
+                    ? 'bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 text-white shadow-[0_0_20px_rgba(56,189,248,0.4)] scale-[1.02]'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
                 }`}
               >
                 <span>{sc.badge}</span>
@@ -114,18 +114,18 @@ export function TestimonialsSection() {
         </div>
 
         {/* Scenario Display Window */}
-        <div className="rounded-2xl sm:rounded-3xl border border-white/15 bg-[#1a1a1a] shadow-2xl overflow-hidden">
+        <div className="rounded-2xl sm:rounded-3xl border border-sky-400/20 bg-[#141923] shadow-2xl overflow-hidden">
           {/* Top Window Chrome Bar */}
-          <div className="h-10 bg-[#222222] border-b border-white/10 px-4 sm:px-5 flex items-center justify-between text-xs text-neutral-400">
+          <div className="h-10 bg-gradient-to-b from-[#252e42] to-[#1c2333] border-b border-sky-400/20 px-4 sm:px-5 flex items-center justify-between text-xs text-slate-300">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-              <span className="mr-2 font-mono text-[10px] sm:text-[11px] text-neutral-300 font-semibold truncate">
+              <span className="mr-2 font-mono text-[10px] sm:text-[11px] text-slate-200 font-semibold truncate">
                 {currentScenario.badge}
               </span>
             </div>
-            <span className="text-[9px] sm:text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold hidden xs:inline">
+            <span className="text-[9px] sm:text-[10px] font-mono text-sky-300 bg-sky-500/20 px-2 py-0.5 rounded border border-sky-400/30 font-bold hidden xs:inline">
               Real Studio Benchmark
             </span>
           </div>
