@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useEditorStore } from '../editor-store';
 import { createHistorySlice } from './slices/history-slice';
 import { create } from 'zustand';
 

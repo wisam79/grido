@@ -31,8 +31,10 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
     const cacheKey = `${src}__${crossOrigin || ""}`;
     const cached = imageCache.get(cacheKey);
     if (cached && cached.complete) {
-      setImage(cached);
-      setStatus("loaded");
+      queueMicrotask(() => {
+        setImage(cached);
+        setStatus("loaded");
+      });
       return;
     }
 

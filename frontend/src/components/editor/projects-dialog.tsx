@@ -74,16 +74,13 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
   // Search & Sort & Pin states
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "name_asc">("date_desc");
-  const [pinnedProjects, setPinnedProjects] = useState<string[]>([]);
-
-  useEffect(() => {
-    const savedPinned = localStorage.getItem("grido_pinned_projects");
-    if (savedPinned) {
-      try {
-        setPinnedProjects(JSON.parse(savedPinned));
-      } catch (e) {}
-    }
-  }, []);
+  const [pinnedProjects, setPinnedProjects] = useState<string[]>(() => {
+    try {
+      const savedPinned = localStorage.getItem("grido_pinned_projects");
+      if (savedPinned) return JSON.parse(savedPinned);
+    } catch { /* ignore */ }
+    return [];
+  });
 
   const togglePin = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
