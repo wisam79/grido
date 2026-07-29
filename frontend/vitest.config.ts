@@ -23,11 +23,18 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      exclude: [
+        '**/node_modules/**',
+        '**/wailsjs/**',
+        '**/coverage/**',
+        '**/*.test.{ts,tsx}',
+        '**/*.spec.{ts,tsx}',
+      ],
       thresholds: {
-        statements: 25,
-        branches: 25,
-        functions: 25,
-        lines: 25
+        statements: 35,
+        branches: 28,
+        functions: 35,
+        lines: 35
       }
     },
   },

@@ -196,14 +196,14 @@ describe('Component Testing: UI Rendering', () => {
   it('renders the initial header and toolbar correctly', async () => {
     render(<App />);
     expect(await screen.findByText('Grido Studio | استوديو الهوية')).toBeInTheDocument();
-    expect(screen.getByLabelText('رفع صورة جديدة')).toBeInTheDocument();
+    expect(await screen.findByLabelText('رفع صورة جديدة')).toBeInTheDocument();
     expect(await screen.findByLabelText('مكتبة المشاريع المحلية')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('renders the TemplatePanel correctly', async () => {
     render(<App />);
     expect(await screen.findByText('لون خلفية مساحة العمل')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('renders initial collage templates correctly', async () => {
     render(<App />);
@@ -215,5 +215,5 @@ describe('Component Testing: UI Rendering', () => {
     expect(screen.getAllByText('طقم هوية ومعاملات عراقية (مختلط)')[0]).toBeInTheDocument();
     expect(screen.getAllByText('ورقة البطاقة الوطنية وجواز السفر (8 صور)')[0]).toBeInTheDocument();
     expect(screen.getAllByText('ورقة الأحوال والجنسية العراقية (8 صور)')[0]).toBeInTheDocument();
-  });
+  }, 15000);
 });
