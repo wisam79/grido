@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-var supabaseAiDisabled = false
 
 type AIRateEntry struct {
 	count    int

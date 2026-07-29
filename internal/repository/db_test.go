@@ -111,8 +111,6 @@ func TestCleanupUnusedMedia(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDir)
 
-	appDir := filepath.Join(tempDir, "GridoStudio")
-
 	origAppData := os.Getenv("APPDATA")
 	origHome := os.Getenv("HOME")
 	origXdg := os.Getenv("XDG_CONFIG_HOME")
@@ -124,7 +122,7 @@ func TestCleanupUnusedMedia(t *testing.T) {
 		os.Setenv("GRIDO_APP_DIR", origAppDir)
 	}()
 
-	appDir = filepath.Join(tempDir, "GridoStudio")
+	appDir := filepath.Join(tempDir, "GridoStudio")
 	os.Setenv("APPDATA", tempDir)
 	os.Setenv("HOME", tempDir)
 	os.Setenv("XDG_CONFIG_HOME", tempDir)
