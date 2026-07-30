@@ -24,7 +24,7 @@ export function AppMockup() {
     <div className="relative mx-auto w-full max-w-6xl perspective-container group select-none py-3 px-1 sm:px-0">
       {/* SpaceX Dark Tilted Window Frame matching Real Grido Studio App */}
       <div
-        className="perspective-mockup relative rounded-none overflow-hidden border border-[#383842] bg-[#1a1a1e] text-right w-full transition-all duration-500 hover:border-white/40"
+        className="perspective-mockup relative rounded-none overflow-hidden border border-subtle bg-elevated text-right w-full transition-all duration-500 hover:border-white/40"
         dir="rtl"
       >
         {/* Top App Titlebar */}

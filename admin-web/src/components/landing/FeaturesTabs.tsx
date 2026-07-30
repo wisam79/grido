@@ -78,25 +78,25 @@ export function FeaturesTabs() {
   const content = TAB_CONTENT[activeTab];
 
   return (
-    <section id="features" className="relative py-16 sm:py-24 lg:py-28 border-t border-[#383842] bg-[#121214] overflow-hidden">
+    <section id="features" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-secondary overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16 relative z-20">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
+          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
             <Sparkles className="w-3.5 h-3.5 text-white" />
             <span>المميزات الرئيسية</span>
           </span>
           <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
-            استكشف قوة <span className="text-[#f0f0fa]">GRIDO STUDIO</span>
+            استكشف قوة <span className="text-secondary">GRIDO STUDIO</span>
           </h2>
-          <p className="stagger-3 mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
+          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
             أدوات الذكاء الاصطناعي والأتمتة لتضاعف إنتاجية استوديوهات التصوير.
           </p>
         </div>
 
         {/* SpaceX Sharp Tabs */}
         <div className="stagger-4 flex justify-center mb-8 sm:mb-16 relative z-20">
-          <div className="p-1 rounded-none bg-[#1a1a1e] border border-[#383842] flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto justify-start sm:justify-center">
+          <div className="p-1 rounded-none bg-elevated border border-subtle flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto justify-start sm:justify-center">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -107,10 +107,10 @@ export function FeaturesTabs() {
                   className={`px-4 py-3 sm:px-6 sm:py-3.5 rounded-none font-bold text-xs sm:text-sm uppercase tracking-[1px] transition-all duration-300 flex items-center gap-2 shrink-0 cursor-pointer ${
                     isActive
                       ? 'bg-white text-black font-extrabold'
-                      : 'text-[#999999] hover:text-white hover:bg-[#24242c]'
+                      : 'text-tertiary hover:text-white hover:bg-elevated/70'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? 'text-black' : 'text-[#999999]'}`} />
+                  <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? 'text-black' : 'text-tertiary'}`} />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -119,18 +119,18 @@ export function FeaturesTabs() {
         </div>
 
         {/* Studio Canvas App Window Frame */}
-        <div className="relative overflow-hidden rounded-none bg-[#1a1a1e] border border-[#383842] group/window">
+        <div className="relative overflow-hidden rounded-none bg-elevated border border-subtle group/window">
           {/* Top Window Bar (Chrome UI) */}
-          <div className="h-10 sm:h-14 bg-[#24242c] border-b border-[#383842] px-4 sm:px-6 flex items-center justify-between text-xs text-[#999999] relative z-10 font-mono">
+          <div className="h-10 sm:h-14 bg-elevated/70 border-b border-subtle px-4 sm:px-6 flex items-center justify-between text-xs text-tertiary relative z-10 font-mono">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
-              <span className="mr-3 font-mono text-[10px] sm:text-[11px] text-[#f0f0fa] font-bold hidden sm:inline tracking-[1px] uppercase">
+              <span className="mr-3 font-mono text-[10px] sm:text-[11px] text-secondary font-bold hidden sm:inline tracking-[1px] uppercase">
                 Grido Studio WorkSpace — {content.badge}
               </span>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-mono uppercase tracking-[1px]">
-              <span className="hidden md:flex items-center px-2.5 py-1 rounded-none bg-[#121214] border border-[#383842] text-[#f0f0fa]">
+              <span className="hidden md:flex items-center px-2.5 py-1 rounded-none bg-secondary border border-subtle text-secondary">
                 A4 (210 × 297 mm)
               </span>
               <span className="flex items-center px-2.5 py-1 rounded-none bg-white text-black font-bold">
@@ -142,7 +142,7 @@ export function FeaturesTabs() {
           {/* Main Grid Content */}
           <div className="p-4 sm:p-10 grid lg:grid-cols-12 gap-6 sm:gap-8 items-center">
             {/* Visual Interactive Preview Column (7 Cols) */}
-            <div className="lg:col-span-7 bg-[#121214] rounded-none border border-[#383842] p-3 sm:p-5 relative overflow-hidden min-h-[260px] sm:min-h-[340px] flex items-center justify-center group">
+            <div className="lg:col-span-7 bg-secondary rounded-none border border-subtle p-3 sm:p-5 relative overflow-hidden min-h-[260px] sm:min-h-[340px] flex items-center justify-center group">
               {/* Studio Canvas Ruler Markers Overlay */}
               <div className="absolute top-0 inset-x-0 h-4 bg-[#1a1a1a] border-b border-white/10 flex items-center justify-between px-2 text-[8px] font-mono text-neutral-500 select-none">
                 <span>0mm</span>

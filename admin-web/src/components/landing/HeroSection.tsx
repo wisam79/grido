@@ -49,22 +49,22 @@ export function HeroSection() {
             {/* Version Badge */}
             {/* Version Eyebrow */}
             <div className="stagger-1">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase">
                 <span className="text-white font-extrabold">VERSION 1.2.3</span>
-                <span className="text-[#999999]">| MISSION READY</span>
+                <span className="text-tertiary">| MISSION READY</span>
               </span>
             </div>
 
             {/* Headline */}
             <h1 className="stagger-2 text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black leading-tight sm:leading-[1.15] font-display uppercase tracking-tight text-white">
               <span>تنسيق صور المعاملات</span>
-              <span className="mt-2 block text-[#f0f0fa]">
+              <span className="mt-2 block text-secondary">
                 في 3 ثوانٍ فقط
               </span>
             </h1>
 
             {/* Subtitle */}
-            <p className="stagger-3 text-sm sm:text-base text-[#f0f0fa] leading-relaxed max-w-xl font-sans font-medium">
+            <p className="stagger-3 text-sm sm:text-base text-secondary leading-relaxed max-w-xl font-sans font-medium">
               توزيع تلقائي للجوازات والبطاقات، دعم ألوان CMYK، وترميم الوجوه بالذكاء الاصطناعي.
             </p>
 
@@ -95,17 +95,17 @@ export function HeroSection() {
                   e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
                   e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
                 }}
-                className="group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-[rgba(240,240,250,0.1)] border border-[#555555] text-[#f0f0fa] px-6 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] transition-all duration-300 hover:scale-[1.03] hover:border-white active:scale-95 cursor-pointer"
+                className="group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-[rgba(240,240,250,0.1)] border border-[#555555] text-secondary px-6 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] transition-all duration-300 hover:scale-[1.03] hover:border-white active:scale-95 cursor-pointer"
                 aria-label="نسخة محمولة (Portable)"
               >
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: 'radial-gradient(120px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.1), transparent 100%)' }} />
-                <Download className="w-4 h-4 text-[#f0f0fa] shrink-0 relative z-10 group-hover:text-white transition-all duration-300 group-hover:-translate-y-0.5" />
+                <Download className="w-4 h-4 text-secondary shrink-0 relative z-10 group-hover:text-white transition-all duration-300 group-hover:-translate-y-0.5" />
                 <span className="relative z-10 group-hover:text-white transition-colors duration-300">نسخة محمولة (PORTABLE)</span>
               </a>
             </div>
 
             {/* Trust Tags */}
-            <div className="stagger-4 flex flex-wrap items-center justify-start gap-4 text-xs text-[#999999] font-mono tracking-[1px] uppercase pt-2">
+            <div className="stagger-4 flex flex-wrap items-center justify-start gap-4 text-xs text-tertiary font-mono tracking-[1px] uppercase pt-2">
               {TRUST_TAGS.map((tag) => {
                 const Icon = tag.icon;
                 return (
@@ -126,20 +126,20 @@ export function HeroSection() {
             </div>
 
             {/* Mobile Native Feature Showcase Card (Phone) */}
-            <div className="sm:hidden w-full rounded-none bg-[#1a1a1e] border border-[#383842] p-4 space-y-3 relative overflow-hidden">
-              <div className="flex items-center justify-between text-xs border-b border-[#383842] pb-2.5">
+            <div className="sm:hidden w-full rounded-none bg-elevated border border-subtle p-4 space-y-3 relative overflow-hidden">
+              <div className="flex items-center justify-between text-xs border-b border-subtle pb-2.5">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-white" />
                   <span className="font-mono text-[10px] text-white font-bold tracking-[1.5px] uppercase">Grido Studio Mobile</span>
                 </div>
-                <span className="text-[10px] font-mono text-white bg-[#24242c] px-2 py-0.5 border border-[#383842] font-bold uppercase tracking-[1px]">
+                <span className="text-[10px] font-mono text-white bg-elevated/70 px-2 py-0.5 border border-subtle font-bold uppercase tracking-[1px]">
                   3 SECONDS
                 </span>
               </div>
 
               {/* Passport Grid Sample Card */}
-              <div className="bg-[#121214] p-3 rounded-none border border-[#383842] space-y-2">
-                <div className="flex items-center justify-between text-[10px] text-[#999999] font-mono uppercase tracking-[1px]">
+              <div className="bg-secondary p-3 rounded-none border border-subtle space-y-2">
+                <div className="flex items-center justify-between text-[10px] text-tertiary font-mono uppercase tracking-[1px]">
                   <span>A4 Paper Sheet</span>
                   <span className="text-white font-bold">6 PHOTOS (40×32mm)</span>
                 </div>
@@ -155,7 +155,7 @@ export function HeroSection() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-[10px] font-mono text-[#999999] uppercase tracking-[1px] pt-0.5">
+              <div className="flex items-center justify-between text-[10px] font-mono text-tertiary uppercase tracking-[1px] pt-0.5">
                 <span>DPI: 300</span>
                 <span>CMYK READY</span>
                 <span className="text-white font-bold">0% WASTE</span>
@@ -165,19 +165,19 @@ export function HeroSection() {
         </div>
 
         {/* Horizontal Stats Bar */}
-        <div className="mt-12 sm:mt-20 border-t border-[#383842] pt-8 sm:pt-12">
+        <div className="mt-12 sm:mt-20 border-t border-subtle pt-8 sm:pt-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
             {STATS.map((stat) => {
               const Icon = stat.icon;
               return (
-                <div key={stat.label} className="flex flex-col items-center justify-center gap-1.5 p-5 rounded-none bg-[#1a1a1e] border border-[#383842] text-center">
+                <div key={stat.label} className="flex flex-col items-center justify-center gap-1.5 p-5 rounded-none bg-elevated border border-subtle text-center">
                   <div className="flex items-center gap-2">
                     <Icon className="w-5 h-5 text-white shrink-0" />
                     <span className="text-xl sm:text-3xl font-black font-display text-white tracking-tight">
                       {stat.value}
                     </span>
                   </div>
-                  <span className="text-xs font-mono uppercase tracking-[1px] text-[#999999]">
+                  <span className="text-xs font-mono uppercase tracking-[1px] text-tertiary">
                     {stat.label}
                   </span>
                 </div>
@@ -186,24 +186,24 @@ export function HeroSection() {
           </div>
 
           {/* Supported Photo Printers & Lab Equipment Strip */}
-          <div className="mt-8 pt-6 border-t border-[#383842] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-right">
-            <span className="text-xs font-mono font-bold text-[#999999] uppercase tracking-[1.5px]">
+          <div className="mt-8 pt-6 border-t border-subtle flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-right">
+            <span className="text-xs font-mono font-bold text-tertiary uppercase tracking-[1.5px]">
               متوافق 100% مع طابعات ومختبرات التصوير الرسمية:
             </span>
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs font-mono font-bold text-[#f0f0fa] uppercase tracking-[1px]">
-              <span className="px-3 py-1.5 rounded-none bg-[#1a1a1e] border border-[#383842]">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs font-mono font-bold text-secondary uppercase tracking-[1px]">
+              <span className="px-3 py-1.5 rounded-none bg-elevated border border-subtle">
                 EPSON SureLab
               </span>
-              <span className="px-3 py-1.5 rounded-none bg-[#1a1a1e] border border-[#383842]">
+              <span className="px-3 py-1.5 rounded-none bg-elevated border border-subtle">
                 Canon PIXMA / PRO
               </span>
-              <span className="px-3 py-1.5 rounded-none bg-[#1a1a1e] border border-[#383842]">
+              <span className="px-3 py-1.5 rounded-none bg-elevated border border-subtle">
                 DNP DS-Series
               </span>
-              <span className="px-3 py-1.5 rounded-none bg-[#1a1a1e] border border-[#383842]">
+              <span className="px-3 py-1.5 rounded-none bg-elevated border border-subtle">
                 HP DesignJet
               </span>
-              <span className="px-3 py-1.5 rounded-none bg-[#1a1a1e] border border-[#383842]">
+              <span className="px-3 py-1.5 rounded-none bg-elevated border border-subtle">
                 Noritsu QSS
               </span>
             </div>

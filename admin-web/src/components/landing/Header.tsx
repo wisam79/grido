@@ -52,7 +52,7 @@ export function Header() {
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-[#121214]/95 backdrop-blur-md border-b border-[#383842]'
+          ? 'bg-secondary/95 backdrop-blur-md border-b border-subtle'
           : 'bg-transparent border-b border-transparent'
       }`}
     >
@@ -66,7 +66,7 @@ export function Header() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-[13px] font-bold tracking-[1.5px] uppercase text-[#f0f0fa] hover:text-white transition-colors relative py-1 group/link"
+                className="text-[13px] font-bold tracking-[1.5px] uppercase text-secondary hover:text-white transition-colors relative py-1 group/link"
               >
                 <span>{link.label}</span>
                 <span className="absolute bottom-0 inset-x-0 h-0.5 bg-white scale-x-0 group-hover/link:scale-x-100 transition-transform origin-right" />
@@ -89,7 +89,7 @@ export function Header() {
 
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-none bg-[#1a1a1e] text-[#f0f0fa] border border-[#383842]"
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-none bg-elevated text-secondary border border-subtle"
               aria-label="القائمة"
               aria-expanded={menuOpen}
             >
@@ -100,14 +100,14 @@ export function Header() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden pb-4 pt-2 border-t border-[#383842] bg-[#121214]">
+          <div className="md:hidden pb-4 pt-2 border-t border-subtle bg-secondary">
             <nav className="flex flex-col gap-1">
               {NAV_LINKS.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="px-4 py-3 text-xs font-bold tracking-[1.5px] uppercase text-[#f0f0fa] hover:bg-[#1a1a1e] transition-colors"
+                  className="px-4 py-3 text-xs font-bold tracking-[1.5px] uppercase text-secondary hover:bg-elevated transition-colors"
                 >
                   {link.label}
                 </a>

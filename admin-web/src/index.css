@@ -4,6 +4,18 @@
   --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 
+  /* Design System Tokens */
+  --color-primary: var(--color-bg-primary);
+  --color-secondary: var(--color-bg-secondary);
+  --color-elevated: var(--color-bg-elevated);
+  --color-subtle: var(--color-border-subtle);
+  
+  --color-text-primary: var(--color-text-primary-var);
+  --color-text-secondary: var(--color-text-secondary-var);
+  --color-text-tertiary: var(--color-text-tertiary-var);
+  
+  --spacing-section: clamp(80px, 10vw, 160px);
+
   /* Grido Studio Dark Neutral Theme Palette (#141414, #1E1E1E, #282828) */
   --color-ink-950: #141414;
   --color-ink-900: #1e1e1e;
@@ -20,6 +32,26 @@
   --color-accent-500: #3b82f6;
 }
 
+:root {
+  /* الخلفيات — Surfaces */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #121214;
+  --color-bg-elevated: #18181b;
+
+  /* النصوص — Typography */
+  --color-text-primary-var: #ffffff;
+  --color-text-secondary-var: #f0f0fa;
+  --color-text-tertiary-var: #999999;
+
+  /* الحدود — Borders */
+  --color-border-subtle: #383842;
+  --color-border-glow: rgba(255, 255, 255, 0.5);
+
+  /* إحداثيات المؤشر */
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -29,8 +61,8 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: #141414;
-  color: #ffffff;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary-var);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;

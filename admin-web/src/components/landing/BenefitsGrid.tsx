@@ -34,17 +34,17 @@ const BENEFITS: {
 
 export function BenefitsGrid() {
   return (
-    <section id="benefits" className="relative py-16 sm:py-24 lg:py-28 border-t border-[#383842] bg-[#121214] overflow-hidden">
+    <section id="benefits" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-secondary overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
+          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
             <Sparkles className="w-3.5 h-3.5 text-white" />
             <span>المزايا المتقدمة</span>
           </span>
           <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
-            لماذا يختار أصحاب الاستوديوهات <span className="text-[#f0f0fa]">GRIDO STUDIO</span>؟
+            لماذا يختار أصحاب الاستوديوهات <span className="text-secondary">GRIDO STUDIO</span>؟
           </h2>
-          <p className="stagger-3 mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
+          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
             سرعة، دقة عالية، وبدون تعقيد.
           </p>
         </div>
@@ -65,7 +65,7 @@ export function BenefitsGrid() {
           {BENEFITS.map((benefit, index) => (
             <div
               key={benefit.title}
-              className="glow-card-benefit p-5 sm:p-6 rounded-none bg-[#1a1a1e] border border-[#383842] transition-all duration-300 flex flex-row sm:flex-col items-center justify-start sm:justify-between text-right sm:text-center group relative overflow-hidden gap-4 sm:gap-0 cursor-default"
+              className="glow-card-benefit p-5 sm:p-6 rounded-none bg-elevated border border-subtle transition-all duration-300 flex flex-row sm:flex-col items-center justify-start sm:justify-between text-right sm:text-center group relative overflow-hidden gap-4 sm:gap-0 cursor-default"
             >
               {/* Spotlight Glow Overlay */}
               <div 
@@ -103,7 +103,7 @@ export function BenefitsGrid() {
                 <h3 className="text-base sm:text-lg font-bold font-display text-white mb-1 sm:mb-2 drop-shadow-xs transition-colors duration-300 group-hover:text-white">
                   {benefit.title}
                 </h3>
-                <p className="text-[#999999] group-hover:text-[#f0f0fa] transition-colors duration-300 text-xs leading-relaxed font-sans font-medium">
+                <p className="text-tertiary group-hover:text-secondary transition-colors duration-300 text-xs leading-relaxed font-sans font-medium">
                   {benefit.description}
                 </p>
               </div>

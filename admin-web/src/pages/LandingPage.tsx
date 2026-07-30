@@ -69,10 +69,10 @@ export default function LandingPage() {
   return (
     <div
       dir="rtl"
-      className="relative min-h-screen overflow-x-hidden bg-[#121214] font-sans text-[#f0f0fa] selection:bg-white/20"
+      className="relative min-h-screen overflow-x-hidden bg-secondary font-sans text-secondary selection:bg-white/20"
     >
       {/* Top Scroll Progress Bar */}
-      <div className="fixed top-0 inset-x-0 h-0.5 bg-[#24242c] z-[60] pointer-events-none">
+      <div className="fixed top-0 inset-x-0 h-0.5 bg-elevated/70 z-[60] pointer-events-none">
         <div
           className="h-full bg-white transition-all duration-150 ease-out"
           style={{ width: `${scrollProgress}%` }}
@@ -81,7 +81,7 @@ export default function LandingPage() {
 
       {/* SpaceX Dark Charcoal Canvas Background */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-[#121214]" />
+        <div className="absolute inset-0 bg-secondary" />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{

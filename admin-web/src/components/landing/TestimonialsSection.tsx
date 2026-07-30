@@ -75,25 +75,25 @@ export function TestimonialsSection() {
   const ScenarioIcon = currentScenario.icon;
 
   return (
-    <section id="scenarios" className="relative py-16 sm:py-24 lg:py-28 border-t border-[#383842] bg-[#121214] overflow-hidden">
+    <section id="scenarios" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-secondary overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title Header */}
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
+          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
             <UserCheck className="w-3.5 h-3.5 text-white" />
             <span>حالات استخدام واقعية من داخل الاستوديو</span>
           </span>
           <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
-            كيف يحل <span className="text-[#f0f0fa]">GRIDO STUDIO</span> مواقف العمل اليومية؟
+            كيف يحل <span className="text-secondary">GRIDO STUDIO</span> مواقف العمل اليومية؟
           </h2>
-          <p className="stagger-3 mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
+          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
             حلول فورية لمواقف العمل اليومية داخل الاستوديو.
           </p>
         </div>
 
         {/* Scenario Selector */}
         <div className="stagger-4 flex justify-center mb-8 sm:mb-10">
-          <div className="p-1 rounded-none bg-[#1a1a1e] border border-[#383842] flex items-center gap-1 max-w-full overflow-x-auto no-scrollbar">
+          <div className="p-1 rounded-none bg-elevated border border-subtle flex items-center gap-1 max-w-full overflow-x-auto no-scrollbar">
             {SCENARIOS.map((sc) => (
               <button
                 key={sc.id}
@@ -101,7 +101,7 @@ export function TestimonialsSection() {
                 className={`px-4 py-2.5 sm:px-5 sm:py-3 rounded-none font-bold text-xs sm:text-sm uppercase tracking-[1px] transition-all duration-300 flex items-center gap-2 shrink-0 cursor-pointer ${
                   activeTab === sc.id
                     ? 'bg-white text-black font-extrabold'
-                    : 'text-[#999999] hover:text-white hover:bg-[#24242c]'
+                    : 'text-tertiary hover:text-white hover:bg-elevated/70'
                 }`}
               >
                 <span>{sc.badge}</span>
@@ -111,16 +111,16 @@ export function TestimonialsSection() {
         </div>
 
         {/* Scenario Display Window */}
-        <div className="stagger-5 rounded-none border border-[#383842] bg-[#1a1a1e] overflow-hidden">
+        <div className="stagger-5 rounded-none border border-subtle bg-elevated overflow-hidden">
           {/* Top Window Chrome Bar */}
-          <div className="h-10 bg-[#24242c] border-b border-[#383842] px-4 sm:px-5 flex items-center justify-between text-xs text-[#999999] font-mono">
+          <div className="h-10 bg-elevated/70 border-b border-subtle px-4 sm:px-5 flex items-center justify-between text-xs text-tertiary font-mono">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
               <span className="mr-2 font-mono text-[10px] sm:text-[11px] text-white font-bold uppercase tracking-[1px]">
                 {currentScenario.badge}
               </span>
             </div>
-            <span className="text-[9px] sm:text-[10px] font-mono text-[#f0f0fa] bg-[#121214] px-2 py-0.5 border border-[#383842] font-bold uppercase tracking-[1px] hidden xs:inline">
+            <span className="text-[9px] sm:text-[10px] font-mono text-secondary bg-secondary px-2 py-0.5 border border-subtle font-bold uppercase tracking-[1px] hidden xs:inline">
               BENCHMARK TEST
             </span>
           </div>
@@ -146,13 +146,13 @@ export function TestimonialsSection() {
               {/* Step-by-Step Flow Cards */}
               <div className="grid grid-cols-1 gap-4 pt-1">
                 {/* Problem Flow Box */}
-                <div className="p-5 rounded-none bg-[#121214] border border-[#383842]">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#999999] mb-3 pb-2 border-b border-[#383842]">
+                <div className="p-5 rounded-none bg-secondary border border-subtle">
+                  <div className="flex items-center justify-between text-xs font-bold text-tertiary mb-3 pb-2 border-b border-subtle">
                     <span className="flex items-center gap-2 font-display text-sm text-white">
                       <ShieldAlert className="w-4 h-4 text-white" />
                       {currentScenario.problemTitle}
                     </span>
-                    <span className="px-2 py-0.5 rounded-none bg-[#24242c] text-[#999999] border border-[#383842] text-[10px] font-mono uppercase tracking-[1px]">
+                    <span className="px-2 py-0.5 rounded-none bg-elevated/70 text-tertiary border border-subtle text-[10px] font-mono uppercase tracking-[1px]">
                       بطء وهدر في الوقت
                     </span>
                   </div>
@@ -160,11 +160,11 @@ export function TestimonialsSection() {
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     {currentScenario.problemSteps.map((step, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <span className="px-3 py-1.5 rounded-none bg-[#24242c] border border-[#383842] text-[#999999] font-medium font-mono">
+                        <span className="px-3 py-1.5 rounded-none bg-elevated/70 border border-subtle text-tertiary font-medium font-mono">
                           {idx + 1}. {step}
                         </span>
                         {idx < currentScenario.problemSteps.length - 1 && (
-                          <ArrowLeft className="w-3.5 h-3.5 text-[#999999] shrink-0" />
+                          <ArrowLeft className="w-3.5 h-3.5 text-tertiary shrink-0" />
                         )}
                       </div>
                     ))}
@@ -172,8 +172,8 @@ export function TestimonialsSection() {
                 </div>
 
                 {/* Solution Flow Box */}
-                <div className="p-5 rounded-none bg-[#24242c] border border-white/40">
-                  <div className="flex items-center justify-between text-xs font-bold text-white mb-3 pb-2 border-b border-[#383842]">
+                <div className="p-5 rounded-none bg-elevated/70 border border-white/40">
+                  <div className="flex items-center justify-between text-xs font-bold text-white mb-3 pb-2 border-b border-subtle">
                     <span className="flex items-center gap-2 font-display text-sm font-extrabold text-white">
                       <CheckCircle2 className="w-4 h-4 text-white" />
                       {currentScenario.solutionTitle}
@@ -186,7 +186,7 @@ export function TestimonialsSection() {
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     {currentScenario.solutionSteps.map((step, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <span className="px-3 py-1.5 rounded-none bg-[#121214] border border-[#383842] text-white font-extrabold font-mono">
+                        <span className="px-3 py-1.5 rounded-none bg-secondary border border-subtle text-white font-extrabold font-mono">
                           {step}
                         </span>
                         {idx < currentScenario.solutionSteps.length - 1 && (

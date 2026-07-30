@@ -35,17 +35,17 @@ const COMPARISON_ROWS = [
 
 export function ComparisonSection() {
   return (
-    <section id="comparison" className="relative py-16 sm:py-24 lg:py-28 border-t border-[#383842] bg-[#121214] overflow-hidden">
+    <section id="comparison" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-secondary overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
+          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
             <Sparkles className="w-3.5 h-3.5 text-white" />
             <span>مقارنة الأداء والمقاييس</span>
           </span>
           <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
-            لماذا يتحول الجميع إلى <span className="text-[#f0f0fa]">GRIDO STUDIO</span>؟
+            لماذا يتحول الجميع إلى <span className="text-secondary">GRIDO STUDIO</span>؟
           </h2>
-          <p className="stagger-3 mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
+          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
             وفر 90% من وقت العمل اليومي بفضل الأتمتة المباشرة.
           </p>
         </div>
@@ -68,7 +68,7 @@ export function ComparisonSection() {
             return (
               <div 
                 key={idx} 
-                className="glow-card-compare group relative flex flex-col lg:flex-row items-stretch gap-4 lg:gap-0 p-3 rounded-none bg-[#1a1a1e] border border-[#383842] transition-all duration-300 overflow-hidden cursor-default"
+                className="glow-card-compare group relative flex flex-col lg:flex-row items-stretch gap-4 lg:gap-0 p-3 rounded-none bg-elevated border border-subtle transition-all duration-300 overflow-hidden cursor-default"
               >
                 {/* Spotlight Glow Overlay */}
                 <div 
@@ -88,7 +88,7 @@ export function ComparisonSection() {
                 />
                 {/* 1. Feature Title Column */}
                 <div className="relative z-10 lg:w-1/3 flex items-center gap-4 p-4 lg:p-6 bg-transparent">
-                  <div className="w-10 h-10 rounded-none bg-[#24242c] border border-[#383842] flex items-center justify-center shrink-0 text-white">
+                  <div className="w-10 h-10 rounded-none bg-elevated/70 border border-subtle flex items-center justify-center shrink-0 text-white">
                     <Icon className="w-5 h-5" />
                   </div>
                   <h3 className="text-base lg:text-lg font-bold text-white font-display leading-tight">
@@ -97,26 +97,26 @@ export function ComparisonSection() {
                 </div>
 
                 {/* 2. VS Split Comparison Column */}
-                <div className="relative z-10 lg:w-2/3 flex flex-col sm:flex-row rounded-none border border-[#383842] bg-[#121214]">
+                <div className="relative z-10 lg:w-2/3 flex flex-col sm:flex-row rounded-none border border-subtle bg-secondary">
                   
                   {/* Traditional (Old Way) */}
-                  <div className="flex-1 p-5 sm:p-6 flex items-center justify-start sm:justify-center text-right sm:text-center relative overflow-hidden border-b sm:border-b-0 sm:border-l border-[#383842]">
+                  <div className="flex-1 p-5 sm:p-6 flex items-center justify-start sm:justify-center text-right sm:text-center relative overflow-hidden border-b sm:border-b-0 sm:border-l border-subtle">
                     <div className="relative z-10 flex flex-col sm:items-center gap-2 w-full">
-                      <span className="text-[10px] uppercase tracking-[1.5px] font-mono font-bold text-[#999999]">الطريقة التقليدية</span>
+                      <span className="text-[10px] uppercase tracking-[1.5px] font-mono font-bold text-tertiary">الطريقة التقليدية</span>
                       <div className="flex items-start sm:items-center gap-2 opacity-60">
-                        <X className="w-4 h-4 text-[#999999] shrink-0 mt-0.5 sm:mt-0" />
-                        <p className="text-[#999999] text-xs sm:text-sm font-medium line-through">{row.traditional}</p>
+                        <X className="w-4 h-4 text-tertiary shrink-0 mt-0.5 sm:mt-0" />
+                        <p className="text-tertiary text-xs sm:text-sm font-medium line-through">{row.traditional}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* VS Divider Badge */}
-                  <div className="hidden sm:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-none bg-[#24242c] border border-[#383842] items-center justify-center z-20">
-                    <span className="text-[10px] font-mono font-bold text-[#999999]">VS</span>
+                  <div className="hidden sm:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-none bg-elevated/70 border border-subtle items-center justify-center z-20">
+                    <span className="text-[10px] font-mono font-bold text-tertiary">VS</span>
                   </div>
 
                   {/* Grido Studio (New Way) */}
-                  <div className="flex-1 p-5 sm:p-6 flex items-center justify-start sm:justify-center text-right sm:text-center bg-[#24242c] relative overflow-hidden">
+                  <div className="flex-1 p-5 sm:p-6 flex items-center justify-start sm:justify-center text-right sm:text-center bg-elevated/70 relative overflow-hidden">
                     <div className="relative z-10 flex flex-col sm:items-center gap-2 w-full">
                       <span className="text-[10px] uppercase tracking-[1.5px] font-mono font-extrabold text-white">مع GRIDO STUDIO</span>
                       <div className="flex items-start sm:items-center gap-2">
