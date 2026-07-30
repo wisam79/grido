@@ -30,11 +30,44 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Cache Go Binaries (Wails & Staticcheck)
+        id: cache-go-bin
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\go\bin
+          key: ${{ runner.os }}-go-bin-v1
+
+      - name: Cache NSIS Compiler
+        id: cache-nsis
+        uses: actions/cache@v4
+        with:
+          path: 'C:\Program Files (x86)\NSIS'
+          key: ${{ runner.os }}-nsis-v1
+
+      - name: Cache Downloaded Models & Fonts
+        id: cache-models-fonts
+        uses: actions/cache@v4
+        with:
+          path: |
+            frontend/public/models
+            frontend/public/fonts
+            frontend/public/onnxruntime-web
+          key: ${{ runner.os }}-models-fonts-v1
+
+      - name: Add Go Bin & NSIS to PATH
+        shell: powershell
+        run: |
+          $gopath = $(go env GOPATH)
+          "$gopath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Install Frontend Dependencies
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps
 
       - name: Download Offline Assets (Fonts & Models)
+        if: steps.cache-models-fonts.outputs.cache-hit != 'true'
         working-directory: ./frontend
         shell: powershell
         run: |
@@ -42,10 +75,10 @@ jobs:
           .\scripts\download-models.ps1
 
       - name: Install NSIS Compiler
+        if: steps.cache-nsis.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           choco install nsis -y
-          "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install Python Dependencies & Generate Installer Assets
         run: |
@@ -53,7 +86,12 @@ jobs:
           python build/windows/installer/generate_installer_assets.py
 
       - name: Install Wails CLI
+        if: steps.cache-go-bin.outputs.cache-hit != 'true'
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install Staticcheck
+        if: steps.cache-go-bin.outputs.cache-hit != 'true'
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
 
       - name: Generate Wails Bindings
         run: |
@@ -63,7 +101,6 @@ jobs:
 
       - name: Run Go Vet & Staticcheck
         run: |
-          go install honnef.co/go/tools/cmd/staticcheck@latest
           go vet ./...
           staticcheck ./...
 
@@ -101,4 +138,3 @@ jobs:
             - يشمل نسخة Portable وملف تثبيت Installer.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
