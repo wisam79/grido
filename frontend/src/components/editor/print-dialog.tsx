@@ -239,7 +239,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     try {
       const TIMEOUT_MS = 30000;
       canvasDataUrl = await Promise.race([
-        captureStageDataUrl(stage, targetPixelRatio, "image/png"),
+        captureStageDataUrl(stage, targetPixelRatio, "image/jpeg", 0.95),
         new Promise<null>((_, reject) => setTimeout(() => reject(new Error("Canvas capture timed out")), TIMEOUT_MS)),
       ]);
     } catch {

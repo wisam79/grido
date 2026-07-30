@@ -11,6 +11,7 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
+	"image/png"
 	"log/slog"
 	"math"
 	"os"
@@ -31,20 +32,67 @@ import (
 	"github.com/fogleman/gg"
 )
 
-// ConvertRGBAtoCMYK converts an image.Image to an image.CMYK instance
+// ConvertRGBAtoCMYK converts an image.Image to an image.CMYK instance using parallel workers and direct slice access
 func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 	bounds := src.Bounds()
 	w, h := bounds.Dx(), bounds.Dy()
 	cmykImg := image.NewCMYK(image.Rect(0, 0, w, h))
 
-	for y := range h {
-		for x := range w {
-			r, g, b, _ := src.At(x, y).RGBA()
-			r8, g8, b8 := uint8(r>>8), uint8(g>>8), uint8(b>>8)
-			cmykColor := color.CMYKModel.Convert(color.RGBA{R: r8, G: g8, B: b8, A: 255}).(color.CMYK)
-			cmykImg.SetCMYK(x, y, cmykColor)
-		}
+	rgba, isRGBA := src.(*image.RGBA)
+	numCPU := runtime.NumCPU()
+	if numCPU < 1 {
+		numCPU = 1
 	}
+
+	var wg sync.WaitGroup
+	rowsPerWorker := (h + numCPU - 1) / numCPU
+
+	for worker := 0; worker < numCPU; worker++ {
+		startY := worker * rowsPerWorker
+		endY := startY + rowsPerWorker
+		if endY > h {
+			endY = h
+		}
+		if startY >= endY {
+			continue
+		}
+
+		wg.Add(1)
+		go func(sy, ey int) {
+			defer wg.Done()
+			if isRGBA {
+				for y := sy; y < ey; y++ {
+					srcOffset := y * rgba.Stride
+					dstOffset := y * cmykImg.Stride
+					for x := 0; x < w; x++ {
+						r := rgba.Pix[srcOffset+x*4]
+						g := rgba.Pix[srcOffset+x*4+1]
+						b := rgba.Pix[srcOffset+x*4+2]
+						c, m, yVal, k := color.RGBToCMYK(r, g, b)
+						cmykOffset := dstOffset + x*4
+						cmykImg.Pix[cmykOffset] = c
+						cmykImg.Pix[cmykOffset+1] = m
+						cmykImg.Pix[cmykOffset+2] = yVal
+						cmykImg.Pix[cmykOffset+3] = k
+					}
+				}
+			} else {
+				for y := sy; y < ey; y++ {
+					dstOffset := y * cmykImg.Stride
+					for x := 0; x < w; x++ {
+						r, g, b, _ := src.At(x, y).RGBA()
+						c, m, yVal, k := color.RGBToCMYK(uint8(r>>8), uint8(g>>8), uint8(b>>8))
+						cmykOffset := dstOffset + x*4
+						cmykImg.Pix[cmykOffset] = c
+						cmykImg.Pix[cmykOffset+1] = m
+						cmykImg.Pix[cmykOffset+2] = yVal
+						cmykImg.Pix[cmykOffset+3] = k
+					}
+				}
+			}
+		}(startY, endY)
+	}
+	wg.Wait()
 
 	return cmykImg
 }
@@ -383,15 +431,17 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 }
 
 type imageCache struct {
-	mu     sync.RWMutex
-	images map[string]image.Image
-	access map[string]time.Time
+	mu       sync.RWMutex
+	images   map[string]image.Image
+	access   map[string]time.Time
+	inFlight map[string]*sync.Cond
 }
 
 type processedCache struct {
-	mu     sync.RWMutex
-	images map[processedKey]image.Image
-	access map[processedKey]time.Time
+	mu       sync.RWMutex
+	images   map[processedKey]image.Image
+	access   map[processedKey]time.Time
+	inFlight map[processedKey]*sync.Cond
 }
 
 // computeImageCacheKey يحسب مفتاح كاش للصورة (مع تجنب Hash كامل لـ Base64 الضخمة)
@@ -408,18 +458,39 @@ func computeImageCacheKey(filePath string) string {
 	return filePath
 }
 
-// loadRawImage يفتح الصورة من ملف أو Base64 مع كاش LRU
+// loadRawImage يفتح الصورة من ملف أو Base64 مع كاش LRU ومنع تكرار التحميل الجاري (In-Flight Deduplication)
 func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image.Image, error) {
-	imgCache.mu.RLock()
-	cachedRaw, ok := imgCache.images[cacheKey]
-	imgCache.mu.RUnlock()
-
-	if ok {
-		imgCache.mu.Lock()
+	imgCache.mu.Lock()
+	if cachedRaw, ok := imgCache.images[cacheKey]; ok {
 		imgCache.access[cacheKey] = time.Now()
 		imgCache.mu.Unlock()
 		return cachedRaw, nil
 	}
+
+	if cond, loading := imgCache.inFlight[cacheKey]; loading {
+		for {
+			cond.Wait()
+			if cachedRaw, ok := imgCache.images[cacheKey]; ok {
+				imgCache.access[cacheKey] = time.Now()
+				imgCache.mu.Unlock()
+				return cachedRaw, nil
+			}
+			if _, stillLoading := imgCache.inFlight[cacheKey]; !stillLoading {
+				break
+			}
+		}
+	}
+
+	cond := sync.NewCond(&imgCache.mu)
+	imgCache.inFlight[cacheKey] = cond
+	imgCache.mu.Unlock()
+
+	defer func() {
+		imgCache.mu.Lock()
+		delete(imgCache.inFlight, cacheKey)
+		cond.Broadcast()
+		imgCache.mu.Unlock()
+	}()
 
 	var img image.Image
 	var err error
@@ -561,7 +632,7 @@ func applyImageProcessing(img image.Image, item domain.PrintItem, targetW, targe
 	return processedImg
 }
 
-// loadAndProcessImage يقوم بفتح الصورة ومعالجة ألوانها وأبعادها مع إدارة الذاكرة بنظام LRU
+// loadAndProcessImage يقوم بفتح الصورة ومعالجة ألوانها وأبعادها مع إدارة الذاكرة بنظام LRU وتفادي تكرار المعالجة الجارية
 func (s *PrintService) loadAndProcessImage(
 	item domain.PrintItem,
 	dpi int,
@@ -595,16 +666,37 @@ func (s *PrintService) loadAndProcessImage(
 		dragY:      item.DragY,
 	}
 
-	procCache.mu.RLock()
-	cached, ok := procCache.images[pKey]
-	procCache.mu.RUnlock()
-
-	if ok {
-		procCache.mu.Lock()
+	procCache.mu.Lock()
+	if cached, ok := procCache.images[pKey]; ok {
 		procCache.access[pKey] = time.Now()
 		procCache.mu.Unlock()
 		return cached, nil
 	}
+
+	if cond, loading := procCache.inFlight[pKey]; loading {
+		for {
+			cond.Wait()
+			if cached, ok := procCache.images[pKey]; ok {
+				procCache.access[pKey] = time.Now()
+				procCache.mu.Unlock()
+				return cached, nil
+			}
+			if _, stillLoading := procCache.inFlight[pKey]; !stillLoading {
+				break
+			}
+		}
+	}
+
+	cond := sync.NewCond(&procCache.mu)
+	procCache.inFlight[pKey] = cond
+	procCache.mu.Unlock()
+
+	defer func() {
+		procCache.mu.Lock()
+		delete(procCache.inFlight, pKey)
+		cond.Broadcast()
+		procCache.mu.Unlock()
+	}()
 
 	img, err := loadRawImage(filePath, cacheKey, imgCache)
 	if err != nil {
@@ -719,7 +811,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			if err != nil {
 				return "", "", fmt.Errorf("create cmyk tiff: %w", err)
 			}
-			err = tiff.Encode(f, cmykImg, &tiff.Options{Compression: tiff.Deflate})
+			err = tiff.Encode(f, cmykImg, &tiff.Options{Compression: tiff.Uncompressed})
 			f.Close()
 			if err != nil {
 				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
@@ -730,7 +822,8 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		htmlImageName = baseName + "_preview.png"
 		htmlImagePath := filepath.Join(outDir, htmlImageName)
 		var buf bytes.Buffer
-		if err := dc.EncodePNG(&buf); err == nil {
+		enc := &png.Encoder{CompressionLevel: png.BestSpeed}
+		if err := enc.Encode(&buf, dc.Image()); err == nil {
 			pngData := buf.Bytes()
 			if updatedData, err := setPngDPI(pngData, req.DPI); err == nil {
 				pngData = updatedData
@@ -745,7 +838,8 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		htmlImageName = imageName
 		imagePath = filepath.Join(outDir, imageName)
 		var buf bytes.Buffer
-		err := dc.EncodePNG(&buf)
+		enc := &png.Encoder{CompressionLevel: png.BestSpeed}
+		err := enc.Encode(&buf, dc.Image())
 		if err != nil {
 			return "", "", err
 		}
@@ -852,12 +946,14 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 	dc.Clear()
 
 	imgCache := &imageCache{
-		images: make(map[string]image.Image),
-		access: make(map[string]time.Time),
+		images:   make(map[string]image.Image),
+		access:   make(map[string]time.Time),
+		inFlight: make(map[string]*sync.Cond),
 	}
 	procCache := &processedCache{
-		images: make(map[processedKey]image.Image),
-		access: make(map[processedKey]time.Time),
+		images:   make(map[processedKey]image.Image),
+		access:   make(map[processedKey]time.Time),
+		inFlight: make(map[processedKey]*sync.Cond),
 	}
 
 	// 1. Process all images in parallel

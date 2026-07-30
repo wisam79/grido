@@ -80,7 +80,7 @@ export async function captureStageDataUrl(
       }
     });
 
-    const exportRatio = Math.max(1, targetPixelRatio);
+    const exportRatio = Math.min(4, Math.max(1, targetPixelRatio));
     for (const node of cachedNodes) {
       try {
         node.clearCache();
