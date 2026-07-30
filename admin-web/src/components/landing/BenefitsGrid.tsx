@@ -45,7 +45,7 @@ export function BenefitsGrid() {
             لماذا يختار أصحاب الاستوديوهات <span className="text-[#f0f0fa]">GRIDO STUDIO</span>؟
           </h2>
           <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-            مصمم خصيصاً لتلبية احتياجات سوق التصوير والطباعة اليومية بأعلى معايير السرعة والجودة.
+            سرعة، دقة عالية، وبدون تعقيد.
           </p>
         </div>
 

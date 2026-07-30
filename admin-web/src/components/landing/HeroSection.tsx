@@ -57,15 +57,15 @@ export function HeroSection() {
 
             {/* Headline */}
             <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black leading-tight sm:leading-[1.15] font-display uppercase tracking-tight text-white">
-              <span>تنسيق وتجهيز صور المعاملات</span>
+              <span>تنسيق صور المعاملات</span>
               <span className="mt-2 block text-[#f0f0fa]">
-                جاهزة للطباعة والقص في 3 ثوان
+                في 3 ثوانٍ فقط
               </span>
             </h1>
 
             {/* Subtitle */}
             <p className="text-sm sm:text-base text-[#f0f0fa] leading-relaxed max-w-xl font-sans font-medium">
-              توزيع تلقائي لصور الجوازات والبطاقات، دعم ألوان CMYK، وترميم الوجوه بالذكاء الاصطناعي بضغطة زر واحدة.
+              توزيع تلقائي للجوازات والبطاقات، دعم ألوان CMYK، وترميم الوجوه بالذكاء الاصطناعي.
             </p>
 
             {/* SpaceX Pill CTAs */}

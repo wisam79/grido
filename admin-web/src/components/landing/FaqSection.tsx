@@ -34,7 +34,7 @@ export function FaqSection() {
             <span>الدعم الفني والأسئلة</span>
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">الأسئلة الشائعة</h2>
-          <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">إليك الإجابات على أكثر الأسئلة شيوعاً حول برنامج Grido Studio</p>
+          <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">إجابات سريعة ومباشرة.</p>
         </div>
 
         <div className="max-w-3xl mx-auto space-y-3">

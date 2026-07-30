@@ -90,7 +90,7 @@ export function FeaturesTabs() {
             استكشف قوة <span className="text-[#f0f0fa]">GRIDO STUDIO</span>
           </h2>
           <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-            محرك معالجة احترافي يجمع بين أدوات التصميم العالمية والذكاء الاصطناعي لتسريع إنتاجية استوديو الصور الخاص بك.
+            أدوات الذكاء الاصطناعي والأتمتة لتضاعف إنتاجية استوديوهات التصوير.
           </p>
         </div>
 

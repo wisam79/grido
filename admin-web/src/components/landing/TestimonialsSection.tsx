@@ -87,7 +87,7 @@ export function TestimonialsSection() {
             كيف يحل <span className="text-[#f0f0fa]">GRIDO STUDIO</span> مواقف العمل اليومية؟
           </h2>
           <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-            مقارنة بين بطء الطرق القديمة وسرعة أتمتة Grido Studio المباشرة داخل استوديوهات التصوير.
+            حلول فورية لمواقف العمل اليومية داخل الاستوديو.
           </p>
         </div>
 

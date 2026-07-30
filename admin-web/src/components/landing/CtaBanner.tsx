@@ -20,12 +20,12 @@ export function CtaBanner() {
 
             {/* Headline */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display text-white uppercase tracking-tight leading-tight">
-              جاهز لتطوير أداء استوديو الصور الخاص بك؟
+              جاهز لتضاعف سرعة إنتاجيتك؟
             </h2>
 
             {/* Description */}
             <p className="text-[#f0f0fa] text-sm sm:text-lg max-w-xl mx-auto font-sans leading-relaxed font-medium">
-              حمّل البرنامج الآن وجهّز صور المعاملات بالذكاء الاصطناعي في 3 ثوانٍ فقط.
+              حمّل البرنامج وابدأ المعالجة الفورية الآن.
             </p>
 
             {/* SpaceX Download Actions */}
