@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   ShieldCheck,
   LayoutGrid,
@@ -20,13 +21,49 @@ import {
 const PASSPORT_IMG = '/sample-passport.png';
 
 export function AppMockup() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // -1 to 1 based on mouse position relative to center
+    const xPct = (x / rect.width - 0.5) * 2;
+    const yPct = (y / rect.height - 0.5) * 2;
+    
+    const rotX = yPct * -2; 
+    const rotY = xPct * 2;
+
+    containerRef.current.style.setProperty('--tilt-x', `${x}px`);
+    containerRef.current.style.setProperty('--tilt-y', `${y}px`);
+    containerRef.current.style.setProperty('--rot-x', `${rotX}deg`);
+    containerRef.current.style.setProperty('--rot-y', `${rotY}deg`);
+  };
+
+  const handleMouseLeave = () => {
+    if (!containerRef.current) return;
+    containerRef.current.style.setProperty('--rot-x', '0deg');
+    containerRef.current.style.setProperty('--rot-y', '0deg');
+    containerRef.current.style.setProperty('--tilt-x', '50%');
+    containerRef.current.style.setProperty('--tilt-y', '50%');
+  };
+
   return (
-    <div className="relative mx-auto w-full max-w-6xl perspective-container group select-none py-3 px-1 sm:px-0">
+    <div 
+      className="relative mx-auto w-full max-w-6xl perspective-container group select-none py-3 px-1 sm:px-0"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* SpaceX Dark Tilted Window Frame matching Real Grido Studio App */}
       <div
-        className="perspective-mockup relative rounded-none overflow-hidden border border-subtle bg-elevated text-right w-full transition-all duration-500 hover:border-white/40"
+        ref={containerRef}
+        className="perspective-mockup relative rounded-none overflow-hidden border border-subtle bg-elevated text-right w-full transition-colors duration-500 hover:border-white/40"
         dir="rtl"
       >
+        <div className="tilt-glow-layer" />
+        
         {/* Top App Titlebar */}
         <div className="h-11 bg-[#242424] border-b border-white/10 px-3 flex items-center justify-between text-neutral-300 text-xs">
           {/* Left Controls & Status */}

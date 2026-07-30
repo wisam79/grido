@@ -32,6 +32,24 @@ export default function LandingPage() {
     }
   }, []);
 
+  // Global mousemove tracker for Spotlight Card Glow Effect (design.md Section 4.2)
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const cards = document.querySelectorAll('.spotlight-card');
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        // Calculate coordinates relative to the card bounds
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+        (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   // Track scroll progress & floating CTA visibility
   useEffect(() => {
     const handleScroll = () => {
@@ -47,13 +65,13 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Intersection Observer for smooth scroll reveal animations
+  // Intersection Observer for smooth scroll reveal animations (design.md Section 4.1)
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('is-revealed');
+            entry.target.classList.add('is-revealed', 'is-visible');
           }
         });
       },
@@ -69,7 +87,7 @@ export default function LandingPage() {
   return (
     <div
       dir="rtl"
-      className="relative min-h-screen overflow-x-hidden bg-secondary font-sans text-secondary selection:bg-white/20"
+      className="relative min-h-screen overflow-x-hidden bg-primary font-sans text-secondary selection:bg-white/20"
     >
       {/* Top Scroll Progress Bar */}
       <div className="fixed top-0 inset-x-0 h-0.5 bg-elevated/70 z-[60] pointer-events-none">
@@ -79,9 +97,10 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* SpaceX Dark Charcoal Canvas Background */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-secondary" />
+      {/* SpaceX Dark Charcoal Canvas Background & Aurora */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-primary" />
+        <div className="aurora-bg fixed" aria-hidden />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -94,7 +113,7 @@ export default function LandingPage() {
       <Header />
 
       <main className="relative z-10">
-        <div className="reveal-on-scroll is-revealed">
+        <div className="reveal-on-scroll is-revealed is-visible">
           <HeroSection />
         </div>
         <div className="reveal-on-scroll">
@@ -125,7 +144,7 @@ export default function LandingPage() {
           href={GITHUB_RELEASE_DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-6 left-6 z-50 flex items-center gap-2 px-6 py-3 rounded-full bg-white hover:bg-[#f0f0fa] text-black font-extrabold text-xs tracking-[1px] uppercase transition-all duration-300 hover:scale-105 active:scale-95 border border-white"
+          className="magnetic-pill fixed bottom-6 left-6 z-50 flex items-center gap-2 px-6 py-3 rounded-full bg-white hover:bg-[#f0f0fa] text-black font-mono font-extrabold text-xs tracking-[1px] uppercase transition-all duration-300 hover:scale-105 active:scale-95 border border-white shadow-[0_0_20px_rgba(255,255,255,0.3)]"
           aria-label="تحميل مباشر الآن"
         >
           <Download className="w-4 h-4 text-black shrink-0" />

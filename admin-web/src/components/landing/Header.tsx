@@ -14,7 +14,6 @@ const NAV_LINKS = [
 function AnimatedLogo() {
   return (
     <a href="#top" className="flex items-center gap-3 group select-none relative">
-      {/* Clean Official Logo Image without any glow or drop shadow */}
       <div className="relative w-9 h-9 flex items-center justify-center">
         <img
           src="/favicon.png"
@@ -25,11 +24,11 @@ function AnimatedLogo() {
 
       <div className="flex flex-col leading-none">
         <div className="flex items-center gap-1.5">
-          <span className="text-xl font-bold font-display text-white tracking-tight group-hover:text-brand-300 transition-colors">
+          <span className="text-xl font-extrabold font-display text-white tracking-tight transition-colors">
             Grido Studio
           </span>
         </div>
-        <span className="mt-1 text-[9px] font-semibold text-brand-400">
+        <span className="mt-1 text-[9px] font-mono font-bold text-tertiary uppercase tracking-[1px]">
           استوديو الصور الذكي
         </span>
       </div>
@@ -48,6 +47,17 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const handleMagneticMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const relX = e.clientX - rect.left - rect.width / 2;
+    const relY = e.clientY - rect.top - rect.height / 2;
+    e.currentTarget.style.transform = `translate(${relX * 0.12}px, ${relY * 0.12}px)`;
+  };
+
+  const handleMagneticMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.currentTarget.style.transform = 'translate(0px, 0px)';
+  };
+
   return (
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
@@ -60,13 +70,13 @@ export function Header() {
         <div className="h-20 flex items-center justify-between">
           <AnimatedLogo />
 
-          {/* Clean nav links with SpaceX uppercase tracking */}
+          {/* Clean nav links with SpaceX monospace tracking */}
           <nav className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="text-[13px] font-bold tracking-[1.5px] uppercase text-secondary hover:text-white transition-colors relative py-1 group/link"
+                className="text-xs font-mono font-bold tracking-[1.5px] uppercase text-secondary hover:text-white transition-colors relative py-1 group/link"
               >
                 <span>{link.label}</span>
                 <span className="absolute bottom-0 inset-x-0 h-0.5 bg-white scale-x-0 group-hover/link:scale-x-100 transition-transform origin-right" />
@@ -80,7 +90,9 @@ export function Header() {
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 px-6 py-2.5 rounded-full bg-white hover:bg-[#f0f0fa] text-black text-xs font-extrabold uppercase tracking-[1px] transition-all hover:scale-105 active:scale-95 cursor-pointer relative border border-white"
+              onMouseMove={handleMagneticMouseMove}
+              onMouseLeave={handleMagneticMouseLeave}
+              className="magnetic-pill hidden sm:flex items-center gap-2 px-6 py-2.5 rounded-full bg-white hover:bg-[#f0f0fa] text-black text-xs font-mono font-extrabold uppercase tracking-[1px] transition-shadow duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] cursor-pointer relative border border-white"
               aria-label="تحميل البرنامج"
             >
               <Download className="w-3.5 h-3.5 text-black relative z-10" />
@@ -89,7 +101,7 @@ export function Header() {
 
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-none bg-elevated text-secondary border border-subtle"
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-none bg-elevated text-secondary border border-subtle cursor-pointer"
               aria-label="القائمة"
               aria-expanded={menuOpen}
             >
@@ -107,7 +119,7 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="px-4 py-3 text-xs font-bold tracking-[1.5px] uppercase text-secondary hover:bg-elevated transition-colors"
+                  className="px-4 py-3 text-xs font-mono font-bold tracking-[1.5px] uppercase text-secondary hover:bg-elevated transition-colors"
                 >
                   {link.label}
                 </a>
@@ -116,7 +128,7 @@ export function Header() {
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white text-black font-extrabold text-xs uppercase tracking-[1px]"
+                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white text-black font-mono font-extrabold text-xs uppercase tracking-[1px]"
               >
                 <Download className="w-4 h-4 text-black" />
                 تحميل التطبيق

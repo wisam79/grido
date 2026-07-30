@@ -8,16 +8,16 @@ const NAV_LINKS = [
 
 export function Footer() {
   return (
-    <footer className="relative border-t border-subtle bg-secondary py-10 sm:py-16">
+    <footer className="relative border-t border-subtle bg-transparent py-10 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8">
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="relative w-8 h-8 sm:w-9 sm:h-9 overflow-hidden rounded-none border border-subtle bg-elevated">
+            <div className="relative w-8 h-8 sm:w-9 sm:h-9 overflow-hidden border border-subtle bg-elevated">
               <img src="/favicon.png" alt="Grido Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="font-extrabold text-base text-white uppercase tracking-tight">Grido Studio</span>
+              <span className="font-extrabold text-base text-white uppercase tracking-tight font-display">Grido Studio</span>
               <span className="mt-1 text-[10px] text-tertiary font-mono uppercase tracking-[1px]">استوديو الصور الذكي</span>
             </div>
           </div>

@@ -1,13 +1,14 @@
+import { useEffect, useState, useRef } from 'react';
 import { Download, Printer, Gauge, Target, Users, Monitor, ShieldCheck, Zap } from 'lucide-react';
 import { AppMockup } from './AppMockup';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const STATS = [
-  { icon: Printer, value: '100%', label: 'متوافق مع كل الطابعات' },
-  { icon: Gauge, value: '4x', label: 'أسرع من الطرق التنفيذية' },
-  { icon: Target, value: '99.9%', label: 'دقة في النتائج' },
-  { icon: Users, value: '50,000+', label: 'صورة معالجة يومياً' },
+  { icon: Printer, value: 100, suffix: '%', label: 'متوافق مع كل الطابعات' },
+  { icon: Gauge, value: 4, suffix: 'x', label: 'أسرع من الطرق التنفيذية' },
+  { icon: Target, value: 99.9, suffix: '%', isFloat: true, label: 'دقة في النتائج' },
+  { icon: Users, value: 50000, suffix: '+', label: 'صورة معالجة يومياً' },
 ];
 
 const TRUST_TAGS = [
@@ -15,6 +16,48 @@ const TRUST_TAGS = [
   { icon: Zap, label: 'خفيف وسريع' },
   { icon: Monitor, label: 'يدعم جميع ويندوز' },
 ];
+
+function AnimatedCounter({ end, suffix = '', isFloat = false }: { end: number, suffix?: string, isFloat?: boolean }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          let start = 0;
+          const duration = 1800; // Fast count up
+          const startTime = performance.now();
+
+          const animate = (currentTime: number) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // easeOutExpo for dramatic slowdown at the end
+            const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+            
+            const currentCount = start + (end - start) * easeProgress;
+            setCount(currentCount);
+
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+            }
+          };
+          requestAnimationFrame(animate);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [end]);
+
+  const displayValue = isFloat ? count.toFixed(1) : Math.floor(count).toLocaleString('en-US');
+
+  return <span ref={ref}>{displayValue}{suffix}</span>;
+}
 
 export function HeroSection() {
   return (
@@ -133,7 +176,7 @@ export function HeroSection() {
                   <span className="font-mono text-[10px] text-white font-bold tracking-[1.5px] uppercase">Grido Studio Mobile</span>
                 </div>
                 <span className="text-[10px] font-mono text-white bg-elevated/70 px-2 py-0.5 border border-subtle font-bold uppercase tracking-[1px]">
-                  3 SECONDS
+                  <AnimatedCounter end={3} suffix=" SECONDS" />
                 </span>
               </div>
 
@@ -174,7 +217,7 @@ export function HeroSection() {
                   <div className="flex items-center gap-2">
                     <Icon className="w-5 h-5 text-white shrink-0" />
                     <span className="text-xl sm:text-3xl font-black font-display text-white tracking-tight">
-                      {stat.value}
+                      <AnimatedCounter end={stat.value} suffix={stat.suffix} isFloat={stat.isFloat} />
                     </span>
                   </div>
                   <span className="text-xs font-mono uppercase tracking-[1px] text-tertiary">

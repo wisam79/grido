@@ -1,56 +1,50 @@
 @import "tailwindcss";
+@import "@fontsource-variable/alyamama";
 
 @theme inline {
   --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Alyamama Variable', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Space Mono', monospace;
 
-  /* Design System Tokens */
-  --color-primary: var(--color-bg-primary);
-  --color-secondary: var(--color-bg-secondary);
-  --color-elevated: var(--color-bg-elevated);
-  --color-subtle: var(--color-border-subtle);
-  
-  --color-text-primary: var(--color-text-primary-var);
-  --color-text-secondary: var(--color-text-secondary-var);
-  --color-text-tertiary: var(--color-text-tertiary-var);
-  
-  --spacing-section: clamp(80px, 10vw, 160px);
-
-  /* Grido Studio Dark Neutral Theme Palette (#141414, #1E1E1E, #282828) */
-  --color-ink-950: #141414;
-  --color-ink-900: #1e1e1e;
-  --color-ink-800: #282828;
-  --color-ink-700: #383838;
-  --color-ink-600: #484848;
-
-  --color-brand-600: #1d4ed8;
-  --color-brand-500: #2563eb;
-  --color-brand-400: #3b82f6;
-  --color-brand-300: #60a5fa;
-
-  --color-accent-400: #60a5fa;
-  --color-accent-500: #3b82f6;
-}
-
-:root {
-  /* الخلفيات — Surfaces */
+  /* Colors defined specifically to prevent Tailwind text/bg conflicts */
   --color-bg-primary: #000000;
   --color-bg-secondary: #121214;
   --color-bg-elevated: #18181b;
 
-  /* النصوص — Typography */
+  --color-border-subtle: #383842;
+  --color-border-glow: rgba(255, 255, 255, 0.5);
+}
+
+:root {
+  /* Surface Background Colors */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #121214;
+  --color-bg-elevated: #18181b;
+
+  /* Typography Text Colors (design.md Section 2) */
   --color-text-primary-var: #ffffff;
   --color-text-secondary-var: #f0f0fa;
   --color-text-tertiary-var: #999999;
 
-  /* الحدود — Borders */
+  /* Borders */
   --color-border-subtle: #383842;
   --color-border-glow: rgba(255, 255, 255, 0.5);
 
-  /* إحداثيات المؤشر */
+  /* Mouse coordinates */
   --mouse-x: 50%;
   --mouse-y: 50%;
 }
+
+/* Explicit Utility Classes for Surface & Typography Tokens */
+.bg-primary { background-color: var(--color-bg-primary) !important; }
+.bg-secondary { background-color: var(--color-bg-secondary) !important; }
+.bg-elevated { background-color: var(--color-bg-elevated) !important; }
+
+.text-primary { color: var(--color-text-primary-var) !important; }
+.text-secondary { color: var(--color-text-secondary-var) !important; }
+.text-tertiary { color: var(--color-text-tertiary-var) !important; }
+
+.border-subtle { border-color: var(--color-border-subtle) !important; }
 
 * {
   box-sizing: border-box;
@@ -70,7 +64,11 @@ html, body {
 }
 
 h1, h2, h3, h4, h5, h6, .font-display {
-  font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Alyamama Variable', 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Space Mono', monospace;
 }
 
 /* Hide scrollbar for clean mobile horizontal scroll */
@@ -82,51 +80,93 @@ h1, h2, h3, h4, h5, h6, .font-display {
   scrollbar-width: none;
 }
 
-/* Laser Scan Line animation */
-@keyframes laser-scan {
-  0% { transform: translateY(-100%); opacity: 0.2; }
-  50% { opacity: 0.85; }
-  100% { transform: translateY(400px); opacity: 0.2; }
+/* Glassmorphism Dark Mockup Surface (design.md Section 6.1) */
+.app-mockup {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-subtle);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
 }
 
+/* Spotlight Glow Cards (design.md Section 4.2 & 4.3) */
+.spotlight-card {
+  position: relative;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+  isolation: isolate;
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.spotlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255, 255, 255, 0.06),
+    transparent 40%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+.spotlight-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: radial-gradient(
+    250px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    var(--color-border-glow),
+    transparent 40%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.spotlight-card:hover::after {
+  opacity: 1;
+}
+
+/* Magnetic Button Base (design.md Section 4.4) */
+.magnetic-pill {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform;
+}
+
+/* Floating 3D Graphic Animation (design.md Section 4.5 & 6.4) */
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+  from { transform: translateY(0); }
+  to   { transform: translateY(-8px); }
 }
 
-.animate-float {
-  animation: float 4s ease-in-out infinite;
+.benefit-icon {
+  animation: float 5s ease-in-out infinite alternate;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.animate-laser-scan {
-  animation: laser-scan 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.spotlight-card:hover .benefit-icon {
+  transform: scale(1.08) translateY(-4px);
 }
 
-/* Floating CTA Bounce Slow */
-@keyframes bounce-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-.animate-bounce-slow {
-  animation: bounce-slow 3s ease-in-out infinite;
-}
-
-/* Rotating SVG aperture rings */
-@keyframes rotate-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.animate-rotate-slow {
-  animation: rotate-slow 25s linear infinite;
-}
-
-.animate-rotate-reverse {
-  animation: rotate-slow 35s linear infinite reverse;
-}
-
-/* 3D Perspective tilt - Active only on desktop lg+ screens to prevent mobile overflow */
+/* 3D Perspective tilt - Active on desktop screens */
 @media (min-width: 1024px) {
   .perspective-container {
     perspective: 1400px;
@@ -139,32 +179,37 @@ h1, h2, h3, h4, h5, h6, .font-display {
   }
 
   .perspective-container:hover .perspective-mockup {
-    transform: rotateY(0deg) rotateX(0deg) scale(1.01);
+    transform: rotateY(var(--rot-y, 0deg)) rotateX(var(--rot-x, 0deg)) scale(1.01);
   }
 }
 
-/* Presentation Cinematic Reveal Animations */
+/* Cinematic Reveal Animations (design.md Section 4.1) */
 .reveal-on-scroll {
   opacity: 0;
-  transform: translateY(40px) scale(0.97);
-  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+  filter: blur(8px);
+  transform: translateY(30px) scale(0.97);
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform, filter;
 }
 
-.reveal-on-scroll.is-revealed {
+.reveal-on-scroll.is-revealed,
+.reveal-on-scroll.is-visible {
   opacity: 1;
+  filter: blur(0);
   transform: translateY(0) scale(1);
 }
 
-/* Cinematic Sequential Presentation Stagger */
+/* Cinematic Sequential Stagger */
 .reveal-on-scroll .stagger-1,
 .reveal-on-scroll .stagger-2,
 .reveal-on-scroll .stagger-3,
 .reveal-on-scroll .stagger-4,
 .reveal-on-scroll .stagger-5 {
   opacity: 0;
-  transform: translateY(30px) scale(0.95);
   filter: blur(8px);
+  transform: translateY(24px) scale(0.96);
   transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), 
               transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
               filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -175,18 +220,40 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .reveal-on-scroll.is-revealed .stagger-2,
 .reveal-on-scroll.is-revealed .stagger-3,
 .reveal-on-scroll.is-revealed .stagger-4,
-.reveal-on-scroll.is-revealed .stagger-5 {
+.reveal-on-scroll.is-revealed .stagger-5,
+.reveal-on-scroll.is-visible .stagger-1,
+.reveal-on-scroll.is-visible .stagger-2,
+.reveal-on-scroll.is-visible .stagger-3,
+.reveal-on-scroll.is-visible .stagger-4,
+.reveal-on-scroll.is-visible .stagger-5 {
   opacity: 1;
-  transform: translateY(0) scale(1);
   filter: blur(0);
+  transform: translateY(0) scale(1);
 }
 
-/* Presentation Timing Choreography */
-.reveal-on-scroll.is-revealed .stagger-1 { transition-delay: 150ms; }
-.reveal-on-scroll.is-revealed .stagger-2 { transition-delay: 350ms; }
-.reveal-on-scroll.is-revealed .stagger-3 { transition-delay: 550ms; }
-.reveal-on-scroll.is-revealed .stagger-4 { transition-delay: 750ms; }
-.reveal-on-scroll.is-revealed .stagger-5 { transition-delay: 900ms; }
+.reveal-on-scroll.is-revealed .stagger-1, .reveal-on-scroll.is-visible .stagger-1 { transition-delay: 100ms; }
+.reveal-on-scroll.is-revealed .stagger-2, .reveal-on-scroll.is-visible .stagger-2 { transition-delay: 250ms; }
+.reveal-on-scroll.is-revealed .stagger-3, .reveal-on-scroll.is-visible .stagger-3 { transition-delay: 400ms; }
+.reveal-on-scroll.is-revealed .stagger-4, .reveal-on-scroll.is-visible .stagger-4 { transition-delay: 550ms; }
+.reveal-on-scroll.is-revealed .stagger-5, .reveal-on-scroll.is-visible .stagger-5 { transition-delay: 700ms; }
+
+/* Tab content mini cinematic reveal */
+.tab-content-reveal {
+  animation: miniCinematicReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes miniCinematicReveal {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
 
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
@@ -195,13 +262,80 @@ h1, h2, h3, h4, h5, h6, .font-display {
     transition-duration: 0.01ms !important;
   }
   .perspective-mockup { transform: none !important; }
-  .reveal-on-scroll { opacity: 1 !important; transform: none !important; }
+  .reveal-on-scroll { opacity: 1 !important; filter: none !important; transform: none !important; }
+  .benefit-icon { animation: none !important; }
 }
-
-
 
 /* Custom scrollbar for desktop */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #141414; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(37, 99, 235, 0.5); }
+::-webkit-scrollbar-track { background: #000000; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
+
+/* --- WOW Factor UI Animations --- */
+
+/* Aurora Light Beams */
+@keyframes aurora-flow {
+  0% { transform: rotate(0deg) scale(1) translate(0, 0); opacity: 0.1; }
+  33% { transform: rotate(15deg) scale(1.1) translate(5%, 5%); opacity: 0.2; }
+  66% { transform: rotate(-5deg) scale(0.9) translate(-5%, 5%); opacity: 0.15; }
+  100% { transform: rotate(0deg) scale(1) translate(0, 0); opacity: 0.1; }
+}
+
+.aurora-bg {
+  position: absolute;
+  inset: -50%;
+  background: 
+    radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.15), transparent 50%),
+    radial-gradient(ellipse at 20% 40%, rgba(96, 165, 250, 0.1), transparent 40%),
+    radial-gradient(ellipse at 80% 60%, rgba(37, 99, 235, 0.15), transparent 60%);
+  filter: blur(80px);
+  animation: aurora-flow 15s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 3D Tilt Glow */
+.tilt-glow-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    400px circle at var(--tilt-x, 50%) var(--tilt-y, 50%),
+    rgba(255, 255, 255, 0.15),
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+.perspective-container:hover .tilt-glow-layer {
+  opacity: 1;
+}
+
+/* Laser Bleed Lines */
+@keyframes laser-scan {
+  0% { opacity: 0.2; box-shadow: 0 0 0px transparent; }
+  50% { opacity: 1; box-shadow: 0 0 8px rgba(255, 50, 50, 0.8); }
+  100% { opacity: 0.2; box-shadow: 0 0 0px transparent; }
+}
+
+.laser-bleed-line {
+  position: absolute;
+  background-color: rgba(255, 50, 50, 0.7);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 20;
+}
+
+.laser-bleed-wrapper:hover .laser-bleed-line {
+  opacity: 1;
+  animation: laser-scan 1.5s infinite ease-in-out;
+}
+
+.laser-bleed-top { top: 3mm; left: 0; right: 0; height: 1px; }
+.laser-bleed-bottom { bottom: 3mm; left: 0; right: 0; height: 1px; }
+.laser-bleed-left { left: 3mm; top: 0; bottom: 0; width: 1px; }
+.laser-bleed-right { right: 3mm; top: 0; bottom: 0; width: 1px; }
+
