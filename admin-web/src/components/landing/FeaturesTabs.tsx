@@ -82,20 +82,20 @@ export function FeaturesTabs() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16 relative z-20">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
+          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
             <Sparkles className="w-3.5 h-3.5 text-white" />
             <span>المميزات الرئيسية</span>
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
+          <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
             استكشف قوة <span className="text-[#f0f0fa]">GRIDO STUDIO</span>
           </h2>
-          <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
+          <p className="stagger-3 mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
             أدوات الذكاء الاصطناعي والأتمتة لتضاعف إنتاجية استوديوهات التصوير.
           </p>
         </div>
 
         {/* SpaceX Sharp Tabs */}
-        <div className="flex justify-center mb-8 sm:mb-16 relative z-20">
+        <div className="stagger-4 flex justify-center mb-8 sm:mb-16 relative z-20">
           <div className="p-1 rounded-none bg-[#1a1a1e] border border-[#383842] flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto justify-start sm:justify-center">
             {TABS.map((tab) => {
               const Icon = tab.icon;

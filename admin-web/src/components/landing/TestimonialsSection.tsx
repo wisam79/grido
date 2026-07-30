@@ -79,20 +79,20 @@ export function TestimonialsSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title Header */}
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
+          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
             <UserCheck className="w-3.5 h-3.5 text-white" />
             <span>حالات استخدام واقعية من داخل الاستوديو</span>
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
+          <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
             كيف يحل <span className="text-[#f0f0fa]">GRIDO STUDIO</span> مواقف العمل اليومية؟
           </h2>
-          <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
+          <p className="stagger-3 mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
             حلول فورية لمواقف العمل اليومية داخل الاستوديو.
           </p>
         </div>
 
         {/* Scenario Selector */}
-        <div className="flex justify-center mb-8 sm:mb-10">
+        <div className="stagger-4 flex justify-center mb-8 sm:mb-10">
           <div className="p-1 rounded-none bg-[#1a1a1e] border border-[#383842] flex items-center gap-1 max-w-full overflow-x-auto no-scrollbar">
             {SCENARIOS.map((sc) => (
               <button
@@ -111,7 +111,7 @@ export function TestimonialsSection() {
         </div>
 
         {/* Scenario Display Window */}
-        <div className="rounded-none border border-[#383842] bg-[#1a1a1e] overflow-hidden">
+        <div className="stagger-5 rounded-none border border-[#383842] bg-[#1a1a1e] overflow-hidden">
           {/* Top Window Chrome Bar */}
           <div className="h-10 bg-[#24242c] border-b border-[#383842] px-4 sm:px-5 flex items-center justify-between text-xs text-[#999999] font-mono">
             <div className="flex items-center gap-2">

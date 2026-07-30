@@ -29,15 +29,15 @@ export function FaqSection() {
     <section id="faq" className="relative py-16 sm:py-24 lg:py-28 border-t border-[#383842] bg-[#121214] overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
+          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
             <Sparkles className="w-3.5 h-3.5 text-white" />
             <span>الدعم الفني والأسئلة</span>
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">الأسئلة الشائعة</h2>
-          <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">إجابات سريعة ومباشرة.</p>
+          <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">الأسئلة الشائعة</h2>
+          <p className="stagger-3 mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">إجابات سريعة ومباشرة.</p>
         </div>
 
-        <div className="max-w-3xl mx-auto space-y-3">
+        <div className="stagger-4 max-w-3xl mx-auto space-y-3">
           {FAQ_ITEMS.map((faq, idx) => {
             const isOpen = openFaq === idx;
             return (

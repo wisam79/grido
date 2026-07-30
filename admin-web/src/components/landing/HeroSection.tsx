@@ -48,7 +48,7 @@ export function HeroSection() {
           <div className="lg:col-span-5 text-right space-y-4 sm:space-y-6">
             {/* Version Badge */}
             {/* Version Eyebrow */}
-            <div>
+            <div className="stagger-1">
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase">
                 <span className="text-white font-extrabold">VERSION 1.2.3</span>
                 <span className="text-[#999999]">| MISSION READY</span>
@@ -56,7 +56,7 @@ export function HeroSection() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black leading-tight sm:leading-[1.15] font-display uppercase tracking-tight text-white">
+            <h1 className="stagger-2 text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black leading-tight sm:leading-[1.15] font-display uppercase tracking-tight text-white">
               <span>تنسيق صور المعاملات</span>
               <span className="mt-2 block text-[#f0f0fa]">
                 في 3 ثوانٍ فقط
@@ -64,12 +64,12 @@ export function HeroSection() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-sm sm:text-base text-[#f0f0fa] leading-relaxed max-w-xl font-sans font-medium">
+            <p className="stagger-3 text-sm sm:text-base text-[#f0f0fa] leading-relaxed max-w-xl font-sans font-medium">
               توزيع تلقائي للجوازات والبطاقات، دعم ألوان CMYK، وترميم الوجوه بالذكاء الاصطناعي.
             </p>
 
             {/* SpaceX Pill CTAs */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+            <div className="stagger-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
               <a
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
@@ -93,7 +93,7 @@ export function HeroSection() {
             </div>
 
             {/* Trust Tags */}
-            <div className="flex flex-wrap items-center justify-start gap-4 text-xs text-[#999999] font-mono tracking-[1px] uppercase pt-2">
+            <div className="stagger-4 flex flex-wrap items-center justify-start gap-4 text-xs text-[#999999] font-mono tracking-[1px] uppercase pt-2">
               {TRUST_TAGS.map((tag) => {
                 const Icon = tag.icon;
                 return (
@@ -107,7 +107,7 @@ export function HeroSection() {
           </div>
 
           {/* Column 2: App Showcase */}
-          <div className="lg:col-span-7 relative w-full pt-2 sm:pt-0">
+          <div className="stagger-5 lg:col-span-7 relative w-full pt-2 sm:pt-0">
             {/* Desktop Mockup (Tablet/Desktop) */}
             <div className="hidden sm:block">
               <AppMockup />

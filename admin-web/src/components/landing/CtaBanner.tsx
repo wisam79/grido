@@ -11,7 +11,7 @@ export function CtaBanner() {
         <div className="max-w-5xl mx-auto relative overflow-hidden rounded-none p-8 sm:p-14 text-center border border-[#383842] bg-[#1a1a1e]">
           <div className="relative z-10 space-y-6">
             {/* Eyebrow Badge */}
-            <div>
+            <div className="stagger-1">
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none bg-[#24242c] border border-[#383842] text-[#f0f0fa] text-xs font-mono font-bold tracking-[2px] uppercase">
                 <Sparkles className="w-3.5 h-3.5 text-white shrink-0" />
                 <span>VERSION 1.2.3 • WINDOWS 64-BIT</span>
@@ -19,17 +19,17 @@ export function CtaBanner() {
             </div>
 
             {/* Headline */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display text-white uppercase tracking-tight leading-tight">
+            <h2 className="stagger-2 text-3xl sm:text-4xl md:text-5xl font-black font-display text-white uppercase tracking-tight leading-tight">
               جاهز لتضاعف سرعة إنتاجيتك؟
             </h2>
 
             {/* Description */}
-            <p className="text-[#f0f0fa] text-sm sm:text-lg max-w-xl mx-auto font-sans leading-relaxed font-medium">
+            <p className="stagger-3 text-[#f0f0fa] text-sm sm:text-lg max-w-xl mx-auto font-sans leading-relaxed font-medium">
               حمّل البرنامج وابدأ المعالجة الفورية الآن.
             </p>
 
             {/* SpaceX Download Actions */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="stagger-4 pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
