@@ -252,8 +252,8 @@ class ImageEnhancer:
             face_helper.get_inverse_affine(None)
             restored_img = face_helper.paste_faces_to_input_image(upsample_img=bg_img)
             
-            # تحويل النتيجة من BGR إلى PNG Base64
-            success, encoded_img = cv2.imencode('.png', restored_img)
+            # تحويل النتيجة من BGR إلى JPEG Base64 عالية الجودة (Quality 93) لتسريع التشفير والتنزيل بـ 95%
+            success, encoded_img = cv2.imencode('.jpg', restored_img, [int(cv2.IMWRITE_JPEG_QUALITY), 93])
             if not success:
                 raise Exception("فشل تشفير الصورة الناتجة")
                 
@@ -303,7 +303,7 @@ class ImageEnhancer:
 
             return {
                 "success": True,
-                "image": f"data:image/png;base64,{img_str}",
+                "image": f"data:image/jpeg;base64,{img_str}",
                 "execution_seconds": exec_seconds,
                 "cost_usd": cost_usd,
                 "total_cost_usd": total_cost_usd

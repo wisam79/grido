@@ -13,11 +13,9 @@ interface KonvaNodeLike {
 }
 
 function getScreenPixelRatio(node: CachedImageNode): number {
-  const screenRatio = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-  // مساحة Konva تستخدم إحداثيات الطباعة ثم تُصغّر للعرض. إعادة الكاش
-  // بنسبة DPR فقط بعد التصدير كانت تنشئ canvases ضخمة بلا فائدة.
+  const screenRatio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
   const stageScale = node.getStage()?.scaleX() || 1;
-  return Math.max(0.1, Math.min(2, stageScale * screenRatio));
+  return Math.max(0.75, Math.min(2.5, stageScale * screenRatio * 1.2));
 }
 
 function restoreScreenCache(previouslyCached: CachedImageNode[]): void {
@@ -64,7 +62,7 @@ export async function withHiddenOverlays<T>(
 }
 
 /**
- * يلتقط canvas من Stage مع إخفاء الطبقات المؤقتة وإعادة بناء الكاش.
+ * يلتقط canvas من Stage مع إخفاء الطبقات المؤقتة وإعادة بناء الكاش على الدقة العالية لضمان نقاء الطباعة.
  * يعيد data URL أو null عند الفشل.
  */
 export async function captureStageDataUrl(
@@ -73,20 +71,47 @@ export async function captureStageDataUrl(
   mimeType: string = "image/png",
   quality?: number,
 ): Promise<string | null> {
-  const dataUrl = await withHiddenOverlays(stage, targetPixelRatio, async () => {
-    const exportCanvas = stage.toCanvas({ pixelRatio: targetPixelRatio });
-    const blob = await new Promise<Blob | null>((resolve) => {
-      exportCanvas.toBlob(resolve, mimeType, quality);
+  // حصر العناصر المحفوظة في الكاش وتكبير الكاش بدقة التصدير العالية لمنع فقدان تفاصيل الفلاتر
+  const cachedNodes: CachedImageNode[] = [];
+  try {
+    stage.find((node: any) => {
+      if (node && typeof node.isCached === "function" && node.isCached()) {
+        cachedNodes.push(node as unknown as CachedImageNode);
+      }
     });
 
-    if (!blob) return null;
+    const exportRatio = Math.max(1, targetPixelRatio);
+    for (const node of cachedNodes) {
+      try {
+        node.clearCache();
+        node.cache({ pixelRatio: exportRatio });
+      } catch (e) {
+        console.warn("Failed to upgrade node cache for export", e);
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to query cached nodes before export", err);
+  }
 
-    return new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
+  try {
+    const dataUrl = await withHiddenOverlays(stage, targetPixelRatio, async () => {
+      const exportCanvas = stage.toCanvas({ pixelRatio: targetPixelRatio });
+      const blob = await new Promise<Blob | null>((resolve) => {
+        exportCanvas.toBlob(resolve, mimeType, quality);
+      });
+
+      if (!blob) return null;
+
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
     });
-  });
 
-  return dataUrl;
+    return dataUrl;
+  } finally {
+    // إعادة كاش العناصر للعرض العادي على الشاشة للحفاظ على سلاسة الأداء وخفة الذاكرة
+    restoreScreenCache(cachedNodes);
+  }
 }

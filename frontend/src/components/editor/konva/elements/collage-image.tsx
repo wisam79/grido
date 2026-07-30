@@ -1,10 +1,12 @@
 import React, { useRef, useEffect, useMemo } from "react";
-import { Image as KonvaImage } from "react-konva";
+import { Image as KonvaImage, Group } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import { getKonvaFilters } from "@/lib/konva-filters";
 import { useRenderQuality } from "@/lib/render-quality";
+import { MagicAiScanner } from "./magic-ai-scanner";
 
 export const KonvaCollageImage = React.memo(function KonvaCollageImage({
+  id,
   imageSrc,
   width,
   height,
@@ -22,6 +24,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   onClick,
   onDblClick
 }: {
+  id?: string;
   imageSrc: string;
   width: number;
   height: number;
@@ -43,6 +46,8 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const imageRef = useRef<any>(null);
   const accumulatedDrag = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
   const isDraggingFilter = useRenderQuality((s) => s.isDraggingFilter);
+  const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
+  const isEnhancing = Boolean(id && enhancingElementId === id);
 
   useEffect(() => {
     accumulatedDrag.current = { dragX, dragY };
@@ -71,9 +76,10 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
 
     try {
       const stageScale = node.getStage()?.scaleX() || 1;
+      const deviceRatio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
       const ratio = isDraggingFilter
         ? Math.max(0.25, Math.min(0.5, stageScale * 0.3))
-        : Math.max(0.5, Math.min(1.5, stageScale * 1.2));
+        : Math.max(0.75, Math.min(2.5, stageScale * deviceRatio * 1.2));
       node.clearCache();
       node.cache({ pixelRatio: ratio });
     } catch (err) {
@@ -117,69 +123,94 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   sh = Math.round(sh);
 
   return (
-    <KonvaImage
-      draggable={draggable}
-      onDragMove={(e) => {
-        if (!draggable) return;
-        const node = e.target as any;
-        const dx = node.x();
-        const dy = node.y();
-        // Reset component position to stay locked inside slot
-        node.x(0);
-        node.y(0);
-        
-        // Calculate deltas in source image scale
-        const deltaCropX = -dx * (sw / width);
-        const deltaCropY = -dy * (sh / height);
-        
-        // Accumulate sub-pixel movement with float precision
-        accumulatedDrag.current.dragX += deltaCropX;
-        accumulatedDrag.current.dragY += deltaCropY;
-        
-        // Clamp accumulated drag values to bounds
-        accumulatedDrag.current.dragX = Math.max(-maxDragX, Math.min(maxDragX, accumulatedDrag.current.dragX));
-        accumulatedDrag.current.dragY = Math.max(-maxDragY, Math.min(maxDragY, accumulatedDrag.current.dragY));
-        
-        // Compute new crop coords based on clamped accumulated drag
-        const newCropX = defaultSx + accumulatedDrag.current.dragX;
-        const newCropY = defaultSy + accumulatedDrag.current.dragY;
-        
-        node.cropX(Math.round(newCropX));
-        node.cropY(Math.round(newCropY));
-        
-        node.getLayer()?.batchDraw();
-      }}
-      onDragEnd={() => {
-        if (draggable && accumulatedDrag.current) {
-          onUpdateOffsets?.(accumulatedDrag.current.dragX, accumulatedDrag.current.dragY);
-          onDragEnd?.();
-        }
-      }}
-      image={image}
-      cropX={sx}
-      cropY={sy}
-      cropWidth={sw}
-      cropHeight={sh}
-      x={0}
-      y={0}
-      width={width}
-      height={height}
-      cornerRadius={cornerRadius}
-      perfectDrawEnabled={false}
-      filters={filterResult.filters}
-      brightness={filterResult.brightness}
-      contrast={filterResult.contrast}
-      hue={(filterResult as any).hue}
-      saturation={(filterResult as any).saturation}
-      onClick={onClick}
-      onTap={onClick}
-      onDblClick={onDblClick}
-      onDblTap={onDblClick}
-      ref={imageRef}
-    />
+    <Group>
+      <KonvaImage
+        draggable={draggable}
+        dragBoundFunc={(pos) => {
+          const node = imageRef.current;
+          if (!node || !image) return pos;
+          const stageScale = node.getStage()?.scaleX() || 1;
+          const nodeAbsPos = node.getAbsolutePosition();
+          
+          const dxScreen = pos.x - nodeAbsPos.x;
+          const dyScreen = pos.y - nodeAbsPos.y;
+          
+          const dxCanvas = dxScreen / stageScale;
+          const dyCanvas = dyScreen / stageScale;
+
+          const currentX = accumulatedDrag.current.dragX;
+          const currentY = accumulatedDrag.current.dragY;
+
+          const proposedX = currentX - dxCanvas * (sw / width);
+          const proposedY = currentY - dyCanvas * (sh / height);
+
+          const clampedX = Math.max(-maxDragX, Math.min(maxDragX, proposedX));
+          const clampedY = Math.max(-maxDragY, Math.min(maxDragY, proposedY));
+
+          accumulatedDrag.current = { dragX: clampedX, dragY: clampedY };
+          
+          node.getLayer()?.batchDraw();
+          return nodeAbsPos;
+        }}
+        onDragMove={() => {
+          const node = imageRef.current;
+          if (!node || !image) return;
+          const currentX = accumulatedDrag.current.dragX;
+          const currentY = accumulatedDrag.current.dragY;
+
+          const dragXClamped = Math.max(-maxDragX, Math.min(maxDragX, currentX));
+          const dragYClamped = Math.max(-maxDragY, Math.min(maxDragY, currentY));
+
+          const newSx = Math.round(defaultSx + dragXClamped);
+          const newSy = Math.round(defaultSy + dragYClamped);
+
+          node.cropX(newSx);
+          node.cropY(newSy);
+          
+          node.getLayer()?.batchDraw();
+        }}
+        onDragEnd={() => {
+          if (draggable && accumulatedDrag.current) {
+            onUpdateOffsets?.(accumulatedDrag.current.dragX, accumulatedDrag.current.dragY);
+            onDragEnd?.();
+          }
+        }}
+        image={image}
+        cropX={sx}
+        cropY={sy}
+        cropWidth={sw}
+        cropHeight={sh}
+        x={0}
+        y={0}
+        width={width}
+        height={height}
+        cornerRadius={cornerRadius}
+        perfectDrawEnabled={false}
+        filters={filterResult.filters}
+        brightness={filterResult.brightness}
+        contrast={filterResult.contrast}
+        hue={(filterResult as any).hue}
+        saturation={(filterResult as any).saturation}
+        onClick={onClick}
+        onTap={onClick}
+        onDblClick={onDblClick}
+        onDblTap={onDblClick}
+        ref={imageRef}
+      />
+      {isEnhancing && (
+        <MagicAiScanner
+          targetNodeRef={imageRef}
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+        />
+      )}
+    </Group>
   );
 }, (prev, next) => {
-  return prev.imageSrc === next.imageSrc &&
+  return prev.id === next.id &&
+         prev.imageSrc === next.imageSrc &&
          prev.width === next.width &&
          prev.height === next.height &&
          prev.filter === next.filter &&

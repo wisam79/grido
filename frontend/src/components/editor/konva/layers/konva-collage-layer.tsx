@@ -104,6 +104,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
             >
               {slot.imageSrc ? (
                 <KonvaCollageImage
+                  id={slot.id}
                   imageSrc={slot.imageSrc}
                   width={width}
                   height={height}

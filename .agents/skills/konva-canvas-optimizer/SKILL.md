@@ -33,3 +33,11 @@ description: دليل مهارة تحسين رسومات الكانفاس وال
 
 - استخدم `transform: scale(zoom)` على الحاوية الخارجية (Wrapper Div) للكانفاس عند تدوير عجلة الفأرة (Wheel Zoom) لتجنب إعادة حساب أبعاد كافة عناصر Stage في React.
 - قم بتفعيل `listening={false}` لجميع العناصر أثناء تنفيذ الـ Pinch-to-zoom لضمان 60 إطاراً في الثانية (60 FPS).
+
+---
+
+## 🖨️ 4. تصدير الفلاتر والدقة العالية (High-DPI Filter Export)
+
+عند تطبيق فلاتر Konva، يُنشئ المحرك offscreen canvas محلي. لحفظ نقاء الصورة عند التصدير:
+1. ارتقِ بدقة كاش كافة العناصر المفلترة إلى `pixelRatio: Math.max(1, targetPixelRatio)` قبل التقاط `stage.toCanvas()`.
+2. استعد كاش الشاشة الأصلي الخفيف (`restoreScreenCache`) في كتلة `finally` لضمان عدم إرهاق ذاكرة VRAM أثناء التحرير.

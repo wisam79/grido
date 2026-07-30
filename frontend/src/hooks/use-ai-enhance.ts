@@ -66,6 +66,45 @@ function incrementLocalDailyUsage() {
   }
 }
 
+export async function prepareImageForAiUpload(src: string, maxDim = 2048, quality = 0.92): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      let w = img.naturalWidth || img.width;
+      let h = img.naturalHeight || img.height;
+
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(src);
+        return;
+      }
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(src);
+    img.src = src;
+  });
+}
+
+import { useRenderQuality } from "@/lib/render-quality";
+
 export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void) {
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => {
@@ -97,27 +136,17 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
     }
 
     setIsEnhancing(true);
+    useRenderQuality.getState().setEnhancingElementId(element.id);
     setEnhanceProgress(10);
-    setEnhanceProgressText("جاري تجهيز الصورة...");
+    setEnhanceProgressText("جاري تجهيز الصورة وتحسين أبعاد الرفع...");
 
     let progressTimer: any = null;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
     try {
-      let base64Image = element.imageSrc;
-
-      if (!base64Image.startsWith("data:image/")) {
-        setEnhanceProgress(25);
-        const response = await fetch(element.imageSrc);
-        const blob = await response.blob();
-        base64Image = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      }
+      setEnhanceProgress(20);
+      const base64Image = await prepareImageForAiUpload(element.imageSrc, 2048, 0.92);
 
       const loadingMessages = [
         "جاري إيقاظ خوادم الذكاء الاصطناعي... 💤",
@@ -198,6 +227,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
       }
     } finally {
       setIsEnhancing(false);
+      useRenderQuality.getState().setEnhancingElementId(null);
       setEnhanceProgress(0);
       setEnhanceProgressText("");
     }

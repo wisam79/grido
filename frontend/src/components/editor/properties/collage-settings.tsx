@@ -1,5 +1,6 @@
 import { Sparkles, Columns, Move, Square, Maximize2, Scissors, PaintBucket } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
+import { useRenderQuality } from "@/lib/render-quality";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";
 import { Slider } from "@/components/ui/slider";
@@ -267,7 +268,7 @@ function BatchAiEnhanceButton() {
 
     // Dynamic import to avoid circular dependencies if any, though regular import is fine
     const { SaveImageFromBase64, EnhanceImageWithAI } = await import("../../../../wailsjs/go/main/App");
-    const { getUserDailyLimit, getTodayUsageCount } = await import("@/hooks/use-ai-enhance");
+    const { getUserDailyLimit, getTodayUsageCount, prepareImageForAiUpload } = await import("@/hooks/use-ai-enhance");
 
     const dailyLimit = getUserDailyLimit();
     const dailyCount = getTodayUsageCount();
@@ -285,17 +286,8 @@ function BatchAiEnhanceButton() {
     for (let i = 0; i < validSlots.length; i++) {
       const slot = validSlots[i];
       try {
-        let base64Image = slot.imageSrc!;
-        if (!base64Image.startsWith("data:image/")) {
-          const response = await fetch(base64Image);
-          const blob = await response.blob();
-          base64Image = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-        }
+        useRenderQuality.getState().setEnhancingElementId(slot.id);
+        const base64Image = await prepareImageForAiUpload(slot.imageSrc!, 2048, 0.92);
 
         const token = user?.token || "";
         const resultStr = await EnhanceImageWithAI(base64Image, token, dailyLimit);
@@ -310,6 +302,8 @@ function BatchAiEnhanceButton() {
         }
       } catch (err) {
         console.error(`Failed to enhance slot ${slot.id}:`, err);
+      } finally {
+        useRenderQuality.getState().setEnhancingElementId(null);
       }
       setProgress(((i + 1) / validSlots.length) * 100);
     }
