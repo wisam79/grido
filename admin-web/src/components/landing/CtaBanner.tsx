@@ -28,28 +28,40 @@ export function CtaBanner() {
               حمّل البرنامج وابدأ المعالجة الفورية الآن.
             </p>
 
-            {/* SpaceX Download Actions */}
+            {/* SpaceX Download Actions with Smart Hover */}
             <div className="stagger-4 pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto group flex items-center justify-center gap-2.5 bg-white hover:bg-[#f0f0fa] text-black px-8 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] border border-white transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                  e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                }}
+                className="group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white text-black px-8 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] border border-white transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 cursor-pointer"
                 aria-label="تحميل البرنامج للويندوز المباشر"
               >
-                <Download className="w-4 h-4 text-black shrink-0" />
-                <span>تحميل ملف التثبيت المباشر (.EXE)</span>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: 'radial-gradient(120px circle at var(--mouse-x) var(--mouse-y), rgba(0,0,0,0.08), transparent 100%)' }} />
+                <Download className="w-4 h-4 text-black shrink-0 relative z-10 transition-transform duration-300 group-hover:-translate-y-0.5" />
+                <span className="relative z-10">تحميل ملف التثبيت المباشر (.EXE)</span>
               </a>
 
               <a
                 href="/api/download?type=portable"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-[rgba(240,240,250,0.1)] hover:bg-[rgba(240,240,250,0.2)] border border-[#555555] text-[#f0f0fa] hover:text-white px-6 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] transition-all cursor-pointer"
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                  e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                }}
+                className="group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-[rgba(240,240,250,0.1)] border border-[#555555] text-[#f0f0fa] px-6 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] transition-all duration-300 hover:scale-[1.03] hover:border-white active:scale-95 cursor-pointer"
                 aria-label="نسخة محمولة (Portable)"
               >
-                <Download className="w-4 h-4 text-[#f0f0fa] shrink-0" />
-                <span>نسخة محمولة (PORTABLE)</span>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: 'radial-gradient(120px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.1), transparent 100%)' }} />
+                <Download className="w-4 h-4 text-[#f0f0fa] shrink-0 relative z-10 group-hover:text-white transition-all duration-300 group-hover:-translate-y-0.5" />
+                <span className="relative z-10 group-hover:text-white transition-colors duration-300">نسخة محمولة (PORTABLE)</span>
               </a>
             </div>
 

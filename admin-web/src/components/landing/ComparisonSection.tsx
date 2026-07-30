@@ -51,16 +51,43 @@ export function ComparisonSection() {
         </div>
 
         {/* Feature VS Cards Stack */}
-        <div className="stagger-4 space-y-4">
+        <div 
+          className="stagger-4 space-y-4"
+          onMouseMove={(e) => {
+            for (const card of document.getElementsByClassName('glow-card-compare')) {
+              const rect = card.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
+              (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+              (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+            }
+          }}
+        >
           {COMPARISON_ROWS.map((row, idx) => {
             const Icon = row.icon;
             return (
               <div 
                 key={idx} 
-                className="group relative flex flex-col lg:flex-row items-stretch gap-4 lg:gap-0 p-3 rounded-none bg-[#1a1a1e] border border-[#383842] hover:border-white/40 transition-all duration-300"
+                className="glow-card-compare group relative flex flex-col lg:flex-row items-stretch gap-4 lg:gap-0 p-3 rounded-none bg-[#1a1a1e] border border-[#383842] transition-all duration-300 overflow-hidden cursor-default"
               >
+                {/* Spotlight Glow Overlay */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                  style={{
+                    background: 'radial-gradient(500px circle at var(--mouse-x) var(--mouse-y), rgba(240, 240, 250, 0.04), transparent 40%)',
+                  }}
+                />
+                
+                {/* Border Spotlight Glow */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none border-2 border-transparent [mask-composite:exclude] [-webkit-mask-composite:xor] z-0"
+                  style={{
+                    background: 'radial-gradient(500px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.3), transparent 40%) border-box',
+                    WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
+                  }}
+                />
                 {/* 1. Feature Title Column */}
-                <div className="lg:w-1/3 flex items-center gap-4 p-4 lg:p-6 bg-transparent">
+                <div className="relative z-10 lg:w-1/3 flex items-center gap-4 p-4 lg:p-6 bg-transparent">
                   <div className="w-10 h-10 rounded-none bg-[#24242c] border border-[#383842] flex items-center justify-center shrink-0 text-white">
                     <Icon className="w-5 h-5" />
                   </div>
@@ -70,7 +97,7 @@ export function ComparisonSection() {
                 </div>
 
                 {/* 2. VS Split Comparison Column */}
-                <div className="lg:w-2/3 flex flex-col sm:flex-row relative rounded-none border border-[#383842] bg-[#121214]">
+                <div className="relative z-10 lg:w-2/3 flex flex-col sm:flex-row rounded-none border border-[#383842] bg-[#121214]">
                   
                   {/* Traditional (Old Way) */}
                   <div className="flex-1 p-5 sm:p-6 flex items-center justify-start sm:justify-center text-right sm:text-center relative overflow-hidden border-b sm:border-b-0 sm:border-l border-[#383842]">

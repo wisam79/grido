@@ -50,32 +50,60 @@ export function BenefitsGrid() {
         </div>
 
         {/* 5 Cards Row */}
-        <div className="stagger-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div 
+          className="stagger-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
+          onMouseMove={(e) => {
+            for (const card of document.getElementsByClassName('glow-card-benefit')) {
+              const rect = card.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
+              (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+              (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+            }
+          }}
+        >
           {BENEFITS.map((benefit, index) => (
             <div
               key={benefit.title}
-              className="p-5 sm:p-6 rounded-none bg-[#1a1a1e] border border-[#383842] hover:border-white/40 transition-all duration-300 flex flex-row sm:flex-col items-center justify-start sm:justify-between text-right sm:text-center group relative overflow-hidden gap-4 sm:gap-0"
+              className="glow-card-benefit p-5 sm:p-6 rounded-none bg-[#1a1a1e] border border-[#383842] transition-all duration-300 flex flex-row sm:flex-col items-center justify-start sm:justify-between text-right sm:text-center group relative overflow-hidden gap-4 sm:gap-0 cursor-default"
             >
+              {/* Spotlight Glow Overlay */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                style={{
+                  background: 'radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(240, 240, 250, 0.05), transparent 40%)',
+                }}
+              />
+              
+              {/* Border Spotlight Glow */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none border-2 border-transparent [mask-composite:exclude] [-webkit-mask-composite:xor]"
+                style={{
+                  background: 'radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.4), transparent 40%) border-box',
+                  WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
+                }}
+              />
+
               {/* Top Inner Light Flare Overlay */}
               <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-sky-400/10 to-transparent pointer-events-none" />
 
               {/* High Resolution 3D Studio Graphic Asset with Float Animation */}
               <div 
-                className="relative w-16 h-16 sm:w-28 sm:h-28 sm:mb-5 shrink-0 flex items-center justify-center transition-transform duration-500 ease-out group-hover:scale-125 animate-float"
+                className="relative w-16 h-16 sm:w-28 sm:h-28 sm:mb-5 shrink-0 flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.3] group-hover:-translate-y-2 animate-float"
                 style={{ animationDelay: `${index * 0.2}s` }}
               >
                 <img
                   src={benefit.img}
                   alt={benefit.title}
-                  className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]"
+                  className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-all duration-700 group-hover:drop-shadow-[0_20px_40px_rgba(255,255,255,0.15)]"
                 />
               </div>
 
-              <div className="relative z-10">
-                <h3 className="text-base sm:text-lg font-bold font-display text-white mb-1 sm:mb-2 drop-shadow-xs">
+              <div className="relative z-10 transition-transform duration-500 ease-out group-hover:-translate-y-1">
+                <h3 className="text-base sm:text-lg font-bold font-display text-white mb-1 sm:mb-2 drop-shadow-xs transition-colors duration-300 group-hover:text-white">
                   {benefit.title}
                 </h3>
-                <p className="text-slate-300 text-xs leading-relaxed font-sans font-medium">
+                <p className="text-[#999999] group-hover:text-[#f0f0fa] transition-colors duration-300 text-xs leading-relaxed font-sans font-medium">
                   {benefit.description}
                 </p>
               </div>
