@@ -506,7 +506,7 @@ export default function App() {
               <button
                 type="button"
                 className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
-                onClick={() => setCanvasZoom((z: number) => Math.max(0.1, z - 0.1))}
+                onClick={() => setCanvasZoom(Math.max(0.1, canvasZoom - 0.1))}
                 title="تصغير (Zoom Out)"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
@@ -524,7 +524,7 @@ export default function App() {
               <button
                 type="button"
                 className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
-                onClick={() => setCanvasZoom((z: number) => Math.min(5, z + 0.1))}
+                onClick={() => setCanvasZoom(Math.min(5, canvasZoom + 0.1))}
                 title="تكبير (Zoom In)"
               >
                 <ZoomIn className="w-3.5 h-3.5" />

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Grid3x3, Columns, Palette, ChevronDown, Square } from "lucide-react";
+import { Grid3x3, Columns, Palette, Square } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import {
