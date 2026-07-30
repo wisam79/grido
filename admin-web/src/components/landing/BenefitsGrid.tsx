@@ -1,3 +1,5 @@
+import { Sparkles } from 'lucide-react';
+
 const BENEFITS: {
   img: string;
   title: string;
@@ -32,27 +34,27 @@ const BENEFITS: {
 
 export function BenefitsGrid() {
   return (
-    <section id="benefits" className="relative py-12 sm:py-20 border-t border-white/10 bg-gradient-to-b from-[#181818] via-[#1a2130] to-[#181818] overflow-hidden">
-      {/* Studio Blue Right Accent Glow */}
-      <div aria-hidden className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-sky-500/8 rounded-full blur-[120px] sm:blur-[160px]" />
+    <section id="benefits" className="relative py-16 sm:py-24 lg:py-28 border-t border-[#383842] bg-[#121214] overflow-hidden">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-white" />
+            <span>المزايا المتقدمة</span>
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
+            لماذا يختار أصحاب الاستوديوهات <span className="text-[#f0f0fa]">GRIDO STUDIO</span>؟
+          </h2>
+          <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
+            مصمم خصيصاً لتلبية احتياجات سوق التصوير والطباعة اليومية بأعلى معايير السرعة والجودة.
+          </p>
+        </div>
 
-      {/* Decorative Wave Vector SVG Background */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-10" xmlns="http://www.w3.org/2000/svg">
-        <path d="M 0 100 Q 350 0 700 100 T 1400 100" fill="none" stroke="rgba(56,189,248,0.25)" strokeWidth="2" />
-        <path d="M 0 180 Q 350 80 700 180 T 1400 180" fill="none" stroke="rgba(37,99,235,0.25)" strokeWidth="1.5" />
-      </svg>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center">
-        <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black font-display text-white mb-8 sm:mb-14">
-          لماذا <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-brand-300">Grido Studio</span> ؟
-        </h2>
-
-        {/* 5 Cards Row with Ultra High Quality 3D Renders */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
+        {/* 5 Cards Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {BENEFITS.map((benefit, index) => (
             <div
               key={benefit.title}
-              className="p-5 sm:p-6 rounded-2xl bg-gradient-to-b from-[#242936] to-[#1c2230] border border-sky-400/15 transition-all duration-300 hover:-translate-y-1 hover:border-sky-400/40 hover:shadow-[0_8px_20px_rgba(56,189,248,0.12)] shadow-md flex flex-row sm:flex-col items-center justify-start sm:justify-between text-right sm:text-center group relative overflow-hidden gap-4 sm:gap-0"
+              className="p-5 sm:p-6 rounded-none bg-[#1a1a1e] border border-[#383842] hover:border-white/40 transition-all duration-300 flex flex-row sm:flex-col items-center justify-start sm:justify-between text-right sm:text-center group relative overflow-hidden gap-4 sm:gap-0"
             >
               {/* Top Inner Light Flare Overlay */}
               <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-sky-400/10 to-transparent pointer-events-none" />

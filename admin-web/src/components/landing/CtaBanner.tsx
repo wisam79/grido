@@ -6,70 +6,58 @@ const CHECKS = ['نسخة أساسية مجانية', 'بدون تسجيل', 'ت
 
 export function CtaBanner() {
   return (
-    <section id="download" className="relative py-12 sm:py-24 border-t border-white/10 bg-gradient-to-b from-[#141414] via-[#1a2130] to-[#181818] overflow-hidden">
-      {/* Soft Ambient Studio Glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[200px] sm:h-[300px] bg-sky-500/10 rounded-full blur-[120px] sm:blur-[160px]"
-      />
-
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-6 sm:p-12 md:p-14 text-center border border-sky-400/20 bg-gradient-to-b from-[#1e2536]/95 to-[#141923]/95 backdrop-blur-md shadow-xl">
-          {/* Subtle Studio Blueprint Grid Overlay */}
-          <div
-            className="absolute inset-0 opacity-15 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '24px 24px' }}
-          />
-
-          <div className="relative z-10 space-y-4 sm:space-y-6">
-            {/* Version Badge */}
+    <section id="download" className="relative py-16 sm:py-24 lg:py-28 border-t border-[#383842] bg-[#121214] overflow-hidden">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto relative overflow-hidden rounded-none p-8 sm:p-14 text-center border border-[#383842] bg-[#1a1a1e]">
+          <div className="relative z-10 space-y-6">
+            {/* Eyebrow Badge */}
             <div>
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/20 text-sky-300 text-[10px] sm:text-xs font-bold shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span>الإصدار v1.2.3 • متوافق مع أجهزة الويندوز (64-bit)</span>
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none bg-[#24242c] border border-[#383842] text-[#f0f0fa] text-xs font-mono font-bold tracking-[2px] uppercase">
+                <Sparkles className="w-3.5 h-3.5 text-white shrink-0" />
+                <span>VERSION 1.2.3 • WINDOWS 64-BIT</span>
               </span>
             </div>
 
             {/* Headline */}
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black font-display text-white leading-snug sm:leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-display text-white uppercase tracking-tight leading-tight">
               جاهز لتطوير أداء استوديو الصور الخاص بك؟
             </h2>
 
             {/* Description */}
-            <p className="text-slate-300 text-xs sm:text-lg max-w-xl mx-auto font-sans leading-relaxed font-medium">
+            <p className="text-[#f0f0fa] text-sm sm:text-lg max-w-xl mx-auto font-sans leading-relaxed font-medium">
               حمّل البرنامج الآن وجهّز صور المعاملات بالذكاء الاصطناعي في 3 ثوانٍ فقط.
             </p>
 
-            {/* Download Actions */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4">
+            {/* SpaceX Download Actions */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto group flex items-center justify-center gap-2.5 bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-extrabold font-display text-xs sm:text-sm shadow-md shadow-brand-500/20 border border-sky-300/30 transition-all active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto group flex items-center justify-center gap-2.5 bg-white hover:bg-[#f0f0fa] text-black px-8 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] border border-white transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
                 aria-label="تحميل البرنامج للويندوز المباشر"
               >
-                <Download className="w-4 h-4 text-white shrink-0 group-hover:translate-y-0.5 transition-transform" />
-                <span>تحميل ملف التثبيت المباشر (.exe)</span>
+                <Download className="w-4 h-4 text-black shrink-0" />
+                <span>تحميل ملف التثبيت المباشر (.EXE)</span>
               </a>
 
               <a
                 href="/api/download?type=portable"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#242936] hover:bg-[#2d3548] border border-sky-400/25 text-slate-200 hover:text-white px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl font-bold font-display text-xs sm:text-sm transition-all cursor-pointer shadow-md"
+                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-[rgba(240,240,250,0.1)] hover:bg-[rgba(240,240,250,0.2)] border border-[#555555] text-[#f0f0fa] hover:text-white px-6 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] transition-all cursor-pointer"
                 aria-label="نسخة محمولة (Portable)"
               >
-                <Download className="w-4 h-4 text-sky-400 shrink-0" />
-                <span>نسخة محمولة (Portable)</span>
+                <Download className="w-4 h-4 text-[#f0f0fa] shrink-0" />
+                <span>نسخة محمولة (PORTABLE)</span>
               </a>
             </div>
 
             {/* Feature Checks */}
-            <div className="pt-3 sm:pt-4 border-t border-white/10 flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-[11px] sm:text-xs text-slate-300 font-semibold">
+            <div className="pt-4 border-t border-[#383842] flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[#999999] font-mono uppercase tracking-[1px]">
               {CHECKS.map((check) => (
-                <span key={check} className="inline-flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span key={check} className="inline-flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-white shrink-0" />
                   <span>{check}</span>
                 </span>
               ))}

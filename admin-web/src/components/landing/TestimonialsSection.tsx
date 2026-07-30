@@ -75,36 +75,33 @@ export function TestimonialsSection() {
   const ScenarioIcon = currentScenario.icon;
 
   return (
-    <section id="scenarios" className="relative py-12 sm:py-24 border-t border-white/10 bg-gradient-to-b from-[#141414] via-[#1a202c] to-[#141414] overflow-hidden">
-      {/* Studio Ambient Glow Accent */}
-      <div className="absolute top-1/3 right-1/4 w-[300px] sm:w-[550px] h-[300px] sm:h-[550px] bg-sky-500/15 rounded-full blur-[120px] sm:blur-[160px] pointer-events-none" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
+    <section id="scenarios" className="relative py-16 sm:py-24 lg:py-28 border-t border-[#383842] bg-[#121214] overflow-hidden">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Title Header */}
-        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-sky-300 text-[11px] sm:text-xs font-extrabold mb-3 shadow-md">
-            <UserCheck className="w-3.5 h-3.5 text-sky-400" />
+        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-[#383842] bg-[#1a1a1e] text-xs font-mono font-bold text-[#f0f0fa] tracking-[2px] uppercase mb-4">
+            <UserCheck className="w-3.5 h-3.5 text-white" />
             <span>حالات استخدام واقعية من داخل الاستوديو</span>
           </span>
-          <h2 className="text-2xl sm:text-5xl font-black font-display text-white drop-shadow-md">
-            كيف يحل <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-brand-300 to-indigo-300 drop-shadow-[0_2px_15px_rgba(56,189,248,0.35)]">Grido Studio</span> مواقف العمل اليومية؟
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight uppercase leading-tight">
+            كيف يحل <span className="text-[#f0f0fa]">GRIDO STUDIO</span> مواقف العمل اليومية؟
           </h2>
-          <p className="mt-3 text-slate-300 text-xs sm:text-base max-w-xl mx-auto font-sans leading-relaxed font-medium">
+          <p className="mt-4 text-[#f0f0fa] text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
             مقارنة بين بطء الطرق القديمة وسرعة أتمتة Grido Studio المباشرة داخل استوديوهات التصوير.
           </p>
         </div>
 
         {/* Scenario Selector */}
         <div className="flex justify-center mb-8 sm:mb-10">
-          <div className="p-1.5 rounded-2xl bg-[#1e2536] border border-sky-400/30 shadow-xl flex items-center gap-1 max-w-full overflow-x-auto no-scrollbar">
+          <div className="p-1 rounded-none bg-[#1a1a1e] border border-[#383842] flex items-center gap-1 max-w-full overflow-x-auto no-scrollbar">
             {SCENARIOS.map((sc) => (
               <button
                 key={sc.id}
                 onClick={() => setActiveTab(sc.id)}
-                className={`px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl font-bold font-display text-xs sm:text-sm transition-all duration-300 flex items-center gap-2 shrink-0 cursor-pointer ${
+                className={`px-4 py-2.5 sm:px-5 sm:py-3 rounded-none font-bold text-xs sm:text-sm uppercase tracking-[1px] transition-all duration-300 flex items-center gap-2 shrink-0 cursor-pointer ${
                   activeTab === sc.id
-                    ? 'bg-gradient-to-r from-blue-600 via-brand-500 to-sky-500 text-white shadow-[0_0_20px_rgba(56,189,248,0.4)] scale-[1.02]'
-                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    ? 'bg-white text-black font-extrabold'
+                    : 'text-[#999999] hover:text-white hover:bg-[#24242c]'
                 }`}
               >
                 <span>{sc.badge}</span>
@@ -114,19 +111,17 @@ export function TestimonialsSection() {
         </div>
 
         {/* Scenario Display Window */}
-        <div className="rounded-2xl sm:rounded-3xl border border-sky-400/20 bg-[#141923] shadow-2xl overflow-hidden">
+        <div className="rounded-none border border-[#383842] bg-[#1a1a1e] overflow-hidden">
           {/* Top Window Chrome Bar */}
-          <div className="h-10 bg-gradient-to-b from-[#252e42] to-[#1c2333] border-b border-sky-400/20 px-4 sm:px-5 flex items-center justify-between text-xs text-slate-300">
+          <div className="h-10 bg-[#24242c] border-b border-[#383842] px-4 sm:px-5 flex items-center justify-between text-xs text-[#999999] font-mono">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-              <span className="mr-2 font-mono text-[10px] sm:text-[11px] text-slate-200 font-semibold truncate">
+              <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
+              <span className="mr-2 font-mono text-[10px] sm:text-[11px] text-white font-bold uppercase tracking-[1px]">
                 {currentScenario.badge}
               </span>
             </div>
-            <span className="text-[9px] sm:text-[10px] font-mono text-sky-300 bg-sky-500/20 px-2 py-0.5 rounded border border-sky-400/30 font-bold hidden xs:inline">
-              Real Studio Benchmark
+            <span className="text-[9px] sm:text-[10px] font-mono text-[#f0f0fa] bg-[#121214] px-2 py-0.5 border border-[#383842] font-bold uppercase tracking-[1px] hidden xs:inline">
+              BENCHMARK TEST
             </span>
           </div>
 
@@ -150,14 +145,14 @@ export function TestimonialsSection() {
 
               {/* Step-by-Step Flow Cards */}
               <div className="grid grid-cols-1 gap-4 pt-1">
-                {/* Problem Flow Box (Subtle Gray) */}
-                <div className="p-5 rounded-2xl bg-[#1c1c1c] border border-white/5 shadow-none">
-                  <div className="flex items-center justify-between text-xs font-bold text-neutral-400 mb-3 pb-2 border-b border-white/5">
-                    <span className="flex items-center gap-2 font-display text-sm">
-                      <ShieldAlert className="w-4 h-4 text-rose-500/70" />
+                {/* Problem Flow Box */}
+                <div className="p-5 rounded-none bg-[#121214] border border-[#383842]">
+                  <div className="flex items-center justify-between text-xs font-bold text-[#999999] mb-3 pb-2 border-b border-[#383842]">
+                    <span className="flex items-center gap-2 font-display text-sm text-white">
+                      <ShieldAlert className="w-4 h-4 text-white" />
                       {currentScenario.problemTitle}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/10 text-[10px] font-mono">
+                    <span className="px-2 py-0.5 rounded-none bg-[#24242c] text-[#999999] border border-[#383842] text-[10px] font-mono uppercase tracking-[1px]">
                       بطء وهدر في الوقت
                     </span>
                   </div>
@@ -165,37 +160,37 @@ export function TestimonialsSection() {
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     {currentScenario.problemSteps.map((step, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <span className="px-3 py-1.5 rounded-lg bg-[#242424] border border-white/5 text-neutral-400 font-medium">
+                        <span className="px-3 py-1.5 rounded-none bg-[#24242c] border border-[#383842] text-[#999999] font-medium font-mono">
                           {idx + 1}. {step}
                         </span>
                         {idx < currentScenario.problemSteps.length - 1 && (
-                          <ArrowLeft className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+                          <ArrowLeft className="w-3.5 h-3.5 text-[#999999] shrink-0" />
                         )}
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Solution Flow Box (Subtle Brand Blue Accent) */}
-                <div className="p-5 rounded-2xl bg-[#242424] border border-brand-500/20 shadow-md">
-                  <div className="flex items-center justify-between text-xs font-bold text-white mb-3 pb-2 border-b border-white/5">
-                    <span className="flex items-center gap-2 font-display text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-brand-400" />
+                {/* Solution Flow Box */}
+                <div className="p-5 rounded-none bg-[#24242c] border border-white/40">
+                  <div className="flex items-center justify-between text-xs font-bold text-white mb-3 pb-2 border-b border-[#383842]">
+                    <span className="flex items-center gap-2 font-display text-sm font-extrabold text-white">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
                       {currentScenario.solutionTitle}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-[10px] font-bold font-mono">
-                      ⚡ سرعة فائقة 100%
+                    <span className="px-2.5 py-0.5 rounded-none bg-white text-black text-[10px] font-bold font-mono uppercase tracking-[1px]">
+                      ⚡ 3 SECONDS
                     </span>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     {currentScenario.solutionSteps.map((step, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <span className="px-3 py-1.5 rounded-lg bg-brand-500/10 border border-brand-500/20 text-brand-100 font-extrabold">
+                        <span className="px-3 py-1.5 rounded-none bg-[#121214] border border-[#383842] text-white font-extrabold font-mono">
                           {step}
                         </span>
                         {idx < currentScenario.solutionSteps.length - 1 && (
-                          <ArrowLeft className="w-3.5 h-3.5 text-brand-400/50 shrink-0" />
+                          <ArrowLeft className="w-3.5 h-3.5 text-white shrink-0" />
                         )}
                       </div>
                     ))}

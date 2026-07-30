@@ -52,44 +52,44 @@ export function Header() {
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-[#181818]/95 backdrop-blur-md shadow-lg shadow-black/50 border-b border-white/10'
+          ? 'bg-[#121214]/95 backdrop-blur-md border-b border-[#383842]'
           : 'bg-transparent border-b border-transparent'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-5 sm:px-6">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="h-20 flex items-center justify-between">
           <AnimatedLogo />
 
-          {/* Clean nav links with hover indicator line */}
-          <nav className="hidden md:flex items-center gap-6">
+          {/* Clean nav links with SpaceX uppercase tracking */}
+          <nav className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm font-semibold text-neutral-300 hover:text-blue-400 transition-colors relative py-1 group/link"
+                className="text-[13px] font-bold tracking-[1.5px] uppercase text-[#f0f0fa] hover:text-white transition-colors relative py-1 group/link"
               >
                 <span>{link.label}</span>
-                <span className="absolute bottom-0 inset-x-0 h-0.5 bg-gradient-to-r from-brand-600 to-blue-400 scale-x-0 group-hover/link:scale-x-100 transition-transform origin-right" />
+                <span className="absolute bottom-0 inset-x-0 h-0.5 bg-white scale-x-0 group-hover/link:scale-x-100 transition-transform origin-right" />
               </a>
             ))}
           </nav>
 
           <div className="flex items-center gap-3">
-            {/* Clean download button */}
+            {/* SpaceX Pill CTA Download button */}
             <a
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-white text-sm font-bold font-display shadow-md border border-blue-400/20 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer relative overflow-hidden group/btn"
+              className="hidden sm:flex items-center gap-2 px-6 py-2.5 rounded-full bg-white hover:bg-[#f0f0fa] text-black text-xs font-extrabold uppercase tracking-[1px] transition-all hover:scale-105 active:scale-95 cursor-pointer relative border border-white"
               aria-label="تحميل البرنامج"
             >
-              <Download className="w-4 h-4 text-white relative z-10" />
-              <span className="relative z-10">تحميل البرنامج</span>
+              <Download className="w-3.5 h-3.5 text-black relative z-10" />
+              <span className="relative z-10">تحميل التطبيق</span>
             </a>
 
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-[#242424] text-white border border-white/10"
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-none bg-[#1a1a1e] text-[#f0f0fa] border border-[#383842]"
               aria-label="القائمة"
               aria-expanded={menuOpen}
             >
@@ -100,14 +100,14 @@ export function Header() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden pb-4 pt-2 border-t border-white/10">
+          <div className="md:hidden pb-4 pt-2 border-t border-[#383842] bg-[#121214]">
             <nav className="flex flex-col gap-1">
               {NAV_LINKS.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="px-4 py-3 text-sm font-semibold text-neutral-200 hover:bg-white/5 transition-colors"
+                  className="px-4 py-3 text-xs font-bold tracking-[1.5px] uppercase text-[#f0f0fa] hover:bg-[#1a1a1e] transition-colors"
                 >
                   {link.label}
                 </a>
@@ -116,10 +116,10 @@ export function Header() {
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-500 text-white font-bold text-sm"
+                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white text-black font-extrabold text-xs uppercase tracking-[1px]"
               >
-                <Download className="w-4 h-4" />
-                تحميل البرنامج
+                <Download className="w-4 h-4 text-black" />
+                تحميل التطبيق
               </a>
             </nav>
           </div>

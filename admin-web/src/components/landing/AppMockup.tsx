@@ -22,19 +22,9 @@ const PASSPORT_IMG = '/sample-passport.png';
 export function AppMockup() {
   return (
     <div className="relative mx-auto w-full max-w-6xl perspective-container group select-none py-3 px-1 sm:px-0">
-      {/* Soft Ambient Floor & Back Glow for Focal Depth */}
+      {/* SpaceX Dark Tilted Window Frame matching Real Grido Studio App */}
       <div
-        aria-hidden
-        className="pointer-events-none absolute -top-8 -right-8 w-[550px] h-[450px] bg-gradient-to-br from-brand-600/25 via-blue-500/15 to-transparent rounded-full blur-[130px] opacity-90"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-8 -left-8 w-[500px] h-[400px] bg-gradient-to-tr from-brand-500/20 via-indigo-600/15 to-transparent rounded-full blur-[110px] opacity-80"
-      />
-
-      {/* 3D Perspective Tilted Window Frame matching Real Grido Studio App */}
-      <div
-        className="perspective-mockup relative rounded-2xl overflow-hidden border border-white/20 bg-[#1e1e1e] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95)] text-right w-full ring-1 ring-white/10"
+        className="perspective-mockup relative rounded-none overflow-hidden border border-[#383842] bg-[#1a1a1e] text-right w-full transition-all duration-500 hover:border-white/40"
         dir="rtl"
       >
         {/* Top App Titlebar */}
