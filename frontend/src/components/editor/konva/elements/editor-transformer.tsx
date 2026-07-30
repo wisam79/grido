@@ -140,7 +140,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           }
         }}
         boundBoxFunc={(oldBox, newBox) => {
-          if (newBox.width < 5 || newBox.height < 5) {
+          if (Math.abs(newBox.width) < 2 && Math.abs(newBox.height) < 2) {
             return oldBox;
           }
           return newBox;

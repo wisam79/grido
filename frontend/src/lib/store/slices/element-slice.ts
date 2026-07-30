@@ -148,8 +148,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const id = uid();
     const state = get();
 
-    const hPercent = 0.3;
-    const wPercent = hPercent * (state.canvasHeight / state.canvasWidth);
+    const isLine = shape === "line";
+    const hPercent = isLine ? 0.03 : 0.3;
+    const wPercent = 0.35 * (state.canvasHeight / state.canvasWidth);
 
     const newEl: CanvasElement = {
       id,
@@ -163,8 +164,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       zIndex: (state.elements.length + 1) * 10 + Date.now() % 1000,
       shape,
       fill: "#3b82f6",
-      stroke: "#000000",
-      strokeWidth: 0,
+      stroke: "#3b82f6",
+      strokeWidth: isLine ? 4 : 0,
       radius: 8,
       svgPath,
     };

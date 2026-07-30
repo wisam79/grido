@@ -303,27 +303,34 @@ export function SlotProperties({
             <Label className="text-[11px] font-bold text-foreground/90 block">عزل وتعديل الخلفية</Label>
             
             <Button
-              variant={isRemovingBg ? "destructive" : "secondary"}
+              variant={isRemovingBg ? "destructive" : "outline"}
               className={cn(
-                "w-full flex items-center justify-center gap-2 h-10 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.98] group font-bold text-xs shadow-xs",
-                !isRemovingBg && "bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+                "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-xs",
+                isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
               )}
               onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(slot)}
+              title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية الذكي بالذكاء الاصطناعي"}
             >
               {isRemovingBg ? (
-                <>
-                  <X className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  <span>إلغاء العملية</span>
-                </>
+                <div className="flex items-center gap-2.5">
+                  <X className="w-4 h-4 text-destructive-foreground group-hover:scale-110 transition-transform shrink-0" />
+                  <span>إلغاء العملية الحالية</span>
+                </div>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 text-primary group-hover:rotate-12 transition-transform duration-300" />
-                  <span className="flex items-center gap-1.5">
-                    عزل الخلفية
-                    {!isLicenseActive && (
-                      <span className="text-[8px] bg-primary text-primary-foreground px-1 py-0.5 rounded font-extrabold uppercase select-none">PRO</span>
-                    )}
-                  </span>
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+                    <span>عزل الخلفية الذكي</span>
+                  </div>
+                  {!isLicenseActive ? (
+                    <span className="text-[8.5px] bg-primary text-primary-foreground font-black px-1.5 py-0.5 rounded-md tracking-wider uppercase">
+                      PRO
+                    </span>
+                  ) : (
+                    <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
+                      AI
+                    </span>
+                  )}
                 </>
               )}
             </Button>
@@ -357,23 +364,24 @@ export function SlotProperties({
 
           {/* الذكاء الاصطناعي */}
           {slot.imageSrc && (
-            <div className="bg-violet-500/5 dark:bg-violet-500/10 p-3 rounded-xl border border-violet-500/20 space-y-2">
-              <Label className="text-[11px] font-bold text-violet-700 dark:text-violet-300 block">الذكاء الاصطناعي</Label>
+            <div className="bg-muted/20 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2.5">
+              <Label className="text-[11px] font-bold text-foreground/90 block">الذكاء الاصطناعي</Label>
               <Button
                 variant="outline"
+                disabled={isEnhancing || isRemovingBg}
                 className={cn(
-                  "w-full flex items-center justify-between px-3 h-10 rounded-xl transition-all duration-200 cursor-pointer font-bold text-xs bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-indigo-500/10 hover:from-violet-500/20 hover:to-indigo-500/20 border-violet-500/30 text-violet-700 dark:text-violet-300 shadow-xs",
-                  isEnhancing && "opacity-50 cursor-not-allowed"
+                  "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-xs",
+                  (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
                 )}
-                disabled={isEnhancing}
                 onClick={() => handleEnhance(slot)}
+                title={`تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
               >
-                <div className="flex items-center gap-1.5">
-                  <Wand2 className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                  <span>تحسين الجودة والوضوح ✨</span>
+                <div className="flex items-center gap-2.5">
+                  <Wand2 className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+                  <span>تحسين الجودة والوضوح</span>
                 </div>
-                <span className="text-[9px] bg-violet-500/20 border border-violet-500/30 text-violet-700 dark:text-violet-300 px-2 py-0.5 rounded-full font-extrabold font-mono">
-                  {remainingQuota}/{dailyLimit}
+                <span className="text-[9.5px] bg-primary/20 border border-primary/40 text-primary px-2 py-0.5 rounded-md font-extrabold font-mono">
+                  {remainingQuota}/{dailyLimit} اليوم
                 </span>
               </Button>
 

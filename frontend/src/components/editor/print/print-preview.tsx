@@ -21,6 +21,7 @@ interface SheetPreviewProps {
   canvasWidth?: number;
   canvasHeight?: number;
   hasPhysical?: boolean;
+  scaleFactor?: number;
 }
 
 export function SheetPreview({
@@ -44,6 +45,7 @@ export function SheetPreview({
   canvasWidth = 2480,
   canvasHeight = 3508,
   hasPhysical = false,
+  scaleFactor = 1.5,
 }: SheetPreviewProps) {
   if (mode === "collage") {
     return (
@@ -89,9 +91,9 @@ export function SheetPreview({
                 <img
                   src={slot.imageSrc}
                   alt=""
-                  className="w-full h-full"
+                  className="w-full h-full object-cover"
                   style={{
-                    objectFit: "fill",
+                    transform: `scale(${slot.zoom || 1}) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1}) rotate(${slot.rotation || 0}deg)`,
                     filter: buildCSSFilter(slot),
                   }}
                 />
@@ -102,10 +104,7 @@ export function SheetPreview({
           <img
             src={previewImageSrc}
             alt=""
-            className="w-full h-full"
-            style={{
-              objectFit: "fill",
-            }}
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-xs text-muted-foreground font-cairo">
@@ -129,10 +128,10 @@ export function SheetPreview({
   for (let i = 0; i < count; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const x = (offsetX + col * (imageWidthMM + gapMM)) * 2 * zoom;
-    const y = (offsetY + row * (imageHeightMM + gapMM)) * 2 * zoom;
-    const w = imageWidthMM * 2 * zoom;
-    const h = imageHeightMM * 2 * zoom;
+    const x = (offsetX + col * (imageWidthMM + gapMM)) * scaleFactor * zoom;
+    const y = (offsetY + row * (imageHeightMM + gapMM)) * scaleFactor * zoom;
+    const w = imageWidthMM * scaleFactor * zoom;
+    const h = imageHeightMM * scaleFactor * zoom;
 
     items.push(
       <div
@@ -152,10 +151,7 @@ export function SheetPreview({
           <img
             src={previewImageSrc}
             alt=""
-            className="w-full h-full"
-            style={{
-              objectFit: "fill",
-            }}
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-[10px] text-muted-foreground font-cairo">
@@ -168,10 +164,10 @@ export function SheetPreview({
 
   const cutLines = [];
   if (showCutLines) {
-    const marginPx = marginMM * 2 * zoom;
+    const marginPx = marginMM * scaleFactor * zoom;
 
     for (let i = 1; i < cols; i++) {
-      const x = i * (imageWidthMM + gapMM) * 2 * zoom - gapMM * zoom;
+      const x = i * (imageWidthMM + gapMM) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
       cutLines.push(
         <div
           key={`v-${i}`}
@@ -185,7 +181,7 @@ export function SheetPreview({
       );
     }
     for (let i = 1; i < rows; i++) {
-      const y = i * (imageHeightMM + gapMM) * 2 * zoom - gapMM * zoom;
+      const y = i * (imageHeightMM + gapMM) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
       cutLines.push(
         <div
           key={`h-${i}`}

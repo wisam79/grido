@@ -30,7 +30,10 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               onChangeSolidColor={(col) => {
-                onUpdate(element.id, { fill: col });
+                onUpdate(element.id, { 
+                  fill: col, 
+                  stroke: element.shape === "line" ? col : (element.stroke || col) 
+                });
                 useEditorStore.getState().pushHistory();
               }}
               onChangeColorStops={(stops) => {
@@ -49,7 +52,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
               <span>لون الحدود</span>
             </span>
             <PopoverColorPicker
-              color={element.stroke || "#000000"}
+              color={element.stroke || element.fill || "#3b82f6"}
               onChange={(val) => onUpdate(element.id, { stroke: val })}
               className="w-32 h-8"
             />
@@ -70,11 +73,11 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
           />
         )}
         <SliderControl
-          label="سماكة الحد"
+          label={element.shape === "line" ? "سمك الخط" : "سماكة الحد"}
           icon={<Maximize2 className="w-3.5 h-3.5 text-muted-foreground/75" />}
-          value={element.strokeWidth ?? 0}
-          min={0}
-          max={20}
+          value={element.shape === "line" ? (element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4) : (element.strokeWidth ?? 0)}
+          min={element.shape === "line" ? 1 : 0}
+          max={50}
           step={0.5}
           unit="px"
           onChange={(v) => onUpdate(element.id, { strokeWidth: v })}

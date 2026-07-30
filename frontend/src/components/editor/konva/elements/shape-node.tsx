@@ -92,8 +92,12 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     onClick: onClick,
     onTap: onTap,
     ...getFillProps(element, w, h),
-    stroke: element.strokeWidth && element.strokeWidth > 0 ? element.stroke || "#000000" : undefined,
-    strokeWidth: element.strokeWidth || 0,
+    stroke: element.shape === "line" 
+      ? (element.stroke || element.fill || "#3b82f6") 
+      : (element.strokeWidth && element.strokeWidth > 0 ? element.stroke || "#000000" : undefined),
+    strokeWidth: element.shape === "line" 
+      ? (element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4) 
+      : (element.strokeWidth || 0),
     draggable: !element.locked && isSelected,
     onDragStart,
     dragBoundFunc,
@@ -114,10 +118,14 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   }
 
   if (element.shape === "line") {
+    const strokeW = element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4;
+    const lineH = Math.max(h, strokeW, 16);
     return (
       <KonvaLine
         {...shapeProps}
-        points={[0, h / 2, w, h / 2]}
+        height={lineH}
+        points={[0, lineH / 2, w, lineH / 2]}
+        hitStrokeWidth={Math.max(30, strokeW + 20)}
       />
     );
   }

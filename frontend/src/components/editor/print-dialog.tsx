@@ -394,6 +394,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   // Add a 0.5mm tolerance for floating point conversions (px to mm) to avoid false positive overflow warnings
   const isOverflowing = spaceUsedPercent > 101 || imageWidthMM > availableWidthMM + 0.5 || imageHeightMM > availableHeightMM + 0.5;
 
+  const scaleFactor = Math.min(1.4, 420 / Math.max(paperHeight, 1));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] sm:max-w-[800px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border/60 bg-background rounded-2xl shadow-2xl" dir="rtl">
@@ -494,8 +496,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <div
                   className="bg-white rounded-xs relative border border-slate-200/50 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]"
                   style={{
-                    width: paperWidth * 2 * zoom,
-                    height: paperHeight * 2 * zoom,
+                    width: paperWidth * scaleFactor * zoom,
+                    height: paperHeight * scaleFactor * zoom,
                   }}
                 >
                   {/* إطار الهامش التوضيحي (Margin Guides) */}
@@ -505,10 +507,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                       isOverflowing ? "border-red-400/60" : "border-slate-300"
                     )}
                     style={{
-                      left: effectiveMarginMM * 2 * zoom,
-                      top: effectiveMarginMM * 2 * zoom,
-                      right: effectiveMarginMM * 2 * zoom,
-                      bottom: effectiveMarginMM * 2 * zoom,
+                      left: effectiveMarginMM * scaleFactor * zoom,
+                      top: effectiveMarginMM * scaleFactor * zoom,
+                      right: effectiveMarginMM * scaleFactor * zoom,
+                      bottom: effectiveMarginMM * scaleFactor * zoom,
                     }}
                   />
 
@@ -516,10 +518,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   <div
                     className="absolute"
                     style={{
-                      left: effectiveMarginMM * 2 * zoom,
-                      top: effectiveMarginMM * 2 * zoom,
-                      right: effectiveMarginMM * 2 * zoom,
-                      bottom: effectiveMarginMM * 2 * zoom,
+                      left: effectiveMarginMM * scaleFactor * zoom,
+                      top: effectiveMarginMM * scaleFactor * zoom,
+                      right: effectiveMarginMM * scaleFactor * zoom,
+                      bottom: effectiveMarginMM * scaleFactor * zoom,
                     }}
                   >
                     <SheetPreview
@@ -543,6 +545,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                       canvasWidth={canvasWidth}
                       canvasHeight={canvasHeight}
                       hasPhysical={!!collageTemplate?.physicalLayout}
+                      scaleFactor={scaleFactor}
                     />
                   </div>
                 </div>
