@@ -154,271 +154,266 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   const activePresetId = activePreset ? activePreset.id : "custom";
 
   return (
-    <div className="space-y-3 border border-border/40 rounded-xl bg-card/30 p-3">
-      <button
-        type="button"
-        onClick={() => setDimensionsExpanded(!dimensionsExpanded)}
-        className="flex items-center justify-between w-full text-right cursor-pointer select-none"
-      >
-        <div className="flex items-center gap-1.5">
-          <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !dimensionsExpanded && "-rotate-90")} />
-          <Label className="text-sm font-bold text-foreground/90 cursor-pointer">أبعاد مساحة العمل</Label>
-        </div>
-        {!dimensionsExpanded && (
-          <span className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded-md font-bold" dir="ltr">
-            {canvasWidth}×{canvasHeight}px
-          </span>
-        )}
-      </button>
-
-      {dimensionsExpanded && (
-        <div className="space-y-3 pt-2 border-t border-border/10 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">وحدة القياس</span>
-
-            <div className="flex rounded-lg bg-muted/60 p-0.5 border border-border/30">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setUnit("px"); }}
-                className={cn(
-                  "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
-                  unit === "px"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                بكسل
-              </button>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setUnit("mm"); }}
-                className={cn(
-                  "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
-                  unit === "mm"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                ملم
-              </button>
-            </div>
+    <div className="space-y-3.5 bg-card/40 dark:bg-card/20 border border-border/50 p-3.5 rounded-2xl shadow-xs font-cairo">
+      {/* هيدر ثابت بدون تقليص */}
+      <div className="flex items-center justify-between border-b border-border/25 pb-2.5">
+        <Label className="text-xs font-extrabold text-foreground flex items-center gap-2 select-none">
+          <div className="p-1 rounded-md bg-primary/10 text-primary">
+            <RefreshCw className="w-3.5 h-3.5" />
           </div>
+          <span>أبعاد مساحة العمل</span>
+        </Label>
+        <span className="text-[10px] text-muted-foreground font-mono bg-muted/40 border border-border/20 px-2 py-0.5 rounded-md font-bold tracking-tight" dir="ltr">
+          {canvasWidth} × {canvasHeight} px
+        </span>
+      </div>
 
-          {/* الحجم القياسي (Visual Grid Cards) */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground/80 font-bold pr-0.5">الحجم القياسي</Label>
-            <div className="grid grid-cols-3 gap-2 text-xs" dir="rtl">
-              {/* A4 Button */}
-              <button
-                type="button"
-                onClick={() => handlePresetChange("a4")}
-                className={cn(
-                  "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
-                  activePresetId === "a4"
-                    ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                    : "border-border hover:bg-muted/20 text-foreground"
-                )}
-              >
-                <PresetMiniature id="a4" active={activePresetId === "a4"} />
-                <span className="text-[11px] font-bold">A4</span>
-                <span className="text-[8.5px] text-muted-foreground/80 font-medium">٢١٠×٢٩٧ مم</span>
-              </button>
+      <div className="space-y-3 animate-in fade-in duration-200">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-muted-foreground/80 font-bold">وحدة القياس</span>
 
-              {/* 4x6 Photo Button */}
-              <button
-                type="button"
-                onClick={() => handlePresetChange("4x6")}
-                className={cn(
-                  "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
-                  activePresetId === "4x6"
-                    ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                    : "border-border hover:bg-muted/20 text-foreground"
-                )}
-              >
-                <PresetMiniature id="4x6" active={activePresetId === "4x6"} />
-                <span className="text-[11px] font-bold">4×6 بوصة</span>
-                <span className="text-[8.5px] text-muted-foreground/80 font-medium">١٠×١٥ سم</span>
-              </button>
+          <div className="flex rounded-lg bg-muted/60 dark:bg-muted/30 p-0.5 border border-border/30">
+            <button
+              type="button"
+              onClick={() => setUnit("px")}
+              className={cn(
+                "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
+                unit === "px"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              بكسل
+            </button>
+            <button
+              type="button"
+              onClick={() => setUnit("mm")}
+              className={cn(
+                "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
+                unit === "mm"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              ملم
+            </button>
+          </div>
+        </div>
 
-              {/* A5 Button */}
-              <button
-                type="button"
-                onClick={() => handlePresetChange("a5")}
-                className={cn(
-                  "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
-                  activePresetId === "a5"
-                    ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                    : "border-border hover:bg-muted/20 text-foreground"
-                )}
-              >
-                <PresetMiniature id="a5" active={activePresetId === "a5"} />
-                <span className="text-[11px] font-bold">A5</span>
-                <span className="text-[8.5px] text-muted-foreground/80 font-medium">١٤٨×٢١٠ مم</span>
-              </button>
+        {/* الحجم القياسي (Visual Grid Cards) */}
+        <div className="space-y-1.5">
+          <Label className="text-[11px] text-muted-foreground/80 font-bold pr-0.5">الحجم القياسي</Label>
+          <div className="grid grid-cols-3 gap-2 text-xs" dir="rtl">
+            {/* A4 Button */}
+            <button
+              type="button"
+              onClick={() => handlePresetChange("a4")}
+              className={cn(
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                activePresetId === "a4"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
+                  : "border-border/60 hover:bg-muted/20 text-foreground"
+              )}
+            >
+              <PresetMiniature id="a4" active={activePresetId === "a4"} />
+              <span className="text-[11px] font-bold">A4</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-medium">٢١٠×٢٩٧ مم</span>
+            </button>
 
-              {/* A3 Button */}
-              <button
-                type="button"
-                onClick={() => handlePresetChange("a3")}
-                className={cn(
-                  "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
-                  activePresetId === "a3"
-                    ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                    : "border-border hover:bg-muted/20 text-foreground"
-                )}
-              >
-                <PresetMiniature id="a3" active={activePresetId === "a3"} />
-                <span className="text-[11px] font-bold">A3</span>
-                <span className="text-[8.5px] text-muted-foreground/80 font-medium">٢٩٧×٤٢٠ مم</span>
-              </button>
+            {/* 4x6 Photo Button */}
+            <button
+              type="button"
+              onClick={() => handlePresetChange("4x6")}
+              className={cn(
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                activePresetId === "4x6"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
+                  : "border-border/60 hover:bg-muted/20 text-foreground"
+              )}
+            >
+              <PresetMiniature id="4x6" active={activePresetId === "4x6"} />
+              <span className="text-[11px] font-bold">4×6 بوصة</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-medium">١٠×١٥ سم</span>
+            </button>
 
-              {/* 5x7 Photo Button */}
-              <button
-                type="button"
-                onClick={() => handlePresetChange("5x7")}
-                className={cn(
-                  "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
-                  activePresetId === "5x7"
-                    ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                    : "border-border hover:bg-muted/20 text-foreground"
-                )}
-              >
-                <PresetMiniature id="5x7" active={activePresetId === "5x7"} />
-                <span className="text-[11px] font-bold">5×7 بوصة</span>
-                <span className="text-[8.5px] text-muted-foreground/80 font-medium">١٢×١٧ سم</span>
-              </button>
+            {/* A5 Button */}
+            <button
+              type="button"
+              onClick={() => handlePresetChange("a5")}
+              className={cn(
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                activePresetId === "a5"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
+                  : "border-border/60 hover:bg-muted/20 text-foreground"
+              )}
+            >
+              <PresetMiniature id="a5" active={activePresetId === "a5"} />
+              <span className="text-[11px] font-bold">A5</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-medium">١٤٨×٢١٠ مم</span>
+            </button>
 
-              {/* Dropdown for other sizes */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
-                      ["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId)
-                        ? "border-border text-foreground hover:bg-muted/20"
-                        : "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                    )}
-                  >
-                    <PresetMiniature id={activePresetId} active={!["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId)} />
-                    {(() => {
-                      const isCommon = ["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId);
-                      if (isCommon) {
-                        return (
-                          <>
-                            <span className="text-[11px] font-bold">أخرى...</span>
-                            <span className="text-[8.5px] text-muted-foreground/80 font-medium">باقي المقاسات</span>
-                          </>
-                        );
-                      }
-                      if (activePresetId === "custom") {
-                        return (
-                          <>
-                            <span className="text-[11px] font-bold">مخصص 📐</span>
-                            <span className="text-[8.5px] text-primary/80 font-medium">مقاس حر</span>
-                          </>
-                        );
-                      }
-                      const activePaper = PAPER_SIZES.find((p) => p.id === activePresetId);
+            {/* A3 Button */}
+            <button
+              type="button"
+              onClick={() => handlePresetChange("a3")}
+              className={cn(
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                activePresetId === "a3"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
+                  : "border-border/60 hover:bg-muted/20 text-foreground"
+              )}
+            >
+              <PresetMiniature id="a3" active={activePresetId === "a3"} />
+              <span className="text-[11px] font-bold">A3</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-medium">٢٩٧×٤٢٠ مم</span>
+            </button>
+
+            {/* 5x7 Photo Button */}
+            <button
+              type="button"
+              onClick={() => handlePresetChange("5x7")}
+              className={cn(
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                activePresetId === "5x7"
+                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
+                  : "border-border/60 hover:bg-muted/20 text-foreground"
+              )}
+            >
+              <PresetMiniature id="5x7" active={activePresetId === "5x7"} />
+              <span className="text-[11px] font-bold">5×7 بوصة</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-medium">١٢×١٧ سم</span>
+            </button>
+
+            {/* Dropdown for other sizes */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                    ["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId)
+                      ? "border-border/60 text-foreground hover:bg-muted/20"
+                      : "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
+                  )}
+                >
+                  <PresetMiniature id={activePresetId} active={!["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId)} />
+                  {(() => {
+                    const isCommon = ["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId);
+                    if (isCommon) {
                       return (
                         <>
-                          <span className="text-[11px] font-bold truncate max-w-[80px]">{activePaper?.name.split(" (")[0]}</span>
-                          <span className="text-[8.5px] text-primary/80 font-medium">مقاس قياسي</span>
+                          <span className="text-[11px] font-bold">أخرى...</span>
+                          <span className="text-[8.5px] text-muted-foreground/80 font-medium">باقي المقاسات</span>
                         </>
                       );
-                    })()}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (template) setTemplate(null);
-                    }}
-                    className="text-xs text-right justify-end font-bold cursor-pointer"
-                  >
-                    📐 مقاس مخصص (Custom Size)
-                  </DropdownMenuItem>
-                  {PAPER_SIZES.map((p) => {
-                    const nameParts = p.name.split(" (");
-                    const mainName = nameParts[0].replace(" بوصة", "″");
-                    const label = `${mainName} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                    }
+                    if (activePresetId === "custom") {
+                      return (
+                        <>
+                          <span className="text-[11px] font-bold">مخصص 📐</span>
+                          <span className="text-[8.5px] text-primary/80 font-medium">مقاس حر</span>
+                        </>
+                      );
+                    }
+                    const activePaper = PAPER_SIZES.find((p) => p.id === activePresetId);
                     return (
-                      <DropdownMenuItem
-                        key={p.id}
-                        onClick={() => handlePresetChange(p.id)}
-                        className="text-xs text-right justify-end cursor-pointer"
-                      >
-                        {label}
-                      </DropdownMenuItem>
+                      <>
+                        <span className="text-[11px] font-bold truncate max-w-[80px]">{activePaper?.name.split(" (")[0]}</span>
+                        <span className="text-[8.5px] text-primary/80 font-medium">مقاس قياسي</span>
+                      </>
                     );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  })()}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 font-cairo" align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (template) setTemplate(null);
+                  }}
+                  className="text-xs text-right justify-end font-bold cursor-pointer"
+                >
+                  📐 مقاس مخصص (Custom Size)
+                </DropdownMenuItem>
+                {PAPER_SIZES.map((p) => {
+                  const nameParts = p.name.split(" (");
+                  const mainName = nameParts[0].replace(" بوصة", "″");
+                  const label = `${mainName} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                  return (
+                    <DropdownMenuItem
+                      key={p.id}
+                      onClick={() => handlePresetChange(p.id)}
+                      className="text-xs text-right justify-end cursor-pointer"
+                    >
+                      {label}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-
-          {/* حقول الأبعاد الموزعة بنمط Figma */}
-          <div className="flex items-center gap-2" dir="rtl">
-            {/* العرض */}
-            <div className="flex-1 flex items-center bg-background border border-border/60 hover:border-primary/45 rounded-xl px-2.5 h-10 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 shadow-2xs">
-              <span className="text-[10px] font-black text-muted-foreground/45 select-none w-4 text-center">W</span>
-              <input
-                type="number"
-                value={widthVal}
-                onChange={(e) => handleWidthChange(e.target.value)}
-                className="w-full bg-transparent border-0 p-0 text-sm font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
-                min={1}
-              />
-              <span className="text-[9px] text-muted-foreground/45 select-none font-bold pr-1">{unit === "px" ? "px" : "mm"}</span>
-            </div>
-
-            {/* زر التبديل العائم */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleSwapDimensions}
-              className="h-10 w-10 rounded-xl border border-border/60 bg-background hover:bg-primary/10 hover:border-primary/40 hover:text-primary text-muted-foreground transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs"
-              title="تبديل الاتجاه (أفقي/عمودي)"
-            >
-              <RefreshCw className="w-3.5 h-3.5 transition-transform duration-300 active:rotate-180" />
-            </Button>
-
-            {/* الارتفاع */}
-            <div className="flex-1 flex items-center bg-background border border-border/60 hover:border-primary/45 rounded-xl px-2.5 h-10 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 shadow-2xs">
-              <span className="text-[10px] font-black text-muted-foreground/45 select-none w-4 text-center">H</span>
-              <input
-                type="number"
-                value={heightVal}
-                onChange={(e) => handleHeightChange(e.target.value)}
-                className="w-full bg-transparent border-0 p-0 text-sm font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
-                min={1}
-              />
-              <span className="text-[9px] text-muted-foreground/45 select-none font-bold pr-1">{unit === "px" ? "px" : "mm"}</span>
-            </div>
-          </div>
-
-          {/* خيار الدقة DPI */}
-          {unit === "mm" && (
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground/80 font-bold">دقة الطباعة (DPI)</Label>
-              <Select
-                value={String(dpiVal)}
-                onValueChange={(val) => handleDpiChange(Number(val))}
-              >
-                <SelectTrigger className="w-full h-10 text-xs bg-background border border-border/60">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="150">150 DPI (منخفض)</SelectItem>
-                  <SelectItem value="200">200 DPI (متوسط)</SelectItem>
-                  <SelectItem value="300">300 DPI (عالي - موصى به)</SelectItem>
-                  <SelectItem value="600">600 DPI (فائق الدقة)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </div>
-      )}
+
+        {/* حقول الأبعاد الموزعة بنمط Figma */}
+        <div className="flex items-center gap-2" dir="rtl">
+          {/* العرض */}
+          <div className="flex-1 flex items-center bg-background border border-border/60 hover:border-primary/45 rounded-xl px-2.5 h-10 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 shadow-2xs">
+            <span className="text-[10px] font-black text-muted-foreground/50 select-none w-4 text-center">W</span>
+            <input
+              type="number"
+              value={widthVal}
+              onChange={(e) => handleWidthChange(e.target.value)}
+              className="w-full bg-transparent border-0 p-0 text-sm font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
+              min={1}
+            />
+            <span className="text-[9px] text-muted-foreground/50 select-none font-bold pr-1">{unit === "px" ? "px" : "mm"}</span>
+          </div>
+
+          {/* زر التبديل العائم */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleSwapDimensions}
+            className="h-10 w-10 rounded-xl border border-border/60 bg-background hover:bg-primary/10 hover:border-primary/40 hover:text-primary text-muted-foreground transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs"
+            title="تبديل الاتجاه (أفقي/عمودي)"
+          >
+            <RefreshCw className="w-3.5 h-3.5 transition-transform duration-300 active:rotate-180" />
+          </Button>
+
+          {/* الارتفاع */}
+          <div className="flex-1 flex items-center bg-background border border-border/60 hover:border-primary/45 rounded-xl px-2.5 h-10 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 shadow-2xs">
+            <span className="text-[10px] font-black text-muted-foreground/50 select-none w-4 text-center">H</span>
+            <input
+              type="number"
+              value={heightVal}
+              onChange={(e) => handleHeightChange(e.target.value)}
+              className="w-full bg-transparent border-0 p-0 text-sm font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
+              min={1}
+            />
+            <span className="text-[9px] text-muted-foreground/50 select-none font-bold pr-1">{unit === "px" ? "px" : "mm"}</span>
+          </div>
+        </div>
+
+        {/* خيار الدقة DPI */}
+        {unit === "mm" && (
+          <div className="space-y-1.5 font-cairo">
+            <Label className="text-[11px] text-muted-foreground/80 font-bold">دقة الطباعة (DPI)</Label>
+            <Select
+              value={String(dpiVal)}
+              onValueChange={(val) => handleDpiChange(Number(val))}
+            >
+              <SelectTrigger className="w-full h-10 text-xs bg-background border border-border/60 rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="font-cairo">
+                <SelectItem value="150">150 DPI (منخفض)</SelectItem>
+                <SelectItem value="200">200 DPI (متوسط)</SelectItem>
+                <SelectItem value="300">300 DPI (عالي - موصى به)</SelectItem>
+                <SelectItem value="600">600 DPI (فائق الدقة)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
     </div>
   );
 });

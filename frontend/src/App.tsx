@@ -72,10 +72,14 @@ export default function App() {
     isLicenseActive: isLicenseActiveFn,
     canvasZoom,
     setCanvasZoom,
+    canvasWidth,
+    canvasHeight,
   } = useEditorStore(useShallow((state) => ({
     isLicenseActive: state.isLicenseActive,
     canvasZoom: state.canvasZoom,
     setCanvasZoom: state.setCanvasZoom,
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
   })));
   const isLicenseActive = isLicenseActiveFn();
   const setAccountModalOpen = useEditorStore((state) => state.setAccountModalOpen);
@@ -484,32 +488,47 @@ export default function App() {
             </ErrorBoundary>
           </div>
 
-          {/* شريط الحالة السفلي */}
-          <div className="border-t bg-card px-4 py-1.5 no-print flex items-center justify-between text-[11px] text-muted-foreground">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">Ctrl+Z</kbd>
-                تراجع
+          {/* شريط الحالة السفلي - نمط Figma مضغوط وأنيق */}
+          <div className="border-t border-border/40 bg-card/80 backdrop-blur-xs px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-7">
+            {/* مؤشر الحالة والنوع */}
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/70 bg-muted/40 px-2 py-0.5 rounded-md border border-border/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>جاهز</span>
               </span>
-              <span className="hidden sm:flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">Delete</kbd>
-                حذف العنصر
+              <span className="text-[10px] font-mono text-muted-foreground/60" dir="ltr">
+                {canvasWidth} × {canvasHeight} px
               </span>
             </div>
-            <div className="flex items-center gap-4">
-              <span>اضغط على عنصر لتحديده · اسحب لتغيير الموضع</span>
-              
-              <div className="flex items-center gap-1 border-r pr-4 border-border">
-                <button className="hover:bg-muted p-1 rounded transition-colors" onClick={() => setCanvasZoom((z: number) => Math.max(0.1, z - 0.1))}>
-                  <ZoomOut className="w-3.5 h-3.5" />
-                </button>
-                <div className="text-[11px] font-mono w-10 text-center select-none cursor-pointer hover:text-foreground" onDoubleClick={() => setCanvasZoom(1)}>
-                  {Math.round(canvasZoom * 100)}%
-                </div>
-                <button className="hover:bg-muted p-1 rounded transition-colors" onClick={() => setCanvasZoom((z: number) => Math.min(5, z + 0.1))}>
-                  <ZoomIn className="w-3.5 h-3.5" />
-                </button>
-              </div>
+
+            {/* أدوات الزوم وإعادة الضبط */}
+            <div className="flex items-center gap-1 bg-muted/30 border border-border/30 rounded-lg p-0.5">
+              <button
+                type="button"
+                className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                onClick={() => setCanvasZoom((z: number) => Math.max(0.1, z - 0.1))}
+                title="تصغير (Zoom Out)"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                className="text-[11px] font-mono font-bold w-12 text-center select-none cursor-pointer hover:bg-background hover:text-primary py-0.5 rounded-md transition-all border border-transparent hover:border-border/30"
+                onClick={() => setCanvasZoom(1)}
+                title="إعادة ضبط المقياس إلى 100% (انقر مرتين)"
+              >
+                {Math.round(canvasZoom * 100)}%
+              </button>
+
+              <button
+                type="button"
+                className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                onClick={() => setCanvasZoom((z: number) => Math.min(5, z + 0.1))}
+                title="تكبير (Zoom In)"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </section>
