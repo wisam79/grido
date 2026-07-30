@@ -26,11 +26,8 @@ import (
 var assets embed.FS
 
 func main() {
-	// 🪵 تهيئة نظام التسجيل الموحد (slog) لحفظ السجلات في ملف app.log
-	logFile, logErr := utils.InitLogger()
-	if logErr == nil {
-		defer logFile.Close()
-	}
+	// 🪵 تهيئة نظام التسجيل الموحد الوحيد (lumberjack + slog) — ملف واحد داخل logs/
+	service.InitLogger()
 
 	// 🔒 قفل تشغيل مثيل واحد فقط للتطبيق لمنع مشاكل تعارض الملفات
 	cleanup, err := checkSingleInstance()

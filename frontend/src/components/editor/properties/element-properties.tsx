@@ -2,7 +2,7 @@ import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
-  ImageIcon, Type, Palette, Sparkles, Eye, RotateCw, FlipHorizontal, Square, 
+  ImageIcon, Type, Palette, Sparkles, Eye, RotateCw, FlipHorizontal, FlipVertical, Square,
   Paintbrush, Sliders, Move, Lock, Droplet
 } from "lucide-react";
 import { SliderControl, PopoverColorPicker } from "./shared-controls";
@@ -174,9 +174,27 @@ export function ElementProperties({
                     useEditorStore.getState().pushHistory();
                   }}
                   title="قلب أفقي"
-                  className="h-8 w-8 border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center"
+                  className={cn(
+                    "h-8 w-8 border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center",
+                    element.flipX && "bg-primary/10 border-primary/50 text-primary"
+                  )}
                 >
                   <FlipHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    onUpdate(element.id, { flipY: !element.flipY });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  title="قلب عمودي"
+                  className={cn(
+                    "h-8 w-8 border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center",
+                    element.flipY && "bg-primary/10 border-primary/50 text-primary"
+                  )}
+                >
+                  <FlipVertical className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
               </div>
 

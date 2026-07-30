@@ -33,12 +33,14 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
 
   const isArabicText = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(textEl.text || "");
   const spacingVal = textEl.letterSpacing || 0;
+  const bgColor = textEl.textBgColor && textEl.textBgColor !== "transparent" ? textEl.textBgColor : "transparent";
 
   return (
     <textarea
       autoFocus
       className="absolute z-50 bg-transparent resize-none outline-none border-2 border-primary ring-0 m-0 p-0"
       style={{
+        backgroundColor: bgColor,
         left: `${textEl.x * displayW}px`,
         top: `${textEl.y * displayH}px`,
         width: `${textEl.width * displayW}px`,

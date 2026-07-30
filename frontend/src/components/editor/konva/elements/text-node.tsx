@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Text as KonvaText } from "react-konva";
+import { Text as KonvaText, Rect as KonvaRect } from "react-konva";
 import Konva from "konva";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
@@ -28,6 +28,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const editingTextId = useEditorStore((state) => state.editingTextId);
   const canvasWidth = useEditorStore((state) => state.canvasWidth) || 2480;
   const hasAnimatedRef = React.useRef(false);
+  const bgRef = useRef<any>(null);
 
   const {
     onDragStart,
@@ -83,6 +84,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight, elementRef]);
 
   const flipped = element.flipX === true;
+  const flippedY = element.flipY === true;
   const w = element.width * stageCanvasWidth;
   const h = element.height * canvasHeight;
 
@@ -100,16 +102,67 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     renderText = rawText.replace(/ /g, extraSpaces);
   }
 
+  // خلفية النص الاختيارية — مستطيل غير تفاعلي خلف النص بنفس الحدود والدوران.
+  // ⚠️ تُزامَن يدوياً مع موضع عقدة النص أثناء السحب/التحويل لأن الـ store يبقى
+  // على الإحداثيات القديمة حتى dragEnd — بدون المزامنة تتخلف الخلفية «عنصراً ثانياً».
+  const hasBg = !!element.textBgColor && element.textBgColor !== "transparent";
+  const sharedX = flipped ? (element.x + element.width) * stageCanvasWidth : element.x * stageCanvasWidth;
+  const sharedY = flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight;
+  const sharedScaleY = flippedY ? -1 : 1;
+  const sharedOpacity = editingTextId === element.id ? 0 : element.opacity;
+
+  // مزامنة الخلفية عبر أحداث Konva المباشرة على عقدة النص — تعمل من أي مصدر حركة:
+  // سحب فردي (onDragMove)، سحب جماعي (تُحرَّك العقدة من معالج العنصر القائد)،
+  // أو تحويل Transformer أثناء السحب. تحديث الـ store عند dragEnd/transformEnd
+  // يعيد ضبط الخلفية بقيم props النهائية تلقائياً.
+  useEffect(() => {
+    const textNode = elementRef.current;
+    if (!textNode || !hasBg) return;
+    const handler = () => {
+      const bgNode = bgRef.current;
+      if (!bgNode) return;
+      bgNode.x(textNode.x());
+      bgNode.y(textNode.y());
+      bgNode.rotation(textNode.rotation());
+      bgNode.scaleX(textNode.scaleX());
+      bgNode.scaleY(textNode.scaleY());
+      textNode.getLayer()?.batchDraw();
+    };
+    textNode.on("xChange.grido yChange.grido rotationChange.grido scaleXChange.grido scaleYChange.grido", handler);
+    return () => {
+      textNode.off("xChange.grido yChange.grido rotationChange.grido scaleXChange.grido scaleYChange.grido");
+    };
+  }, [hasBg, element.id, elementRef]);
+
   return (
+    <>
+      {hasBg && (
+        <KonvaRect
+          ref={bgRef}
+          x={sharedX}
+          y={sharedY}
+          width={w}
+          height={h}
+          scaleX={flipped ? -1 : 1}
+          scaleY={sharedScaleY}
+          rotation={element.rotation}
+          opacity={sharedOpacity}
+          visible={element.visible !== false}
+          fill={element.textBgColor}
+          listening={false}
+          perfectDrawEnabled={false}
+        />
+      )}
     <KonvaText
       ref={elementRef}
       text={renderText}
-      x={flipped ? (element.x + element.width) * stageCanvasWidth : element.x * stageCanvasWidth}
-      y={element.y * canvasHeight}
+      x={sharedX}
+      y={sharedY}
       width={w}
       scaleX={flipped ? -1 : 1}
+      scaleY={sharedScaleY}
       rotation={element.rotation}
-      opacity={editingTextId === element.id ? 0 : element.opacity}
+      opacity={sharedOpacity}
       visible={element.visible !== false}
       id={element.id}
       perfectDrawEnabled={false}
@@ -144,5 +197,6 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       onDragMove={onDragMove}
       onDragEnd={onDragEnd}
     />
+    </>
   );
 }, propsAreEqual);

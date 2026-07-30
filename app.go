@@ -35,7 +35,7 @@ func NewApp(db *gorm.DB) *App {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	service.InitLogger()
+	service.InitLogger() // محمي بـ once — لا يعيد التهيئة إذا استدعي من main سابقاً
 	// تنظيف ملفات التحديث المهجورة في الخلفية فور بدء التشغيل
 	go service.CleanupTempUpdates()
 }
@@ -236,9 +236,9 @@ func (a *App) CheckForUpdate() (*service.UpdateInfo, error) {
 	return updater.CheckForUpdate()
 }
 
-func (a *App) DownloadAndInstallUpdate(url string) error {
+func (a *App) DownloadAndInstallUpdate(url string, sha256 string) error {
 	updater := service.NewUpdaterService()
-	return updater.DownloadAndInstall(a.ctx, url)
+	return updater.DownloadAndInstall(a.ctx, url, sha256)
 }
 
 func (a *App) OpenExportsFolder() error {

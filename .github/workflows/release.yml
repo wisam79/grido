@@ -120,6 +120,19 @@ jobs:
             Copy-Item $installer.FullName "build\bin\Grido Studio Setup.exe"
           }
 
+      - name: Generate SHA256 Checksums
+        shell: powershell
+        run: |
+          # 🛡️ توليد بصمات SHA-256 لكل الملفات التنفيذية المنشورة — يستهلكها /api/version
+          # ويتحقق منها التطبيق قبل تشغيل أي مثبت محمّل (حماية سلسلة الإمداد)
+          $lines = @()
+          Get-ChildItem -Path "build\bin\*.exe" | ForEach-Object {
+            $hash = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLower()
+            $lines += "$hash  $($_.Name)"
+          }
+          $lines | Out-File -FilePath "build\bin\grido-checksums.txt" -Encoding ascii
+          Get-Content "build\bin\grido-checksums.txt"
+
       - name: Create GitHub Release & Upload Asset
         uses: softprops/action-gh-release@v2
         with:
@@ -128,6 +141,7 @@ jobs:
             build/bin/Grido Studio.exe
             build/bin/GridoStudio-installer.exe
             build/bin/Grido Studio Setup.exe
+            build/bin/grido-checksums.txt
           draft: false
           prerelease: false
           name: Grido Studio Release ${{ github.ref_name }}

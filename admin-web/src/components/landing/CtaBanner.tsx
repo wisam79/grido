@@ -1,10 +1,13 @@
 import { Download, Check, Sparkles } from 'lucide-react';
+import { useAppVersion } from '../../lib/version';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const CHECKS = ['نسخة أساسية مجانية', 'بدون تسجيل حساب', 'تحديثات تلقائية', 'يعمل 100% بدون إنترنت'];
 
 export function CtaBanner() {
+  const version = useAppVersion();
+
   const handleMagneticMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const relX = e.clientX - rect.left - rect.width / 2;
@@ -25,7 +28,7 @@ export function CtaBanner() {
             <div className="stagger-1">
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary border border-subtle text-secondary text-xs font-mono font-bold tracking-[2px] uppercase">
                 <Sparkles className="w-3.5 h-3.5 text-white shrink-0" />
-                <span>VERSION 1.2.3 • WINDOWS 64-BIT</span>
+                <span>VERSION {version ?? '…'} • WINDOWS 64-BIT</span>
               </span>
             </div>
 

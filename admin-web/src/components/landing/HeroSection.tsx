@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { Download, Printer, Gauge, Target, Users, Monitor, ShieldCheck, Zap } from 'lucide-react';
 import { AppMockup } from './AppMockup';
+import { useAppVersion } from '../../lib/version';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const STATS = [
   { icon: Printer, value: 100, suffix: '%', label: 'متوافق مع كل الطابعات' },
-  { icon: Gauge, value: 4, suffix: 'x', label: 'أسرع من الطرق التنفيذية' },
+  { icon: Gauge, value: 4, suffix: 'x', label: 'أسرع من الطرق اليدوية' },
   { icon: Target, value: 99.9, suffix: '%', isFloat: true, label: 'دقة في النتائج' },
   { icon: Users, value: 50000, suffix: '+', label: 'صورة معالجة يومياً' },
 ];
@@ -60,6 +61,8 @@ function AnimatedCounter({ end, suffix = '', isFloat = false }: { end: number, s
 }
 
 export function HeroSection() {
+  const version = useAppVersion();
+
   return (
     <section id="top" className="relative pt-6 pb-14 sm:pt-10 sm:pb-20 lg:pt-12 lg:pb-24 overflow-hidden">
       {/* Decorative Vector SVG Blueprint Grid */}
@@ -93,16 +96,20 @@ export function HeroSection() {
             {/* Version Eyebrow */}
             <div className="stagger-1">
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase">
-                <span className="text-white font-extrabold">VERSION 1.2.3</span>
+                <span className="text-white font-extrabold">VERSION {version ?? '…'}</span>
                 <span className="text-tertiary">| MISSION READY</span>
               </span>
             </div>
 
-            {/* Headline */}
-            <h1 className="stagger-2 text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black leading-tight sm:leading-[1.15] font-display uppercase tracking-tight text-white">
-              <span>تنسيق صور المعاملات</span>
-              <span className="mt-2 block text-secondary">
-                في 3 ثوانٍ فقط
+            {/* Headline — كتلة بصرية درامية فوق عمود ضوئي طبقي */}
+            <h1 className="stagger-2 relative text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-black leading-tight sm:leading-[1.12] font-display uppercase text-white">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -top-10 right-[-15%] w-[420px] h-[340px] rounded-full opacity-60 blur-[100px] bg-gradient-to-l from-white/12 via-brand-600/20 to-transparent"
+              />
+              <span className="relative block">تنسيق صور المعاملات</span>
+              <span className="relative mt-2 block text-secondary">
+                في <span className="font-mono tracking-tight text-white">3</span> ثوانٍ فقط
               </span>
             </h1>
 

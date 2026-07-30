@@ -7,6 +7,7 @@ import { KonvaCanvas } from "./konva/konva-canvas";
 import { useShallow } from "zustand/react/shallow";
 import { ContextMenuPosition, ContextMenuTarget } from "./context-menu";
 import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from "./canvas/canvas-rulers";
+import type { RulerUnit } from "./ruler";
 import { TextEditingOverlay } from "./canvas/text-editing-overlay";
 import { CanvasContextMenu } from "./canvas/canvas-context-menu";
 
@@ -32,6 +33,18 @@ export const EditorCanvas = React.memo(React.forwardRef<
     position: ContextMenuPosition;
     target: ContextMenuTarget;
   } | null>(null);
+
+  // وحدة المساطر — تفضيل واجهة خفيف يُحفظ محلياً (AGENTS.md #68)
+  const [rulerUnit, setRulerUnit] = useState<RulerUnit>(() =>
+    typeof localStorage !== "undefined" && localStorage.getItem("grido_ruler_unit") === "px" ? "px" : "mm"
+  );
+  const toggleRulerUnit = useCallback(() => {
+    setRulerUnit((prev) => {
+      const next = prev === "mm" ? "px" : "mm";
+      try { localStorage.setItem("grido_ruler_unit", next); } catch { /* تجاهل قيود التخزين */ }
+      return next;
+    });
+  }, []);
 
   const {
     mode,
@@ -747,6 +760,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
         printMode={printMode}
         displayW={displayW}
         widthMM={widthMM}
+        canvasPxW={canvasWidth}
+        rulerUnit={rulerUnit}
+        onToggleRulerUnit={toggleRulerUnit}
         hRulerWrapperRef={hRulerWrapperRef}
       />
 
@@ -756,6 +772,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
           printMode={printMode}
           displayH={displayH}
           heightMM={heightMM}
+          canvasPxH={canvasHeight}
+          rulerUnit={rulerUnit}
           vRulerWrapperRef={vRulerWrapperRef}
         />
 

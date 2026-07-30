@@ -45,6 +45,8 @@ export interface BaseCanvasElement {
   cornerRadius?: number;
   globalCompositeOperation?: string;
   flipX?: boolean;
+  /** قلب عمودي — تكافؤ مع CanvasElementSchema في schema.ts (إصلاح عدم تطابق flipY) */
+  flipY?: boolean;
   groupId?: string;
 }
 
@@ -114,6 +116,16 @@ export type EditorMode = "single" | "collage";
 export interface HistoryEntry {
   elements: CanvasElement[];
   slots: CanvasSlot[];
+  // إعدادات بصرية مؤثرة على الناتج — التراجع عنها يجب أن يستعيدها فعلاً (إصلاح E-4)
+  canvasWidth?: number;
+  canvasHeight?: number;
+  backgroundColor?: string;
+  collageGap?: number;
+  collageMargin?: number;
+  collageRadius?: number;
+  collageShowCutLines?: boolean;
+  collageStrokeWidth?: number;
+  collageStrokeColor?: string;
 }
 
 export interface PrintSettings {

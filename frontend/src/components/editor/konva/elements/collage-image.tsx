@@ -17,6 +17,9 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   zoom = 1,
   dragX = 0,
   dragY = 0,
+  flipX = false,
+  flipY = false,
+  rotation = 0,
   draggable = false,
   cornerRadius = 0,
   onUpdateOffsets,
@@ -35,6 +38,9 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   zoom?: number;
   dragX?: number;
   dragY?: number;
+  flipX?: boolean;
+  flipY?: boolean;
+  rotation?: number;
   draggable?: boolean;
   cornerRadius?: number;
   onUpdateOffsets?: (x: number, y: number) => void;
@@ -122,8 +128,12 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   sw = Math.round(sw);
   sh = Math.round(sh);
 
-  return (
-    <Group>
+  // مجموعة تحويل المشهد: قلب وتدوير المحتوى حول مركز الخلية
+  // (يطابق تصنيم CSS في معاينة الطباعة: scaleX/scaleY/rotate حول المركز)
+  const hasTransform = flipX || flipY || rotation !== 0;
+
+  const content = (
+    <Group x={hasTransform ? -width / 2 : 0} y={hasTransform ? -height / 2 : 0}>
       <KonvaImage
         draggable={draggable}
         dragBoundFunc={(pos) => {
@@ -208,6 +218,20 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
       )}
     </Group>
   );
+
+  if (!hasTransform) return content;
+
+  return (
+    <Group
+      x={width / 2}
+      y={height / 2}
+      rotation={rotation}
+      scaleX={flipX ? -1 : 1}
+      scaleY={flipY ? -1 : 1}
+    >
+      {content}
+    </Group>
+  );
 }, (prev, next) => {
   return prev.id === next.id &&
          prev.imageSrc === next.imageSrc &&
@@ -220,6 +244,9 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
          prev.zoom === next.zoom &&
          prev.dragX === next.dragX &&
          prev.dragY === next.dragY &&
+         prev.flipX === next.flipX &&
+         prev.flipY === next.flipY &&
+         prev.rotation === next.rotation &&
          prev.draggable === next.draggable &&
          prev.cornerRadius === next.cornerRadius &&
          prev.onDblClick === next.onDblClick;

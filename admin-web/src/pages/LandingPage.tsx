@@ -6,12 +6,11 @@ import { FeaturesTabs } from '../components/landing/FeaturesTabs';
 import { ComparisonSection } from '../components/landing/ComparisonSection';
 import { BenefitsGrid } from '../components/landing/BenefitsGrid';
 import { TestimonialsSection } from '../components/landing/TestimonialsSection';
+import { QuotesSection } from '../components/landing/QuotesSection';
+import { PricingSection } from '../components/landing/PricingSection';
 import { FaqSection } from '../components/landing/FaqSection';
 import { CtaBanner } from '../components/landing/CtaBanner';
 import { Footer } from '../components/landing/Footer';
-
-const DESCRIPTION =
-  'المنصة المتكاملة الأولى المصممة خصيصاً لأصحاب الاستوديوهات ومحلات التصوير. طباعة صور الهوية، كولاج محترف، واستعادة ملامح الوجه بالذكاء الاصطناعي.';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
@@ -19,35 +18,35 @@ export default function LandingPage() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showFloatingCta, setShowFloatingCta] = useState(false);
 
-  useEffect(() => {
-    document.title = 'Grido Studio | استوديو الصور ومعالجة صور الهوية بالذكاء الاصطناعي';
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', DESCRIPTION);
-    } else {
-      const meta = document.createElement('meta');
-      meta.name = 'description';
-      meta.content = DESCRIPTION;
-      document.head.appendChild(meta);
-    }
-  }, []);
-
   // Global mousemove tracker for Spotlight Card Glow Effect (design.md Section 4.2)
+  // الأداء: التوهج يظهر فقط على البطاقة تحت المؤشر — نحدّث متغيرات البطاقة المستهدفة وحدها
+  // (closest) بدل حساب getBoundingClientRect لكل البطاقات في كل حدث، مع كبح بـ rAF.
   useEffect(() => {
+    let rafId: number | null = null;
+    let lastEvent: MouseEvent | null = null;
+
+    const flush = () => {
+      rafId = null;
+      const e = lastEvent;
+      lastEvent = null;
+      if (!e) return;
+      const card = (e.target as Element | null)?.closest?.('.spotlight-card') as HTMLElement | null;
+      if (!card) return;
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+      card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
-      const cards = document.querySelectorAll('.spotlight-card');
-      cards.forEach((card) => {
-        const rect = card.getBoundingClientRect();
-        // Calculate coordinates relative to the card bounds
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
-        (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
-      });
+      lastEvent = e;
+      if (rafId === null) rafId = requestAnimationFrame(flush);
     };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Track scroll progress & floating CTA visibility
@@ -89,6 +88,10 @@ export default function LandingPage() {
       dir="rtl"
       className="relative min-h-screen overflow-x-hidden bg-primary font-sans text-secondary selection:bg-white/20"
     >
+      <a href="#features" className="skip-link">
+        تخطَّ إلى المحتوى
+      </a>
+
       {/* Top Scroll Progress Bar */}
       <div className="fixed top-0 inset-x-0 h-0.5 bg-elevated/70 z-[60] pointer-events-none">
         <div
@@ -112,7 +115,7 @@ export default function LandingPage() {
 
       <Header />
 
-      <main className="relative z-10">
+      <main id="main-content" className="relative z-10">
         <div className="reveal-on-scroll is-revealed is-visible">
           <HeroSection />
         </div>
@@ -127,6 +130,12 @@ export default function LandingPage() {
         </div>
         <div className="reveal-on-scroll">
           <TestimonialsSection />
+        </div>
+        <div className="reveal-on-scroll">
+          <QuotesSection />
+        </div>
+        <div className="reveal-on-scroll">
+          <PricingSection />
         </div>
         <div className="reveal-on-scroll">
           <FaqSection />

@@ -9,8 +9,21 @@ export interface HistorySlice {
   redo: () => void;
 }
 
+// القيم الافتراضية للحقول الإضافية — يجب أن تطابق DEFAULT_CORE_STATE في core-slice
+export const DEFAULT_HISTORY_ENTRY_EXTRAS = {
+  canvasWidth: 2480,
+  canvasHeight: 3508,
+  backgroundColor: "#FFFFFF",
+  collageGap: 0,
+  collageMargin: 0,
+  collageRadius: 0,
+  collageShowCutLines: false,
+  collageStrokeWidth: 0,
+  collageStrokeColor: "#000000",
+};
+
 export const DEFAULT_HISTORY_STATE = {
-  history: [{ elements: [] as CanvasElement[], slots: [] as CanvasSlot[] }],
+  history: [{ elements: [] as CanvasElement[], slots: [] as CanvasSlot[], ...DEFAULT_HISTORY_ENTRY_EXTRAS }],
   historyIndex: 0,
 };
 
@@ -20,32 +33,73 @@ type HistoryCross = HistorySlice & {
   selectedId: string | null;
   selectedIds: string[];
   editingTextId: string | null;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  backgroundColor?: string;
+  collageGap?: number;
+  collageMargin?: number;
+  collageRadius?: number;
+  collageShowCutLines?: boolean;
+  collageStrokeWidth?: number;
+  collageStrokeColor?: string;
+};
+
+// التقاط لقطة كاملة للحالة القابلة للتراجع (عناصر + خانات + إعدادات بصرية مؤثرة)
+const captureSnapshot = (s: HistoryCross): HistoryEntry => ({
+  elements: s.elements.map((el) => ({ ...el })),
+  slots: s.slots.map((sl) => ({ ...sl })),
+  canvasWidth: s.canvasWidth,
+  canvasHeight: s.canvasHeight,
+  backgroundColor: s.backgroundColor,
+  collageGap: s.collageGap,
+  collageMargin: s.collageMargin,
+  collageRadius: s.collageRadius,
+  collageShowCutLines: s.collageShowCutLines,
+  collageStrokeWidth: s.collageStrokeWidth,
+  collageStrokeColor: s.collageStrokeColor,
+});
+
+// استعادة حقول اللقطة — الحقول غير المعرفة (undefined) لا تُفرض على الحالة الحالية
+const restoreEntry = (entry: HistoryEntry) => {
+  const restored: Record<string, unknown> = {
+    elements: entry.elements.map((el) => ({ ...el })),
+    slots: entry.slots.map((sl) => ({ ...sl })),
+  };
+  const optionalKeys = [
+    "canvasWidth", "canvasHeight", "backgroundColor",
+    "collageGap", "collageMargin", "collageRadius",
+    "collageShowCutLines", "collageStrokeWidth", "collageStrokeColor",
+  ] as const;
+  for (const key of optionalKeys) {
+    if (entry[key] !== undefined) {
+      restored[key] = entry[key];
+    }
+  }
+  return restored;
 };
 
 export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice> = (set, get) => ({
   ...DEFAULT_HISTORY_STATE,
 
   pushHistory: () => {
-    const { elements, slots, history, historyIndex } = get() as HistoryCross;
-    
+    const state = get() as HistoryCross;
+    const { history, historyIndex } = state;
+
+    const snapshot = captureSnapshot(state);
+    const snapshotString = JSON.stringify(snapshot);
+
     // Avoid pushing identical states
     if (history.length > 0 && historyIndex >= 0) {
       const current = history[historyIndex];
-      if (
-        JSON.stringify(current.elements) === JSON.stringify(elements) &&
-        JSON.stringify(current.slots) === JSON.stringify(slots)
-      ) {
+      if (JSON.stringify(current) === snapshotString) {
         return; // No change
       }
     }
 
     const newHistory = history.slice(0, historyIndex + 1);
 
-    newHistory.push({
-      elements: elements.map((el) => ({ ...el })),
-      slots: slots.map((sl) => ({ ...sl })),
-    });
-    
+    newHistory.push(snapshot);
+
     if (newHistory.length > 30) newHistory.shift();
     set({ history: newHistory, historyIndex: newHistory.length - 1 });
   },
@@ -55,13 +109,12 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     if (historyIndex <= 0) return;
     const prev = history[historyIndex - 1];
     set({
-      elements: prev.elements.map((el) => ({ ...el })),
-      slots: prev.slots.map((sl) => ({ ...sl })),
+      ...restoreEntry(prev),
       historyIndex: historyIndex - 1,
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
-    });
+    } as Partial<HistoryCross>);
   },
 
   redo: () => {
@@ -69,12 +122,11 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     if (historyIndex >= history.length - 1) return;
     const next = history[historyIndex + 1];
     set({
-      elements: next.elements.map((el) => ({ ...el })),
-      slots: next.slots.map((sl) => ({ ...sl })),
+      ...restoreEntry(next),
       historyIndex: historyIndex + 1,
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
-    });
+    } as Partial<HistoryCross>);
   },
 });

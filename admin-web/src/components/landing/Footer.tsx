@@ -3,6 +3,7 @@ const NAV_LINKS = [
   { href: '#comparison', label: 'مقارنة الأداء' },
   { href: '#benefits', label: 'لماذا Grido' },
   { href: '#scenarios', label: 'حالات العمل' },
+  { href: '#pricing', label: 'الخطط' },
   { href: '#faq', label: 'الأسئلة الشائعة' },
 ];
 
@@ -31,13 +32,9 @@ export function Footer() {
                 </a>
               ))}
             </nav>
-            <div className="flex items-center gap-4 text-[11px] text-tertiary font-mono uppercase tracking-[1px]">
-              <a href="#" className="hover:text-white transition-colors">شروط الاستخدام</a>
-              <span className="w-1 h-1 rounded-full bg-[#383842]"></span>
-              <a href="#" className="hover:text-white transition-colors">سياسة الخصوصية</a>
-              <span className="w-1 h-1 rounded-full bg-[#383842]"></span>
-              <a href="#" className="hover:text-white transition-colors">تواصل معنا</a>
-            </div>
+            <p className="text-[11px] text-tertiary font-mono uppercase tracking-[1px]">
+              للتفعيل والدعم: الوكيل المعتمد لديك
+            </p>
           </div>
 
           {/* Copyright */}

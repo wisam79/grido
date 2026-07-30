@@ -1,8 +1,14 @@
 import React, { useMemo } from "react";
 
+// وحدة قياس المساطر — mm (فعلية) أو px (بكسلات الكانفس الفعلية)
+export type RulerUnit = "mm" | "px";
+
 interface HorizontalRulerProps {
   width: number;
   mmWidth: number;
+  /** بكسلات الكانفس الفعلية — مطلوبة فقط عند unit="px" */
+  pxWidth?: number;
+  unit?: RulerUnit;
 }
 
 function getRulerSteps(pixelsPerMM: number) {
@@ -28,15 +34,17 @@ function getRulerSteps(pixelsPerMM: number) {
   return { labelStep, subStep, midStep };
 }
 
-export const HorizontalRuler = React.memo(function HorizontalRuler({ width, mmWidth }: HorizontalRulerProps) {
+export const HorizontalRuler = React.memo(function HorizontalRuler({ width, mmWidth, pxWidth, unit = "mm" }: HorizontalRulerProps) {
   const ticks = useMemo(() => {
-    if (!width || !mmWidth || width <= 0 || mmWidth <= 0) return [];
-    const pixelsPerMM = width / mmWidth;
-    const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerMM);
+    // المدى الكلي حسب الوحدة المختارة: ملم فعلية أو بكسلات الكانفس
+    const span = unit === "px" ? (pxWidth || 0) : mmWidth;
+    if (!width || !span || width <= 0 || span <= 0) return [];
+    const pixelsPerUnit = width / span;
+    const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerUnit);
 
     const items = [];
-    for (let i = 0; i <= mmWidth; i += subStep) {
-      const x = i * pixelsPerMM;
+    for (let i = 0; i <= span; i += subStep) {
+      const x = i * pixelsPerUnit;
       const isLabel = Math.abs(i % labelStep) < 0.001 || Math.abs((i % labelStep) - labelStep) < 0.001;
       const isMid = !isLabel && (Math.abs(i % midStep) < 0.001 || Math.abs((i % midStep) - midStep) < 0.001);
 
@@ -91,7 +99,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({ width, mmWi
       }
     }
     return items;
-  }, [width, mmWidth]);
+  }, [width, mmWidth, pxWidth, unit]);
 
   return (
     <svg
@@ -118,17 +126,21 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({ width, mmWi
 interface VerticalRulerProps {
   height: number;
   mmHeight: number;
+  /** بكسلات الكانفس الفعلية — مطلوبة فقط عند unit="px" */
+  pxHeight?: number;
+  unit?: RulerUnit;
 }
 
-export const VerticalRuler = React.memo(function VerticalRuler({ height, mmHeight }: VerticalRulerProps) {
+export const VerticalRuler = React.memo(function VerticalRuler({ height, mmHeight, pxHeight, unit = "mm" }: VerticalRulerProps) {
   const ticks = useMemo(() => {
-    if (!height || !mmHeight || height <= 0 || mmHeight <= 0) return [];
-    const pixelsPerMM = height / mmHeight;
-    const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerMM);
+    const span = unit === "px" ? (pxHeight || 0) : mmHeight;
+    if (!height || !span || height <= 0 || span <= 0) return [];
+    const pixelsPerUnit = height / span;
+    const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerUnit);
 
     const items = [];
-    for (let i = 0; i <= mmHeight; i += subStep) {
-      const y = i * pixelsPerMM;
+    for (let i = 0; i <= span; i += subStep) {
+      const y = i * pixelsPerUnit;
       const isLabel = Math.abs(i % labelStep) < 0.001 || Math.abs((i % labelStep) - labelStep) < 0.001;
       const isMid = !isLabel && (Math.abs(i % midStep) < 0.001 || Math.abs((i % midStep) - midStep) < 0.001);
 
@@ -185,7 +197,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({ height, mmHeigh
       }
     }
     return items;
-  }, [height, mmHeight]);
+  }, [height, mmHeight, pxHeight, unit]);
 
   return (
     <svg

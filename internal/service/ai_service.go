@@ -41,7 +41,7 @@ func (l *AIRateLimiter) Reserve(key string, limit int) error {
 	if entry.count >= limit {
 		return fmt.Errorf("تم تجاوز الحد اليومي لاستخدام الذكاء الاصطناعي (%d صورة/يومياً). يتجدد الرصيد غداً", limit)
 	}
-	
+
 	entry.count++
 	return nil
 }
@@ -65,23 +65,137 @@ func NewAIService() *AIService {
 const (
 	maxAIResponseSize = 50 * 1024 * 1024 // 50MB max AI response
 	defaultModalAIURL = "https://wisamsamir78--grido-ai-upscaler-imageenhancer-enhance.modal.run"
+
+	// الحدود اليومية حسب الخطة — يجب أن تطابق CASE داخل RPC check_and_record_ai_usage في Supabase.
+	// العميل لا يملك حق فرض الحد؛ هذه القيم تُشتق من قاعدة البيانات عبر JWT.
+	planLimitFree       = 5
+	planLimitPro        = 15
+	planLimitEnterprise = 50
 )
 
-func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
-	rateKey := "anonymous"
-	if token != "" {
-		tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))[:16]
-		rateKey = tokenHash
+// planDailyLimit يحوّل اسم الخطة إلى حدها اليومي المعتمد خادمياً
+func planDailyLimit(plan string) int {
+	switch plan {
+	case "enterprise":
+		return planLimitEnterprise
+	case "pro":
+		return planLimitPro
+	default:
+		return planLimitFree
 	}
-	if err := GlobalAIRateLimiter.Reserve(rateKey, limit); err != nil {
+}
+
+type planCacheEntry struct {
+	limit   int
+	expires time.Time
+}
+
+var (
+	planCacheMu sync.Mutex
+	planCache   = make(map[string]planCacheEntry)
+	planCacheTTL = 5 * time.Minute
+)
+
+// resolveDailyLimitForToken يشتق الحد اليومي من خطة المستخدم في Supabase باستخدام JWT نفسه.
+// لا نثق إطلاقاً بأي حد يرسله العميل — أي فشل في الاشتقاق يعيد حد الخطة المجانية (الأكثر أمناً).
+func resolveDailyLimitForToken(tokenHash string, token string) int {
+	planCacheMu.Lock()
+	if entry, ok := planCache[tokenHash]; ok && time.Now().Before(entry.expires) {
+		limit := entry.limit
+		planCacheMu.Unlock()
+		return limit
+	}
+	planCacheMu.Unlock()
+
+	limit := planLimitFree
+	if SupabaseURL != "" && SupabaseAnonKey != "" && token != "" {
+		if plan, err := fetchUserPlan(token); err == nil {
+			limit = planDailyLimit(plan)
+		}
+	}
+
+	planCacheMu.Lock()
+	planCache[tokenHash] = planCacheEntry{limit: limit, expires: time.Now().Add(planCacheTTL)}
+	planCacheMu.Unlock()
+	return limit
+}
+
+// fetchUserPlan يجلب خطة المستخدم من جدول profiles عبر Supabase REST باستخدام JWT المستخدم
+func fetchUserPlan(token string) (string, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	userReq, err := http.NewRequest("GET", SupabaseURL+"/auth/v1/user", nil)
+	if err != nil {
 		return "", err
 	}
-	
+	userReq.Header.Set("apikey", SupabaseAnonKey)
+	userReq.Header.Set("Authorization", "Bearer "+token)
+
+	userResp, err := client.Do(userReq)
+	if err != nil {
+		return "", err
+	}
+	defer userResp.Body.Close()
+	if userResp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("user token rejected: %s", userResp.Status)
+	}
+
+	var userData struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(io.LimitReader(userResp.Body, 256*1024)).Decode(&userData); err != nil || userData.ID == "" {
+		return "", fmt.Errorf("invalid user payload")
+	}
+
+	profileReq, err := http.NewRequest("GET", SupabaseURL+"/rest/v1/profiles?select=plan&id=eq."+userData.ID, nil)
+	if err != nil {
+		return "", err
+	}
+	profileReq.Header.Set("apikey", SupabaseAnonKey)
+	profileReq.Header.Set("Authorization", "Bearer "+token)
+
+	profileResp, err := client.Do(profileReq)
+	if err != nil {
+		return "", err
+	}
+	defer profileResp.Body.Close()
+	if profileResp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("profiles lookup failed: %s", profileResp.Status)
+	}
+
+	var profiles []struct {
+		Plan string `json:"plan"`
+	}
+	if err := json.NewDecoder(io.LimitReader(profileResp.Body, 256*1024)).Decode(&profiles); err != nil {
+		return "", err
+	}
+	if len(profiles) == 0 {
+		return "", fmt.Errorf("profile not found")
+	}
+	return profiles[0].Plan, nil
+}
+
+func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
+	// 🛡️ تسجيل الدخول إلزامي — خادم Modal يرفق الطلبات بدون Bearer JWT صالح
+	if token == "" {
+		return "", fmt.Errorf("تسجيل الدخول مطلوب لاستخدام ميزة التحسين بالذكاء الاصطناعي")
+	}
+
+	tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))[:16]
+
+	// 🛡️ الحد اليومي يُشتق من خطة المستخدم في قاعدة البيانات، وليس من القيمة المرسلة من العميل.
+	// (المعامل limit المُستقبَل يُتجاهل عمداً — يبقى في التوقيع حفاظاً على توافقية الـ bindings).
+	serverLimit := resolveDailyLimitForToken(tokenHash, token)
+
+	if err := GlobalAIRateLimiter.Reserve(tokenHash, serverLimit); err != nil {
+		return "", err
+	}
+
 	// Flag to track if the request succeeded. If not, we rollback the usage.
 	success := false
 	defer func() {
 		if !success {
-			GlobalAIRateLimiter.Rollback(rateKey)
+			GlobalAIRateLimiter.Rollback(tokenHash)
 		}
 	}()
 
@@ -92,7 +206,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 
 	payload, err := json.Marshal(map[string]interface{}{
 		"image":      base64Image,
-		"dailyLimit": limit,
+		"dailyLimit": serverLimit, // يُرسل للتوافقية فقط — RPC يشتق الحد من الخطة خادمياً أيضاً
 	})
 	if err != nil {
 		return "", err
@@ -104,12 +218,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	} else if aiKey, err := GetModalAIKey(); err == nil && aiKey != "" {
-		// Fallback to static key if no user token (for backward compatibility/testing)
-		req.Header.Set("X-Grido-Api-Key", aiKey)
-	}
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	client := &http.Client{Timeout: 3 * time.Minute}
 	resp, err := client.Do(req)

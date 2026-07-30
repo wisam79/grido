@@ -1,6 +1,5 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import '@fontsource-variable/alyamama'
 import App from './App.tsx'
 import './index.css'
 

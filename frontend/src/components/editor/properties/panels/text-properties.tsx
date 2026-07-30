@@ -6,7 +6,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, Type, PaintBucket, Shrink, Palette, SlidersHorizontal
 } from "lucide-react";
 import { SliderControl, PopoverColorPicker } from "../shared-controls";
-import { GradientPicker } from "../gradient-picker";
+import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-picker";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Sub-components (Modular Architecture)
@@ -183,6 +183,18 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   });
                   useEditorStore.getState().pushHistory();
                 }}
+                angle={gradientAngleFromPoints(
+                  element.fillLinearGradientStartPoint,
+                  element.fillLinearGradientEndPoint
+                )}
+                onChangeAngle={(deg) => {
+                  const { start, end } = gradientPointsFromAngle(deg);
+                  onUpdate(element.id, {
+                    fillLinearGradientStartPoint: start,
+                    fillLinearGradientEndPoint: end,
+                  });
+                }}
+                onCommitAngle={() => useEditorStore.getState().pushHistory()}
               />
             </div>
 

@@ -2,7 +2,8 @@ import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { 
-  ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, Sparkles, X, Rows, Columns, LayoutGrid, Wand2
+  ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, Sparkles, X, Rows, Columns, LayoutGrid, Wand2,
+  FlipHorizontal2, FlipVertical2, RotateCw, Undo2
 } from "lucide-react";
 import {
   Tooltip,
@@ -420,6 +421,88 @@ export function SlotProperties({
               <p className="text-[9px] text-muted-foreground/70 text-right leading-snug">
                 💡 يمكنك تحريك موضع الصورة بالسحب المباشر بالفأرة داخل الخلية.
               </p>
+            </div>
+          )}
+
+          {/* القلب والتدوير — تُطبق على المعاينة والطباعة معاً */}
+          {slot.imageSrc && (
+            <div className="space-y-1.5 bg-muted/20 dark:bg-muted/10 p-2.5 rounded-xl border border-border/30">
+              <Label className="text-[10px] font-bold text-muted-foreground block text-right">قلب وتدوير الصورة</Label>
+              <div className="grid grid-cols-4 gap-1.5">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
+                        slot.flipX && "bg-primary/10 border-primary/50 text-primary"
+                      )}
+                      onClick={() => {
+                        onUpdate(slot.id, { flipX: !slot.flipX });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                    >
+                      <FlipHorizontal2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">قلب أفقي</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
+                        slot.flipY && "bg-primary/10 border-primary/50 text-primary"
+                      )}
+                      onClick={() => {
+                        onUpdate(slot.id, { flipY: !slot.flipY });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                    >
+                      <FlipVertical2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">قلب عمودي</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
+                        (slot.rotation ?? 0) !== 0 && "bg-primary/10 border-primary/50 text-primary"
+                      )}
+                      onClick={() => {
+                        onUpdate(slot.id, { rotation: (((slot.rotation ?? 0) + 90) % 360) });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                    >
+                      <RotateCw className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">تدوير 90° ({slot.rotation ?? 0}°)</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={!slot.flipX && !slot.flipY && !(slot.rotation ?? 0)}
+                      className="h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent disabled:opacity-40"
+                      onClick={() => {
+                        onUpdate(slot.id, { flipX: false, flipY: false, rotation: 0 });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                    >
+                      <Undo2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">إعادة تعيين التحويلات</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           )}
 

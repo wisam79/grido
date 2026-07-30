@@ -111,8 +111,9 @@ export const URLImage = React.memo(function URLImage({
   }, [image, hasFilters, elementRef, isDraggingFilter]);
 
   const flipped = element.flipX === true;
+  const flippedY = element.flipY === true;
   const nodeX = flipped ? (element.x + element.width) * canvasWidth : element.x * canvasWidth;
-  const nodeY = element.y * canvasHeight;
+  const nodeY = flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight;
   const nodeW = element.width * canvasWidth;
   const nodeH = element.height * canvasHeight;
 
@@ -126,7 +127,7 @@ export const URLImage = React.memo(function URLImage({
         width={nodeW}
         height={nodeH}
         scaleX={flipped ? -1 : 1}
-        scaleY={1}
+        scaleY={flippedY ? -1 : 1}
         rotation={element.rotation}
         opacity={element.opacity}
         visible={element.visible !== false}
@@ -159,7 +160,7 @@ export const URLImage = React.memo(function URLImage({
         <MagicAiScanner
           targetNodeRef={elementRef}
           x={element.x * canvasWidth}
-          y={nodeY}
+          y={element.y * canvasHeight}
           width={nodeW}
           height={nodeH}
           rotation={element.rotation}

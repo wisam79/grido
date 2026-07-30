@@ -4,7 +4,7 @@
 @theme inline {
   --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: 'Alyamama Variable', 'IBM Plex Sans Arabic', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Space Mono', monospace;
+  --font-mono: 'JetBrains Mono', 'Space Mono', ui-monospace, SFMono-Regular, monospace;
 
   /* Colors defined specifically to prevent Tailwind text/bg conflicts */
   --color-bg-primary: #000000;
@@ -13,6 +13,14 @@
 
   --color-border-subtle: #383842;
   --color-border-glow: rgba(255, 255, 255, 0.5);
+
+  /* لون العلامة الوحيد — يطابق أزرق واجهة التطبيق الفعلية داخل الـ Mockup والتوهجات */
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+
+  /* نقطة كسر صغيرة جداً — مستخدمة في عنوان الهيرو وعرض الـ Mockup */
+  --breakpoint-xs: 24rem;
 }
 
 :root {
@@ -68,7 +76,28 @@ h1, h2, h3, h4, h5, h6, .font-display {
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', 'Space Mono', monospace;
+  font-family: 'JetBrains Mono', 'Space Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+/* رابط «تخطَّ إلى المحتوى» — مخفي حتى التركيز عليه بلوحة المفاتيح (a11y) */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  inset-inline-start: 8px;
+  z-index: 100;
+  transform: translateY(-200%);
+  transition: transform 0.2s ease;
+  background: #ffffff;
+  color: #000000;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 999px;
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
 }
 
 /* Hide scrollbar for clean mobile horizontal scroll */

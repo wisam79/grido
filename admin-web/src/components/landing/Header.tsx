@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { href: '#comparison', label: 'مقارنة الأداء' },
   { href: '#benefits', label: 'لماذا Grido' },
   { href: '#scenarios', label: 'حالات العمل' },
+  { href: '#pricing', label: 'الخطط' },
   { href: '#faq', label: 'الأسئلة الشائعة' },
 ];
 

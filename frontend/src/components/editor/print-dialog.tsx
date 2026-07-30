@@ -12,7 +12,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/stage-context";
 import { usePrintLayout } from "@/hooks/use-print-layout";
 import { cn } from "@/lib/utils";
-import { Printer, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
+import { Printer, ZoomIn, ZoomOut, Loader2, Plus, Minus, LayoutGrid, Rows, Columns, Scissors } from "lucide-react";
 import { SheetPreview } from "./print/print-preview";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -455,6 +455,103 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden py-4 flex flex-col h-full">
+
+            {/* 🧩 شريط توزيع النسخ: عدد النسخ، نمط التكرار، المسافة، خطوط القص */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 pb-3 select-none">
+              {/* عدد النسخ في الورقة */}
+              <div className="flex items-center justify-between bg-muted/30 rounded-lg border border-border/40 px-2.5 py-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground">نسخ/ورقة</span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost" size="sm"
+                    className="h-6 w-6 p-0 rounded-md cursor-pointer"
+                    disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) <= 1}
+                    onClick={() => setPrintSettings({ copiesPerSheet: Math.max(1, (printSettings.copiesPerSheet ?? 1) - 1) })}
+                  >
+                    <Minus className="w-3 h-3" />
+                  </Button>
+                  <span className="text-xs font-mono font-bold w-7 text-center">
+                    {(printSettings.repeatMode ?? "all") === "all" ? (printSettings.copiesPerSheet ?? 1) : "—"}
+                  </span>
+                  <Button
+                    variant="ghost" size="sm"
+                    className="h-6 w-6 p-0 rounded-md cursor-pointer"
+                    disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= 48}
+                    onClick={() => setPrintSettings({ copiesPerSheet: Math.min(48, (printSettings.copiesPerSheet ?? 1) + 1) })}
+                  >
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* نمط التكرار */}
+              <div className="flex items-center justify-between bg-muted/30 rounded-lg border border-border/40 px-2.5 py-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground">التكرار</span>
+                <div className="flex items-center gap-0.5 bg-muted/50 p-0.5 rounded-md">
+                  {([
+                    { id: "all", icon: LayoutGrid, label: "تعبئة تلقائية" },
+                    { id: "row", icon: Rows, label: "صف واحد" },
+                    { id: "column", icon: Columns, label: "عمود واحد" },
+                  ] as const).map(({ id, icon: Icon, label }) => (
+                    <Tooltip key={id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => setPrintSettings({ repeatMode: id })}
+                          className={cn(
+                            "h-6 w-6 rounded-sm flex items-center justify-center transition-all cursor-pointer",
+                            (printSettings.repeatMode ?? "all") === id
+                              ? "bg-background text-primary shadow-xs"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                          aria-label={label}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-[11px]">{label}</TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </div>
+
+              {/* المسافة بين النسخ */}
+              <div className="flex items-center justify-between bg-muted/30 rounded-lg border border-border/40 px-2.5 py-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground">المسافة (مم)</span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost" size="sm"
+                    className="h-6 w-6 p-0 rounded-md cursor-pointer"
+                    disabled={(printSettings.gapMM ?? 2) <= 0}
+                    onClick={() => setPrintSettings({ gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1) })}
+                  >
+                    <Minus className="w-3 h-3" />
+                  </Button>
+                  <span className="text-xs font-mono font-bold w-7 text-center">{printSettings.gapMM ?? 2}</span>
+                  <Button
+                    variant="ghost" size="sm"
+                    className="h-6 w-6 p-0 rounded-md cursor-pointer"
+                    disabled={(printSettings.gapMM ?? 2) >= 20}
+                    onClick={() => setPrintSettings({ gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1) })}
+                  >
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* خطوط القص */}
+              <div className="flex items-center justify-between bg-muted/30 rounded-lg border border-border/40 px-2.5 py-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                  <Scissors className="w-3 h-3" />
+                  خطوط القص
+                </span>
+                <Switch
+                  id="print-cut-lines"
+                  checked={printSettings.showCutLines}
+                  onCheckedChange={(checked) => setPrintSettings({ showCutLines: checked })}
+                />
+              </div>
+            </div>
 
             <div className="border border-border/50 rounded-xl overflow-hidden bg-muted/10 dark:bg-slate-950/30 flex flex-col h-full min-h-[400px] shadow-inner">
               <div className="flex items-center justify-between p-3 border-b border-border/40 bg-card select-none">

@@ -112,6 +112,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
           canvasHeight={canvasHeight}
           stageScale={displayW / canvasWidth}
           isText={isText}
+          setActiveGuides={setActiveGuides}
           onTransformEnd={() => {
             if (!trRef.current) return;
             const nodes = trRef.current.nodes();
@@ -124,6 +125,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                 const sx = node.scaleX();
                 const sy = node.scaleY();
                 const isNowFlipped = sx < 0;
+                const isNowFlippedY = sy < 0;
                 const absScaleX = Math.abs(sx);
                 const absScaleY = Math.abs(sy);
 
@@ -137,17 +139,20 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                   node.height(newH);
                 }
                 node.scaleX(isNowFlipped ? -1 : 1);
-                node.scaleY(1);
+                node.scaleY(isNowFlippedY ? -1 : 1);
 
                 const newWidth = newW / canvasWidth;
+                const newHeight = newH / canvasHeight;
                 const rawX = node.x() / canvasWidth;
+                const rawY = node.y() / canvasHeight;
 
                 const patch: Partial<CanvasElement> = {
                   x: isNowFlipped ? rawX - newWidth : rawX,
-                  y: node.y() / canvasHeight,
+                  y: isNowFlippedY ? rawY - newHeight : rawY,
                   width: newWidth,
                   rotation: node.rotation(),
                   flipX: isNowFlipped,
+                  flipY: isNowFlippedY,
                 };
 
                 if (el.type === "text") {

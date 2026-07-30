@@ -18,24 +18,44 @@ vi.mock('sonner', () => ({
   },
 }));
 
-// Mock MediaPipe Tasks-Vision
-vi.mock('@mediapipe/tasks-vision', () => {
-  const mockSegmenter = {
-    segment: vi.fn().mockReturnValue({
-      confidenceMasks: [{
-        getAsFloat32Array: () => new Float32Array(10000).fill(0.1),
-      }],
-    }),
-  };
-  return {
-    FilesetResolver: {
-      forVisionTasks: vi.fn().mockResolvedValue({}),
-    },
-    ImageSegmenter: {
-      createFromOptions: vi.fn().mockResolvedValue(mockSegmenter),
-    },
-  };
-});
+// محاكاة Web Worker الحقيقي (واجهة الجلسة السابقة: postMessage segment → نتيجة via onmessage)
+// لا نحاكي MediaPipe بعد الآن لأن الاستدلال صار داخل Worker حقيقي bg-removal.worker.ts
+class MockBgWorker {
+  static instance: MockBgWorker | null = null;
+  static autoRespond = true;
+
+  onmessage: ((e: MessageEvent) => void) | null = null;
+  onerror: ((e: unknown) => void) | null = null;
+  terminated = false;
+
+  postMessage = vi.fn((msg: { type: string; requestId?: number }) => {
+    if (msg?.type !== 'segment' || msg.requestId == null) return;
+    if (!MockBgWorker.autoRespond) return;
+    // الاستجابة ية (مثل Worker الحقيقي): نتيجة بعد دورتي microtask
+    const requestId = msg.requestId;
+    Promise.resolve()
+      .then(() => Promise.resolve())
+      .then(() => {
+        if (this.terminated) return;
+        this.onmessage?.({
+          data: {
+            type: 'result',
+            requestId,
+            result: { maskBase64: 'bW9jaw==', targetW: 100, targetH: 100, inferredMs: 12 },
+          },
+        } as MessageEvent);
+      });
+  });
+
+  terminate = vi.fn(() => {
+    this.terminated = true;
+    MockBgWorker.instance = null;
+  });
+
+  constructor() {
+    MockBgWorker.instance = this;
+  }
+}
 
 // Wrap renders in TooltipProvider since the element uses Radix Tooltips.
 // This must be a module-level import so vitest transforms it as TSX.
@@ -45,33 +65,37 @@ const wrapWithTooltip = (ui: React.ReactElement) => (
   <TooltipProvider delayDuration={0}>{ui}</TooltipProvider>
 );
 
-describe('ElementProperties - Main Thread Background Removal', () => {
+describe('ElementProperties - Worker Background Removal', () => {
   let ElementProperties: any;
 
   beforeEach(async () => {
     vi.resetModules();
     vi.clearAllMocks();
-    
-    // Polyfill HTML globals missing in JSDOM
-    (window as any).createImageBitmap = vi.fn().mockResolvedValue({
-      width: 100,
-      height: 100,
-      close: () => {},
-    } as any);
+    MockBgWorker.instance = null;
+    MockBgWorker.autoRespond = true;
 
-    (window as any).fetch = vi.fn().mockResolvedValue({
-      blob: () => Promise.resolve(new Blob([])),
-    } as any);
+    // توفير Worker في بيئة JSDOM (غير متوفر أصلاً فيها)
+    (globalThis as any).Worker = MockBgWorker;
 
-    // Mock HTMLCanvasElement context and exports for JSDOM
-    HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
-      drawImage: vi.fn(),
-      createImageData: vi.fn().mockReturnValue({ data: new Uint8Array(40000) }),
-      getImageData: vi.fn().mockReturnValue({ data: new Uint8Array(40000) }),
-      putImageData: vi.fn(),
-    } as any);
-
-    HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue("data:image/png;base64,mockdata");
+    // محاكاة تحميل الصور في jsdom — الصور لا تُحمَّل فعلياً هناك،
+    // بينما الخطاف ينتظر fك ضغط الكاش قبل تطبيق النتيجة (preloadImageIntoCache).
+    // jsdom لا يستدعي setter الميداني src عبر subclass، لذا نستبدل Image كلياً.
+    (globalThis as any).Image = class {
+      onload: ((e: any) => void) | null = null;
+      onerror: ((e: any) => void) | null = null;
+      complete = false;
+      _src = '';
+      crossOrigin: string | null = null;
+      decode() { return Promise.resolve(); }
+      set src(v: string) {
+        this._src = v;
+        queueMicrotask(() => {
+          this.complete = true;
+          this.onload?.({ target: this });
+        });
+      }
+      get src() { return this._src; }
+    };
 
     // Dynamically load the component and set active license state to pick up the mocks
     const { useEditorStore } = await import('../src/lib/editor-store');
@@ -100,15 +124,23 @@ describe('ElementProperties - Main Thread Background Removal', () => {
     imageSrc: '/local-image/dummy.png',
   };
 
-  it('should run background removal on main thread and update element src on success', async () => {
+  it('should run background removal in Worker and update element src on success', async () => {
     const onUpdateMock = vi.fn();
     render(wrapWithTooltip(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />));
-    
+
     const removeBgBtn = screen.getByTitle(/عزل الخلفية/);
-    
+
     await act(async () => {
       fireEvent.click(removeBgBtn);
+      // انتظار دورات microtask حتى تصل نتيجة الـ Worker ويكتمل ApplyMaskToImage
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
     });
+
+    // الـ Worker استُدعي فعلاً بطلب segment
+    expect(MockBgWorker.instance?.postMessage).toHaveBeenCalled();
 
     // Verify ApplyMaskToImage was called to generate the transparent image
     const { ApplyMaskToImage: mockApplyMask } = await import('../wailsjs/go/main/App');
@@ -120,32 +152,36 @@ describe('ElementProperties - Main Thread Background Removal', () => {
     });
   });
 
-  it('should handle cancel button click and reset loading UI', async () => {
+  it('should handle cancel button click and reset loading UI (hard terminate)', async () => {
+    // وضع التعليق: الـ Worker لا يستجيب ليبقى العزل في حالة تشغيل
+    MockBgWorker.autoRespond = false;
+
     const onUpdateMock = vi.fn();
     render(wrapWithTooltip(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />));
-    
-    const removeBgBtn = screen.getByTitle(/عزل الخلفية/);
-    
-    // We mock getSegmenter to take a bit of time to check loading/canceling states
-    const mediapipe = await import('@mediapipe/tasks-vision');
-    let resolveSegmenter: any;
-    const segmenterPromise = new Promise((resolve) => {
-      resolveSegmenter = resolve;
-    });
-    vi.spyOn(mediapipe.ImageSegmenter, 'createFromOptions').mockImplementation(() => segmenterPromise as any);
 
-    act(() => {
+    const removeBgBtn = screen.getByTitle(/عزل الخلفية/);
+
+    await act(async () => {
       fireEvent.click(removeBgBtn);
+      await Promise.resolve();
     });
 
     // UI should show the cancel button now
     expect(screen.getByTitle('إلغاء العزل')).toBeDefined();
 
-    // Click cancel
+    // التقط المثيل قبل النقر — terminate يُصفّر المرجع الساكن (مطابقة سلوك الهوك)
+    const workerBeforeCancel = MockBgWorker.instance;
+    expect(workerBeforeCancel).not.toBeNull();
+
+    // Click cancel — الإلغاء القسري ينهي الـ Worker فوراً
     const cancelBtn = screen.getByTitle('إلغاء العزل');
-    act(() => {
+    await act(async () => {
       fireEvent.click(cancelBtn);
+      await Promise.resolve();
     });
+
+    // الإنهاء القسري استدعي على الـ Worker
+    expect(workerBeforeCancel?.terminate).toHaveBeenCalled();
 
     // UI should reset back to normal
     expect(screen.queryByTitle('إلغاء العزل')).toBeNull();

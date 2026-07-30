@@ -2,7 +2,7 @@ import { Label } from "@/components/ui/label";
 import { ShapeElement, useEditorStore } from "@/lib/editor-store";
 import { PaintBucket, Square, Maximize2 } from "lucide-react";
 import { SliderControl, PopoverColorPicker } from "../shared-controls";
-import { GradientPicker } from "../gradient-picker";
+import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-picker";
 
 interface ShapePropertiesProps {
   element: ShapeElement;
@@ -43,6 +43,18 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
                 });
                 useEditorStore.getState().pushHistory();
               }}
+              angle={gradientAngleFromPoints(
+                element.fillLinearGradientStartPoint,
+                element.fillLinearGradientEndPoint
+              )}
+              onChangeAngle={(deg) => {
+                const { start, end } = gradientPointsFromAngle(deg);
+                onUpdate(element.id, {
+                  fillLinearGradientStartPoint: start,
+                  fillLinearGradientEndPoint: end,
+                });
+              }}
+              onCommitAngle={() => useEditorStore.getState().pushHistory()}
             />
           </div>
 

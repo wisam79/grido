@@ -16,6 +16,9 @@ interface Slot {
   zoom?: number;
   dragX?: number;
   dragY?: number;
+  flipX?: boolean;
+  flipY?: boolean;
+  rotation?: number;
 }
 
 interface KonvaCollageLayerProps {
@@ -115,6 +118,9 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   zoom={slot.zoom}
                   dragX={slot.dragX}
                   dragY={slot.dragY}
+                  flipX={slot.flipX}
+                  flipY={slot.flipY}
+                  rotation={slot.rotation}
                   draggable={isSelected}
                   cornerRadius={radius}
                   onUpdateOffsets={(x, y) => {

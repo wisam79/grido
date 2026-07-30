@@ -187,12 +187,14 @@ export function useKonvaDrag({
         if (node) {
           const el = currentElements.find((x) => x.id === id) || element;
           const flipped = el.flipX === true;
+          const flippedY = el.flipY === true;
           const rawX = node.x() / canvasWidth;
+          const rawY = node.y() / canvasHeight;
           return {
             id,
             patch: {
               x: flipped ? rawX - el.width : rawX,
-              y: node.y() / canvasHeight,
+              y: flippedY ? rawY - el.height : rawY,
             },
           };
         }

@@ -95,12 +95,12 @@ sequenceDiagram
 
 ## 4. AI Background Removal Engine
 
-Background removal is powered by **RMBG-1.4** running entirely on the client side inside a Web Worker.
+Background removal is powered by **`selfie_multiclass.tflite`** running entirely on the client side inside a Web Worker.
 
-- **Technology Stack:** `@huggingface/transformers` running ONNX Runtime WASM/WebGPU models.
-- **Background Worker (`bg-worker.ts`):** Offloads inference computation to avoid locking the main renderer thread.
-- **Thread Optimizations (`numThreads = 1`):** In case WebGPU is unavailable and the app falls back to CPU execution, WASM is restricted to a **single execution thread**. This keeps other CPU cores entirely free for the main React app to process mouse movements and updates without UI stutters.
-- **Blob-to-Base64 Offloading:** Converting the transparent PNG output from a `Blob` to a `base64` string is performed **inside the Web Worker** using a chunked array buffer loop. The base64 data is then sent to Wails, bypassing the slow synchronous `FileReader` blocking on the main UI thread.
+- **Technology Stack:** `@mediapipe/tasks-vision` (`ImageSegmenter` with GPU delegate) — model is served locally from `frontend/public/models/`.
+- **Background Worker (`workers/bg-removal.worker.ts`):** The full pipeline (model loading, image decode, resize to 1024px max, inference, mask bytes generation) runs off the main thread to keep the UI responsive.
+- **Real Cancellation:** Cancel = hard `terminate()` of the Worker from the host (`use-bg-removal.ts`), aborting inference instantly; a fresh Worker is spawned per operation.
+- **Blob-to-Base64 Offloading:** Converting the mask bytes to a `base64` string is performed **inside the Web Worker** using a chunked array buffer loop. The base64 data is then sent to Wails, bypassing the slow synchronous `FileReader` blocking on the main UI thread.
 
 ---
 

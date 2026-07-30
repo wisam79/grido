@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { PopoverColorPicker } from "./shared-controls";
+import { PopoverColorPicker, SliderControl } from "./shared-controls";
 
 interface GradientPickerProps {
   fillType: "solid" | "linear" | "radial";
@@ -8,6 +8,35 @@ interface GradientPickerProps {
   onChangeType: (type: "solid" | "linear" | "radial") => void;
   onChangeSolidColor: (color: string) => void;
   onChangeColorStops: (stops: Array<number | string>) => void;
+  /** زاوية التدرج الخطي الحالية (0-360) — تُحسب من نقطتي البداية/النهاية */
+  angle?: number;
+  onChangeAngle?: (deg: number) => void;
+  onCommitAngle?: (deg: number) => void;
+}
+
+// حساب زاوية التدرج الخطي من نقطتي البداية/النهاية (0° = يسار→يمين، وتدور مع عقارب الساعة نزولاً)
+export function gradientAngleFromPoints(
+  start?: { x: number; y: number },
+  end?: { x: number; y: number }
+): number {
+  const s = start || { x: 0, y: 0 };
+  const e = end || { x: 1, y: 1 };
+  const deg = (Math.atan2(e.y - s.y, e.x - s.x) * 180) / Math.PI;
+  return Math.round(((deg + 360) % 360) * 10) / 10;
+}
+
+// توليد نقطتي البداية/النهاية حول مركز العنصر من زاوية معطاة (إحداثيات نسبية 0-1 كما في Konva)
+export function gradientPointsFromAngle(deg: number): {
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+} {
+  const rad = (deg * Math.PI) / 180;
+  const dx = Math.cos(rad) * 0.5;
+  const dy = Math.sin(rad) * 0.5;
+  return {
+    start: { x: 0.5 - dx, y: 0.5 - dy },
+    end: { x: 0.5 + dx, y: 0.5 + dy },
+  };
 }
 
 export const GradientPicker = ({
@@ -17,6 +46,9 @@ export const GradientPicker = ({
   onChangeType,
   onChangeSolidColor,
   onChangeColorStops,
+  angle,
+  onChangeAngle,
+  onCommitAngle,
 }: GradientPickerProps) => {
   const stop1 = (colorStops[1] as string) || "#3b82f6";
   const stop2 = (colorStops[3] as string) || "#8b5cf6";
@@ -75,6 +107,19 @@ export const GradientPicker = ({
               <PopoverColorPicker color={stop2} onChange={handleStop2Change} className="w-full h-7" />
             </div>
           </div>
+
+          {fillType === "linear" && onChangeAngle && (
+            <SliderControl
+              label="زاوية التدرج"
+              value={angle ?? 135}
+              min={0}
+              max={360}
+              step={1}
+              unit="°"
+              onChange={onChangeAngle}
+              onCommit={onCommitAngle}
+            />
+          )}
 
           <div className="space-y-1 pt-1.5 border-t border-border/10">
             <span className="text-[9px] text-muted-foreground font-semibold block mb-1">تدرجات جاهزة:</span>

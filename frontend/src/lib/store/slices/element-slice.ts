@@ -34,6 +34,18 @@ export const DEFAULT_ELEMENT_STATE = {
   editingTextId: null as string | null,
 };
 
+/**
+ * توليد zIndex تصاعدي رتيب خالٍ من التصادم —
+ * بديل عن صيغة (length + Date.now + random) القديمة التي كانت قابلة للتكرار (E-8)
+ */
+export const nextZIndex = (elements: CanvasElement[]): number => {
+  let max = 0;
+  for (const el of elements) {
+    if (el.zIndex > max) max = el.zIndex;
+  }
+  return max + 10;
+};
+
 type ElementCross = ElementSlice & {
   canvasWidth: number;
   canvasHeight: number;
@@ -66,7 +78,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       height: hPercent,
       rotation: 0,
       opacity: 1,
-      zIndex: (state.elements.length + 1) * 10 + (Date.now() % 100000) + Math.floor(Math.random() * 9),
+      zIndex: nextZIndex(state.elements),
       imageSrc: src,
       filter: "none",
       brightness: 100,
@@ -104,7 +116,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       height: 0.05,
       rotation: 0,
       opacity: 1,
-      zIndex: (get().elements.length + 1) * 10 + Date.now() % 1000,
+      zIndex: nextZIndex(get().elements),
       text,
       fontSize: 32,
       fontWeight: 700,
@@ -161,7 +173,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       height: hPercent,
       rotation: 0,
       opacity: 1,
-      zIndex: (state.elements.length + 1) * 10 + Date.now() % 1000,
+      zIndex: nextZIndex(state.elements),
       shape,
       fill: "#3b82f6",
       stroke: "#3b82f6",
@@ -175,11 +187,24 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
   updateElement: (id, patch) => {
     set((s) => {
+      const currentEl = s.elements.find((el: CanvasElement) => el.id === id);
+      if (!currentEl) return {};
+
+      // تخطي إعادة بناء المصفوفة عند عدم تغير أي قيمة (يحدث كثيراً مع تحديثات الـ drag المجمعة)
+      const patchKeys = Object.keys(patch) as (keyof CanvasElement)[];
+      let hasChanged = false;
+      for (const key of patchKeys) {
+        if (currentEl[key] !== patch[key]) {
+          hasChanged = true;
+          break;
+        }
+      }
+      if (!hasChanged) return {};
+
       const nextElements = s.elements.map((el: CanvasElement) =>
         el.id === id ? { ...el, ...patch } as CanvasElement : el,
       );
-      const targetEl = nextElements.find((e: CanvasElement) => e.id === id);
-      const isImg = targetEl && targetEl.type === "image";
+      const isImg = currentEl.type === "image";
       const imgPatch = patch as Partial<ImageElement>;
       return {
         elements: nextElements,
@@ -235,7 +260,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       groupId: undefined,
       x: Math.min(el.x + 0.05, 0.9),
       y: Math.min(el.y + 0.05, 0.9),
-      zIndex: (get().elements.length + 1) * 10,
+      zIndex: nextZIndex(get().elements),
     };
     set((s) => ({ elements: [...s.elements, copy], selectedId: newId, selectedIds: [newId] }));
     get().pushHistory();
@@ -271,7 +296,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
         groupId: newGroupId,
         x: Math.min(el.x + 0.05, 0.9),
         y: Math.min(el.y + 0.05, 0.9),
-        zIndex: (nextElements.length + 1) * 10,
+        // تزايد رتيب لكل نسخة لضمان ترتيب فريد حتى مع التكرار الجماعي
+        zIndex: nextZIndex(nextElements),
       };
       nextElements.push(copy);
       newSelectedIds.push(newId);

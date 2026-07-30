@@ -120,13 +120,17 @@ export function FeaturesTabs() {
 
         {/* SpaceX Monochromatic Pill Tabs Bar */}
         <div className="stagger-4 flex justify-center mb-8 sm:mb-16 relative z-20">
-          <div className="p-1.5 rounded-full bg-elevated border border-subtle flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto justify-start sm:justify-center">
+          <div role="tablist" aria-label="ميزات Grido Studio" className="p-1.5 rounded-full bg-elevated border border-subtle flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto justify-start sm:justify-center">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
+                  role="tab"
+                  id={`feature-tab-${tab.id}`}
+                  aria-selected={isActive}
+                  aria-controls="features-tabpanel"
                   onClick={() => handleTabChange(tab.id)}
                   className={`px-5 py-2.5 rounded-full font-mono font-extrabold text-xs sm:text-sm uppercase tracking-[1px] transition-all duration-300 flex items-center gap-2 shrink-0 cursor-pointer ${
                     isActive
@@ -164,7 +168,13 @@ export function FeaturesTabs() {
           </div>
 
           {/* Main Grid Content with tab reveal animation key */}
-          <div key={tabKey} className="tab-content-reveal p-4 sm:p-8 grid lg:grid-cols-12 gap-6 sm:gap-8 items-center">
+          <div
+            key={tabKey}
+            role="tabpanel"
+            id="features-tabpanel"
+            aria-labelledby={`feature-tab-${activeTab}`}
+            className="tab-content-reveal p-4 sm:p-8 grid lg:grid-cols-12 gap-6 sm:gap-8 items-center"
+          >
             {/* Visual Interactive Preview Column Card (7 Cols) */}
             <div className="lg:col-span-7 bg-secondary rounded-xl border border-subtle p-3 sm:p-5 relative overflow-hidden min-h-[380px] sm:min-h-[440px] flex items-center justify-center group">
               
@@ -493,6 +503,8 @@ export function FeaturesTabs() {
                         max="95"
                         value={aiSplitPos}
                         onChange={(e) => setAiSplitPos(Number(e.target.value))}
+                        aria-label="المقارنة قبل وبعد الترميم بالذكاء الاصطناعي"
+                        aria-valuetext={`قبل ${aiSplitPos}% / بعد ${100 - aiSplitPos}%`}
                         className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-white"
                       />
                       <span>بعد (HD)</span>

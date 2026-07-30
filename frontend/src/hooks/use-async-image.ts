@@ -15,6 +15,40 @@ export function invalidateImageCache(src?: string) {
   }
 }
 
+/**
+ * تسخين الكاش بصورة (تحميل + decode) قبل تبديل عنصر الكانفس عليها —
+ * عند إعادة الرندر يصيب useAsyncImage الكاش فوراً فيظهر التبديل بلا وميض.
+ * لا ترفع خطأ أبداً: فشل التسخين يعني ببساطة العودة للمسار العادي (jsdom/الاختبارات).
+ */
+export function preloadImageIntoCache(src: string, crossOrigin?: string): Promise<void> {
+  if (!src) return Promise.resolve();
+  const cacheKey = `${src}__${crossOrigin || ""}`;
+  if (imageCache.has(cacheKey)) return Promise.resolve();
+
+  return new Promise<void>((resolve) => {
+    const img = new Image();
+    if (crossOrigin) img.crossOrigin = crossOrigin;
+
+    img.onload = () => {
+      const finish = () => {
+        if (imageCache.size >= 200) {
+          const firstKey = imageCache.keys().next().value;
+          if (firstKey) imageCache.delete(firstKey);
+        }
+        imageCache.set(cacheKey, img);
+        resolve();
+      };
+      if (typeof img.decode === "function") {
+        img.decode().then(finish).catch(finish);
+      } else {
+        finish();
+      }
+    };
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+}
+
 export function useAsyncImage(src: string, crossOrigin?: string) {
   const [image, setImage] = useState<HTMLImageElement | undefined>(undefined);
   const [status, setStatus] = useState<"loading" | "loaded" | "failed">("loading");

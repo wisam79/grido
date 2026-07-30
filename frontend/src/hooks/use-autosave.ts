@@ -90,9 +90,11 @@ export function useAutoSave() {
       state.elements, state.slots, state.mode, state.canvasWidth, state.canvasHeight, state.backgroundColor,
       state.template, state.collageTemplate, state.printSettings,
       state.showGrid, state.gridSize, state.gridColor, state.gridOpacity, state.gridSubdivisions,
+      state.gridType, state.snapToGrid, // كانتا غير مراقبتين رغم أنهما تُسلسلان مع المشروع
       state.showColumns, state.columnsCount, state.columnsColor, state.columnsMargin, state.columnsGutter,
       state.collageGap, state.collageMargin, state.collageRadius, state.collageStrokeWidth, state.collageStrokeColor,
-      state.showRuler, state.collageShowCutLines
+      state.collageShowCutLines
+      // ملاحظة: showRuler تفضيل واجهة وليست بيانات مشروع (لا تُسلسل) — لذا استُبعدت من المراقبة
     ];
 
     let lastDeps = getDeps(useEditorStore.getState());

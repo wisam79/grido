@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Transformer as KonvaTransformer, Group, Rect, Text } from "react-konva";
 import Konva from "konva";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
+import { getSnapPositionsWithTargets, SnapGuide, SnapTarget } from "@/lib/snap-utils";
 
 interface EditorTransformerProps {
   trRef: React.RefObject<Konva.Transformer | null>;
@@ -12,7 +13,23 @@ interface EditorTransformerProps {
   stageScale: number;
   isText: boolean;
   onTransformEnd: (e: any) => void;
+  setActiveGuides?: (guides: SnapGuide[]) => void;
 }
+
+// تحويل أسماء مقابض Konva إلى اتجاهات البوصلة المستخدمة في محرك المحاذاة
+const anchorToCompass = (anchor: string): string => {
+  switch (anchor) {
+    case "top-left": return "nw";
+    case "top-center": return "n";
+    case "top-right": return "ne";
+    case "middle-left": return "w";
+    case "middle-right": return "e";
+    case "bottom-left": return "sw";
+    case "bottom-center": return "s";
+    case "bottom-right": return "se";
+    default: return "se";
+  }
+};
 
 export const EditorTransformer = React.memo(function EditorTransformer({
   trRef,
@@ -23,6 +40,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   stageScale,
   isText,
   onTransformEnd,
+  setActiveGuides,
 }: EditorTransformerProps) {
   const badgeRef = React.useRef<any>(null);
   const textRef = React.useRef<any>(null);
@@ -32,6 +50,25 @@ export const EditorTransformer = React.memo(function EditorTransformer({
 
   // فحص هل العنصر المحدد مقفل (Locked)
   const isLocked = selectedIds.length === 1 && sortedElements.find((e) => e.id === selectedIds[0])?.locked;
+
+  // 🧲 حالة المحاذاة المغناطيسية أثناء التحجيم (Resize Snapping)
+  // معايرة ذاتية: نربط فضاء صناديق Konva بالفضاء المنطقي من أول استدعاء boundBoxFunc
+  const resizeSnapRef = React.useRef<{
+    vTargets: SnapTarget[];
+    hTargets: SnapTarget[];
+    oldBox: { x: number; y: number; width: number; height: number };
+    L0: number; T0: number; R0: number; B0: number;
+    unitX: number; unitY: number;
+  } | null>(null);
+  const prevResizeGuidesRef = React.useRef<SnapGuide[]>([]);
+
+  const resetResizeSnap = React.useCallback(() => {
+    resizeSnapRef.current = null;
+    if (prevResizeGuidesRef.current.length > 0) {
+      prevResizeGuidesRef.current = [];
+      setActiveGuides?.([]);
+    }
+  }, [setActiveGuides]);
 
   useEffect(() => {
     const transformer = trRef.current;
@@ -66,6 +103,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     };
 
     const handleTransformStart = () => {
+      resizeSnapRef.current = null; // يُعاد بناؤه عند أول boundBoxFunc (يحتاج oldBox للمعايرة)
       updateInfo();
     };
 
@@ -78,6 +116,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         badgeRef.current.visible(false);
         badgeRef.current.getLayer()?.batchDraw();
       }
+      resetResizeSnap();
     };
 
     transformer.on("transformstart dragstart", handleTransformStart);
@@ -89,7 +128,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       transformer.off("transform dragmove", handleTransform);
       transformer.off("transformend dragend", handleTransformEndInternal);
     };
-  }, [trRef, canvasWidth, canvasHeight, dpi, stageScale]);
+  }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, resetResizeSnap]);
 
   // تخصيص مظهر المحابث (Anchors) بنمط Figma المحترف
   const primaryColor = isLocked ? "#f59e0b" : "#2563eb";
@@ -143,7 +182,97 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           if (Math.abs(newBox.width) < 2 && Math.abs(newBox.height) < 2) {
             return oldBox;
           }
-          return newBox;
+
+          // 🧲 محاذاة مغناطيسية أثناء التحجيم (عنصر واحد، بلا دوران)
+          const transformer = trRef.current;
+          const node = transformer?.nodes()?.[0];
+          if (!transformer || !node || selectedIds.length !== 1) return newBox;
+          const rotation = Math.abs(node.rotation() % 360);
+          if (rotation > 0.5 && rotation < 359.5) return newBox;
+
+          // معايرة كسولة من أول صندوق: ربط فضاء الصناديق بالفضاء المنطقي
+          if (!resizeSnapRef.current) {
+            const absSX = Math.abs(node.scaleX()) || 1;
+            const absSY = Math.abs(node.scaleY()) || 1;
+            const W0 = node.width() * absSX;
+            const H0 = node.height() * absSY;
+            if (W0 <= 0 || H0 <= 0 || oldBox.width === 0 || oldBox.height === 0) return newBox;
+            const isFlipped = (node.scaleX() ?? 1) < 0;
+            const isFlippedY = (node.scaleY() ?? 1) < 0;
+            const L0 = isFlipped ? node.x() - W0 : node.x();
+            const T0 = isFlippedY ? node.y() - H0 : node.y();
+
+            const vTargets: SnapTarget[] = [{ value: 0.5, origin: "canvas" }];
+            const hTargets: SnapTarget[] = [{ value: 0.5, origin: "canvas" }];
+            for (const el of sortedElements) {
+              if (selectedIds.includes(el.id)) continue;
+              vTargets.push(
+                { value: el.x, origin: "element" },
+                { value: el.x + el.width / 2, origin: "element" },
+                { value: el.x + el.width, origin: "element" }
+              );
+              hTargets.push(
+                { value: el.y, origin: "element" },
+                { value: el.y + el.height / 2, origin: "element" },
+                { value: el.y + el.height, origin: "element" }
+              );
+            }
+
+            resizeSnapRef.current = {
+              vTargets,
+              hTargets,
+              oldBox: { ...oldBox },
+              L0,
+              T0,
+              R0: L0 + W0,
+              B0: T0 + H0,
+              unitX: oldBox.width / W0,
+              unitY: oldBox.height / H0,
+            };
+          }
+
+          const snap = resizeSnapRef.current;
+          const { oldBox: cBox, L0, T0, R0, B0, unitX, unitY } = snap;
+
+          // تحويل حواف الصندوق الجديد إلى الفضاء المنطقي (0-1 نسبي)
+          const relL = (L0 + (newBox.x - cBox.x) / unitX) / canvasWidth;
+          const relT = (T0 + (newBox.y - cBox.y) / unitY) / canvasHeight;
+          const relR = (R0 + (newBox.x + newBox.width - cBox.x - cBox.width) / unitX) / canvasWidth;
+          const relB = (B0 + (newBox.y + newBox.height - cBox.y - cBox.height) / unitY) / canvasHeight;
+
+          const anchor = transformer.getActiveAnchor();
+          const handle = anchorToCompass(anchor || "");
+
+          const result = getSnapPositionsWithTargets(
+            relL, relT, relR - relL, relB - relT,
+            snap.vTargets, snap.hTargets,
+            5 / canvasWidth, 5 / canvasHeight,
+            handle
+          );
+
+          // إعادة الحواف المنحازة إلى فضاء الصندوق (كل حافة تُعاير على حدة)
+          const snappedL = result.x;
+          const snappedR = result.x + result.w;
+          const snappedT = result.y;
+          const snappedB = result.y + result.h;
+
+          const boxL = cBox.x + (snappedL * canvasWidth - L0) * unitX;
+          const boxR = cBox.x + cBox.width + (snappedR * canvasWidth - R0) * unitX;
+          const boxT = cBox.y + (snappedT * canvasHeight - T0) * unitY;
+          const boxB = cBox.y + cBox.height + (snappedB * canvasHeight - B0) * unitY;
+
+          if (setActiveGuides) {
+            const prev = prevResizeGuidesRef.current;
+            const next = result.guides;
+            const equal = prev.length === next.length &&
+              prev.every((g, i) => g.type === next[i].type && Math.abs(g.coord - next[i].coord) < 0.0001);
+            if (!equal) {
+              prevResizeGuidesRef.current = next;
+              setActiveGuides(next);
+            }
+          }
+
+          return { ...newBox, x: boxL, y: boxT, width: boxR - boxL, height: boxB - boxT };
         }}
         onTransformEnd={onTransformEnd}
       />

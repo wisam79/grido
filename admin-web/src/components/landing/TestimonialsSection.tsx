@@ -89,10 +89,14 @@ export function TestimonialsSection() {
 
         {/* Scenario Selector Pill Bar */}
         <div className="stagger-4 flex justify-center mb-8 sm:mb-10">
-          <div className="p-1.5 rounded-full bg-elevated border border-subtle flex items-center gap-1 max-w-full overflow-x-auto no-scrollbar">
+          <div role="tablist" aria-label="سيناريوهات الاستخدام" className="p-1.5 rounded-full bg-elevated border border-subtle flex items-center gap-1 max-w-full overflow-x-auto no-scrollbar">
             {SCENARIOS.map((sc) => (
               <button
                 key={sc.id}
+                role="tab"
+                id={`scenario-tab-${sc.id}`}
+                aria-selected={activeTab === sc.id}
+                aria-controls="scenario-tabpanel"
                 onClick={() => setActiveTab(sc.id)}
                 className={`px-5 py-2.5 rounded-full font-mono font-extrabold text-xs sm:text-sm uppercase tracking-[1px] transition-all duration-300 flex items-center gap-2 shrink-0 cursor-pointer ${
                   activeTab === sc.id
@@ -107,7 +111,12 @@ export function TestimonialsSection() {
         </div>
 
         {/* Scenario Display Window Card */}
-        <div className="stagger-5 rounded-2xl border border-subtle bg-elevated overflow-hidden shadow-2xl">
+        <div
+          role="tabpanel"
+          id="scenario-tabpanel"
+          aria-labelledby={`scenario-tab-${currentScenario.id}`}
+          className="stagger-5 rounded-2xl border border-subtle bg-elevated overflow-hidden shadow-2xl"
+        >
           {/* Top Window Chrome Bar */}
           <div className="h-10 bg-elevated/80 border-b border-subtle px-4 sm:px-5 flex items-center justify-between text-xs text-tertiary font-mono">
             <div className="flex items-center gap-2">

@@ -11,6 +11,7 @@ import { ShapeElement } from "@/lib/editor-store";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import { getFillProps } from "./fill-utils";
+import { VECTOR_SHAPES } from "@/lib/svg-paths";
 
 export const KonvaShapeElement = React.memo(function KonvaShapeElement({ 
   element: _element, 
@@ -33,6 +34,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   const w = element.width * canvasWidth;
   const h = element.height * canvasHeight;
   const flipped = element.flipX === true;
+  const flippedY = element.flipY === true;
   const hasAnimatedRef = React.useRef(false);
 
   const {
@@ -71,10 +73,11 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   const shapeProps = {
     ref: elementRef,
     x: flipped ? (element.x + element.width) * canvasWidth : element.x * canvasWidth,
-    y: element.y * canvasHeight,
+    y: flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight,
     width: w,
     height: h,
     scaleX: flipped ? -1 : 1,
+    scaleY: flippedY ? -1 : 1,
     rotation: element.rotation,
     opacity: element.opacity,
     visible: element.visible !== false,
@@ -144,10 +147,16 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   }
 
   if (element.shape === "path") {
+    // قياس المسار المتجه ليملأ صندوق العنصر (المسارات بإطارات مرجعية مختلفة الأحجام)
+    const def = VECTOR_SHAPES.find((s) => s.path === element.svgPath);
+    const vbW = def?.viewBox.w || 24;
+    const vbH = def?.viewBox.h || 24;
     return (
       <KonvaPath
         {...shapeProps}
         data={element.svgPath || ""}
+        scaleX={(flipped ? -1 : 1) * (w / vbW)}
+        scaleY={(flippedY ? -1 : 1) * (h / vbH)}
       />
     );
   }

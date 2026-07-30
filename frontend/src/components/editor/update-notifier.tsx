@@ -54,7 +54,8 @@ export function UpdateNotifier() {
 
     try {
       const url = updateInfo.download_url || "https://grido.cloud-ip.cc/api/download";
-      await DownloadAndInstallUpdate(url);
+      // تمرير بصمة المثبت المعلنة من خادم الإصدارات — يتحقق منها Go قبل تشغيل المثبت
+      await DownloadAndInstallUpdate(url, updateInfo.sha256 || "");
     } catch (err: unknown) {
       console.error("Failed to update:", err);
       const errMsg = typeof err === 'string' ? err : (err instanceof Error ? err.message : "حدث خطأ أثناء تحميل وتثبيت التحديث.");

@@ -7,13 +7,19 @@ describe('history-slice', () => {
 
   beforeEach(() => {
     // Mock the store for testing the slice
-    store = create((set: any, get: any, api: any) => ({
+      store = create((set: any, get: any, api: any) => ({
       ...createHistorySlice(set, get, api),
       elements: [],
       slots: [],
-      backgroundColor: '#ffffff',
-      canvasWidth: 800,
-      canvasHeight: 600,
+      backgroundColor: '#FFFFFF',
+      canvasWidth: 2480,
+      canvasHeight: 3508,
+      collageGap: 0,
+      collageMargin: 0,
+      collageRadius: 0,
+      collageShowCutLines: false,
+      collageStrokeWidth: 0,
+      collageStrokeColor: '#000000',
       mode: 'select',
       selectedId: null,
       selectedIds: [],

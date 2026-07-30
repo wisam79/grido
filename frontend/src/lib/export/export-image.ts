@@ -1,7 +1,8 @@
 import type Konva from "konva";
-import { ImageElement, useEditorStore } from "@/lib/editor-store";
+import { CanvasElement, ImageElement, useEditorStore } from "@/lib/editor-store";
 import { buildCSSFilter } from "@/lib/utils";
 import { captureStageDataUrl } from "@/lib/konva-export-utils";
+import { VECTOR_SHAPES } from "@/lib/svg-paths";
 
 // [FIX #9] تحويل Data URL إلى Blob مباشرة في الذاكرة بدلاً من fetch غير الضروري
 export function dataURLToBlob(dataUrl: string): Blob {
@@ -88,6 +89,54 @@ export function drawStar(
   }
   ctx.lineTo(cx, cy - outerRadius);
   ctx.closePath();
+}
+
+// دمج الشفافية داخل أي لون CSS — Canvas2D لا يملك shadowOpacity منفصلة كما في Konva
+function colorWithAlpha(color: string, alpha: number): string {
+  if (alpha >= 1) return color;
+  const probe = document.createElement("canvas");
+  probe.width = probe.height = 1;
+  const pctx = probe.getContext("2d", { willReadFrequently: true });
+  if (!pctx) return color;
+  pctx.fillStyle = color;
+  pctx.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = pctx.getImageData(0, 0, 1, 1).data;
+  return `rgba(${r}, ${g}, ${b}, ${((a / 255) * alpha).toFixed(3)})`;
+}
+
+// بناء تعبئة تدرج (linear/radial) مطابقة لمنطق getFillProps في Konva — null تعني اللون الصلب
+function buildGradientFill(
+  ctx: CanvasRenderingContext2D,
+  el: CanvasElement,
+  w: number,
+  h: number
+): CanvasGradient | null {
+  const addStops = (grad: CanvasGradient, stops?: Array<number | string>) => {
+    const s = stops && stops.length >= 4 ? stops : [0, "#3b82f6", 1, "#8b5cf6"];
+    for (let i = 0; i + 1 < s.length; i += 2) {
+      grad.addColorStop(Number(s[i]), String(s[i + 1]));
+    }
+  };
+  if (el.fillType === "linear") {
+    const start = el.fillLinearGradientStartPoint || { x: 0, y: 0 };
+    const end = el.fillLinearGradientEndPoint || { x: 1, y: 1 };
+    const grad = ctx.createLinearGradient(start.x * w, start.y * h, end.x * w, end.y * h);
+    addStops(grad, el.fillLinearGradientColorStops);
+    return grad;
+  }
+  if (el.fillType === "radial") {
+    const start = el.fillRadialGradientStartPoint || { x: 0.5, y: 0.5 };
+    const end = el.fillRadialGradientEndPoint || { x: 0.5, y: 0.5 };
+    const rStart = el.fillRadialGradientStartRadius ?? 0;
+    const rEnd = el.fillRadialGradientEndRadius ?? 0.5;
+    const grad = ctx.createRadialGradient(
+      start.x * w, start.y * h, rStart * Math.max(w, h),
+      end.x * w, end.y * h, rEnd * Math.max(w, h)
+    );
+    addStops(grad, el.fillRadialGradientColorStops);
+    return grad;
+  }
+  return null;
 }
 
 // دالة مساعدة لتطبيق العلامة المائية عند التصدير للخطة المجانية
@@ -332,29 +381,103 @@ export async function exportCanvas(
       ctx.translate(x + w / 2, y + h / 2);
       ctx.rotate((el.rotation * Math.PI) / 180);
       if (el.flipX) ctx.scale(-1, 1);
+      if (el.flipY) ctx.scale(1, -1);
       ctx.translate(-w / 2, -h / 2);
+
+      // نمط الدمج والظل — مطابقة خصائص Konva المشتركة (shadowOpacity تُدمج في ألفا اللون)
+      ctx.globalCompositeOperation = (el.globalCompositeOperation ||
+        "source-over") as GlobalCompositeOperation;
+      if (el.shadowColor && (el.shadowOpacity ?? 0) > 0) {
+        ctx.shadowColor = colorWithAlpha(el.shadowColor, el.shadowOpacity ?? 1);
+        ctx.shadowBlur = el.shadowBlur || 0;
+        ctx.shadowOffsetX = el.shadowOffsetX || 0;
+        ctx.shadowOffsetY = el.shadowOffsetY || 0;
+      }
 
       if (el.type === "image" && el.imageSrc && elImageMap[el.id]) {
         const img = elImageMap[el.id];
-        ctx.filter = buildCSSFilter(el);
-        drawImageCover(ctx, img, 0, 0, w, h);
-        ctx.filter = "none";
+        const filterStr = buildCSSFilter(el);
+        const radius = el.cornerRadius || 0;
+        if (radius > 0) {
+          // قص cornerRadius على كانفس وسيط ليأخذ الظل شكل ألفا الصورة المقصوصة (مطابقة KonvaImage)
+          const off = document.createElement("canvas");
+          off.width = Math.max(1, Math.round(w));
+          off.height = Math.max(1, Math.round(h));
+          const octx = off.getContext("2d");
+          if (octx) {
+            if (filterStr && filterStr !== "none") octx.filter = filterStr;
+            drawRoundRect(octx, 0, 0, off.width, off.height, radius);
+            octx.clip();
+            drawImageCover(octx, img, 0, 0, off.width, off.height);
+            ctx.drawImage(off, 0, 0, w, h);
+          }
+        } else {
+          ctx.filter = filterStr;
+          drawImageCover(ctx, img, 0, 0, w, h);
+          ctx.filter = "none";
+        }
       } else if (el.type === "text") {
         const fontSize = el.fontSize || 32;
-        ctx.font = `${el.fontWeight || 700} ${fontSize}px ${el.fontFamily || "Cairo, Tajawal, sans-serif"}`;
-        ctx.fillStyle = el.color || "#000000";
+        // خلفية النص الاختيارية — عقدة مستقلة في Konva: تُرسم بلا ظل ولا نمط دمج مخصص
+        if (el.textBgColor && el.textBgColor !== "transparent") {
+          ctx.save();
+          ctx.globalCompositeOperation = "source-over";
+          ctx.shadowColor = "transparent";
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+          ctx.fillStyle = el.textBgColor;
+          ctx.fillRect(0, 0, w, h);
+          ctx.restore();
+        }
+        const fontStyle = el.fontStyle === "italic" ? "italic " : "";
+        ctx.font = `${fontStyle}${el.fontWeight || 700} ${fontSize}px ${el.fontFamily || "Cairo, Tajawal, sans-serif"}`;
+        // التدرج يسري على تعبئة النص أيضاً (getFillProps مشتركة بين العقد في Konva)
+        ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.color || "#000000";
         ctx.textAlign = (el.textAlign as CanvasTextAlign) || "center";
         ctx.textBaseline = "middle";
         ctx.direction = "rtl";
         const lines = (el.text || "").split("\n");
-        const lineHeight = fontSize * 1.2;
+        const lineHeight = fontSize * (el.lineHeight ?? 1.2);
         const startY = h / 2 - ((lines.length - 1) * lineHeight) / 2;
         const textX = el.textAlign === "left" ? 0 : el.textAlign === "right" ? w : w / 2;
+        const strokeW = el.strokeWidth || 0;
+        if (strokeW > 0) {
+          ctx.strokeStyle = el.stroke || "#000000";
+          ctx.lineWidth = strokeW;
+          ctx.lineJoin = "round";
+        }
+        // زخرفة النص تُرسم يدوياً — Canvas2D لا يدعم textDecoration كما في Konva
+        const deco = el.textDecoration || "none";
+        const decoThickness = Math.max(1, fontSize / 16);
         lines.forEach((line, i) => {
-          ctx.fillText(line, textX, startY + i * lineHeight);
+          const lineY = startY + i * lineHeight;
+          ctx.fillText(line, textX, lineY);
+          if (strokeW > 0) ctx.strokeText(line, textX, lineY);
+          if (deco !== "none" && line.trim()) {
+            const lineW = ctx.measureText(line).width;
+            const fromX =
+              el.textAlign === "left"
+                ? textX
+                : el.textAlign === "right"
+                  ? textX - lineW
+                  : textX - lineW / 2;
+            const decoY = deco === "underline" ? lineY + fontSize / 2 : lineY;
+            ctx.save();
+            ctx.strokeStyle =
+              typeof ctx.fillStyle === "string"
+                ? ctx.fillStyle
+                : el.color || "#000000";
+            ctx.lineWidth = decoThickness;
+            ctx.beginPath();
+            ctx.moveTo(fromX, decoY);
+            ctx.lineTo(fromX + lineW, decoY);
+            ctx.stroke();
+            ctx.restore();
+          }
         });
       } else if (el.type === "shape") {
-        ctx.fillStyle = el.fill || "#6366f1";
+        ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.fill || "#6366f1";
         ctx.strokeStyle = el.stroke || "#000000";
         ctx.lineWidth = el.strokeWidth || 0;
         if (el.shape === "rect") {
@@ -378,6 +501,17 @@ export async function exportCanvas(
           drawStar(ctx, w / 2, h / 2, 5, Math.min(w, h) / 2, Math.min(w, h) / 4);
           ctx.fill();
           if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke();
+        } else if (el.shape === "path" && el.svgPath) {
+          // قياس المسار المتجه ليملأ صندوق العنصر — نفس منطق KonvaPath (viewBox مرجعي)
+          const def = VECTOR_SHAPES.find((s) => s.path === el.svgPath);
+          const vbW = def?.viewBox.w || 24;
+          const vbH = def?.viewBox.h || 24;
+          const path2d = new Path2D(el.svgPath);
+          ctx.save();
+          ctx.scale(w / vbW, h / vbH);
+          ctx.fill(path2d);
+          if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke(path2d);
+          ctx.restore();
         }
       }
       ctx.restore();

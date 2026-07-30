@@ -180,10 +180,44 @@ class ImageEnhancer:
 
             import cv2
             import numpy as np
-            
+
             data = await request.json()
             image_b64 = data.get("image", "")
             daily_limit = data.get("dailyLimit", 2)
+
+            # 🛡️ فحص مسبق للرصيد اليومي قبل حرق أي ثانية GPU مكلفة.
+            # الحد يُشتق خادمياً من خطة المستخدم (p_daily_limit مهمل في RPC الجديد).
+            try:
+                precheck_payload = json.dumps({
+                    "p_user_id": user_id,
+                    "p_daily_limit": daily_limit,
+                    "p_image_bytes": 0,
+                    "p_check_only": True
+                }).encode('utf-8')
+                precheck_req = urllib.request.Request(
+                    f"{SUPABASE_URL}/rest/v1/rpc/check_and_record_ai_usage",
+                    data=precheck_payload,
+                    headers={
+                        "Authorization": f"Bearer {jwt_token}",
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    method="POST"
+                )
+                with urllib.request.urlopen(precheck_req) as precheck_res:
+                    pass  # الرصيد متاح — نتابع للمعالجة
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode()
+                print(f"Pre-flight quota check blocked request: {err_body}")
+                return Response(
+                    content='{"error": "تم الوصول للحد اليومي المسموح به لاستخدام الذكاء الاصطناعي (429 Quota Exceeded)"}',
+                    media_type="application/json",
+                    status_code=429
+                )
+            except Exception as e:
+                # فشل الفحص المسبق لأسباب شبكية لا يمنع الخدمة — التسجيل اللاحق يبقى الحاجز الفعلي
+                print(f"Pre-flight quota check failed (continuing): {e}")
             
             if not image_b64:
                 return Response(content='{"error": "الصورة غير موجودة"}', media_type="application/json", status_code=400)

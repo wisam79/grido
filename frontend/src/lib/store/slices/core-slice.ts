@@ -3,6 +3,7 @@ import { EditorMode, ProjectFileV1, CanvasElement, CanvasSlot, PrintSettings, Hi
 import { PhotoTemplate, CollageTemplate, COLLAGE_TEMPLATES, PHOTO_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
 import { generateInitialSlots } from "./collage-slice";
 import { DEFAULT_PRINT_SETTINGS } from "./print-slice";
+import { DEFAULT_HISTORY_ENTRY_EXTRAS } from "./history-slice";
 import { uid } from "../../utils";
 
 export interface CoreSlice {
@@ -234,7 +235,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       showRuler: true,
       printSettings: DEFAULT_PRINT_SETTINGS,
       printImageSrc: null,
-      history: [{ elements: [], slots: freshSlots }],
+      history: [{ elements: [], slots: freshSlots, ...DEFAULT_HISTORY_ENTRY_EXTRAS }],
       historyIndex: 0,
     });
   },
@@ -285,9 +286,18 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
-      history: [{ 
-        elements: (project.elements || []) as CanvasElement[], 
-        slots: (project.slots && project.slots.length > 0 ? project.slots : (project.mode === "collage" ? generateInitialSlots() : [])) as CanvasSlot[]
+      history: [{
+        elements: (project.elements || []) as CanvasElement[],
+        slots: rawSlots,
+        canvasWidth: validWidth,
+        canvasHeight: validHeight,
+        backgroundColor: project.backgroundColor || "#FFFFFF",
+        collageGap: project.collageGap ?? 0,
+        collageMargin: project.collageMargin ?? 0,
+        collageRadius: project.collageRadius ?? 0,
+        collageShowCutLines: project.collageShowCutLines ?? false,
+        collageStrokeWidth: project.collageStrokeWidth ?? 0,
+        collageStrokeColor: project.collageStrokeColor ?? "#000000",
       }],
       historyIndex: 0,
       showGrid: project.showGrid ?? false,
