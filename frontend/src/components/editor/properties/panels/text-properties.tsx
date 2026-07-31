@@ -207,9 +207,12 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => onUpdate(element.id, { 
-                    textBgColor: element.textBgColor === "transparent" ? "#ffffff" : "transparent" 
-                  })}
+                  onClick={() => {
+                    onUpdate(element.id, { 
+                      textBgColor: element.textBgColor === "transparent" ? "#ffffff" : "transparent" 
+                    });
+                    useEditorStore.getState().pushHistory();
+                  }}
                   className={cn(
                     "w-8 h-8 flex items-center justify-center rounded-lg border transition-all shrink-0 cursor-pointer shadow-2xs",
                     element.textBgColor === "transparent" ? "border-border/60 bg-background text-muted-foreground hover:bg-muted" : "border-primary/50 bg-primary/10 text-primary"
@@ -220,7 +223,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 </button>
                 <PopoverColorPicker
                   color={element.textBgColor && element.textBgColor !== "transparent" ? element.textBgColor : "#ffffff"}
-                  onChange={(val) => onUpdate(element.id, { textBgColor: val })}
+                  onChange={(val) => {
+                    onUpdate(element.id, { textBgColor: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
                   disabled={element.textBgColor === "transparent"}
                   className="w-32 h-8"
                 />

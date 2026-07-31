@@ -3,7 +3,7 @@ import { useAppVersion } from '../../lib/version';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
-const CHECKS = ['نسخة أساسية مجانية', 'بدون تسجيل حساب', 'تحديثات تلقائية', 'يعمل 100% بدون إنترنت'];
+const CHECKS = ['نسخة أساسية مجانية', 'بدون تسجيل حساب', 'تحديثات تلقائية', 'أساسيات 100% بدون إنترنت'];
 
 export function CtaBanner() {
   const version = useAppVersion();

@@ -1,4 +1,5 @@
 import { Check, Crown, Sparkles, Download } from 'lucide-react';
+import { SectionHeading } from './SectionHeading';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
@@ -63,18 +64,13 @@ export function PricingSection() {
   return (
     <section id="pricing" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
-            <Crown className="w-3.5 h-3.5 text-white" />
-            <span>خطط الترخيص</span>
-          </span>
-          <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white uppercase leading-tight">
-            ابدأ مجاناً… والف عندما <span className="text-secondary">تتضاعف طلباتك</span>
-          </h2>
-          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-            النسخة المجانية تكفيك للتجربة الكاملة. التفعيل يفتح قوة الذكاء الاصطناعي بلا حدود تذكر.
-          </p>
-        </div>
+        <SectionHeading
+          icon={Crown}
+          eyebrow="خطط الترخيص"
+          title={<>ابدأ مجاناً… والف عندما <span className="text-secondary">تتضاعف طلباتك</span></>}
+          subtitle="النسخة المجانية تكفيك للتجربة الكاملة. التفعيل يفتح قوة الذكاء الاصطناعي بلا حدود تذكر."
+          index="07"
+        />
 
         <div className="stagger-4 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto items-stretch">
           {PLANS.map((plan) => (

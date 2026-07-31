@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"hash/crc32"
+	"html"
 	"io"
 	"image"
 	"image/color"
@@ -194,7 +195,7 @@ func resolveLocalPath(src string) string {
 		if err != nil {
 			return fullPath
 		}
-		if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(mediaDir)) {
+		if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(mediaDir)+string(filepath.Separator)) {
 			slog.Warn("Blocked path traversal attempt in resolveLocalPath", "path", src)
 			return ""
 		}
@@ -408,6 +409,18 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 	}
 
 	for _, item := range req.Items {
+		// 🛡️ رفض هندسة عناصر غير منطقية (منع تخصيص ذاكرة ضخمة عبر W/H غير مقيد)
+		if !math.IsNaN(item.W) && !math.IsNaN(item.H) &&
+			(item.W <= 0 || item.H <= 0 || item.W > req.PaperWidthMM || item.H > req.PaperHeightMM) {
+			return 0, 0, fmt.Errorf("invalid item geometry: W=%.2f H=%.2f (must fit within paper %.0f×%.0f mm)", item.W, item.H, req.PaperWidthMM, req.PaperHeightMM)
+		}
+		// 🛡️ رفض نسب اقتصاص سلبية أو متناقضة
+		if (item.CropW > 0 || item.CropH > 0) && (item.CropW <= 0 || item.CropH <= 0) {
+			return 0, 0, fmt.Errorf("invalid crop region: CropW=%.2f CropH=%.2f must both be positive or both zero", item.CropW, item.CropH)
+		}
+	}
+
+	for _, item := range req.Items {
 		if item.ImageSrc == "" {
 			continue
 		}
@@ -600,6 +613,31 @@ func applyImageProcessing(img image.Image, item domain.PrintItem, targetW, targe
 	cropX, cropY, cropW, cropH := computeCropFromSlot(item, img)
 
 	if cropW > 0 && cropH > 0 {
+		bounds := img.Bounds()
+		imgW := float64(bounds.Dx())
+		imgH := float64(bounds.Dy())
+
+		// 🛡️ ضغط منطقة الاقتصاص داخل حدود الصورة — يمنع انهيار imaging.Crop
+		// خارج النطاق عند وصول بيانات اقتصاص من واجهة لا تتطابق مع الصورة الحالية
+		if cropX < 0 {
+			cropW += cropX
+			cropX = 0
+		}
+		if cropY < 0 {
+			cropH += cropY
+			cropY = 0
+		}
+		if cropX+cropW > imgW {
+			cropW = imgW - cropX
+		}
+		if cropY+cropH > imgH {
+			cropH = imgH - cropY
+		}
+
+		if cropW <= 0 || cropH <= 0 {
+			return imaging.Resize(img, targetW, targetH, imaging.Lanczos)
+		}
+
 		rect := image.Rect(
 			int(math.Round(cropX)),
 			int(math.Round(cropY)),
@@ -769,8 +807,12 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	_ = os.MkdirAll(outDir, 0755)
 
 	// 🧹 تنظيف المخرجات القديمة (أقدم من 24 ساعة) تلقائياً لتفادي امتلاء القرص
+	// نقوم بحذف ملفات الطباعة print_* فقط — لا نلمس ملفات المستخدم الخاصة
 	if files, err := os.ReadDir(outDir); err == nil {
 		for _, f := range files {
+			if !strings.HasPrefix(f.Name(), "print_") {
+				continue
+			}
 			filePath := filepath.Join(outDir, f.Name())
 			if info, err := os.Stat(filePath); err == nil {
 				if time.Since(info.ModTime()) > 24*time.Hour {
@@ -1026,9 +1068,6 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 	imgCache = nil
 	procCache = nil
 
-	// Trigger garbage collection manually after heavy memory usage (allocating huge CMYK image and decoding many images)
-	runtime.GC()
-
 	return s.saveOutput(dc, req)
 }
 
@@ -1106,8 +1145,10 @@ func (s *PrintService) PrintNative(filePath string) error {
 		if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tiff" {
 			// Create a temporary 100% scale HTML file for native mshtml printing
 			htmlPath := cleanPath + ".html"
+			// 🛡️ تهريب آمن للمسار في HTML/URL — يمنع حقن وسوم عند مسارات تحمل أحرف خاصة
 			fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(cleanPath), " ", "%20")
-			htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;}html,body{margin:0;padding:0;width:100%%;height:100%%;}img{width:100%%;height:100%%;object-fit:contain;}</style></head><body onload="window.print()"><img src="%s"/></body></html>`, fileURI)
+			escapedURI := html.EscapeString(fileURI)
+			htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;}html,body{margin:0;padding:0;width:100%%;height:100%%;}img{width:100%%;height:100%%;object-fit:contain;}</style></head><body onload="window.print()"><img src="%s"/></body></html>`, escapedURI)
 			_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 			targetPath = htmlPath
 		}

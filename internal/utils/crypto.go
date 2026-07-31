@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/hkdf"
@@ -51,9 +52,18 @@ func writeSecureFile(path string, data []byte) error {
 	return os.Rename(tmpPath, path)
 }
 
+// derivedKeyCache يخزن المفاتيح المشتقة لكل عملية لمنع إعادة اشتقاق PBKDF2
+// (600K تكرار) مع كل استدعاء — المفاتيح حتمية لكل جهاز فلا خطر من التخزين المؤقت.
+var derivedKeyCache sync.Map // salt → []byte
+
 // deriveKey derives a 32-byte key using PBKDF2 with 600,000 iterations.
 func deriveKey(deviceID, salt string) []byte {
-	return pbkdf2.Key([]byte(deviceID), []byte(salt), 600_000, 32, sha256.New)
+	if cached, ok := derivedKeyCache.Load(salt); ok {
+		return cached.([]byte)
+	}
+	key := pbkdf2.Key([]byte(deviceID), []byte(salt), 600_000, 32, sha256.New)
+	derivedKeyCache.Store(salt, key)
+	return key
 }
 
 // deriveEncryptionKey derives a 32-byte AES-GCM key from the device ID.
@@ -160,7 +170,17 @@ func ClearLicenseSignature() error {
 }
 
 // UpdateLastTime records the last known time signed with HMAC to prevent clock rollback tampering.
+// لا يكتب شيئاً إذا لم يتقدم الزمن الموقّع المخزّن — يمنع كتابة القرص مع كل فحص حالة.
 func UpdateLastTime(t time.Time) error {
+	path := filepath.Join(GetAppDir(), ".license_time")
+
+	// Skip the write when the stored time is already ahead or equal (not newer)
+	if existing, err := readLicenseTime(path); err == nil {
+		if t.Unix() <= existing {
+			return nil
+		}
+	}
+
 	deviceID := GetDeviceID()
 	if deviceID == "" {
 		deviceID = getFallbackDeviceID()
@@ -173,8 +193,20 @@ func UpdateLastTime(t time.Time) error {
 	sigHex := hex.EncodeToString(mac.Sum(nil))
 
 	payload := fmt.Sprintf("%s|%s", unixStr, sigHex)
-	path := filepath.Join(GetAppDir(), ".license_time")
 	return writeSecureFile(path, []byte(payload))
+}
+
+// readLicenseTime يقرأ آخر طابع زمني موقّع من الملف (دون التحقق من التوقيع)
+func readLicenseTime(path string) (int64, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+	parts := strings.Split(string(data), "|")
+	if len(parts) != 2 {
+		return 0, errors.New("invalid license time format")
+	}
+	return strconv.ParseInt(parts[0], 10, 64)
 }
 
 // VerifyTime returns false if system clock rollback is detected or time file is tampered with.
@@ -182,7 +214,13 @@ func VerifyTime(t time.Time) bool {
 	path := filepath.Join(GetAppDir(), ".license_time")
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return true // No previous run time stored yet
+		// لا ملف وقت: إذا وُجد ملف توقيع الترخيص فهذا يعني أن الجهاز مُفعّل سابقاً
+		// وحذف ملف الوقت يُعدّ عبثاً (هجوم إعادة الساعة للخلف) → إغلاق حازم.
+		if _, sigErr := os.Stat(filepath.Join(GetAppDir(), ".license_signature")); sigErr == nil {
+			slog.Warn("License time file missing while signature exists — failing closed (tampering)")
+			return false
+		}
+		return true // أول تشغيل ولم يُخزَّن وقت سابق بعد
 	}
 
 	parts := strings.Split(string(data), "|")

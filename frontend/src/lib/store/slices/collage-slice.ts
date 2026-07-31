@@ -4,7 +4,7 @@ import { uid } from "../../utils";
 import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
 
 // قياس نسبة أبعاد الصورة — لاستبدال قُصَّ الصور عند تغيّر الأبعاد
-function measureImageAspect(src: string): Promise<number> {
+export function measureImageAspect(src: string): Promise<number> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(img.width > 0 && img.height > 0 ? img.width / img.height : NaN);
@@ -32,6 +32,7 @@ export interface CollageSlice {
   fillAllSlots: (src: string, sourceSlotId?: string) => void;
   fillRowSlots: (slotId: string, src: string) => void;
   fillColumnSlots: (slotId: string, src: string) => void;
+  setSlotImagesBatch: (assignments: { slotId: string; src: string }[], lastEditedSrc?: string | null) => void;
 
   setCollageGap: (gap: number) => void;
   setCollageMargin: (margin: number) => void;
@@ -190,11 +191,12 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         selectedId: null,
         canvasWidth: currentWidth,
         canvasHeight: currentHeight,
-        history: [{ elements: [], slots }],
-        historyIndex: 0,
       });
+      // لا نمسح سجل التراجع — التبديل يُسجل كخطوة واحدة قابلة للتراجع (إصلاح E-2)
+      get().pushHistory();
     } else {
       set({ collageTemplate: null, slots: [] });
+      get().pushHistory();
     }
   },
 
@@ -227,8 +229,74 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       ]);
       if (!Number.isFinite(prevAspect) || !Number.isFinite(nextAspect)) return;
       if (Math.abs(prevAspect - nextAspect) > 0.001) {
+        // حارس قِدم: نتجاهل النتيجة إذا استُبدلت الصورة مجدداً أثناء القياس
+        if (get().slots.find((sl) => sl.id === slotId)?.imageSrc !== src) return;
         get().updateSlot(slotId, { dragX: 0, dragY: 0, zoom: 1 });
+        // التصحيح اللاحق يُسجل كخطوة تراجع مستقلة بدل تغيير صامت غير قابل للتراجع (إصلاح E-1)
+        get().pushHistory();
       }
+    })();
+  },
+
+  setSlotImagesBatch: (assignments, lastEditedSrc) => {
+    if (assignments.length === 0) return;
+    // التقاط القيم السابقة قبل التحديث — مقارنة ما بعد التحديث كانت
+    // تبطل الكشف عن الاستبدالات دائماً (imageSrc أصبح يساوي الجديد)
+    const prevBySlot = new Map(
+      assignments.map((a) => [a.slotId, get().slots.find((sl) => sl.id === a.slotId)?.imageSrc])
+    );
+    set((state) => ({
+      slots: state.slots.map((sl: CanvasSlot) => {
+        const a = assignments.find((x) => x.slotId === sl.id);
+        return a
+          ? {
+              ...sl,
+              imageSrc: a.src,
+              filter: "none",
+              brightness: 100,
+              contrast: 100,
+              saturation: 100,
+            }
+          : sl;
+      }),
+      lastEditedImage: lastEditedSrc ?? state.lastEditedImage,
+    }));
+    // دفعة كاملة تُسجل كخطوة تراجع واحدة (الإسقاط المتعدد)
+    get().pushHistory();
+
+    // استبدالات تختلف نسبة أبعادها عن السابقة: تصفير إزاحات القص (مطابقة setSlotImage)
+    const replaced = assignments.filter((a) => {
+      const prev = prevBySlot.get(a.slotId);
+      return !!prev && prev !== a.src;
+    });
+    if (replaced.length === 0) return;
+    void (async () => {
+      const results = await Promise.all(
+        replaced.map(async (a) => {
+          const [prevAspect, nextAspect] = await Promise.all([
+            measureImageAspect(prevBySlot.get(a.slotId) || ""),
+            measureImageAspect(a.src),
+          ]);
+          if (!Number.isFinite(prevAspect) || !Number.isFinite(nextAspect)) return null;
+          if (Math.abs(prevAspect - nextAspect) <= 0.001) return null;
+          return a.slotId;
+        })
+      );
+      const candidates = results.filter((id): id is string => !!id);
+      if (candidates.length === 0) return;
+      // حارس قِدم: نتجاهل النتيجة إذا استُبدلت الصورة مجدداً أثناء القياس
+      const toReset = candidates.filter((id) => {
+        const a = assignments.find((x) => x.slotId === id);
+        return a && get().slots.find((sl) => sl.id === id)?.imageSrc === a.src;
+      });
+      if (toReset.length === 0) return;
+      set((state) => ({
+        slots: state.slots.map((sl: CanvasSlot) =>
+          toReset.includes(sl.id) ? { ...sl, dragX: 0, dragY: 0, zoom: 1 } : sl
+        ),
+      }));
+      // التصحيح اللاحق يُسجل كخطوة تراجع مستقلة بدل تغيير صامت غير قابل للتراجع (إصلاح E-1)
+      get().pushHistory();
     })();
   },
 
@@ -379,8 +447,8 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     });
     get().pushHistory();
   },
-  setCollageRadius: (radius) => set({ collageRadius: radius }),
-  setCollageShowCutLines: (show) => set({ collageShowCutLines: show }),
-  setCollageStrokeWidth: (width) => set({ collageStrokeWidth: width }),
-  setCollageStrokeColor: (color) => set({ collageStrokeColor: color }),
+  setCollageRadius: (radius) => { set({ collageRadius: radius }); get().pushHistory(); },
+  setCollageShowCutLines: (show) => { set({ collageShowCutLines: show }); get().pushHistory(); },
+  setCollageStrokeWidth: (width) => { set({ collageStrokeWidth: width }); get().pushHistory(); },
+  setCollageStrokeColor: (color) => { set({ collageStrokeColor: color }); get().pushHistory(); },
 });

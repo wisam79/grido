@@ -117,6 +117,15 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 		return "", fmt.Errorf("decode mask base64: %w", err)
 	}
 
+	// 🛡️ رفض أبعاد قناع غير منطقية أو فيض حسابي (maskW*maskH)
+	if maskW <= 0 || maskH <= 0 {
+		return "", fmt.Errorf("invalid mask dimensions: %dx%d", maskW, maskH)
+	}
+	const maxMaskPixels = 200 * 1024 * 1024 // 200 ميغابكسل كحد أقصى
+	if int64(maskW)*int64(maskH) > maxMaskPixels {
+		return "", fmt.Errorf("mask dimensions too large: %dx%d", maskW, maskH)
+	}
+
 	var srcImg image.Image
 	mediaDir := s.mediaService.GetMediaDir()
 
@@ -138,7 +147,7 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 		if err != nil {
 			return "", fmt.Errorf("eval symlink: %w", err)
 		}
-		if !strings.HasPrefix(filepath.Clean(resolvedPath), filepath.Clean(mediaDir)) {
+		if !strings.HasPrefix(filepath.Clean(resolvedPath), filepath.Clean(mediaDir)+string(filepath.Separator)) {
 			return "", fmt.Errorf("invalid image path: outside media directory")
 		}
 
@@ -152,7 +161,7 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 		}
 	}
 
-	if len(maskBytes) != maskW*maskH {
+	if int64(len(maskBytes)) != int64(maskW)*int64(maskH) {
 		return "", fmt.Errorf("mask bytes size mismatch: expected %d, got %d", maskW*maskH, len(maskBytes))
 	}
 

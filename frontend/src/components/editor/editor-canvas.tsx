@@ -357,7 +357,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     if (vCursor) vCursor.style.display = "none";
   };
 
-   const handleDoubleClick = async (el: CanvasElement) => {
+   const handleDoubleClick = useCallback(async (el: CanvasElement) => {
      if (printMode || isLoading) return;
      // العنصر المقفل لا يُحرَّر بالنقر المزدوج — السحب والـ Transformer يحترمان القفل أيضاً
      if (el.locked) return;
@@ -387,14 +387,14 @@ export const EditorCanvas = React.memo(React.forwardRef<
      } else if (el.type === "text") {
        setEditingTextId(el.id);
      }
-   };
+   }, [printMode, isLoading, updateElement, pushHistory, setEditingTextId]);
 
-  const handleSlotClick = (slotId: string) => {
+  const handleSlotClick = useCallback((slotId: string) => {
     if (printMode) return;
     selectElement(slotId);
-  };
+  }, [printMode, selectElement]);
 
-    const handleSlotDblClick = async (slotId: string) => {
+    const handleSlotDblClick = useCallback(async (slotId: string) => {
       if (printMode || isLoading) return;
       const now = Date.now();
       if (now - lastDblClickRef.current < 200) return;
@@ -420,7 +420,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
      } finally {
        setIsLoading(false);
      }
-   };
+   }, [printMode, isLoading]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -501,27 +501,32 @@ export const EditorCanvas = React.memo(React.forwardRef<
           }
         }
 
+        const assignments: { slotId: string; src: string }[] = [];
         if ((freshCollageTemplate?.physicalLayout || freshSlots.length > 1) && uploadedSrcs.length === 1 && uploadedSrcs[0]) {
-          freshState.fillAllSlots(uploadedSrcs[0]);
+          for (const s of freshSlots) {
+            assignments.push({ slotId: s.id, src: uploadedSrcs[0] });
+          }
         } else if (targetSlotId && uploadedSrcs[0]) {
-          freshState.setSlotImage(targetSlotId, uploadedSrcs[0]);
+          assignments.push({ slotId: targetSlotId, src: uploadedSrcs[0] });
           let srcIdx = 1;
           for (const s of freshSlots) {
             if (s.id !== targetSlotId && !s.imageSrc && srcIdx < uploadedSrcs.length) {
-              freshState.setSlotImage(s.id, uploadedSrcs[srcIdx++]);
+              assignments.push({ slotId: s.id, src: uploadedSrcs[srcIdx++] });
             }
           }
         } else {
           let srcIdx = 0;
           for (const s of freshSlots) {
             if (!s.imageSrc && srcIdx < uploadedSrcs.length) {
-              freshState.setSlotImage(s.id, uploadedSrcs[srcIdx++]);
+              assignments.push({ slotId: s.id, src: uploadedSrcs[srcIdx++] });
             }
           }
           if (srcIdx === 0 && freshSlots[0] && uploadedSrcs[0]) {
-            freshState.setSlotImage(freshSlots[0].id, uploadedSrcs[0]);
+            assignments.push({ slotId: freshSlots[0].id, src: uploadedSrcs[0] });
           }
         }
+        // دفعة واحدة بخطوة تراجع واحدة بدل خطوة لكل صورة (الإسقاط المتعدد)
+        freshState.setSlotImagesBatch(assignments, uploadedSrcs[0] || null);
        } else {
          for (const src of uploadedSrcs) {
            let aspect = 1;
@@ -553,6 +558,53 @@ export const EditorCanvas = React.memo(React.forwardRef<
       setIsLoading(false);
     }
   };
+
+  const handleCanvasContextMenu = useCallback((e: any) => {
+    if (printMode) return;
+    const evt = e.evt;
+    if (!evt) return;
+
+    const x = evt.clientX;
+    const y = evt.clientY;
+
+    let targetType: "element" | "slot" | "canvas" = "canvas";
+    let targetId: string | null = null;
+
+    const node = e.target;
+    const stage = node.getStage();
+    const isBackground = node === stage || node.hasName("bg-rect");
+
+    if (!isBackground) {
+      if (mode === "single") {
+        const elNode = typeof node.findAncestor === 'function' ? (node.findAncestor((n: any) => !!n.id(), true)) : null;
+        const id = elNode?.id() || node.id() || node.attrs?.id;
+        if (id) {
+          targetType = "element";
+          targetId = id;
+          if (!selectedIds.includes(id)) {
+            selectElement(id);
+          }
+        }
+      } else if (mode === "collage") {
+        const parentGroup = typeof node.findAncestor === 'function' ? node.findAncestor((n: any) => n.id() && n.id().startsWith("slot-"), true) : null;
+        if (parentGroup) {
+          targetType = "slot";
+          targetId = parentGroup.id().replace("slot-", "");
+          selectElement(targetId);
+        }
+      }
+    }
+
+    if (targetType === "canvas") {
+      setContextMenu(null);
+      return;
+    }
+
+    setContextMenu({
+      position: { x, y },
+      target: { type: targetType, id: targetId }
+    });
+  }, [printMode, mode, selectedIds, selectElement]);
 
   const sortedElements = useMemo(
     () => [...elements].sort((a, b) => a.zIndex - b.zIndex),
@@ -596,52 +648,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
           setActiveGuides={setActiveGuides}
           handleSlotClick={handleSlotClick}
           handleSlotDblClick={handleSlotDblClick}
-          onContextMenu={(e) => {
-            if (printMode) return;
-            const evt = e.evt;
-            if (!evt) return;
-
-            const x = evt.clientX;
-            const y = evt.clientY;
-
-            let targetType: "element" | "slot" | "canvas" = "canvas";
-            let targetId: string | null = null;
-
-            const node = e.target;
-            const stage = node.getStage();
-            const isBackground = node === stage || node.hasName("bg-rect");
-
-            if (!isBackground) {
-              if (mode === "single") {
-                const elNode = typeof node.findAncestor === 'function' ? (node.findAncestor((n: any) => !!n.id(), true)) : null;
-                const id = elNode?.id() || node.id() || node.attrs?.id;
-                if (id) {
-                  targetType = "element";
-                  targetId = id;
-                  if (!selectedIds.includes(id)) {
-                    selectElement(id);
-                  }
-                }
-              } else if (mode === "collage") {
-                const parentGroup = typeof node.findAncestor === 'function' ? node.findAncestor((n: any) => n.id() && n.id().startsWith("slot-"), true) : null;
-                if (parentGroup) {
-                  targetType = "slot";
-                  targetId = parentGroup.id().replace("slot-", "");
-                  selectElement(targetId);
-                }
-              }
-            }
-
-            if (targetType === "canvas") {
-              setContextMenu(null);
-              return;
-            }
-
-            setContextMenu({
-              position: { x, y },
-              target: { type: targetType, id: targetId }
-            });
-          }}
+          onContextMenu={handleCanvasContextMenu}
         />
       )}
 

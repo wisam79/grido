@@ -94,15 +94,16 @@ export function ImageAdjustProperties({
           variant="outline"
           size="sm"
           className="w-full mt-2 text-xs font-semibold gap-1.5 flex items-center justify-center cursor-pointer"
-          onClick={() =>
+          onClick={() => {
             onUpdate(element.id, {
               filter: "none",
               brightness: 100,
               contrast: 100,
               saturation: 100,
               blur: 0,
-            })
-          }
+            });
+            useEditorStore.getState().pushHistory();
+          }}
         >
           <RefreshCw className="w-3 h-3" />
           <span>إعادة تعيين الألوان</span>
@@ -379,7 +380,10 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   height: newHeight
                 });
                 
+                state.setLastEditedImage(localPath);
                 state.setLastEditedImageAspect(croppedAspect);
+                // حفظ القص يُسجل كخطوة تراجع مستقلة (إصلاح E-5)
+                state.pushHistory();
               };
                img.onerror = () => {
                  img.onload = null;

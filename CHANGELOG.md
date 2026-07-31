@@ -5,6 +5,15 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.15] - 2026-07-31
+
+### Fixed & Modernized
+- OAuth authentication callback JS string interpolation fix (`EXPECTED_STATE` quoted).
+- Expanded OAuth exchange local server allowed origins (`localhost` dynamic port & `null` origin).
+- Modernized benchmark loop idioms to `for b.Loop()` for Go 1.24+ standards.
+- Windows file locking protection: explicitly close installer file handles prior to `os.Remove`.
+- Memory optimization: restored shallow copying in Zustand history-slice (`elements.map(el => ({ ...el }))`) to prevent VRAM bloat and GC pauses.
+
 ## [v1.2.14] - 2026-07-31
 
 ### Fixed & Security

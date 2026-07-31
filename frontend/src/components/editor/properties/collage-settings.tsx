@@ -160,7 +160,6 @@ export function CollageSettings() {
           step={2}
           unit="px"
           onChange={setCollageGap}
-          onCommit={() => useEditorStore.getState().pushHistory()}
         />
         <PanelSlider
           label="الهامش"
@@ -171,7 +170,6 @@ export function CollageSettings() {
           step={2}
           unit="px"
           onChange={setCollageMargin}
-          onCommit={() => useEditorStore.getState().pushHistory()}
         />
         <PanelSlider
           label="الزوايا"
@@ -182,7 +180,6 @@ export function CollageSettings() {
           step={2}
           unit="px"
           onChange={setCollageRadius}
-          onCommit={() => useEditorStore.getState().pushHistory()}
         />
         <PanelSlider
           label="الإطار"
@@ -193,7 +190,6 @@ export function CollageSettings() {
           step={1}
           unit="px"
           onChange={setCollageStrokeWidth}
-          onCommit={() => useEditorStore.getState().pushHistory()}
         />
       </div>
 

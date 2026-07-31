@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -110,7 +111,7 @@ func resolveDailyLimitForToken(tokenHash string, token string) int {
 
 	limit := planLimitFree
 	if SupabaseURL != "" && SupabaseAnonKey != "" && token != "" {
-		if plan, err := fetchUserPlan(token); err == nil {
+		if _, plan, err := fetchSupabaseUserInfo(token); err == nil {
 			limit = planDailyLimit(plan)
 		}
 	}
@@ -121,65 +122,119 @@ func resolveDailyLimitForToken(tokenHash string, token string) int {
 	return limit
 }
 
-// fetchUserPlan يجلب خطة المستخدم من جدول profiles عبر Supabase REST باستخدام JWT المستخدم
-func fetchUserPlan(token string) (string, error) {
+// fetchSupabaseUserInfo يجلب معرّف المستخدم وخطته من Supabase عبر JWT المستخدم
+func fetchSupabaseUserInfo(token string) (userID string, plan string, err error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	userReq, err := http.NewRequest("GET", SupabaseURL+"/auth/v1/user", nil)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	userReq.Header.Set("apikey", SupabaseAnonKey)
 	userReq.Header.Set("Authorization", "Bearer "+token)
 
 	userResp, err := client.Do(userReq)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer userResp.Body.Close()
 	if userResp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("user token rejected: %s", userResp.Status)
+		return "", "", fmt.Errorf("user token rejected: %s", userResp.Status)
 	}
 
 	var userData struct {
 		ID string `json:"id"`
 	}
 	if err := json.NewDecoder(io.LimitReader(userResp.Body, 256*1024)).Decode(&userData); err != nil || userData.ID == "" {
-		return "", fmt.Errorf("invalid user payload")
+		return "", "", fmt.Errorf("invalid user payload")
 	}
 
 	profileReq, err := http.NewRequest("GET", SupabaseURL+"/rest/v1/profiles?select=plan&id=eq."+userData.ID, nil)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	profileReq.Header.Set("apikey", SupabaseAnonKey)
 	profileReq.Header.Set("Authorization", "Bearer "+token)
 
 	profileResp, err := client.Do(profileReq)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer profileResp.Body.Close()
 	if profileResp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("profiles lookup failed: %s", profileResp.Status)
+		return "", "", fmt.Errorf("profiles lookup failed: %s", profileResp.Status)
 	}
 
 	var profiles []struct {
 		Plan string `json:"plan"`
 	}
 	if err := json.NewDecoder(io.LimitReader(profileResp.Body, 256*1024)).Decode(&profiles); err != nil {
-		return "", err
+		return "", "", err
 	}
-	if len(profiles) == 0 {
-		return "", fmt.Errorf("profile not found")
+	plan = ""
+	if len(profiles) > 0 {
+		plan = profiles[0].Plan
 	}
-	return profiles[0].Plan, nil
+	return userData.ID, plan, nil
+}
+
+// callAIUsageRPC يستدعي RPC check_and_record_ai_usage في Supabase — الحجة الرسمية
+// الوحيدة للحد اليومي. تعمل بوضع الفحص المسبق (check_only) أو التسجيل (record).
+func callAIUsageRPC(token string, userID string, imageBytes int64, checkOnly bool) error {
+	payload, err := json.Marshal(map[string]interface{}{
+		"p_user_id":     userID,
+		"p_daily_limit": 0, // مهمل خادمياً — يُشتق من خطة المستخدم
+		"p_image_bytes": imageBytes,
+		"p_exec_seconds": 0,
+		"p_cost_usd":     0,
+		"p_check_only":   checkOnly,
+	})
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", SupabaseURL+"/rest/v1/rpc/check_and_record_ai_usage", bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("apikey", SupabaseAnonKey)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var errRes struct {
+			Message string `json:"message"`
+			Details string `json:"details"`
+		}
+		if jsonErr := json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&errRes); jsonErr == nil && errRes.Message != "" {
+			if errRes.Details != "" {
+				return fmt.Errorf("%s (%s)", errRes.Message, errRes.Details)
+			}
+			return errors.New(errRes.Message)
+		}
+		return fmt.Errorf("AI usage check failed: %s", resp.Status)
+	}
+	return nil
 }
 
 func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
-	// 🛡️ تسجيل الدخول إلزامي — خادم Modal يرفق الطلبات بدون Bearer JWT صالح
+	// 🛡️ تسجيل الدخول إلزامي — خادم Modal يرفض الطلبات بدون Bearer JWT صالح
 	if token == "" {
 		return "", fmt.Errorf("تسجيل الدخول مطلوب لاستخدام ميزة التحسين بالذكاء الاصطناعي")
+	}
+
+	// 🛡️ سقف حجم الصورة المدخلة — يمنع إغراق خادم الذكاء الاصطناعي ببيانات ضخمة
+	const maxInputImageBytes = 50 * 1024 * 1024 // 50MB كصورة مفكوكة
+	inputImageBytes := int64(len(base64Image)) * 3 / 4
+	if inputImageBytes > maxInputImageBytes {
+		return "", fmt.Errorf("حجم الصورة كبير جداً للمعالجة بالذكاء الاصطناعي (الحد الأقصى %d ميجابايت)", maxInputImageBytes/(1024*1024))
 	}
 
 	tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))[:16]
@@ -188,6 +243,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	// (المعامل limit المُستقبَل يُتجاهل عمداً — يبقى في التوقيع حفاظاً على توافقية الـ bindings).
 	serverLimit := resolveDailyLimitForToken(tokenHash, token)
 
+	// فحص سريع محلي (تخفيف مؤقت) — الحجة النهائية خادمية عبر RPC
 	if err := GlobalAIRateLimiter.Reserve(tokenHash, serverLimit); err != nil {
 		return "", err
 	}
@@ -199,6 +255,26 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 			GlobalAIRateLimiter.Rollback(tokenHash)
 		}
 	}()
+
+	// 🛡️ الفحص الخادمي الرسمي — لا يستهلك الرصيد (check_only) ويستمر عبر إعادة التشغيل.
+	// RPC check_and_record_ai_usage يشتق الحد من الخطة ويحصي استهلاك اليوم في قاعدة البيانات.
+	if SupabaseURL != "" && SupabaseAnonKey != "" {
+		userID, _, userErr := fetchSupabaseUserInfo(token)
+		if userErr == nil && userID != "" {
+			if rpcErr := callAIUsageRPC(token, userID, inputImageBytes, true); rpcErr != nil {
+				GlobalAIRateLimiter.Rollback(tokenHash)
+				return "", fmt.Errorf("تجاوزت الحد اليومي أو تعذر التحقق من الحصة: %w", rpcErr)
+			}
+			// تسجيل الاستهلاك خادمياً بعد نجاح المعالجة فقط
+			defer func() {
+				if success {
+					if recErr := callAIUsageRPC(token, userID, inputImageBytes, false); recErr != nil {
+						slog.Error("Failed to record AI usage server-side", "error", recErr)
+					}
+				}
+			}()
+		}
+	}
 
 	modalURL := strings.TrimRight(ModalAIURL, "/")
 	if modalURL == "" {
@@ -220,7 +296,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("User-Agent", "GridoStudio-Desktop/1.2.14")
+	req.Header.Set("User-Agent", "GridoStudio-Desktop/1.2.15")
 
 	client := &http.Client{Timeout: 3 * time.Minute}
 	resp, err := client.Do(req)
@@ -239,7 +315,8 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 			Error string `json:"error"`
 		}
 		if err := json.Unmarshal(body, &errRes); err == nil && errRes.Error != "" {
-			return "", errors.New(errRes.Error)
+			slog.Error("Modal AI server error", "detail", errRes.Error)
+			return "", fmt.Errorf("فشل خادم الذكاء الاصطناعي في معالجة الصورة (%d)", resp.StatusCode)
 		}
 		return "", fmt.Errorf("فشل خادم الذكاء الاصطناعي: %d", resp.StatusCode)
 	}

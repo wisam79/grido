@@ -13,7 +13,7 @@ const STATS = [
 ];
 
 const TRUST_TAGS = [
-  { icon: ShieldCheck, label: 'لا يحتاج إنترنت' },
+  { icon: ShieldCheck, label: 'أساسيات بدون إنترنت' },
   { icon: Zap, label: 'خفيف وسريع' },
   { icon: Monitor, label: 'يدعم جميع ويندوز' },
 ];
@@ -220,7 +220,7 @@ export function HeroSection() {
                 <div className="grid grid-cols-3 gap-2">
                   {[1, 2, 3, 4, 5, 6].map((n) => (
                     <div key={n} className="aspect-[3/4] bg-white rounded-none overflow-hidden border border-neutral-300 relative shadow-sm">
-                      <img src="/sample-passport.png" alt="Passport Sample" className="w-full h-full object-cover" />
+                      <img src="/sample-passport.png" alt="Passport Sample" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       <div className="absolute bottom-0 inset-x-0 bg-black/90 text-[7px] font-mono text-center text-white py-0.5 uppercase tracking-[0.5px]">
                         40×32mm
                       </div>

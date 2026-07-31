@@ -6,7 +6,12 @@ import { VECTOR_SHAPES } from "@/lib/svg-paths";
 
 // [FIX #9] تحويل Data URL إلى Blob مباشرة في الذاكرة بدلاً من fetch غير الضروري
 export function dataURLToBlob(dataUrl: string): Blob {
-  const [header, data] = dataUrl.split(",");
+  const commaIndex = dataUrl.indexOf(",");
+  if (commaIndex === -1) {
+    throw new Error("Invalid data URL: missing base64 payload");
+  }
+  const header = dataUrl.slice(0, commaIndex);
+  const data = dataUrl.slice(commaIndex + 1);
   const mime = header.match(/:(.*?);/)?.[1] || "image/png";
   const bytes = atob(data);
   const arr = new Uint8Array(bytes.length);
@@ -48,6 +53,44 @@ export function drawImageCover(
     sy = (img.height - sh) / 2;
   }
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+
+// رسم صورة الخانة مع القص (zoom/drag) والقلب والدوران —
+// يطابق منطق KonvaCollageImage في كل من التصدير اليدوي وتصدير الخانات المفردة
+export function drawSlotImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  slot: { zoom?: number; dragX?: number; dragY?: number; flipX?: boolean; flipY?: boolean; rotation?: number }
+) {
+  const imgAspect = img.width / img.height;
+  const slotAspect = w / h;
+  let sw = img.width;
+  let sh = img.height;
+  if (imgAspect > slotAspect) {
+    sw = img.height * slotAspect;
+  } else {
+    sh = img.width / slotAspect;
+  }
+  const zoom = slot.zoom && slot.zoom > 0 ? slot.zoom : 1;
+  sw /= zoom;
+  sh /= zoom;
+  const defaultSx = imgAspect > slotAspect ? (img.width - sw) / 2 : 0;
+  const defaultSy = imgAspect > slotAspect ? 0 : (img.height - sh) / 2;
+  const maxDragX = (img.width - sw) / 2;
+  const maxDragY = (img.height - sh) / 2;
+  const dragX = Math.max(-maxDragX, Math.min(maxDragX, slot.dragX || 0));
+  const dragY = Math.max(-maxDragY, Math.min(maxDragY, slot.dragY || 0));
+
+  ctx.translate(x + w / 2, y + h / 2);
+  ctx.rotate(((slot.rotation || 0) * Math.PI) / 180);
+  if (slot.flipX) ctx.scale(-1, 1);
+  if (slot.flipY) ctx.scale(1, -1);
+  ctx.translate(-w / 2, -h / 2);
+  ctx.drawImage(img, defaultSx + dragX, defaultSy + dragY, sw, sh, 0, 0, w, h);
 }
 
 export function drawRoundRect(
@@ -238,19 +281,39 @@ export async function exportCanvas(
     let dataUrl: string | null = null;
     try {
       const targetPixelRatio = canvasWidth / stageRef.width();
+      // JPEG لا يدعم الشفافية — نلتقط PNG ثم نركّبه على خلفية بيضاء
+      // (كان يُنتج خلفية سوداء للتصدير الشفاف)
+      const needsWhiteFlatten = format === "jpg" && backgroundColor === "transparent";
       dataUrl = await captureStageDataUrl(
         stageRef,
         targetPixelRatio,
-        format === "png" ? "image/png" : "image/jpeg",
-        quality
+        needsWhiteFlatten ? "image/png" : format === "png" ? "image/png" : "image/jpeg",
+        needsWhiteFlatten ? undefined : quality
       );
+      if (needsWhiteFlatten && dataUrl) {
+        const captured = await loadImage(dataUrl);
+        const flattenCanvas = document.createElement("canvas");
+        flattenCanvas.width = canvasWidth;
+        flattenCanvas.height = canvasHeight;
+        const fctx = flattenCanvas.getContext("2d");
+        if (fctx) {
+          fctx.fillStyle = "#FFFFFF";
+          fctx.fillRect(0, 0, canvasWidth, canvasHeight);
+          fctx.drawImage(captured, 0, 0);
+          dataUrl = flattenCanvas.toDataURL("image/jpeg", quality);
+        }
+      }
     } catch (e) {
       console.error("Failed to export via Konva Stage, falling back to manual canvas:", e);
     }
 
     if (dataUrl) {
-      const originalBlob = dataURLToBlob(dataUrl);
-      return await applyWatermarkIfFree(originalBlob, format, quality);
+      try {
+        const originalBlob = dataURLToBlob(dataUrl);
+        return await applyWatermarkIfFree(originalBlob, format, quality);
+      } catch (e) {
+        console.error("Failed to decode stage data URL, falling back to manual canvas:", e);
+      }
     }
   }
 
@@ -277,15 +340,18 @@ export async function exportCanvas(
       collageStrokeColor = "#000000",
     } = state;
 
-    const margin = collageMargin;
-    const gap = collageGap;
+    // القوالب الفيزيائية (physicalLayout) تُخبز الهامش والفجوة داخل إحداثيات
+    // الخلايا نفسها — تطبيقها مجدداً هنا يضاعفها ويُباعد التصدير عن المعاينة
+    const hasPhysical = Boolean(state.collageTemplate?.physicalLayout);
+    const margin = hasPhysical ? 0 : collageMargin;
+    const gap = hasPhysical ? 0 : collageGap;
     const radius = collageRadius;
     const borderW = collageStrokeWidth;
 
     const availW = canvasWidth - 2 * margin;
     const availH = canvasHeight - 2 * margin;
 
-    if (collageShowCutLines) {
+    if (collageShowCutLines && hasPhysical) {
       ctx.save();
       ctx.strokeStyle = "#a0aec0";
       ctx.lineWidth = Math.max(1, 2 * (canvasWidth / 1200));
@@ -333,7 +399,8 @@ export async function exportCanvas(
           ctx.rect(left, top, width, height);
         }
         ctx.clip();
-        drawImageCover(ctx, img, left, top, width, height);
+        // يطبّق zoom/dragX/dragY/flipX/flipY/rotation كما في عقدة Konva (إصلاح E-7)
+        drawSlotImage(ctx, img, left, top, width, height, slot);
         ctx.restore();
       }
 
@@ -570,7 +637,8 @@ export async function exportSlotCanvas(
     if (filterStr && filterStr !== "none") {
       ctx.filter = filterStr;
     }
-    drawImageCover(ctx, img, 0, 0, exportWidth, exportHeight);
+    // القص (zoom/drag) والقلب والدوران يُحترمون أيضاً في تصدير الخانة المفردة (إصلاح E-7)
+    drawSlotImage(ctx, img, 0, 0, exportWidth, exportHeight, slot);
     ctx.restore();
 
     return new Promise((resolve) => {

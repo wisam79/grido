@@ -221,8 +221,7 @@ func BenchmarkPrintService_GeneratePrintSheet(b *testing.B) {
 		},
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		out, _, err := svc.GeneratePrintSheet(req)
 		if err != nil {
 			b.Fatalf("GeneratePrintSheet failed: %v", err)

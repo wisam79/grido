@@ -21,11 +21,14 @@ window.addEventListener('unhandledrejection', function (event) {
 
 // 🚫 حظر تكبير وتصغير واجهة التطبيق بالكامل (Browser Page Zoom) عبر التوجباد أو المفاتيح
 if (typeof window !== 'undefined') {
-  // حظر Ctrl + Wheel للتوجباد المسبب لتكبير النافذة بدلاً من الكانفس
+  // حظر Ctrl + Wheel للتوجباد المسبب لتكبير النافذة بدلاً من الكانفس —
+  // يُستثنى الكانفس نفسه (id=canvas-area) لأنه يعالج Ctrl+wheel للتكبير داخلياً
   window.addEventListener(
     'wheel',
     (e: WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
+        const target = e.target as HTMLElement | null;
+        if (target?.closest?.('#canvas-area')) return;
         e.preventDefault();
       }
     },

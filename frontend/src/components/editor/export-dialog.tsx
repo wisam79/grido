@@ -64,8 +64,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             if (blob) {
               const ext = format === "png" ? "png" : "jpg";
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
-              await downloadBlob(blob, name);
-              successCount++;
+              const res = await downloadBlob(blob, name);
+              if (res === "success") successCount++;
+              else if (res === "") break; // ألغى المستخدم الحوار — لا نواصل الدفعة
             }
             setProgress(((i + 1) / validSlots.length) * 100);
             
@@ -102,6 +103,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             if (res === "success") {
               toast.success("تم تصدير الصورة بنجاح");
               onOpenChange(false);
+            } else if (res === "") {
+              toast.info("تم إلغاء التصدير");
+            } else {
+              toast.error("فشل حفظ الصورة");
             }
           } else {
             toast.error("تعذر إنشاء الصورة");

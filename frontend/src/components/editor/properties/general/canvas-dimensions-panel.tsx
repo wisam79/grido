@@ -67,37 +67,56 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     return () => cancelAnimationFrame(rafId);
   }, [canvasWidth, canvasHeight, unit, currentDpi]);
 
+  const MIN_PX = 1;
+  const MAX_PX = 20000;
+
+  // أثناء الكتابة نحدّث الحقل المحلي فقط — الالتزام الفعلي عند blur/Enter
   const handleWidthChange = (val: string) => {
     setWidthVal(val);
-    const num = parseFloat(val);
-    if (!isNaN(num) && num > 0) {
-      if (unit === "px") {
-        setCanvasSize(Math.round(num), canvasHeight);
-        if (template) setTemplate(null);
-      } else {
-        const mm = Math.min(num, 2000);
-        setWidthVal(mm.toString());
-        const px = Math.round((mm * dpiVal) / 25.4);
-        setCanvasSize(px, canvasHeight);
-        if (template) setTemplate(null);
-      }
+  };
+
+  const handleWidthCommit = () => {
+    const num = parseFloat(widthVal);
+    if (isNaN(num) || num <= 0) {
+      // إعادة العرض الصحيح دون تغيير المقاس
+      setWidthVal(canvasWidth.toString());
+      return;
+    }
+    if (unit === "px") {
+      const px = Math.max(MIN_PX, Math.min(MAX_PX, Math.round(num)));
+      setWidthVal(px.toString());
+      setCanvasSize(px, canvasHeight);
+      if (template) setTemplate(null);
+    } else {
+      const mm = Math.min(num, 2000);
+      setWidthVal(mm.toString());
+      const px = Math.round((mm * dpiVal) / 25.4);
+      setCanvasSize(Math.max(MIN_PX, px), canvasHeight);
+      if (template) setTemplate(null);
     }
   };
 
   const handleHeightChange = (val: string) => {
     setHeightVal(val);
-    const num = parseFloat(val);
-    if (!isNaN(num) && num > 0) {
-      if (unit === "px") {
-        setCanvasSize(canvasWidth, Math.round(num));
-        if (template) setTemplate(null);
-      } else {
-        const mm = Math.min(num, 2000);
-        setHeightVal(mm.toString());
-        const px = Math.round((mm * dpiVal) / 25.4);
-        setCanvasSize(canvasWidth, px);
-        if (template) setTemplate(null);
-      }
+  };
+
+  const handleHeightCommit = () => {
+    const num = parseFloat(heightVal);
+    if (isNaN(num) || num <= 0) {
+      setHeightVal(canvasHeight.toString());
+      return;
+    }
+    if (unit === "px") {
+      const px = Math.max(MIN_PX, Math.min(MAX_PX, Math.round(num)));
+      setHeightVal(px.toString());
+      setCanvasSize(canvasWidth, px);
+      if (template) setTemplate(null);
+    } else {
+      const mm = Math.min(num, 2000);
+      setHeightVal(mm.toString());
+      const px = Math.round((mm * dpiVal) / 25.4);
+      setCanvasSize(canvasWidth, Math.max(MIN_PX, px));
+      if (template) setTemplate(null);
     }
   };
 
@@ -367,6 +386,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="number"
               value={widthVal}
               onChange={(e) => handleWidthChange(e.target.value)}
+              onBlur={handleWidthCommit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+              }}
               className="w-full bg-transparent border-0 p-0 text-sm font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
               min={1}
             />
@@ -391,6 +414,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="number"
               value={heightVal}
               onChange={(e) => handleHeightChange(e.target.value)}
+              onBlur={handleHeightCommit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+              }}
               className="w-full bg-transparent border-0 p-0 text-sm font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
               min={1}
             />

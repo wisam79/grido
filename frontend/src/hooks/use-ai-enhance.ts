@@ -143,8 +143,9 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
     setEnhanceProgressText("جاري تجهيز الصورة وتحسين أبعاد الرفع...");
 
     let progressTimer: any = null;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout for Modal AI cold-starts
+    // لا يدعم ربط Wails الإلغاء الفعلي — نستبدل AbortController الوهمي بمهلة
+    // حقيقية عبر Promise.race ليعود للمستخدم خطأ واضح بدل انتظار لا نهائي
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     try {
       setEnhanceProgress(20);
@@ -177,10 +178,21 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
       }, 800);
 
       const token = user?.token || "";
-      const resultStr = await EnhanceImageWithAI(base64Image, token, dailyLimit);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error("استغرق الطلب وقتاً طويلاً. أعد المحاولة مرة أخرى.")),
+          120000 // مهلة 120 ثانية للبارد على الخادم السحابي
+        );
+      });
+      const resultStr = await Promise.race([
+        EnhanceImageWithAI(base64Image, token, dailyLimit),
+        timeoutPromise,
+      ]);
 
       clearInterval(progressTimer);
-      clearTimeout(timeoutId);
+      progressTimer = null;
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = null;
 
       const result = JSON.parse(resultStr);
 
@@ -219,10 +231,10 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
       }
     } catch (err) {
       if (progressTimer) clearInterval(progressTimer);
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
       console.error("AI Enhance failed:", err);
-      if (err instanceof Error && err.name === "AbortError") {
-        toast.error("استغرق الطلب وقتاً طويلاً. أعد المحاولة مرة أخرى.");
+      if (err instanceof Error && /طويلاً/.test(err.message)) {
+        toast.error(err.message);
       } else {
         const errorMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل تحسين الصورة بالذكاء الاصطناعي");
         toast.error(errorMsg);

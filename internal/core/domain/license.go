@@ -35,7 +35,4 @@ type LicenseRepository interface {
 	Save(profile *UserProfile) error
 	Get() (*UserProfile, error)
 	Clear() error
-	GetAll() ([]UserProfile, error)
-	SaveUser(profile *UserProfile) error
-	DeleteUser(id string) error
 }

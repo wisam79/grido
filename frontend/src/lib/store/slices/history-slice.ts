@@ -11,6 +11,7 @@ export interface HistorySlice {
 
 // القيم الافتراضية للحقول الإضافية — يجب أن تطابق DEFAULT_CORE_STATE في core-slice
 export const DEFAULT_HISTORY_ENTRY_EXTRAS = {
+  mode: "collage" as const,
   canvasWidth: 2480,
   canvasHeight: 3508,
   backgroundColor: "#FFFFFF",
@@ -20,6 +21,8 @@ export const DEFAULT_HISTORY_ENTRY_EXTRAS = {
   collageShowCutLines: false,
   collageStrokeWidth: 0,
   collageStrokeColor: "#000000",
+  lastEditedImage: null as string | null,
+  lastEditedImageAspect: null as number | null,
 };
 
 export const DEFAULT_HISTORY_STATE = {
@@ -33,6 +36,7 @@ type HistoryCross = HistorySlice & {
   selectedId: string | null;
   selectedIds: string[];
   editingTextId: string | null;
+  mode?: "single" | "collage";
   canvasWidth?: number;
   canvasHeight?: number;
   backgroundColor?: string;
@@ -42,12 +46,16 @@ type HistoryCross = HistorySlice & {
   collageShowCutLines?: boolean;
   collageStrokeWidth?: number;
   collageStrokeColor?: string;
+  lastEditedImage?: string | null;
+  lastEditedImageAspect?: number | null;
 };
 
 // التقاط لقطة كاملة للحالة القابلة للتراجع (عناصر + خانات + إعدادات بصرية مؤثرة)
 const captureSnapshot = (s: HistoryCross): HistoryEntry => ({
+  // نسخ سطحي يمنع نسخ البيانات الضخمة مع ضمان فصل المراجع
   elements: s.elements.map((el) => ({ ...el })),
   slots: s.slots.map((sl) => ({ ...sl })),
+  mode: s.mode,
   canvasWidth: s.canvasWidth,
   canvasHeight: s.canvasHeight,
   backgroundColor: s.backgroundColor,
@@ -57,6 +65,9 @@ const captureSnapshot = (s: HistoryCross): HistoryEntry => ({
   collageShowCutLines: s.collageShowCutLines,
   collageStrokeWidth: s.collageStrokeWidth,
   collageStrokeColor: s.collageStrokeColor,
+  // تسوية undefined إلى null — يضمن تطابق JSON مع الإدخال الابتدائي في الـ dedupe
+  lastEditedImage: s.lastEditedImage ?? null,
+  lastEditedImageAspect: s.lastEditedImageAspect ?? null,
 });
 
 // استعادة حقول اللقطة — الحقول غير المعرفة (undefined) لا تُفرض على الحالة الحالية
@@ -66,9 +77,10 @@ const restoreEntry = (entry: HistoryEntry) => {
     slots: entry.slots.map((sl) => ({ ...sl })),
   };
   const optionalKeys = [
-    "canvasWidth", "canvasHeight", "backgroundColor",
+    "mode", "canvasWidth", "canvasHeight", "backgroundColor",
     "collageGap", "collageMargin", "collageRadius",
     "collageShowCutLines", "collageStrokeWidth", "collageStrokeColor",
+    "lastEditedImage", "lastEditedImageAspect",
   ] as const;
   for (const key of optionalKeys) {
     if (entry[key] !== undefined) {

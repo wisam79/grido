@@ -12,10 +12,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+// updateMutex يمنع تعارض تنظيف مجلد التحديثات مع تحميل نشط في نفس الوقت
+var updateMutex sync.Mutex
 
 // AppVersion يتم حقنها تلقائياً ديناميكياً عند البناء عبر ldflags (مثل -X grido/internal/service.AppVersion=v1.0.2)
 var AppVersion = "dev"
@@ -37,6 +41,10 @@ const checksumsAssetName = "grido-checksums.txt"
 
 // CleanupTempUpdates يقوم بتنظيف كافّة ملفات والمثبتات المؤقتة الخاصة بـ Grido في مجلد Temp
 func CleanupTempUpdates() {
+	// لا تنظّف أثناء تحميل تحديث نشط
+	updateMutex.Lock()
+	defer updateMutex.Unlock()
+
 	tempDir := os.TempDir()
 
 	// 1. تنظيف مجلد grido-updates المخصص
@@ -89,12 +97,8 @@ func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 			if resp != nil {
 				resp.Body.Close()
 			}
-			return &UpdateInfo{
-				HasUpdate:      false,
-				CurrentVersion: AppVersion,
-				LatestVersion:  AppVersion,
-				DownloadURL:    "https://grido.cloud-ip.cc/api/download",
-			}, nil
+			// فشل كلا المصدرين — نُبلغ المستخدم بدل إخفاء وجود تحديثات
+			return nil, fmt.Errorf("failed to check for updates (both primary and fallback sources unavailable): %w", err)
 		}
 	}
 	defer resp.Body.Close()
@@ -236,6 +240,18 @@ func (pw *progressWriter) Write(p []byte) (int, error) {
 }
 
 func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL string, expectedSHA256 string) error {
+	// 🛡️ إغلاق حازم: بدون بصمة SHA-256 معلنة لا نثبّت أي ملف بصلاحيات مسؤول
+	expected := strings.ToLower(strings.TrimSpace(expectedSHA256))
+	if expected == "" {
+		return fmt.Errorf("refusing to install update: no SHA-256 checksum published for this release")
+	}
+	if len(expected) != sha256.Size*2 {
+		return fmt.Errorf("refusing to install update: invalid SHA-256 checksum format")
+	}
+	if _, err := hex.DecodeString(expected); err != nil {
+		return fmt.Errorf("refusing to install update: invalid SHA-256 checksum format: %w", err)
+	}
+
 	if downloadURL == "" {
 		downloadURL = "https://grido.cloud-ip.cc/api/download"
 	}
@@ -246,7 +262,19 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	}
 	req.Header.Set("User-Agent", "GridoStudio-Desktop")
 
-	client := &http.Client{Timeout: 5 * time.Minute}
+	// 🛡️ رفض أي إعادة توجيه تنزل إلى HTTP غير مشفّر (منع هبوط TLS→HTTP)
+	client := &http.Client{
+		Timeout: 5 * time.Minute,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 {
+				return fmt.Errorf("too many redirects")
+			}
+			if req.URL.Scheme != "https" {
+				return fmt.Errorf("refusing insecure redirect to non-HTTPS URL: %s", req.URL)
+			}
+			return nil
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to download update: %w", err)
@@ -256,6 +284,22 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("server returned status: %s", resp.Status)
 	}
+
+	// 🛡️ رفض أي نوع محتوى غير ملف تنفيذي
+	contentType := strings.ToLower(strings.TrimSpace(resp.Header.Get("Content-Type")))
+	if contentType != "" && !isInstallerContentType(contentType) {
+		return fmt.Errorf("refusing to install update: unexpected content type %q", contentType)
+	}
+
+	// 🛡️ رفض التحميل مسبقاً إذا أعلن الخادم حجماً يتجاوز السقف
+	const maxInstallerSize = 200 * 1024 * 1024 // 200MB max
+	if resp.ContentLength > maxInstallerSize {
+		return fmt.Errorf("refusing to install update: declared size %d exceeds limit of %d bytes", resp.ContentLength, maxInstallerSize)
+	}
+
+	// منع تنظيف مجلد التحديثات أثناء التحميل (متزامن مع CleanupTempUpdates)
+	updateMutex.Lock()
+	defer updateMutex.Unlock()
 
 	tempDir := filepath.Join(os.TempDir(), "grido-updates")
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
@@ -278,29 +322,32 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	}
 
 	mw := io.MultiWriter(out, pw, hasher)
-	const maxInstallerSize = 200 * 1024 * 1024 // 200MB max
-	limitedBody := io.LimitReader(resp.Body, maxInstallerSize)
-	if _, err := io.Copy(mw, limitedBody); err != nil {
-		out.Close()
+	// 🛡️ كاتب محدود يفشل فوراً عند تجاوز السقف بدل الاقتطاع الصامت
+	limitedWriter := &limitedWriter{w: mw, limit: maxInstallerSize}
+	if _, err := io.Copy(limitedWriter, resp.Body); err != nil {
+		_ = out.Close()
+		_ = os.Remove(installerPath)
 		return fmt.Errorf("failed to save update file: %w", err)
 	}
-	out.Close()
+	if err := out.Sync(); err != nil {
+		_ = out.Close()
+		_ = os.Remove(installerPath)
+		return fmt.Errorf("failed to sync update file: %w", err)
+	}
+	if err := out.Close(); err != nil {
+		_ = os.Remove(installerPath)
+		return fmt.Errorf("failed to close update file: %w", err)
+	}
 
 	// 🛡️ فرض مطابقة البصمة قبل أي تشغيل — إغلاق كامل عند الاختلاف لمنع تنفيذ ملف معدل
-	expected := strings.ToLower(strings.TrimSpace(expectedSHA256))
-	if expected != "" {
-		actual := hex.EncodeToString(hasher.Sum(nil))
-		if actual != expected {
-			_ = os.Remove(installerPath)
-			slog.Error("Update installer checksum mismatch — refusing to run",
-				"expected", expected, "actual", actual)
-			return fmt.Errorf("فشل التحقق من سلامة ملف التحديث (بصمة SHA-256 غير مطابقة). تم حذف الملف وحظر التثبيت")
-		}
-		slog.Info("Update installer checksum verified", "sha256", actual)
-	} else {
-		// الإصدارات القديمة لا تعلن بصمة — نسمح مع توثيق تحذير واضح
-		slog.Warn("Update installer has no published checksum — proceeding without integrity verification")
+	actual := hex.EncodeToString(hasher.Sum(nil))
+	if actual != expected {
+		_ = os.Remove(installerPath)
+		slog.Error("Update installer checksum mismatch — refusing to run",
+			"expected", expected, "actual", actual)
+		return fmt.Errorf("فشل التحقق من سلامة ملف التحديث (بصمة SHA-256 غير مطابقة). تم حذف الملف وحظر التثبيت")
 	}
+	slog.Info("Update installer checksum verified", "sha256", actual)
 
 	wailsruntime.EventsEmit(ctx, "update-progress", 100)
 
@@ -313,4 +360,36 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	time.Sleep(200 * time.Millisecond)
 	os.Exit(0)
 	return nil
+}
+
+// isInstallerContentType يتحقق أن نوع المحتوى ملف تنفيذي Windows مقبول
+func isInstallerContentType(contentType string) bool {
+	for _, allowed := range []string{
+		"application/octet-stream",
+		"application/x-msdownload",
+		"application/x-msdos-program",
+		"application/exe",
+		"application/vnd.microsoft.portable-executable",
+	} {
+		if strings.HasPrefix(contentType, allowed) {
+			return true
+		}
+	}
+	return false
+}
+
+// limitedWriter يفشل عند تجاوز حد الحجم بدل السماح بالاقتطاع الصامت
+type limitedWriter struct {
+	w       io.Writer
+	limit   int64
+	written int64
+}
+
+func (lw *limitedWriter) Write(p []byte) (int, error) {
+	if lw.written+int64(len(p)) > lw.limit {
+		return 0, fmt.Errorf("update file exceeds size limit of %d bytes", lw.limit)
+	}
+	n, err := lw.w.Write(p)
+	lw.written += int64(n)
+	return n, err
 }

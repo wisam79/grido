@@ -7,7 +7,7 @@ import { WifiOff, Cpu, Droplets, ShieldCheck, Zap, Gauge, Monitor, FileCheck2 } 
  */
 const ITEMS = [
   { icon: Zap, label: '3 SECONDS WORKFLOW' },
-  { icon: WifiOff, label: '100% OFFLINE' },
+  { icon: WifiOff, label: 'CORE 100% OFFLINE' },
   { icon: Cpu, label: 'CODEFORMER + REAL-ESRGAN' },
   { icon: Droplets, label: 'CMYK PRESS READY' },
   { icon: ShieldCheck, label: 'K=100% PURE BLACK CUTS' },

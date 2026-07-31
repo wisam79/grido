@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useEditorStore } from "@/lib/editor-store";
+import { useShallow } from "zustand/react/shallow";
 import { 
   Copy, 
   Trash2, 
@@ -52,7 +53,19 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
     pushHistory,
     slots,
     elements
-  } = useEditorStore();
+  } = useEditorStore(useShallow((state) => ({
+    duplicateElement: state.duplicateElement,
+    duplicateElements: state.duplicateElements,
+    removeElement: state.removeElement,
+    bringToFront: state.bringToFront,
+    sendToBack: state.sendToBack,
+    updateSlot: state.updateSlot,
+    updateElement: state.updateElement,
+    setSlotImage: state.setSlotImage,
+    pushHistory: state.pushHistory,
+    slots: state.slots,
+    elements: state.elements,
+  })));
 
   const onUpdateSlot = (id: string, patch: Partial<CanvasSlot>) => {
     updateSlot(id, patch);

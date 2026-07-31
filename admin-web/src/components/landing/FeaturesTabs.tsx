@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Crop, LayoutGrid, Wand2, Printer, CheckCircle2, ArrowLeftRight, Sliders, ShieldCheck, Sparkles, MoveHorizontal } from 'lucide-react';
+import { SectionHeading } from './SectionHeading';
 
 type TabId = 'id' | 'collage' | 'ai' | 'cmyk';
 
@@ -105,18 +106,13 @@ export function FeaturesTabs() {
     <section id="features" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16 relative z-20">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-            <span>المميزات الرئيسية</span>
-          </span>
-          <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white uppercase leading-tight">
-            استكشف قوة <span className="text-secondary">GRIDO STUDIO</span>
-          </h2>
-          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-            أدوات الذكاء الاصطناعي والأتمتة لتضاعف إنتاجية استوديوهات التصوير.
-          </p>
-        </div>
+        <SectionHeading
+          icon={Sparkles}
+          eyebrow="المميزات الرئيسية"
+          title={<>استكشف قوة <span className="text-secondary">GRIDO STUDIO</span></>}
+          subtitle="أدوات الذكاء الاصطناعي والأتمتة لتضاعف إنتاجية استوديوهات التصوير."
+          index="02"
+        />
 
         {/* SpaceX Monochromatic Pill Tabs Bar */}
         <div className="stagger-4 flex justify-center mb-8 sm:mb-16 relative z-20">
@@ -253,6 +249,8 @@ export function FeaturesTabs() {
                           <img
                             src={PASSPORT_IMG}
                             alt="Passport Preview"
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-contain transition-transform duration-300 group-hover/img:scale-105"
                           />
 

@@ -117,6 +117,7 @@ export interface HistoryEntry {
   elements: CanvasElement[];
   slots: CanvasSlot[];
   // إعدادات بصرية مؤثرة على الناتج — التراجع عنها يجب أن يستعيدها فعلاً (إصلاح E-4)
+  mode?: EditorMode;
   canvasWidth?: number;
   canvasHeight?: number;
   backgroundColor?: string;
@@ -126,6 +127,9 @@ export interface HistoryEntry {
   collageShowCutLines?: boolean;
   collageStrokeWidth?: number;
   collageStrokeColor?: string;
+  // حالة الصورة المحررة الأخيرة — تُستعاد مع التراجع لمنع "شبح" صورة قديمة
+  lastEditedImage?: string | null;
+  lastEditedImageAspect?: number | null;
 }
 
 export interface PrintSettings {

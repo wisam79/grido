@@ -1,4 +1,5 @@
 import { CheckCircle2, X, Sparkles, Zap, ShieldCheck, Cpu, Droplets, WifiOff } from 'lucide-react';
+import { SectionHeading } from './SectionHeading';
 
 const COMPARISON_ROWS = [
   {
@@ -47,18 +48,13 @@ export function ComparisonSection() {
   return (
     <section id="comparison" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-            <span>مقارنة الأداء والمقاييس</span>
-          </span>
-          <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white uppercase leading-tight">
-            لماذا يتحول الجميع إلى <span className="text-secondary">GRIDO STUDIO</span>؟
-          </h2>
-          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-            وفر 90% من وقت العمل اليومي بفضل الأتمتة المباشرة.
-          </p>
-        </div>
+        <SectionHeading
+          icon={Sparkles}
+          eyebrow="مقارنة الأداء والمقاييس"
+          title={<>لماذا يتحول الجميع إلى <span className="text-secondary">GRIDO STUDIO</span>؟</>}
+          subtitle="وفر 90% من وقت العمل اليومي بفضل الأتمتة المباشرة."
+          index="03"
+        />
 
         {/* Feature VS Cards Stack */}
         <div className="stagger-4 space-y-4">

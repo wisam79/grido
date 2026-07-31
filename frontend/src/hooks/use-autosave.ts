@@ -41,6 +41,7 @@ export function useAutoSave() {
     let lastSavedString = "";
     let isSaving = false;
     let pendingSaveState: string | null = null;
+    let disposed = false;
 
     // دالة الحفظ الفعلي للمسودة بشكل متسلسل لحماية الملفات من التلف
     const saveDraft = async (stateString: string) => {
@@ -57,6 +58,8 @@ export function useAutoSave() {
         console.error("Failed to save draft:", err);
       } finally {
         isSaving = false;
+        // السلسلة تفرّغ آخر مسودة معلّقة حتى بعد إلغاء التنشيط (كتابة نهائية
+        // بأحدث حالة) — الحارس ضد القِدم هو فحص disposed في runSave فقط
         if (pendingSaveState !== null) {
           const nextState = pendingSaveState;
           pendingSaveState = null;
@@ -67,6 +70,7 @@ export function useAutoSave() {
 
     const handleStateChange = (state: any) => {
       const runSave = () => {
+        if (disposed) return; // منع كتابة مسودة قديمة بعد إلغاء التنشيط
         const projectData = serializeEditorState(state);
         const currentString = JSON.stringify(projectData);
         if (currentString === lastSavedString) {
@@ -117,16 +121,21 @@ export function useAutoSave() {
     });
 
     return () => {
+      disposed = true;
       unsubscribe();
       debouncedSave.cancel();
-      // حفظ فوري للحالة الحالية قبل إلغاء التنشيط لمنع فقدان أي تعديلات
+      // حفظ فوري للحالة الحالية قبل إلغاء التنشيط لمنع فقدان أي تعديلات —
+      // يُوجَّه عبر السلسلة المتسلسلة إن كان حفظ آخر قيد التنفيذ حتى لا
+      // تتجاوزه مسودة أحدث أو تتجاوزها مسودة أقدم (سباق الكتابة القديمة)
       const currentState = useEditorStore.getState();
       const projectData = serializeEditorState(currentState);
       const currentString = JSON.stringify(projectData);
       if (currentString !== lastSavedString) {
-        SaveAutoSave(currentString).catch((err) => {
-          console.error("Failed to run final save on unmount:", err);
-        });
+        if (isSaving) {
+          pendingSaveState = currentString;
+        } else {
+          saveDraft(currentString);
+        }
       }
     };
   }, []);

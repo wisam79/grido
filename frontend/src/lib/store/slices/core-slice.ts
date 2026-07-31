@@ -122,6 +122,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       
       return nextState;
     });
+    // تبديل الوضع قابل للتراجع — اللقطة الآن تتضمن mode (إصلاح E-4)
+    get().pushHistory();
   },
 
   setCanvasSize: (w, h) => {
@@ -189,7 +191,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     get().pushHistory();
   },
 
-  setBackgroundColor: (c) => set({ backgroundColor: c }),
+  setBackgroundColor: (c) => { set({ backgroundColor: c }); get().pushHistory(); },
 
   setLastEditedImage: (src) => set({ lastEditedImage: src }),
   setLastEditedImageAspect: (aspect) => set({ lastEditedImageAspect: aspect }),
@@ -252,11 +254,13 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       ? project.canvasHeight
       : 3508;
 
+    // قالب غير موجود في الكتالوج (إصدار أحدث/إضافة مخصصة) يُحتفظ به كما هو —
+    // بياناته كاملة بعد التحقق، وإسقاطه كان يترك الكانفس بلا قالب
     const restoredTemplate = project.template
-      ? (PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) as PhotoTemplate | undefined) || null
+      ? (PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) as PhotoTemplate | undefined) || (project.template as PhotoTemplate)
       : null;
     const restoredCollageTemplate = project.collageTemplate
-      ? (COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate?.id) as CollageTemplate | undefined) || null
+      ? (COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate?.id) as CollageTemplate | undefined) || (project.collageTemplate as CollageTemplate)
       : null;
 
     const rawElements = (project.elements || []) as CanvasElement[];
@@ -268,16 +272,69 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       return true;
     });
 
-    const rawSlots = (project.slots && project.slots.length > 0 ? project.slots : (project.mode === "collage" ? generateInitialSlots() : [])) as CanvasSlot[];
+    // وضع موحّد مع الافتراضي: ملفات جديدة/فارغة تبدأ كولاج (مطابقة reset)،
+    // بينما الملفات القديمة التي تحتوي عناصر تعديل حر تُحمل كوضع مفرد
+    const resolvedMode: EditorMode =
+      project.mode || (validElements.length > 0 ? "single" : "collage");
+
+    const fallbackSlots = (): CanvasSlot[] => (resolvedMode === "collage" ? generateInitialSlots() : []);
+
+    const rawSlots = ((project.slots && project.slots.length > 0 ? project.slots : fallbackSlots()) || []) as CanvasSlot[];
+    // التحقق من سلامة الخانات مثلما تُفلتر العناصر — يمنع خانات تالفة من الوصول للكانفس
+    const validSlots = rawSlots.filter((sl) => {
+      if (!sl || typeof sl !== "object") return false;
+      if (!isFinite(sl.x) || !isFinite(sl.y) || !isFinite(sl.w) || !isFinite(sl.h)) return false;
+      if (sl.w <= 0 || sl.h <= 0) return false;
+      return true;
+    });
+
+    // مطابقة عدد الخانات مع خلايا قالب الكولاج: اختلاف العدد يعني ملفاً تالفاً
+    // أو هجرة قديمة — نعيد بناء الخانات من القالب مع الإبقاء على الصور حسب الموضع
+    let reconciledSlots = validSlots;
+    if (resolvedMode === "collage" && restoredCollageTemplate && validSlots.length !== restoredCollageTemplate.cells.length) {
+      const storedDpi = project.printSettings?.dpi || 300;
+      const dpi = getEffectiveDpi(validWidth, validHeight, storedDpi);
+      let cells = restoredCollageTemplate.cells;
+      if (restoredCollageTemplate.physicalLayout) {
+        const dynamicCells = computeDynamicCollageCells(
+          restoredCollageTemplate,
+          validWidth,
+          validHeight,
+          dpi,
+          project.collageGap ?? 0,
+          project.collageMargin ?? 0
+        );
+        if (dynamicCells) cells = dynamicCells;
+      }
+      reconciledSlots = cells.map((c, i) => {
+        const existingSlot = validSlots[i];
+        return {
+          id: uid(),
+          cellIndex: i,
+          x: c.x,
+          y: c.y,
+          w: c.w,
+          h: c.h,
+          imageSrc: existingSlot?.imageSrc || undefined,
+          filter: existingSlot?.filter || "none",
+          brightness: existingSlot?.brightness || 100,
+          contrast: existingSlot?.contrast || 100,
+          saturation: existingSlot?.saturation || 100,
+          zoom: existingSlot?.zoom || 1,
+          dragX: existingSlot?.dragX || 0,
+          dragY: existingSlot?.dragY || 0,
+        };
+      });
+    }
 
     set({
       projectId,
-      mode: project.mode || "single",
+      mode: resolvedMode,
       canvasWidth: validWidth,
       canvasHeight: validHeight,
       backgroundColor: project.backgroundColor || "#FFFFFF",
       elements: validElements,
-      slots: rawSlots,
+      slots: reconciledSlots,
       template: restoredTemplate,
       collageTemplate: restoredCollageTemplate,
       printSettings: project.printSettings
@@ -289,8 +346,9 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       history: [{
         // تُبذر بداية التاريخ بالعناصر المفلترة نفسها المعروضة — إعادة الخام
         // تعني أن أول تراجع يعيد العنصر التالف (NaN/أبعاد صفرية) للكانفس.
+        mode: resolvedMode,
         elements: validElements,
-        slots: rawSlots,
+        slots: reconciledSlots,
         canvasWidth: validWidth,
         canvasHeight: validHeight,
         backgroundColor: project.backgroundColor || "#FFFFFF",

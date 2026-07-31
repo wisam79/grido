@@ -20,7 +20,7 @@ describe('history-slice', () => {
       collageShowCutLines: false,
       collageStrokeWidth: 0,
       collageStrokeColor: '#000000',
-      mode: 'select',
+      mode: 'collage',
       selectedId: null,
       selectedIds: [],
     }));

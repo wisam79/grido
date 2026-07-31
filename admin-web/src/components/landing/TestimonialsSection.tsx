@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Clock, Zap, ShieldAlert, Sparkles, CheckCircle2, UserCheck, FileSpreadsheet, ArrowLeft } from 'lucide-react';
+import { SectionHeading } from './SectionHeading';
 
 interface StudioScenario {
   id: string;
@@ -73,19 +74,13 @@ export function TestimonialsSection() {
   return (
     <section id="scenarios" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Title Header */}
-        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
-            <UserCheck className="w-3.5 h-3.5 text-white" />
-            <span>حالات استخدام واقعية من داخل الاستوديو</span>
-          </span>
-          <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white uppercase leading-tight">
-            كيف يحل <span className="text-secondary">GRIDO STUDIO</span> مواقف العمل اليومية؟
-          </h2>
-          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-            حلول فورية لمواقف العمل اليومية داخل الاستوديو والمطبعة.
-          </p>
-        </div>
+        <SectionHeading
+          icon={UserCheck}
+          eyebrow="حالات استخدام واقعية من داخل الاستوديو"
+          title={<>كيف يحل <span className="text-secondary">GRIDO STUDIO</span> مواقف العمل اليومية؟</>}
+          subtitle="حلول فورية لمواقف العمل اليومية داخل الاستوديو والمطبعة."
+          index="05"
+        />
 
         {/* Scenario Selector Pill Bar */}
         <div className="stagger-4 flex justify-center mb-8 sm:mb-10">

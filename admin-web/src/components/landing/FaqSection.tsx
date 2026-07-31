@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { ChevronDown, Sparkles, MessageCircle, ArrowUpLeft } from 'lucide-react';
+import { SectionHeading } from './SectionHeading';
 
 const FAQ_ITEMS = [
   {
     q: 'هل يعمل البرنامج بدون اتصال بالإنترنت؟',
-    a: 'نعم! كل الوظائف — القص، التوسيط، توزيع الشبكات، الطباعة، تصدير CMYK، وحتى ترميم الوجوه بالذكاء الاصطناعي (CodeFormer + Real-ESRGAN) — تعمل محلياً 100% على جهازك دون أي اتصال بالإنترنت. النماذج تعمل على معالج/كرت شاشة الاستوديو مباشرة.',
+    a: 'نعم! جميع الوظائف الأساسية للطباعة — القص، التوسيط، توزيع الشبكات، الطباعة، وتصدير CMYK — تعمل محلياً 100% على جهازك. الإنترنت مطلوب فقط لميزات الترميم بالذكاء الاصطناعي (CodeFormer) لأنها تعمل على خوادم معالجة GPU متخصصة تضمن أعلى دقة ممكنة.',
   },
   {
     q: 'ما هي الطابعات المدعومة في Grido Studio؟',
@@ -24,7 +25,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'هل تُرسل صور الزبائن إلى خوادم خارجية؟',
-    a: 'إطلاقاً. كل المعالجة — بما فيها ترميم الوجوه بالذكاء الاصطناعي — تتم على جهازك مباشرة دون إرسال أي صورة لأي خادم خارجي. خصوصية زبائنك مضمونة بالكامل والعمل يستمر حتى مع انقطاع الإنترنت كلياً.',
+    a: 'إطلاقاً في الوظائف المحلية (التنسيق والطباعة). وعند استخدام ترميم AI الاختياري، تُرسل الصورة مشفّرةً إلى خادم المعالجة لحظياً وتُحذف فور اكتمال الطلب — لا تُخزَّن أي صورة نهائياً، وخصوصية زبائنك مضمونة بالكامل.',
   },
 ];
 
@@ -36,18 +37,13 @@ export function FaqSection() {
   return (
     <section id="faq" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-            <span>الدعم الفني والأسئلة</span>
-          </span>
-          <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white uppercase leading-tight">
-            إجابات مباشرة <span className="text-secondary">بدون لفّ ودوران</span>
-          </h2>
-          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-            كل ما يسأل عنه أصحاب الاستوديوهات قبل أول تحميل.
-          </p>
-        </div>
+        <SectionHeading
+          icon={Sparkles}
+          eyebrow="الدعم الفني والأسئلة"
+          title={<>إجابات مباشرة <span className="text-secondary">بدون لفّ ودوران</span></>}
+          subtitle="كل ما يسأل عنه أصحاب الاستوديوهات قبل أول تحميل."
+          index="08"
+        />
 
         <div className="stagger-4 max-w-3xl mx-auto space-y-3">
           {FAQ_ITEMS.map((faq, idx) => {

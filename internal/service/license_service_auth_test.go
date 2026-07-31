@@ -2,10 +2,12 @@ package service
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"grido/internal/core/domain"
 	"grido/internal/repository"
@@ -139,5 +141,113 @@ func TestLicenseService_ResendOTP(t *testing.T) {
 
 	if prof.Status != "pending_otp" {
 		t.Errorf("ResendOTP should return pending_otp status")
+	}
+}
+
+func TestStartOAuthLocalServer_CallbackServesPageWithState(t *testing.T) {
+	callbackURL, _, errChan, shutdown, state, err := startOAuthLocalServer()
+	if err != nil {
+		t.Fatalf("startOAuthLocalServer failed: %v", err)
+	}
+	defer shutdown()
+	defer func() { select { case e := <-errChan: t.Errorf("server error: %v", e); default: } }()
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(callbackURL)
+	if err != nil {
+		t.Fatalf("GET /callback failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+	if ct := resp.Header.Get("Content-Type"); !strings.Contains(ct, "text/html") {
+		t.Errorf("expected html content type, got %q", ct)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read body failed: %v", err)
+	}
+	if !strings.Contains(string(body), state) {
+		t.Errorf("callback page should embed session state %q", state)
+	}
+	if strings.Contains(string(body), "EXPECTED_STATE") {
+		t.Error("callback page should not contain raw EXPECTED_STATE placeholder")
+	}
+}
+
+func TestStartOAuthLocalServer_ExchangeFlow(t *testing.T) {
+	callbackURL, tokenChan, errChan, shutdown, state, err := startOAuthLocalServer()
+	if err != nil {
+		t.Fatalf("startOAuthLocalServer failed: %v", err)
+	}
+	defer shutdown()
+	defer func() { select { case e := <-errChan: t.Errorf("server error: %v", e); default: } }()
+
+	origin := strings.Replace(callbackURL, "/callback", "", 1)
+	client := &http.Client{Timeout: 5 * time.Second}
+	exchangeWithOrigin := func(originHeader, body string) *http.Response {
+		req, err := http.NewRequest(http.MethodPost, strings.Replace(callbackURL, "/callback", "/exchange", 1), strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("build request failed: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		if originHeader != "" {
+			req.Header.Set("Origin", originHeader)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("POST /exchange failed: %v", err)
+		}
+		return resp
+	}
+
+	exchange := func(body string) *http.Response {
+		return exchangeWithOrigin(origin, body)
+	}
+
+	// 1) محاولة بدون Origin → مرفوضة
+	resp := exchangeWithOrigin("", "access_token=x&state="+state)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("missing origin should be 403, got %d", resp.StatusCode)
+	}
+
+	// 2) محاولة بـ Origin صحيح لكن state خاطئ → مرفوضة
+	resp = exchange("access_token=x&state=wrong")
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("wrong state should be 403, got %d", resp.StatusCode)
+	}
+
+	// 3) تدفق المتصفح الحقيقي: fragment يتضمن state قديم من GoTrue → يُقبل ويوصِل الرمز
+	fragment := "access_token=abc123&expires_in=3600&refresh_token=refresh&state=old-gotrue-state"
+	body := strings.Replace(fragment, "state=old-gotrue-state", "", 1) + "&state=" + state
+	resp = exchange(body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("valid exchange should be 200, got %d", resp.StatusCode)
+	}
+
+	select {
+	case received := <-tokenChan:
+		if !strings.Contains(received, "access_token=abc123") {
+			t.Errorf("token channel should carry the exchanged body, got %q", received)
+		}
+	default:
+		t.Fatal("token channel should have received the body")
+	}
+
+	// 4) طلب مكرر → 409 (لا يُوصِل رمزاً ثانياً)
+	resp = exchange("access_token=abc123&state=" + state)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusConflict {
+		t.Errorf("duplicate exchange should be 409, got %d", resp.StatusCode)
+	}
+	select {
+	case <-tokenChan:
+		t.Error("duplicate exchange should not deliver a second token")
+	default:
 	}
 }

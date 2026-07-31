@@ -186,33 +186,6 @@ func (r *licenseRepositoryImpl) Clear() error {
 	return r.db.Where("1 = 1").Delete(&domain.UserProfile{}).Error
 }
 
-func (r *licenseRepositoryImpl) GetAll() ([]domain.UserProfile, error) {
-	var profiles []domain.UserProfile
-	err := r.db.Find(&profiles).Error
-	if err == nil {
-		for i := range profiles {
-			if !utils.VerifyLicenseSignature(&profiles[i]) {
-				profiles[i].Plan = "free"
-				profiles[i].Status = "expired"
-			}
-		}
-	}
-	return profiles, err
-}
-
-func (r *licenseRepositoryImpl) SaveUser(profile *domain.UserProfile) error {
-	err := r.db.Save(profile).Error
-	if err == nil {
-		_ = utils.SaveLicenseSignature(profile)
-		_ = utils.UpdateLastTime(time.Now())
-	}
-	return err
-}
-
-func (r *licenseRepositoryImpl) DeleteUser(id string) error {
-	return r.db.Delete(&domain.UserProfile{}, "id = ?", id).Error
-}
-
 func (r *projectRepositoryImpl) Save(project *domain.Project) error {
 	return r.db.Save(project).Error
 }

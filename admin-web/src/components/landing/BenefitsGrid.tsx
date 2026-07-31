@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react';
+import { SectionHeading } from './SectionHeading';
 
 const BENEFITS: {
   img: string;
@@ -36,18 +37,13 @@ export function BenefitsGrid() {
   return (
     <section id="benefits" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
-          <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-            <span>المزايا المتقدمة</span>
-          </span>
-          <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white uppercase leading-tight">
-            لماذا يختار أصحاب الاستوديوهات <span className="text-secondary">GRIDO STUDIO</span>؟
-          </h2>
-          <p className="stagger-3 mt-4 text-secondary text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-sans leading-relaxed font-medium">
-            سرعة فائقة، دقة عالية، وبدون تعقيد.
-          </p>
-        </div>
+        <SectionHeading
+          icon={Sparkles}
+          eyebrow="المزايا المتقدمة"
+          title={<>لماذا يختار أصحاب الاستوديوهات <span className="text-secondary">GRIDO STUDIO</span>؟</>}
+          subtitle="سرعة فائقة، دقة عالية، وبدون تعقيد."
+          index="04"
+        />
 
         {/* 5 Cards Row adhering to design.md Section 6.4 */}
         <div className="stagger-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -72,6 +68,10 @@ export function BenefitsGrid() {
                 <img
                   src={benefit.img}
                   alt={benefit.title}
+                  loading="lazy"
+                  decoding="async"
+                  width={112}
+                  height={112}
                   className="relative z-10 w-full h-full object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.9)] transition-all duration-500 group-hover:drop-shadow-[0_24px_40px_rgba(59,130,246,0.35)] group-hover:rotate-[6deg]"
                 />
                 {/* انعكاس أرضي خفيف تحت الأيقونة */}

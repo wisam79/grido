@@ -46,7 +46,7 @@ func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, er
 	if err != nil {
 		resolved = fullPath
 	}
-	if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(mediaDir)) {
+	if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(mediaDir)+string(filepath.Separator)) {
 		return ImageDimensions{}, fmt.Errorf("invalid path: outside media directory")
 	}
 

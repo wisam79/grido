@@ -122,14 +122,21 @@ export function useKonvaDrag({
       const dx = draggedNode.x() - startPos.x;
       const dy = draggedNode.y() - startPos.y;
 
-      const { selectedIds } = useEditorStore.getState();
+      const { selectedIds, elements: currentElements } = useEditorStore.getState();
+      const margin = 0.25;
       selectedIds.forEach((id) => {
         if (id === draggedId) return;
         const node = getKonvaNode(id);
         const nodeStart = dragStartPositionsRef.current[id];
         if (node && nodeStart) {
-          node.x(nodeStart.x + dx);
-          node.y(nodeStart.y + dy);
+          // الحدود نفسها التي يطبقها dragBoundFunc على القائد —
+          // منع التابعين من الخروج عن الكانفس أثناء السحب الجماعي
+          const followerEl = currentElements.find((e) => e.id === id);
+          if (followerEl?.locked) return;
+          const fW = (followerEl?.width ?? element.width) * canvasWidth;
+          const fH = (followerEl?.height ?? element.height) * canvasHeight;
+          node.x(Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - fW, nodeStart.x + dx)));
+          node.y(Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - fH, nodeStart.y + dy)));
         }
       });
       e.target.getLayer().batchDraw();
