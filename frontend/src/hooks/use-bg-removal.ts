@@ -13,17 +13,43 @@ import { preloadImageIntoCache } from "./use-async-image";
 let workerInstance: Worker | null = null;
 let nextRequestId = 1;
 
+// حالة «عملية جارية» مشتركة على مستوى الوحدة: الـ Worker واحد للتطبيق كله،
+// لكن كل مثيل Hook كان يمتلك isBusyRef خاصاً — فكان مثيلان (الشريط السريع
+// واللوحة الجانبية) يبدآن عمليتين على العامل نفسه ويُعاد تعيين onmessage
+// فتضيع نتيجة الأولى. الحل: قفل مشترك + توزيع رسائل العامل على مالك requestId.
+let busyRequestId = 0;
+
+interface PendingBgRequest {
+  onMessage: (msg: any) => void;
+  onError: (message: string) => void;
+}
+const pendingBgRequests = new Map<number, PendingBgRequest>();
+
 function getWorker(): Worker {
   if (!workerInstance) {
     workerInstance = new Worker(
       new URL("../workers/bg-removal.worker.ts", import.meta.url),
       { type: "module" }
     );
+    // موزّع رسائل واحد ثابت — لا يُعاد تعيينه مع كل طلب جديد
+    workerInstance.onmessage = (e: MessageEvent) => {
+      const msg = e.data;
+      if (!msg || typeof msg.requestId !== "number") return;
+      pendingBgRequests.get(msg.requestId)?.onMessage(msg);
+    };
+    workerInstance.onerror = (e) => {
+      for (const pending of pendingBgRequests.values()) {
+        pending.onError(e.message || "فشل تشغيل عامل عزل الخلفية.");
+      }
+    };
   }
   return workerInstance;
 }
 
 function terminateWorker() {
+  // أي مكالمة terminate تُسقط كل الطلبات المعلقة (العملية المشتركة تموت)
+  pendingBgRequests.clear();
+  busyRequestId = 0;
   if (workerInstance) {
     try { workerInstance.terminate(); } catch { /* ignore */ }
     workerInstance = null;
@@ -45,23 +71,27 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [bgProgress, setBgProgress] = useState(0);
   const [bgProgressText, setBgProgressText] = useState("");
-  const isBusyRef = useRef(false);
   const modelCachedRef = useRef(false);
   const activeRequestRef = useRef<number>(0);
 
   useEffect(() => {
     return () => {
-      // عنصر مفكوك أثناء عملية جارية — نُبطل طلبه فقط دون قتل الـ Worker المشترك
-      activeRequestRef.current = 0;
-      isBusyRef.current = false;
+      // عنصر مفكوك أثناء عملية جارية — نُسقط طلبه من السجل ونحرر القفل المشترك
+      // إن كان هو مالكه (وإلا تبقى العمليات الأخرى محظورة للأبد).
+      const reqId = activeRequestRef.current;
+      if (reqId) {
+        pendingBgRequests.delete(reqId);
+        if (busyRequestId === reqId) busyRequestId = 0;
+        activeRequestRef.current = 0;
+      }
     };
   }, []);
 
   const handleCancelBgRemoval = () => {
     // 🛑 إلغاء قسري حقيقي: إنهاء الـ Worker يوقف الاستدلال فوراً حتى في منتصفه
-    // (النموذج سيُعاد تحميله عند الاستخدام التالي — مقايضة مقبولة مقابل استجابة الواجهة)
+    // (النموذج سيُعاد تحميله عند الاستخدام التالي — مقايضة مقبولة مقابل استجابة الواجهة).
+    // terminateWorker يسقط كل الطلبات المعلقة من القفل المشترك.
     activeRequestRef.current = 0;
-    isBusyRef.current = false;
     terminateWorker();
     setIsRemovingBg(false);
     setBgProgress(0);
@@ -86,7 +116,8 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
       return;
     }
 
-    if (isBusyRef.current) {
+    // القفل على مستوى الوحدة — أي مثيل Hook آخر يرى العملية الجارية
+    if (busyRequestId !== 0) {
       toast.warning("هناك عملية إزالة خلفية قيد التنفيذ حالياً. يرجى الانتظار.");
       return;
     }
@@ -104,54 +135,48 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
     }
 
     setIsRemovingBg(true);
-    isBusyRef.current = true;
     setBgProgress(0);
     setBgProgressText("جاري التهيئة...");
 
     const requestId = nextRequestId++;
+    busyRequestId = requestId;
     activeRequestRef.current = requestId;
     const worker = getWorker();
     const startedAt = performance.now();
 
-    const cleanup = () => {
-      worker.onmessage = null;
-      worker.onerror = null;
-    };
-
-    worker.onerror = (e) => {
-      if (activeRequestRef.current !== requestId) return;
-      cleanup();
-      isBusyRef.current = false;
-      activeRequestRef.current = 0;
+    // إنهاء مشترك بين المسارات الثلاثة (نتيجة/خطأ/إلغاء خارجي)
+    const settle = () => {
+      pendingBgRequests.delete(requestId);
+      if (busyRequestId === requestId) busyRequestId = 0;
+      if (activeRequestRef.current === requestId) activeRequestRef.current = 0;
       setIsRemovingBg(false);
       setBgProgressText("");
       setBgProgress(0);
-      toast.error(e.message || "فشل تشغيل عامل عزل الخلفية.");
     };
 
-    worker.onmessage = async (e: MessageEvent) => {
-      const msg = e.data;
-      if (!msg || msg.requestId !== requestId || activeRequestRef.current !== requestId) return;
+    pendingBgRequests.set(requestId, {
+      onError: (message: string) => {
+        if (activeRequestRef.current !== requestId) return;
+        settle();
+        toast.error(message);
+      },
+      onMessage: async (msg: any) => {
+        if (activeRequestRef.current !== requestId) return;
 
-      if (msg.type === "progress") {
-        setBgProgress(msg.percent);
-        setBgProgressText(msg.text);
-        return;
-      }
+        if (msg.type === "progress") {
+          setBgProgress(msg.percent);
+          setBgProgressText(msg.text);
+          return;
+        }
 
-      if (msg.type === "error") {
-        cleanup();
-        isBusyRef.current = false;
-        activeRequestRef.current = 0;
-        setIsRemovingBg(false);
-        setBgProgressText("");
-        setBgProgress(0);
-        toast.error(msg.message);
-        return;
-      }
+        if (msg.type === "error") {
+          settle();
+          toast.error(msg.message);
+          return;
+        }
 
-      if (msg.type === "result") {
-        const { maskBase64, targetW, targetH, inferredMs } = msg.result as {
+        if (msg.type === "result") {
+          const { maskBase64, targetW, targetH, inferredMs } = msg.result as {
           maskBase64: string; targetW: number; targetH: number; inferredMs: number;
         };
 
@@ -191,15 +216,11 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
           toast.error("فشل تجهيز الصورة النهائية بعد العزل.");
         } finally {
           // إسقاط المؤشر بعد تطبيق النتيجة (أو فشلها) — يحدث التبديل في نفس الدفعة
-          cleanup();
-          isBusyRef.current = false;
-          activeRequestRef.current = 0;
-          setIsRemovingBg(false);
-          setBgProgressText("");
-          setBgProgress(0);
+          settle();
         }
-      }
-    };
+        }
+      },
+    });
 
     worker.postMessage({
       type: "segment",

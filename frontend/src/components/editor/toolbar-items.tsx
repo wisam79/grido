@@ -230,22 +230,47 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
   const removeElements = useEditorStore((state) => state.removeElements);
 
   const alignElement = useCallback((type: "left" | "center" | "right" | "top" | "middle" | "bottom") => {
-    const { selectedId, elements, updateElement, pushHistory } = useEditorStore.getState();
+    const { selectedId, selectedIds, elements, updateElement, updateElements, pushHistory } = useEditorStore.getState();
     if (!selectedId) return;
-    const el = elements.find((e) => e.id === selectedId);
-    if (!el) return;
-    
-    let patch = {};
-    if (type === "left") patch = { x: 0 };
-    else if (type === "center") patch = { x: 0.5 - el.width / 2 };
-    else if (type === "right") patch = { x: 1 - el.width };
-    else if (type === "top") patch = { y: 0 };
-    else if (type === "middle") patch = { y: 0.5 - el.height / 2 };
-    else if (type === "bottom") patch = { y: 1 - el.height };
-    
-    updateElement(selectedId, patch);
+
+    const targetIds = selectedIds.length > 1 ? selectedIds : [selectedId];
+    const targets = elements.filter((e) => targetIds.includes(e.id));
+    if (targets.length === 0) return;
+
+    if (targets.length === 1) {
+      const el = targets[0];
+      let patch = {};
+      if (type === "left") patch = { x: 0 };
+      else if (type === "center") patch = { x: 0.5 - el.width / 2 };
+      else if (type === "right") patch = { x: 1 - el.width };
+      else if (type === "top") patch = { y: 0 };
+      else if (type === "middle") patch = { y: 0.5 - el.height / 2 };
+      else if (type === "bottom") patch = { y: 1 - el.height };
+      updateElement(selectedId, patch);
+    } else {
+      // تعدد التحديد: محاذاة نسبة لحدود التحديد كلها لتظل المجموعة متماسكة
+      const minX = Math.min(...targets.map((e) => e.x));
+      const minY = Math.min(...targets.map((e) => e.y));
+      const maxX = Math.max(...targets.map((e) => e.x + e.width));
+      const maxY = Math.max(...targets.map((e) => e.y + e.height));
+      const width = maxX - minX;
+      const height = maxY - minY;
+
+      const patches = targets.map((el) => {
+        let patch = {};
+        if (type === "left") patch = { x: minX };
+        else if (type === "center") patch = { x: minX + (width - el.width) / 2 };
+        else if (type === "right") patch = { x: minX + width - el.width };
+        else if (type === "top") patch = { y: minY };
+        else if (type === "middle") patch = { y: minY + (height - el.height) / 2 };
+        else if (type === "bottom") patch = { y: minY + height - el.height };
+        return { id: el.id, patch };
+      });
+      updateElements(patches);
+    }
+
     pushHistory();
-    toast.success("تمت محاذاة العنصر");
+    toast.success(targets.length > 1 ? "تمت محاذاة العناصر" : "تمت محاذاة العنصر");
   }, []);
 
   if (!hasSelection) return null;

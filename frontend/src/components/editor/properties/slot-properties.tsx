@@ -91,11 +91,13 @@ export function SlotProperties({
            freshStore.fillAllSlots(srcToUse, slot.id);
          }
        }
-     } catch (err) {
-       console.error(err);
-     } finally {
-       setIsFileDialogOpen(false);
-     }
+      } catch (err) {
+        console.error(err);
+        // إشعار فشل تغيير الصورة بدل السكوت
+        toast.error("فشل تغيير الصورة");
+      } finally {
+        setIsFileDialogOpen(false);
+      }
    };
 
   const handleFillAll = () => {

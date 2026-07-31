@@ -2,6 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore } from '../src/lib/editor-store';
 import { COLLAGE_TEMPLATES } from '../src/lib/templates/collage-templates';
 
+// إعداد مشترك: تطبيق قالب الكولاج وإرجاع أول فتحة — يزيل تكرار كتل الإعداد عبر الاختبارات
+function setupCollage() {
+  const tmpl = COLLAGE_TEMPLATES[0];
+  useEditorStore.getState().setCollageTemplate(tmpl);
+  return useEditorStore.getState().slots[0];
+}
+
 describe('CollageSlice Unit Tests', () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
@@ -16,10 +23,8 @@ describe('CollageSlice Unit Tests', () => {
   });
 
   it('updates slot properties', () => {
-    const tmpl = COLLAGE_TEMPLATES[0];
-    useEditorStore.getState().setCollageTemplate(tmpl);
+    const firstSlot = setupCollage();
 
-    const firstSlot = useEditorStore.getState().slots[0];
     useEditorStore.getState().updateSlot(firstSlot.id, { imageSrc: 'photo.jpg' });
 
     const updated = useEditorStore.getState().slots.find((s) => s.id === firstSlot.id);
@@ -27,10 +32,8 @@ describe('CollageSlice Unit Tests', () => {
   });
 
   it('sets slot image directly', () => {
-    const tmpl = COLLAGE_TEMPLATES[0];
-    useEditorStore.getState().setCollageTemplate(tmpl);
+    const firstSlot = setupCollage();
 
-    const firstSlot = useEditorStore.getState().slots[0];
     useEditorStore.getState().setSlotImage(firstSlot.id, 'pic.png');
 
     const updated = useEditorStore.getState().slots.find((s) => s.id === firstSlot.id);
@@ -38,10 +41,8 @@ describe('CollageSlice Unit Tests', () => {
   });
 
   it('fills all slots with specified image', () => {
-    const tmpl = COLLAGE_TEMPLATES[0];
-    useEditorStore.getState().setCollageTemplate(tmpl);
+    const firstSlot = setupCollage();
 
-    const firstSlot = useEditorStore.getState().slots[0];
     useEditorStore.getState().fillAllSlots('fill.jpg', firstSlot.id);
 
     const allSlots = useEditorStore.getState().slots;
@@ -49,10 +50,8 @@ describe('CollageSlice Unit Tests', () => {
   });
 
   it('clears all slots image data', () => {
-    const tmpl = COLLAGE_TEMPLATES[0];
-    useEditorStore.getState().setCollageTemplate(tmpl);
+    const firstSlot = setupCollage();
 
-    const firstSlot = useEditorStore.getState().slots[0];
     useEditorStore.getState().setSlotImage(firstSlot.id, 'pic.png');
 
     useEditorStore.getState().clearSlots();

@@ -210,9 +210,11 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             <div className="flex justify-between pt-1 border-t border-border/50 mt-1">
               <span className="text-muted-foreground font-semibold">الحجم التقريبي للملف:</span>
               <span className="font-mono text-primary">
+                {/* معاملات تقدير مرفوعة لمطابقة الواقع: PNG مضغوط ≈60% من الخام، JPG ≈35% */}
                 {format === "png" 
-                  ? ((canvasWidth * canvasHeight * 4) / 1024 / 1024 * 0.4).toFixed(1)
-                  : ((canvasWidth * canvasHeight * 3) / 1024 / 1024 * 0.15 * (quality / 100)).toFixed(1)} MB
+                  ? ((canvasWidth * canvasHeight * 4) / 1024 / 1024 * 0.6).toFixed(1)
+                  : ((canvasWidth * canvasHeight * 3) / 1024 / 1024 * 0.35 * (quality / 100)).toFixed(1)} MB
+                <span className="text-[10px] text-muted-foreground font-normal"> (تقريبي)</span>
               </span>
             </div>
           </div>

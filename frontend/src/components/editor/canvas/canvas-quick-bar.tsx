@@ -52,6 +52,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     bringToFront,
     sendToBack,
     selectElement,
+    licenseActive,
   } = useEditorStore(
     useShallow((state) => ({
       mode: state.mode,
@@ -72,6 +73,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       bringToFront: state.bringToFront,
       sendToBack: state.sendToBack,
       selectElement: state.selectElement,
+      licenseActive: state.isLicenseActive(),
     }))
   );
 
@@ -213,6 +215,15 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>عزل الخلفية</span>
+                      {!licenseActive ? (
+                        <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded tracking-wider uppercase">
+                          PRO
+                        </span>
+                      ) : (
+                        <span className="text-[8px] bg-primary/20 border border-primary/40 text-primary px-1 py-0.5 rounded font-bold font-mono">
+                          AI
+                        </span>
+                      )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">عزل التحديد وتفريغ خلفية الصورة</TooltipContent>
@@ -315,6 +326,15 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>عزل الخلفية</span>
+                      {!licenseActive ? (
+                        <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded tracking-wider uppercase">
+                          PRO
+                        </span>
+                      ) : (
+                        <span className="text-[8px] bg-primary/20 border border-primary/40 text-primary px-1 py-0.5 rounded font-bold font-mono">
+                          AI
+                        </span>
+                      )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">عزل وتفريغ خلفية الصورة</TooltipContent>

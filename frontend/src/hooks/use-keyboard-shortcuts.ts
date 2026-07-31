@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { saveProjectAsJSON } from "@/components/editor/export-utils";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
@@ -19,16 +20,38 @@ export function useKeyboardShortcuts() {
     useEditorStore.getState().redo();
   });
 
-  // Delete / Backspace
-  useHotkeys("delete, backspace", (e) => {
-    e.preventDefault();
-    const { selectedIds, removeElements, removeElement } = useEditorStore.getState();
-    if (selectedIds.length === 1) {
-      removeElement(selectedIds[0]);
-    } else if (selectedIds.length > 1) {
-      removeElements(selectedIds);
+  // Delete / Backspace — العناصر المقفلة لا تُحذف بصمت، ونُعلم المستخدم إن تبقى شيء محذوف.
+  // ignoreEventWhen: تجاهل الاختصار عندما يكون التركيز على زر/قائمة (مثلاً Backspace
+  // بعد النقر على زر في شريط الأدوات العائم كان يحذف التحديد بالخطأ).
+  useHotkeys(
+    "delete, backspace",
+    (e) => {
+      e.preventDefault();
+      const { selectedIds, elements, removeElements, removeElement } = useEditorStore.getState();
+      const removableIds = selectedIds.filter((id) => {
+        const el = elements.find((x) => x.id === id);
+        return el && !el.locked;
+      });
+      if (removableIds.length === 0) {
+        toast.info("العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف");
+        return;
+      }
+      if (removableIds.length < selectedIds.length) {
+        toast.info("تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط");
+      }
+      if (removableIds.length === 1) {
+        removeElement(removableIds[0]);
+      } else {
+        removeElements(removableIds);
+      }
+    },
+    {
+      ignoreEventWhen: (e) => {
+        const t = e.target as HTMLElement | null;
+        return !!t?.closest?.('button, [role="menu"], [role="menuitem"]');
+      },
     }
-  });
+  );
 
   // Duplicate: Ctrl+D or Cmd+D
   useHotkeys("mod+d", (e) => {

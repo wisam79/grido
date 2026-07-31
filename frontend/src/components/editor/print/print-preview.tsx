@@ -167,7 +167,7 @@ export function SheetPreview({
     const marginPx = marginMM * scaleFactor * zoom;
 
     for (let i = 1; i < cols; i++) {
-      const x = i * (imageWidthMM + gapMM) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
+      const x = (offsetX + i * (imageWidthMM + gapMM)) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
       cutLines.push(
         <div
           key={`v-${i}`}
@@ -181,7 +181,7 @@ export function SheetPreview({
       );
     }
     for (let i = 1; i < rows; i++) {
-      const y = i * (imageHeightMM + gapMM) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
+      const y = (offsetY + i * (imageHeightMM + gapMM)) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
       cutLines.push(
         <div
           key={`h-${i}`}

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useAutoSave } from "../src/hooks/use-autosave";
 import { useEditorStore } from "../src/lib/editor-store";
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { toast } from "sonner";
 
 // Mock sonner toast
@@ -17,6 +17,10 @@ describe("useAutoSave - Auto Save Hook Tests", () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("should load auto saved project on initialization", async () => {
@@ -47,14 +51,23 @@ describe("useAutoSave - Auto Save Hook Tests", () => {
     (window as any).go.main.App.SaveAutoSave = mockSaveAutoSave;
     (window as any).go.main.App.LoadAutoSave = vi.fn().mockResolvedValue("");
 
-    renderHook(() => useAutoSave());
+    // مؤقتات وهمية بدل انتظار debounce الحقيقي (ثانيتان) — أسرع ودون اعتماد على توقيت حقيقي
+    vi.useFakeTimers();
+    try {
+      renderHook(() => useAutoSave());
+      await act(async () => {});
 
-    // Add elements to trigger store change
-    useEditorStore.getState().addTextElement("Initial Element");
+      // Add elements to trigger store change
+      useEditorStore.getState().addTextElement("Initial Element");
 
-    // Wait for the 2000ms debounce
-    await waitFor(() => {
+      // Fast-forward past the 2000ms debounce
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+
       expect(mockSaveAutoSave).toHaveBeenCalled();
-    }, { timeout: 3000 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

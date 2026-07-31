@@ -4,10 +4,20 @@ import { useEditorStore } from "../src/lib/editor-store";
 import { saveProjectAsJSON } from "../src/components/editor/export-utils";
 import { renderHook } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 
 // Mock saveProjectAsJSON
 vi.mock("../src/components/editor/export-utils", () => ({
   saveProjectAsJSON: vi.fn(),
+}));
+
+// Mock sonner toast
+vi.mock("sonner", () => ({
+  toast: {
+    info: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 describe("useKeyboardShortcuts - Keyboard Shortcuts Hook Tests", () => {
@@ -55,6 +65,45 @@ describe("useKeyboardShortcuts - Keyboard Shortcuts Hook Tests", () => {
     await user.keyboard("{Backspace}");
     expect(removeElementSpy).toHaveBeenCalledWith(elementId);
 
+    removeElementSpy.mockRestore();
+  });
+
+  it("should not delete locked elements and informs the user instead", async () => {
+    const removeElementSpy = vi.spyOn(useEditorStore.getState(), "removeElement");
+    const toastInfoSpy = vi.spyOn(toast, "info");
+
+    useEditorStore.getState().addTextElement("Locked element");
+    const elementId = useEditorStore.getState().elements[0].id;
+    useEditorStore.getState().updateElement(elementId, { locked: true });
+    useEditorStore.getState().selectElement(elementId);
+
+    renderHook(() => useKeyboardShortcuts());
+
+    await user.keyboard("{Backspace}");
+    expect(removeElementSpy).not.toHaveBeenCalled();
+    expect(toastInfoSpy).toHaveBeenCalledWith("العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف");
+
+    removeElementSpy.mockRestore();
+    toastInfoSpy.mockRestore();
+  });
+
+  it("should ignore delete shortcut when focus is on a button or menu item", async () => {
+    const removeElementSpy = vi.spyOn(useEditorStore.getState(), "removeElement");
+
+    useEditorStore.getState().addTextElement("Element");
+    const elementId = useEditorStore.getState().elements[0].id;
+    useEditorStore.getState().selectElement(elementId);
+
+    renderHook(() => useKeyboardShortcuts());
+
+    const button = document.createElement("button");
+    document.body.appendChild(button);
+    button.focus();
+
+    await user.keyboard("{Backspace}");
+    expect(removeElementSpy).not.toHaveBeenCalled();
+
+    document.body.removeChild(button);
     removeElementSpy.mockRestore();
   });
 

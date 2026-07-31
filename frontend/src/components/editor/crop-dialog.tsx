@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface CropDialogProps {
   open: boolean;
@@ -34,7 +35,8 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
   const cropperRef = useRef<ReactCropperElement>(null);
   
   // تحديد نسبة العرض إلى الارتفاع الافتراضية
-  const templateAspect = template ? template.width / template.height : undefined;
+  const templateAspect =
+    template && template.width > 0 && template.height > 0 ? template.width / template.height : undefined;
   
   const [prevOpen, setPrevOpen] = useState(open);
   const [aspect, setAspect] = useState<number | undefined>(templateAspect);
@@ -74,9 +76,11 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
         imageSmoothingEnabled: true,
         imageSmoothingQuality: "high",
       });
-      if (croppedCanvas) {
+      if (croppedCanvas && croppedCanvas.width > 0 && croppedCanvas.height > 0) {
         onCropSave(croppedCanvas.toDataURL());
         onOpenChange(false);
+      } else {
+        toast.error("حدد منطقة قص صالحة");
       }
     }
   };

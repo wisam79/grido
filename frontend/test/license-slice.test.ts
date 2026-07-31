@@ -48,13 +48,33 @@ describe('LicenseSlice Tests', () => {
     expect(useEditorStore.getState().licenseLoading).toBe(false);
   });
 
-  it('checkLicenseStatus sets user to null on error', async () => {
-    vi.mocked(LicenseHandler.GetLicenseStatus).mockRejectedValueOnce(new Error('Network error'));
+  it('checkLicenseStatus keeps session on network error (offline grace)', async () => {
+    // أولاً: جلسة صالحة موجودة
+    const mockUser = {
+      id: 'usr_1',
+      name: 'Ali Hassan',
+      email: 'ali@example.com',
+      plan: 'pro',
+      status: 'active',
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+    } as any;
+    vi.mocked(LicenseHandler.GetLicenseStatus).mockResolvedValueOnce(mockUser);
+    await useEditorStore.getState().checkLicenseStatus();
 
+    // عند فشل الشبكة لاحقاً: تبقى الجلسة ولا يُقفل التطبيق على المستخدم
+    vi.mocked(LicenseHandler.GetLicenseStatus).mockRejectedValueOnce(new Error('Network error'));
     const profile = await useEditorStore.getState().checkLicenseStatus();
-    expect(profile).toBeNull();
-    expect(useEditorStore.getState().user).toBeNull();
+    expect(profile).toEqual(mockUser);
+    expect(useEditorStore.getState().user).toEqual(mockUser);
     expect(useEditorStore.getState().licenseLoading).toBe(false);
+  });
+
+  it('checkLicenseStatus clears user only on explicit server response of no-session', async () => {
+    // ردّ خادم صريح بحالة «لا جلسة» (ليس خطأ شبكة) يصفّر المستخدم
+    const noSession = { id: '', name: '', email: '', plan: 'free', status: 'none', expiresAt: '' } as any;
+    vi.mocked(LicenseHandler.GetLicenseStatus).mockResolvedValueOnce(noSession);
+    await useEditorStore.getState().checkLicenseStatus();
+    expect(useEditorStore.getState().user).toEqual(noSession);
   });
 
   it('registerAccount succeeds and sets user', async () => {

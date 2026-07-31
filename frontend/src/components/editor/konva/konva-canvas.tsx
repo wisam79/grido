@@ -63,6 +63,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const pushHistory = useEditorStore((s) => s.pushHistory);
 
   const handleSlotWheel = React.useCallback((slot: { id: string; imageSrc?: string; zoom?: number }, e: any) => {
+    // إيماءة Ctrl+عجلة مخصصة لتكبير الكانفس — لا نكبّر الصورة والكانفس معاً
+    if (e.evt.ctrlKey || e.evt.metaKey) return;
     if (!slot.imageSrc || useEditorStore.getState().selectedId !== slot.id) return;
 
     e.evt.preventDefault();
@@ -131,11 +133,23 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Alt") altPressedRef.current = false;
     };
+    // مع Alt+Tab يُسرق حدث keyup فيبقى Alt «عالقاً» وتُلغى المغناطيس بصمت —
+    // نصفّر المرجع عند فقدان النافذة للتركيز أو إخفائها.
+    const resetAlt = () => {
+      altPressedRef.current = false;
+    };
+    const handleVisibility = () => {
+      if (document.hidden) resetAlt();
+    };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", resetAlt);
+    document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", resetAlt);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
 

@@ -326,12 +326,10 @@ export const EditorCanvas = React.memo(React.forwardRef<
     mouseMoveRafId.current = requestAnimationFrame(() => {
       mouseMoveRafId.current = null;
 
-      if (!hRulerCursorRef.current) {
-        hRulerCursorRef.current = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
-      }
-      if (!vRulerCursorRef.current) {
-        vRulerCursorRef.current = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
-      }
+      // إعادة استعلام العناصر كل إطار — المراجع المتخزنة تموت عند تبديل المساطر
+      // (تعاد بنية الـ SVG من جديد فتترك العناصر القديمة مفصولة عن الـ DOM)
+      hRulerCursorRef.current = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
+      vRulerCursorRef.current = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
 
       const hCursor = hRulerCursorRef.current;
       if (hCursor) {
@@ -361,6 +359,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
    const handleDoubleClick = async (el: CanvasElement) => {
      if (printMode || isLoading) return;
+     // العنصر المقفل لا يُحرَّر بالنقر المزدوج — السحب والـ Transformer يحترمان القفل أيضاً
+     if (el.locked) return;
      if (el.type === "image") {
        try {
          setIsLoading(true);
@@ -478,12 +478,24 @@ export const EditorCanvas = React.memo(React.forwardRef<
         let targetSlotId: string | null = null;
         if (innerRef.current) {
           const rect = innerRef.current.getBoundingClientRect();
-          const relX = (e.clientX - rect.left) / rect.width;
-          const relY = (e.clientY - rect.top) / rect.height;
+          // إحداثيات منطقية بمساحة الكانفس (مثل konva-collage-layer) بدل نسبة عرض الشاشة —
+          // القانون يشمل هوامش الكولاج وفجواته: margin + slot.x * availW + gap/2
+          const scale = rect.width / canvasWidth;
+          const logicalX = (e.clientX - rect.left) / scale;
+          const logicalY = (e.clientY - rect.top) / scale;
+          const hasPhysical = freshCollageTemplate?.physicalLayout;
+          const margin = hasPhysical ? 0 : collageMargin;
+          const gap = hasPhysical ? 0 : collageGap;
+          const availW = canvasWidth - 2 * margin;
+          const availH = canvasHeight - 2 * margin;
 
-          const matched = freshSlots.find(
-            (s) => relX >= s.x && relX <= s.x + s.w && relY >= s.y && relY <= s.y + s.h
-          );
+          const matched = freshSlots.find((s) => {
+            const sx = margin + s.x * availW + gap / 2;
+            const sy = margin + s.y * availH + gap / 2;
+            const sw = s.w * availW - gap;
+            const sh = s.h * availH - gap;
+            return logicalX >= sx && logicalX <= sx + sw && logicalY >= sy && logicalY <= sy + sh;
+          });
           if (matched) {
             targetSlotId = matched.id;
           }

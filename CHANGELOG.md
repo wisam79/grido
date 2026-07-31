@@ -5,6 +5,32 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.12] - 2026-07-31
+
+### Fixed
+- Drag in free mode now uses logical coordinates (divided by stage scale) so elements track the pointer exactly at any zoom; dropping a photo onto a collage slot uses the same coordinate law, and dragging inside a slot inverts the absolute transform (P0-1 / P1-10 / P1-11)
+- Locked elements are excluded from group drag, multi-delete, double-click and context-menu delete (P0-4 / P0-5 / P0-6 / P1-9)
+- Undo/redo history seed on project load now contains valid elements only (P0-7); X/Y property fields are guarded to a sane logical range (P0-8)
+- Offline license check failure keeps the session instead of locking the user out (P0-2)
+- Concurrent background removal from toolbar and properties panel now shares one Worker with a request map instead of clobbering callbacks (P0-12)
+- Daily AI quota counter uses a unified `sv-SE` date stamp so it resets correctly at midnight UTC+3 (P0-11)
+- Alt+drag reset restores the original position on blur/visibility change with proper listener cleanup (P0-9); Ctrl/Cmd+wheel no longer double-zooms over slots (P0-10)
+- Print dialog: preview iframe removed via `afterprint` with a 60s safety timeout (P1-2), Enter ignored inside input/select fields (P1-7), stale captured preview cleared on close (P1-6), last non-zero margin restored when re-enabling margins (P1-3), copy count formula accounts for the gap (P1-4), cut marks aligned on a centered origin in both preview and export (P1-5)
+- Export: mirrored edge/corner bleed strips drawn inside the bleed area (P1-14); more accurate file-size estimate with a "(تقريبي)" label (P1-15)
+- Replacing or cropping a photo now surfaces clear error toasts (P1-8)
+- Text editing overlay uses box-shadow instead of border/padding so the editor overlays the text exactly (P2-3); Escape now commits the typed text like blur does — no more silent data loss (P2-4)
+- Context menu re-measures when its content changes while open (P2-9); zero-size crop shows "حدد منطقة قص صالحة" (P2-8)
+- Account/license modal re-derives the initial tab on every open (P2-11)
+- Canvas dimensions: DPI changes recompute from store values rather than partial fields, and mm inputs are capped at 2000 (P2-15)
+- Collage template switch now asks for confirmation when it would drop existing photos or clear free-mode elements (P2-14)
+
+### Changed
+- Multi-select properties broadcast style keys to all selected elements; positional keys (x/y/locked) apply only to the displayed element (P1-17)
+- Multi-select alignment aligns to the group's bounding box (P1-18)
+- Ruler cursor markers are re-queried every rAF frame instead of cached refs (P1-12)
+- Replacing a slot image with a different aspect ratio resets drag/zoom while keeping flip/rotation (P1-13)
+- Quick bar shows the PRO/AI badge on background removal while the free tier keeps 5 AI enhances/day (P1-16)
+
 ## [v1.0.38] - 2026-07-25
 
 ### Fixed

@@ -137,7 +137,8 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       });
     }
     focusIndexRef.current = 0;
-  }, [target, position.x, position.y]);
+    // أعد القياس عندما يتغير محتوى القائمة أثناء فتحها (spinner ↔ نص) حتى لا تبقى المقاسات قديمة
+  }, [target, position.x, position.y, isRemovingBg, isEnhancing]);
 
   const size = menuSize || { w: 190, h: 280 };
 
@@ -293,9 +294,16 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 className="group w-full text-right px-2.5 py-1.5 hover:bg-destructive/10 text-destructive rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
                 onClick={() => handleAction(() => {
                   const { selectedIds, removeElements } = useEditorStore.getState();
-                  if (selectedIds.length > 1) {
-                    removeElements(selectedIds);
-                  } else {
+                  // العناصر المقفلة لا تُحذف (توحيد الفلترة مع اختصار Delete)
+                  const removableIds = selectedIds.filter((id) => {
+                    const found = elements.find((e) => e.id === id);
+                    return found && !found.locked;
+                  });
+                  if (removableIds.length > 1) {
+                    removeElements(removableIds);
+                  } else if (removableIds.length === 1) {
+                    removeElement(removableIds[0]);
+                  } else if (!el?.locked) {
                     removeElement(target.id!);
                   }
                 })}

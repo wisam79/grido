@@ -32,15 +32,26 @@ export function PropertiesPanel() {
   const selectedSlot = slots.find((s) => s.id === selectedId);
 
   const handleUpdateElement = useCallback((id: string, patch: any) => {
-    const { selectedIds, updateElements } = useEditorStore.getState();
-    if (selectedIds.length > 1 && selectedIds.includes(id)) {
-      const patches = selectedIds.map((sid) => ({
-        id: sid,
-        patch,
-      }));
-      updateElements(patches);
-    } else {
+    const { selectedIds, updateElements, updateElement } = useEditorStore.getState();
+    const isMulti = selectedIds.length > 1 && selectedIds.includes(id);
+    if (!isMulti) {
       updateElement(id, patch);
+      return;
+    }
+
+    // التحديد المتعدد: الخيارات الأسلوبية تُبثّ لجميع المحددين (لون، خط، مرشحات، استدارة...)،
+    // أما الإحداثيات والقفل فتُطبَّق على العنصر المعروض وحده — وإلا تتداخل العناصر بعضها فوق بعض
+    const styleExcluded = new Set(["x", "y", "locked"]);
+    const stylePatch: any = {};
+    const positionalPatch: any = {};
+    for (const key of Object.keys(patch)) {
+      (styleExcluded.has(key) ? positionalPatch : stylePatch)[key] = patch[key];
+    }
+    if (Object.keys(stylePatch).length > 0) {
+      updateElements(selectedIds.map((sid) => ({ id: sid, patch: stylePatch })));
+    }
+    if (Object.keys(positionalPatch).length > 0) {
+      updateElement(id, positionalPatch);
     }
   }, [updateElement]);
 

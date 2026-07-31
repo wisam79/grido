@@ -287,7 +287,9 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       selectedIds: [],
       editingTextId: null,
       history: [{
-        elements: (project.elements || []) as CanvasElement[],
+        // تُبذر بداية التاريخ بالعناصر المفلترة نفسها المعروضة — إعادة الخام
+        // تعني أن أول تراجع يعيد العنصر التالف (NaN/أبعاد صفرية) للكانفس.
+        elements: validElements,
         slots: rawSlots,
         canvasWidth: validWidth,
         canvasHeight: validHeight,

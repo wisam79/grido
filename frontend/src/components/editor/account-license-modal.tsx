@@ -104,6 +104,14 @@ export function AccountLicenseModal() {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  // أعد اشتقاق التبويب الابتدائي عند فتح الحوار حتى لا يبقى قديماً بعد تسجيل دخول/خروج سابق
+  useEffect(() => {
+    if (!accountModalOpen) return;
+    const currentUser = useEditorStore.getState().user;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveTab(currentUser && currentUser.token ? "license" : "auth");
+  }, [accountModalOpen]);
+
   // Reset errors when modal status changes or tabs toggle
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

@@ -78,9 +78,12 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err) {
-      console.error("Failed to check license status:", err);
-      set({ user: null, licenseLoading: false });
-      return null;
+      // فشل شبكة/عطل مؤقت → نبقي الجلسة الحالية (سماح عدم الاتصال) بدل قفل
+      // المستخدم خارجاً فجأة. تصفير الجلسة يحدث فقط بردّ خادم صريح بأن
+      // الترخيص غير صالح (يصل عبر profile بنجاح النداء أعلاه).
+      console.error("Failed to check license status (network error, keeping session):", err);
+      set({ licenseLoading: false });
+      return get().user;
     }
   },
 

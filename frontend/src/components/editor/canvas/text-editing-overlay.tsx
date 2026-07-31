@@ -38,7 +38,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   return (
     <textarea
       autoFocus
-      className="absolute z-50 bg-transparent resize-none outline-none border-2 border-primary ring-0 m-0 p-0"
+      className="absolute z-50 bg-transparent resize-none outline-none ring-0 m-0 p-0 border-0"
       style={{
         backgroundColor: bgColor,
         left: `${textEl.x * displayW}px`,
@@ -55,7 +55,8 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         lineHeight: textEl.lineHeight || 1.2,
         letterSpacing: isArabicText ? "0px" : `${spacingVal}px`,
         wordSpacing: isArabicText ? `${spacingVal}px` : undefined,
-        padding: "2px",
+        // تمييز بصري عبر ظل بدل border/padding حتى لا ينزاح المحرر عن موضع النص الفعلي
+        boxShadow: "0 0 0 2px hsl(var(--primary))",
       }}
       defaultValue={textEl.text}
       onFocus={(e) => {
@@ -75,6 +76,9 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         }
         if (e.key === "Escape") {
           e.preventDefault();
+          // التزام نفس منطق onBlur: حفظ المكتوب ثم إغلاق — لا يضيع نص المستخدم
+          updateElement(textEl.id, { text: e.currentTarget.value });
+          pushHistory();
           setEditingTextId(null);
         }
       }}

@@ -24,7 +24,9 @@ export function getUserDailyLimit(): number {
 
 export function getTodayUsageCount(): number {
   try {
-    const todayStr = new Date().toISOString().split("T")[0]; // e.g. "2026-07-19"
+    // مفتاح اليوم المحلي (sv-SE يعطي "YYYY-MM-DD" محلياً) — يطابق طابع logAiUsage
+    // المحلي ويتجنب انزياح UTC عند منتصف الليل (الحصة تتجدد 00:00 محلياً فعلياً).
+    const todayStr = new Date().toLocaleDateString("sv-SE"); // e.g. "2026-07-19"
     const user = useEditorStore.getState().user;
     const userEmail = user?.email || "unknown";
     const logs = useEditorStore.getState().aiUsageLogs || [];
@@ -57,7 +59,7 @@ export function getTodayUsageCount(): number {
 
 function incrementLocalDailyUsage() {
   try {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = new Date().toLocaleDateString("sv-SE");
     const current = getTodayUsageCount();
     const updated = { date: todayStr, count: current + 1 };
     localStorage.setItem("grido_ai_daily_usage", JSON.stringify(updated));

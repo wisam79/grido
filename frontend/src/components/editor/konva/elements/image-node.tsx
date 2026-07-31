@@ -60,12 +60,12 @@ export const URLImage = React.memo(function URLImage({
       node.to({
         opacity: targetOpacity,
         scaleX: element.flipX === true ? -1 : 1,
-        scaleY: 1,
+        scaleY: element.flipY === true ? -1 : 1,
         duration: 0.28,
         easing: Konva.Easings.BackEaseOut
       });
     }
-  }, [elementRef, element.opacity, element.flipX]);
+  }, [elementRef, element.opacity, element.flipX, element.flipY]);
 
   const { filters, filterProps } = React.useMemo(() => {
     const res = getKonvaFilters({

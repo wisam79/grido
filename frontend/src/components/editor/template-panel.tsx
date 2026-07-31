@@ -12,6 +12,16 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "../../../wailsjs/go/main/App";
 
 
@@ -25,14 +35,36 @@ import { PopoverColorPicker } from "./properties/shared-controls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function TemplatePanel() {
-  const { setCollageTemplate, collageTemplate, backgroundColor, setBackgroundColor } = useEditorStore(useShallow((state) => ({
+  const { setCollageTemplate, collageTemplate, backgroundColor, setBackgroundColor, slots, mode, elements } = useEditorStore(useShallow((state) => ({
     setCollageTemplate: state.setCollageTemplate,
     collageTemplate: state.collageTemplate,
     backgroundColor: state.backgroundColor,
     setBackgroundColor: state.setBackgroundColor,
+    slots: state.slots,
+    mode: state.mode,
+    elements: state.elements,
   })));
 
   const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
+
+  // حوار تأكيد عند تبديل القالب إذا كان سيُسقط صوراً موجودة أو عناصر الوضع الحر (P2-14)
+  const [pendingTemplate, setPendingTemplate] = useState<CollageTemplate | null>(null);
+
+  const handleSelectTemplate = (t: CollageTemplate) => {
+    const capacity = t.cells?.length ?? t.slots;
+    const filledSlots = slots.filter((s) => s.imageSrc).length;
+    const dropsImages = filledSlots > 0 && capacity < filledSlots;
+    const hasFreeElements = mode !== "collage" && elements.length > 0;
+    if (dropsImages || hasFreeElements) {
+      setPendingTemplate(t);
+      return;
+    }
+    setCollageTemplate(t);
+  };
+
+  const droppedCount = pendingTemplate
+    ? Math.max(0, slots.filter((s) => s.imageSrc).length - (pendingTemplate.cells?.length ?? pendingTemplate.slots))
+    : 0;
 
   const officialTemplates = COLLAGE_TEMPLATES.filter(
     (t) => t.id.startsWith("collage-iq-") || t.id === "collage-passport-sheet"
@@ -164,7 +196,7 @@ export function TemplatePanel() {
                             <div>
                               <CollageTemplateCard
                                 tpl={tpl}
-                                onSelect={(t) => setCollageTemplate(t)}
+                                onSelect={handleSelectTemplate}
                                 isActive={collageTemplate?.id === tpl.id}
                               />
                             </div>
@@ -245,7 +277,7 @@ export function TemplatePanel() {
                               <div>
                                 <CollageTemplateCard
                                   tpl={tpl}
-                                  onSelect={(t) => setCollageTemplate(t)}
+                                  onSelect={handleSelectTemplate}
                                   isActive={collageTemplate?.id === tpl.id}
                                   onDelete={(e) => handleDeleteTemplate(tpl.id, e)}
                                 />
@@ -262,6 +294,35 @@ export function TemplatePanel() {
           </div>
         </div>
       </ScrollArea>
+
+      <AlertDialog open={pendingTemplate !== null} onOpenChange={(open) => { if (!open) setPendingTemplate(null); }}>
+        <AlertDialogContent dir="rtl" className="font-cairo">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right text-base font-bold">
+              {droppedCount > 0 ? "تبديل قالب الكولاج" : "الانتقال إلى وضع الكولاج"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-right text-[12px] leading-relaxed">
+              {droppedCount > 0 && mode === "collage"
+                ? `سيتم إسقاط ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} موجودة لا تتسع للقالب الجديد. هل تريد المتابعة؟`
+                : droppedCount > 0
+                  ? `سيتم إسقاط ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} موجودة ومسح عناصر الوضع الحر الحالية. هل تريد المتابعة؟`
+                  : "سيتم مسح عناصر الوضع الحر الحالية عند التحويل إلى وضع الكولاج. هل تريد المتابعة؟"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl cursor-pointer">إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xl cursor-pointer"
+              onClick={() => {
+                if (pendingTemplate) setCollageTemplate(pendingTemplate);
+                setPendingTemplate(null);
+              }}
+            >
+              متابعة
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

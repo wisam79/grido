@@ -93,13 +93,28 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               />
             )}
 
-            {/* Slot rendering group */}
+            {/* مجموعة قص الخلية: قص بالحدود الفعلية (مع الانحناءة) حتى لا يتجاوز
+                المحتوى المدوّر/المقلوب إلى الخلايا المجاورة — مطابق لنافذة CSS */}
             <Group
               id={slot.id}
               x={left}
               y={top}
               width={width}
               height={height}
+              clipFunc={(ctx: any) => {
+                const r = Math.min(radius, width / 2, height / 2);
+                ctx.beginPath();
+                if (r > 0) {
+                  ctx.moveTo(r, 0);
+                  ctx.arcTo(width, 0, width, height, r);
+                  ctx.arcTo(width, height, 0, height, r);
+                  ctx.arcTo(0, height, 0, 0, r);
+                  ctx.arcTo(0, 0, width, 0, r);
+                } else {
+                  ctx.rect(0, 0, width, height);
+                }
+                ctx.closePath();
+              }}
               onClick={() => handleSlotClick?.(slot.id)}
               onTouchEnd={() => handleSlotClick?.(slot.id)}
               onDblClick={() => handleSlotDblClick?.(slot.id)}

@@ -3,6 +3,16 @@ import { CanvasElement, CanvasSlot, PhotoTemplate, CollageTemplate } from "../ty
 import { uid } from "../../utils";
 import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
 
+// قياس نسبة أبعاد الصورة — لاستبدال قُصَّ الصور عند تغيّر الأبعاد
+function measureImageAspect(src: string): Promise<number> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img.width > 0 && img.height > 0 ? img.width / img.height : NaN);
+    img.onerror = () => resolve(NaN);
+    img.src = src;
+  });
+}
+
 export interface CollageSlice {
   template: PhotoTemplate | null;
   collageTemplate: CollageTemplate | null;
@@ -189,6 +199,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   },
 
   setSlotImage: (slotId, src) => {
+    const prev = get().slots.find((sl) => sl.id === slotId);
     set((state) => ({
       slots: state.slots.map((sl: CanvasSlot) =>
         sl.id === slotId
@@ -205,6 +216,20 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       lastEditedImage: src,
     }));
     get().pushHistory();
+
+    // استبدال الصورة يُبقي إزاحات القص مضبوطة على أبعاد الصورة السابقة —
+    // عند اختلاف نسبة الأبعاد نُصفّر dragX/dragY/zoom (مع إبقاء flip/rotation)
+    if (!prev?.imageSrc || prev.imageSrc === src) return;
+    void (async () => {
+      const [prevAspect, nextAspect] = await Promise.all([
+        measureImageAspect(prev.imageSrc!),
+        measureImageAspect(src),
+      ]);
+      if (!Number.isFinite(prevAspect) || !Number.isFinite(nextAspect)) return;
+      if (Math.abs(prevAspect - nextAspect) > 0.001) {
+        get().updateSlot(slotId, { dragX: 0, dragY: 0, zoom: 1 });
+      }
+    })();
   },
 
   updateSlot: (slotId, patch) => {

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor-store";
+import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
 import { useStageRef } from "@/lib/stage-context";
 import { usePrintLayout } from "@/hooks/use-print-layout";
 import { cn } from "@/lib/utils";
@@ -69,6 +70,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [colorSpace, setColorSpace] = useState<"sRGB" | "CMYK">("sRGB");
   const [previewImageSrc, setPreviewImageSrc] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
+  // آخر هامش غير صفري — لاستعادته عند إطفاء «بدون هوامش» بدل الـ 5mm الثابتة
+  const [lastNonZeroMargin, setLastNonZeroMargin] = useState<number>(() =>
+    printSettings.marginMM > 0 ? printSettings.marginMM : DEFAULT_PRINT_SETTINGS.marginMM
+  );
   const handlePrintRef = useRef<() => void>(() => {});
 
   useEffect(() => {
@@ -84,6 +89,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       if (e.key === "Escape") {
         onOpenChange(false);
       } else if (e.key === "Enter" && !isExporting && previewImageSrc) {
+        // لا نطلق الطباعة إذا كان التركيز داخل عنصر إدخال — Enter له معناه الخاص هناك
+        const t = e.target as HTMLElement | null;
+        if (t?.closest?.('input, select, textarea, button, [role="combobox"]')) return;
         e.preventDefault();
         handlePrintRef.current();
       }
@@ -100,8 +108,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       return;
     }
     if (open && stageRef.current && mode === "single") {
+      // علم الإلغاء: الحوار قد يُقفل خلال مهلة الـ 50ms — ننهي المهمة بصمت حينها
+      let cancelled = false;
       const timer = setTimeout(() => {
-        const stage = stageRef.current!;
+        if (cancelled) return;
+        const stage = stageRef.current;
+        if (!stage) return;
         const transformers = stage.find('Transformer');
         const gridLayers = stage.find('.grid-layer');
         const columnsLayers = stage.find('.columns-layer');
@@ -120,6 +132,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             quality: 0.8,
           });
 
+          if (cancelled) return;
           setPreviewImageSrc(previewUrl);
         } catch (err) {
           console.error("Failed to generate print preview image:", err);
@@ -130,11 +143,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           stage.batchDraw();
         }
       }, 50);
-      return () => clearTimeout(timer);
+      return () => { cancelled = true; clearTimeout(timer); };
     } else if (!open) {
-      queueMicrotask(() => {
-        setPreviewImageSrc("");
-      });
+      // صفّر المعاينة فور القفل — queueMicrotask كان يسمح للالتقاط المتأخر بالكتابة بعده
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPreviewImageSrc("");
     }
   }, [open, stageRef, elements, slots, backgroundColor, mode, canvasWidth, printSettings]);
 
@@ -233,6 +246,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
     const exportDpi = printSettings.dpi || 300;
     const dpiRatio = exportDpi / 300;
+    // النسبة ثابتة تحت أي تكبير: stage.width() = displayW = scaleX × canvasWidth،
+    // فيخرج الناتج دائماً = canvasWidth × dpiRatio بكسل (ناتج بمقياس فعلي واحد).
     const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
 
     let canvasDataUrl: string | null = null;
@@ -276,13 +291,18 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     }
 
     if (printSettings.showCutLines && actualCopies > 1) {
+      // خطوط القص على نفس الأصل المتمركز للعناصر (offsetX/offsetY) لا على الهامش
       for (let c = 1; c < cols; c++) {
-        const x = effectiveMarginMM + c * (imageWidthMM + gapMM) - gapMM / 2;
-        cutLines.push({ x1: x, y1: effectiveMarginMM, x2: x, y2: paperHeight - effectiveMarginMM });
+        const x = offsetX + c * (imageWidthMM + gapMM) - gapMM / 2;
+        if (x > effectiveMarginMM && x < paperWidth - effectiveMarginMM) {
+          cutLines.push({ x1: x, y1: effectiveMarginMM, x2: x, y2: paperHeight - effectiveMarginMM });
+        }
       }
       for (let r = 1; r < actualRows; r++) {
-        const y = effectiveMarginMM + r * (imageHeightMM + gapMM) - gapMM / 2;
-        cutLines.push({ x1: effectiveMarginMM, y1: y, x2: paperWidth - effectiveMarginMM, y2: y });
+        const y = offsetY + r * (imageHeightMM + gapMM) - gapMM / 2;
+        if (y > effectiveMarginMM && y < paperHeight - effectiveMarginMM) {
+          cutLines.push({ x1: effectiveMarginMM, y1: y, x2: paperWidth - effectiveMarginMM, y2: y });
+        }
       }
     }
     return { items, cutLines };
@@ -311,11 +331,20 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         doc.write(result.htmlDoc);
         doc.close();
 
+        // إزالة الـ iframe عند انتهاء الطباعة فعلاً (afterprint) بدل مهلة ثانية واحدة —
+        // إزالته مبكراً تجعل نافذة الطباعة تفتح صفحة فارغة في بعض المتصفحات.
+        const removeIframe = () => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        };
+
         let hasPrinted = false;
         const triggerPrint = () => {
           if (hasPrinted) return;
           hasPrinted = true;
           try {
+            iframe.contentWindow?.addEventListener("afterprint", removeIframe, { once: true });
             iframe.contentWindow?.focus();
             iframe.contentWindow?.print();
           } catch (e) {
@@ -324,11 +353,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               PrintNative(result.filePath).catch(console.error);
             }
           } finally {
-            setTimeout(() => {
-              if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-              }
-            }, 1000);
+            // مهلة أمان فقط (بعض السياقات لا تطلق afterprint)
+            setTimeout(removeIframe, 60000);
           }
         };
 
@@ -444,7 +470,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <Switch 
                   id="borderless-mode" 
                   checked={printSettings.marginMM === 0}
-                  onCheckedChange={(checked) => setPrintSettings({ marginMM: checked ? 0 : 5 })}
+                  onCheckedChange={(checked) => {
+                    if (checked && printSettings.marginMM > 0) {
+                      setLastNonZeroMargin(printSettings.marginMM);
+                    }
+                    setPrintSettings({ marginMM: checked ? 0 : lastNonZeroMargin });
+                  }}
                 />
                 <Label htmlFor="borderless-mode" className="text-xs cursor-pointer select-none">
                   طباعة بدون هوامش (ملء الورقة)

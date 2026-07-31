@@ -204,7 +204,11 @@ export function ElementProperties({
                   <input
                     type="number"
                     value={Math.round(element.x * 100)}
-                    onChange={(e) => onUpdate(element.id, { x: Number(e.target.value) / 100 })}
+                    onChange={(e) => {
+                      // حراسة NaN/الحقل الفارغ: «» أو «-» لا يُخرِجان إحداثيات العنصر بصمت
+                      const v = Number(e.target.value);
+                      if (e.target.value !== "" && Number.isFinite(v)) onUpdate(element.id, { x: Math.max(-1, Math.min(2, v / 100)) });
+                    }}
                     onBlur={() => useEditorStore.getState().pushHistory()}
                     className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                   />
@@ -214,7 +218,10 @@ export function ElementProperties({
                   <input
                     type="number"
                     value={Math.round(element.y * 100)}
-                    onChange={(e) => onUpdate(element.id, { y: Number(e.target.value) / 100 })}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (e.target.value !== "" && Number.isFinite(v)) onUpdate(element.id, { y: Math.max(-1, Math.min(2, v / 100)) });
+                    }}
                     onBlur={() => useEditorStore.getState().pushHistory()}
                     className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                   />

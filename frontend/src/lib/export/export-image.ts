@@ -627,6 +627,62 @@ export async function applyBleedAndCropMarks(
       // رسم الصورة الأصلية في المنتصف
       ctx.drawImage(img, bleedPx, bleedPx);
 
+      // مرآة حواف الصورة داخل منطقة النزيف بدلاً من خلفية بيضاء ناصعة —
+      // انعكاس شرائط الحواف الأربعة ثم الزوايا الأربع (على المحورين)
+      if (bleedPx > 0) {
+        const strip = Math.min(bleedPx, img.width, img.height);
+        if (strip > 0) {
+          ctx.save();
+          // يسار
+          ctx.translate(bleedPx, bleedPx);
+          ctx.scale(-1, 1);
+          ctx.drawImage(img, 0, 0, strip, img.height, 0, 0, strip, img.height);
+          ctx.restore();
+          // يمين
+          ctx.save();
+          ctx.translate(bleedPx + img.width, bleedPx);
+          ctx.scale(-1, 1);
+          ctx.drawImage(img, img.width - strip, 0, strip, img.height, 0, 0, strip, img.height);
+          ctx.restore();
+          // أعلى
+          ctx.save();
+          ctx.translate(bleedPx, bleedPx);
+          ctx.scale(1, -1);
+          ctx.drawImage(img, 0, 0, img.width, strip, 0, 0, img.width, strip);
+          ctx.restore();
+          // أسفل
+          ctx.save();
+          ctx.translate(bleedPx, bleedPx + img.height);
+          ctx.scale(1, -1);
+          ctx.drawImage(img, 0, img.height - strip, img.width, strip, 0, 0, img.width, strip);
+          ctx.restore();
+          // الزاوية العلوية اليسرى
+          ctx.save();
+          ctx.translate(bleedPx, bleedPx);
+          ctx.scale(-1, -1);
+          ctx.drawImage(img, 0, 0, strip, strip, 0, 0, strip, strip);
+          ctx.restore();
+          // الزاوية العلوية اليمنى
+          ctx.save();
+          ctx.translate(bleedPx + img.width, bleedPx);
+          ctx.scale(-1, -1);
+          ctx.drawImage(img, img.width - strip, 0, strip, strip, 0, 0, strip, strip);
+          ctx.restore();
+          // الزاوية السفلية اليسرى
+          ctx.save();
+          ctx.translate(bleedPx, bleedPx + img.height);
+          ctx.scale(-1, -1);
+          ctx.drawImage(img, 0, img.height - strip, strip, strip, 0, 0, strip, strip);
+          ctx.restore();
+          // الزاوية السفلية اليمنى
+          ctx.save();
+          ctx.translate(bleedPx + img.width, bleedPx + img.height);
+          ctx.scale(-1, -1);
+          ctx.drawImage(img, img.width - strip, img.height - strip, strip, strip, 0, 0, strip, strip);
+          ctx.restore();
+        }
+      }
+
       // رسم علامات القص
       if (showCropMarks && bleedPx > 0) {
         ctx.strokeStyle = "#000000";

@@ -75,7 +75,9 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         setCanvasSize(Math.round(num), canvasHeight);
         if (template) setTemplate(null);
       } else {
-        const px = Math.round((num * dpiVal) / 25.4);
+        const mm = Math.min(num, 2000);
+        setWidthVal(mm.toString());
+        const px = Math.round((mm * dpiVal) / 25.4);
         setCanvasSize(px, canvasHeight);
         if (template) setTemplate(null);
       }
@@ -90,7 +92,9 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         setCanvasSize(canvasWidth, Math.round(num));
         if (template) setTemplate(null);
       } else {
-        const px = Math.round((num * dpiVal) / 25.4);
+        const mm = Math.min(num, 2000);
+        setHeightVal(mm.toString());
+        const px = Math.round((mm * dpiVal) / 25.4);
         setCanvasSize(canvasWidth, px);
         if (template) setTemplate(null);
       }
@@ -101,9 +105,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     setDpiVal(newDpi);
     setPrintSettings({ dpi: newDpi });
     if (unit === "mm") {
-      const wMM = parseFloat(widthVal);
-      const hMM = parseFloat(heightVal);
-      if (!isNaN(wMM) && !isNaN(hMM)) {
+      // احسب من مقادير الـ store الحقيقية لا من الحقول الجزئية حتى لا تُفقد الأبعاد أثناء الكتابة
+      const wMM = (canvasWidth / currentDpi) * 25.4;
+      const hMM = (canvasHeight / currentDpi) * 25.4;
+      if (wMM > 0 && hMM > 0) {
         const wPx = Math.round((wMM * newDpi) / 25.4);
         const hPx = Math.round((hMM * newDpi) / 25.4);
         setCanvasSize(wPx, hPx);

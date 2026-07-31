@@ -385,6 +385,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                  img.onload = null;
                  img.onerror = null;
                  img.src = "";
+                 // إشعار فشل فك تشفير الصورة المقصوصة — بدون تحديث للعنصر
+                 toast.error("فشل قراءة الصورة المقصوصة");
                };
                img.src = cropped;
             } catch (err) {

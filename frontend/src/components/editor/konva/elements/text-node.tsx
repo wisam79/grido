@@ -56,12 +56,12 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       node.to({
         opacity: targetOpacity,
         scaleX: element.flipX === true ? -1 : 1,
-        scaleY: 1,
+        scaleY: element.flipY === true ? -1 : 1,
         duration: 0.28,
         easing: Konva.Easings.BackEaseOut
       });
     }
-  }, [elementRef, element.opacity, element.flipX, editingTextId, element.id]);
+  }, [elementRef, element.opacity, element.flipX, element.flipY, editingTextId, element.id]);
   
   // Sync auto height back to store so bounding boxes and overlays stay perfect
   // استخدام ref لمنع الحلقة الدائرية — نتوقف عن التحديث إذا كان الارتفاع الجديد مطابقاً

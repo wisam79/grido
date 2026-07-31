@@ -49,6 +49,10 @@ export function useKonvaDrag({
 
     const startPositions: Record<string, { x: number; y: number }> = {};
     selectedIds.forEach((id) => {
+      // العناصر المقفلة لا تدخل قائمة السحب الجماعي — حماية draggable={!locked}
+      // تمنع القائد فقط، وonDragMove تحرّك كل عقدة لها موضع بداية مسجّل.
+      const el = currentElements.find((e) => e.id === id);
+      if (el?.locked) return;
       const node = getKonvaNode(id);
       if (node) {
         startPositions[id] = { x: node.x(), y: node.y() };
@@ -59,15 +63,21 @@ export function useKonvaDrag({
 
   const dragBoundFunc = (pos: { x: number; y: number }) => {
     if (altPressedRef.current) return pos;
-    let xAbs = pos.x;
-    let yAbs = pos.y;
+
+    // Konva يمرر إحداثيات «مطلقة» (شاشية، بعد scale الـ Stage) ويغذّي القيمة
+    // المعادة في setAbsolutePosition. المغناطيس والحدود معرّفة بوحدات الكانفس
+    // المنطقية — لذا نحوّل للفضاء المنطقي أولاً ثم نعيد الناتج للمطلق.
+    // (نفس نمط collage-image.tsx: القسمة على stageScale والضرب عند الإرجاع)
+    const stageScale = getKonvaNode(element.id)?.getStage()?.scaleX() || 1;
+    let xLogical = pos.x / stageScale;
+    let yLogical = pos.y / stageScale;
 
     if (snapToGrid && gridSize && gridSize > 0) {
-      xAbs = Math.round(xAbs / gridSize) * gridSize;
-      yAbs = Math.round(yAbs / gridSize) * gridSize;
+      xLogical = Math.round(xLogical / gridSize) * gridSize;
+      yLogical = Math.round(yLogical / gridSize) * gridSize;
     } else {
-      const x = xAbs / canvasWidth;
-      const y = yAbs / canvasHeight;
+      const x = xLogical / canvasWidth;
+      const y = yLogical / canvasHeight;
       const thresholdX = 5 / canvasWidth;
       const thresholdY = 5 / canvasHeight;
       const targets = snapTargetsRef.current || {
@@ -84,15 +94,15 @@ export function useKonvaDrag({
         thresholdX,
         thresholdY
       );
-      xAbs = snapResult.x * canvasWidth;
-      yAbs = snapResult.y * canvasHeight;
+      xLogical = snapResult.x * canvasWidth;
+      yLogical = snapResult.y * canvasHeight;
     }
     const elW = element.width * canvasWidth;
     const elH = element.height * canvasHeight;
     const margin = 0.25;
-    xAbs = Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - elW, xAbs));
-    yAbs = Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - elH, yAbs));
-    return { x: xAbs, y: yAbs };
+    xLogical = Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - elW, xLogical));
+    yLogical = Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - elH, yLogical));
+    return { x: xLogical * stageScale, y: yLogical * stageScale };
   };
 
   const onDragMove = (e: KonvaEventObject<DragEvent>) => {
@@ -180,9 +190,11 @@ export function useKonvaDrag({
     if (startPos) {
       const dx = draggedNode.x() - startPos.x;
       const dy = draggedNode.y() - startPos.y;
-      
+
       const currentElements = useEditorStore.getState().elements;
-      const patches = selectedIds.map((id) => {
+      // استبعاد المقفلة من كتابة المواضع النهائية — مواضعها لم تتغير أصلاً
+      const movableIds = selectedIds.filter((id) => !currentElements.find((e) => e.id === id)?.locked);
+      const patches = movableIds.map((id) => {
         const node = getKonvaNode(id);
         if (node) {
           const el = currentElements.find((x) => x.id === id) || element;

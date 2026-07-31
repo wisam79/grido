@@ -65,6 +65,12 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
 
   const hasFilters = filterResult.filters.length > 0;
 
+  // مجموعة تحويل المشهد: flipX/flipY/rotation تكوِّن بُنية شجرة مختلفة (Group
+  // خارجية جديدة)؛ لهذا الانتقال 0 → !0 يُعيد تركيب KonvaImage كنودٍ جديد—
+  // فلنضمن إعادة تخزينه في ذاكرة المصير نضمِّن hasTransform ضمن اعتمادات
+  // التأثير المدار للكاش بالأسفل.
+  const hasTransform = flipX || flipY || rotation !== 0;
+
   useEffect(() => {
     const node = imageRef.current;
     if (!node || !image) return;
@@ -91,7 +97,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
     } catch (err) {
       console.warn("Failed to cache collage image", err);
     }
-  }, [image, hasFilters, isDraggingFilter]);
+  }, [image, hasFilters, isDraggingFilter, hasTransform]);
 
   if (!image) return null;
 
@@ -130,8 +136,6 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
 
   // مجموعة تحويل المشهد: قلب وتدوير المحتوى حول مركز الخلية
   // (يطابق تصنيم CSS في معاينة الطباعة: scaleX/scaleY/rotate حول المركز)
-  const hasTransform = flipX || flipY || rotation !== 0;
-
   const content = (
     <Group x={hasTransform ? -width / 2 : 0} y={hasTransform ? -height / 2 : 0}>
       <KonvaImage
@@ -139,20 +143,20 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
         dragBoundFunc={(pos) => {
           const node = imageRef.current;
           if (!node || !image) return pos;
-          const stageScale = node.getStage()?.scaleX() || 1;
+          // معكوس التحويل المطلق للعقدة — يشمل الدوران والقلب وتكبير المسرح —
+          // فيتحول متجه حركة المؤشر إلى محاور نافذة القص الصحيحة بدل محاور الشاشة
           const nodeAbsPos = node.getAbsolutePosition();
-          
-          const dxScreen = pos.x - nodeAbsPos.x;
-          const dyScreen = pos.y - nodeAbsPos.y;
-          
-          const dxCanvas = dxScreen / stageScale;
-          const dyCanvas = dyScreen / stageScale;
+          const inv = node.getAbsoluteTransform().copy().invert();
+          const p0 = inv.point({ x: nodeAbsPos.x, y: nodeAbsPos.y });
+          const p1 = inv.point({ x: pos.x, y: pos.y });
+          const dxLocal = p1.x - p0.x;
+          const dyLocal = p1.y - p0.y;
 
           const currentX = accumulatedDrag.current.dragX;
           const currentY = accumulatedDrag.current.dragY;
 
-          const proposedX = currentX - dxCanvas * (sw / width);
-          const proposedY = currentY - dyCanvas * (sh / height);
+          const proposedX = currentX - dxLocal * (sw / width);
+          const proposedY = currentY - dyLocal * (sh / height);
 
           const clampedX = Math.max(-maxDragX, Math.min(maxDragX, proposedX));
           const clampedY = Math.max(-maxDragY, Math.min(maxDragY, proposedY));
