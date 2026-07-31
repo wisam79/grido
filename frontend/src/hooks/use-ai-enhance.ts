@@ -144,7 +144,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
 
     let progressTimer: any = null;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout for Modal AI cold-starts
 
     try {
       setEnhanceProgress(20);

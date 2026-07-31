@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -199,7 +200,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 		}
 	}()
 
-	modalURL := ModalAIURL
+	modalURL := strings.TrimRight(ModalAIURL, "/")
 	if modalURL == "" {
 		modalURL = defaultModalAIURL
 	}
@@ -219,6 +220,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("User-Agent", "GridoStudio-Desktop/1.2.14")
 
 	client := &http.Client{Timeout: 3 * time.Minute}
 	resp, err := client.Do(req)

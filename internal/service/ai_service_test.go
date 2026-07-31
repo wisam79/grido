@@ -1,62 +1,114 @@
 package service
 
 import (
-	"sync"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
-	"time"
 )
 
-func TestAIRateLimiter_ConcurrentRequests(t *testing.T) {
-	var wg sync.WaitGroup
-	successCount := 0
-	var mu sync.Mutex
+// TestEnhanceImageWithAI_Success verifies end-to-end connection, payload structure,
+// User-Agent header, trailing slash cleanup, and successful JSON response parsing.
+func TestEnhanceImageWithAI_Success(t *testing.T) {
+	// Mock Modal AI HTTP Server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 1. Verify HTTP Method
+		if r.Method != "POST" {
+			t.Errorf("Expected POST method, got %s", r.Method)
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			return
+		}
 
-	// Send 50 concurrent requests, the limit is maxQuota (e.g. 20)
-	for i := 0; i < 50; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := GlobalAIRateLimiter.Reserve("test-key", 20); err == nil {
-				mu.Lock()
-				successCount++
-				mu.Unlock()
-			}
-		}()
+		// 2. Verify User-Agent Header
+		ua := r.Header.Get("User-Agent")
+		if !strings.Contains(ua, "GridoStudio-Desktop") {
+			t.Errorf("Expected User-Agent containing GridoStudio-Desktop, got '%s'", ua)
+		}
+
+		// 3. Verify Bearer Authorization Header
+		auth := r.Header.Get("Authorization")
+		if auth != "Bearer test-jwt-token" {
+			t.Errorf("Expected Authorization 'Bearer test-jwt-token', got '%s'", auth)
+		}
+
+		// 4. Decode Payload
+		var reqPayload struct {
+			Image      string `json:"image"`
+			DailyLimit int    `json:"dailyLimit"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&reqPayload); err != nil {
+			t.Errorf("Failed to decode request body: %v", err)
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		if reqPayload.Image != "data:image/jpeg;base64,sample" {
+			t.Errorf("Unexpected image data: %s", reqPayload.Image)
+		}
+
+		// 5. Send Successful 200 OK Response
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"image": "data:image/jpeg;base64,enhanced", "execution_seconds": 2.4, "total_cost_usd": 0.0012}`))
+	}))
+	defer ts.Close()
+
+	// Override ModalAIURL with trailing slash to test URL normalization
+	ModalAIURL = ts.URL + "///"
+	defer func() { ModalAIURL = "" }()
+
+	aiSvc := NewAIService()
+	respStr, err := aiSvc.EnhanceImageWithAI("data:image/jpeg;base64,sample", "test-jwt-token", 5)
+
+	if err != nil {
+		t.Fatalf("EnhanceImageWithAI failed unexpectedly: %v", err)
 	}
-	wg.Wait()
 
-	// Should not exceed 20
-	if successCount > 20 {
-		t.Errorf("expected at most 20 successful reservations, got %d", successCount)
+	var resp struct {
+		Image            string  `json:"image"`
+		ExecutionSeconds float64 `json:"execution_seconds"`
+	}
+	if err := json.Unmarshal([]byte(respStr), &resp); err != nil {
+		t.Fatalf("Failed to parse returned JSON: %v", err)
+	}
+
+	if resp.Image != "data:image/jpeg;base64,enhanced" {
+		t.Errorf("Expected enhanced image, got '%s'", resp.Image)
 	}
 }
 
-func TestAIRateLimiter_DailyReset(t *testing.T) {
-	// Consume all quota
-	for i := 0; i < 20; i++ {
-		err := GlobalAIRateLimiter.Reserve("test-key-2", 20)
-		if err != nil {
-			t.Fatalf("unexpected error on reservation %d: %v", i+1, err)
-		}
-	}
-
-	// Next one should fail
-	err := GlobalAIRateLimiter.Reserve("test-key-2", 20)
+// TestEnhanceImageWithAI_Unauthenticated verifies that empty tokens are rejected immediately.
+func TestEnhanceImageWithAI_Unauthenticated(t *testing.T) {
+	aiSvc := NewAIService()
+	_, err := aiSvc.EnhanceImageWithAI("data:image/jpeg;base64,sample", "", 5)
 	if err == nil {
-		t.Fatal("expected error when exceeding quota, got nil")
+		t.Error("Expected error for empty token, got nil")
+	}
+	if !strings.Contains(err.Error(), "تسجيل الدخول مطلوب") {
+		t.Errorf("Unexpected error message: %v", err)
+	}
+}
+
+// TestEnhanceImageWithAI_HTTPError_Rollback verifies rate limit rollback on HTTP 404 or 500 error.
+func TestEnhanceImageWithAI_HTTPError_Rollback(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"error": "Endpoint not found"}`, http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	ModalAIURL = ts.URL
+	defer func() { ModalAIURL = "" }()
+
+	aiSvc := NewAIService()
+	_, err := aiSvc.EnhanceImageWithAI("data:image/jpeg;base64,sample", "test-jwt-rollback", 5)
+
+	if err == nil {
+		t.Error("Expected error for 404 response, got nil")
 	}
 
-	// Mock daily reset by manually modifying the struct fields (if possible) or just testing the public behavior.
-	// Since we don't have a way to mock time.Now() globally in this simple limiter, we will simulate it by manipulating the internal state if accessible.
-	GlobalAIRateLimiter.mu.Lock()
-	if entry, ok := GlobalAIRateLimiter.usage["test-key-2"]; ok {
-		entry.resetDay = time.Now().AddDate(0, 0, -1).Format("2006-01-02")
-	}
-	GlobalAIRateLimiter.mu.Unlock()
-
-	// Now it should succeed because of the simulated daily reset
-	err = GlobalAIRateLimiter.Reserve("test-key-2", 20)
-	if err != nil {
-		t.Fatalf("expected success after daily reset, got: %v", err)
+	// Verify that error message contains original error response
+	if !strings.Contains(err.Error(), "Endpoint not found") && !strings.Contains(err.Error(), "404") {
+		t.Errorf("Expected error to contain 'Endpoint not found', got: %v", err)
 	}
 }

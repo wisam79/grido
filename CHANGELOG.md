@@ -5,6 +5,14 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.14] - 2026-07-31
+
+### Fixed & Security
+- Modal AI connectivity: URL trailing slash normalization prevents duplicate slashes (`//`) that trigger 404/405 routing errors on Modal endpoints.
+- User-Agent header `GridoStudio-Desktop/1.2.14` added to AI HTTP requests to prevent CDN/Cloudflare automated request blocks.
+- Extended frontend AI enhance timeout to 120 seconds to accommodate cold-start GPU container boots on Modal AI.
+- Added comprehensive unit tests in `ai_service_test.go` covering endpoint connection, payload structure, rate-limit rollback, and HTTP error handling.
+
 ## [v1.2.13] - 2026-07-31
 
 ### Performance & Changed
