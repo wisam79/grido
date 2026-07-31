@@ -210,6 +210,144 @@ h1, h2, h3, h4, h5, h6, .font-display {
   .perspective-container:hover .perspective-mockup {
     transform: rotateY(var(--rot-y, 0deg)) rotateX(var(--rot-x, 0deg)) scale(1.01);
   }
+
+  /* ── Multi-layer 3D depth (parallax inside the mockup) ── */
+  .layer-depth {
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+  }
+  .depth-1 { --depth: 16px; }
+  .depth-2 { --depth: 34px; }
+  .depth-3 { --depth: 56px; }
+  .perspective-container:hover .layer-depth {
+    transform: translateZ(var(--depth));
+  }
+}
+
+/* ── Fake 3D title text-shadow depth (SpaceX embossed look) ── */
+.title-depth {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 0 rgba(0, 0, 0, 0.6),
+    0 4px 0 rgba(0, 0, 0, 0.5),
+    0 6px 0 rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Floating particle dots (slow drift) ── */
+@keyframes particle-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+  50%      { transform: translate(var(--drift-x, 12px), var(--drift-y, -18px)) scale(1.15); opacity: 0.9; }
+}
+.particle {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.6);
+  animation: particle-drift var(--dur, 7s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  pointer-events: none;
+}
+
+/* ── Orbiting ring (SVG loops around a glow core) ── */
+@keyframes orbit {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+.orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--size, 220px);
+  height: var(--size, 220px);
+  transform: translate(-50%, -50%);
+  animation: orbit var(--orbit-dur, 20s) linear infinite;
+  pointer-events: none;
+}
+.orbit-ring .orbit-dot {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 24px rgba(96, 165, 250, 0.5);
+}
+
+/* ── Subtle scanline sweep across a surface ── */
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(400%); }
+}
+.scanline {
+  position: absolute;
+  inset-inline: 0;
+  height: 25%;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.04), transparent);
+  animation: scanline 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Benefit card ring background ── */
+.benefit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  padding-top: 150%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.05) 60deg,
+    transparent 120deg,
+    transparent 180deg,
+    rgba(96, 165, 250, 0.05) 240deg,
+    transparent 300deg
+  );
+  animation: orbit 18s linear infinite;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+.spotlight-card:hover .benefit-ring {
+  opacity: 1;
+}
+
+/* ── Infinite marquee track ── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 30s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* ── HUD Floating chips parallax ── */
+.float-chip {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+  animation: float 6s ease-in-out infinite alternate;
+}
+
+/* ── Marquee edge fade ── */
+.marquee-mask {
+  mask-image: linear-gradient(to left, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to left, transparent, black 12%, black 88%, transparent);
+}
+
+/* ── Glow pulse for CTA banner beacon ── */
+@keyframes beacon-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.05); }
+}
+.beacon-glow {
+  animation: beacon-pulse 4s ease-in-out infinite;
 }
 
 /* Cinematic Reveal Animations (design.md Section 4.1) */
@@ -293,6 +431,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   .perspective-mockup { transform: none !important; }
   .reveal-on-scroll { opacity: 1 !important; filter: none !important; transform: none !important; }
   .benefit-icon { animation: none !important; }
+  .particle, .orbit-ring, .scanline, .benefit-ring, .marquee-track, .beacon-glow { animation: none !important; }
 }
 
 /* Custom scrollbar for desktop */
@@ -367,4 +506,23 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .laser-bleed-bottom { bottom: 3mm; left: 0; right: 0; height: 1px; }
 .laser-bleed-left { left: 3mm; top: 0; bottom: 0; width: 1px; }
 .laser-bleed-right { right: 3mm; top: 0; bottom: 0; width: 1px; }
+
+/* --- GPU & Layer Compositing Optimizations --- */
+.perspective-mockup, .float-chip, .aurora-bg, .orbit-ring, .beacon-glow {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.perspective-mockup {
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+.float-chip {
+  will-change: transform;
+}
+
+.aurora-bg {
+  will-change: transform, opacity;
+}
 

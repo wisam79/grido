@@ -5,6 +5,14 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.13] - 2026-07-31
+
+### Performance & Changed
+- Landing page (`admin-web`): Throttled 3D parallax mockup mousemove and page scroll listeners with `requestAnimationFrame` and state guards to prevent unnecessary React re-renders.
+- Cached floating HUD chip DOM references in `AppMockup.tsx` to eliminate layout thrashing during mouse movement.
+- Enabled GPU hardware acceleration layers (`will-change: transform`, `translate3d`, `backface-visibility: hidden`) across 3D mockup, aurora glow, and floating chips in `index.css`.
+- Unobserved revealed scroll elements in `IntersectionObserver` to reduce browser engine overhead during long page scrolling.
+
 ## [v1.2.12] - 2026-07-31
 
 ### Fixed

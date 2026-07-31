@@ -4,12 +4,12 @@ import { Download, Menu, X } from 'lucide-react';
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const NAV_LINKS = [
-  { href: '#features', label: 'المميزات الذكية' },
-  { href: '#comparison', label: 'مقارنة الأداء' },
+  { href: '#features', label: 'المميزات' },
+  { href: '#comparison', label: 'المقارنة' },
   { href: '#benefits', label: 'لماذا Grido' },
   { href: '#scenarios', label: 'حالات العمل' },
   { href: '#pricing', label: 'الخطط' },
-  { href: '#faq', label: 'الأسئلة الشائعة' },
+  { href: '#faq', label: 'الأسئلة' },
 ];
 
 function AnimatedLogo() {
@@ -40,12 +40,43 @@ function AnimatedLogo() {
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('');
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const isScrolled = window.scrollY > 12;
+        setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
+      });
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Scrollspy: تظليل رابط القسم الظاهر حالياً في الشاشة
+  useEffect(() => {
+    const ids = NAV_LINKS.map((l) => l.href.slice(1));
+    const sections = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveSection(`#${entry.target.id}`);
+        });
+      },
+      // نطاق ضيّق وسط الشاشة حتى لا يتبدّل التظليل إلا عند توسّط القسم فعلياً
+      { rootMargin: '-40% 0px -55% 0px' }
+    );
+    sections.forEach((s) => observer.observe(s));
+    return () => observer.disconnect();
   }, []);
 
   const handleMagneticMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -71,18 +102,28 @@ export function Header() {
         <div className="h-20 flex items-center justify-between">
           <AnimatedLogo />
 
-          {/* Clean nav links with SpaceX monospace tracking */}
-          <nav className="hidden md:flex items-center gap-8">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-xs font-mono font-bold tracking-[1.5px] uppercase text-secondary hover:text-white transition-colors relative py-1 group/link"
-              >
-                <span>{link.label}</span>
-                <span className="absolute bottom-0 inset-x-0 h-0.5 bg-white scale-x-0 group-hover/link:scale-x-100 transition-transform origin-right" />
-              </a>
-            ))}
+          {/* Clean nav links with SpaceX monospace tracking + scrollspy */}
+          <nav className="hidden md:flex items-center gap-8" aria-label="التنقل الرئيسي">
+            {NAV_LINKS.map((link) => {
+              const isActive = activeSection === link.href;
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? 'true' : undefined}
+                  className={`text-xs font-mono font-bold tracking-[1.5px] uppercase transition-colors relative py-1 group/link ${
+                    isActive ? 'text-white' : 'text-secondary hover:text-white'
+                  }`}
+                >
+                  <span>{link.label}</span>
+                  <span
+                    className={`absolute bottom-0 inset-x-0 h-0.5 bg-white transition-transform origin-right ${
+                      isActive ? 'scale-x-100' : 'scale-x-0 group-hover/link:scale-x-100'
+                    }`}
+                  />
+                </a>
+              );
+            })}
           </nav>
 
           <div className="flex items-center gap-3">

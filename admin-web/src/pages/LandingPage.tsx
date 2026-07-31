@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import { Header } from '../components/landing/Header';
 import { HeroSection } from '../components/landing/HeroSection';
+import { TrustMarquee } from '../components/landing/TrustMarquee';
+import { HowItWorksSection } from '../components/landing/HowItWorksSection';
 import { FeaturesTabs } from '../components/landing/FeaturesTabs';
 import { ComparisonSection } from '../components/landing/ComparisonSection';
 import { BenefitsGrid } from '../components/landing/BenefitsGrid';
@@ -49,28 +51,41 @@ export default function LandingPage() {
     };
   }, []);
 
-  // Track scroll progress & floating CTA visibility
+  // Track scroll progress & floating CTA visibility (throttled with rAF + state guards)
   useEffect(() => {
+    let ticking = false;
+
     const handleScroll = () => {
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const progress = (window.scrollY / totalHeight) * 100;
-        setScrollProgress(progress);
-      }
-      setShowFloatingCta(window.scrollY > 450);
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        ticking = false;
+        const scrollY = window.scrollY;
+        const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+        if (totalHeight > 0) {
+          const progress = Math.round((scrollY / totalHeight) * 100);
+          setScrollProgress((prev) => (prev !== progress ? progress : prev));
+        }
+
+        const shouldShow = scrollY > 450;
+        setShowFloatingCta((prev) => (prev !== shouldShow ? shouldShow : prev));
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Intersection Observer for smooth scroll reveal animations (design.md Section 4.1)
+  // Intersection Observer for smooth scroll reveal animations (unobserve once revealed)
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-revealed', 'is-visible');
+            observer.unobserve(entry.target);
           }
         });
       },
@@ -82,6 +97,8 @@ export default function LandingPage() {
 
     return () => observer.disconnect();
   }, []);
+
+
 
   return (
     <div
@@ -118,6 +135,10 @@ export default function LandingPage() {
       <main id="main-content" className="relative z-10">
         <div className="reveal-on-scroll is-revealed is-visible">
           <HeroSection />
+        </div>
+        <TrustMarquee />
+        <div className="reveal-on-scroll">
+          <HowItWorksSection />
         </div>
         <div className="reveal-on-scroll">
           <FeaturesTabs />

@@ -16,54 +16,147 @@ import {
   Layers,
   ArrowUpLeft,
   ChevronDown,
+  Wand2,
+  ScanLine,
 } from 'lucide-react';
 
 const PASSPORT_IMG = '/sample-passport.png';
 
+/**
+ * شارة HUD عائمة حول نموذج التطبيق — تتحرك بعمق ثلاثي الأبعاد مستقل
+ * (Parallax) مع حركة المؤشر لتعزيز إحساس الطبقات دون أي مكتبة خارجية.
+ */
+function FloatChip({
+  className,
+  depth,
+  icon: Icon,
+  label,
+  sub,
+}: {
+  className: string;
+  depth: number;
+  icon: typeof Wand2;
+  label: string;
+  sub: string;
+}) {
+  return (
+    <div
+      aria-hidden
+      data-depth={depth}
+      className={`float-chip pointer-events-none absolute z-30 hidden lg:flex items-center gap-2.5 rounded-xl bg-elevated/90 border border-white/20 px-3.5 py-2.5 shadow-[0_16px_40px_rgba(0,0,0,0.6)] backdrop-blur-md ${className}`}
+    >
+      <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-black shrink-0">
+        <Icon className="w-4 h-4" />
+      </span>
+      <span className="flex flex-col leading-none text-right">
+        <span className="text-[11px] font-extrabold text-white font-display">{label}</span>
+        <span className="mt-1 text-[8.5px] font-mono font-bold text-tertiary uppercase tracking-[1px]" dir="ltr">{sub}</span>
+      </span>
+    </div>
+  );
+}
+
 export function AppMockup() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const chipsRef = useRef<HTMLElement[]>([]);
+  const rafIdRef = useRef<number | null>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // -1 to 1 based on mouse position relative to center
-    const xPct = (x / rect.width - 0.5) * 2;
-    const yPct = (y / rect.height - 0.5) * 2;
-    
-    const rotX = yPct * -2; 
-    const rotY = xPct * 2;
+    if (!frameRef.current || !containerRef.current) return;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
 
-    containerRef.current.style.setProperty('--tilt-x', `${x}px`);
-    containerRef.current.style.setProperty('--tilt-y', `${y}px`);
-    containerRef.current.style.setProperty('--rot-x', `${rotX}deg`);
-    containerRef.current.style.setProperty('--rot-y', `${rotY}deg`);
+    if (rafIdRef.current !== null) return;
+
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      if (!frameRef.current || !containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      const xPct = (x / rect.width - 0.5) * 2;
+      const yPct = (y / rect.height - 0.5) * 2;
+
+      const rotX = yPct * -2;
+      const rotY = xPct * 2;
+
+      frameRef.current.style.setProperty('--tilt-x', `${x}px`);
+      frameRef.current.style.setProperty('--tilt-y', `${y}px`);
+      frameRef.current.style.setProperty('--rot-x', `${rotX}deg`);
+      frameRef.current.style.setProperty('--rot-y', `${rotY}deg`);
+
+      // Cache chips query on first run or use cached array
+      if (chipsRef.current.length === 0) {
+        chipsRef.current = Array.from(containerRef.current.querySelectorAll<HTMLElement>('.float-chip'));
+      }
+
+      chipsRef.current.forEach((chip) => {
+        const d = Number(chip.dataset.depth ?? 10);
+        chip.style.transform = `translate3d(${xPct * d}px, ${yPct * d}px, 0px)`;
+      });
+    });
   };
 
   const handleMouseLeave = () => {
-    if (!containerRef.current) return;
-    containerRef.current.style.setProperty('--rot-x', '0deg');
-    containerRef.current.style.setProperty('--rot-y', '0deg');
-    containerRef.current.style.setProperty('--tilt-x', '50%');
-    containerRef.current.style.setProperty('--tilt-y', '50%');
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    if (!frameRef.current || !containerRef.current) return;
+    frameRef.current.style.setProperty('--rot-x', '0deg');
+    frameRef.current.style.setProperty('--rot-y', '0deg');
+    frameRef.current.style.setProperty('--tilt-x', '50%');
+    frameRef.current.style.setProperty('--tilt-y', '50%');
+
+    if (chipsRef.current.length === 0 && containerRef.current) {
+      chipsRef.current = Array.from(containerRef.current.querySelectorAll<HTMLElement>('.float-chip'));
+    }
+    chipsRef.current.forEach((chip) => {
+      chip.style.transform = 'translate3d(0px, 0px, 0px)';
+    });
   };
 
   return (
-    <div 
+    <div
+      ref={containerRef}
       className="relative mx-auto w-full max-w-6xl perspective-container group select-none py-3 px-1 sm:px-0"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
+      {/* نواة توهج زرقاء نابضة أسفل الإطار */}
+      <div
+        aria-hidden
+        className="beacon-glow pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] h-[80%] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.22),transparent_65%)] blur-[80px]"
+      />
+
+      {/* حلقة مدارية SVG حول النموذج */}
+      <div aria-hidden className="orbit-ring hidden xl:block" style={{ ['--size' as string]: '640px', ['--orbit-dur' as string]: '26s' }}>
+        <span className="orbit-dot" />
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" fill="none">
+          <circle cx="50" cy="50" r="49.5" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="1 3" />
+        </svg>
+      </div>
+
+      {/* شارات HUD العائمة (Parallax) */}
+      <FloatChip className="-top-5 -right-6" depth={18} icon={Wand2} label="ترميم AI" sub="CODEFORMER HD" />
+      <FloatChip className="top-1/3 -left-10" depth={26} icon={ScanLine} label="قص تلقائي" sub="AUTO CENTER 40×32" />
+      <FloatChip className="-bottom-5 right-16" depth={14} icon={Printer} label="جاهز للمطبعة" sub="CMYK • 300 DPI" />
+
       {/* SpaceX Dark Tilted Window Frame matching Real Grido Studio App */}
       <div
-        ref={containerRef}
-        className="perspective-mockup relative rounded-none overflow-hidden border border-subtle bg-elevated text-right w-full transition-colors duration-500 hover:border-white/40"
+        ref={frameRef}
+        className="perspective-mockup relative rounded-none overflow-hidden border border-subtle bg-elevated text-right w-full transition-colors duration-500 hover:border-white/40 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.9)]"
         dir="rtl"
       >
         <div className="tilt-glow-layer" />
-        
+
+        {/* مسح ضوئي خفيف يعبر النافذة */}
+        <div className="scanline" aria-hidden />
         {/* Top App Titlebar */}
         <div className="h-11 bg-[#242424] border-b border-white/10 px-3 flex items-center justify-between text-neutral-300 text-xs">
           {/* Left Controls & Status */}

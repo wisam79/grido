@@ -56,15 +56,28 @@ export function BenefitsGrid() {
               key={benefit.title}
               className="spotlight-card rounded-2xl p-6 sm:p-7 flex flex-row sm:flex-col items-center justify-start sm:justify-between text-right sm:text-center group relative overflow-hidden gap-4 sm:gap-0 cursor-default bg-secondary border border-subtle hover:scale-[1.03] transition-transform duration-500"
             >
-              {/* High Resolution 3D Studio Graphic Asset with Float Animation */}
-              <div 
+              {/* حلقة SVG مدارية دوّارة تظهر عند hover خلف الأيقونة */}
+              <span aria-hidden className="benefit-ring" />
+
+              {/* High Resolution 3D Studio Graphic Asset with Float Animation + Parallax Glow */}
+              <div
                 className="benefit-icon relative w-16 h-16 sm:w-28 sm:h-28 sm:mb-5 shrink-0 flex items-center justify-center"
                 style={{ animationDelay: `${index * 0.25}s` }}
               >
+                {/* هالة زرقاء خلف الأيقونة تشتد عند hover */}
+                <span
+                  aria-hidden
+                  className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(96,165,250,0.25),transparent_70%)] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110"
+                />
                 <img
                   src={benefit.img}
                   alt={benefit.title}
-                  className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] transition-transform duration-500"
+                  className="relative z-10 w-full h-full object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.9)] transition-all duration-500 group-hover:drop-shadow-[0_24px_40px_rgba(59,130,246,0.35)] group-hover:rotate-[6deg]"
+                />
+                {/* انعكاس أرضي خفيف تحت الأيقونة */}
+                <span
+                  aria-hidden
+                  className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4/5 h-3 rounded-[100%] bg-black/70 blur-md opacity-60 group-hover:opacity-90 group-hover:scale-110 transition-all duration-500"
                 />
               </div>
 
@@ -76,6 +89,11 @@ export function BenefitsGrid() {
                   {benefit.description}
                 </p>
               </div>
+
+              {/* رقم البطاقة التسلسلي بأسلوب HUD */}
+              <span aria-hidden className="absolute top-4 left-4 text-[9px] font-mono font-bold text-tertiary/60 tracking-[2px]" dir="ltr">
+                0{index + 1}
+              </span>
             </div>
           ))}
         </div>

@@ -87,6 +87,30 @@ export function HeroSection() {
         className="sm:hidden pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[200px] h-[200px] bg-brand-500/10 rounded-full blur-[60px]"
       />
 
+      {/* جسيمات عائمة (Particles) فوق طبقة الشبكة */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0 hidden sm:block">
+        <span className="particle w-1 h-1 top-[18%] right-[12%]" style={{ ['--dur' as string]: '8s' }} />
+        <span className="particle w-1.5 h-1.5 top-[30%] right-[45%]" style={{ ['--dur' as string]: '11s', ['--delay' as string]: '1.2s', ['--drift-y' as string]: '-26px' }} />
+        <span className="particle w-1 h-1 top-[60%] right-[70%]" style={{ ['--dur' as string]: '9s', ['--delay' as string]: '0.6s', ['--drift-x' as string]: '-16px' }} />
+        <span className="particle w-1 h-1 top-[75%] right-[20%]" style={{ ['--dur' as string]: '7s', ['--delay' as string]: '2s' }} />
+        <span className="particle w-1.5 h-1.5 top-[12%] right-[80%]" style={{ ['--dur' as string]: '12s', ['--delay' as string]: '0.4s' }} />
+        <span className="particle w-1 h-1 top-[50%] right-[92%]" style={{ ['--dur' as string]: '10s', ['--delay' as string]: '1.6s' }} />
+      </div>
+
+      {/* خطوط قياس SVG زخرفية (crosshair marks بأسلوب مخطط هندسي) */}
+      <svg aria-hidden className="pointer-events-none absolute inset-0 w-full h-full z-0 hidden lg:block" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="rgba(255,255,255,0.14)" strokeWidth="1">
+          <path d="M 6% 22% h 14 M 6% 22% v 14" transform="translate(-7,-7)" />
+          <path d="M 94% 16% h -14 M 94% 16% v 14" />
+          <path d="M 8% 84% h 14 M 8% 84% v -14" />
+          <path d="M 92% 78% h -14 M 92% 78% v -14" />
+        </g>
+        <g fill="rgba(255,255,255,0.25)" fontFamily="JetBrains Mono, monospace" fontSize="7" letterSpacing="1">
+          <text x="6.8%" y="20.5%">+</text>
+          <text x="93%" y="14.5%">+</text>
+        </g>
+      </svg>
+
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Split 2-Column Hero Grid */}
         <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 items-center">
@@ -102,14 +126,14 @@ export function HeroSection() {
             </div>
 
             {/* Headline — كتلة بصرية درامية فوق عمود ضوئي طبقي */}
-            <h1 className="stagger-2 relative text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-black leading-tight sm:leading-[1.12] font-display uppercase text-white">
+            <h1 className="stagger-2 title-depth relative text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-black leading-tight sm:leading-[1.12] font-display uppercase text-white">
               <span
                 aria-hidden
                 className="pointer-events-none absolute -top-10 right-[-15%] w-[420px] h-[340px] rounded-full opacity-60 blur-[100px] bg-gradient-to-l from-white/12 via-brand-600/20 to-transparent"
               />
               <span className="relative block">تنسيق صور المعاملات</span>
               <span className="relative mt-2 block text-secondary">
-                في <span className="font-mono tracking-tight text-white">3</span> ثوانٍ فقط
+                في <span className="font-mono tracking-tight text-white inline-block animate-[float_3.2s_ease-in-out_infinite_alternate]">3</span> ثوانٍ فقط
               </span>
             </h1>
 
