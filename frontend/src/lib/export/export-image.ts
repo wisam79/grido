@@ -351,17 +351,87 @@ export async function exportCanvas(
     const availW = canvasWidth - 2 * margin;
     const availH = canvasHeight - 2 * margin;
 
-    if (collageShowCutLines && hasPhysical) {
+    if (collageShowCutLines && slots.length > 0) {
       ctx.save();
-      ctx.strokeStyle = "#a0aec0";
-      ctx.lineWidth = Math.max(1, 2 * (canvasWidth / 1200));
-      ctx.setLineDash([8, 8]);
+
+      const colLefts = new Set<number>();
+      const colRights = new Set<number>();
+      const rowTops = new Set<number>();
+      const rowBottoms = new Set<number>();
+
       for (const slot of slots) {
-        const left = margin + slot.x * availW + gap / 2;
-        const top = margin + slot.y * availH + gap / 2;
-        const width = slot.w * availW - gap;
-        const height = slot.h * availH - gap;
-        ctx.strokeRect(left - gap / 2, top - gap / 2, width + gap, height + gap);
+        const left = Math.round(margin + slot.x * availW + gap / 2);
+        const top = Math.round(margin + slot.y * availH + gap / 2);
+        const right = Math.round(left + slot.w * availW - gap);
+        const bottom = Math.round(top + slot.h * availH - gap);
+
+        colLefts.add(left);
+        colRights.add(right);
+        rowTops.add(top);
+        rowBottoms.add(bottom);
+      }
+
+      const sortedLefts = Array.from(colLefts).sort((a, b) => a - b);
+      const sortedRights = Array.from(colRights).sort((a, b) => a - b);
+      const sortedTops = Array.from(rowTops).sort((a, b) => a - b);
+      const sortedBottoms = Array.from(rowBottoms).sort((a, b) => a - b);
+
+      if (sortedLefts.length > 0 && sortedTops.length > 0) {
+        const xCutLines: number[] = [];
+        xCutLines.push(Math.round(sortedLefts[0] - gap / 2));
+        for (let i = 0; i < sortedRights.length - 1; i++) {
+          const midX = Math.round((sortedRights[i] + sortedLefts[i + 1]) / 2);
+          xCutLines.push(midX);
+        }
+        xCutLines.push(Math.round(sortedRights[sortedRights.length - 1] + gap / 2));
+
+        const yCutLines: number[] = [];
+        yCutLines.push(Math.round(sortedTops[0] - gap / 2));
+        for (let i = 0; i < sortedBottoms.length - 1; i++) {
+          const midY = Math.round((sortedBottoms[i] + sortedTops[i + 1]) / 2);
+          yCutLines.push(midY);
+        }
+        const gridBottomY = Math.round(sortedBottoms[sortedBottoms.length - 1] + gap / 2);
+        yCutLines.push(gridBottomY);
+
+        const minX = xCutLines[0];
+        const maxX = xCutLines[xCutLines.length - 1];
+        const minY = yCutLines[0];
+        const maxY = yCutLines[yCutLines.length - 1];
+
+        const lineW = Math.max(1, Math.round(canvasWidth / 1200));
+
+        // خطوط قص رأسية مفردة ممتدة عبر منتصف الفجوات بالضبط
+        ctx.strokeStyle = "#a0aec0";
+        ctx.lineWidth = lineW;
+        ctx.setLineDash([8, 8]);
+        for (const x of xCutLines) {
+          ctx.beginPath();
+          ctx.moveTo(x, minY);
+          ctx.lineTo(x, maxY);
+          ctx.stroke();
+        }
+
+        // خطوط قص أفقية مفردة ممتدة + خط نهاية منطقة الطباعة الكامل بعرض الورقة
+        for (let i = 0; i < yCutLines.length; i++) {
+          const y = yCutLines[i];
+          const isBottomEnd = i === yCutLines.length - 1;
+          ctx.beginPath();
+          if (isBottomEnd) {
+            ctx.strokeStyle = "#3182ce";
+            ctx.lineWidth = lineW * 1.5;
+            ctx.setLineDash([12, 6]);
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvasWidth, y);
+          } else {
+            ctx.strokeStyle = "#a0aec0";
+            ctx.lineWidth = lineW;
+            ctx.setLineDash([8, 8]);
+            ctx.moveTo(minX, y);
+            ctx.lineTo(maxX, y);
+          }
+          ctx.stroke();
+        }
       }
       ctx.restore();
     }

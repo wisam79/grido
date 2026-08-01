@@ -68,6 +68,7 @@ export default defineConfig({
     target: 'esnext'
   },
   optimizeDeps: {
+    exclude: ['@techstark/opencv-js'],
     esbuildOptions: {
       target: 'esnext'
     }

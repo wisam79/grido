@@ -26,6 +26,7 @@ import {
   autoDetectDocumentCorners,
   warpPerspective,
   inferSmartDocumentAspect,
+  detectDocumentAuto,
 } from "./perspective-transform";
 import { toast } from "sonner";
 
@@ -61,6 +62,47 @@ export function DocumentScannerDialog({
 
   const [imgSize, setImgSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const displayScaleRef = useRef<number>(1);
+  const [isDetecting, setIsDetecting] = useState(false);
+
+  const activeReqIdRef = useRef<number>(0);
+
+  const runDetection = useCallback(
+    async (notify: boolean) => {
+      const img = imgRef.current;
+      if (!img) return;
+      const reqId = ++activeReqIdRef.current;
+      setIsDetecting(true);
+      try {
+        const result = await detectDocumentAuto(img, img.naturalWidth, img.naturalHeight);
+        if (reqId !== activeReqIdRef.current) return;
+        if (result.corners) {
+          setCorners(result.corners);
+          const inferred = inferSmartDocumentAspect(result.corners);
+          if (inferred !== "free") setAspect(inferred);
+          if (notify) {
+            if (result.method === "opencv") {
+              toast.success(`كشف دقيق عبر OpenCV (${Math.round(result.confidence * 100)}%) 🎯`);
+            } else if (result.method === "js") {
+              toast.success("كشف عبر الخوارزمية الاحتياطية 🎯");
+            } else {
+              toast.warning("لم يُكتشف المستند بدقة — اضبط الأركان يدوياً ⚠️");
+            }
+          }
+        } else {
+          if (notify) toast.warning("لم يُنتج الكشف أي أركان — استخدم التعديل اليدوي ⚠️");
+        }
+      } catch (err) {
+        if (reqId === activeReqIdRef.current && notify) {
+          toast.error("حدث خطأ أثناء الكشف — جرب مرة أخرى");
+        }
+      } finally {
+        if (reqId === activeReqIdRef.current) {
+          setIsDetecting(false);
+        }
+      }
+    },
+    []
+  );
 
   // 🔒 إصلاح BUG-3 & BUG-13: التحقق من التلغية عند فك المكون وإزالة prevOpen المزدوج
   useEffect(() => {
@@ -74,28 +116,10 @@ export function DocumentScannerDialog({
       if (isCancelled) return;
       imgRef.current = img;
       setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
-
-      const maxDim = 400;
-      const scale = Math.min(1, maxDim / img.naturalWidth, maxDim / img.naturalHeight);
-      const sw = Math.max(1, Math.round(img.naturalWidth * scale));
-      const sh = Math.max(1, Math.round(img.naturalHeight * scale));
-
-      const tmpCanvas = document.createElement("canvas");
-      tmpCanvas.width = sw;
-      tmpCanvas.height = sh;
-      const tmpCtx = tmpCanvas.getContext("2d");
-      if (tmpCtx) {
-        tmpCtx.drawImage(img, 0, 0, sw, sh);
-        const imgData = tmpCtx.getImageData(0, 0, sw, sh);
-        const detected = autoDetectDocumentCorners(imgData, sw, sh, img.naturalWidth, img.naturalHeight);
-        setCorners(detected);
-      }
-      // 🔒 تنظيف tmpCanvas (BUG-6)
-      tmpCanvas.width = 0;
-      tmpCanvas.height = 0;
-
       setIsPreviewMode(false);
       setPreviewSrc(null);
+      // Run detection asynchronously with OpenCV + JS fallback
+      runDetection(false);
     };
 
     img.onerror = () => {
@@ -108,10 +132,11 @@ export function DocumentScannerDialog({
 
     return () => {
       isCancelled = true;
+      activeReqIdRef.current++;
       img.onload = null;
       img.onerror = null;
     };
-  }, [open, imageSrc]);
+  }, [open, imageSrc, runDetection]);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -302,41 +327,7 @@ export function DocumentScannerDialog({
   };
 
   const handleAutoDetect = () => {
-    const img = imgRef.current;
-    if (!img) return;
-
-    const maxDim = 400;
-    const scale = Math.min(1, maxDim / img.naturalWidth, maxDim / img.naturalHeight);
-    const sw = Math.max(1, Math.round(img.naturalWidth * scale));
-    const sh = Math.max(1, Math.round(img.naturalHeight * scale));
-
-    const tmpCanvas = document.createElement("canvas");
-    tmpCanvas.width = sw;
-    tmpCanvas.height = sh;
-    const tmpCtx = tmpCanvas.getContext("2d");
-    if (tmpCtx) {
-      tmpCtx.drawImage(img, 0, 0, sw, sh);
-      const imgData = tmpCtx.getImageData(0, 0, sw, sh);
-      const detected = autoDetectDocumentCorners(imgData, sw, sh, img.naturalWidth, img.naturalHeight);
-      setCorners(detected);
-
-      const inferred = inferSmartDocumentAspect(detected);
-      if (inferred !== "free") {
-        setAspect(inferred);
-        const aspectLabels: Record<string, string> = {
-          id_card: "بطاقة شخصية / هوية 🪪",
-          a4_p: "ورقة A4 رأسي 📄",
-          a4_l: "ورقة A4 أفقي 📄",
-          square: "مستند مربع ⏹️",
-        };
-        toast.success(`تم كشف أركان المستند وتصنيف النوع: ${aspectLabels[inferred] || inferred} 🎯`);
-      } else {
-        toast.success("تم كشف أركان المستند بنجاح 🎯");
-      }
-    }
-    // 🔒 تنظيف tmpCanvas (BUG-6)
-    tmpCanvas.width = 0;
-    tmpCanvas.height = 0;
+    runDetection(true);
   };
 
   const handleResetCorners = () => {
@@ -511,10 +502,15 @@ export function DocumentScannerDialog({
                   size="sm"
                   className="h-8.5 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                   onClick={handleAutoDetect}
+                  disabled={isDetecting}
                   title="كشف تلقائي لأركان المستند"
                 >
-                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  <span>كشف تلقائي</span>
+                  {isDetecting ? (
+                    <RefreshCw className="w-3.5 h-3.5 shrink-0 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  )}
+                  <span>{isDetecting ? "جاري الكشف..." : "كشف تلقائي"}</span>
                 </Button>
                 <Button
                   variant="outline"

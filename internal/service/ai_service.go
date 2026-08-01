@@ -311,14 +311,22 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		bodyStr := strings.TrimSpace(string(body))
+		slog.Error("Modal AI HTTP error", "status", resp.StatusCode, "body", bodyStr)
+
 		var errRes struct {
 			Error string `json:"error"`
 		}
 		if err := json.Unmarshal(body, &errRes); err == nil && errRes.Error != "" {
-			slog.Error("Modal AI server error", "detail", errRes.Error)
-			return "", fmt.Errorf("فشل خادم الذكاء الاصطناعي في معالجة الصورة (%d)", resp.StatusCode)
+			return "", fmt.Errorf("فشل خادم الذكاء الاصطناعي: %s", errRes.Error)
 		}
-		return "", fmt.Errorf("فشل خادم الذكاء الاصطناعي: %d", resp.StatusCode)
+		if strings.Contains(bodyStr, "disabled") || strings.Contains(bodyStr, "workspace") {
+			return "", fmt.Errorf("خادم الذكاء الاصطناعي غير نشط حالياً على Modal (Workspace disabled). يرجى إعادة تفعيل الحساب أو إعادة النشر بـ modal deploy")
+		}
+		if resp.StatusCode == http.StatusNotFound {
+			return "", fmt.Errorf("تعذر العثور على نقطة النهاية لمعالجة الذكاء الاصطناعي (404 Not Found). يرجى التأكد من تشغيل خادم Modal")
+		}
+		return "", fmt.Errorf("فشل خادم الذكاء الاصطناعي (%d)", resp.StatusCode)
 	}
 
 	success = true

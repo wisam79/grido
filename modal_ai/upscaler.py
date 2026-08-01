@@ -56,7 +56,7 @@ app = modal.App("grido-ai-upscaler")
 
 @app.cls(
     image=image,
-    gpu="A10G",
+    gpu="L4",
     scaledown_window=2,
     secrets=[modal.Secret.from_name("grido-ai-secret"), modal.Secret.from_name("supabase-auth")]
 )
@@ -107,7 +107,7 @@ class ImageEnhancer:
             scale=2,
             model_path='/root/.cache/realesrgan/RealESRGAN_x2plus.pth',
             model=bg_model,
-            tile=400,
+            tile=640,
             tile_pad=10,
             pre_pad=0,
             half=True if torch.cuda.is_available() else False,
@@ -232,6 +232,14 @@ class ImageEnhancer:
             if img_bgr is None:
                 return Response(content='{"error": "فشل قراءة الصورة"}', media_type="application/json", status_code=400)
 
+            # ⚡ تقليص الأبعاد الكبيرة جداً إلى 1920px قبل المعالجة لتسريع التشغيل وتوفير تكلفة الـ GPU
+            h_orig, w_orig = img_bgr.shape[:2]
+            max_dim = 1920
+            if max(h_orig, w_orig) > max_dim:
+                scale = max_dim / float(max(h_orig, w_orig))
+                new_w, new_h = int(w_orig * scale), int(h_orig * scale)
+                img_bgr = cv2.resize(img_bgr, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
             # 🌟 إجراء معالجة فائقة المزدوجة (ترميم الوجوه بالـ CodeFormer وتوضيح الخلفية والملابس بالـ Real-ESRGAN)
             import sys
             if '/root/CodeFormer' not in sys.path:
@@ -266,7 +274,7 @@ class ImageEnhancer:
                 cropped_face_t = cropped_face_t.unsqueeze(0).to(self.device)
 
                 try:
-                    with torch.no_grad():
+                    with torch.no_grad(), torch.autocast(device_type='cuda', dtype=torch.float16):
                         # adain=False يمنع فلتر التنعيم الاصطناعي والتلوين الشمعي/الكارتوني
                         output = self.net(cropped_face_t, w=w, adain=False)[0]
                         restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))

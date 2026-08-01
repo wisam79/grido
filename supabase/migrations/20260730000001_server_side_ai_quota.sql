@@ -68,7 +68,10 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.check_and_record_ai_usage TO authenticated, anon, service_role;
+-- تنظيف التوقيعات القديمة إن وجدت لمنع تضارب Overloading
+DROP FUNCTION IF EXISTS public.check_and_record_ai_usage(uuid, integer, bigint, numeric, numeric);
+
+GRANT EXECUTE ON FUNCTION public.check_and_record_ai_usage(uuid, integer, bigint, numeric, numeric, boolean) TO authenticated, anon, service_role;
 
 -- Reload PostgREST schema cache لالتقاط التوقيع الجديد فوراً
 NOTIFY pgrst, 'reload schema';

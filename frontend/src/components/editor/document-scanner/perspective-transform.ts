@@ -3,6 +3,8 @@ export interface Point {
   y: number;
 }
 
+import { loadOpenCV } from "./opencv-loader";
+
 export function sortCornerPoints(points: Point[]): Point[] {
   if (points.length !== 4) return points;
 
@@ -610,4 +612,158 @@ export function inferSmartDocumentAspect(corners: Point[]): "free" | "a4_p" | "a
   if (ratio >= 0.92 && ratio <= 1.08) return "square";
 
   return "free";
+}
+
+/* ============================================================
+ *  OpenCV WASM detection (primary) with JS fallback
+ * ============================================================ */
+
+export interface DetectionResult {
+  corners: Point[] | null;
+  confidence: number;
+  method: "opencv" | "js" | "default" | "loading";
+}
+
+export async function detectDocumentAuto(
+  src: HTMLCanvasElement | HTMLImageElement,
+  originalWidth: number,
+  originalHeight: number
+): Promise<DetectionResult> {
+  const cv = await loadOpenCV();
+  if (!cv) {
+    // Fallback to JS detector (sync)
+    const canvas = document.createElement("canvas");
+    canvas.width = originalWidth;
+    canvas.height = originalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return { corners: null, confidence: 0, method: "default" };
+    ctx.drawImage(src, 0, 0, originalWidth, originalHeight);
+    const maxDim = 400;
+    const scale = Math.min(1, maxDim / originalWidth, maxDim / originalHeight);
+    const sw = Math.max(1, Math.round(originalWidth * scale));
+    const sh = Math.max(1, Math.round(originalHeight * scale));
+    const smallCanvas = document.createElement("canvas");
+    smallCanvas.width = sw;
+    smallCanvas.height = sh;
+    const sctx = smallCanvas.getContext("2d");
+    if (!sctx) return { corners: null, confidence: 0, method: "default" };
+    sctx.drawImage(src, 0, 0, sw, sh);
+    const small = sctx.getImageData(0, 0, sw, sh);
+    const corners = autoDetectDocumentCorners(small, sw, sh, originalWidth, originalHeight);
+    canvas.width = 0;
+    canvas.height = 0;
+    smallCanvas.width = 0;
+    smallCanvas.height = 0;
+    return { corners, confidence: 0.5, method: "js" };
+  }
+  // OpenCV path
+  const canvas = document.createElement("canvas");
+  canvas.width = originalWidth;
+  canvas.height = originalHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return { corners: null, confidence: 0, method: "default" };
+  ctx.drawImage(src, 0, 0, originalWidth, originalHeight);
+  const srcMat = cv.imread(canvas);
+  canvas.width = 0;
+  canvas.height = 0;
+  // Multi-scale sampling scales (relative to original)
+  const scales = [1, 0.6, 0.35];
+  let bestCorners: Point[] | null = null;
+  let bestScore = -Infinity;
+  for (const s of scales) {
+    const w = Math.max(30, Math.floor(originalWidth * s));
+    const h = Math.max(30, Math.floor(originalHeight * s));
+    let currentMat = srcMat;
+    let localMat: any = null;
+    if (s !== 1) {
+      localMat = new cv.Mat();
+      cv.resize(currentMat, localMat, new cv.Size(w, h), 0, 0, cv.INTER_AREA);
+      currentMat = localMat;
+    }
+    // Process: gray → median blur → Canny → morph close → contours
+    const gray = new cv.Mat();
+    cv.cvtColor(currentMat, gray, cv.COLOR_RGBA2GRAY);
+    const blurred = new cv.Mat();
+    cv.medianBlur(gray, blurred, 5);
+    const edges = new cv.Mat();
+    cv.Canny(blurred, edges, 40, 120);
+    const kernel = cv.Mat.ones(9, 9, cv.CV_8U);
+    const closed = new cv.Mat();
+    cv.morphologyEx(edges, closed, cv.MORPH_CLOSE, kernel);
+    // Invert edges → document most bright / background
+    const inv = new cv.Mat();
+    cv.bitwise_not(closed, inv);
+    const contours = new cv.MatVector();
+    const hierarchy = new cv.Mat();
+    cv.findContours(inv, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    const imgArea = w * h;
+    for (let i = 0; i < contours.size(); i++) {
+      const c = contours.get(i);
+      const peri = cv.arcLength(c, true);
+      const approx = new cv.Mat();
+      cv.approxPolyDP(c, approx, 0.02 * peri, true);
+      if (approx.rows === 4) {
+        const area = cv.contourArea(approx);
+        if (area < imgArea * 0.05 || area > imgArea * 0.97) {
+          approx.delete();
+          c.delete();
+          continue;
+        }
+        // angle check: interior angles near 90°
+        const pts: Point[] = [];
+        for (let r = 0; r < 4; r++) {
+          const px = (approx as any).intPtr ? (approx as any).intPtr(r, 0)[0] : (approx as any).data32S[r * 2];
+          const py = (approx as any).intPtr ? (approx as any).intPtr(r, 0)[1] : (approx as any).data32S[r * 2 + 1];
+          pts.push({ x: px, y: py });
+        }
+        const sorted = sortCornerPoints(pts);
+        // interior angle at sorted[k] uses neighbors sorted[k-1] and sorted[k+1]
+        const sortedAngles: number[] = [];
+        for (let k = 0; k < 4; k++) {
+          const prev = sorted[(k + 3) % 4];
+          const curr = sorted[k];
+          const next = sorted[(k + 1) % 4];
+          const v1x = prev.x - curr.x, v1y = prev.y - curr.y;
+          const v2x = next.x - curr.x, v2y = next.y - curr.y;
+          const dot = v1x * v2x + v1y * v2y;
+          const m1 = Math.hypot(v1x, v1y), m2 = Math.hypot(v2x, v2y);
+          const angle =
+            m1 && m2
+              ? Math.acos(Math.max(-1, Math.min(1, dot / (m1 * m2)))) * (180 / Math.PI)
+              : 0;
+          sortedAngles.push(angle);
+        }
+        // penalty for deviation from 90°
+        const avgDev = sortedAngles.reduce((acc, ang) => acc + Math.abs(90 - ang), 0) / 4;
+        const skewness = avgDev / 90;
+        if (skewness > 0.6) {
+          approx.delete();
+          c.delete();
+          continue;
+        }
+        // score: area ratio discounted by skewness
+        const score = (area / imgArea) * (1 - skewness);
+        if (score > bestScore) {
+          bestScore = score;
+          // re-scale to original resolution
+          bestCorners = sorted.map((p) => ({ x: p.x / s, y: p.y / s }));
+        }
+      }
+      approx.delete();
+      c.delete();
+    }
+    // cleanup per scale
+    gray.delete(); blurred.delete(); edges.delete();
+    kernel.delete(); closed.delete(); inv.delete();
+    contours.delete(); hierarchy.delete();
+    if (localMat) localMat.delete();
+    if (bestScore > 0.5) break;
+  }
+  srcMat.delete();
+  const confidence = Math.max(0, Math.min(1, bestScore));
+  return {
+    corners: bestCorners,
+    confidence,
+    method: bestCorners ? "opencv" : "default",
+  };
 }

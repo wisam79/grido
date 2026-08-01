@@ -49,6 +49,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     collageRadius,
     collageStrokeWidth,
     collageStrokeColor,
+    collageShowCutLines,
   } = useEditorStore(useShallow((state) => ({
     template: state.template,
     canvasWidth: state.canvasWidth,
@@ -65,6 +66,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     collageRadius: state.collageRadius,
     collageStrokeWidth: state.collageStrokeWidth,
     collageStrokeColor: state.collageStrokeColor,
+    collageShowCutLines: state.collageShowCutLines,
   })));
   const [zoom, setZoom] = useState(1);
   const [colorSpace, setColorSpace] = useState<"sRGB" | "CMYK">("sRGB");
@@ -172,10 +174,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     mode,
   });
 
-  const buildCollageItems = () => {
+  const buildItems = async () => {
     const items: domain.PrintItem[] = [];
     const cutLines: domain.CutLine[] = [];
-    const hasPhysical = collageTemplate?.physicalLayout;
+    const hasPhysical = Boolean(collageTemplate?.physicalLayout);
     const marginPx = hasPhysical ? 0 : collageMargin;
     const gapPx = hasPhysical ? 0 : collageGap;
     const scalePxToMM = imageWidthMM / canvasWidth;
@@ -187,26 +189,28 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     const offsetX = effectiveMarginMM + Math.max(0, availableWidthMM - gridWidth) / 2;
     const offsetY = effectiveMarginMM + Math.max(0, availableHeightMM - gridHeight) / 2;
 
+    const shouldShowCut = printSettings.showCutLines || collageShowCutLines;
+    if (shouldShowCut) {
+      for (let c = 1; c < cols; c++) {
+        const cx = offsetX + c * (imageWidthMM + gapMM) - gapMM / 2;
+        if (cx > 0 && cx < paperWidth) {
+          cutLines.push({ x1: cx, y1: offsetY, x2: cx, y2: offsetY + gridHeight });
+        }
+      }
+      for (let r = 1; r <= actualRows; r++) {
+        const cy = offsetY + r * (imageHeightMM + gapMM) - gapMM / 2;
+        const isBottomEnd = (r === actualRows);
+        const x1 = isBottomEnd ? 0 : offsetX;
+        const x2 = isBottomEnd ? paperWidth : (offsetX + gridWidth);
+        cutLines.push({ x1, y1: cy, x2, y2: cy });
+      }
+    }
+
     for (let i = 0; i < actualCopies; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
       const blockXMM = offsetX + col * (imageWidthMM + gapMM);
       const blockYMM = offsetY + row * (imageHeightMM + gapMM);
-
-      if (printSettings.showCutLines && actualCopies > 1) {
-        if (i < cols) {
-          const cx = blockXMM - gapMM / 2;
-          if (cx > effectiveMarginMM && cx < paperWidth - effectiveMarginMM) {
-            cutLines.push({ x1: cx, y1: effectiveMarginMM, x2: cx, y2: paperHeight - effectiveMarginMM });
-          }
-        }
-        if (col === 0 && row > 0) {
-          const cy = blockYMM - gapMM / 2;
-          if (cy > effectiveMarginMM && cy < paperHeight - effectiveMarginMM) {
-            cutLines.push({ x1: effectiveMarginMM, y1: cy, x2: paperWidth - effectiveMarginMM, y2: cy });
-          }
-        }
-      }
 
       for (const slot of slots) {
         if (!slot.imageSrc) continue;
@@ -290,19 +294,20 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       }));
     }
 
-    if (printSettings.showCutLines && actualCopies > 1) {
-      // خطوط القص على نفس الأصل المتمركز للعناصر (offsetX/offsetY) لا على الهامش
+    const shouldShowCut = printSettings.showCutLines || collageShowCutLines;
+    if (shouldShowCut) {
       for (let c = 1; c < cols; c++) {
-        const x = offsetX + c * (imageWidthMM + gapMM) - gapMM / 2;
-        if (x > effectiveMarginMM && x < paperWidth - effectiveMarginMM) {
-          cutLines.push({ x1: x, y1: effectiveMarginMM, x2: x, y2: paperHeight - effectiveMarginMM });
+        const cx = offsetX + c * (imageWidthMM + gapMM) - gapMM / 2;
+        if (cx > 0 && cx < paperWidth) {
+          cutLines.push({ x1: cx, y1: offsetY, x2: cx, y2: offsetY + gridHeight });
         }
       }
-      for (let r = 1; r < actualRows; r++) {
-        const y = offsetY + r * (imageHeightMM + gapMM) - gapMM / 2;
-        if (y > effectiveMarginMM && y < paperHeight - effectiveMarginMM) {
-          cutLines.push({ x1: effectiveMarginMM, y1: y, x2: paperWidth - effectiveMarginMM, y2: y });
-        }
+      for (let r = 1; r <= actualRows; r++) {
+        const cy = offsetY + r * (imageHeightMM + gapMM) - gapMM / 2;
+        const isBottomEnd = (r === actualRows);
+        const x1 = isBottomEnd ? 0 : offsetX;
+        const x2 = isBottomEnd ? paperWidth : (offsetX + gridWidth);
+        cutLines.push({ x1, y1: cy, x2, y2: cy });
       }
     }
     return { items, cutLines };
@@ -382,7 +387,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const handlePrint = async () => {
     setIsExporting(true);
     try {
-      const buildResult = mode === "collage" ? buildCollageItems() : await buildSingleItems();
+      const buildResult = mode === "collage" ? await buildItems() : await buildSingleItems();
       if (!buildResult) {
         setIsExporting(false);
         return;
@@ -393,7 +398,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         paperHeightMM: paperHeight,
         dpi: printSettings.dpi,
         backgroundColor: backgroundColor || "#FFFFFF",
-        showCutLines: printSettings.showCutLines && actualCopies > 1,
+        showCutLines: printSettings.showCutLines || collageShowCutLines,
         colorSpace: colorSpace,
         exportFormat: colorSpace === "CMYK" ? "tiff" : "png",
         orientation: printSettings.orientation || "portrait",

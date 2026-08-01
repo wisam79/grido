@@ -1,4 +1,4 @@
-import { buildCSSFilter } from "@/lib/utils";
+import { buildCSSFilter, cn } from "@/lib/utils";
 
 interface SheetPreviewProps {
   cols: number;
@@ -164,32 +164,34 @@ export function SheetPreview({
 
   const cutLines = [];
   if (showCutLines) {
-    const marginPx = marginMM * scaleFactor * zoom;
-
     for (let i = 1; i < cols; i++) {
       const x = (offsetX + i * (imageWidthMM + gapMM)) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
       cutLines.push(
         <div
           key={`v-${i}`}
-          className="absolute border-l border-dashed border-red-400/60 pointer-events-none"
+          className="absolute border-l border-dashed border-slate-400/80 pointer-events-none"
           style={{ 
             left: x, 
-            top: -marginPx, 
-            bottom: -marginPx 
+            top: 0, 
+            bottom: 0 
           }}
         />
       );
     }
-    for (let i = 1; i < rows; i++) {
+    for (let i = 1; i <= rows; i++) {
       const y = (offsetY + i * (imageHeightMM + gapMM)) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
+      const isBottomEnd = (i === rows);
       cutLines.push(
         <div
           key={`h-${i}`}
-          className="absolute border-t border-dashed border-red-400/60 pointer-events-none"
+          className={cn(
+            "absolute border-t border-dashed pointer-events-none",
+            isBottomEnd ? "border-blue-500 border-t-2" : "border-slate-400/80"
+          )}
           style={{ 
             top: y, 
-            left: -marginPx, 
-            right: -marginPx 
+            left: isBottomEnd ? 0 : offsetX * scaleFactor * zoom, 
+            right: isBottomEnd ? 0 : offsetX * scaleFactor * zoom 
           }}
         />
       );
