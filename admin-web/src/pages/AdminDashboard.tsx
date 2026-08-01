@@ -326,7 +326,8 @@ export default function AdminDashboard() {
         });
 
       if (error) throw error;
-      setGeneratedKey(data as string);
+      const keyVal = typeof data === 'object' && data !== null && 'key' in data ? (data as any).key : (data as string);
+      setGeneratedKey(keyVal);
       alert('تم توليد مفتاح ترخيص وإدراجه سحابياً بنجاح!');
       loadDashboardData();
     } catch (err: any) {
