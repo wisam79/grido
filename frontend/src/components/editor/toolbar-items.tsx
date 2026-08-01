@@ -10,7 +10,6 @@ import {
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { IMAGE_FILTERS } from "@/lib/templates";
-import { VECTOR_SHAPES } from "@/lib/svg-paths";
 import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
@@ -77,7 +76,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           </div>
         </TooltipBtn>
         <DropdownMenuContent align="start" className="w-40 font-cairo">
-          <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">أشكال هندسية أساسية</div>
+          <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">الأشكال الهندسية</div>
           <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-[11px] cursor-pointer">
             <Square className="w-4 h-4 text-muted-foreground" />
             <span>مستطيل / مربع</span>
@@ -94,19 +93,6 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             <Minus className="w-4 h-4 text-muted-foreground" />
             <span>خط مستقيم</span>
           </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-          <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">أشكال متجهة جاهزة</div>
-          {VECTOR_SHAPES.map((shape) => (
-            <DropdownMenuItem
-              key={shape.id}
-              onClick={() => addShapeElement("path", shape.path)}
-              className="gap-2 text-[11px] cursor-pointer"
-            >
-              <span className="text-sm leading-none w-4 text-center" aria-hidden>{shape.emoji}</span>
-              <span>{shape.name}</span>
-            </DropdownMenuItem>
-          ))}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

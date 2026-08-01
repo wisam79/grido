@@ -302,7 +302,7 @@ export default function App() {
   }
 
   return (
-    <TooltipProvider delayDuration={300}>
+    <TooltipProvider delayDuration={650} skipDelayDuration={150}>
       <div 
         className={cn(
           "h-screen flex flex-col overflow-hidden font-cairo bg-background",

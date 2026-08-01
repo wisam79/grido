@@ -5,6 +5,14 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.17] - 2026-08-01
+
+### Added & Refined
+- **Soft Compact Toast Notifications**: Redesigned Sonner notifications into soft, lightweight floating pills matching Grido's visual identity with custom Lucide icons and dark/light mode backdrop blur.
+- **Tooltip Hover Delay**: Adjusted `TooltipProvider` hover delay to `650ms` (`delayDuration={650}`) preventing accidental popping text when sweeping mouse cursor rapidly over toolbar and workspace controls.
+- **Cleaned Preset Vector Shapes**: Streamlined shape menu to retain core basic geometric shapes only (Rectangle, Circle, Star, Line).
+- **Codebase & Workspace Cleanup**: Cleaned up obsolete files, dev artifacts (`test.exe`, `tmp.exe`, `diff.patch`, `scratch_transcript.txt`, duplicate test files) and verified clean build and 100% unit test coverage.
+
 ## [v1.2.15] - 2026-07-31
 
 ### Fixed & Modernized
