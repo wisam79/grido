@@ -5,6 +5,15 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.18] - 2026-08-01
+
+### Added & Refined
+- **Advanced Admin Management Console**: Integrated interactive user profile editor, custom plan overrides, custom expiry dates, and instant account banning/unbanning.
+- **Batch License Key Generator & Export**: Enabled bulk generation (up to 50 keys at once) with custom reseller prefixes and 1-click export to CSV / TXT files.
+- **Live System Settings & AI Quotas**: Added dedicated System Config tab for live AI daily quota adjustments, global broadcast announcements, and maintenance mode toggles.
+- **Financial & Revenue Analytics**: Added real-time MRR (Monthly Recurring Revenue) estimation, ARR projections, and GPU hosting cost tracking.
+- **Supabase RPC Optimization**: Resolved PostgreSQL function overload ambiguity and pgcrypto dependencies in `admin_create_license_key` with automatic PostgREST schema cache reloads.
+
 ## [v1.2.17] - 2026-08-01
 
 ### Added & Refined
