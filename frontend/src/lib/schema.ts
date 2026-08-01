@@ -69,6 +69,8 @@ export const CanvasSlotSchema = z.object({
   y: z.number(),
   w: z.number(),
   h: z.number(),
+  presetType: z.string().optional(),
+  label: z.string().optional(),
   imageSrc: z.string().optional(),
   filter: z.string().optional(),
   brightness: z.number().optional(),
@@ -122,6 +124,9 @@ export const CollageTemplateSchema = z.object({
     y: z.number(),
     w: z.number(),
     h: z.number(),
+    presetType: z.string().optional(),
+    label: z.string().optional(),
+    rotation: z.number().optional(),
   })),
   physicalLayout: z.object({
     type: z.string(),

@@ -1074,8 +1074,10 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 		if item.CornerRadiusMM > 0 {
 			rPx := mmToPx(item.CornerRadiusMM, req.DPI)
 			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
-			dc.Clip()
+		} else {
+			dc.DrawRectangle(xPx, yPx, wPx, hPx)
 		}
+		dc.Clip()
 		dc.DrawImage(processedImg, int(xPx), int(yPx))
 		dc.Pop()
 

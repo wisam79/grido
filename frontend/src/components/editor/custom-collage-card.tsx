@@ -3,8 +3,9 @@ import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-import { LayoutGrid, Plus, Minus, FolderHeart, X, Save, ArrowUpRight, ArrowUpLeft, ArrowDownRight, ArrowDownLeft, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Crosshair, Columns, Rows, Maximize2 } from "lucide-react";
+import { LayoutGrid, Plus, Minus, FolderHeart, X, Save, ArrowUpRight, ArrowUpLeft, ArrowDownRight, ArrowDownLeft, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Crosshair, Columns, Rows, Maximize2, Sparkles } from "lucide-react";
 import { CollageTemplate, PAPER_SIZES } from "@/lib/templates";
+import { FreeformCollageModal } from "@/features/freeform-collage";
 
 function DocumentPresetGraphic({ type, active }: { type: string; active: boolean }) {
   const activeBorder = active ? "border-primary/80 bg-primary/20" : "border-muted-foreground/40 bg-muted/30";
@@ -417,17 +418,37 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   }, [photoType, canvasWidth, canvasHeight, rows, cols, getMaxGridConfig, applyCustomCollage, gridAlign]);
 
 
-  const isCurrentActive = activeTemplateId === "collage-custom";
+  const isCurrentActive =
+    activeTemplateId === "collage-custom" ||
+    (typeof activeTemplateId === "string" && activeTemplateId.startsWith("freeform-"));
+  const [showFreeformModal, setShowFreeformModal] = useState(false);
 
   return (
     <div className="flex flex-col gap-4 font-cairo" dir="rtl">
+      {/* Freeform Mixed Builder Action Button */}
+      <button
+        type="button"
+        onClick={() => setShowFreeformModal(true)}
+        className="w-full p-2.5 rounded-xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary transition-all cursor-pointer flex items-center justify-between shadow-xs font-bold group"
+      >
+        <div className="flex items-center gap-2 text-xs">
+          <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+          <span>محرر الكولاج الحر والأحجام المختلطة</span>
+        </div>
+        <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-md font-bold">
+          جديد ✨
+        </span>
+      </button>
+
+      <FreeformCollageModal open={showFreeformModal} onOpenChange={setShowFreeformModal} />
+
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <span className={cn(
           "text-[11px] font-extrabold uppercase tracking-wide",
           isCurrentActive ? "text-primary" : "text-foreground/70"
         )}>
-          تخصيص الشبكة
+          تخصيص الشبكة المنتظمة
         </span>
         {isCurrentActive && (
           <span className="text-[9px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-bold shadow-sm">

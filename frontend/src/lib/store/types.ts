@@ -97,6 +97,8 @@ export interface CanvasSlot {
   y: number;
   w: number;
   h: number;
+  presetType?: string;
+  label?: string;
   imageSrc?: string;
   filter?: string;
   brightness?: number;

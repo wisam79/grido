@@ -176,6 +176,10 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           y: c.y,
           w: c.w,
           h: c.h,
+          // الحفاظ على بيانات الخلية من القالب الحر (مقاس/تسمية/تدوير الصورة)
+          presetType: c.presetType ?? existingSlot?.presetType,
+          label: c.label ?? existingSlot?.label,
+          rotation: c.rotation ?? existingSlot?.rotation ?? 0,
           imageSrc: existingSlot?.imageSrc || undefined,
           filter: existingSlot?.filter || "none",
           brightness: existingSlot?.brightness || 100,

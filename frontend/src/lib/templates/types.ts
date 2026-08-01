@@ -28,7 +28,15 @@ export interface CollageTemplate {
   id: string;
   name: string;
   slots: number;
-  cells: { x: number; y: number; w: number; h: number }[];
+  cells: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    presetType?: string;
+    label?: string;
+    rotation?: number;
+  }[];
   icon: LucideIcon;
   physicalLayout?: {
     type:

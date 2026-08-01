@@ -98,8 +98,10 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   if (!image) return null;
 
   // object-fit: cover
+  const normRot = ((rotation % 360) + 360) % 360;
+  const isRotated90or270 = normRot === 90 || normRot === 270;
   const imgAspect = image.width / image.height;
-  const slotAspect = width / height;
+  const slotAspect = isRotated90or270 ? height / width : width / height;
   let sw = image.width;
   let sh = image.height;
 

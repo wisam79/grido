@@ -5,6 +5,20 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.1] - 2026-08-02
+
+### Fixed & Refined (Freeform Collage Engine & Comprehensive Fixes)
+- **Keyboard Shortcut Isolation**: Intercepted modal keydown events (`Ctrl+Z`, `Ctrl+Y`, `Ctrl+D`, `Delete`, `Backspace`, Arrows) in capture phase on `window` with `stopPropagation` & `stopImmediatePropagation` to isolate modal shortcuts from main canvas actions.
+- **Aspect-Aware Physical Rotation**: Updated `rotateSlot` to calculate physical mm dimensions before rotation using paper aspect ratio ($paperHeightMM / paperWidthMM$), ensuring 35×45mm cells rotate to 45×35mm on non-square paper.
+- **Zod Schema Data Loss Prevention**: Extended `CanvasSlotSchema` and `CollageTemplateSchema` in `schema.ts` with `presetType`, `label`, and `rotation` to prevent field stripping during JSON save/load.
+- **Center Snap Line Guideline Fix**: Separated slot alignment target coordinate from visual snap line position, drawing center guidelines directly down the paper center ($50\%$).
+- **Atomic Single-Step Undo**: Batched canvas dimension and print settings state updates prior to template application for 100% atomic single-step undo.
+- **Physical Preset Selection Resizing**: Standardized preset selection to resize slot dimensions to standard physical sizes (Passport 5x5, ID 3.5x4.5, Visa, Transactions).
+- **Go Print Service Mandatory Clipping**: Enforced `dc.Clip()` for all slot bounding boxes in backend PDF generation to prevent rotated or unclipped image bleed.
+- **Konva Rotated Cover-Fit Fix**: Swapped slot aspect ratio when rotation is 90° or 270° for exact cover-fit image cropping.
+- **Web Mode Template Saving Fallback**: Added `localStorage` fallback under `grido_custom_templates` when Wails `SaveCustomTemplate` binding is absent.
+- **Full Unit Test Coverage**: Passed 100% of frontend Vitest (29 files, 155 tests) and Go backend tests (`grido/internal/service`).
+
 ## [v1.3.0] - 2026-08-01
 
 ### Added & Refined (Human-Expert AI Auto-Framing & Canvas Parity)
