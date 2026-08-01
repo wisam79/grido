@@ -172,6 +172,11 @@ func main() {
 			wailsruntime.WindowShow(ctx)
 		},
 		OnShutdown: func(ctx context.Context) {
+			defer func() {
+				if r := recover(); r != nil {
+					// حماية من خطأ runtime panic (ScaleToDefaultDPI/divide by zero) عند الإغلاق السريع لـ Wails
+				}
+			}()
 			// حفظ مقاسات وموضع النافذة عند إغلاق التطبيق
 			isMax := wailsruntime.WindowIsMaximised(ctx)
 			w, h := wailsruntime.WindowGetSize(ctx)
