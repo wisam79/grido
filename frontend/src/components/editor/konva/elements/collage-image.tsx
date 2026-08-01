@@ -51,6 +51,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const [image] = useAsyncImage(imageSrc);
   const imageRef = useRef<any>(null);
   const accumulatedDrag = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
+  const dragStartRef = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
   const isDraggingFilter = useRenderQuality((s) => s.isDraggingFilter);
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = Boolean(id && enhancingElementId === id);
@@ -64,11 +65,6 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   }), [filter, brightness, contrast, saturation]);
 
   const hasFilters = filterResult.filters.length > 0;
-
-  // مجموعة تحويل المشهد: flipX/flipY/rotation تكوِّن بُنية شجرة مختلفة (Group
-  // خارجية جديدة)؛ لهذا الانتقال 0 → !0 يُعيد تركيب KonvaImage كنودٍ جديد—
-  // فلنضمن إعادة تخزينه في ذاكرة المصير نضمِّن hasTransform ضمن اعتمادات
-  // التأثير المدار للكاش بالأسفل.
   const hasTransform = flipX || flipY || rotation !== 0;
 
   useEffect(() => {
@@ -122,8 +118,8 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const defaultSy = imgAspect > slotAspect ? 0 : (image.height - sh) / 2;
 
   // Max bounds for offset X and Y
-  const maxDragX = (image.width - sw) / 2;
-  const maxDragY = (image.height - sh) / 2;
+  const maxDragX = Math.max(0, (image.width - sw) / 2);
+  const maxDragY = Math.max(0, (image.height - sh) / 2);
 
   // Clamp the drag offsets to ensure crop window stays within the image boundaries
   const dragXClamped = Math.max(-maxDragX, Math.min(maxDragX, dragX));
@@ -134,17 +130,21 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   sw = Math.round(sw);
   sh = Math.round(sh);
 
-  // مجموعة تحويل المشهد: قلب وتدوير المحتوى حول مركز الخلية
-  // (يطابق تصنيم CSS في معاينة الطباعة: scaleX/scaleY/rotate حول المركز)
   const content = (
     <Group x={hasTransform ? -width / 2 : 0} y={hasTransform ? -height / 2 : 0}>
       <KonvaImage
         draggable={draggable}
+        onDragStart={() => {
+          dragStartRef.current = {
+            dragX: accumulatedDrag.current.dragX,
+            dragY: accumulatedDrag.current.dragY,
+          };
+        }}
         dragBoundFunc={(pos) => {
           const node = imageRef.current;
           if (!node || !image) return pos;
-          // معكوس التحويل المطلق للعقدة — يشمل الدوران والقلب وتكبير المسرح —
-          // فيتحول متجه حركة المؤشر إلى محاور نافذة القص الصحيحة بدل محاور الشاشة
+
+          // تحويل حركة المؤشر المطلقة إلى المحاور المحلية للخلية والصورة
           const nodeAbsPos = node.getAbsolutePosition();
           const inv = node.getAbsoluteTransform().copy().invert();
           const p0 = inv.point({ x: nodeAbsPos.x, y: nodeAbsPos.y });
@@ -152,17 +152,18 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
           const dxLocal = p1.x - p0.x;
           const dyLocal = p1.y - p0.y;
 
-          const currentX = accumulatedDrag.current.dragX;
-          const currentY = accumulatedDrag.current.dragY;
+          // الحساب الخطي المتناسب مع وضع السحب الابتدائي (منع الانزلاق والتسارع)
+          const startX = dragStartRef.current.dragX;
+          const startY = dragStartRef.current.dragY;
 
-          const proposedX = currentX - dxLocal * (sw / width);
-          const proposedY = currentY - dyLocal * (sh / height);
+          const proposedX = startX - dxLocal * (sw / width);
+          const proposedY = startY - dyLocal * (sh / height);
 
           const clampedX = Math.max(-maxDragX, Math.min(maxDragX, proposedX));
           const clampedY = Math.max(-maxDragY, Math.min(maxDragY, proposedY));
 
           accumulatedDrag.current = { dragX: clampedX, dragY: clampedY };
-          
+
           node.getLayer()?.batchDraw();
           return nodeAbsPos;
         }}
@@ -180,7 +181,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
 
           node.cropX(newSx);
           node.cropY(newSy);
-          
+
           node.getLayer()?.batchDraw();
         }}
         onDragEnd={() => {

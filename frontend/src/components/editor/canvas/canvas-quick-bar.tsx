@@ -17,12 +17,14 @@ import {
   ArrowUp, 
   ArrowDown, 
   X,
-  Eraser
+  Eraser,
+  ScanFace
 } from "lucide-react";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
+import { useFaceFrame } from "@/hooks/use-face-frame";
 import { toast } from "sonner";
 import type { CanvasSlot, CanvasElement } from "@/lib/store/types";
 
@@ -92,6 +94,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   const { isRemovingBg, handleRemoveBg } = useBgRemoval(selectedSlot ? onUpdateSlot : onUpdateElement);
   const { isEnhancing, handleEnhance, remainingQuota, dailyLimit } = useAiEnhance(selectedSlot ? onUpdateSlot : onUpdateElement);
+  const { isFraming, handleFrameFace, handleCancelFrame } = useFaceFrame(selectedSlot ? onUpdateSlot : onUpdateElement);
 
   if (printMode || isContextMenuOpen || (!selectedSlot && !selectedElement && selectedIds.length === 0)) {
     return null;
@@ -246,6 +249,23 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   <TooltipContent side="bottom">تحسين الدقة وترميم ملامح الوجه بالذكاء الاصطناعي</TooltipContent>
                 </Tooltip>
 
+                {/* ضبط الوجه تلقائياً وفق مقاييس الهوية */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isFraming}
+                      onClick={isFraming ? handleCancelFrame : () => handleFrameFace(selectedSlot)}
+                      className="h-8 px-2.5 gap-1.5 rounded-full hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs"
+                    >
+                      <ScanFace className="w-3.5 h-3.5" />
+                      <span>{isFraming ? "إلغاء..." : "ضبط الوجه"}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">كشف الوجه وضبط مقاسه وموضعه تلقائياً وفق معايير الهوية</TooltipContent>
+                </Tooltip>
+
                 <Separator orientation="vertical" className="h-4 bg-border/40" />
 
                 <Tooltip>
@@ -354,6 +374,22 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">تحسين الجودة وترميم الوجه</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isFraming}
+                      onClick={isFraming ? handleCancelFrame : () => handleFrameFace(selectedElement)}
+                      className="h-8 px-2.5 gap-1.5 rounded-full hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs"
+                    >
+                      <ScanFace className="w-3.5 h-3.5" />
+                      <span>{isFraming ? "إلغاء..." : "ضبط الوجه"}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">كشف الوجه وضبط مقاسه وموضعه تلقائياً وفق معايير الهوية</TooltipContent>
                 </Tooltip>
               </>
             )}

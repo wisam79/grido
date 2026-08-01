@@ -5,6 +5,17 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.0] - 2026-08-01
+
+### Added & Refined (Human-Expert AI Auto-Framing & Canvas Parity)
+- **Human-Expert Photography Framing Engine**: Integrated 3D Head Pitch Angle ($\phi$) and Roll Angle ($\theta$) compensation derived from MediaPipe 478 3D landmarks, dynamically adjusting eye anchor level when subjects look slightly up or down.
+- **ICAO Eye-Level Standardization (38%)**: Anchored eye level consistently at $\approx 38\%$ from top frame height across all head shapes, facial structures, and headwear types for unified passport/ID photo layouts.
+- **Hair & Headwear Volume Disambiguation**: Implemented dynamic distinction between structural skull top ($Y_{skull\_top}$) and hair/headwear boundary ($Y_{hair\_top}$), preserving $70\%$ passport head scale without over-shrinking faces under tall hair, hijabs, or turbans.
+- **Source Image Aspect Ratio Parity**: Coupled source image aspect ratio ($imageAspectRatio = origW / origH$) into $computeIdCropRect$, producing crop PNG outputs with 100% exact pixel aspect ratio matching cell target slots to eliminate secondary Konva/CSS trimming.
+- **Cell Slot Image Dragging Fluidity**: Captured `dragStartRef` baseline upon `onDragStart` in `KonvaCollageImage`, eliminating exponential runaway acceleration and securing linear 1:1 smooth image drag control inside collage slots.
+- **Collage Slot Auto-Framing UI Parity**: Added "ضبط الوجه تلقائياً" button, MediaPipe progress indicator, and auto-reset offsets ($zoom=1, dragX=0, dragY=0$) to `SlotProperties` panel for seamless collage slot workflow.
+- **Unit Test Coverage**: Expanded `face-frame-utils.test.ts` to 8 comprehensive tests covering pitch compensation, hair volume disambiguation, and non-square image aspect parity (`133/133 tests passed`).
+
 ## [v1.2.19] - 2026-08-01
 
 ### Fixed & Robustness

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
   Sparkles, RefreshCw, Sun, Contrast, Droplet, 
-  EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine
+  EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine, ScanFace
 } from "lucide-react";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
+import { useFaceFrame } from "@/hooks/use-face-frame";
 
 // أدوات الصور الثقيلة لا تُحمّل إلا عند فتحها، بدلاً من تأخير المحرر عند البدء.
 const CropDialog = lazy(() => import("../../crop-dialog").then((module) => ({ default: module.CropDialog })));
@@ -176,6 +177,13 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
     dailyLimit,
     handleEnhance,
   } = useAiEnhance(onUpdate);
+  const {
+    isFraming,
+    frameProgress,
+    frameProgressText,
+    handleCancelFrame,
+    handleFrameFace,
+  } = useFaceFrame(onUpdate);
 
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -267,6 +275,36 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           </span>
         </Button>
 
+        {/* زر ضبط الوجه تلقائياً (تأطير الهوية) */}
+        <Button
+          variant={isFraming ? "destructive" : "outline"}
+          disabled={isEnhancing || isRemovingBg}
+          className={cn(
+            "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-emerald-600/60 hover:border-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 text-foreground",
+            (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
+            isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+          )}
+          onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
+          title={isFraming ? "إلغاء ضبط الوجه" : "كشف الوجه وضبط مقاسه وموضعه وفق معايير الهوية تلقائياً"}
+        >
+          {isFraming ? (
+            <div className="flex items-center gap-2.5">
+              <X className="w-4 h-4 text-destructive-foreground group-hover:scale-110 transition-transform shrink-0" />
+              <span>إلغاء ضبط الوجه</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2.5">
+                <ScanFace className="w-4 h-4 text-emerald-600 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+                <span>ضبط الوجه تلقائياً</span>
+              </div>
+              <span className="text-[9px] bg-emerald-600/15 border border-emerald-600/40 text-emerald-600 px-1.5 py-0.5 rounded-md font-bold font-mono">
+                محلي
+              </span>
+            </>
+          )}
+        </Button>
+
         {/* زر ماسح وتقويم المستندات الذكي (Doc Scanner) */}
         <Button
           variant="outline"
@@ -343,6 +381,21 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <div 
                 className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-500 h-full rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${enhanceProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {isFraming && (
+          <div className="mt-2 p-2.5 rounded-lg bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08] border border-emerald-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex justify-between items-center text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="animate-pulse">{frameProgressText}</span>
+              <span className="font-mono font-extrabold">{frameProgress}%</span>
+            </div>
+            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+              <div 
+                className="bg-gradient-to-r from-emerald-600 via-teal-500 to-green-400 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${frameProgress}%` }}
               />
             </div>
           </div>

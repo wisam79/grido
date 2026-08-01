@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { 
   ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, Sparkles, X, Rows, Columns, LayoutGrid, Wand2,
-  FlipHorizontal2, FlipVertical2, RotateCw, Undo2
+  FlipHorizontal2, FlipVertical2, RotateCw, Undo2, ScanFace
 } from "lucide-react";
 import {
   Tooltip,
@@ -21,6 +21,7 @@ import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
+import { useFaceFrame } from "@/hooks/use-face-frame";
 import { Switch } from "@/components/ui/switch";
 
 const CropDialog = lazy(() => import("../crop-dialog").then((module) => ({ default: module.CropDialog })));
@@ -68,6 +69,14 @@ export function SlotProperties({
     dailyLimit,
     handleEnhance,
   } = useAiEnhance(onUpdate);
+
+  const {
+    isFraming,
+    frameProgress,
+    frameProgressText,
+    handleCancelFrame,
+    handleFrameFace,
+  } = useFaceFrame(onUpdate);
 
    const handleOpenFile = async () => {
      if (isFileDialogOpen) return;
@@ -365,16 +374,62 @@ export function SlotProperties({
             )}
           </div>
 
-          {/* الذكاء الاصطناعي */}
+          {/* الذكاء الاصطناعي والأدوات الذكية */}
           {slot.imageSrc && (
             <div className="bg-muted/20 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2.5">
-              <Label className="text-[11px] font-bold text-foreground/90 block">الذكاء الاصطناعي</Label>
+              <Label className="text-[11px] font-bold text-foreground/90 block">الذكاء الاصطناعي والأدوات الذكية</Label>
+
+              {/* زر ضبط الوجه تلقائياً (تأطير الهوية) */}
               <Button
-                variant="outline"
+                variant={isFraming ? "destructive" : "outline"}
                 disabled={isEnhancing || isRemovingBg}
                 className={cn(
+                  "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-emerald-600/60 hover:border-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 text-foreground shadow-xs",
+                  (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
+                  isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+                )}
+                onClick={isFraming ? handleCancelFrame : () => handleFrameFace(slot)}
+                title={isFraming ? "إلغاء ضبط الوجه" : "كشف الوجه وضبط مقاسه وموضعه وفق معايير الهوية تلقائياً"}
+              >
+                {isFraming ? (
+                  <div className="flex items-center gap-2.5">
+                    <X className="w-4 h-4 text-destructive-foreground group-hover:scale-110 transition-transform shrink-0" />
+                    <span>إلغاء ضبط الوجه</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2.5">
+                      <ScanFace className="w-4 h-4 text-emerald-600 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+                      <span>ضبط الوجه تلقائياً</span>
+                    </div>
+                    <span className="text-[9px] bg-emerald-600/15 border border-emerald-600/40 text-emerald-600 px-1.5 py-0.5 rounded-md font-bold font-mono">
+                      محلي
+                    </span>
+                  </>
+                )}
+              </Button>
+
+              {isFraming && (
+                <div className="mt-2 p-2.5 rounded-lg bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08] border border-emerald-500/20 space-y-1.5 animate-in fade-in duration-200">
+                  <div className="flex justify-between items-center text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="animate-pulse">{frameProgressText}</span>
+                    <span className="font-mono font-extrabold">{frameProgress}%</span>
+                  </div>
+                  <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+                    <div 
+                      className="bg-gradient-to-r from-emerald-600 via-teal-500 to-green-400 h-full rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${frameProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <Button
+                variant="outline"
+                disabled={isEnhancing || isRemovingBg || isFraming}
+                className={cn(
                   "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-xs",
-                  (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
+                  (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
                 )}
                 onClick={() => handleEnhance(slot)}
                 title={`تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
