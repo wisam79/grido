@@ -5,6 +5,15 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.19] - 2026-08-01
+
+### Fixed & Robustness
+- **Modal Loading & Export State Self-Reset**: Implemented automatic loading state cleanup (`isExporting`, `loading`, `isSaving`, `isDetecting`) on dialog open/close across Print, Export, Projects Library, Account/License, Refine BG, and Document Scanner modals to prevent stuck "Exporting..." buttons.
+- **Robust Async Exception Safety**: Wrapped batch AI image processing and export tasks in `try ... finally` blocks to guarantee loading UI resets even upon unhandled errors.
+- **Flexible Playwright E2E Selectors**: Updated Playwright E2E test suite with resilient role/pattern selectors (`getByRole('button', { name: /إضافة صورة|رفع صورة/ })`), passing 100% of Chromium and Firefox E2E tests in CI.
+- **Master Admin Supabase RPC Schema Sync**: Verified parameter type alignment (`text` signature for `p_user_id`) and granted execution permissions with PostgREST schema cache reloads (`NOTIFY pgrst, 'reload schema'`).
+- **Updated Engineering Standards**: Added 3 new strict rules to `AGENTS.md` covering modal state cleanup, flexible Playwright selectors, and batch AI try/finally blocks.
+
 ## [v1.2.18] - 2026-08-01
 
 ### Added & Refined
