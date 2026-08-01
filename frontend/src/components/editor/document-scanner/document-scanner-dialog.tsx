@@ -106,6 +106,7 @@ export function DocumentScannerDialog({
   // 🔒 إصلاح BUG-3 & BUG-13: التحقق من التلغية عند فك المكون وإزالة prevOpen المزدوج
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsDetecting(false);
       setIsPreviewMode(false);
       setPreviewSrc(null);

@@ -105,12 +105,12 @@ export function AccountLicenseModal() {
   }, [resendCooldown]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
     setLoadingGoogle(false);
     setResending(false);
     if (!accountModalOpen) return;
     const currentUser = useEditorStore.getState().user;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveTab(currentUser && currentUser.token ? "license" : "auth");
   }, [accountModalOpen]);
 

@@ -44,6 +44,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   })));
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
     setProgress(0);
   }, [open]);

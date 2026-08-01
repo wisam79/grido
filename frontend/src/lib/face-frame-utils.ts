@@ -233,7 +233,7 @@ export function computeIdCropRect(
   }
 
   // التمركز الأفقي مع الإزاحة للبقاء داخل حدود الصورة
-  let cropX = clamp(eyeCenterX - cropW / 2, 0, 1 - cropW);
+  const cropX = clamp(eyeCenterX - cropW / 2, 0, 1 - cropW);
 
   // الإزاحة العمودية الحافظة للأبعاد عند الحواف
   if (cropY < 0) {

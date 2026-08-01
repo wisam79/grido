@@ -107,6 +107,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
       setBackupActionLoading(false);
       Promise.resolve().then(() => {
