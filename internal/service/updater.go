@@ -177,6 +177,7 @@ func fetchTextAsset(client *http.Client, url string) (string, error) {
 
 // parseChecksumForInstaller يستخرج سطر بصمة المثبت من ملف بصمات بصيغة "sha256  filename"
 func parseChecksumForInstaller(content string) string {
+	var fallback string
 	for _, line := range strings.Split(content, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -190,8 +191,11 @@ func parseChecksumForInstaller(content string) string {
 		if strings.Contains(nameLower, "installer") || strings.Contains(nameLower, "setup") {
 			return strings.ToLower(fields[0])
 		}
+		if strings.HasSuffix(nameLower, ".exe") && fallback == "" {
+			fallback = strings.ToLower(fields[0])
+		}
 	}
-	return ""
+	return fallback
 }
 
 func isVersionGreater(v1, v2 string) bool {

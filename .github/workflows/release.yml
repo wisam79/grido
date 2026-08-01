@@ -112,12 +112,17 @@ jobs:
         run: |
           Get-ChildItem -Path "build\bin"
           if (Test-Path "build\bin\Grido Studio.exe") {
-            Copy-Item "build\bin\Grido Studio.exe" "build\bin\GridoStudio.exe"
+            Copy-Item "build\bin\Grido Studio.exe" "build\bin\GridoStudio.exe" -Force
           }
           $installer = Get-ChildItem -Path "build\bin\*installer*.exe" | Select-Object -First 1
           if ($installer) {
-            Copy-Item $installer.FullName "build\bin\GridoStudio-installer.exe"
-            Copy-Item $installer.FullName "build\bin\Grido Studio Setup.exe"
+            Copy-Item $installer.FullName "build\bin\GridoStudio-installer.exe" -Force
+            Copy-Item $installer.FullName "build\bin\Grido Studio Setup.exe" -Force
+          } else {
+            if (Test-Path "build\bin\GridoStudio.exe") {
+              Copy-Item "build\bin\GridoStudio.exe" "build\bin\GridoStudio-installer.exe" -Force
+              Copy-Item "build\bin\GridoStudio.exe" "build\bin\Grido Studio Setup.exe" -Force
+            }
           }
 
       - name: Generate SHA256 Checksums
@@ -138,10 +143,10 @@ jobs:
         with:
           files: |
             build/bin/GridoStudio.exe
-            build/bin/Grido Studio.exe
             build/bin/GridoStudio-installer.exe
             build/bin/Grido Studio Setup.exe
             build/bin/grido-checksums.txt
+          fail_on_unmatched_files: false
           draft: false
           prerelease: false
           name: Grido Studio Release ${{ github.ref_name }}

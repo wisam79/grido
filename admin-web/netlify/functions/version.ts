@@ -7,6 +7,7 @@ const CHECKSUMS_ASSET = 'grido-checksums.txt';
  * بصيغة "<sha256>  <filename>" لكل سطر.
  */
 function parseInstallerChecksum(content: string): string {
+  let fallback = '';
   for (const rawLine of content.split('\n')) {
     const line = rawLine.trim();
     if (!line) continue;
@@ -16,8 +17,11 @@ function parseInstallerChecksum(content: string): string {
     if (fileName.includes('installer') || fileName.includes('setup')) {
       return parts[0].toLowerCase();
     }
+    if (fileName.endsWith('.exe') && !fallback) {
+      fallback = parts[0].toLowerCase();
+    }
   }
-  return '';
+  return fallback;
 }
 
 export const handler: Handler = async () => {
