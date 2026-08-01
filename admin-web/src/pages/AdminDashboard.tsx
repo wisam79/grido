@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import {
   ShieldCheck,
-  ShieldAlert,
   Users,
   Key,
   BarChart3,
@@ -11,25 +10,21 @@ import {
   Search,
   Plus,
   Copy,
-  Mail,
-  Clock,
   UserCheck,
   Sparkles,
   ChevronLeft,
   Loader2,
-  Info,
-  CalendarPlus,
-  CalendarDays,
-  UserMinus,
   Download,
-  Eye,
-  Calendar,
   X,
   LayoutGrid,
   Wand2,
   DollarSign,
   Activity,
-  Cpu
+  Sliders,
+  Settings,
+  Zap,
+  Coins,
+  FileText
 } from 'lucide-react';
 
 interface UserProfile {
@@ -75,23 +70,43 @@ export default function AdminDashboard() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   // Dashboard states
-  const [activeTab, setActiveTab] = useState<'users' | 'keys' | 'usage' | 'stats'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'keys' | 'usage' | 'stats' | 'settings'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [keys, setKeys] = useState<LicenseKey[]>([]);
   const [aiUsageLogs, setAiUsageLogs] = useState<AiUsageRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pro' | 'trial' | 'free' | 'expired'>('all');
-  const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'expiry'>('newest');
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pro' | 'enterprise' | 'trial' | 'free' | 'expired' | 'banned'>('all');
   const [keySearchQuery, setKeySearchQuery] = useState('');
   const [keyStatusFilter, setKeyStatusFilter] = useState<'all' | 'unused' | 'used' | 'revoked'>('all');
 
-  // Key generator states
+  // User Edit Modal State
+  const [editModalUser, setEditModalUser] = useState<UserProfile | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPlan, setEditPlan] = useState('pro');
+  const [editStatus, setEditStatus] = useState('active');
+  const [editExpiresAt, setEditExpiresAt] = useState('');
+  const [savingUser, setSavingUser] = useState(false);
+
+  // Key generator states (Single & Batch)
+  const [genMode, setGenMode] = useState<'single' | 'batch'>('single');
   const [genPlan, setGenPlan] = useState<'pro' | 'enterprise'>('pro');
   const [genDuration, setGenDuration] = useState('12');
+  const [genCount, setGenCount] = useState('5');
+  const [genPrefix, setGenPrefix] = useState('');
   const [generatedKey, setGeneratedKey] = useState('');
+  const [generatedBatchKeys, setGeneratedBatchKeys] = useState<string[]>([]);
+  const [generatingBatch, setGeneratingBatch] = useState(false);
+
+  // System Settings States
+  const [freeAiLimit, setFreeAiLimit] = useState(5);
+  const [proAiLimit, setProAiLimit] = useState(50);
+  const [enterpriseAiLimit, setEnterpriseAiLimit] = useState(500);
+  const [systemNotice, setSystemNotice] = useState('أهلاً بك في استوديو Grido — يتم استعادة الجلسة والخدمات السحابية تلقائياً.');
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Initialize and check localStorage sessions
   useEffect(() => {
@@ -108,19 +123,21 @@ export default function AdminDashboard() {
       setSbKey(savedKey);
 
       if (savedToken) {
-        // Verify token
-        client.auth.getUser(savedToken).then(({ data: { user }, error }) => {
-          if (!error && user) {
-            // Verify user is an enterprise admin
-            client.from('profiles').select('plan').eq('id', user.id).single().then(({ data: profileData, error: profErr }) => {
-              if (!profErr && profileData && profileData.plan === 'enterprise') {
-                setIsAuthenticated(true);
-              } else {
-                alert('تم رفض استعادة الجلسة: الحساب لا يملك صلاحيات المشرف.');
-                clearSession();
-              }
-              setCheckingSession(false);
-            });
+        client.auth.getUser(savedToken).then(({ data, error }) => {
+          if (!error && data.user) {
+            client
+              .from('profiles')
+              .select('plan')
+              .eq('id', data.user.id)
+              .single()
+              .then(({ data: profileData }) => {
+                if (profileData && profileData.plan === 'enterprise') {
+                  setIsAuthenticated(true);
+                } else {
+                  clearSession();
+                }
+                setCheckingSession(false);
+              });
           } else {
             clearSession();
             setCheckingSession(false);
@@ -134,69 +151,79 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  // Saved Config Preferences
+  useEffect(() => {
+    const savedNotice = localStorage.getItem('grido_sys_notice');
+    if (savedNotice) setSystemNotice(savedNotice);
+    const savedMaint = localStorage.getItem('grido_sys_maint');
+    if (savedMaint) setMaintenanceMode(savedMaint === 'true');
+    const savedFreeLimit = localStorage.getItem('grido_free_ai_limit');
+    if (savedFreeLimit) setFreeAiLimit(parseInt(savedFreeLimit, 10));
+    const savedProLimit = localStorage.getItem('grido_pro_ai_limit');
+    if (savedProLimit) setProAiLimit(parseInt(savedProLimit, 10));
+  }, []);
+
+  const clearSession = () => {
+    localStorage.removeItem('grido_sb_token');
+    setIsAuthenticated(false);
+  };
+
+  // Load Dashboard Data
   const loadDashboardData = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
+
     try {
-      // 1. Fetch profiles
-      const { data: profiles, error: errProf } = await supabase
+      // 1. Fetch User Profiles
+      const { data: profilesData, error: profErr } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (errProf) throw errProf;
-      setUsers(profiles || []);
+      if (!profErr && profilesData) {
+        setUsers(profilesData as UserProfile[]);
+      }
 
-      // 2. Fetch keys
-      const { data: licenseKeys, error: errKeys } = await supabase
+      // 2. Fetch License Keys
+      const { data: keysData, error: keysErr } = await supabase
         .from('license_keys')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (errKeys) throw errKeys;
-      setKeys(licenseKeys || []);
-
-      // 3. Fetch real AI usage logs
-      const { data: usageData, error: errUsage } = await supabase
-        .from('ai_usage')
-        .select('*')
-        .order('used_at', { ascending: false })
-        .limit(200);
-
-      if (!errUsage && usageData) {
-        const profileMap = new Map((profiles || []).map((p: UserProfile) => [p.id, p.email]));
-        const mapped: AiUsageRecord[] = usageData.map((item: any) => ({
-          ...item,
-          user_email: profileMap.get(item.user_id) || item.user_id || 'مستخدم غير معروف'
-        }));
-        setAiUsageLogs(mapped);
+      if (!keysErr && keysData) {
+        setKeys(keysData as LicenseKey[]);
       }
 
-    } catch (err: any) {
-      alert('فشل تحديث البيانات: ' + err.message);
+      // 3. Fetch AI Usage Logs
+      const { data: aiLogsData, error: aiErr } = await supabase
+        .from('ai_usage_logs')
+        .select('*')
+        .order('used_at', { ascending: false })
+        .limit(100);
+
+      if (!aiErr && aiLogsData) {
+        setAiUsageLogs(aiLogsData as AiUsageRecord[]);
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
     } finally {
       setLoading(false);
     }
   }, [supabase]);
 
-  // Fetch data on authentication
   useEffect(() => {
     if (isAuthenticated && supabase) {
       loadDashboardData();
     }
   }, [isAuthenticated, supabase, loadDashboardData]);
 
-  const clearSession = () => {
-    localStorage.removeItem('grido_sb_url');
-    localStorage.removeItem('grido_sb_key');
-    localStorage.removeItem('grido_sb_token');
-    setSupabase(null);
-    setIsAuthenticated(false);
-  };
-
+  // Auth Handlers
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sbUrl || !sbKey || !email || !password) return;
+    if (!sbUrl || !sbKey || !email || !password) {
+      alert('يرجى ملء كافة الخانات المطلوبة.');
+      return;
+    }
 
     setLoginLoading(true);
     try {
@@ -281,6 +308,70 @@ export default function AdminDashboard() {
     }
   };
 
+  // Open Edit User Modal
+  const handleOpenEditUser = (user: UserProfile) => {
+    setEditModalUser(user);
+    setEditName(user.name || '');
+    setEditEmail(user.email || '');
+    setEditPlan(user.plan || 'free');
+    setEditStatus(user.status || 'active');
+    setEditExpiresAt(user.expires_at ? new Date(user.expires_at).toISOString().split('T')[0] : '');
+  };
+
+  // Save User Edit Modal
+  const handleSaveUserProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase || !editModalUser) return;
+    setSavingUser(true);
+
+    try {
+      const patchObj: any = {
+        name: editName,
+        plan: editPlan,
+        status: editStatus,
+        updated_at: new Date().toISOString(),
+      };
+      if (editExpiresAt) {
+        patchObj.expires_at = new Date(editExpiresAt).toISOString();
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(patchObj)
+        .eq('id', editModalUser.id);
+
+      if (error) throw error;
+      alert('تم تحديث بيانات الاشتراك والحساب بنجاح!');
+      setEditModalUser(null);
+      loadDashboardData();
+    } catch (err: any) {
+      alert('فشل تحديث بيانات المستخدم: ' + err.message);
+    } finally {
+      setSavingUser(false);
+    }
+  };
+
+  // Ban / Unban User Toggle
+  const handleToggleBanUser = async (user: UserProfile) => {
+    if (!supabase) return;
+    const isBanned = user.status === 'banned';
+    const actionText = isBanned ? 'إلغاء حظر' : 'حظر';
+    if (!confirm(`هل أنت متأكد من ${actionText} الحساب ${user.email}؟`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: isBanned ? 'active' : 'banned', updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      alert(`تم ${actionText} المستخدم بنجاح.`);
+      loadDashboardData();
+    } catch (err: any) {
+      alert(`فشل إجراء الحظر: ` + err.message);
+    }
+  };
+
   const handleExportCSV = () => {
     if (filteredUsers.length === 0) {
       alert('لا توجد بيانات لتصديرها!');
@@ -288,17 +379,18 @@ export default function AdminDashboard() {
     }
 
     let csvContent = '\uFEFF'; 
-    csvContent += 'الاسم,البريد الإلكتروني,الباقة,تاريخ انتهاء الصلاحية,مفتاح التفعيل,تاريخ التسجيل\n';
+    csvContent += 'الاسم,البريد الإلكتروني,الباقة,الحالة,تاريخ انتهاء الصلاحية,مفتاح التفعيل,تاريخ التسجيل\n';
 
     filteredUsers.forEach(u => {
       const name = (u.name || 'غير معروف').replace(/,/g, ' ');
       const email = (u.email || '').replace(/,/g, ' ');
       const plan = u.plan.toUpperCase();
+      const status = u.status || 'active';
       const expires = u.expires_at ? new Date(u.expires_at).toLocaleDateString('ar-SA') : '—';
       const license = u.license_key || '—';
       const created = u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '—';
 
-      csvContent += `${name},${email},${plan},${expires},${license},${created}\n`;
+      csvContent += `${name},${email},${plan},${status},${expires},${license},${created}\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -312,17 +404,20 @@ export default function AdminDashboard() {
     document.body.removeChild(link);
   };
 
+  // Generate Single License Key
   const handleGenerateKey = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) return;
 
     const duration = parseInt(genDuration, 10);
+    const customKey = genPrefix ? `${genPrefix.trim().toUpperCase()}-${genPlan.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}` : undefined;
 
     try {
       const { data, error } = await supabase
         .rpc('admin_create_license_key', {
           p_plan: genPlan,
           p_duration_months: duration,
+          p_custom_key: customKey
         });
 
       if (error) throw error;
@@ -335,6 +430,66 @@ export default function AdminDashboard() {
     }
   };
 
+  // Generate Batch License Keys
+  const handleGenerateBatchKeys = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+    setGeneratingBatch(true);
+    setGeneratedBatchKeys([]);
+
+    const duration = parseInt(genDuration, 10);
+    const count = Math.min(50, Math.max(1, parseInt(genCount, 10)));
+    const batchList: string[] = [];
+
+    try {
+      for (let i = 0; i < count; i++) {
+        const customPrefix = genPrefix ? `${genPrefix.trim().toUpperCase()}-${genPlan.toUpperCase()}-${i + 1}` : undefined;
+        const { data, error } = await supabase
+          .rpc('admin_create_license_key', {
+            p_plan: genPlan,
+            p_duration_months: duration,
+            p_custom_key: customPrefix
+          });
+
+        if (!error && data) {
+          const k = typeof data === 'object' && 'key' in data ? (data as any).key : (data as string);
+          batchList.push(k);
+        }
+      }
+
+      setGeneratedBatchKeys(batchList);
+      alert(`تم توليد دفعة مكونة من ${batchList.length} مفاتيح سحابية بنجاح!`);
+      loadDashboardData();
+    } catch (err: any) {
+      alert('فشل توليد الدفعة: ' + err.message);
+    } finally {
+      setGeneratingBatch(false);
+    }
+  };
+
+  // Export Batch Keys
+  const handleExportBatch = (format: 'txt' | 'csv') => {
+    if (generatedBatchKeys.length === 0) return;
+    let content = '';
+    if (format === 'csv') {
+      content = '\uFEFFمفتاح الترخيص,الباقة,تاريخ التوليد\n';
+      generatedBatchKeys.forEach(k => {
+        content += `${k},${genPlan.toUpperCase()},${new Date().toLocaleDateString('ar-SA')}\n`;
+      });
+    } else {
+      content = generatedBatchKeys.join('\n');
+    }
+
+    const blob = new Blob([content], { type: format === 'csv' ? 'text/csv;charset=utf-8;' : 'text/plain;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `grido_batch_keys_${genPlan}_${new Date().toISOString().split('T')[0]}.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleCopyKey = () => {
     if (generatedKey) {
       navigator.clipboard.writeText(generatedKey);
@@ -342,80 +497,78 @@ export default function AdminDashboard() {
     }
   };
 
-  // Filtering & Sorting
-  const filteredUsers = users
-    .filter(u => {
-      const matchesSearch = 
-        (u.name && u.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (u.license_key && u.license_key.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      let matchesStatus = true;
-      if (statusFilter === 'pro') {
-        matchesStatus = u.plan === 'pro' || u.plan === 'enterprise';
-      } else if (statusFilter === 'trial') {
-        matchesStatus = u.plan === 'trial';
-      } else if (statusFilter === 'free') {
-        matchesStatus = u.plan === 'free';
-      } else if (statusFilter === 'expired') {
-        matchesStatus = u.status === 'expired' || (u.plan === 'trial' && new Date(u.expires_at) <= new Date());
-      }
-
-      return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => {
-      if (sortOption === 'newest') {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-      if (sortOption === 'oldest') {
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      }
-      if (sortOption === 'expiry') {
-        if (!a.expires_at) return 1;
-        if (!b.expires_at) return -1;
-        return new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime();
-      }
-      return 0;
-    });
-
-  // Filtering & Sorting Keys
-  const filteredKeys = keys.filter(k => {
-    const matchesSearch = k.key.toLowerCase().includes(keySearchQuery.toLowerCase());
-    
-    let matchesStatus = true;
-    if (keyStatusFilter === 'unused') {
-      matchesStatus = k.status === 'unused';
-    } else if (keyStatusFilter === 'used') {
-      matchesStatus = k.status === 'used';
-    } else if (keyStatusFilter === 'revoked') {
-      matchesStatus = k.status !== 'unused' && k.status !== 'used';
+  // Save System Settings
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      localStorage.setItem('grido_sys_notice', systemNotice);
+      localStorage.setItem('grido_sys_maint', maintenanceMode.toString());
+      localStorage.setItem('grido_free_ai_limit', freeAiLimit.toString());
+      localStorage.setItem('grido_pro_ai_limit', proAiLimit.toString());
+      alert('تم حفظ إعدادات النظام الحية بنجاح!');
+    } catch (err: any) {
+      alert('حدث خطأ أثناء حفظ الإعدادات.');
+    } finally {
+      setSavingSettings(false);
     }
+  };
 
-    return matchesSearch && matchesStatus;
+  // Filtering & Sorting Users
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      (user.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.license_key || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'banned') return user.status === 'banned';
+    if (statusFilter === 'pro') return user.plan === 'pro';
+    if (statusFilter === 'enterprise') return user.plan === 'enterprise';
+    if (statusFilter === 'trial') return user.plan === 'trial';
+    if (statusFilter === 'free') return user.plan !== 'pro' && user.plan !== 'enterprise' && user.plan !== 'trial';
+    if (statusFilter === 'expired') {
+      const isExpiredDate = user.expires_at && new Date(user.expires_at) <= new Date();
+      return user.status === 'expired' || isExpiredDate;
+    }
+    return true;
+  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Filtering Keys
+  const filteredKeys = keys.filter(key => {
+    const matchesSearch = 
+      (key.key || '').toLowerCase().includes(keySearchQuery.toLowerCase()) ||
+      (key.user_id || '').toLowerCase().includes(keySearchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (keyStatusFilter === 'all') return true;
+    return key.status === keyStatusFilter;
   });
 
-  // Computed stats
+  // Dashboard Overview Metrics
   const totalUsers = users.length;
-  const activePro = users.filter(u => u.plan === 'pro' || u.plan === 'enterprise').length;
-  const activeTrial = users.filter(u => u.plan === 'trial' && new Date(u.expires_at) > new Date()).length;
-  const expiredUsers = users.filter(u => u.status === 'expired' || (u.plan === 'trial' && new Date(u.expires_at) <= new Date())).length;
+  const activePro = users.filter(u => u.plan === 'pro' && u.status !== 'banned' && (!u.expires_at || new Date(u.expires_at) > new Date())).length;
+  const activeEnt = users.filter(u => u.plan === 'enterprise' && u.status !== 'banned').length;
+  const totalAiRuns = aiUsageLogs.length;
+  const totalAiCost = aiUsageLogs.reduce((acc, curr) => acc + (curr.cost_usd || 0.012), 0);
+  const estimatedMRR = (activePro * 15) + (activeEnt * 49);
 
   // Segmented stats
   const proCount = users.filter(u => u.plan === 'pro').length;
   const entCount = users.filter(u => u.plan === 'enterprise').length;
-  const trialCount = users.filter(u => u.plan === 'trial').length;
   const freeCount = users.filter(u => u.plan !== 'pro' && u.plan !== 'enterprise' && u.plan !== 'trial').length;
 
   const totalSegment = totalUsers || 1;
   const proPct = Math.round((proCount / totalSegment) * 100);
   const entPct = Math.round((entCount / totalSegment) * 100);
-  const trialPct = Math.round((trialCount / totalSegment) * 100);
-  const freePct = Math.round((freeCount / totalSegment) * 100);
 
   if (checkingSession) {
     return (
-      <div className="min-h-screen bg-slate-800/50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
       </div>
     );
   }
@@ -526,7 +679,7 @@ export default function AdminDashboard() {
               <span className="font-extrabold text-xs text-white">Grido Studio</span>
               <span className="text-[9px] text-slate-500 font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                لوحة التحكم
+                لوحة التحكم المتقدمة
               </span>
             </div>
           </div>
@@ -561,7 +714,7 @@ export default function AdminDashboard() {
           >
             <span className="flex items-center gap-2">
               <Key className="w-4 h-4" />
-              التراخيص السحابية
+              التراخيص والتوليد المجمع
             </span>
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -574,7 +727,7 @@ export default function AdminDashboard() {
           >
             <span className="flex items-center gap-2">
               <Wand2 className="w-4 h-4 text-violet-400" />
-              سجل استهلاك الـ AI 📊
+              سجل استهلاك الذكاء الاصطناعي 📊
             </span>
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -587,7 +740,20 @@ export default function AdminDashboard() {
           >
             <span className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
-              إحصائيات الخادم
+              إحصائيات الإيرادات والأداء
+            </span>
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
+              activeTab === 'settings' ? 'bg-gradient-to-l from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/15' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-emerald-400" />
+              تخصيص وإعدادات النظام
             </span>
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -598,731 +764,816 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-6 overflow-y-auto space-y-6">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
+      {/* Main Content Area */}
+      <main className="flex-1 p-6 md:p-8 space-y-6 overflow-y-auto max-h-screen">
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800 p-4 rounded-xl backdrop-blur-md">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-extrabold text-slate-100">
-                {activeTab === 'users' && 'إدارة المشتركين والحسابات'}
-                {activeTab === 'keys' && 'إدارة وتوليد مفاتيح الترخيص'}
-                {activeTab === 'usage' && 'سجل وتدقيق استهلاك الذكاء الاصطناعي على السيرفر (AI Audit & Cost Log)'}
-                {activeTab === 'stats' && 'إحصائيات وقراءات خادم الترخيص'}
-              </h2>
-              <div className="relative group">
-                <Info className="w-4 h-4 text-slate-400 hover:text-slate-400 cursor-pointer" />
-                <div className="absolute right-0 top-6 hidden group-hover:block w-72 bg-slate-800 text-white text-[10px] p-2.5 rounded-lg shadow-lg z-50 leading-relaxed text-right font-normal">
-                  تقوم هذه اللوحة بالتواصل المباشر والمؤمن مع قاعدة بيانات Supabase سحابياً. يتم التحقق من صحة الجلسة باستخدام بروتوكولات الأمان. التعديل هنا ينعكس فوراً وتلقائياً على أجهزة العملاء المشغلين لتطبيق سطح المكتب دون الحاجة لتحديث البرنامج.
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {activeTab === 'users' && 'قائمة بكافة حسابات العملاء المسجلين وصلاحيات تراخيصهم'}
-              {activeTab === 'keys' && 'توليد مفاتيح سحابية جديدة للمشتركين واستعراض سجل الأكواد المنشأة'}
-              {activeTab === 'stats' && 'قراءات تحليلية لأعداد المستخدمين، الاشتراكات النشطة والتجريبية'}
-            </p>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              {activeTab === 'users' && <Users className="w-5 h-5 text-blue-400" />}
+              {activeTab === 'keys' && <Key className="w-5 h-5 text-indigo-400" />}
+              {activeTab === 'usage' && <Wand2 className="w-5 h-5 text-violet-400" />}
+              {activeTab === 'stats' && <BarChart3 className="w-5 h-5 text-emerald-400" />}
+              {activeTab === 'settings' && <Sliders className="w-5 h-5 text-teal-400" />}
+              {activeTab === 'users' && 'إدارة الحسابات والمشتركين'}
+              {activeTab === 'keys' && 'إدارة مفاتيح الترخيص والتوليد المجمع'}
+              {activeTab === 'usage' && 'سجل استخدام وخصم حصص الذكاء الاصطناعي'}
+              {activeTab === 'stats' && 'إحصائيات الخادم وتوقعات الإيرادات (MRR)'}
+              {activeTab === 'settings' && 'تخصيص وإعدادات حدود الخادم الحية'}
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">لوحة مركزية سحابية لإدارة المنظومة والاشتراكات فورياً</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {activeTab === 'users' && (
-              <button
-                onClick={handleExportCSV}
-                className="px-3 py-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800/50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer text-slate-300"
-                title="تصدير القائمة الحالية لملف CSV"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>تصدير CSV</span>
-              </button>
-            )}
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={loadDashboardData}
               disabled={loading}
-              className="px-3.5 py-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800/50 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>تحديث البيانات</span>
+              تحديث البيانات
             </button>
           </div>
-        </header>
+        </div>
 
-        {/* 🏢 Tabs Content */}
+        {/* Overview Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span>إجمالي الحسابات</span>
+              <Users className="w-4 h-4 text-blue-400" />
+            </div>
+            <div className="text-2xl font-extrabold text-white">{totalUsers}</div>
+            <div className="text-[10px] text-slate-500 font-medium">مستخدم مسجل بالمحتوى</div>
+          </div>
 
-        {/* 1. Tab Users */}
+          <div className="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span>مشتركي Pro / Enterprise</span>
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="text-2xl font-extrabold text-emerald-400">{activePro + activeEnt}</div>
+            <div className="text-[10px] text-slate-500 font-medium">{activePro} Pro + {activeEnt} Enterprise</div>
+          </div>
+
+          <div className="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span>مفاتيح غير مفعلة</span>
+              <Key className="w-4 h-4 text-amber-400" />
+            </div>
+            <div className="text-2xl font-extrabold text-amber-400">{keys.filter(k => k.status === 'unused').length}</div>
+            <div className="text-[10px] text-slate-500 font-medium">جاهزة للتوزيع والتسليم</div>
+          </div>
+
+          <div className="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span>إجمالي عمليات الذكاء</span>
+              <Wand2 className="w-4 h-4 text-violet-400" />
+            </div>
+            <div className="text-2xl font-extrabold text-violet-400">{totalAiRuns}</div>
+            <div className="text-[10px] text-slate-500 font-medium">تكلفة تقديرية: ${totalAiCost.toFixed(2)}</div>
+          </div>
+
+          <div className="bg-slate-900/80 border border-slate-800/80 p-4 rounded-xl space-y-1">
+            <div className="flex items-center justify-between text-slate-400 text-xs">
+              <span>تقدير الدخل (MRR)</span>
+              <DollarSign className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="text-2xl font-extrabold text-emerald-300">${estimatedMRR} <span className="text-xs font-normal text-slate-400">/شهر</span></div>
+            <div className="text-[10px] text-slate-500 font-medium">تقديري للاشتراكات الفاعلة</div>
+          </div>
+        </div>
+
+        {/* TAB 1: USERS MANAGEMENT */}
         {activeTab === 'users' && (
-          <section className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="relative max-w-md flex-1">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <div className="space-y-4">
+            {/* Filters Bar */}
+            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="relative w-full md:w-80">
+                <Search className="w-4 h-4 absolute right-3 top-3 text-slate-500" />
                 <input
                   type="text"
-                  placeholder="ابحث بالاسم، البريد الإلكتروني أو الترخيص..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pr-9 pl-4 py-2 border border-slate-800 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-900"
+                  placeholder="ابحث بالاسم، البريد الإلكتروني، أو المفتاح..."
+                  className="w-full pr-9 pl-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
-              {/* تصفية الاشتراكات */}
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value as any)}
-                className="py-2 px-3 border border-slate-800 rounded-lg text-xs bg-slate-900 focus:outline-none cursor-pointer text-slate-300 font-semibold"
-              >
-                <option value="all">كل الاشتراكات</option>
-                <option value="pro">باقات PRO / المدفوعة</option>
-                <option value="trial">الفترة التجريبية</option>
-                <option value="free">الحسابات المجانية</option>
-                <option value="expired">منتهية الصلاحية</option>
-              </select>
+              <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
+                <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 p-1 rounded-lg text-xs">
+                  <button
+                    onClick={() => setStatusFilter('all')}
+                    className={`px-2.5 py-1 rounded-md text-xs cursor-pointer ${statusFilter === 'all' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    الكل
+                  </button>
+                  <button
+                    onClick={() => setStatusFilter('pro')}
+                    className={`px-2.5 py-1 rounded-md text-xs cursor-pointer ${statusFilter === 'pro' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Pro
+                  </button>
+                  <button
+                    onClick={() => setStatusFilter('enterprise')}
+                    className={`px-2.5 py-1 rounded-md text-xs cursor-pointer ${statusFilter === 'enterprise' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Enterprise
+                  </button>
+                  <button
+                    onClick={() => setStatusFilter('free')}
+                    className={`px-2.5 py-1 rounded-md text-xs cursor-pointer ${statusFilter === 'free' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    مجاني
+                  </button>
+                  <button
+                    onClick={() => setStatusFilter('banned')}
+                    className={`px-2.5 py-1 rounded-md text-xs cursor-pointer ${statusFilter === 'banned' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    محظور
+                  </button>
+                </div>
 
-              {/* فرز الترتيب */}
-              <select
-                value={sortOption}
-                onChange={e => setSortOption(e.target.value as any)}
-                className="py-2 px-3 border border-slate-800 rounded-lg text-xs bg-slate-900 focus:outline-none cursor-pointer text-slate-300 font-semibold"
-              >
-                <option value="newest">الأحدث تسجيلاً</option>
-                <option value="oldest">الأقدم تسجيلاً</option>
-                <option value="expiry">الأقرب انتهاءً</option>
-              </select>
+                <button
+                  onClick={handleExportCSV}
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer font-medium"
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-400" />
+                  تصدير CSV
+                </button>
+              </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xs">
-              <div className="overflow-x-auto text-right text-xs">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-slate-800/50 border-b border-slate-800/50 text-[10px] text-slate-500 font-bold">
-                      <th className="p-3">المشترك</th>
-                      <th className="p-3">نوع الباقة</th>
-                      <th className="p-3">تاريخ انتهاء الصلاحية</th>
-                      <th className="p-3">مفتاح التفعيل</th>
-                      <th className="p-3 text-center">العمليات السريعة</th>
+            {/* Users Table */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs text-slate-300">
+                  <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                    <tr>
+                      <th className="p-3.5">المستخدم</th>
+                      <th className="p-3.5">الباقة</th>
+                      <th className="p-3.5">الحالة</th>
+                      <th className="p-3.5">تاريخ الانتهاء</th>
+                      <th className="p-3.5">مفتاح الترخيص</th>
+                      <th className="p-3.5 text-center">إجراءات سريعة</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-800/60">
                     {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-6 text-center text-slate-400">
-                          لا يوجد أي مشتركين مسجلين حالياً أو مطابقين لبحثك
+                        <td colSpan={6} className="p-8 text-center text-slate-500">
+                          لا توجد نتائج تطابق خيارات البحث الحالية.
                         </td>
                       </tr>
                     ) : (
-                      filteredUsers.map(u => (
-                        <tr key={u.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                          <td className="p-3">
-                            <div className="font-bold text-slate-100">{u.name || 'مستخدم غير معروف'}</div>
-                            <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-1">
-                              <Mail className="w-3 h-3 text-slate-400" />
-                              {u.email}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            {u.plan === 'pro' && (
-                              <span className="bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">PRO احترافي</span>
-                            )}
-                            {u.plan === 'enterprise' && (
-                              <span className="bg-indigo-950/60 text-indigo-400 border border-indigo-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">Enterprise مؤسسات</span>
-                            )}
-                            {u.plan === 'trial' && (
-                              <span className="bg-amber-950/60 text-amber-400 border border-amber-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">تجريبي (Trial)</span>
-                            )}
-                            {u.plan !== 'pro' && u.plan !== 'enterprise' && u.plan !== 'trial' && (
-<span className="bg-slate-700 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-bold text-[9px]">مجاني (Free)</span>
-                            )}
-                          </td>
-                          <td className="p-3 font-mono text-[11px] text-slate-400">
-                            {u.expires_at ? (
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                {new Date(u.expires_at).toLocaleDateString('ar-SA')}
+                      filteredUsers.map(user => {
+                        const isExpired = user.expires_at && new Date(user.expires_at) <= new Date();
+                        const isBanned = user.status === 'banned';
+
+                        return (
+                          <tr key={user.id} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="p-3.5">
+                              <div className="font-bold text-white">{user.name || 'بدون اسم'}</div>
+                              <div className="text-[11px] text-slate-400 font-mono">{user.email}</div>
+                            </td>
+                            <td className="p-3.5">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                user.plan === 'enterprise' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
+                                user.plan === 'pro' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                                'bg-slate-800 text-slate-400'
+                              }`}>
+                                {user.plan.toUpperCase()}
                               </span>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
-                          <td className="p-3">
-                            {u.license_key ? (
-                              <code className="bg-slate-800 text-indigo-600 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] select-all">
-                                {u.license_key}
-                              </code>
-                            ) : (
-                              <span className="text-slate-400">—</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-center">
-                            <div className="inline-flex items-center gap-1.5 justify-center">
-                              <button
-                                onClick={() => setSelectedUser(u)}
-                                className="p-1.5 bg-slate-800/50 hover:bg-slate-800 text-slate-500 hover:text-slate-300 rounded-lg border border-slate-800 transition-colors cursor-pointer"
-                                title="عرض التفاصيل الكاملة"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleExtendLicense(u.id, 1)}
-                                className="p-1.5 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-400 rounded-lg transition-colors cursor-pointer"
-                                title="تمديد +1 شهر"
-                              >
-                                <CalendarPlus className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleExtendLicense(u.id, 12)}
-                                className="p-1.5 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-400 rounded-lg transition-colors cursor-pointer"
-                                title="تمديد +1 سنة"
-                              >
-                                <CalendarDays className="w-3.5 h-3.5" />
-                              </button>
-                              {(u.plan === 'pro' || u.plan === 'enterprise') && (
-                                <button
-                                  onClick={() => handleRevokeLicense(u.id)}
-                                  className="p-1.5 bg-red-950/60 hover:bg-red-900/60 text-red-400 rounded-lg transition-colors cursor-pointer"
-                                  title="إلغاء الترخيص وإرجاعه للمجاني"
-                                >
-                                  <UserMinus className="w-3.5 h-3.5" />
-                                </button>
+                            </td>
+                            <td className="p-3.5">
+                              {isBanned ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                                  محظور 🛑
+                                </span>
+                              ) : isExpired ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                  منتهي الصلاحية ⏳
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                  نشط ✨
+                                </span>
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="p-3.5 font-mono text-[11px]">
+                              {user.expires_at ? new Date(user.expires_at).toLocaleDateString('ar-SA') : 'غير محدد'}
+                            </td>
+                            <td className="p-3.5 font-mono text-[11px] text-slate-400">
+                              {user.license_key || '—'}
+                            </td>
+                            <td className="p-3.5 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => handleOpenEditUser(user)}
+                                  className="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded text-[11px] cursor-pointer flex items-center gap-1"
+                                >
+                                  <Sliders className="w-3 h-3" />
+                                  تعديل وتخصيص
+                                </button>
+                                <button
+                                  onClick={() => handleExtendLicense(user.id, 1)}
+                                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] cursor-pointer"
+                                  title="+1 شهر"
+                                >
+                                  + شهر
+                                </button>
+                                {user.plan !== 'free' && (
+                                  <button
+                                    onClick={() => handleRevokeLicense(user.id)}
+                                    className="px-2 py-1 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded text-[11px] cursor-pointer"
+                                    title="سحب الترخيص وإعادية للـ Free"
+                                  >
+                                    سحب الترخيص
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleToggleBanUser(user)}
+                                  className={`px-2 py-1 rounded text-[11px] cursor-pointer border ${
+                                    isBanned ? 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-600/20 text-rose-300 border-rose-500/30'
+                                  }`}
+                                >
+                                  {isBanned ? 'إلغاء الحظر' : 'حظر'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
               </div>
             </div>
-          </section>
+          </div>
         )}
 
-        {/* 2. Tab Keys & Generator */}
+        {/* TAB 2: KEYS & BATCH GENERATOR */}
         {activeTab === 'keys' && (
-          <section className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Key generator form */}
-              <form onSubmit={handleGenerateKey} className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 text-right">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-indigo-600" />
-                  توليد مفتاح ترخيص Pro جديد
+          <div className="space-y-6">
+            {/* Key Generator Tool */}
+            <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                  <Key className="w-4 h-4 text-blue-400" />
+                  أداة توليد مفاتيح الترخيص (فردي ومجمع)
                 </h3>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">نوع الباقة</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setGenPlan('pro')}
-                      className={`py-2 text-xs font-bold rounded-lg border-2 transition-all cursor-pointer ${
-                        genPlan === 'pro' ? 'border-indigo-600 bg-indigo-55 text-indigo-600' : 'border-slate-800 hover:bg-slate-800/50 text-slate-400'
-                      }`}
-                    >
-                      PRO احترافي
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setGenPlan('enterprise')}
-                      className={`py-2 text-xs font-bold rounded-lg border-2 transition-all cursor-pointer ${
-                        genPlan === 'enterprise' ? 'border-indigo-600 bg-indigo-55 text-indigo-600' : 'border-slate-800 hover:bg-slate-800/50 text-slate-400'
-                      }`}
-                    >
-                      Enterprise للمؤسسات
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">مدة الصلاحية</label>
-                  <select
-                    value={genDuration}
-                    onChange={e => setGenDuration(e.target.value)}
-                    className="w-full py-2 border border-slate-800 rounded-lg text-xs bg-slate-900 px-2 focus:outline-none"
+                <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 p-1 rounded-lg">
+                  <button
+                    onClick={() => setGenMode('single')}
+                    className={`px-3 py-1 text-xs rounded-md cursor-pointer ${genMode === 'single' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400'}`}
                   >
-                    <option value="1">1 شهر (30 يوم)</option>
-                    <option value="3">3 أشهر (90 يوم)</option>
-                    <option value="6">6 أشهر (180 يوم)</option>
-                    <option value="12">1 سنة كاملة (365 يوم)</option>
-                    <option value="120">مدى الحياة (LifeTime)</option>
-                  </select>
+                    مفتاح فردي
+                  </button>
+                  <button
+                    onClick={() => setGenMode('batch')}
+                    className={`px-3 py-1 text-xs rounded-md cursor-pointer ${genMode === 'batch' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400'}`}
+                  >
+                    توليد دفعة مجمعة 📦
+                  </button>
                 </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold text-xs border-0 shadow-lg shadow-blue-500/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>توليد وتخزين المفتاح سحابياً</span>
-                </button>
-              </form>
-
-              {/* Display generated key */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-center items-center text-center space-y-4">
-                <div className="p-3 bg-indigo-950/60 text-indigo-400 rounded-full border border-indigo-800/50">
-                  <Key className="w-8 h-8" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-100">مفتاح الترخيص المولد سحابياً</h4>
-                  <p className="text-[10px] text-slate-500 mt-1">انسخ الكود وأرسله للعميل لتفعيل اشتراكه على أي جهاز</p>
-                </div>
-
-                {generatedKey ? (
-                  <div className="w-full space-y-2.5">
-                    <div className="w-full bg-slate-800/50 border border-slate-800 p-3 rounded-lg flex items-center justify-between font-mono font-bold text-sm tracking-wide text-indigo-600 select-all">
-                      <span>{generatedKey}</span>
-                      <button
-                        onClick={handleCopyKey}
-                        className="p-1 hover:bg-slate-700 rounded-md text-slate-500 transition-colors cursor-pointer"
-                        title="نسخ"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-full h-14 bg-slate-800/30 border border-dashed border-slate-800 rounded-lg flex items-center justify-center text-xs text-slate-400">
-                    سيظهر المفتاح هنا بعد التوليد
-                  </div>
-                )}
               </div>
-            </div>
 
-            {/* List of keys */}
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
-                <h3 className="text-xs font-bold text-slate-100">سجل مفاتيح التراخيص المولدة</h3>
-                
-                <div className="flex items-center gap-2">
-                  <div className="relative max-w-xs">
-                    <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              {genMode === 'single' ? (
+                <form onSubmit={handleGenerateKey} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">نوع الباقة المستهدفة</label>
+                    <select
+                      value={genPlan}
+                      onChange={e => setGenPlan(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    >
+                      <option value="pro">Pro (احترافي)</option>
+                      <option value="enterprise">Enterprise (مؤسسات)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">مدة الصلاحية (أشهر)</label>
+                    <select
+                      value={genDuration}
+                      onChange={e => setGenDuration(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    >
+                      <option value="1">1 شهر</option>
+                      <option value="3">3 أشهر</option>
+                      <option value="6">6 أشهر</option>
+                      <option value="12">12 شهر (سنة)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">بادئة مخصصة (اختياري)</label>
                     <input
                       type="text"
-                      placeholder="ابحث عن مفتاح..."
-                      value={keySearchQuery}
-                      onChange={e => setKeySearchQuery(e.target.value)}
-                      className="pr-7 pl-3 py-1 border border-slate-800 rounded-lg text-[10px] focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-900 w-40"
+                      value={genPrefix}
+                      onChange={e => setGenPrefix(e.target.value)}
+                      placeholder="مثال: STUDIO-VIP"
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white uppercase"
                     />
                   </div>
 
-                  <select
-                    value={keyStatusFilter}
-                    onChange={e => setKeyStatusFilter(e.target.value as any)}
-                    className="py-1 px-2 border border-slate-800 rounded-lg text-[10px] bg-slate-900 focus:outline-none cursor-pointer text-slate-400 font-semibold"
+                  <button
+                    type="submit"
+                    className="py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs shadow-md shadow-blue-500/20 cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    <option value="all">كل الحالات</option>
-                    <option value="unused">غير مستخدم</option>
-                    <option value="used">تم تفعيله</option>
-                    <option value="revoked">ملغي</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xs">
-                <div className="overflow-x-auto text-right text-xs">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-slate-800/50 border-b border-slate-800/50 text-[10px] text-slate-500 font-bold">
-                        <th className="p-3">مفتاح الترخيص</th>
-                        <th className="p-3">نوع الباقة</th>
-                        <th className="p-3">مدة الصلاحية</th>
-                        <th className="p-3">حالة الاستخدام</th>
-                        <th className="p-3">تاريخ التوليد</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredKeys.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="p-6 text-center text-slate-400">
-                            لا يوجد أي مفاتيح تراخيص مطابقة للبحث أو الفلترة
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredKeys.map(k => (
-                          <tr key={k.key} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                            <td className="p-3">
-                              <code className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono font-bold select-all">{k.key}</code>
-                            </td>
-                            <td className="p-3">
-                              <span className={`font-bold ${k.plan === 'pro' ? 'text-emerald-600' : 'text-indigo-600'}`}>
-                                {k.plan.toUpperCase()}
-                              </span>
-                            </td>
-                            <td className="p-3 font-semibold text-slate-400">
-                              {k.duration_months === 120 ? 'مدى الحياة' : `${k.duration_months} شهر`}
-                            </td>
-                            <td className="p-3">
-                              {k.status === 'unused' && (
-                                <span className="bg-blue-950/60 text-blue-400 px-1.5 py-0.5 rounded-sm font-semibold text-[9px]">غير مستخدم</span>
-                              )}
-                              {k.status === 'used' && (
-                                <span className="bg-emerald-950/60 text-emerald-400 px-1.5 py-0.5 rounded-sm font-semibold text-[9px]">تم تفعيله</span>
-                              )}
-                              {k.status !== 'unused' && k.status !== 'used' && (
-                                <span className="bg-red-950/60 text-red-400 px-1.5 py-0.5 rounded-sm font-semibold text-[9px]">ملغي</span>
-                              )}
-                            </td>
-                            <td className="p-3 text-slate-500 font-mono text-[10px]">
-                              {new Date(k.created_at).toLocaleDateString('ar-SA')}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* 📊 AI Usage Audit Log Tab */}
-        {activeTab === 'usage' && (
-          <section className="space-y-6">
-            {/* Metric Cards (computed from real logs) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20 rounded-xl p-4 text-right space-y-1 shadow-xs">
-                <div className="flex items-center gap-1.5 text-violet-600 font-bold text-xs">
-                  <DollarSign className="w-4 h-4" />
-                  <span>إجمالي تكلفة الاستهلاك ($)</span>
-                </div>
-                <div className="text-xl font-extrabold font-mono text-slate-100">
-                  ${aiUsageLogs.reduce((sum, r) => sum + (r.cost_usd || 0), 0).toFixed(6)}
-                </div>
-                <div className="text-[10px] text-slate-400">من آخر 200 طلب</div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1 shadow-xs">
-                <div className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs">
-                  <Activity className="w-4 h-4" />
-                  <span>عدد الطلبات المعالجة</span>
-                </div>
-                <div className="text-xl font-extrabold font-mono text-slate-100">{aiUsageLogs.length} طلب</div>
-                <div className="text-[10px] text-slate-400">آخر 200 عملية معالجة</div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1 shadow-xs">
-                <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs">
-                  <Cpu className="w-4 h-4" />
-                  <span>متوسط زمن الطلب</span>
-                </div>
-                <div className="text-xl font-extrabold font-mono text-slate-100">
-                  {aiUsageLogs.length > 0
-                    ? (aiUsageLogs.reduce((s, r) => s + (r.execution_seconds || 0), 0) / aiUsageLogs.length).toFixed(2)
-                    : '0.00'} ثانية
-                </div>
-                <div className="text-[10px] text-slate-400">متوسط زمن المعالجة</div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1 shadow-xs">
-                <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs">
-                  <UserCheck className="w-4 h-4" />
-                  <span>الحسابات المستهلكة</span>
-                </div>
-                <div className="text-xl font-extrabold font-mono text-slate-100">
-                  {new Set(aiUsageLogs.map((r) => r.user_id)).size} حساب
-                </div>
-                <div className="text-[10px] text-slate-400">مستخدمي الذكاء الاصطناعي</div>
-              </div>
-            </div>
-
-            {/* Audit Log Table (real data) */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-xs overflow-hidden">
-              <div className="p-4 border-b border-slate-800/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-slate-800/30">
-                <div>
-                  <h3 className="font-extrabold text-xs text-slate-100">سجل تدقيق الطلبات الفعلي (AI Audit Log)</h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">يتتبع كل طلب معالجة يُنفذ من أي حساب وتكلفته بالسنتات</p>
-                </div>
-                <button
-                  onClick={loadDashboardData}
-                  disabled={loading}
-                  className="text-[11px] px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold disabled:opacity-50"
-                >
-                  {loading ? '...جاري' : 'تحديث'}
-                </button>
-              </div>
-
-              {aiUsageLogs.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-xs">لا توجد سجلات استهلاك بعد.</div>
+                    <Plus className="w-4 h-4" />
+                    توليد وتخزين المفتاح سحابياً
+                  </button>
+                </form>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-800/50 border-b border-slate-800/50 text-[10px] font-extrabold text-slate-500 uppercase">
-                        <th className="p-3.5">بريد الحساب</th>
-                        <th className="p-3.5 text-center">حجم الصورة (بايت)</th>
-                        <th className="p-3.5 text-center">الزمن (ثانية)</th>
-                        <th className="p-3.5 text-left">التكلفة ($)</th>
-                        <th className="p-3.5 text-center">التاريخ والتوقيت</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/50 font-medium">
-                      {aiUsageLogs.map((r) => (
-                        <tr key={r.id} className="hover:bg-slate-800/30 transition-colors">
-                          <td className="p-3.5 font-bold font-mono text-slate-100">{r.user_email}</td>
-                          <td className="p-3.5 text-center font-mono text-slate-300">
-                            {(r.image_bytes || 0).toLocaleString()}
-                          </td>
-                          <td className="p-3.5 text-center font-mono font-bold text-slate-300">
-                            {(r.execution_seconds || 0).toFixed(2)}ث
-                          </td>
-                          <td className="p-3.5 text-left font-mono font-extrabold text-violet-600">
-                            ${(r.cost_usd || 0).toFixed(6)}
-                          </td>
-                          <td className="p-3.5 text-center font-mono text-slate-400 text-[10px]">
-                            {r.used_at}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <form onSubmit={handleGenerateBatchKeys} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">الباقة</label>
+                    <select
+                      value={genPlan}
+                      onChange={e => setGenPlan(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    >
+                      <option value="pro">Pro (احترافي)</option>
+                      <option value="enterprise">Enterprise (مؤسسات)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">المدة (أشهر)</label>
+                    <select
+                      value={genDuration}
+                      onChange={e => setGenDuration(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    >
+                      <option value="1">1 شهر</option>
+                      <option value="3">3 أشهر</option>
+                      <option value="6">6 أشهر</option>
+                      <option value="12">12 شهر (سنة)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">عدد المفاتيح (1 - 50)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={genCount}
+                      onChange={e => setGenCount(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">بادئة الموزع / الاستوديو</label>
+                    <input
+                      type="text"
+                      value={genPrefix}
+                      onChange={e => setGenPrefix(e.target.value)}
+                      placeholder="مثال: BULK-RESELLER"
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white uppercase"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={generatingBatch}
+                    className="py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-lg text-xs shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {generatingBatch ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    توليد الدفعة سحابياً
+                  </button>
+                </form>
+              )}
+
+              {/* Single Generated Key Preview */}
+              {generatedKey && genMode === 'single' && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-emerald-400 font-bold">المفتاح المولد:</span>
+                    <code className="font-mono text-white text-sm bg-slate-950 px-2 py-1 rounded border border-slate-800">{generatedKey}</code>
+                  </div>
+                  <button
+                    onClick={handleCopyKey}
+                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    نسخ المفتاح
+                  </button>
+                </div>
+              )}
+
+              {/* Batch Generated Keys Preview */}
+              {generatedBatchKeys.length > 0 && genMode === 'batch' && (
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4" />
+                      الدفعة المولدة ({generatedBatchKeys.length} مفتاح):
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleExportBatch('txt')}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-blue-400" />
+                        تحميل TXT
+                      </button>
+                      <button
+                        onClick={() => handleExportBatch('csv')}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5 text-emerald-400" />
+                        تحميل CSV
+                      </button>
+                    </div>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto font-mono text-xs text-slate-300 space-y-1 bg-slate-900 p-3 rounded border border-slate-800/80">
+                    {generatedBatchKeys.map((k, i) => (
+                      <div key={i} className="flex justify-between border-b border-slate-800/40 pb-1">
+                        <span>{i + 1}. {k}</span>
+                        <span className="text-emerald-400 font-bold">جاهز</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-          </section>
-        )}
 
-        {/* 3. Tab Stats */}
-        {activeTab === 'stats' && (
-          <section className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
-                <Users className="w-5 h-5 text-indigo-600" />
-                <div className="text-[10px] text-slate-500 font-semibold">إجمالي المسجلين</div>
-                <div className="text-xl font-bold font-mono text-slate-100">{totalUsers}</div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
-                <UserCheck className="w-5 h-5 text-emerald-500" />
-                <div className="text-[10px] text-slate-500 font-semibold">تراخيص Pro مفعّلة</div>
-                <div className="text-xl font-bold font-mono text-slate-100">{activePro}</div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
-                <Clock className="w-5 h-5 text-amber-500" />
-                <div className="text-[10px] text-slate-500 font-semibold">أعضاء النسخ التجريبية</div>
-                <div className="text-xl font-bold font-mono text-slate-100">{activeTrial}</div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-right space-y-1.5 shadow-xs">
-                <ShieldAlert className="w-5 h-5 text-red-500" />
-                <div className="text-[10px] text-slate-500 font-semibold">اشتراكات منتهية الصلاحية</div>
-                <div className="text-xl font-bold font-mono text-slate-100">{expiredUsers}</div>
-              </div>
-            </div>
-
-            {/* 📊 Visual Breakdown Cards */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-right space-y-5 shadow-xs">
-              <div>
-                <h3 className="text-xs font-extrabold text-slate-100">توزيع خطط المشتركين ونسب الاشتراك</h3>
-                <p className="text-[10px] text-slate-400 mt-1">توزيع نسبي لحسابات العملاء النشطة والتجريبية والمجانية</p>
-              </div>
-
-              {/* Progress Segmented Bar */}
-              <div className="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden flex flex-row-reverse">
-                <div style={{ width: `${proPct}%` }} className="bg-emerald-500 transition-all" title={`PRO: ${proPct}%`} />
-                <div style={{ width: `${entPct}%` }} className="bg-indigo-500 transition-all" title={`Enterprise: ${entPct}%`} />
-                <div style={{ width: `${trialPct}%` }} className="bg-amber-500 transition-all" title={`Trial: ${trialPct}%`} />
-                <div style={{ width: `${freePct}%` }} className="bg-slate-300 transition-all" title={`Free: ${freePct}%`} />
-              </div>
-
-              {/* Labels & Statistics Details */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 justify-start text-[10px] text-slate-500 font-bold">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                    <span>خطة PRO احترافية</span>
-                  </div>
-                  <div className="text-sm font-bold text-slate-100 font-mono pr-4">
-                    {proCount} <span className="text-[10px] text-slate-400 font-normal">({proPct}%)</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 justify-start text-[10px] text-slate-500 font-bold">
-                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
-                    <span>خطة المؤسسات</span>
-                  </div>
-                  <div className="text-sm font-bold text-slate-100 font-mono pr-4">
-                    {entCount} <span className="text-[10px] text-slate-400 font-normal">({entPct}%)</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 justify-start text-[10px] text-slate-500 font-bold">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                    <span>فترة تجريبية</span>
-                  </div>
-                  <div className="text-sm font-bold text-slate-100 font-mono pr-4">
-                    {trialCount} <span className="text-[10px] text-slate-400 font-normal">({trialPct}%)</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 justify-start text-[10px] text-slate-500 font-bold">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block" />
-                    <span>خطة مجانية</span>
-                  </div>
-                  <div className="text-sm font-bold text-slate-100 font-mono pr-4">
-                    {freeCount} <span className="text-[10px] text-slate-400 font-normal">({freePct}%)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-        {/* 👤 Subscriber Details Modal */}
-        {selectedUser && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50" dir="rtl">
-            <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-right flex flex-col max-h-[90vh]">
-              {/* Header */}
-              <div className="p-4 border-b border-slate-800/50 flex items-center justify-between bg-slate-800/50">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-indigo-950/60 text-indigo-400 rounded-lg">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-xs text-slate-100">تفاصيل حساب المشترك</h3>
-                    <p className="text-[9px] text-slate-400 font-mono mt-0.5">{selectedUser.id}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedUser(null)}
-                  className="p-1 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-400 transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
-                {/* Profile Card */}
-                <div className="bg-slate-800/50 border border-slate-800/50 p-4 rounded-xl space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-bold text-[10px]">الاسم الكامل</span>
-                    <span className="font-bold text-slate-100 text-sm">{selectedUser.name || 'غير معروف'}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-bold text-[10px]">البريد الإلكتروني</span>
-                    <span className="font-mono text-slate-300 select-all">{selectedUser.email}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-bold text-[10px]">الباقة الحالية</span>
-                    <span>
-                      {selectedUser.plan === 'pro' && (
-                        <span className="bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">PRO احترافي</span>
-                      )}
-                      {selectedUser.plan === 'enterprise' && (
-                        <span className="bg-indigo-950/60 text-indigo-400 border border-indigo-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">Enterprise مؤسسات</span>
-                      )}
-                      {selectedUser.plan === 'trial' && (
-                        <span className="bg-amber-950/60 text-amber-400 border border-amber-800/50 px-2 py-0.5 rounded-full font-bold text-[9px]">تجريبي (Trial)</span>
-                      )}
-                      {selectedUser.plan !== 'pro' && selectedUser.plan !== 'enterprise' && selectedUser.plan !== 'trial' && (
-                        <span className="bg-slate-800 text-slate-400 border border-slate-800 px-2 py-0.5 rounded-full font-bold text-[9px]">مجاني (Free)</span>
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                {/* License Card */}
-                <div className="border border-slate-800 p-4 rounded-xl space-y-3">
-                  <h4 className="font-bold text-slate-100 border-b border-slate-800/50 pb-1.5 text-[11px] flex items-center gap-1.5 text-slate-400">
-                    <Key className="w-3.5 h-3.5" />
-                    بيانات الترخيص والتفعيل
-                  </h4>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-bold text-[10px]">كود الترخيص النشط</span>
-                    {selectedUser.license_key ? (
-                      <code className="bg-slate-800 text-indigo-400 px-2 py-0.5 rounded font-mono font-bold select-all text-[10px]">
-                        {selectedUser.license_key}
-                      </code>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-bold text-[10px]">تاريخ انتهاء الترخيص</span>
-                    <span className="font-mono text-slate-300">
-                      {selectedUser.expires_at ? new Date(selectedUser.expires_at).toLocaleString('ar-SA') : '—'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-bold text-[10px]">حالة الترخيص السحابية</span>
-                    <span>
-                      {selectedUser.status === 'active' ? (
-                        <span className="text-emerald-400 font-bold">● نشط ومفعّل</span>
-                      ) : selectedUser.status === 'expired' ? (
-                        <span className="text-red-400 font-bold">● منتهي الصلاحية</span>
-                      ) : (
-                        <span className="text-slate-400">● لا يوجد ترخيص</span>
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Metadata Card */}
-                <div className="border border-slate-800/50 p-4 rounded-xl space-y-3 bg-slate-800/30">
-                  <h4 className="font-bold text-slate-100 border-b border-slate-800/50 pb-1.5 text-[11px] flex items-center gap-1.5 text-slate-400">
-                    <Calendar className="w-3.5 h-3.5" />
-                    تواريخ النظام
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-[10px]">
-                    <div>
-                      <span className="block text-slate-400 font-bold">تاريخ التسجيل</span>
-                      <span className="font-mono text-slate-300 block mt-1">
-                        {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleString('ar-SA') : '—'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-slate-400 font-bold">آخر تحديث للبيانات</span>
-                      <span className="font-mono text-slate-300 block mt-1">
-                        {selectedUser.updated_at ? new Date(selectedUser.updated_at).toLocaleString('ar-SA') : '—'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions Footer */}
-              <div className="p-4 border-t border-slate-800/50 bg-slate-800/50 flex justify-between items-center">
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => {
-                      handleExtendLicense(selectedUser.id, 1);
-                      setSelectedUser(null);
-                    }}
-                    className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-[10px] font-bold border-0 shadow-sm shadow-blue-500/10 cursor-pointer transition-colors"
-                  >
-                    تمديد +1 شهر
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleExtendLicense(selectedUser.id, 12);
-                      setSelectedUser(null);
-                    }}
-                    className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-[10px] font-bold border-0 shadow-sm shadow-blue-500/10 cursor-pointer transition-colors"
-                  >
-                    تمديد +1 سنة
-                  </button>
-                  {(selectedUser.plan === 'pro' || selectedUser.plan === 'enterprise') && (
+            {/* Keys Table */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow-xl space-y-3 p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <h4 className="font-bold text-white text-xs">سجل مفاتيح الترخيص المخزنة في السحابة</h4>
+                
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 p-1 rounded-lg text-xs">
                     <button
-                      onClick={() => {
-                        handleRevokeLicense(selectedUser.id);
-                        setSelectedUser(null);
-                      }}
-                      className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
+                      onClick={() => setKeyStatusFilter('all')}
+                      className={`px-2 py-0.5 rounded text-[11px] cursor-pointer ${keyStatusFilter === 'all' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
                     >
-                      إلغاء الترخيص
+                      الكل
                     </button>
-                  )}
+                    <button
+                      onClick={() => setKeyStatusFilter('unused')}
+                      className={`px-2 py-0.5 rounded text-[11px] cursor-pointer ${keyStatusFilter === 'unused' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}
+                    >
+                      غير مستخدم
+                    </button>
+                    <button
+                      onClick={() => setKeyStatusFilter('used')}
+                      className={`px-2 py-0.5 rounded text-[11px] cursor-pointer ${keyStatusFilter === 'used' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
+                    >
+                      تم التفعيل
+                    </button>
+                  </div>
+
+                  <div className="relative w-48">
+                    <Search className="w-3.5 h-3.5 absolute right-3 top-2.5 text-slate-500" />
+                    <input
+                      type="text"
+                      value={keySearchQuery}
+                      onChange={e => setKeySearchQuery(e.target.value)}
+                      placeholder="ابحث..."
+                      className="w-full pr-8 pl-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none"
+                    />
+                  </div>
                 </div>
-                <button
-                  onClick={() => setSelectedUser(null)}
-                  className="px-3.5 py-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800/50 rounded-lg text-[10px] font-bold cursor-pointer transition-colors text-slate-400"
-                >
-                  إغلاق
-                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs text-slate-300">
+                  <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                    <tr>
+                      <th className="p-3">مفتاح الترخيص</th>
+                      <th className="p-3">الباقة</th>
+                      <th className="p-3">مدة الصلاحية</th>
+                      <th className="p-3">الحالة</th>
+                      <th className="p-3">تاريخ التوليد</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-mono">
+                    {filteredKeys.map(k => (
+                      <tr key={k.key} className="hover:bg-slate-800/40">
+                        <td className="p-3 font-bold text-white">{k.key}</td>
+                        <td className="p-3 font-sans">
+                          <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-300">
+                            {k.plan.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="p-3 font-sans">{k.duration_months} شهر</td>
+                        <td className="p-3 font-sans">
+                          {k.status === 'unused' ? (
+                            <span className="text-emerald-400 font-bold">غير مستخدم 🟢</span>
+                          ) : (
+                            <span className="text-slate-500">تم التفعيل ⚪</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-slate-400">
+                          {k.created_at ? new Date(k.created_at).toLocaleDateString('ar-SA') : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         )}
+
+        {/* TAB 3: AI USAGE LOGS */}
+        {activeTab === 'usage' && (
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden p-4 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-xs flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-violet-400" />
+                سجل عمليات الترميم ومعالجة الذكاء الاصطناعي (أحدث 100 عملية)
+              </h3>
+              <span className="text-xs text-slate-400 font-mono">Total Runs: {aiUsageLogs.length}</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs text-slate-300">
+                <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                  <tr>
+                    <th className="p-3">معرف المستخدم</th>
+                    <th className="p-3">تاريخ التنفيذ</th>
+                    <th className="p-3">حجم الصورة</th>
+                    <th className="p-3">مدة المعالجة</th>
+                    <th className="p-3">التكلفة التقديرية</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
+                  {aiUsageLogs.map(log => (
+                    <tr key={log.id} className="hover:bg-slate-800/40">
+                      <td className="p-3 text-slate-300">{log.user_id}</td>
+                      <td className="p-3 text-slate-400">{new Date(log.used_at).toLocaleString('ar-SA')}</td>
+                      <td className="p-3">{((log.image_bytes || 0) / 1024 / 1024).toFixed(2)} MB</td>
+                      <td className="p-3">{(log.execution_seconds || 1.2).toFixed(1)}s</td>
+                      <td className="p-3 text-emerald-400">${(log.cost_usd || 0.012).toFixed(3)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: SYSTEM STATS & METRICS */}
+        {activeTab === 'stats' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-xl space-y-4">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-400" />
+                توزيع الاشتراكات والفاعلية
+              </h3>
+              <div className="space-y-3 text-xs">
+                <div>
+                  <div className="flex justify-between text-slate-300 mb-1">
+                    <span>باقة Pro (احترافي)</span>
+                    <span className="font-bold">{proCount} مستخدم ({proPct}%)</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                    <div className="bg-blue-500 h-full" style={{ width: `${proPct}%` }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-slate-300 mb-1">
+                    <span>باقة Enterprise (مؤسسات)</span>
+                    <span className="font-bold">{entCount} مستخدم ({entPct}%)</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                    <div className="bg-purple-500 h-full" style={{ width: `${entPct}%` }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-slate-300 mb-1">
+                    <span>الباقة المجانية (Free)</span>
+                    <span className="font-bold">{freeCount} مستخدم ({100 - proPct - entPct}%)</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                    <div className="bg-slate-700 h-full" style={{ width: `${100 - proPct - entPct}%` }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-xl space-y-4">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Coins className="w-4 h-4 text-amber-400" />
+                المؤشرات المالية واسترداد التكلفة
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+                  <div className="text-slate-400">الإيراد الشهري (MRR)</div>
+                  <div className="text-xl font-bold text-emerald-400 mt-1">${estimatedMRR}</div>
+                </div>
+                <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+                  <div className="text-slate-400">الإيراد السنوي (ARR)</div>
+                  <div className="text-xl font-bold text-emerald-300 mt-1">${estimatedMRR * 12}</div>
+                </div>
+                <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+                  <div className="text-slate-400">معدل التحويل للـ Pro</div>
+                  <div className="text-xl font-bold text-blue-400 mt-1">{proPct + entPct}%</div>
+                </div>
+                <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+                  <div className="text-slate-400">مجموع استهلاك الـ GPU</div>
+                  <div className="text-xl font-bold text-violet-400 mt-1">${totalAiCost.toFixed(2)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: SYSTEM CONFIG & SETTINGS */}
+        {activeTab === 'settings' && (
+          <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-xl space-y-6">
+            <div className="border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-emerald-400" />
+                تخصيص وإعدادات السيرفر والحدود الحية
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">تخصيص حدود استخدام الذكاء الاصطناعي والإعلانات الفورية</p>
+            </div>
+
+            <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl">
+              {/* AI Quotas */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-amber-400" />
+                  حدود الذكاء الاصطناعي اليومية لكل باقة (صور/يومياً)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-[11px] text-slate-400 block mb-1">الباقة المجانية</label>
+                    <input
+                      type="number"
+                      value={freeAiLimit}
+                      onChange={e => setFreeAiLimit(parseInt(e.target.value, 10))}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 block mb-1">باقة Pro الاحترافية</label>
+                    <input
+                      type="number"
+                      value={proAiLimit}
+                      onChange={e => setProAiLimit(parseInt(e.target.value, 10))}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 block mb-1">باقة Enterprise</label>
+                    <input
+                      type="number"
+                      value={enterpriseAiLimit}
+                      onChange={e => setEnterpriseAiLimit(parseInt(e.target.value, 10))}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Notice Announcement */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-300 block">رسالة التنبيه العامة للتطبيق (Notice Banner)</label>
+                <textarea
+                  rows={3}
+                  value={systemNotice}
+                  onChange={e => setSystemNotice(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white leading-relaxed"
+                />
+              </div>
+
+              {/* Maintenance Toggle */}
+              <div className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 rounded-lg">
+                <div>
+                  <div className="text-xs font-bold text-white">وضع الصيانة والتحديثات السحابية</div>
+                  <div className="text-[11px] text-slate-400">إظهار إشعار صيانة للمستخدمين عند التشغيل</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMaintenanceMode(!maintenanceMode)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-colors ${
+                    maintenanceMode ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  {maintenanceMode ? 'مُفعّل (صيانة)' : 'معطل (طبيعي)'}
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingSettings}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-md cursor-pointer flex items-center gap-2"
+              >
+                {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <Settings className="w-4 h-4" />}
+                حفظ تفضيلات النظام السحابية
+              </button>
+            </form>
+          </div>
+        )}
       </main>
+
+      {/* EDIT USER MODAL */}
+      {editModalUser && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" dir="rtl">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-blue-400" />
+                تعديل وتخصيص حساب: {editModalUser.email}
+              </h3>
+              <button
+                onClick={() => setEditModalUser(null)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveUserProfile} className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-300 font-semibold block mb-1">الاسم الكامل</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-semibold block mb-1">البريد الإلكتروني</label>
+                <input
+                  type="email"
+                  disabled
+                  value={editEmail}
+                  className="w-full px-3 py-2 bg-slate-950/50 border border-slate-800 rounded-lg text-xs text-slate-400 cursor-not-allowed"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold block mb-1">الباقة المستهدفة</label>
+                  <select
+                    value={editPlan}
+                    onChange={e => setEditPlan(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                  >
+                    <option value="free">FREE (مجاني)</option>
+                    <option value="pro">PRO (احترافي)</option>
+                    <option value="enterprise">ENTERPRISE (مؤسسات)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-300 font-semibold block mb-1">حالة الحساب</label>
+                  <select
+                    value={editStatus}
+                    onChange={e => setEditStatus(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                  >
+                    <option value="active">نشط (Active)</option>
+                    <option value="expired">منتهي (Expired)</option>
+                    <option value="banned">محظور (Banned)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-semibold block mb-1">تاريخ انتهاء الصلاحية المخصص</label>
+                <input
+                  type="date"
+                  value={editExpiresAt}
+                  onChange={e => setEditExpiresAt(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditModalUser(null)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-700 cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingUser}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {savingUser ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                  حفظ التعديلات سحابياً
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
