@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +42,11 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     printSettings: state.printSettings,
     slots: state.slots,
   })));
+
+  useEffect(() => {
+    setLoading(false);
+    setProgress(0);
+  }, [open]);
 
   const handleExport = async () => {
     setLoading(true);

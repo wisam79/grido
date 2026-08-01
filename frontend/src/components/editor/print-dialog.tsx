@@ -85,6 +85,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     if (open) {
       // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة
       useEditorStore.getState().selectElement(null);
+      setIsExporting(false);
+    } else {
+      setIsExporting(false);
     }
   }, [open]);
 
@@ -353,6 +356,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   };
 
   const handlePrintResult = (result: any) => {
+    setIsExporting(false);
     if (!result.success) {
       toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
       return;
@@ -448,6 +452,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       handlePrintResult(result);
     } catch (err) {
       toast.error("حدث خطأ أثناء توليد ورقة الطباعة: " + String(err));
+    } finally {
       setIsExporting(false);
     }
   };
