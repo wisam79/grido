@@ -1,13 +1,13 @@
 -- =========================================================================
--- Migration: Fix admin_create_license_key RPC & PostgREST Schema Cache
+-- Fix Ambiguous Function Overload for admin_create_license_key
 -- =========================================================================
 
--- 1. حذف كافة التوقيعات القديمة للدالة لمنع أي تعارض في أطراف PostgREST
-DROP FUNCTION IF EXISTS public.admin_create_license_key(text, integer, text);
+-- 1. Drop ALL candidate overloads first to eliminate ambiguity
 DROP FUNCTION IF EXISTS public.admin_create_license_key(text, integer);
 DROP FUNCTION IF EXISTS public.admin_create_license_key(integer, text);
+DROP FUNCTION IF EXISTS public.admin_create_license_key(text, integer, text);
 
--- 2. بناء الدالة الرئيسية (3 معاملات مع القيمة الافتراضية)
+-- 2. Create the single, definitive function with DEFAULT NULL for p_custom_key
 CREATE OR REPLACE FUNCTION public.admin_create_license_key(
     p_plan text,
     p_duration_months integer,
@@ -42,24 +42,8 @@ BEGIN
 END;
 $$;
 
--- 3. بناء دالة Overload ذات معاملين لضمان التطابق التام مع استدعاءات PostgREST RPC
-CREATE OR REPLACE FUNCTION public.admin_create_license_key(
-    p_plan text,
-    p_duration_months integer
-)
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-    RETURN public.admin_create_license_key(p_plan, p_duration_months, NULL);
-END;
-$$;
-
--- 4. منح الصلاحيات الصريحة لكافة أدوار المستخدمين ومنفذي RPC
+-- 3. Grant permissions to authenticated, anon, service_role
 GRANT EXECUTE ON FUNCTION public.admin_create_license_key(text, integer, text) TO authenticated, anon, service_role;
-GRANT EXECUTE ON FUNCTION public.admin_create_license_key(text, integer) TO authenticated, anon, service_role;
 
--- 5. إعادة تحديث وتنشيط Schema Cache في خادم PostgREST فورياً
+-- 4. Reload PostgREST schema cache immediately
 NOTIFY pgrst, 'reload schema';
