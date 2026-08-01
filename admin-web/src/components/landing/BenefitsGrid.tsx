@@ -29,13 +29,13 @@ const BENEFITS: {
   {
     img: '/3d-printer.png',
     title: 'جاهز للطباعة فوراً',
-    description: 'إعدادات احترافية تدعم CMYK و Dpi عالية تناسب جميع المطابع والمعامل.',
+    description: 'إعدادات احترافية تدعم CMYK و DPI عالية تناسب جميع المطابع والمعامل.',
   },
 ];
 
 export function BenefitsGrid() {
   return (
-    <section id="benefits" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
+    <section id="benefits" className="relative section-rhythm border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <SectionHeading
           icon={Sparkles}
@@ -60,10 +60,10 @@ export function BenefitsGrid() {
                 className="benefit-icon relative w-16 h-16 sm:w-28 sm:h-28 sm:mb-5 shrink-0 flex items-center justify-center"
                 style={{ animationDelay: `${index * 0.25}s` }}
               >
-                {/* هالة زرقاء خلف الأيقونة تشتد عند hover */}
+                {/* هالة بيضاء خلف الأيقونة تشتد عند hover */}
                 <span
                   aria-hidden
-                  className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(96,165,250,0.25),transparent_70%)] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110"
+                  className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.14),transparent_70%)] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110"
                 />
                 <img
                   src={benefit.img}
@@ -72,7 +72,7 @@ export function BenefitsGrid() {
                   decoding="async"
                   width={112}
                   height={112}
-                  className="relative z-10 w-full h-full object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.9)] transition-all duration-500 group-hover:drop-shadow-[0_24px_40px_rgba(59,130,246,0.35)] group-hover:rotate-[6deg]"
+                  className="relative z-10 w-full h-full object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.9)] transition-all duration-500 group-hover:drop-shadow-[0_24px_40px_rgba(255,255,255,0.25)] group-hover:rotate-[6deg]"
                 />
                 {/* انعكاس أرضي خفيف تحت الأيقونة */}
                 <span

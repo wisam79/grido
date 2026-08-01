@@ -21,6 +21,7 @@ export interface CollageSlice {
   collageMargin: number;
   collageRadius: number;
   collageShowCutLines: boolean;
+  collageShowEndCutLine: boolean;
   collageStrokeWidth: number;
   collageStrokeColor: string;
 
@@ -38,6 +39,7 @@ export interface CollageSlice {
   setCollageMargin: (margin: number) => void;
   setCollageRadius: (radius: number) => void;
   setCollageShowCutLines: (show: boolean) => void;
+  setCollageShowEndCutLine: (show: boolean) => void;
   setCollageStrokeWidth: (width: number) => void;
   setCollageStrokeColor: (color: string) => void;
 }
@@ -70,6 +72,7 @@ export const DEFAULT_COLLAGE_STATE = {
   collageMargin: 0,
   collageRadius: 0,
   collageShowCutLines: false,
+  collageShowEndCutLine: true,
   collageStrokeWidth: 0,
   collageStrokeColor: "#000000",
 };
@@ -449,6 +452,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   },
   setCollageRadius: (radius) => { set({ collageRadius: radius }); get().pushHistory(); },
   setCollageShowCutLines: (show) => { set({ collageShowCutLines: show }); get().pushHistory(); },
+  setCollageShowEndCutLine: (show) => { set({ collageShowEndCutLine: show }); get().pushHistory(); },
   setCollageStrokeWidth: (width) => { set({ collageStrokeWidth: width }); get().pushHistory(); },
   setCollageStrokeColor: (color) => { set({ collageStrokeColor: color }); get().pushHistory(); },
 });

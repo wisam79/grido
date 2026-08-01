@@ -212,11 +212,50 @@
     font-family: var(--font-tajawal), system-ui, sans-serif;
   }
   .glass-panel {
-    background: color-mix(in srgb, var(--card) 85%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--card);
     border: 1px solid var(--border);
   }
+
+  /* ─── Native Visual Depth & High-Contrast System ─────────────── */
+  .native-depth-sidebar {
+    background-color: var(--card);
+    border-color: var(--border);
+  }
+
+  .dark .native-depth-sidebar {
+    background-color: #232326; /* Solid native dark sidebar for strong visual weight */
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .native-card-elevated {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .dark .native-card-elevated {
+    background-color: #2b2b2e; /* Distinct card surface fill */
+    border-color: rgba(255, 255, 255, 0.09); /* Crisp contrast border */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2); /* Very light tight shadow */
+  }
+
+  .native-inset-box {
+    background-color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .dark .native-inset-box {
+    background-color: #1a1a1d; /* Deep inset contrast fill */
+    border-color: rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 1px 1px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  .native-header-elevated {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  }
+
   .checkerboard {
     background-image:
       linear-gradient(45deg, oklch(0.9 0 0) 25%, transparent 25%),

@@ -7,46 +7,46 @@ const COMPARISON_ROWS = [
     feature: 'تجهيز ورقة الطباعة والتقطيع',
     grido: 'تلقائي بنقرة واحدة (أقل من ثانية)',
     traditional: 'يدوي محبط يستغرق 5 - 10 دقائق',
-    gridoTime: '3 SECONDS',
-    traditionalTime: '10 MINUTES',
+    gridoTime: '3 ثوانٍ',
+    traditionalTime: '10 دقائق',
   },
   {
     icon: ShieldCheck,
     feature: 'دقة المقاسات الرسمية (الهوية والفيزا)',
     grido: '100% مطابقة للمواصفات الحكومية',
     traditional: 'عرضة للأخطاء البشرية وإعادة الطباعة',
-    gridoTime: '100% ACCURATE',
-    traditionalTime: 'MANUAL ERRORS',
+    gridoTime: 'دقة 100%',
+    traditionalTime: 'أخطاء يدوية',
   },
   {
     icon: Cpu,
-    feature: 'ترميم ملامح الوجه (AI Restoration)',
+    feature: 'ترميم ملامح الوجه بالذكاء الاصطناعي',
     grido: 'محلي فوري بـ CodeFormer + HD',
     traditional: 'يتطلب خبرة فوتوشوب معقدة أو اشتراكات',
-    gridoTime: 'INSTANT AI HD',
-    traditionalTime: 'MANUAL EDITING',
+    gridoTime: 'ترميم فوري HD',
+    traditionalTime: 'تعديل يدوي',
   },
   {
     icon: Droplets,
-    feature: 'هدر ورق الطباعة (Paper Waste)',
+    feature: 'هدر ورق الطباعة',
     grido: '0% هدر مع شبكات توزيع الخلايا الذكية',
     traditional: 'هدر متكرر للأوراق والحبر الثمين',
-    gridoTime: '0% WASTE',
-    traditionalTime: 'HIGH WASTE',
+    gridoTime: 'صفر هدر',
+    traditionalTime: 'هدر كبير',
   },
   {
     icon: WifiOff,
-    feature: 'العمل بدون إنترنت (Offline 100%)',
+    feature: 'العمل بدون إنترنت',
     grido: 'سرعة فائقة وخصوصية كاملة للصور',
     traditional: 'بطء في التعامل والاعتماد على سيرفرات خارجية',
-    gridoTime: '100% OFFLINE',
-    traditionalTime: 'CLOUD DEPENDENT',
+    gridoTime: 'بدون إنترنت',
+    traditionalTime: 'اعتماد على سحابة',
   },
 ];
 
 export function ComparisonSection() {
   return (
-    <section id="comparison" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
+    <section id="comparison" className="relative section-rhythm border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           icon={Sparkles}
@@ -80,11 +80,11 @@ export function ComparisonSection() {
                 {/* 2. VS Split Comparison Column */}
                 <div className="relative z-10 lg:w-2/3 flex flex-col sm:flex-row rounded-xl border border-subtle bg-primary overflow-hidden">
                   {/* Traditional (Old Way) */}
-                  <div className="flex-1 p-4 sm:p-5 flex items-center justify-start sm:justify-center text-right sm:text-center relative overflow-hidden border-b sm:border-b-0 sm:border-l border-subtle bg-secondary/40">
-                    <div className="relative z-10 flex flex-col sm:items-center gap-1.5 w-full">
-                      <div className="flex items-center justify-between sm:justify-center w-full gap-2">
-                        <span className="text-[10px] uppercase tracking-[1.5px] font-mono font-bold text-tertiary">الطريقة التقليدية</span>
-                        <span className="text-[10px] font-mono font-bold text-tertiary bg-elevated px-2 py-0.5 rounded border border-subtle">{row.traditionalTime}</span>
+                  <div className="flex-1 p-4 sm:p-5 flex items-center justify-start sm:justify-center text-right sm:text-center relative overflow-hidden border-b sm:border-b-0 sm:border-e border-subtle bg-secondary/40">
+                    <div className="relative z-10 flex flex-col sm:items-center gap-2 w-full">
+                      <span className="text-[10px] font-extrabold text-tertiary">الطريقة التقليدية</span>
+                      <div className="text-2xl sm:text-3xl font-black font-mono text-tertiary/70 line-through decoration-tertiary/60 decoration-2 tracking-tight whitespace-nowrap">
+                        {row.traditionalTime}
                       </div>
                       <div className="flex items-start sm:items-center gap-2 opacity-60">
                         <X className="w-4 h-4 text-tertiary shrink-0 mt-0.5 sm:mt-0" />
@@ -100,10 +100,10 @@ export function ComparisonSection() {
 
                   {/* Grido Studio (New Way) */}
                   <div className="flex-1 p-4 sm:p-5 flex items-center justify-start sm:justify-center text-right sm:text-center bg-elevated relative overflow-hidden border-t sm:border-t-0 border-white/20">
-                    <div className="relative z-10 flex flex-col sm:items-center gap-1.5 w-full">
-                      <div className="flex items-center justify-between sm:justify-center w-full gap-2">
-                        <span className="text-[10px] uppercase tracking-[1.5px] font-mono font-extrabold text-white">مع GRIDO STUDIO</span>
-                        <span className="text-[10px] font-mono font-extrabold text-black bg-white px-2 py-0.5 rounded">{row.gridoTime}</span>
+                    <div className="relative z-10 flex flex-col sm:items-center gap-2 w-full">
+                      <span className="text-[10px] font-extrabold text-white">مع GRIDO STUDIO</span>
+                      <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight whitespace-nowrap">
+                        {row.gridoTime}
                       </div>
                       <div className="flex items-start sm:items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5 sm:mt-0" />

@@ -336,6 +336,7 @@ export async function exportCanvas(
       collageMargin = 0,
       collageRadius = 0,
       collageShowCutLines = false,
+      collageShowEndCutLine = true,
       collageStrokeWidth = 0,
       collageStrokeColor = "#000000",
     } = state;
@@ -416,6 +417,7 @@ export async function exportCanvas(
         for (let i = 0; i < yCutLines.length; i++) {
           const y = yCutLines[i];
           const isBottomEnd = i === yCutLines.length - 1;
+          if (isBottomEnd && !collageShowEndCutLine) continue;
           ctx.beginPath();
           if (isBottomEnd) {
             ctx.strokeStyle = "#3182ce";

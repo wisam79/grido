@@ -29,7 +29,7 @@ function AnimatedLogo() {
             Grido Studio
           </span>
         </div>
-        <span className="mt-1 text-[9px] font-mono font-bold text-tertiary uppercase tracking-[1px]">
+        <span className="mt-1 text-[9px] font-bold text-tertiary">
           استوديو الصور الذكي
         </span>
       </div>
@@ -111,7 +111,7 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   aria-current={isActive ? 'true' : undefined}
-                  className={`text-xs font-mono font-bold tracking-[1.5px] uppercase transition-colors relative py-1 group/link ${
+                  className={`text-xs font-bold transition-colors relative py-1 group/link ${
                     isActive ? 'text-white' : 'text-secondary hover:text-white'
                   }`}
                 >
@@ -137,7 +137,7 @@ export function Header() {
               rel="noopener noreferrer"
               onMouseMove={handleMagneticMouseMove}
               onMouseLeave={handleMagneticMouseLeave}
-              className="magnetic-pill hidden sm:flex items-center gap-2 px-6 py-2.5 rounded-full bg-white hover:bg-[#f0f0fa] text-black text-xs font-mono font-extrabold uppercase tracking-[1px] transition-shadow duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] cursor-pointer relative border border-white"
+              className="magnetic-pill hidden sm:flex items-center gap-2 px-6 py-2.5 rounded-full bg-white hover:bg-[#f0f0fa] text-black text-xs font-extrabold transition-shadow duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] cursor-pointer relative border border-white"
               aria-label="تحميل البرنامج"
             >
               <Download className="w-3.5 h-3.5 text-black relative z-10" />
@@ -164,7 +164,7 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="px-4 py-3 text-xs font-mono font-bold tracking-[1.5px] uppercase text-secondary hover:bg-elevated transition-colors"
+                  className="px-4 py-3 text-xs font-bold text-secondary hover:bg-elevated transition-colors"
                 >
                   {link.label}
                 </a>
@@ -173,7 +173,7 @@ export function Header() {
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white text-black font-mono font-extrabold text-xs uppercase tracking-[1px]"
+                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white text-black font-extrabold text-xs"
               >
                 <Download className="w-4 h-4 text-black" />
                 تحميل التطبيق

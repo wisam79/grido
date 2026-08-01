@@ -19,6 +19,7 @@ export const DEFAULT_HISTORY_ENTRY_EXTRAS = {
   collageMargin: 0,
   collageRadius: 0,
   collageShowCutLines: false,
+  collageShowEndCutLine: true,
   collageStrokeWidth: 0,
   collageStrokeColor: "#000000",
   lastEditedImage: null as string | null,
@@ -44,6 +45,7 @@ type HistoryCross = HistorySlice & {
   collageMargin?: number;
   collageRadius?: number;
   collageShowCutLines?: boolean;
+  collageShowEndCutLine?: boolean;
   collageStrokeWidth?: number;
   collageStrokeColor?: string;
   lastEditedImage?: string | null;
@@ -63,6 +65,7 @@ const captureSnapshot = (s: HistoryCross): HistoryEntry => ({
   collageMargin: s.collageMargin,
   collageRadius: s.collageRadius,
   collageShowCutLines: s.collageShowCutLines,
+  collageShowEndCutLine: s.collageShowEndCutLine,
   collageStrokeWidth: s.collageStrokeWidth,
   collageStrokeColor: s.collageStrokeColor,
   // تسوية undefined إلى null — يضمن تطابق JSON مع الإدخال الابتدائي في الـ dedupe
@@ -79,7 +82,7 @@ const restoreEntry = (entry: HistoryEntry) => {
   const optionalKeys = [
     "mode", "canvasWidth", "canvasHeight", "backgroundColor",
     "collageGap", "collageMargin", "collageRadius",
-    "collageShowCutLines", "collageStrokeWidth", "collageStrokeColor",
+    "collageShowCutLines", "collageShowEndCutLine", "collageStrokeWidth", "collageStrokeColor",
     "lastEditedImage", "lastEditedImageAspect",
   ] as const;
   for (const key of optionalKeys) {

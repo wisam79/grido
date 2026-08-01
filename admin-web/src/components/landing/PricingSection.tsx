@@ -1,11 +1,10 @@
-import { Check, Crown, Sparkles, Download } from 'lucide-react';
+import { Check, Crown, Download } from 'lucide-react';
 import { SectionHeading } from './SectionHeading';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 interface Plan {
   id: string;
-  badge: string;
   title: string;
   audience: string;
   features: string[];
@@ -17,7 +16,6 @@ interface Plan {
 const PLANS: Plan[] = [
   {
     id: 'free',
-    badge: 'FREE',
     title: 'المجانية',
     audience: 'للتجربة والتقييم اليومي',
     features: [
@@ -31,7 +29,6 @@ const PLANS: Plan[] = [
   },
   {
     id: 'pro',
-    badge: 'PRO',
     title: 'الاحترافية',
     audience: 'للاستوديوهات العاملة يومياً',
     features: [
@@ -47,7 +44,6 @@ const PLANS: Plan[] = [
   },
   {
     id: 'enterprise',
-    badge: 'ENTERPRISE',
     title: 'المؤسسات',
     audience: 'للمطابع وسلاسل الاستوديوهات',
     features: [
@@ -62,7 +58,7 @@ const PLANS: Plan[] = [
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
+    <section id="pricing" className="relative section-rhythm border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           icon={Crown}
@@ -81,17 +77,13 @@ export function PricingSection() {
               }`}
             >
               {plan.highlighted && (
-                <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-white text-black text-[10px] font-mono font-extrabold uppercase tracking-[1.5px]">
+                <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-white text-black text-[10px] font-extrabold">
                   الأكثر طلباً
                 </span>
               )}
 
               <div className="relative z-10 flex flex-col h-full space-y-5">
                 <div className="space-y-2">
-                  <span className="inline-flex items-center gap-2 text-[11px] font-mono font-extrabold tracking-[2px] uppercase text-tertiary">
-                    <Sparkles className="w-3.5 h-3.5 text-white" />
-                    {plan.badge}
-                  </span>
                   <h3 className="text-2xl font-black font-display text-white">{plan.title}</h3>
                   <p className="text-tertiary text-xs font-medium">{plan.audience}</p>
                 </div>
@@ -108,7 +100,7 @@ export function PricingSection() {
                 <a
                   href={plan.cta.href}
                   {...(plan.cta.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className={`magnetic-pill mt-2 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-mono font-extrabold text-xs uppercase tracking-[1px] transition-all duration-300 cursor-pointer ${
+                  className={`magnetic-pill mt-2 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-extrabold text-sm transition-all duration-300 cursor-pointer ${
                     plan.highlighted
                       ? 'bg-white text-black border border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.35)]'
                       : 'bg-elevated text-secondary border border-subtle hover:border-white hover:text-white'
@@ -122,7 +114,7 @@ export function PricingSection() {
           ))}
         </div>
 
-        <p className="stagger-5 mt-8 text-center text-[11px] font-mono text-tertiary uppercase tracking-[1.5px]">
+        <p className="stagger-5 mt-8 text-center text-[11px] font-extrabold text-tertiary">
           الأسعار عند التفعيل عبر الوكيل المعتمد — بدون اشتراكات شهرية مفروضة
         </p>
       </div>

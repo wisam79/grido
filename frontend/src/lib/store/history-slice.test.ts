@@ -18,6 +18,7 @@ describe('history-slice', () => {
       collageMargin: 0,
       collageRadius: 0,
       collageShowCutLines: false,
+      collageShowEndCutLine: true,
       collageStrokeWidth: 0,
       collageStrokeColor: '#000000',
       mode: 'collage',

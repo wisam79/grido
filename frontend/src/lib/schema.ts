@@ -91,6 +91,7 @@ export const PrintSettingsSchema = z.object({
   dpi: z.number(),
   copiesPerSheet: z.number(),
   showCutLines: z.boolean(),
+  showEndCutLine: z.boolean().optional(),
   orientation: z.enum(["portrait", "landscape"]),
   fitToPage: z.boolean().optional(),
   repeatMode: z.enum(["all", "row", "column"]).optional(),

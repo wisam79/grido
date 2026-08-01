@@ -21,7 +21,7 @@ import { TooltipBtn, ToolbarAddTools, ToolbarSelectionTools, ToolbarHistoryTools
 
 export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   return (
-    <div className="relative flex items-center gap-2 p-1 px-3 border-b bg-card/65 backdrop-blur-md flex-nowrap overflow-x-auto select-none no-print h-12.5 shrink-0 scrollbar-none shadow-xs">
+    <div className="relative flex items-center gap-2 p-1 px-3 border-b border-border/80 bg-card flex-nowrap overflow-x-auto select-none no-print h-12.5 shrink-0 scrollbar-none">
         
       {/* المجموعة 1: إدارة الملفات والمستندات */}
       <ToolbarFileOps />
@@ -69,15 +69,16 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
             <Download className="w-3.5 h-3.5" />
           </Button>
         </TooltipBtn>
-        <TooltipBtn content="بدء عملية الطباعة">
+        <TooltipBtn content="بدء إعدادات وطباعة المستند (Ctrl + P)">
           <Button 
             variant="default" 
-            size="icon" 
+            size="sm" 
             onClick={onPrint} 
-            aria-label="طباعة"
-            className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg cursor-pointer transition-all shadow-xs border-0 hover:shadow-md hover:shadow-indigo-500/10 active:scale-95 flex items-center justify-center"
+            aria-label="طباعة المستند"
+            className="h-8 px-3.5 gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-[11.5px] rounded-lg cursor-pointer transition-all shadow-xs border-0 hover:shadow-md hover:shadow-indigo-500/20 active:scale-95 flex items-center justify-center"
           >
-            <Printer className="w-3.5 h-3.5 text-white" />
+            <Printer className="w-4 h-4 text-white stroke-[2.2]" />
+            <span>طباعة المستند</span>
           </Button>
         </TooltipBtn>
       </div>

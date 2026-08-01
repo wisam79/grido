@@ -1,4 +1,5 @@
 import { buildCSSFilter, cn } from "@/lib/utils";
+import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
 
 interface SheetPreviewProps {
   cols: number;
@@ -9,6 +10,7 @@ interface SheetPreviewProps {
   gapMM: number;
   zoom: number;
   showCutLines: boolean;
+  showEndCutLine?: boolean;
   mode: "single" | "collage";
   backgroundColor: string;
   previewImageSrc: string;
@@ -33,6 +35,7 @@ export function SheetPreview({
   gapMM,
   zoom,
   showCutLines,
+  showEndCutLine = true,
   mode,
   backgroundColor,
   previewImageSrc,
@@ -47,6 +50,73 @@ export function SheetPreview({
   hasPhysical = false,
   scaleFactor = 1.5,
 }: SheetPreviewProps) {
+  const sf = scaleFactor * zoom;
+  const availableWidthMM = paperWidthMM - 2 * marginMM;
+  const availableHeightMM = paperHeightMM - 2 * marginMM;
+
+  const rawCutLines = showCutLines
+    ? calculatePrintCutLines({
+        mode,
+        cols,
+        rows,
+        actualCopies: count,
+        imageWidthMM,
+        imageHeightMM,
+        gapMM,
+        effectiveMarginMM: marginMM,
+        availableWidthMM,
+        availableHeightMM,
+        paperWidth: paperWidthMM,
+        paperHeight: paperHeightMM,
+        showEndCutLine,
+        slots,
+        collageMargin,
+        collageGap,
+        canvasWidth,
+        canvasHeight,
+        hasPhysical,
+      })
+    : [];
+
+  const cutLineElements = rawCutLines.map((line, idx) => {
+    const isVertical = Math.abs(line.x1 - line.x2) < 0.01;
+    if (isVertical) {
+      const left = (line.x1 - marginMM) * sf;
+      const top = (line.y1 - marginMM) * sf;
+      const height = (line.y2 - line.y1) * sf;
+      return (
+        <div
+          key={`v-cut-${idx}`}
+          className="absolute border-l border-dashed border-slate-400/80 pointer-events-none"
+          style={{
+            left,
+            top,
+            height,
+          }}
+        />
+      );
+    } else {
+      const top = (line.y1 - marginMM) * sf;
+      const left = (line.x1 - marginMM) * sf;
+      const width = (line.x2 - line.x1) * sf;
+      const isBottomEnd = line.isBottomEnd;
+      return (
+        <div
+          key={`h-cut-${idx}`}
+          className={cn(
+            "absolute border-t border-dashed pointer-events-none",
+            isBottomEnd ? "border-blue-500 border-t-2" : "border-slate-400/80"
+          )}
+          style={{
+            top,
+            left,
+            width,
+          }}
+        />
+      );
+    }
+  });
+
   if (mode === "collage") {
     return (
       <div 
@@ -59,9 +129,6 @@ export function SheetPreview({
         {slots && slots.length > 0 ? (
           slots.map((slot, index) => {
             if (!slot.imageSrc) return null;
-            
-            const scaleX = 100;
-            const scaleY = 100;
 
             const marginX_pct = hasPhysical ? 0 : (collageMargin / canvasWidth) * 100;
             const marginY_pct = hasPhysical ? 0 : (collageMargin / canvasHeight) * 100;
@@ -111,6 +178,7 @@ export function SheetPreview({
             جاري تحميل المعاينة...
           </div>
         )}
+        {cutLineElements}
       </div>
     );
   }
@@ -118,8 +186,6 @@ export function SheetPreview({
   const actualRows = Math.ceil(count / cols);
   const gridWidth = cols * imageWidthMM + Math.max(0, cols - 1) * gapMM;
   const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
-  const availableWidthMM = paperWidthMM - 2 * marginMM;
-  const availableHeightMM = paperHeightMM - 2 * marginMM;
   const offsetX = Math.max(0, availableWidthMM - gridWidth) / 2;
   const offsetY = Math.max(0, availableHeightMM - gridHeight) / 2;
 
@@ -128,10 +194,10 @@ export function SheetPreview({
   for (let i = 0; i < count; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const x = (offsetX + col * (imageWidthMM + gapMM)) * scaleFactor * zoom;
-    const y = (offsetY + row * (imageHeightMM + gapMM)) * scaleFactor * zoom;
-    const w = imageWidthMM * scaleFactor * zoom;
-    const h = imageHeightMM * scaleFactor * zoom;
+    const x = (offsetX + col * (imageWidthMM + gapMM)) * sf;
+    const y = (offsetY + row * (imageHeightMM + gapMM)) * sf;
+    const w = imageWidthMM * sf;
+    const h = imageHeightMM * sf;
 
     items.push(
       <div
@@ -162,46 +228,11 @@ export function SheetPreview({
     );
   }
 
-  const cutLines = [];
-  if (showCutLines) {
-    for (let i = 1; i < cols; i++) {
-      const x = (offsetX + i * (imageWidthMM + gapMM)) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
-      cutLines.push(
-        <div
-          key={`v-${i}`}
-          className="absolute border-l border-dashed border-slate-400/80 pointer-events-none"
-          style={{ 
-            left: x, 
-            top: 0, 
-            bottom: 0 
-          }}
-        />
-      );
-    }
-    for (let i = 1; i <= rows; i++) {
-      const y = (offsetY + i * (imageHeightMM + gapMM)) * scaleFactor * zoom - (gapMM * scaleFactor * zoom) / 2;
-      const isBottomEnd = (i === rows);
-      cutLines.push(
-        <div
-          key={`h-${i}`}
-          className={cn(
-            "absolute border-t border-dashed pointer-events-none",
-            isBottomEnd ? "border-blue-500 border-t-2" : "border-slate-400/80"
-          )}
-          style={{ 
-            top: y, 
-            left: isBottomEnd ? 0 : offsetX * scaleFactor * zoom, 
-            right: isBottomEnd ? 0 : offsetX * scaleFactor * zoom 
-          }}
-        />
-      );
-    }
-  }
-
   return (
     <div className="relative w-full h-full">
       {items}
-      {cutLines}
+      {cutLineElements}
     </div>
   );
 }
+

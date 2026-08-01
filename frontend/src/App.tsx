@@ -312,21 +312,22 @@ export default function App() {
       {!isMaximized && <WindowResizeHandles />}
       {/* الرأس */}
       <header
-        className={`border-b bg-card/90 backdrop-blur-md no-print title-bar-draggable select-none transition-opacity duration-200 ${
-          !isFocused ? "opacity-75" : ""
-        }`}
+        className={cn(
+          "border-b border-border/80 bg-card no-print title-bar-draggable select-none transition-opacity duration-200 z-30 native-header-elevated",
+          !isFocused && "opacity-75"
+        )}
         onDoubleClick={handleMaximize}
       >
         <div className="flex items-center justify-between px-4 py-2 relative">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-primary/80 shrink-0" />
-            <h1 className="text-xs font-bold text-foreground/80">
+            <span className="w-2 h-2 rounded-full bg-primary shrink-0 shadow-xs" />
+            <h1 className="text-xs font-bold text-foreground tracking-wide">
               Grido Studio | استوديو الهوية
             </h1>
           </div>
 
           {/* وضع العمل */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-900/60 p-0.5 rounded-full border border-zinc-200/60 dark:border-zinc-800/50 shadow-inner z-10 backdrop-blur-xs title-bar-controls">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-muted p-1 rounded-xl border border-border z-10 title-bar-controls" dir="rtl">
             <Button
               variant="ghost"
               size="sm"
@@ -334,22 +335,23 @@ export default function App() {
               aria-label="وضع الكولاج"
               title="وضع الكولاج"
               className={cn(
-                "h-8 px-4 rounded-full cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-colors duration-300",
+                "h-7 px-3 rounded-lg cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[11px] z-10 relative transition-all duration-200 select-none",
                 mode === "collage"
-                  ? "text-primary dark:text-blue-400 font-bold"
-                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
+                  ? "text-primary font-black"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               {mode === "collage" && (
                 <motion.div
                   layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/40 dark:border-zinc-700/40 rounded-full -z-10"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  className="absolute inset-0 bg-background border border-border/80 rounded-lg -z-10"
+                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
                 />
               )}
-              <LayoutGrid className="w-4 h-4" />
+              <LayoutGrid className="w-3.5 h-3.5" />
               <span className="leading-none">كولاج</span>
             </Button>
+
             <Button
               variant="ghost"
               size="sm"
@@ -357,20 +359,20 @@ export default function App() {
               aria-label="وضع التعديل الحر"
               title="وضع التعديل الحر"
               className={cn(
-                "h-8 px-4 rounded-full cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-colors duration-300",
+                "h-7 px-3 rounded-lg cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[11px] z-10 relative transition-all duration-200 select-none",
                 mode === "single"
-                  ? "text-primary dark:text-blue-400 font-bold"
-                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
+                  ? "text-primary font-black"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               {mode === "single" && (
                 <motion.div
                   layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/40 dark:border-zinc-700/40 rounded-full -z-10"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  className="absolute inset-0 bg-background border border-border/80 rounded-lg -z-10"
+                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
                 />
               )}
-              <Images className="w-4 h-4" />
+              <Images className="w-3.5 h-3.5" />
               <span className="leading-none">تعديل حر</span>
             </Button>
           </div>
@@ -476,12 +478,12 @@ export default function App() {
       {/* المحتوى الرئيسي */}
       <main className="flex-1 flex overflow-hidden">
         {/* اللوحة اليسرى - القوالب (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-l bg-card flex-col no-print animate-panel-right">
+        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-l border-border/80 native-depth-sidebar flex-col no-print animate-panel-right z-20">
           <TemplatePanel />
         </aside>
 
         {/* الكانفس - الوسط */}
-        <section className="flex-1 flex flex-col min-w-0 bg-muted/20 animate-fade-in">
+        <section className="flex-1 flex flex-col min-w-0 bg-slate-300 dark:bg-zinc-950 animate-fade-in relative z-10">
           <div className="flex-1 relative">
             <ErrorBoundary>
               <EditorCanvas />
@@ -489,20 +491,20 @@ export default function App() {
           </div>
 
           {/* شريط الحالة السفلي - نمط Figma مضغوط وأنيق */}
-          <div className="border-t border-border/40 bg-card/80 backdrop-blur-xs px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-7">
+          <div className="border-t border-border/80 bg-card px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-7">
             {/* مؤشر الحالة والنوع */}
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/70 bg-muted/40 px-2 py-0.5 rounded-md border border-border/20">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>جاهز</span>
               </span>
-              <span className="text-[10px] font-mono text-muted-foreground/60" dir="ltr">
+              <span className="text-[10px] font-mono text-muted-foreground font-semibold" dir="ltr">
                 {canvasWidth} × {canvasHeight} px
               </span>
             </div>
 
             {/* أدوات الزوم وإعادة الضبط */}
-            <div className="flex items-center gap-1 bg-muted/30 border border-border/30 rounded-lg p-0.5">
+            <div className="flex items-center gap-1 bg-muted/50 border border-border/50 rounded-lg p-0.5 shadow-2xs">
               <button
                 type="button"
                 className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
@@ -534,7 +536,7 @@ export default function App() {
         </section>
 
         {/* اللوحة اليمنى - الخصائص (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-r bg-card flex-col no-print animate-panel-left">
+        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-r border-border/80 native-depth-sidebar flex-col no-print animate-panel-left shadow-sm z-20">
           <PropertiesPanel />
         </aside>
       </main>

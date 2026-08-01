@@ -790,11 +790,39 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 	dc.SetLineWidth(lineWidth)
 	dc.SetDash(dashSize, dashSize)
 
+	paperW := float64(dc.Width())
+	paperH := float64(dc.Height())
+
 	for _, line := range req.CutLines {
 		x1 := mmToPx(line.X1, req.DPI)
 		y1 := mmToPx(line.Y1, req.DPI)
 		x2 := mmToPx(line.X2, req.DPI)
 		y2 := mmToPx(line.Y2, req.DPI)
+
+		if x1 < 0 {
+			x1 = 0
+		}
+		if x1 >= paperW {
+			x1 = paperW - 2
+		}
+		if x2 < 0 {
+			x2 = 0
+		}
+		if x2 >= paperW {
+			x2 = paperW - 2
+		}
+		if y1 < 0 {
+			y1 = 0
+		}
+		if y1 >= paperH {
+			y1 = paperH - 2
+		}
+		if y2 < 0 {
+			y2 = 0
+		}
+		if y2 >= paperH {
+			y2 = paperH - 2
+		}
 
 		dc.DrawLine(x1, y1, x2, y2)
 		dc.Stroke()

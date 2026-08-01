@@ -17,7 +17,7 @@ describe('CanvasDimensionsPanel Component Tests', () => {
       </TooltipProvider>
     );
 
-    expect(screen.getByText('أبعاد مساحة العمل')).toBeInTheDocument();
+    expect(screen.getByText('مساحة العمل')).toBeInTheDocument();
   });
 
   it('swaps canvas dimensions when orientation toggle button is clicked', () => {

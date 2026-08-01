@@ -22,11 +22,11 @@ export function SectionHeading({ icon: Icon, eyebrow, title, subtitle, index }: 
           {index} —
         </span>
       )}
-      <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase mb-4">
+      <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-subtle bg-elevated text-xs font-bold text-secondary mb-4">
         <Icon className="w-3.5 h-3.5 text-white" aria-hidden />
         <span>{eyebrow}</span>
       </span>
-      <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white uppercase leading-tight">
+      <h2 className="stagger-2 text-3xl sm:text-4xl lg:text-5xl font-black font-display text-white leading-tight">
         {title}
       </h2>
       {subtitle && (

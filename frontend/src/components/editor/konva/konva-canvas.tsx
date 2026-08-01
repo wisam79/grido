@@ -116,10 +116,11 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     collageTemplate: s.collageTemplate,
     collageRadius: s.collageRadius,
     collageShowCutLines: s.collageShowCutLines,
+    collageShowEndCutLine: s.collageShowEndCutLine,
     collageStrokeWidth: s.collageStrokeWidth,
     collageStrokeColor: s.collageStrokeColor,
   })));
-  const { slots, collageGap, collageMargin, collageTemplate, collageRadius, collageShowCutLines, collageStrokeWidth, collageStrokeColor } = collage;
+  const { slots, collageGap, collageMargin, collageTemplate, collageRadius, collageShowCutLines, collageShowEndCutLine, collageStrokeWidth, collageStrokeColor } = collage;
 
   const trRef = useRef<any>(null);
   const elementsRefs = useRef<Record<string, any>>({});
@@ -258,6 +259,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
           collageStrokeWidth={collageStrokeWidth}
           collageStrokeColor={collageStrokeColor}
           collageShowCutLines={collageShowCutLines}
+          collageShowEndCutLine={collageShowEndCutLine}
           collageTemplate={collageTemplate}
           selectedId={selectedId}
           handleSlotClick={handleSlotClick}

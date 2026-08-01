@@ -89,7 +89,7 @@ export default function LandingPage() {
           }
         });
       },
-      { threshold: 0.12 }
+      { threshold: 0.2 }
     );
 
     const elements = document.querySelectorAll('.reveal-on-scroll');
@@ -109,10 +109,10 @@ export default function LandingPage() {
         تخطَّ إلى المحتوى
       </a>
 
-      {/* Top Scroll Progress Bar */}
+      {/* Top Scroll Progress Bar (grows from inline-start = right in RTL) */}
       <div className="fixed top-0 inset-x-0 h-0.5 bg-elevated/70 z-[60] pointer-events-none">
         <div
-          className="h-full bg-white transition-all duration-150 ease-out"
+          className="absolute top-0 start-0 h-full bg-white transition-all duration-150 ease-out"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
@@ -174,7 +174,7 @@ export default function LandingPage() {
           href={GITHUB_RELEASE_DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="magnetic-pill fixed bottom-6 left-6 z-50 flex items-center gap-2 px-6 py-3 rounded-full bg-white hover:bg-[#f0f0fa] text-black font-mono font-extrabold text-xs tracking-[1px] uppercase transition-all duration-300 hover:scale-105 active:scale-95 border border-white shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+          className="magnetic-pill fixed bottom-6 end-6 z-50 flex items-center gap-2 px-6 py-3 rounded-full bg-white hover:bg-[#f0f0fa] text-black font-extrabold text-xs transition-all duration-300 hover:scale-105 active:scale-95 border border-white shadow-[0_0_20px_rgba(255,255,255,0.3)]"
           aria-label="تحميل مباشر الآن"
         >
           <Download className="w-4 h-4 text-black shrink-0" />

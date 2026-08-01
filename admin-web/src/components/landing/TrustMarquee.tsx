@@ -2,18 +2,18 @@ import { WifiOff, Cpu, Droplets, ShieldCheck, Zap, Gauge, Monitor, FileCheck2 } 
 
 /**
  * شريط ثقة متحرك (Infinite Marquee) تحت الهيرو.
- * يعرض قدرات النظام الأساسية كعناصر قصيرة بخط monospace بأسلوب شريط الإحصائيات
- * التقني — يضيف حركة حيّة للصفحة دون تشتيت. يتوقف عند hover ويحترم reduced-motion.
+ * يعرض قدرات النظام الأساسية كعناصر قصيرة — يضيف حركة حيّة للصفحة دون تشتيت.
+ * يتوقف عند hover ويحترم reduced-motion.
  */
 const ITEMS = [
-  { icon: Zap, label: '3 SECONDS WORKFLOW' },
-  { icon: WifiOff, label: 'CORE 100% OFFLINE' },
-  { icon: Cpu, label: 'CODEFORMER + REAL-ESRGAN' },
-  { icon: Droplets, label: 'CMYK PRESS READY' },
-  { icon: ShieldCheck, label: 'K=100% PURE BLACK CUTS' },
-  { icon: Gauge, label: '300 DPI EXPORT' },
-  { icon: Monitor, label: 'WINDOWS 10 / 11' },
-  { icon: FileCheck2, label: 'TIFF + HIGH-JPEG' },
+  { icon: Zap, label: 'خطوة كاملة بـ 3 ثوانٍ' },
+  { icon: WifiOff, label: 'الأساسيات بدون إنترنت 100%' },
+  { icon: Cpu, label: 'ترميم CodeFormer + Real-ESRGAN' },
+  { icon: Droplets, label: 'جاهز لمطابع CMYK' },
+  { icon: ShieldCheck, label: 'قص بأسود خالص K=100%' },
+  { icon: Gauge, label: 'تصدير بدقة 300 DPI' },
+  { icon: Monitor, label: 'ويندوز 10 / 11' },
+  { icon: FileCheck2, label: 'TIFF + JPEG عالي الجودة' },
 ];
 
 function MarqueeRow({ ariaHidden = false }: { ariaHidden?: boolean }) {
@@ -22,9 +22,9 @@ function MarqueeRow({ ariaHidden = false }: { ariaHidden?: boolean }) {
       {ITEMS.map((item) => {
         const Icon = item.icon;
         return (
-          <span key={item.label} className="inline-flex items-center gap-2.5 text-[11px] font-mono font-bold text-tertiary tracking-[2px] uppercase whitespace-nowrap">
+          <span key={item.label} className="inline-flex items-center gap-2.5 text-[11px] font-bold text-tertiary whitespace-nowrap">
             <Icon className="w-3.5 h-3.5 text-white/70 shrink-0" aria-hidden />
-            <span dir="ltr">{item.label}</span>
+            <span>{item.label}</span>
           </span>
         );
       })}

@@ -62,11 +62,23 @@ function getGridCells(
   if (align === "top-left") {
     startX = marginX;
     startY = marginY;
+  } else if (align === "top-center") {
+    startX = (paperW - gridW) / 2;
+    startY = marginY;
   } else if (align === "top-right") {
     startX = paperW - marginX - gridW;
     startY = marginY;
+  } else if (align === "center-left") {
+    startX = marginX;
+    startY = (paperH - gridH) / 2;
+  } else if (align === "center-right") {
+    startX = paperW - marginX - gridW;
+    startY = (paperH - gridH) / 2;
   } else if (align === "bottom-left") {
     startX = marginX;
+    startY = paperH - marginY - gridH;
+  } else if (align === "bottom-center") {
+    startX = (paperW - gridW) / 2;
     startY = paperH - marginY - gridH;
   } else if (align === "bottom-right") {
     startX = paperW - marginX - gridW;
@@ -132,11 +144,23 @@ function getMixedCells(
   if (align === "top-left") {
     startX = marginX;
     startY = marginY;
+  } else if (align === "top-center") {
+    startX = (paperW - gridW) / 2;
+    startY = marginY;
   } else if (align === "top-right") {
     startX = paperW - marginX - gridW;
     startY = marginY;
+  } else if (align === "center-left") {
+    startX = marginX;
+    startY = (paperH - gridH) / 2;
+  } else if (align === "center-right") {
+    startX = paperW - marginX - gridW;
+    startY = (paperH - gridH) / 2;
   } else if (align === "bottom-left") {
     startX = marginX;
+    startY = paperH - marginY - gridH;
+  } else if (align === "bottom-center") {
+    startX = (paperW - gridW) / 2;
     startY = paperH - marginY - gridH;
   } else if (align === "bottom-right") {
     startX = paperW - marginX - gridW;

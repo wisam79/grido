@@ -31,6 +31,7 @@ interface KonvaCollageLayerProps {
   collageStrokeWidth: number;
   collageStrokeColor: string;
   collageShowCutLines: boolean;
+  collageShowEndCutLine?: boolean;
   collageTemplate?: any;
   selectedId: string | null;
   handleSlotClick?: (slotId: string) => void;
@@ -50,6 +51,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   collageStrokeWidth,
   collageStrokeColor,
   collageShowCutLines,
+  collageShowEndCutLine = true,
   collageTemplate,
   selectedId,
   handleSlotClick,
@@ -132,6 +134,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
         {/* خطوط قص أفقية مفردة ممتدة + خط نهاية منطقة الطباعة الكامل بعرض الورقة */}
         {yCutLines.map((y, idx) => {
           const isBottomEnd = idx === yCutLines.length - 1;
+          if (isBottomEnd && !collageShowEndCutLine) return null;
           const lineMinX = isBottomEnd ? 0 : minX;
           const lineMaxX = isBottomEnd ? canvasWidth : maxX;
 

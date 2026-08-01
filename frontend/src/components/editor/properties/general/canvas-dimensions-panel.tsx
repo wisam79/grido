@@ -185,7 +185,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           <div className="p-1 rounded-md bg-primary/10 text-primary">
             <RefreshCw className="w-3.5 h-3.5" />
           </div>
-          <span>أبعاد مساحة العمل</span>
+          <span>مساحة العمل</span>
         </Label>
         <span className="text-[10px] text-muted-foreground font-mono bg-muted/40 border border-border/20 px-2 py-0.5 rounded-md font-bold tracking-tight" dir="ltr">
           {canvasWidth} × {canvasHeight} px
@@ -194,14 +194,12 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
       <div className="space-y-3 animate-in fade-in duration-200">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-muted-foreground/80 font-bold">وحدة القياس</span>
-
-          <div className="flex rounded-lg bg-muted/60 dark:bg-muted/30 p-0.5 border border-border/30">
+          <div className="flex rounded-lg bg-muted/60 dark:bg-muted/30 p-0.5 border border-border/30 w-full">
             <button
               type="button"
               onClick={() => setUnit("px")}
               className={cn(
-                "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
+                "flex-1 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer text-center",
                 unit === "px"
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -213,7 +211,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => setUnit("mm")}
               className={cn(
-                "px-3 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer",
+                "flex-1 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer text-center",
                 unit === "mm"
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -226,7 +224,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
         {/* الحجم القياسي (Visual Grid Cards) */}
         <div className="space-y-1.5">
-          <Label className="text-[11px] text-muted-foreground/80 font-bold pr-0.5">الحجم القياسي</Label>
           <div className="grid grid-cols-3 gap-2 text-xs" dir="rtl">
             {/* A4 Button */}
             <button
@@ -241,7 +238,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             >
               <PresetMiniature id="a4" active={activePresetId === "a4"} />
               <span className="text-[11px] font-bold">A4</span>
-              <span className="text-[8.5px] text-muted-foreground/80 font-medium">٢١٠×٢٩٧ مم</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-mono font-medium" dir="ltr">210 × 297 mm</span>
             </button>
 
             {/* 4x6 Photo Button */}
@@ -257,7 +254,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             >
               <PresetMiniature id="4x6" active={activePresetId === "4x6"} />
               <span className="text-[11px] font-bold">4×6 بوصة</span>
-              <span className="text-[8.5px] text-muted-foreground/80 font-medium">١٠×١٥ سم</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-mono font-medium" dir="ltr">10 × 15 cm</span>
             </button>
 
             {/* A5 Button */}
@@ -273,7 +270,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             >
               <PresetMiniature id="a5" active={activePresetId === "a5"} />
               <span className="text-[11px] font-bold">A5</span>
-              <span className="text-[8.5px] text-muted-foreground/80 font-medium">١٤٨×٢١٠ مم</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-mono font-medium" dir="ltr">148 × 210 mm</span>
             </button>
 
             {/* A3 Button */}
@@ -289,7 +286,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             >
               <PresetMiniature id="a3" active={activePresetId === "a3"} />
               <span className="text-[11px] font-bold">A3</span>
-              <span className="text-[8.5px] text-muted-foreground/80 font-medium">٢٩٧×٤٢٠ مم</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-mono font-medium" dir="ltr">297 × 420 mm</span>
             </button>
 
             {/* 5x7 Photo Button */}
@@ -305,7 +302,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             >
               <PresetMiniature id="5x7" active={activePresetId === "5x7"} />
               <span className="text-[11px] font-bold">5×7 بوصة</span>
-              <span className="text-[8.5px] text-muted-foreground/80 font-medium">١٢×١٧ سم</span>
+              <span className="text-[8.5px] text-muted-foreground/80 font-mono font-medium" dir="ltr">12 × 17 cm</span>
             </button>
 
             {/* Dropdown for other sizes */}

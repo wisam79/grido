@@ -125,6 +125,7 @@ export interface HistoryEntry {
   collageMargin?: number;
   collageRadius?: number;
   collageShowCutLines?: boolean;
+  collageShowEndCutLine?: boolean;
   collageStrokeWidth?: number;
   collageStrokeColor?: string;
   // حالة الصورة المحررة الأخيرة — تُستعاد مع التراجع لمنع "شبح" صورة قديمة
@@ -141,6 +142,7 @@ export interface PrintSettings {
   dpi: number;
   copiesPerSheet: number;
   showCutLines: boolean;
+  showEndCutLine?: boolean;
   orientation: "portrait" | "landscape";
   fitToPage?: boolean;
   repeatMode?: "all" | "row" | "column";

@@ -27,7 +27,7 @@ interface CropDialogProps {
   onOpenChange: (open: boolean) => void;
   imageSrc: string;
   originalImageSrc?: string;
-  onCropSave: (croppedBase64: string) => void;
+  onCropSave: (croppedBase64: string, dims?: { width: number; height: number }) => void;
 }
 
 export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onCropSave }: CropDialogProps) {
@@ -77,7 +77,10 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
         imageSmoothingQuality: "high",
       });
       if (croppedCanvas && croppedCanvas.width > 0 && croppedCanvas.height > 0) {
-        onCropSave(croppedCanvas.toDataURL());
+        onCropSave(croppedCanvas.toDataURL(), {
+          width: croppedCanvas.width,
+          height: croppedCanvas.height,
+        });
         onOpenChange(false);
       } else {
         toast.error("حدد منطقة قص صالحة");

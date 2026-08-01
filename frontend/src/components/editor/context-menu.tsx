@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState, Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
@@ -14,13 +14,16 @@ import {
   Rows,
   Columns,
   LayoutGrid,
-  Loader2
+  Loader2,
+  Scissors
 } from "lucide-react";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
 import type { ImageElement, CanvasSlot, CanvasElement } from "@/lib/store/types";
+
+const CropDialog = lazy(() => import("./crop-dialog").then((m) => ({ default: m.CropDialog })));
 
 export interface ContextMenuPosition {
   x: number;
@@ -77,6 +80,12 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
 
   const { isRemovingBg, handleRemoveBg } = useBgRemoval(target.type === "slot" ? onUpdateSlot : onUpdateElement);
   const { isEnhancing, handleEnhance, remainingQuota } = useAiEnhance(target.type === "slot" ? onUpdateSlot : onUpdateElement);
+
+  const [cropTarget, setCropTarget] = useState<{
+    imageSrc: string;
+    originalImageSrc?: string;
+    onSave: (croppedB64: string, dims?: { width: number; height: number }) => void;
+  } | null>(null);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -186,7 +195,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
   left = Math.max(minLeft, Math.min(left, maxRight - size.w));
   top = Math.max(minTop, Math.min(top, maxBottom - size.h));
 
-  return createPortal(
+  const portal = createPortal(
     <div
       ref={menuRef}
       role="menu"
@@ -215,6 +224,67 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                   معالجة الصور
                 </div>
                 <div className="space-y-0.5">
+                  <button
+                    role="menuitem"
+                    tabIndex={-1}
+                    className="group w-full text-right px-2.5 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    onClick={() => {
+                      setCropTarget({
+                        imageSrc: imgEl.imageSrc,
+                        originalImageSrc: imgEl.originalImageSrc,
+                        onSave: async (croppedB64, dims) => {
+                          try {
+                            const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+                            let finalPath = croppedB64;
+                            if (isWailsDesktop && croppedB64.startsWith("data:image/")) {
+                              try {
+                                const localPath = await SaveImageFromBase64(croppedB64);
+                                if (localPath) finalPath = localPath;
+                              } catch (e) {
+                                console.error("Failed to save cropped image locally:", e);
+                              }
+                            }
+
+                            const img = new Image();
+                            img.onload = () => {
+                              const w = dims?.width || img.width;
+                              const h = dims?.height || img.height;
+                              const croppedAspect = w / h;
+                              const state = useEditorStore.getState();
+                              const canvasRatio = state.canvasWidth / state.canvasHeight;
+                              const newHeight = (imgEl.width * canvasRatio) / croppedAspect;
+
+                              updateElement(imgEl.id, {
+                                imageSrc: finalPath,
+                                height: newHeight,
+                                originalImageSrc: imgEl.originalImageSrc || imgEl.imageSrc,
+                              });
+
+                              state.setLastEditedImage(finalPath);
+                              state.setLastEditedImageAspect(croppedAspect);
+                              state.pushHistory();
+                            };
+                            img.onerror = () => {
+                              updateElement(imgEl.id, {
+                                imageSrc: finalPath,
+                                originalImageSrc: imgEl.originalImageSrc || imgEl.imageSrc,
+                              });
+                              pushHistory();
+                            };
+                            img.src = croppedB64;
+                          } catch (err) {
+                            console.error("Failed to crop image in context menu:", err);
+                          }
+                        }
+                      });
+                    }}
+                  >
+                    <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                      <Scissors className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-emerald-500 transition-colors">قص وتدوير الصورة</span>
+                  </button>
+
                   <button
                     role="menuitem"
                     tabIndex={-1}
@@ -375,6 +445,49 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                   <button
                     role="menuitem"
                     tabIndex={-1}
+                    className="group w-full text-right px-2.5 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    onClick={() => {
+                      if (!slot.imageSrc) return;
+                      setCropTarget({
+                        imageSrc: slot.imageSrc,
+                        originalImageSrc: slot.originalImageSrc,
+                        onSave: async (croppedB64) => {
+                          try {
+                            const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+                            let finalPath = croppedB64;
+                            if (isWailsDesktop && croppedB64.startsWith("data:image/")) {
+                              try {
+                                const localPath = await SaveImageFromBase64(croppedB64);
+                                if (localPath) finalPath = localPath;
+                              } catch (e) {
+                                console.error("Failed to save cropped slot image:", e);
+                              }
+                            }
+
+                            updateSlot(slot.id, {
+                              imageSrc: finalPath,
+                              dragX: 0,
+                              dragY: 0,
+                              zoom: 1,
+                              originalImageSrc: slot.originalImageSrc || slot.imageSrc,
+                            });
+                            pushHistory();
+                          } catch (err) {
+                            console.error("Failed to save cropped slot image:", err);
+                          }
+                        }
+                      });
+                    }}
+                  >
+                    <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                      <Scissors className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-emerald-500 transition-colors">قص وتدوير الصورة</span>
+                  </button>
+
+                  <button
+                    role="menuitem"
+                    tabIndex={-1}
                     disabled={isRemovingBg}
                     className="group w-full text-right px-2.5 py-1.5 hover:bg-purple-500/10 hover:text-purple-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none disabled:opacity-50"
                     onClick={() => {
@@ -476,5 +589,31 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
 
     </div>,
     document.body
+  );
+
+  return (
+    <>
+      {!cropTarget && portal}
+      {cropTarget && (
+        <Suspense fallback={null}>
+          <CropDialog
+            open={!!cropTarget}
+            onOpenChange={(op) => {
+              if (!op) {
+                setCropTarget(null);
+                onClose();
+              }
+            }}
+            imageSrc={cropTarget.imageSrc}
+            originalImageSrc={cropTarget.originalImageSrc}
+            onCropSave={(croppedB64, dims) => {
+              cropTarget.onSave(croppedB64, dims);
+              setCropTarget(null);
+              onClose();
+            }}
+          />
+        </Suspense>
+      )}
+    </>
   );
 }

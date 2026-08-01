@@ -3,9 +3,65 @@ import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-import { LayoutGrid, Plus, Minus, FolderHeart, X, Save, ArrowUpRight, ArrowUpLeft, ArrowDownRight, ArrowDownLeft, Crosshair, Columns, Rows } from "lucide-react";
+import { LayoutGrid, Plus, Minus, FolderHeart, X, Save, ArrowUpRight, ArrowUpLeft, ArrowDownRight, ArrowDownLeft, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Crosshair, Columns, Rows, Maximize2 } from "lucide-react";
 import { CollageTemplate, PAPER_SIZES } from "@/lib/templates";
 import { PhotoTypeMiniature } from "./photo-type-miniature";
+
+function DocumentPresetGraphic({ type, active }: { type: string; active: boolean }) {
+  const activeBorder = active ? "border-primary/80 bg-primary/20" : "border-muted-foreground/40 bg-muted/30";
+  const activeIcon = active ? "text-primary" : "text-muted-foreground/60";
+
+  if (type === "stretch") {
+    return (
+      <div className={cn("w-4 h-4 rounded-[2px] border border-dashed flex items-center justify-center transition-all", activeBorder)}>
+        <Maximize2 className={cn("w-2.5 h-2.5", activeIcon)} />
+      </div>
+    );
+  }
+
+  if (type === "visa") {
+    return (
+      <div className={cn("w-4 h-4 rounded-[3px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
+        <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
+        <div className={cn("w-2.5 h-1 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
+      </div>
+    );
+  }
+
+  if (type === "iq-national-id") {
+    return (
+      <div className={cn("w-3.5 h-4.5 rounded-[2px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
+        <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
+        <div className={cn("w-2.5 h-1.5 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
+      </div>
+    );
+  }
+
+  if (type === "iq-civil-id") {
+    return (
+      <div className={cn("w-3.5 h-4 rounded-[2px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
+        <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
+        <div className={cn("w-2 h-1 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
+      </div>
+    );
+  }
+
+  if (type === "iq-general-id") {
+    return (
+      <div className={cn("w-3 h-5 rounded-[2px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
+        <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
+        <div className={cn("w-2 h-1.5 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("w-3.5 h-4 rounded-[2px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
+      <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
+      <div className={cn("w-2 h-1 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
+    </div>
+  );
+}
 
 const CustomCollageCard = React.memo(function CustomCollageCard({
   onSelect,
@@ -380,15 +436,15 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         )}
       </div>
 
-      {/* Large Steppers: Rows & Cols side by side */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Steppers: Rows & Cols side by side */}
+      <div className="grid grid-cols-2 gap-2.5">
         {/* Rows */}
-        <div className="flex flex-col items-center gap-2 bg-muted/20 border border-border/40 hover:border-primary/20 rounded-2xl p-3.5 transition-colors">
+        <div className="flex flex-col items-center gap-1.5 bg-card border border-border/60 hover:border-primary/30 rounded-xl p-3 transition-colors shadow-2xs">
           <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground select-none">
-            <Rows className="w-3.5 h-3.5" />
+            <Rows className="w-3.5 h-3.5 text-primary/80" />
             الصفوف
           </span>
-          <div className="flex items-center justify-between w-full gap-2" dir="ltr">
+          <div className="flex items-center justify-between w-full gap-1" dir="ltr">
             <button
               type="button"
               disabled={rows <= 1}
@@ -397,11 +453,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 setRows(r);
                 applyCustomCollage(r, cols);
               }}
-              className="w-8 h-8 rounded-lg bg-background dark:bg-card hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/30 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground disabled:active:scale-100"
+              className="w-9 h-9 rounded-lg bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             >
-              <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Minus className="w-4 h-4 stroke-[2.5]" />
             </button>
-            <span className="font-mono text-2xl font-black text-foreground w-8 text-center leading-none select-none">{rows}</span>
+            <span className="font-mono text-xl font-black text-foreground w-8 text-center leading-none select-none">{rows}</span>
             <button
               type="button"
               disabled={rows >= maxRows}
@@ -410,20 +466,20 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 setRows(r);
                 applyCustomCollage(r, cols);
               }}
-              className="w-8 h-8 rounded-lg bg-background dark:bg-card hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/30 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground disabled:active:scale-100"
+              className="w-9 h-9 rounded-lg bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
         </div>
 
         {/* Columns */}
-        <div className="flex flex-col items-center gap-2 bg-muted/20 border border-border/40 hover:border-primary/20 rounded-2xl p-3.5 transition-colors">
+        <div className="flex flex-col items-center gap-1.5 bg-card border border-border/60 hover:border-primary/30 rounded-xl p-3 transition-colors shadow-2xs">
           <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground select-none">
-            <Columns className="w-3.5 h-3.5" />
+            <Columns className="w-3.5 h-3.5 text-primary/80" />
             الأعمدة
           </span>
-          <div className="flex items-center justify-between w-full gap-2" dir="ltr">
+          <div className="flex items-center justify-between w-full gap-1" dir="ltr">
             <button
               type="button"
               disabled={cols <= 1}
@@ -432,11 +488,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 setCols(c);
                 applyCustomCollage(rows, c);
               }}
-              className="w-8 h-8 rounded-lg bg-background dark:bg-card hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/30 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground disabled:active:scale-100"
+              className="w-9 h-9 rounded-lg bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             >
-              <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Minus className="w-4 h-4 stroke-[2.5]" />
             </button>
-            <span className="font-mono text-2xl font-black text-foreground w-8 text-center leading-none select-none">{cols}</span>
+            <span className="font-mono text-xl font-black text-foreground w-8 text-center leading-none select-none">{cols}</span>
             <button
               type="button"
               disabled={cols >= maxCols}
@@ -445,18 +501,18 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 setCols(c);
                 applyCustomCollage(rows, c);
               }}
-              className="w-8 h-8 rounded-lg bg-background dark:bg-card hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/30 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground disabled:active:scale-100"
+              className="w-9 h-9 rounded-lg bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Photo Type Quick Selector */}
-      <div className="flex flex-col gap-2">
-        <span className="text-[10px] font-bold text-muted-foreground">أبعاد ونوع الصورة للوثائق</span>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[10px] font-extrabold text-muted-foreground/80">أبعاد ونوع الصورة للوثائق</span>
+        <div className="grid grid-cols-2 gap-1.5">
           {([
             { value: "stretch",        label: "تمدد حر",      sub: "ملء الخلية" },
             { value: "iq-national-id",  label: "بطاقة وطنية",  sub: "35×45 ملم" },
@@ -464,172 +520,119 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             { value: "iq-general-id",   label: "هوية عامة",    sub: "40×60 ملم" },
             { value: "iq-transactions", label: "متقاعدون",     sub: "30×40 ملم" },
             { value: "visa",            label: "فيزا سفر",     sub: "50×50 ملم" },
-          ] as const).map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => {
-                setPhotoType(opt.value);
-                applyCustomCollage(rows, cols, opt.value);
-              }}
-              className={cn(
-                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer active:scale-[0.97] select-none h-20 bg-card",
-                photoType === opt.value
-                  ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                  : "border-border hover:bg-muted/20 text-foreground"
-              )}
-            >
-              <PhotoTypeMiniature type={opt.value} active={photoType === opt.value} />
-              <span className="text-[11px] font-bold leading-none mt-1">{opt.label}</span>
-              <span className={cn("text-[8.5px] font-mono leading-none mt-1", photoType === opt.value ? "text-primary/80" : "text-muted-foreground/60")}>{opt.sub}</span>
-            </button>
-          ))}
+          ] as const).map((opt) => {
+            const isActive = photoType === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  setPhotoType(opt.value);
+                  applyCustomCollage(rows, cols, opt.value);
+                }}
+                className={cn(
+                  "relative flex items-center gap-2 p-2 px-2.5 rounded-xl border text-right transition-all cursor-pointer active:scale-[0.97] select-none h-[52px]",
+                  isActive
+                    ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-extrabold ring-1 ring-primary/30"
+                    : "bg-card border-border/60 hover:bg-muted/30 text-foreground"
+                )}
+              >
+                {/* Visual Document Miniature Icon */}
+                <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg bg-muted/40 border border-border/40">
+                  <DocumentPresetGraphic type={opt.value} active={isActive} />
+                </div>
+
+                <div className="flex flex-col items-start min-w-0 flex-1">
+                  <span className="text-[11px] font-bold leading-tight truncate w-full">{opt.label}</span>
+                  <span className={cn("text-[8.5px] font-mono leading-none mt-0.5", isActive ? "text-primary/90 font-bold" : "text-muted-foreground/60")}>{opt.sub}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Grid Alignment Quick Selector */}
       {photoType !== "stretch" && (
-        <div className="flex flex-col gap-2 mt-1">
+        <div className="flex flex-col gap-1.5 mt-0.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-muted-foreground">محاذاة شبكة الخلايا على الورقة</span>
-            <span className="text-[9px] font-medium text-primary/80">
+            <span className="text-[10px] font-extrabold text-muted-foreground/80">محاذاة شبكة الخلايا</span>
+            <span className="text-[9px] font-bold text-primary/90">
               {[
-                { value: "center",       label: "توسيط المنتصف" },
-                { value: "top-right",    label: "أعلى اليمين" },
+                { value: "center",       label: "توسيط" },
                 { value: "top-left",     label: "أعلى اليسار" },
-                { value: "bottom-right", label: "أسفل اليمين" },
+                { value: "top-center",   label: "أعلى الوسط" },
+                { value: "top-right",    label: "أعلى اليمين" },
+                { value: "center-left",  label: "منتصف اليسار" },
+                { value: "center-right", label: "منتصف اليمين" },
                 { value: "bottom-left",  label: "أسفل اليسار" },
-              ].find(o => o.value === gridAlign)?.label}
+                { value: "bottom-center",label: "أسفل الوسط" },
+                { value: "bottom-right", label: "أسفل اليمين" },
+              ].find(o => o.value === gridAlign)?.label || "توسيط"}
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 p-2.5 bg-muted/20 border border-border/30 rounded-2xl w-full" style={{ direction: "ltr" }}>
-            {/* Top-Left */}
-            <button
-              type="button"
-              onClick={() => {
-                setGridAlign("top-left");
-                applyCustomCollage(rows, cols, photoType, "top-left");
-              }}
-              title="أعلى اليسار"
-              className={cn(
-                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
-                gridAlign === "top-left"
-                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <ArrowUpLeft className="w-4.5 h-4.5" />
-            </button>
-
-            {/* Top-Center Spacer */}
-            <div className="h-11 flex items-center justify-center opacity-20 pointer-events-none">
-              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-            </div>
-
-            {/* Top-Right */}
-            <button
-              type="button"
-              onClick={() => {
-                setGridAlign("top-right");
-                applyCustomCollage(rows, cols, photoType, "top-right");
-              }}
-              title="أعلى اليمين"
-              className={cn(
-                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
-                gridAlign === "top-right"
-                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <ArrowUpRight className="w-4.5 h-4.5" />
-            </button>
-
-            {/* Middle-Left Spacer */}
-            <div className="h-11 flex items-center justify-center opacity-20 pointer-events-none">
-              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-            </div>
-
-            {/* Center */}
-            <button
-              type="button"
-              onClick={() => {
-                setGridAlign("center");
-                applyCustomCollage(rows, cols, photoType, "center");
-              }}
-              title="توسيط المنتصف"
-              className={cn(
-                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
-                gridAlign === "center"
-                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Crosshair className="w-4.5 h-4.5" />
-            </button>
-
-            {/* Middle-Right Spacer */}
-            <div className="h-11 flex items-center justify-center opacity-20 pointer-events-none">
-              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-            </div>
-
-            {/* Bottom-Left */}
-            <button
-              type="button"
-              onClick={() => {
-                setGridAlign("bottom-left");
-                applyCustomCollage(rows, cols, photoType, "bottom-left");
-              }}
-              title="أسفل اليسار"
-              className={cn(
-                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
-                gridAlign === "bottom-left"
-                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <ArrowDownLeft className="w-4.5 h-4.5" />
-            </button>
-
-            {/* Bottom-Center Spacer */}
-            <div className="h-11 flex items-center justify-center opacity-20 pointer-events-none">
-              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-            </div>
-
-            {/* Bottom-Right */}
-            <button
-              type="button"
-              onClick={() => {
-                setGridAlign("bottom-right");
-                applyCustomCollage(rows, cols, photoType, "bottom-right");
-              }}
-              title="أسفل اليمين"
-              className={cn(
-                "h-11 rounded-xl border flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs",
-                gridAlign === "bottom-right"
-                  ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/20"
-                  : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <ArrowDownRight className="w-4.5 h-4.5" />
-            </button>
+          <div
+            className="grid gap-[3px] p-2.5 bg-card border border-border/60 rounded-xl w-full h-[130px]"
+            style={{
+              direction: "ltr",
+              gridTemplateColumns: "3fr 4fr 3fr",
+              gridTemplateRows: "3fr 4fr 3fr",
+            }}
+          >
+            {[
+              { id: "top-left",      icon: ArrowUpLeft,    label: "أعلى اليسار" },
+              { id: "top-center",    icon: ArrowUp,        label: "أعلى الوسط" },
+              { id: "top-right",     icon: ArrowUpRight,   label: "أعلى اليمين" },
+              { id: "center-left",   icon: ArrowLeft,      label: "منتصف اليسار" },
+              { id: "center",        icon: Crosshair,      label: "توسيط" },
+              { id: "center-right",  icon: ArrowRight,     label: "منتصف اليمين" },
+              { id: "bottom-left",   icon: ArrowDownLeft,  label: "أسفل اليسار" },
+              { id: "bottom-center", icon: ArrowDown,      label: "أسفل الوسط" },
+              { id: "bottom-right",  icon: ArrowDownRight, label: "أسفل اليمين" },
+            ].map(({ id, icon: Icon, label }) => {
+              const isCenter = id === "center";
+              const isActive = gridAlign === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    setGridAlign(id as any);
+                    applyCustomCollage(rows, cols, photoType, id as any);
+                  }}
+                  title={label}
+                  className={cn(
+                    "w-full h-full rounded-md flex items-center justify-center transition-all cursor-pointer active:scale-90",
+                    isCenter && "rounded-lg",
+                    isActive  && "bg-primary text-primary-foreground shadow-md shadow-primary/25 ring-1 ring-primary/50",
+                    !isActive && "bg-card/80 text-muted-foreground border border-border/40 hover:bg-muted/50 hover:text-foreground hover:border-primary/30",
+                  )}
+                >
+                  <Icon className={cn(
+                    "shrink-0",
+                    isCenter ? "w-5 h-5 stroke-[2.5]" : "w-3.5 h-3.5"
+                  )} />
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* Action Buttons */}
       {!showSaveForm ? (
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-1">
           <button
             onClick={() => applyCustomCollage(rows, cols)}
             className={cn(
-              "flex-1 h-11 text-xs font-bold rounded-xl transition-all border active:scale-[0.97] cursor-pointer flex items-center justify-center gap-1.5 shadow-xs",
+              "flex-1 h-9 text-xs font-extrabold rounded-xl transition-all border active:scale-[0.97] cursor-pointer flex items-center justify-center gap-1.5 shadow-xs",
               isCurrentActive
                 ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-primary/20"
                 : "bg-primary/5 hover:bg-primary text-primary hover:text-primary-foreground border-primary/30 hover:border-primary"
             )}
           >
-            <LayoutGrid className="w-4 h-4" />
+            <LayoutGrid className="w-3.5 h-3.5" />
             {isCurrentActive ? "تخصيص نشط" : "تطبيق التقسيم"}
           </button>
           <button
@@ -638,10 +641,10 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               setSaveName(`كولاج مخصص ${rows}×${cols}`);
               setShowSaveForm(true);
             }}
-            className="w-11 h-11 text-xs font-bold rounded-xl border border-border/60 bg-background hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-800/50 text-muted-foreground hover:text-rose-500 cursor-pointer flex items-center justify-center active:scale-[0.97] transition-all shadow-xs"
+            className="w-9 h-9 text-xs font-bold rounded-xl border border-border/60 bg-background hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-800/50 text-muted-foreground hover:text-rose-500 cursor-pointer flex items-center justify-center active:scale-[0.97] transition-all shadow-xs shrink-0"
             title="حفظ كقالب جديد"
           >
-            <FolderHeart className="w-5 h-5" />
+            <FolderHeart className="w-4 h-4" />
           </button>
         </div>
       ) : (

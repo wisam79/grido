@@ -27,7 +27,7 @@ function AnimatedCounter({ end, suffix = '', isFloat = false }: { end: number, s
       (entries) => {
         if (entries[0].isIntersecting) {
           let start = 0;
-          const duration = 1800; // Fast count up
+          const duration = 800; // Count up (kept short to limit rAF work)
           const startTime = performance.now();
 
           const animate = (currentTime: number) => {
@@ -64,37 +64,34 @@ export function HeroSection() {
   const version = useAppVersion();
 
   return (
-    <section id="top" className="relative pt-6 pb-14 sm:pt-10 sm:pb-20 lg:pt-12 lg:pb-24 overflow-hidden">
+    <section id="top" className="relative pt-6 pb-20 sm:pt-10 sm:pb-28 lg:pt-12 lg:pb-36 overflow-hidden">
       {/* Decorative Vector SVG Blueprint Grid */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20 sm:opacity-25" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="hero-grid" width="36" height="36" patternUnits="userSpaceOnUse">
             <path d="M 36 0 L 0 0 0 36" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-            <circle cx="36" cy="36" r="1" fill="rgba(59,130,246,0.3)" />
+            <circle cx="36" cy="36" r="1" fill="rgba(255,255,255,0.15)" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#hero-grid)" />
       </svg>
 
-      {/* Desktop Blue Glow (Hidden on Mobile to Prevent Overflow) */}
+      {/* Desktop White Glow (Hidden on Mobile to Prevent Overflow) */}
       <div
         aria-hidden
-        className="hidden sm:block pointer-events-none absolute top-10 right-0 w-[500px] h-[450px] bg-gradient-to-l from-brand-600/15 via-blue-600/10 to-transparent rounded-full blur-[120px] opacity-50"
+        className="hidden sm:block pointer-events-none absolute top-10 right-0 w-[500px] h-[450px] bg-gradient-to-l from-white/10 via-white/5 to-transparent rounded-full blur-[80px] opacity-50"
       />
       {/* Mobile Subtle Center Glow */}
       <div
         aria-hidden
-        className="sm:hidden pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[200px] h-[200px] bg-brand-500/10 rounded-full blur-[60px]"
+        className="sm:hidden pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[200px] h-[200px] bg-white/10 rounded-full blur-[40px]"
       />
 
-      {/* جسيمات عائمة (Particles) فوق طبقة الشبكة */}
+      {/* جسيمات عائمة (Particles) فوق طبقة الشبكة — عدد أقل وحركة أبطأ لتخفيف الحمل */}
       <div aria-hidden className="pointer-events-none absolute inset-0 z-0 hidden sm:block">
-        <span className="particle w-1 h-1 top-[18%] right-[12%]" style={{ ['--dur' as string]: '8s' }} />
-        <span className="particle w-1.5 h-1.5 top-[30%] right-[45%]" style={{ ['--dur' as string]: '11s', ['--delay' as string]: '1.2s', ['--drift-y' as string]: '-26px' }} />
-        <span className="particle w-1 h-1 top-[60%] right-[70%]" style={{ ['--dur' as string]: '9s', ['--delay' as string]: '0.6s', ['--drift-x' as string]: '-16px' }} />
-        <span className="particle w-1 h-1 top-[75%] right-[20%]" style={{ ['--dur' as string]: '7s', ['--delay' as string]: '2s' }} />
-        <span className="particle w-1.5 h-1.5 top-[12%] right-[80%]" style={{ ['--dur' as string]: '12s', ['--delay' as string]: '0.4s' }} />
-        <span className="particle w-1 h-1 top-[50%] right-[92%]" style={{ ['--dur' as string]: '10s', ['--delay' as string]: '1.6s' }} />
+        <span className="particle w-1 h-1 top-[30%] right-[45%]" style={{ ['--dur' as string]: '14s', ['--delay' as string]: '1.2s', ['--drift-y' as string]: '-26px' }} />
+        <span className="particle w-1 h-1 top-[60%] right-[70%]" style={{ ['--dur' as string]: '12s', ['--delay' as string]: '0.6s', ['--drift-x' as string]: '-16px' }} />
+        <span className="particle w-1.5 h-1.5 top-[12%] right-[80%]" style={{ ['--dur' as string]: '16s', ['--delay' as string]: '0.4s' }} />
       </div>
 
       {/* خطوط قياس SVG زخرفية (crosshair marks بأسلوب مخطط هندسي) */}
@@ -119,21 +116,21 @@ export function HeroSection() {
             {/* Version Badge */}
             {/* Version Eyebrow */}
             <div className="stagger-1">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-subtle bg-elevated text-xs font-mono font-bold text-secondary tracking-[2px] uppercase">
-                <span className="text-white font-extrabold">VERSION {version ?? '…'}</span>
-                <span className="text-tertiary">| MISSION READY</span>
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-subtle bg-elevated text-xs font-bold text-secondary">
+                <span className="text-white font-extrabold">الإصدار {version ?? '…'}</span>
+                <span className="text-tertiary">| جاهز للمهمة</span>
               </span>
             </div>
 
             {/* Headline — كتلة بصرية درامية فوق عمود ضوئي طبقي */}
-            <h1 className="stagger-2 title-depth relative text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-black leading-tight sm:leading-[1.12] font-display uppercase text-white">
+            <h1 className="stagger-2 title-depth relative text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-black leading-tight sm:leading-[1.12] font-display text-white">
               <span
                 aria-hidden
-                className="pointer-events-none absolute -top-10 right-[-15%] w-[420px] h-[340px] rounded-full opacity-60 blur-[100px] bg-gradient-to-l from-white/12 via-brand-600/20 to-transparent"
+                className="pointer-events-none absolute -top-10 right-[-15%] w-[420px] h-[340px] rounded-full opacity-60 blur-[60px] bg-gradient-to-l from-white/10 via-white/5 to-transparent"
               />
               <span className="relative block">تنسيق صور المعاملات</span>
               <span className="relative mt-2 block text-secondary">
-                في <span className="font-mono tracking-tight text-white inline-block animate-[float_3.2s_ease-in-out_infinite_alternate]">3</span> ثوانٍ فقط
+                في <span className="font-mono tracking-tight text-white inline-block animate-[float_5s_ease-in-out_infinite_alternate]">3</span> ثوانٍ فقط
               </span>
             </h1>
 
@@ -153,8 +150,8 @@ export function HeroSection() {
                   e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
                   e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
                 }}
-                className="group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white text-black px-8 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] border border-white transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 cursor-pointer"
-                aria-label="تحميل ملف التثبيت (Setup)"
+                className="group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white text-black px-8 py-4 rounded-full font-extrabold text-xs border border-white transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 cursor-pointer"
+                aria-label="تحميل ملف التثبيت (.EXE)"
               >
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: 'radial-gradient(120px circle at var(--mouse-x) var(--mouse-y), rgba(0,0,0,0.08), transparent 100%)' }} />
                 <Download className="w-4 h-4 text-black shrink-0 relative z-10 transition-transform duration-300 group-hover:-translate-y-0.5" />
@@ -169,17 +166,17 @@ export function HeroSection() {
                   e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
                   e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
                 }}
-                className="group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-[rgba(240,240,250,0.1)] border border-[#555555] text-secondary px-6 py-4 rounded-full font-extrabold text-xs uppercase tracking-[1px] transition-all duration-300 hover:scale-[1.03] hover:border-white active:scale-95 cursor-pointer"
-                aria-label="نسخة محمولة (Portable)"
+                className="group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-[rgba(240,240,250,0.1)] border border-[#555555] text-secondary px-6 py-4 rounded-full font-extrabold text-xs transition-all duration-300 hover:scale-[1.03] hover:border-white active:scale-95 cursor-pointer"
+                aria-label="تحميل النسخة المحمولة"
               >
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: 'radial-gradient(120px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.1), transparent 100%)' }} />
                 <Download className="w-4 h-4 text-secondary shrink-0 relative z-10 group-hover:text-white transition-all duration-300 group-hover:-translate-y-0.5" />
-                <span className="relative z-10 group-hover:text-white transition-colors duration-300">نسخة محمولة (PORTABLE)</span>
+                <span className="relative z-10 group-hover:text-white transition-colors duration-300">النسخة المحمولة</span>
               </a>
             </div>
 
             {/* Trust Tags */}
-            <div className="stagger-4 flex flex-wrap items-center justify-start gap-4 text-xs text-tertiary font-mono tracking-[1px] uppercase pt-2">
+            <div className="stagger-4 flex flex-wrap items-center justify-start gap-4 text-xs text-tertiary font-bold pt-2">
               {TRUST_TAGS.map((tag) => {
                 const Icon = tag.icon;
                 return (
@@ -204,35 +201,35 @@ export function HeroSection() {
               <div className="flex items-center justify-between text-xs border-b border-subtle pb-2.5">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-white" />
-                  <span className="font-mono text-[10px] text-white font-bold tracking-[1.5px] uppercase">Grido Studio Mobile</span>
+                  <span className="text-[10px] text-white font-bold">Grido Studio — نسخة الجوال</span>
                 </div>
-                <span className="text-[10px] font-mono text-white bg-elevated/70 px-2 py-0.5 border border-subtle font-bold uppercase tracking-[1px]">
-                  <AnimatedCounter end={3} suffix=" SECONDS" />
+                <span className="text-[10px] text-white bg-elevated/70 px-2 py-0.5 border border-subtle font-bold">
+                  <AnimatedCounter end={3} suffix=" ثوانٍ" />
                 </span>
               </div>
 
               {/* Passport Grid Sample Card */}
               <div className="bg-secondary p-3 rounded-none border border-subtle space-y-2">
-                <div className="flex items-center justify-between text-[10px] text-tertiary font-mono uppercase tracking-[1px]">
-                  <span>A4 Paper Sheet</span>
-                  <span className="text-white font-bold">6 PHOTOS (40×32mm)</span>
+                <div className="flex items-center justify-between text-[10px] text-tertiary font-bold">
+                  <span>ورقة A4</span>
+                  <span className="text-white font-bold">6 صور (40×32 ملم)</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[1, 2, 3, 4, 5, 6].map((n) => (
                     <div key={n} className="aspect-[3/4] bg-white rounded-none overflow-hidden border border-neutral-300 relative shadow-sm">
                       <img src="/sample-passport.png" alt="Passport Sample" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                      <div className="absolute bottom-0 inset-x-0 bg-black/90 text-[7px] font-mono text-center text-white py-0.5 uppercase tracking-[0.5px]">
-                        40×32mm
+                      <div className="absolute bottom-0 inset-x-0 bg-black/90 text-[7px] font-bold text-center text-white py-0.5">
+                        40×32 ملم
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-[10px] font-mono text-tertiary uppercase tracking-[1px] pt-0.5">
+              <div className="flex items-center justify-between text-[10px] text-tertiary font-bold pt-0.5">
                 <span>DPI: 300</span>
-                <span>CMYK READY</span>
-                <span className="text-white font-bold">0% WASTE</span>
+                <span>جاهز CMYK</span>
+                <span className="text-white font-bold">صفر هدر</span>
               </div>
             </div>
           </div>
@@ -244,14 +241,14 @@ export function HeroSection() {
             {STATS.map((stat) => {
               const Icon = stat.icon;
               return (
-                <div key={stat.label} className="flex flex-col items-center justify-center gap-1.5 p-5 rounded-none bg-elevated border border-subtle text-center">
-                  <div className="flex items-center gap-2">
+                <div key={stat.label} className="spotlight-card flex flex-col items-center justify-center gap-1.5 p-5 rounded-xl text-center">
+                  <div className="flex items-center gap-2 relative z-10">
                     <Icon className="w-5 h-5 text-white shrink-0" />
                     <span className="text-xl sm:text-3xl font-black font-display text-white tracking-tight">
                       <AnimatedCounter end={stat.value} suffix={stat.suffix} isFloat={stat.isFloat} />
                     </span>
                   </div>
-                  <span className="text-xs font-mono uppercase tracking-[1px] text-tertiary">
+                  <span className="relative z-10 text-xs font-bold text-tertiary">
                     {stat.label}
                   </span>
                 </div>
@@ -260,8 +257,8 @@ export function HeroSection() {
           </div>
 
           {/* Supported Photo Printers & Lab Equipment Strip */}
-          <div className="mt-8 pt-6 border-t border-subtle flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-right">
-            <span className="text-xs font-mono font-bold text-tertiary uppercase tracking-[1.5px]">
+          <div className="mt-8 pt-6 border-t border-subtle flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-start">
+            <span className="text-xs font-bold text-tertiary">
               متوافق 100% مع طابعات ومختبرات التصوير الرسمية:
             </span>
             <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs font-mono font-bold text-secondary uppercase tracking-[1px]">

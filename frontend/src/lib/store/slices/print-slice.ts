@@ -20,6 +20,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   dpi: 300,
   copiesPerSheet: 1,
   showCutLines: true,
+  showEndCutLine: true,
   orientation: "portrait",
   fitToPage: true,
   repeatMode: "all",

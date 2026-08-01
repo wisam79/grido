@@ -8,19 +8,16 @@ import { SectionHeading } from './SectionHeading';
 const STEPS = [
   {
     icon: FolderOpen,
-    step: 'STEP 01',
     title: 'أسقِط الصورة',
     desc: 'اسحب صورة الزبون من أي مجلد أو كاميرا — بدون استيراد معقد أو تحضير مسبق.',
   },
   {
     icon: LayoutGrid,
-    step: 'STEP 02',
     title: 'اختر المقاس',
     desc: 'هوية أحوال، فيزا، بطاقة وطنية — التوسيط والخلفية والشبكة تُضبط تلقائياً.',
   },
   {
     icon: Printer,
-    step: 'STEP 03',
     title: 'اطبع فوراً',
     desc: 'ورقة جاهزة بـ 300DPI وعلامات قص دقيقة — من الاستلام إلى التسليم في ثوانٍ.',
   },
@@ -28,7 +25,7 @@ const STEPS = [
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="relative py-14 sm:py-20 lg:py-24 border-t border-subtle bg-transparent overflow-hidden">
+    <section id="how-it-works" className="relative section-rhythm border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           icon={Workflow}
@@ -45,10 +42,13 @@ export function HowItWorksSection() {
           {STEPS.map((s, i) => {
             const Icon = s.icon;
             return (
-              <div key={s.step} className="spotlight-card relative rounded-2xl bg-secondary border border-subtle p-6 sm:p-7 text-center overflow-hidden">
-                <span className="block text-[10px] font-mono font-extrabold text-tertiary tracking-[2.5px] uppercase" dir="ltr">
-                  {s.step}
-                </span>
+              <div key={s.title} className="spotlight-card relative rounded-2xl bg-secondary border border-subtle p-6 sm:p-7 text-center overflow-hidden">
+                <div className="flex items-start justify-between">
+                  <span className="text-[10px] font-extrabold text-tertiary">الخطوة</span>
+                  <span dir="ltr" className="text-4xl font-black font-mono text-white/15 leading-none tracking-tight">
+                    0{i + 1}
+                  </span>
+                </div>
                 <div
                   className="benefit-icon relative z-10 mx-auto my-5 w-16 h-16 rounded-2xl bg-elevated border border-subtle flex items-center justify-center"
                   style={{ animationDelay: `${i * 0.4}s` }}
@@ -56,13 +56,13 @@ export function HowItWorksSection() {
                   <Icon className="w-7 h-7 text-white" aria-hidden />
                 </div>
                 <h3 className="relative z-10 text-lg font-black font-display text-white">{s.title}</h3>
-                <p className="relative z-10 mt-2 text-xs sm:text-sm text-tertiary leading-relaxed font-sans font-medium">
+                <p className="relative z-10 mt-2 text-sm text-tertiary leading-relaxed font-sans font-medium">
                   {s.desc}
                 </p>
 
                 {/* سهم اتجاهي بين البطاقات */}
                 {i < STEPS.length - 1 && (
-                  <ArrowLeft aria-hidden className="hidden md:block absolute top-1/2 -left-3 -translate-y-1/2 w-5 h-5 text-tertiary z-20" />
+                  <ArrowLeft aria-hidden className="hidden md:block absolute top-1/2 -end-3 -translate-y-1/2 w-5 h-5 text-tertiary z-20" />
                 )}
               </div>
             );

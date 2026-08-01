@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import { X, RefreshCw } from "lucide-react";
+import { X, RefreshCw, ImagePlus, FolderOpen } from "lucide-react";
 import { OpenFile, SaveImageFromBase64, GetImageDimensions } from "../../../wailsjs/go/main/App";
 import { SnapGuide } from "@/lib/snap-utils";
 import { KonvaCanvas } from "./konva/konva-canvas";
@@ -730,16 +730,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
         );
       })()}
 
-      {mode === "single" && elements.length === 0 && !printMode && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground pointer-events-none">
-          <svg className="w-16 h-16 mb-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="m21 15-5-5L5 21" />
-          </svg>
-          <p className="text-sm">اختر قالباً من القائمة الجانبية أو أضف صورة للبدء</p>
-        </div>
-      )}
+
 
       {!printMode && activeGuides.map((guide, idx) => (
         <div

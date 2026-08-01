@@ -32,21 +32,21 @@ export function Footer() {
               </div>
               <div className="flex flex-col leading-none">
                 <span className="font-extrabold text-base text-white uppercase tracking-tight font-display">Grido Studio</span>
-                <span className="mt-1 text-[10px] text-tertiary font-mono uppercase tracking-[1px]">استوديو الصور الذكي</span>
+                <span className="mt-1 text-[10px] text-tertiary font-bold">استوديو الصور الذكي</span>
               </div>
             </a>
             <p className="text-xs text-tertiary font-sans font-medium leading-relaxed max-w-xs">
               تطبيق سطح مكتب لاستوديوهات التصوير والمطابع: تنسيق صور المعاملات في 3 ثوانٍ، طباعة CMYK، وترميم وجوه بالذكاء الاصطناعي — بدون إنترنت.
             </p>
-            <span className="inline-flex items-center gap-2 text-[10px] font-mono font-bold text-tertiary uppercase tracking-[1.5px]">
+            <span className="inline-flex items-center gap-2 text-[10px] font-bold text-tertiary">
               <ShieldCheck className="w-3.5 h-3.5 text-white" />
-              <span dir="ltr">100% OFFLINE • WINDOWS 10/11</span>
+              <span>بدون إنترنت 100% • ويندوز 10/11</span>
             </span>
           </div>
 
           {/* عمود المنتج */}
           <div className="md:col-span-3 space-y-3">
-            <h3 className="text-[11px] font-mono font-extrabold text-white uppercase tracking-[2px]">المنتج</h3>
+            <h3 className="text-[11px] font-extrabold text-white">المنتج</h3>
             <nav className="flex flex-col gap-2" aria-label="روابط المنتج">
               {PRODUCT_LINKS.map((link) => (
                 <a key={link.href} href={link.href} className="text-xs font-medium text-tertiary hover:text-white transition-colors w-fit">
@@ -58,7 +58,7 @@ export function Footer() {
 
           {/* عمود الدعم */}
           <div className="md:col-span-2 space-y-3">
-            <h3 className="text-[11px] font-mono font-extrabold text-white uppercase tracking-[2px]">الدعم</h3>
+            <h3 className="text-[11px] font-extrabold text-white">الدعم</h3>
             <nav className="flex flex-col gap-2" aria-label="روابط الدعم">
               {SUPPORT_LINKS.map((link) => (
                 <a key={link.label} href={link.href} className="text-xs font-medium text-tertiary hover:text-white transition-colors w-fit">
@@ -70,7 +70,7 @@ export function Footer() {
 
           {/* عمود التحميل */}
           <div className="md:col-span-3 space-y-3">
-            <h3 className="text-[11px] font-mono font-extrabold text-white uppercase tracking-[2px]">التحميل</h3>
+            <h3 className="text-[11px] font-extrabold text-white">التحميل</h3>
             <div className="flex flex-col gap-2">
               {DOWNLOAD_LINKS.map((link) => (
                 <a
@@ -90,10 +90,10 @@ export function Footer() {
 
         {/* الشريط السفلي: الحقوق + العودة للأعلى */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6">
-          <p className="text-[11px] font-mono text-tertiary tracking-[1px] uppercase" dir="ltr">
-            © {new Date().getFullYear()} GRIDO STUDIO — ALL RIGHTS RESERVED.
+          <p className="text-[11px] text-tertiary">
+            © {new Date().getFullYear()} GRIDO STUDIO — جميع الحقوق محفوظة.
           </p>
-          <p className="text-[10px] font-mono text-tertiary tracking-[1px] uppercase">
+          <p className="text-[10px] text-tertiary font-bold">
             للتفعيل والدعم: الوكيل المعتمد لديك
           </p>
           <a

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useShallow } from "zustand/react/shallow";
 import { SliderControl } from "../shared-controls";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
   const {
@@ -72,7 +73,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
           <div className="p-1 rounded-md bg-primary/10 text-primary">
             <Grid3x3 className="w-3.5 h-3.5" />
           </div>
-          <span>شبكة ومخطط العمل</span>
+          <span>الشبكة</span>
         </Label>
         <span className="text-[10px] text-muted-foreground font-mono bg-muted/40 border border-border/20 px-2 py-0.5 rounded-md font-extrabold">
           {showGrid || showColumns ? "نشط" : "مخفي"}
@@ -124,7 +125,12 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground font-semibold">التقسيم الرئيسي</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-[10px] text-muted-foreground font-semibold cursor-help block">التقسيم</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="font-cairo text-xs font-bold">التقسيم الرئيسي للشبكة</TooltipContent>
+                </Tooltip>
                 <Select
                   value={String(gridSubdivisions)}
                   onValueChange={(val) => setGridSubdivisions(Number(val))}
@@ -142,7 +148,12 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground font-semibold">نمط الرسم</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-[10px] text-muted-foreground font-semibold cursor-help block">النمط</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="font-cairo text-xs font-bold">نمط رسم الشبكة (نقاط أو خطوط)</TooltipContent>
+                </Tooltip>
                 <div className="flex bg-muted/60 p-0.5 rounded-lg border border-border/40 h-9 items-center">
                   <button
                     type="button"
@@ -173,7 +184,6 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
             </div>
 
             <div className="space-y-1.5 pt-1.5 border-t border-border/10">
-              <span className="text-[10px] text-muted-foreground font-semibold block mb-1">لون الشبكة وشفافيتها</span>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5">
                   {["#000000", "#3b82f6", "#ec4899", "#10b981", "#f59e0b"].map((col) => (
@@ -214,7 +224,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
         {activeGridTab === "columns" && (
           <div className="space-y-3 pt-3 border-t border-border/10 animate-in fade-in duration-200">
             <SliderControl
-              label="عدد الأعمدة"
+              label="الأعمدة"
               icon={<Columns className="w-3.5 h-3.5 text-primary" />}
               value={columnsCount}
               min={1}
@@ -226,7 +236,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground font-semibold">الهامش الجانبي (px)</span>
+                <span className="text-[10px] text-muted-foreground font-semibold">الهامش (px)</span>
                 <input
                   type="number"
                   value={columnsMargin}
@@ -237,7 +247,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground font-semibold">المسافة بين الأعمدة (px)</span>
+                <span className="text-[10px] text-muted-foreground font-semibold">التباعد (px)</span>
                 <input
                   type="number"
                   value={columnsGutter}
@@ -249,7 +259,6 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
             </div>
 
             <div className="space-y-1.5 pt-1.5 border-t border-border/10">
-              <span className="text-[10px] text-muted-foreground font-semibold block mb-1">لون الأعمدة ومخطط التخطيط</span>
               <div className="flex items-center gap-1.5">
                 {[
                   { hex: "rgba(239, 68, 68, 0.08)", label: "أحمر خفيف" },

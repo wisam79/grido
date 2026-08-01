@@ -356,7 +356,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           onOpenChange={setCropOpen}
           imageSrc={element.imageSrc}
           originalImageSrc={element.originalImageSrc}
-          onCropSave={async (cropped) => {
+          onCropSave={async (cropped, dims) => {
             try {
               // حفظ الصورة المقصوصة محلياً بدلاً من تخزين Base64 في الذاكرة
               const localPath = await SaveImageFromBase64(cropped);
@@ -370,10 +370,10 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                  img.src = "";
                  if (!isMountedRef.current) return;
                 
-                const croppedAspect = width / height;
+                const croppedAspect = (dims && dims.width > 0 && dims.height > 0) ? (dims.width / dims.height) : (width / height);
                 const state = useEditorStore.getState();
                 const canvasRatio = state.canvasWidth / state.canvasHeight;
-                const newHeight = element.width * canvasRatio / croppedAspect;
+                const newHeight = (element.width * canvasRatio) / croppedAspect;
                 
                 onUpdate(element.id, { 
                   imageSrc: localPath,

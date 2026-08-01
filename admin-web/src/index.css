@@ -54,6 +54,11 @@
 
 .border-subtle { border-color: var(--color-border-subtle) !important; }
 
+/* Vertical Rhythm (design.md Section 5.2 — 80px → 160px cinematic spacing) */
+.section-rhythm {
+  padding-block: clamp(80px, 10vw, 160px);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -107,6 +112,21 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Workspace blueprint grid + ruler ticks (FeaturesTabs studio workspace card) */
+.editor-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+.ruler-ticks {
+  background-image: repeating-linear-gradient(to right, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 8px);
+  background-position: bottom;
+  background-size: 100% 65%;
+  background-repeat: no-repeat;
 }
 
 /* Glassmorphism Dark Mockup Surface (design.md Section 6.1) */
@@ -187,7 +207,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 }
 
 .benefit-icon {
-  animation: float 5s ease-in-out infinite alternate;
+  animation: float 8s ease-in-out infinite alternate;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -244,7 +264,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   position: absolute;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.6);
-  animation: particle-drift var(--dur, 7s) ease-in-out infinite;
+  animation: particle-drift var(--dur, 12s) ease-in-out infinite;
   animation-delay: var(--delay, 0s);
   pointer-events: none;
 }
@@ -261,7 +281,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   width: var(--size, 220px);
   height: var(--size, 220px);
   transform: translate(-50%, -50%);
-  animation: orbit var(--orbit-dur, 20s) linear infinite;
+  animation: orbit var(--orbit-dur, 32s) linear infinite;
   pointer-events: none;
 }
 .orbit-ring .orbit-dot {
@@ -273,7 +293,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   height: 6px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 24px rgba(96, 165, 250, 0.5);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 24px rgba(255, 255, 255, 0.35);
 }
 
 /* ── Subtle scanline sweep across a surface ── */
@@ -286,7 +306,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   inset-inline: 0;
   height: 25%;
   background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.04), transparent);
-  animation: scanline 6s ease-in-out infinite;
+  animation: scanline 10s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -301,19 +321,19 @@ h1, h2, h3, h4, h5, h6, .font-display {
   background: conic-gradient(
     from 0deg,
     transparent 0deg,
-    rgba(255, 255, 255, 0.05) 60deg,
+    rgba(255, 255, 255, 0.06) 60deg,
     transparent 120deg,
     transparent 180deg,
-    rgba(96, 165, 250, 0.05) 240deg,
+    rgba(255, 255, 255, 0.05) 240deg,
     transparent 300deg
   );
-  animation: orbit 18s linear infinite;
   opacity: 0;
   transition: opacity 0.5s ease;
   pointer-events: none;
 }
 .spotlight-card:hover .benefit-ring {
   opacity: 1;
+  animation: orbit 30s linear infinite;
 }
 
 /* ── Infinite marquee track ── */
@@ -322,7 +342,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   to   { transform: translateX(-50%); }
 }
 .marquee-track {
-  animation: marquee 30s linear infinite;
+  animation: marquee 48s linear infinite;
 }
 .marquee-track:hover {
   animation-play-state: paused;
@@ -332,7 +352,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .float-chip {
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
-  animation: float 6s ease-in-out infinite alternate;
+  animation: float 9s ease-in-out infinite alternate;
 }
 
 /* ── Marquee edge fade ── */
@@ -341,46 +361,53 @@ h1, h2, h3, h4, h5, h6, .font-display {
   -webkit-mask-image: linear-gradient(to left, transparent, black 12%, black 88%, transparent);
 }
 
-/* ── Glow pulse for CTA banner beacon ── */
+/* ── Glow pulse for CTA banner beacon (opacity-only for cheap compositing) ── */
 @keyframes beacon-pulse {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50%      { opacity: 0.7; transform: scale(1.05); }
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.6; }
 }
 .beacon-glow {
-  animation: beacon-pulse 4s ease-in-out infinite;
+  animation: beacon-pulse 6s ease-in-out infinite;
 }
 
-/* Cinematic Reveal Animations (design.md Section 4.1) */
+/* Cinematic Reveal Animations (design.md Section 4.1 — خفيفة وسريعة: blur 4px, scale 0.99, 0.55s) */
+@keyframes cinematicReveal {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
 .reveal-on-scroll {
-  opacity: 0;
-  filter: blur(8px);
-  transform: translateY(30px) scale(0.97);
-  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), 
-              transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
-              filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform, filter;
+  animation: cinematicReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-play-state: paused;
+  will-change: opacity, filter, transform;
 }
 
 .reveal-on-scroll.is-revealed,
 .reveal-on-scroll.is-visible {
-  opacity: 1;
-  filter: blur(0);
-  transform: translateY(0) scale(1);
+  animation-play-state: running;
 }
 
-/* Cinematic Sequential Stagger */
+/* Cinematic Sequential Stagger (mini version of the signature reveal — حركة قصيرة 8px) */
 .reveal-on-scroll .stagger-1,
 .reveal-on-scroll .stagger-2,
 .reveal-on-scroll .stagger-3,
 .reveal-on-scroll .stagger-4,
 .reveal-on-scroll .stagger-5 {
   opacity: 0;
-  filter: blur(8px);
-  transform: translateY(24px) scale(0.96);
-  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), 
-              transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
-              filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform, filter;
+  filter: blur(2px);
+  transform: translateY(8px) scale(0.99);
+  transition:
+    opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal-on-scroll.is-revealed .stagger-1,
@@ -398,13 +425,13 @@ h1, h2, h3, h4, h5, h6, .font-display {
   transform: translateY(0) scale(1);
 }
 
-.reveal-on-scroll.is-revealed .stagger-1, .reveal-on-scroll.is-visible .stagger-1 { transition-delay: 100ms; }
-.reveal-on-scroll.is-revealed .stagger-2, .reveal-on-scroll.is-visible .stagger-2 { transition-delay: 250ms; }
-.reveal-on-scroll.is-revealed .stagger-3, .reveal-on-scroll.is-visible .stagger-3 { transition-delay: 400ms; }
-.reveal-on-scroll.is-revealed .stagger-4, .reveal-on-scroll.is-visible .stagger-4 { transition-delay: 550ms; }
-.reveal-on-scroll.is-revealed .stagger-5, .reveal-on-scroll.is-visible .stagger-5 { transition-delay: 700ms; }
+.reveal-on-scroll.is-revealed .stagger-1, .reveal-on-scroll.is-visible .stagger-1 { transition-delay: 40ms; }
+.reveal-on-scroll.is-revealed .stagger-2, .reveal-on-scroll.is-visible .stagger-2 { transition-delay: 90ms; }
+.reveal-on-scroll.is-revealed .stagger-3, .reveal-on-scroll.is-visible .stagger-3 { transition-delay: 140ms; }
+.reveal-on-scroll.is-revealed .stagger-4, .reveal-on-scroll.is-visible .stagger-4 { transition-delay: 190ms; }
+.reveal-on-scroll.is-revealed .stagger-5, .reveal-on-scroll.is-visible .stagger-5 { transition-delay: 240ms; }
 
-/* Tab content mini cinematic reveal */
+/* Tab content mini cinematic reveal (design.md Section 6.2 — 0.4s, lighter blur) */
 .tab-content-reveal {
   animation: miniCinematicReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -412,8 +439,8 @@ h1, h2, h3, h4, h5, h6, .font-display {
 @keyframes miniCinematicReveal {
   from {
     opacity: 0;
-    filter: blur(4px);
-    transform: translateY(8px);
+    filter: blur(2px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -442,23 +469,15 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 /* --- WOW Factor UI Animations --- */
 
-/* Aurora Light Beams */
-@keyframes aurora-flow {
-  0% { transform: rotate(0deg) scale(1) translate(0, 0); opacity: 0.1; }
-  33% { transform: rotate(15deg) scale(1.1) translate(5%, 5%); opacity: 0.2; }
-  66% { transform: rotate(-5deg) scale(0.9) translate(-5%, 5%); opacity: 0.15; }
-  100% { transform: rotate(0deg) scale(1) translate(0, 0); opacity: 0.1; }
-}
-
+/* Aurora Light Beams (monochrome — design.md Section 1.2, static glow for GPU safety) */
 .aurora-bg {
   position: absolute;
   inset: -50%;
   background: 
-    radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.15), transparent 50%),
-    radial-gradient(ellipse at 20% 40%, rgba(96, 165, 250, 0.1), transparent 40%),
-    radial-gradient(ellipse at 80% 60%, rgba(37, 99, 235, 0.15), transparent 60%);
-  filter: blur(80px);
-  animation: aurora-flow 15s ease-in-out infinite;
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.055), transparent 50%),
+    radial-gradient(ellipse at 20% 40%, rgba(255, 255, 255, 0.04), transparent 40%),
+    radial-gradient(ellipse at 80% 60%, rgba(255, 255, 255, 0.05), transparent 60%);
+  filter: blur(60px);
   pointer-events: none;
   z-index: 0;
 }
@@ -520,9 +539,5 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 .float-chip {
   will-change: transform;
-}
-
-.aurora-bg {
-  will-change: transform, opacity;
 }
 

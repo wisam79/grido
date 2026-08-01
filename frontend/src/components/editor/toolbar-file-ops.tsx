@@ -57,7 +57,6 @@ export function ToolbarFileOps() {
     slots,
     setSlotImage,
     addImageElement,
-
     selectedId,
   } = useEditorStore(
     useShallow((state) => ({
@@ -139,36 +138,36 @@ export function ToolbarFileOps() {
                 console.error("Failed to save image locally:", e);
               }
             }
-             await new Promise<void>((resolve) => {
-               const img = new Image();
-               img.onload = () => {
-                 const aspect = img.width / img.height;
-                 img.onload = null;
-                 img.onerror = null;
-                 img.src = "";
-                 addImageElement(srcToUse, aspect);
-                 resolve();
-               };
-               img.onerror = () => {
-                 img.onload = null;
-                 img.onerror = null;
-                 img.src = "";
-                 addImageElement(srcToUse, 1);
-                 resolve();
-               };
-               img.src = b64;
-             });
+            await new Promise<void>((resolve) => {
+              const img = new Image();
+              img.onload = () => {
+                const aspect = img.width / img.height;
+                img.onload = null;
+                img.onerror = null;
+                img.src = "";
+                addImageElement(srcToUse, aspect);
+                resolve();
+              };
+              img.onerror = () => {
+                img.onload = null;
+                img.onerror = null;
+                img.src = "";
+                addImageElement(srcToUse, 1);
+                resolve();
+              };
+              img.src = b64;
+            });
           }
           toast.success(`تم إدراج ${b64s.length} صورة في الكانفس`);
         }
       }
-     } catch (err) {
-       console.error(err);
-       toast.error("فشل تحميل الصور");
-     } finally {
-       setIsFileDialogOpen(false);
-     }
-   };
+    } catch (err) {
+      console.error(err);
+      toast.error("فشل تحميل الصور");
+    } finally {
+      setIsFileDialogOpen(false);
+    }
+  };
 
   const handleSaveProject = () => {
     saveProjectAsJSON();
@@ -206,18 +205,19 @@ export function ToolbarFileOps() {
 
   return (
     <>
-      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
-        {/* رفع صورة */}
-        <TooltipBtn content="إدراج صورة جديدة (سحب وإفلات أو نقر)">
+      <div className="flex items-center gap-1 bg-muted/40 border border-border/40 p-0.5 rounded-xl shadow-2xs">
+        {/* إضافة صورة */}
+        <TooltipBtn content="إدراج صورة جديدة للمستند (Ctrl + O)">
           <Button
             variant="default"
             size="sm"
             onClick={handleOpenFile}
-            aria-label="رفع صورة جديدة"
-            title="رفع صورة جديدة"
-            className="h-7 w-7 p-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-md shadow-xs hover:shadow-md hover:shadow-blue-500/20 active:scale-95 transition-all cursor-pointer border-0 flex items-center justify-center"
+            aria-label="إضافة صورة جديدة"
+            title="إضافة صورة جديدة"
+            className="h-8 px-3 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer border-0 font-extrabold text-[11.5px] flex items-center justify-center"
           >
-            <ImagePlus className="w-3.5 h-3.5 text-white" />
+            <ImagePlus className="w-4 h-4 text-primary-foreground stroke-[2]" />
+            <span>إضافة صورة</span>
           </Button>
         </TooltipBtn>
 

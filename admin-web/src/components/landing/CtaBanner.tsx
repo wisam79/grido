@@ -20,20 +20,20 @@ export function CtaBanner() {
   };
 
   return (
-    <section id="download" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
+    <section id="download" className="relative section-rhythm border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto relative overflow-hidden rounded-3xl p-8 sm:p-14 text-center border border-subtle bg-elevated spotlight-card shadow-2xl">
           <div className="relative z-10 space-y-6">
             {/* Eyebrow Badge */}
             <div className="stagger-1">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary border border-subtle text-secondary text-xs font-mono font-bold tracking-[2px] uppercase">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary border border-subtle text-secondary text-xs font-bold">
                 <Sparkles className="w-3.5 h-3.5 text-white shrink-0" />
-                <span>VERSION {version ?? '…'} • WINDOWS 64-BIT</span>
+                <span>الإصدار {version ?? '…'} • ويندوز 64-بت</span>
               </span>
             </div>
 
             {/* Headline */}
-            <h2 className="stagger-2 text-3xl sm:text-4xl md:text-5xl font-black font-display text-white uppercase leading-tight">
+            <h2 className="stagger-2 text-3xl sm:text-4xl md:text-5xl font-black font-display text-white leading-tight">
               جاهز لتضاعف سرعة إنتاجية استوديوهاتك؟
             </h2>
 
@@ -50,7 +50,7 @@ export function CtaBanner() {
                 rel="noopener noreferrer"
                 onMouseMove={handleMagneticMouseMove}
                 onMouseLeave={handleMagneticMouseLeave}
-                className="magnetic-pill group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white text-black px-8 py-4 rounded-full font-mono font-extrabold text-xs uppercase tracking-[1px] border border-white transition-shadow duration-300 hover:shadow-[0_0_25px_rgba(255,255,255,0.35)] cursor-pointer"
+                className="magnetic-pill group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white text-black px-8 py-4 rounded-full font-extrabold text-xs border border-white transition-shadow duration-300 hover:shadow-[0_0_25px_rgba(255,255,255,0.35)] cursor-pointer"
                 aria-label="تحميل ملف التثبيت المباشر (.EXE)"
               >
                 <Download className="w-4 h-4 text-black shrink-0 relative z-10 transition-transform duration-300 group-hover:-translate-y-0.5" />
@@ -63,16 +63,16 @@ export function CtaBanner() {
                 rel="noopener noreferrer"
                 onMouseMove={handleMagneticMouseMove}
                 onMouseLeave={handleMagneticMouseLeave}
-                className="magnetic-pill group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary border border-subtle text-secondary px-6 py-4 rounded-full font-mono font-extrabold text-xs uppercase tracking-[1px] transition-colors duration-300 hover:border-white hover:text-white cursor-pointer"
-                aria-label="تحميل النسخة المحمولة (PORTABLE)"
+                className="magnetic-pill group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary border border-subtle text-secondary px-6 py-4 rounded-full font-extrabold text-xs transition-colors duration-300 hover:border-white hover:text-white cursor-pointer"
+                aria-label="تحميل النسخة المحمولة"
               >
                 <Download className="w-4 h-4 text-tertiary shrink-0 relative z-10 group-hover:text-white transition-all duration-300 group-hover:-translate-y-0.5" />
-                <span className="relative z-10 group-hover:text-white transition-colors duration-300">نسخة محمولة (PORTABLE)</span>
+                <span className="relative z-10 group-hover:text-white transition-colors duration-300">النسخة المحمولة</span>
               </a>
             </div>
 
             {/* Feature Checks */}
-            <div className="pt-4 border-t border-subtle flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-tertiary font-mono uppercase tracking-[1px]">
+            <div className="pt-4 border-t border-subtle flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-tertiary font-bold">
               {CHECKS.map((check) => (
                 <span key={check} className="inline-flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-white shrink-0" />

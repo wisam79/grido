@@ -35,7 +35,7 @@ export function FaqSection() {
   const toggleFaq = (index: number) => setOpenFaq(openFaq === index ? null : index);
 
   return (
-    <section id="faq" className="relative py-16 sm:py-24 lg:py-28 border-t border-subtle bg-transparent overflow-hidden">
+    <section id="faq" className="relative section-rhythm border-t border-subtle bg-transparent overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           icon={Sparkles}
@@ -106,7 +106,7 @@ export function FaqSection() {
             </div>
             <a
               href="mailto:support@grido.cloud-ip.cc"
-              className="magnetic-pill shrink-0 flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-mono font-extrabold text-xs uppercase tracking-[1px] transition-shadow duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+              className="magnetic-pill shrink-0 flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-extrabold text-xs transition-shadow duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
             >
               <span>تواصل معنا</span>
               <ArrowUpLeft className="w-3.5 h-3.5" />

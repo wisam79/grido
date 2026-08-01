@@ -6,6 +6,7 @@ import { useShallow } from "zustand/react/shallow";
 import { Slider } from "@/components/ui/slider";
 import { useRef, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 // ─── Larger SliderControl built for the left panel ─────────────────────────
 function PanelSlider({
@@ -74,12 +75,18 @@ function PanelSlider({
   }, []);
 
   return (
-    <div className="flex items-center gap-3 w-full h-8 group" dir="rtl">
-      {/* Icon & Label */}
-      <div className="flex items-center gap-1.5 w-20 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors">
-        {icon}
-        <span className="text-xs font-bold">{label}</span>
-      </div>
+    <div className="flex items-center gap-2.5 w-full h-8 group" dir="rtl">
+      {/* Icon with Tooltip */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-muted/30 text-muted-foreground group-hover:text-foreground group-hover:bg-muted/60 transition-colors shrink-0 cursor-help">
+            {icon}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="font-cairo text-xs font-bold">
+          {label}
+        </TooltipContent>
+      </Tooltip>
       
       {/* Slider */}
       <Slider
@@ -94,7 +101,7 @@ function PanelSlider({
       />
       
       {/* Value Input Badge (Figma Style) */}
-      <div className="flex items-center justify-center h-7 w-12 bg-background border border-border/60 hover:border-primary/45 rounded-lg transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 shadow-2xs" dir="ltr">
+      <div className="flex items-center justify-center h-7 w-12 bg-background border border-border/60 hover:border-primary/45 rounded-lg transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 shadow-2xs shrink-0" dir="ltr">
         <input
           type="number"
           value={value}
@@ -116,12 +123,14 @@ export function CollageSettings() {
     collageMargin,
     collageRadius,
     collageShowCutLines,
+    collageShowEndCutLine,
     collageStrokeWidth,
     collageStrokeColor,
     setCollageGap,
     setCollageMargin,
     setCollageRadius,
     setCollageShowCutLines,
+    setCollageShowEndCutLine,
     setCollageStrokeWidth,
     setCollageStrokeColor,
   } = useEditorStore(useShallow((state) => ({
@@ -129,18 +138,20 @@ export function CollageSettings() {
     collageMargin: state.collageMargin,
     collageRadius: state.collageRadius,
     collageShowCutLines: state.collageShowCutLines,
+    collageShowEndCutLine: state.collageShowEndCutLine,
     collageStrokeWidth: state.collageStrokeWidth,
     collageStrokeColor: state.collageStrokeColor,
     setCollageGap: state.setCollageGap,
     setCollageMargin: state.setCollageMargin,
     setCollageRadius: state.setCollageRadius,
     setCollageShowCutLines: state.setCollageShowCutLines,
+    setCollageShowEndCutLine: state.setCollageShowEndCutLine,
     setCollageStrokeWidth: state.setCollageStrokeWidth,
     setCollageStrokeColor: state.setCollageStrokeColor,
   })));
 
   return (
-    <div className="flex flex-col gap-4 border-t border-border/20 pt-4" dir="rtl">
+    <div className="flex flex-col gap-3.5 border-t border-border/20 pt-3.5 font-cairo" dir="rtl">
       {/* Section Header */}
       <div className="flex items-center gap-1.5 justify-start">
         <Sparkles className="w-3.5 h-3.5 text-primary" />
@@ -150,9 +161,9 @@ export function CollageSettings() {
       </div>
 
       {/* Sliders Container */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5">
         <PanelSlider
-          label="المسافات"
+          label="المسافات بين الصور"
           icon={<Columns className="w-3.5 h-3.5" />}
           value={collageGap}
           min={0}
@@ -162,7 +173,7 @@ export function CollageSettings() {
           onChange={setCollageGap}
         />
         <PanelSlider
-          label="الهامش"
+          label="الهامش الخارجي"
           icon={<Move className="w-3.5 h-3.5" />}
           value={collageMargin}
           min={0}
@@ -172,7 +183,7 @@ export function CollageSettings() {
           onChange={setCollageMargin}
         />
         <PanelSlider
-          label="الزوايا"
+          label="استدارة الزوايا"
           icon={<Square className="w-3.5 h-3.5" />}
           value={collageRadius}
           min={0}
@@ -182,7 +193,7 @@ export function CollageSettings() {
           onChange={setCollageRadius}
         />
         <PanelSlider
-          label="الإطار"
+          label="سُمك الإطار"
           icon={<Maximize2 className="w-3.5 h-3.5" />}
           value={collageStrokeWidth}
           min={0}
@@ -195,11 +206,17 @@ export function CollageSettings() {
 
       {/* Frame Color Row — shown only when stroke is active */}
       {collageStrokeWidth > 0 && (
-        <div className="flex items-center justify-between gap-3 border-t border-border/10 pt-3 animate-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <PaintBucket className="w-3.5 h-3.5" />
-            <span className="text-xs font-bold">لون الإطار</span>
-          </div>
+        <div className="flex items-center justify-between gap-3 border-t border-border/10 pt-2.5 animate-in slide-in-from-top-2 duration-200">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-muted/30 text-muted-foreground hover:text-foreground cursor-help shrink-0">
+                <PaintBucket className="w-3.5 h-3.5" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="font-cairo text-xs font-bold">
+              لون الإطار
+            </TooltipContent>
+          </Tooltip>
           <div className="flex items-center gap-2 bg-background border border-border/60 hover:border-primary/45 rounded-xl px-2 w-32 h-8 transition-colors focus-within:border-primary">
             <input
               type="text"
@@ -217,17 +234,50 @@ export function CollageSettings() {
         </div>
       )}
 
-      {/* Cut Lines Toggle */}
-      <div className="flex items-center justify-between bg-muted/20 border border-border/30 hover:border-primary/20 rounded-xl px-3.5 py-2.5 transition-all">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Scissors className="w-3.5 h-3.5 animate-pulse" />
-          <span className="text-xs font-bold text-foreground/80">خطوط القص والمحاذاة</span>
+      {/* Cut Lines Toggle Group */}
+      <div className="bg-card border border-border/60 rounded-xl p-3 shadow-2xs space-y-2 font-cairo">
+        {/* Primary Toggle: Cut Lines */}
+        <div className="flex items-center justify-between gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2 text-foreground cursor-help">
+                <div className="w-6 h-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                  <Scissors className="w-3.5 h-3.5 stroke-[2]" />
+                </div>
+                <span className="text-xs font-bold">خطوط القص والمحاذاة</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="font-cairo text-xs font-bold">
+              إظهار خطوط القص التلقائية بين صور الكولاج
+            </TooltipContent>
+          </Tooltip>
+          <Switch
+            checked={collageShowCutLines}
+            onCheckedChange={setCollageShowCutLines}
+          />
         </div>
-        <Switch
-          checked={collageShowCutLines}
-          onCheckedChange={setCollageShowCutLines}
-          className="scale-90"
-        />
+
+        {/* Nested Sub-option: Blue End Line */}
+        {collageShowCutLines && (
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30 animate-in fade-in-50 duration-150 pr-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 text-muted-foreground cursor-help">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
+                  <span className="text-[11px] font-bold text-foreground/90">خط نهاية الطباعة (الأزرق)</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-cairo text-xs font-bold">
+                إظهار الخط الأزرق الذي يُحدد نهاية الطباعة على الورقة
+              </TooltipContent>
+            </Tooltip>
+            <Switch
+              checked={collageShowEndCutLine}
+              onCheckedChange={setCollageShowEndCutLine}
+              className="scale-90"
+            />
+          </div>
+        )}
       </div>
 
       {/* Batch AI Enhance */}

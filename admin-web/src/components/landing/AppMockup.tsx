@@ -50,7 +50,7 @@ function FloatChip({
       </span>
       <span className="flex flex-col leading-none text-right">
         <span className="text-[11px] font-extrabold text-white font-display">{label}</span>
-        <span className="mt-1 text-[8.5px] font-mono font-bold text-tertiary uppercase tracking-[1px]" dir="ltr">{sub}</span>
+        <span className="mt-1 text-[8.5px] font-mono font-bold text-tertiary">{sub}</span>
       </span>
     </div>
   );
@@ -128,14 +128,14 @@ export function AppMockup() {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* نواة توهج زرقاء نابضة أسفل الإطار */}
+      {/* نواة توهج بيضاء نابضة أسفل الإطار */}
       <div
         aria-hidden
-        className="beacon-glow pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] h-[80%] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.22),transparent_65%)] blur-[80px]"
+        className="beacon-glow pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] h-[80%] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.12),transparent_65%)] blur-[80px]"
       />
 
       {/* حلقة مدارية SVG حول النموذج */}
-      <div aria-hidden className="orbit-ring hidden xl:block" style={{ ['--size' as string]: '640px', ['--orbit-dur' as string]: '26s' }}>
+      <div aria-hidden className="orbit-ring hidden xl:block" style={{ ['--size' as string]: '640px', ['--orbit-dur' as string]: '40s' }}>
         <span className="orbit-dot" />
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" fill="none">
           <circle cx="50" cy="50" r="49.5" stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" strokeDasharray="1 3" />
@@ -144,7 +144,7 @@ export function AppMockup() {
 
       {/* شارات HUD العائمة (Parallax) */}
       <FloatChip className="-top-5 -right-6" depth={18} icon={Wand2} label="ترميم AI" sub="CODEFORMER HD" />
-      <FloatChip className="top-1/3 -left-10" depth={26} icon={ScanLine} label="قص تلقائي" sub="AUTO CENTER 40×32" />
+      <FloatChip className="top-1/3 -left-10" depth={26} icon={ScanLine} label="قص تلقائي" sub="توسيط تلقائي 40×32" />
       <FloatChip className="-bottom-5 right-16" depth={14} icon={Printer} label="جاهز للمطبعة" sub="CMYK • 300 DPI" />
 
       {/* SpaceX Dark Tilted Window Frame matching Real Grido Studio App */}
