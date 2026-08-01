@@ -107,9 +107,14 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
 
   useEffect(() => {
     if (isOpen) {
+      setIsLoading(false);
+      setBackupActionLoading(false);
       Promise.resolve().then(() => {
         fetchProjects();
       });
+    } else {
+      setIsLoading(false);
+      setBackupActionLoading(false);
     }
   }, [isOpen]);
 

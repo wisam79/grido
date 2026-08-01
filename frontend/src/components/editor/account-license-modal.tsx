@@ -104,8 +104,10 @@ export function AccountLicenseModal() {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  // أعد اشتقاق التبويب الابتدائي عند فتح الحوار حتى لا يبقى قديماً بعد تسجيل دخول/خروج سابق
   useEffect(() => {
+    setLoading(false);
+    setLoadingGoogle(false);
+    setResending(false);
     if (!accountModalOpen) return;
     const currentUser = useEditorStore.getState().user;
     // eslint-disable-next-line react-hooks/set-state-in-effect
