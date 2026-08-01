@@ -302,6 +302,55 @@
   }
 }
 
+/* ==========================================================================
+   تنسيقات إشعارات استوديو Grido المخصصة (Sonner Toasts Visual Identity)
+   ========================================================================== */
+[data-sonner-toaster] {
+  font-family: var(--font-cairo), system-ui, sans-serif !important;
+}
+
+[data-sonner-toast] {
+  font-family: var(--font-cairo), system-ui, sans-serif !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* محاذاة زر الإغلاق في البيئة العربية RTL */
+[data-sonner-toast] [data-close-button] {
+  left: 8px !important;
+  right: auto !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* تخصيص التوهج والحدود الجانبية حسب نوع الإشعار */
+[data-sonner-toast][data-type="success"] {
+  border-right-color: #10b981 !important;
+  background-image: linear-gradient(to left, rgba(16, 185, 129, 0.08), transparent 70%) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  border-right-color: #f43f5e !important;
+  background-image: linear-gradient(to left, rgba(244, 63, 94, 0.08), transparent 70%) !important;
+}
+
+[data-sonner-toast][data-type="warning"] {
+  border-right-color: #f59e0b !important;
+  background-image: linear-gradient(to left, rgba(245, 158, 11, 0.08), transparent 70%) !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  border-right-color: #3b82f6 !important;
+  background-image: linear-gradient(to left, rgba(59, 130, 246, 0.08), transparent 70%) !important;
+}
+
+[data-sonner-toast][data-type="loading"] {
+  border-right-color: #6366f1 !important;
+  background-image: linear-gradient(to left, rgba(99, 102, 241, 0.08), transparent 70%) !important;
+}
+
 .workspace-grid {
   --workspace-bg: #f8fafc;
   --grid-dot: #e2e8f0;

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import { X, RefreshCw, ImagePlus, FolderOpen } from "lucide-react";
+import { X, RefreshCw } from "lucide-react";
 import { OpenFile, SaveImageFromBase64, GetImageDimensions } from "../../../wailsjs/go/main/App";
 import { SnapGuide } from "@/lib/snap-utils";
 import { KonvaCanvas } from "./konva/konva-canvas";

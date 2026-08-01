@@ -23,7 +23,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
   Point,
-  autoDetectDocumentCorners,
   warpPerspective,
   inferSmartDocumentAspect,
   detectDocumentAuto,

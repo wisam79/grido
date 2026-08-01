@@ -5,7 +5,6 @@ import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { LayoutGrid, Plus, Minus, FolderHeart, X, Save, ArrowUpRight, ArrowUpLeft, ArrowDownRight, ArrowDownLeft, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Crosshair, Columns, Rows, Maximize2 } from "lucide-react";
 import { CollageTemplate, PAPER_SIZES } from "@/lib/templates";
-import { PhotoTypeMiniature } from "./photo-type-miniature";
 
 function DocumentPresetGraphic({ type, active }: { type: string; active: boolean }) {
   const activeBorder = active ? "border-primary/80 bg-primary/20" : "border-muted-foreground/40 bg-muted/30";
@@ -90,7 +89,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
   // مزامنة حالة عناصر التحكم المحلية مع القالب النشط حالياً على الكانفس
   useEffect(() => {
-    if (collageTemplate) {
+    if (!collageTemplate) return;
+    queueMicrotask(() => {
       if (collageTemplate.physicalLayout) {
         const pl = collageTemplate.physicalLayout;
         if (pl.rows) setRows(pl.rows);
@@ -106,7 +106,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         else if (count === 12) { setRows(3); setCols(4); }
         setPhotoType("stretch");
       }
-    }
+    });
   }, [collageTemplate]);
 
   const getMaxGridConfig = React.useCallback(() => {
@@ -182,18 +182,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
   const { maxRows, maxCols } = React.useMemo(() => getMaxGridConfig(), [getMaxGridConfig]);
 
-  const handleSave = () => {
-    if (!saveName.trim()) {
-      toast.error("يرجى إدخال اسم للقالب");
-      return;
-    }
-    const cells = calculateCells(rows, cols, photoType, gridAlign);
-    onSaveTemplate(saveName.trim(), cells);
-    setSaveName("");
-    setShowSaveForm(false);
-  };
-
-  const calculateCells = React.useCallback((r: number, c: number, type: string, align = gridAlign) => {
+  const calculateCells = React.useCallback(function calculateCells(r: number, c: number, type: string, align = gridAlign) {
     const W = canvasWidth || 2480;
     const H = canvasHeight || 3508;
 
@@ -391,6 +380,17 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     };
     onSelect(tpl);
   }, [calculateCells, photoType, gridAlign, onSelect]);
+
+  const handleSave = () => {
+    if (!saveName.trim()) {
+      toast.error("يرجى إدخال اسم للقالب");
+      return;
+    }
+    const cells = calculateCells(rows, cols, photoType, gridAlign);
+    onSaveTemplate(saveName.trim(), cells);
+    setSaveName("");
+    setShowSaveForm(false);
+  };
 
   useEffect(() => {
     const { maxRows: mR, maxCols: mC } = getMaxGridConfig();
