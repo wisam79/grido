@@ -329,32 +329,35 @@ function BatchAiEnhanceButton() {
     setProgress(0);
 
     let successCount = 0;
-    for (let i = 0; i < validSlots.length; i++) {
-      const slot = validSlots[i];
-      try {
-        useRenderQuality.getState().setEnhancingElementId(slot.id);
-        const base64Image = await prepareImageForAiUpload(slot.imageSrc!, 2048, 0.92);
+    try {
+      for (let i = 0; i < validSlots.length; i++) {
+        const slot = validSlots[i];
+        try {
+          useRenderQuality.getState().setEnhancingElementId(slot.id);
+          const base64Image = await prepareImageForAiUpload(slot.imageSrc!, 2048, 0.92);
 
-        const token = user?.token || "";
-        const resultStr = await EnhanceImageWithAI(base64Image, token, dailyLimit);
-        
-        if (resultStr && resultStr.startsWith("data:image/")) {
-          const localPath = await SaveImageFromBase64(resultStr);
-          updateSlot(slot.id, { 
-            imageSrc: localPath, 
-            originalImageSrc: slot.originalImageSrc || slot.imageSrc 
-          });
-          successCount++;
+          const token = user?.token || "";
+          const resultStr = await EnhanceImageWithAI(base64Image, token, dailyLimit);
+          
+          if (resultStr && resultStr.startsWith("data:image/")) {
+            const localPath = await SaveImageFromBase64(resultStr);
+            updateSlot(slot.id, { 
+              imageSrc: localPath, 
+              originalImageSrc: slot.originalImageSrc || slot.imageSrc 
+            });
+            successCount++;
+          }
+        } catch (err) {
+          console.error(`Failed to enhance slot ${slot.id}:`, err);
+        } finally {
+          useRenderQuality.getState().setEnhancingElementId(null);
         }
-      } catch (err) {
-        console.error(`Failed to enhance slot ${slot.id}:`, err);
-      } finally {
-        useRenderQuality.getState().setEnhancingElementId(null);
+        setProgress(((i + 1) / validSlots.length) * 100);
       }
-      setProgress(((i + 1) / validSlots.length) * 100);
+    } finally {
+      setIsEnhancing(false);
     }
 
-    setIsEnhancing(false);
     if (successCount > 0) {
       useEditorStore.getState().pushHistory();
       toast.success(`تم تحسين ${successCount} صورة بنجاح`);

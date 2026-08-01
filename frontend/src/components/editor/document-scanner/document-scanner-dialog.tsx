@@ -105,7 +105,13 @@ export function DocumentScannerDialog({
 
   // 🔒 إصلاح BUG-3 & BUG-13: التحقق من التلغية عند فك المكون وإزالة prevOpen المزدوج
   useEffect(() => {
-    if (!open || !imageSrc) return;
+    if (!open) {
+      setIsDetecting(false);
+      setIsPreviewMode(false);
+      setPreviewSrc(null);
+      return;
+    }
+    if (!imageSrc) return;
 
     let isCancelled = false;
     const img = new Image();
