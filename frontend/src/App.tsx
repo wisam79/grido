@@ -8,7 +8,6 @@ import { ErrorBoundary } from "@/components/error-boundary";
 
 const ExportDialog = lazy(() => import("@/components/editor/export-dialog").then(module => ({ default: module.ExportDialog })));
 const PrintDialog = lazy(() => import("@/components/editor/print-dialog").then(module => ({ default: module.PrintDialog })));
-import { saveProjectAsJSON } from "@/components/editor/export-utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -472,7 +471,7 @@ export default function App() {
           setPrintOpen(true);
         }}
         onExport={() => setExportOpen(true)}
-        onSave={saveProjectAsJSON}
+        onSave={() => window.dispatchEvent(new CustomEvent("grido:open-projects-dialog"))}
       />
 
       {/* المحتوى الرئيسي */}

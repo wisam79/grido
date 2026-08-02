@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { saveProjectAsJSON } from "@/components/editor/export-utils";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 
 export function useKeyboardShortcuts() {
@@ -78,10 +77,10 @@ export function useKeyboardShortcuts() {
     if (selectedIds.length > 0) ungroupSelectedElements();
   });
 
-  // Save: Ctrl+S or Cmd+S
+  // Save: Ctrl+S or Cmd+S — فتح مكتبة المشاريع للحفظ
   useHotkeys("mod+s", (e) => {
     e.preventDefault();
-    saveProjectAsJSON();
+    window.dispatchEvent(new CustomEvent("grido:open-projects-dialog"));
   });
 
   // --- Arrows (Nudging) & Paste via native events ---

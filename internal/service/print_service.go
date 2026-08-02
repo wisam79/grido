@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"hash/crc32"
 	"html"
-	"io"
 	"image"
 	"image/color"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"log/slog"
 	"math"
 	"os"
@@ -338,7 +338,7 @@ func applySkinGlowBlur(img image.Image) image.Image {
 				var sumR, sumG, sumB, count int
 				for dy := -1; dy <= 1; dy++ {
 					for dx := -1; dx <= 1; dx++ {
-						ni := (y+dy)*width + (x+dx)
+						ni := (y+dy)*width + (x + dx)
 						if isSkin[ni] {
 							nIdx := ni * 4
 							if nIdx+2 < len(orig) {
@@ -410,8 +410,11 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 
 	for _, item := range req.Items {
 		// 🛡️ رفض هندسة عناصر غير منطقية (منع تخصيص ذاكرة ضخمة عبر W/H غير مقيد)
+		// تسامح 0.1mm لامتصاص أخطاء التقريب العائمة عند تحويل بكسل→مم للعناصر
+		// كاملة التغطية (Bleed) التي قد تتجاوز الورقة بأجزاء من المئة من المليمتر
+		// (مثل A4@300DPI = 2480×3508 بكسل ← 209.97×297.01mm)
 		if !math.IsNaN(item.W) && !math.IsNaN(item.H) &&
-			(item.W <= 0 || item.H <= 0 || item.W > req.PaperWidthMM || item.H > req.PaperHeightMM) {
+			(item.W <= 0 || item.H <= 0 || item.W > req.PaperWidthMM+0.1 || item.H > req.PaperHeightMM+0.1) {
 			return 0, 0, fmt.Errorf("invalid item geometry: W=%.2f H=%.2f (must fit within paper %.0f×%.0f mm)", item.W, item.H, req.PaperWidthMM, req.PaperHeightMM)
 		}
 		// 🛡️ رفض نسب اقتصاص سلبية أو متناقضة
@@ -904,27 +907,56 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			htmlImageName = imageName
 		}
 	} else {
-		// sRGB PNG
-		imageName = baseName + ".png"
-		htmlImageName = imageName
-		imagePath = filepath.Join(outDir, imageName)
-		var buf bytes.Buffer
-		enc := &png.Encoder{CompressionLevel: png.BestSpeed}
-		err := enc.Encode(&buf, dc.Image())
-		if err != nil {
-			return "", "", err
-		}
-
-		pngData := buf.Bytes()
-		if updatedData, err := setPngDPI(pngData, req.DPI); err == nil {
-			pngData = updatedData
+		if strings.EqualFold(req.ExportFormat, "jpeg") || strings.EqualFold(req.ExportFormat, "jpg") {
+			// JPEG أسرع عدة مرات من PNG في الترميز وملفه أصغر 3-5× — يُرسل للطباعة
+			// من الوضع المفرد حيث الصورة فوتوغرافية (جودة 95 لا تُفرق بصرياً عند 300 DPI)
+			imageName = baseName + ".jpg"
+			htmlImageName = imageName
+			imagePath = filepath.Join(outDir, imageName)
+			f, err := os.Create(imagePath)
+			if err != nil {
+				return "", "", fmt.Errorf("create jpeg: %w", err)
+			}
+			var buf bytes.Buffer
+			err = jpeg.Encode(&buf, dc.Image(), &jpeg.Options{Quality: 95})
+			if err != nil {
+				f.Close()
+				return "", "", err
+			}
+			jpegData := buf.Bytes()
+			if updatedData, err := setJpegDPI(jpegData, req.DPI); err == nil {
+				jpegData = updatedData
+			} else {
+				slog.Warn("Failed to set JPEG DPI", "error", err)
+			}
+			if _, err = f.Write(jpegData); err != nil {
+				f.Close()
+				return "", "", err
+			}
+			f.Close()
 		} else {
-			slog.Warn("Failed to set PNG DPI", "error", err)
-		}
+			// sRGB PNG (السلوك الافتراضي)
+			imageName = baseName + ".png"
+			htmlImageName = imageName
+			imagePath = filepath.Join(outDir, imageName)
+			var buf bytes.Buffer
+			enc := &png.Encoder{CompressionLevel: png.BestSpeed}
+			err := enc.Encode(&buf, dc.Image())
+			if err != nil {
+				return "", "", err
+			}
 
-		err = os.WriteFile(imagePath, pngData, 0644)
-		if err != nil {
-			return "", "", err
+			pngData := buf.Bytes()
+			if updatedData, err := setPngDPI(pngData, req.DPI); err == nil {
+				pngData = updatedData
+			} else {
+				slog.Warn("Failed to set PNG DPI", "error", err)
+			}
+
+			err = os.WriteFile(imagePath, pngData, 0644)
+			if err != nil {
+				return "", "", err
+			}
 		}
 	}
 
@@ -1027,10 +1059,17 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 		inFlight: make(map[processedKey]*sync.Cond),
 	}
 
+	// 0. تركيب كانفاس الوضع الحر (اختياري): يُرسم مرة واحدة بدقة الطباعة
+	// ثم تُستنسخ نسخه في الخلايا — بدل لقطة كانفس + إعادة ترميز
+	composedCanvas, err := s.composeCanvas(req, imgCache)
+	if err != nil {
+		return "", "", err
+	}
+
 	// 1. Process all images in parallel
 	processedImages := make([]image.Image, len(req.Items))
 	var g errgroup.Group
-	
+
 	// Limit concurrency to number of CPUs to avoid memory spikes and context switching overhead
 	maxConcurrency := runtime.NumCPU()
 	if maxConcurrency < 2 {
@@ -1042,9 +1081,9 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 		if item.ImageSrc == "" {
 			continue
 		}
-		
+
 		// Capture loop variables for the goroutine
-		i, item := i, item 
+		i, item := i, item
 		g.Go(func() error {
 			img, err := s.loadAndProcessImage(item, req.DPI, imgCache, procCache)
 			if err != nil {
@@ -1061,38 +1100,19 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 
 	// 2. Draw everything sequentially (gg.Context is NOT thread-safe)
 	for i, item := range req.Items {
-		if item.ImageSrc == "" || processedImages[i] == nil {
+		if item.ImageSrc == "" {
+			// عنصر بلا صورة: إذا وُجد تركيب كانفاس (وضع حر من العناصر) نرسمه في الخلية،
+			// وإلا نستبقيه فارغاً (السلوك التاريخي)
+			if composedCanvas != nil {
+				drawItemImage(dc, composedCanvas, item, req.DPI)
+			}
+			continue
+		}
+		if processedImages[i] == nil {
 			continue
 		}
 
-		processedImg := processedImages[i]
-		xPx := float64(int(math.Round(mmToPx(item.X, req.DPI))))
-		yPx := float64(int(math.Round(mmToPx(item.Y, req.DPI))))
-		wPx := float64(int(math.Round(mmToPx(item.W, req.DPI))))
-		hPx := float64(int(math.Round(mmToPx(item.H, req.DPI))))
-
-		dc.Push()
-		if item.CornerRadiusMM > 0 {
-			rPx := mmToPx(item.CornerRadiusMM, req.DPI)
-			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
-		} else {
-			dc.DrawRectangle(xPx, yPx, wPx, hPx)
-		}
-		dc.Clip()
-		dc.DrawImage(processedImg, int(xPx), int(yPx))
-		// ⚠️ gg v1.3.0: Pop() لا يستعيد القناع (mask) — يُبقيه متراكماً، لذا يجب مسحه يدوياً
-		// وإلا تتراكم مناطق القص وتصبح الخلايا التالية مقصوصة بالكامل (لا تُرسم إلا الأولى)
-		dc.ResetClip()
-		dc.Pop()
-
-		if item.BorderWidthMM > 0 && item.BorderColor != "" {
-			bPx := mmToPx(item.BorderWidthMM, req.DPI)
-			rPx := mmToPx(item.CornerRadiusMM, req.DPI)
-			dc.SetHexColor(item.BorderColor)
-			dc.SetLineWidth(bPx)
-			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
-			dc.Stroke()
-		}
+		drawItemImage(dc, processedImages[i], item, req.DPI)
 	}
 
 	slog.Info("GeneratePrintSheet: before drawCutLines",
@@ -1113,6 +1133,118 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 	procCache = nil
 
 	return s.saveOutput(dc, req)
+}
+
+// drawItemImage يرسم صورة معالجة داخل مستطيل العنصر بالمليمتر مع القص الدائري والإطار.
+// ⚠️ gg v1.3.0: Pop() لا يستعيد القناع (mask) — يُبقيه متراكماً، لذا يجب مسحه يدوياً
+// وإلا تتراكم مناطق القص وتصبح الخلايا التالية مقصوصة بالكامل (لا تُرسم إلا الأولى)
+func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi int) {
+	xPx := float64(int(math.Round(mmToPx(item.X, dpi))))
+	yPx := float64(int(math.Round(mmToPx(item.Y, dpi))))
+	wPx := float64(int(math.Round(mmToPx(item.W, dpi))))
+	hPx := float64(int(math.Round(mmToPx(item.H, dpi))))
+
+	dc.Push()
+	if item.CornerRadiusMM > 0 {
+		rPx := mmToPx(item.CornerRadiusMM, dpi)
+		dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+	} else {
+		dc.DrawRectangle(xPx, yPx, wPx, hPx)
+	}
+	dc.Clip()
+	dc.DrawImage(img, int(xPx), int(yPx))
+	dc.ResetClip()
+	dc.Pop()
+
+	if item.BorderWidthMM > 0 && item.BorderColor != "" {
+		bPx := mmToPx(item.BorderWidthMM, dpi)
+		rPx := mmToPx(item.CornerRadiusMM, dpi)
+		dc.SetHexColor(item.BorderColor)
+		dc.SetLineWidth(bPx)
+		dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+		dc.Stroke()
+	}
+}
+
+// composeCanvas يرسم محتوى كانفاس الوضع الحر (خلفية + صور) بدقة الطباعة.
+// العناصر تُفسَّر في فضاء الكانفاس (px): X/Y/W/H و CornerRadiusMM بالبكسل —
+// يرسل الواجهة عناصر صالحة فقط (بلا دوران/شفافية/ظلال) مطابقة لعرض Konva.
+func (s *PrintService) composeCanvas(
+	req domain.PrintRequest,
+	imgCache *imageCache,
+) (image.Image, error) {
+	comp := req.Composition
+	if comp == nil {
+		return nil, nil
+	}
+
+	outW := int(math.Round(mmToPx(comp.CanvasWidthMM, req.DPI)))
+	outH := int(math.Round(mmToPx(comp.CanvasHeightMM, req.DPI)))
+	if outW <= 0 || outH <= 0 || comp.CanvasWidthPx <= 0 || comp.CanvasHeightPx <= 0 {
+		return nil, fmt.Errorf("invalid canvas composition dimensions")
+	}
+	if len(comp.Items) > 100 {
+		return nil, fmt.Errorf("too many composition items: %d (max limit is 100)", len(comp.Items))
+	}
+
+	scale := float64(outW) / float64(comp.CanvasWidthPx)
+
+	dc := gg.NewContext(outW, outH)
+	dc.SetColor(parseColor(comp.BackgroundColor))
+	dc.Clear()
+
+	for _, item := range comp.Items {
+		if item.ImageSrc == "" {
+			continue
+		}
+		if item.W <= 0 || item.H <= 0 {
+			continue
+		}
+
+		filePath := resolveLocalPath(item.ImageSrc)
+		cacheKey := computeImageCacheKey(filePath)
+		img, err := loadRawImage(filePath, cacheKey, imgCache)
+		if err != nil {
+			return nil, err
+		}
+
+		targetW := int(math.Round(item.W * scale))
+		targetH := int(math.Round(item.H * scale))
+		if targetW < 1 {
+			targetW = 1
+		}
+		if targetH < 1 {
+			targetH = 1
+		}
+		processedImg := applyImageProcessing(img, item, targetW, targetH)
+
+		xPx := float64(int(math.Round(item.X * scale)))
+		yPx := float64(int(math.Round(item.Y * scale)))
+		wPx := float64(int(math.Round(item.W * scale)))
+		hPx := float64(int(math.Round(item.H * scale)))
+
+		dc.Push()
+		rPx := item.CornerRadiusMM * scale
+		if rPx > 0 {
+			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+		} else {
+			dc.DrawRectangle(xPx, yPx, wPx, hPx)
+		}
+		dc.Clip()
+		dc.DrawImage(processedImg, int(xPx), int(yPx))
+		dc.ResetClip()
+		dc.Pop()
+
+		if item.BorderWidthMM > 0 && item.BorderColor != "" {
+			bPx := item.BorderWidthMM * scale
+			dc.SetHexColor(item.BorderColor)
+			dc.SetLineWidth(bPx)
+			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+			dc.Stroke()
+		}
+	}
+
+	return dc.Image(), nil
 }
 
 // setPngDPI modifies a PNG byte slice to include a pHYs chunk with the specified DPI.
@@ -1150,13 +1282,13 @@ func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
 	if insertPos > len(pngData) {
 		return nil, fmt.Errorf("corrupt PNG data: insert position out of bounds")
 	}
-	
+
 	// Check if pHYs already exists right after IHDR
 	if insertPos+8 <= len(pngData) && string(pngData[insertPos+4:insertPos+8]) == "pHYs" {
 		// Replace existing pHYs chunk
-		existingChunkLen := int(binary.BigEndian.Uint32(pngData[insertPos:insertPos+4]))
+		existingChunkLen := int(binary.BigEndian.Uint32(pngData[insertPos : insertPos+4]))
 		nextChunkPos := insertPos + 4 + 4 + existingChunkLen + 4
-		
+
 		result := make([]byte, 0, len(pngData)-existingChunkLen+len(physData))
 		result = append(result, pngData[:insertPos]...)
 		result = append(result, physChunk...)
@@ -1169,6 +1301,31 @@ func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
 	result = append(result, physChunk...)
 	result = append(result, pngData[insertPos:]...)
 
+	return result, nil
+}
+
+// setJpegDPI injects a JFIF APP0 segment with the given DPI right after the SOI marker.
+// ترميز JPEG في مكتبة Go القياسية لا يكتب قطعة JFIF — نضيفها يدوياً
+// حتى تحترم برامج التخطيط والطابعات مقاس الصورة الفيزيائي
+func setJpegDPI(jpegData []byte, dpi int) ([]byte, error) {
+	if len(jpegData) < 2 || jpegData[0] != 0xFF || jpegData[1] != 0xD8 {
+		return nil, fmt.Errorf("not a valid JPEG")
+	}
+	// APP0: marker(2) + len=16(2) + "JFIF\0"(5) + version 1.01(2) + units=1(1) + Xdensity(2) + Ydensity(2) + thumbnail 0×0(2)
+	seg := []byte{
+		0xFF, 0xE0,
+		0x00, 0x10,
+		'J', 'F', 'I', 'F', 0x00,
+		0x01, 0x01,
+		0x01,
+		byte(dpi >> 8), byte(dpi & 0xFF),
+		byte(dpi >> 8), byte(dpi & 0xFF),
+		0x00, 0x00,
+	}
+	result := make([]byte, 0, len(jpegData)+len(seg))
+	result = append(result, jpegData[:2]...)
+	result = append(result, seg...)
+	result = append(result, jpegData[2:]...)
 	return result, nil
 }
 

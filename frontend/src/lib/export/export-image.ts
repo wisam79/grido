@@ -2,6 +2,9 @@ import type Konva from "konva";
 import { CanvasElement, ImageElement, useEditorStore } from "@/lib/editor-store";
 import { buildCSSFilter } from "@/lib/utils";
 import { captureStageDataUrl } from "@/lib/konva-export-utils";
+import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
+import { computeSlotRectMM } from "@/lib/print-layout-math";
+import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
 import { VECTOR_SHAPES } from "@/lib/svg-paths";
 
 // [FIX #9] تحويل Data URL إلى Blob مباشرة في الذاكرة بدلاً من fetch غير الضروري
@@ -266,15 +269,9 @@ export async function exportCanvas(
     slots,
   } = useEditorStore.getState();
 
-  // Memory guard: ~311MB buffer at 7200×10800 (24×36" @ 300 DPI)
-  const pixelCount = canvasWidth * canvasHeight;
-  if (pixelCount > 50_000_000) {
-    console.warn(
-      `Export aborted: canvas ${canvasWidth}×${canvasHeight} = ${pixelCount}px ` +
-      `exceeds 50MP limit (≈200MB buffer). Reduce canvas size or DPI.`
-    );
-    return null;
-  }
+  // حارس الذاكرة: ~200MB خامة عند 50MP — التجاوز كان يفشل بصمت برسالة عامة.
+  // الآن يرمي CanvasTooLargeError ويعرض المتصل للمستخدم الأبعاد الفعلية
+  assertExportablePixels(canvasWidth, canvasHeight);
 
   // محاولة التصدير مباشرةً من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
   if (stageRef) {
@@ -349,9 +346,6 @@ export async function exportCanvas(
     const radius = collageRadius;
     const borderW = collageStrokeWidth;
 
-    const availW = canvasWidth - 2 * margin;
-    const availH = canvasHeight - 2 * margin;
-
     const slotImageMap: Record<string, HTMLImageElement> = {};
     const slotLoadPromises = slots
       .filter((slot) => slot.imageSrc)
@@ -366,10 +360,19 @@ export async function exportCanvas(
     await Promise.all(slotLoadPromises);
 
     for (const slot of slots) {
-      const left = margin + slot.x * availW + gap / 2;
-      const top = margin + slot.y * availH + gap / 2;
-      const width = slot.w * availW - gap;
-      const height = slot.h * availH - gap;
+      // مستطيل الخانة من print-layout-math — نفس المصدر المستخدم في معاينة الطباعة
+      // وخطوط القص ومسار Go. الوحدات هنا بكسل لكن الصيغة نسبة بحتة (block عند 0,0)
+      const rect = computeSlotRectMM(
+        { xMM: 0, yMM: 0 },
+        { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
+        { widthMM: canvasWidth, heightMM: canvasHeight },
+        { marginXMM: margin, marginYMM: margin },
+        { gapXMM: gap, gapYMM: gap }
+      );
+      const left = rect.xMM;
+      const top = rect.yMM;
+      const width = rect.wMM;
+      const height = rect.hMM;
 
       if (slot.imageSrc && slotImageMap[slot.id]) {
         const img = slotImageMap[slot.id];
@@ -405,89 +408,53 @@ export async function exportCanvas(
       }
     }
 
-    // رسم خطوط القص في النهاية فوق كافة الصور والحدود وضمان عدم تغطيتها
+    // رسم خطوط القص في النهاية فوق كافة الصور والحدود وضمان عدم تغطيتها —
+    // المواضع من cut-lines-utils (نفس مصدر معاينة الطباعة ومسار Go) بمقياس 1:1
+    // لأن الورقة والكانفاس هنا نفس الشيء (بكسل). الخلايا الميتة (بلا صورة وبلا
+    // أبعاد) لم تعد تضيف خطوطاً وهمية عند الهامش — سلوك موحّد مع المعاينة.
     if (collageShowCutLines && slots.length > 0) {
       ctx.save();
 
-      const colLefts = new Set<number>();
-      const colRights = new Set<number>();
-      const rowTops = new Set<number>();
-      const rowBottoms = new Set<number>();
+      const cutLines = calculatePrintCutLines({
+        mode: "collage",
+        cols: 1,
+        actualCopies: 1,
+        imageWidthMM: canvasWidth,
+        imageHeightMM: canvasHeight,
+        gapMM: gap,
+        // لا ورقة طباعة هنا — الكانفاس هو الكولاج نفسه، لذا لا هامش ورقة ولا
+        // توسيط (هامش الكولاج collageMargin يُمرَّر وحده ويُطبَّق داخل computeSlotRectMM)
+        effectiveMarginMM: 0,
+        availableWidthMM: canvasWidth,
+        availableHeightMM: canvasHeight,
+        paperWidth: canvasWidth,
+        paperHeight: canvasHeight,
+        showEndCutLine: collageShowEndCutLine,
+        slots,
+        collageMargin,
+        collageGap,
+        canvasWidth,
+        canvasHeight,
+        hasPhysical,
+      });
 
-      for (const slot of slots) {
-        const left = Math.round(margin + slot.x * availW + gap / 2);
-        const top = Math.round(margin + slot.y * availH + gap / 2);
-        const right = Math.round(left + slot.w * availW - gap);
-        const bottom = Math.round(top + slot.h * availH - gap);
+      const lineW = Math.max(1, Math.round(canvasWidth / 1200));
 
-        colLefts.add(left);
-        colRights.add(right);
-        rowTops.add(top);
-        rowBottoms.add(bottom);
-      }
-
-      const sortedLefts = Array.from(colLefts).sort((a, b) => a - b);
-      const sortedRights = Array.from(colRights).sort((a, b) => a - b);
-      const sortedTops = Array.from(rowTops).sort((a, b) => a - b);
-      const sortedBottoms = Array.from(rowBottoms).sort((a, b) => a - b);
-
-      if (sortedLefts.length > 0 && sortedTops.length > 0) {
-        const xCutLines: number[] = [];
-        xCutLines.push(Math.round(sortedLefts[0] - gap / 2));
-        for (let i = 0; i < sortedRights.length - 1; i++) {
-          const midX = Math.round((sortedRights[i] + sortedLefts[i + 1]) / 2);
-          xCutLines.push(midX);
+      // تقريب المواضع إلى بكسل صحيح كما كان سابقاً (الفرق عن المعاينة ≤ 0.5px)
+      for (const line of cutLines) {
+        ctx.beginPath();
+        if (line.isBottomEnd) {
+          ctx.strokeStyle = "#3182ce";
+          ctx.lineWidth = lineW * 1.5;
+          ctx.setLineDash([12, 6]);
+        } else {
+          ctx.strokeStyle = "#a0aec0";
+          ctx.lineWidth = lineW;
+          ctx.setLineDash([8, 8]);
         }
-        xCutLines.push(Math.round(sortedRights[sortedRights.length - 1] + gap / 2));
-
-        const yCutLines: number[] = [];
-        yCutLines.push(Math.round(sortedTops[0] - gap / 2));
-        for (let i = 0; i < sortedBottoms.length - 1; i++) {
-          const midY = Math.round((sortedBottoms[i] + sortedTops[i + 1]) / 2);
-          yCutLines.push(midY);
-        }
-        const gridBottomY = Math.round(sortedBottoms[sortedBottoms.length - 1] + gap / 2);
-        yCutLines.push(gridBottomY);
-
-        const minX = xCutLines[0];
-        const maxX = xCutLines[xCutLines.length - 1];
-        const minY = yCutLines[0];
-        const maxY = yCutLines[yCutLines.length - 1];
-
-        const lineW = Math.max(1, Math.round(canvasWidth / 1200));
-
-        // خطوط قص رأسية مفردة ممتدة عبر منتصف الفجوات بالضبط
-        ctx.strokeStyle = "#a0aec0";
-        ctx.lineWidth = lineW;
-        ctx.setLineDash([8, 8]);
-        for (const x of xCutLines) {
-          ctx.beginPath();
-          ctx.moveTo(x, minY);
-          ctx.lineTo(x, maxY);
-          ctx.stroke();
-        }
-
-        // خطوط قص أفقية مفردة ممتدة + خط نهاية منطقة الطباعة الكامل بعرض الورقة
-        for (let i = 0; i < yCutLines.length; i++) {
-          const y = yCutLines[i];
-          const isBottomEnd = i === yCutLines.length - 1;
-          if (isBottomEnd && !collageShowEndCutLine) continue;
-          ctx.beginPath();
-          if (isBottomEnd) {
-            ctx.strokeStyle = "#3182ce";
-            ctx.lineWidth = lineW * 1.5;
-            ctx.setLineDash([12, 6]);
-            ctx.moveTo(0, Math.min(canvasHeight, y));
-            ctx.lineTo(canvasWidth, Math.min(canvasHeight, y));
-          } else {
-            ctx.strokeStyle = "#a0aec0";
-            ctx.lineWidth = lineW;
-            ctx.setLineDash([8, 8]);
-            ctx.moveTo(minX, y);
-            ctx.lineTo(maxX, y);
-          }
-          ctx.stroke();
-        }
+        ctx.moveTo(Math.round(line.x1), Math.round(line.y1));
+        ctx.lineTo(Math.round(line.x2), Math.round(line.y2));
+        ctx.stroke();
       }
       ctx.restore();
     }
@@ -687,12 +654,19 @@ export async function exportSlotCanvas(
   try {
     const img = await loadImage(slot.imageSrc);
     
-    // Use the actual target width/height of the slot (without margins/gaps for a clean export)
-    // Wait, the slot's aspect ratio on canvas is slot.w * canvasWidth x slot.h * canvasHeight
-    // For maximum quality, we can export at the original image's resolution or the scaled resolution.
-    // Let's export at the scaled resolution relative to canvas to match the main export's density.
-    const exportWidth = Math.max(1, slot.w * canvasWidth);
-    const exportHeight = Math.max(1, slot.h * canvasHeight);
+    // حجم الخانة بكسل من print-layout-math — نفس الصيغة النسبية (بلا هوامش/فجوات)
+    const rect = computeSlotRectMM(
+      { xMM: 0, yMM: 0 },
+      { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
+      { widthMM: canvasWidth, heightMM: canvasHeight },
+      { marginXMM: 0, marginYMM: 0 },
+      { gapXMM: 0, gapYMM: 0 }
+    );
+    const exportWidth = Math.max(1, rect.wMM);
+    const exportHeight = Math.max(1, rect.hMM);
+
+    // خانة واحدة قد تتجاوز الحد إذا كان الكانفاس ضخماً (w=1 يعني الكانفاس كاملاً)
+    assertExportablePixels(exportWidth, exportHeight);
 
     const canvas = document.createElement("canvas");
     canvas.width = exportWidth;
@@ -729,6 +703,8 @@ export async function exportSlotCanvas(
       );
     });
   } catch (e) {
+    // خطأ الحجم ليس فشل خانة عابراً — نمرره للمتصل ليعرض رسالة الأبعاد الصريحة
+    if (e instanceof CanvasTooLargeError) throw e;
     console.error(`Failed to export slot ${slotId}:`, e);
     return null;
   }
@@ -755,6 +731,10 @@ export async function applyBleedAndCropMarks(
       const canvas = document.createElement("canvas");
       canvas.width = img.width + bleedPx * 2;
       canvas.height = img.height + bleedPx * 2;
+
+      // النزيف يكبّر اللوحة — نحرسها أيضاً حتى لا ننفجر ذاكرةً بعد نجاح التصدير
+      assertExportablePixels(canvas.width, canvas.height);
+
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         resolve(blob);

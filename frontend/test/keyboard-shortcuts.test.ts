@@ -1,15 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useKeyboardShortcuts } from "../src/hooks/use-keyboard-shortcuts";
 import { useEditorStore } from "../src/lib/editor-store";
-import { saveProjectAsJSON } from "../src/components/editor/export-utils";
 import { renderHook } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
-
-// Mock saveProjectAsJSON
-vi.mock("../src/components/editor/export-utils", () => ({
-  saveProjectAsJSON: vi.fn(),
-}));
 
 // Mock sonner toast
 vi.mock("sonner", () => ({
@@ -122,11 +116,16 @@ describe("useKeyboardShortcuts - Keyboard Shortcuts Hook Tests", () => {
     duplicateElementSpy.mockRestore();
   });
 
-  it("should save project as JSON on Ctrl+S", async () => {
+  it("should open projects dialog on Ctrl+S", async () => {
+    const listener = vi.fn();
+    window.addEventListener("grido:open-projects-dialog", listener);
+
     renderHook(() => useKeyboardShortcuts());
 
     await user.keyboard("{Control>}s{/Control}");
-    expect(saveProjectAsJSON).toHaveBeenCalled();
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener("grido:open-projects-dialog", listener);
   });
 
   it("should nudge selected element on Arrow Keys", async () => {

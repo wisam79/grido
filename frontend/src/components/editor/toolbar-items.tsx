@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
-  Type, Square, Circle, Star, Minus, Undo2, Redo2, Trash2, Copy, ArrowUp, ArrowDown, AlignLeft, AlignCenter, AlignRight, ChevronDown, Grid3x3, Magnet, Columns, Link, Unlink, Ruler, Paintbrush,
+  Type, Square, Circle, Star, Minus, Undo2, Redo2, Trash2, Copy, AlignLeft, AlignCenter, AlignRight, ChevronDown, Grid3x3, Magnet, Columns, Link, Unlink, Ruler, Paintbrush,
   Sparkles, Wand2, ScanFace, X
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -204,7 +204,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
   }, []);
 
   const { isRemovingBg, bgProgress, bgProgressText, handleCancelBgRemoval, handleRemoveBg } = useBgRemoval(onUpdate);
-  const { isEnhancing, enhanceProgress, enhanceProgressText, remainingQuota, dailyLimit, handleEnhance } = useAiEnhance(onUpdate);
+  const { isEnhancing, enhanceProgress, enhanceProgressText, handleEnhance } = useAiEnhance(onUpdate);
   const { isFraming, frameProgress, frameProgressText, handleCancelFrame, handleFrameFace } = useFaceFrame(onUpdate);
 
   const [refineOpen, setRefineOpen] = React.useState(false);
@@ -293,7 +293,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           onClick={() => handleEnhance(selectedItem)}
         >
           <Wand2 className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span>{isEnhancing ? `تحسين... (${enhanceProgress}%)` : `تحسين الجودة (${remainingQuota}/${dailyLimit})`}</span>
+          <span>{isEnhancing ? `تحسين... (${enhanceProgress}%)` : "تحسين الجودة"}</span>
         </Button>
       </TooltipBtn>
 
@@ -317,7 +317,6 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
 const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
   const {
     hasSelection,
-    selectedId,
     isImageSelected,
     canGroup,
     canUngroup
@@ -333,15 +332,11 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
 
     return {
       hasSelection: hasSel,
-      selectedId: state.selectedId,
       isImageSelected: !!isImg,
       canGroup: idsCount >= 2,
       canUngroup: hasGroup
     };
   }));
-
-  const bringToFront = useEditorStore((state) => state.bringToFront);
-  const sendToBack = useEditorStore((state) => state.sendToBack);
   const duplicateElement = useEditorStore((state) => state.duplicateElement);
   const duplicateElements = useEditorStore((state) => state.duplicateElements);
   const groupSelectedElements = useEditorStore((state) => state.groupSelectedElements);
@@ -397,28 +392,6 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
 
   return (
     <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs animate-in fade-in zoom-in-95 duration-200">
-      <TooltipBtn content="ترتيب: إحضار للأمام">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => selectedId && bringToFront(selectedId)}
-          aria-label="إحضار للأمام"
-          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
-        >
-          <ArrowUp className="w-4 h-4" />
-        </Button>
-      </TooltipBtn>
-      <TooltipBtn content="ترتيب: إرسال للخلف">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => selectedId && sendToBack(selectedId)}
-          aria-label="إرسال للخلف"
-          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
-        >
-          <ArrowDown className="w-4 h-4" />
-        </Button>
-      </TooltipBtn>
       <TooltipBtn content="تكرار العناصر المحددة">
         <Button
           variant="ghost"

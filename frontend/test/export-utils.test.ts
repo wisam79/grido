@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { exportCanvas, downloadBlob, saveProjectAsJSON, quickExportPNG } from "../src/components/editor/export-utils";
+import { exportCanvas, downloadBlob, quickExportPNG } from "../src/components/editor/export-utils";
 import { useEditorStore } from "../src/lib/editor-store";
 import { toast } from "sonner";
 
@@ -62,25 +62,16 @@ describe("export-utils - Image/Project Export Utilities Tests", () => {
     spy.mockRestore();
   });
 
-  it("should call SaveFileDialog during downloadBlob for JSON/Image files", async () => {
+  it("should call SaveFileDialog during downloadBlob for image files", async () => {
     const mockSaveFileDialog = vi.fn().mockResolvedValue("success");
     // Inject custom mock for SaveFileDialog in the Wails global object
     (window as any).go.main.App.SaveFileDialog = mockSaveFileDialog;
 
-    const blob = new Blob([JSON.stringify({ test: true })], { type: "application/json" });
-    const result = await downloadBlob(blob, "project.json");
+    const blob = new Blob(["mock-image-data"], { type: "image/png" });
+    const result = await downloadBlob(blob, "photo.png");
 
     expect(mockSaveFileDialog).toHaveBeenCalled();
     expect(result).toBe("success");
-  });
-
-  it("should display success toast when saveProjectAsJSON completes successfully", async () => {
-    const mockSaveFileDialog = vi.fn().mockResolvedValue("success");
-    (window as any).go.main.App.SaveFileDialog = mockSaveFileDialog;
-
-    await saveProjectAsJSON();
-
-    expect(toast.success).toHaveBeenCalledWith("تم حفظ المشروع بنجاح");
   });
 
   it("should trigger toast notifications for quickExportPNG success and failures", async () => {

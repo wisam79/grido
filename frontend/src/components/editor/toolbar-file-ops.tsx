@@ -1,6 +1,5 @@
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useEditorStore } from "@/lib/editor-store";
-import { deserializeProjectFile } from "@/lib/project-serializer";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useShallow } from "zustand/react/shallow";
@@ -9,9 +8,7 @@ import { toast } from "sonner";
 import {
   ImagePlus,
   Eraser,
-  Database,
-  FolderOpen,
-  FileJson,
+  Library,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -25,7 +22,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProjectsDialog } from "./projects-dialog";
 import { ClearAutoSave, SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
-import { saveProjectAsJSON } from "./export-utils";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 
 interface TooltipBtnProps {
@@ -68,6 +64,12 @@ export function ToolbarFileOps() {
       selectedId: state.selectedId,
     }))
   );
+
+  useEffect(() => {
+    const openProjects = () => setIsProjectsOpen(true);
+    window.addEventListener("grido:open-projects-dialog", openProjects);
+    return () => window.removeEventListener("grido:open-projects-dialog", openProjects);
+  }, []);
 
   const handleOpenFile = async () => {
     if (isFileDialogOpen) return;
@@ -169,30 +171,6 @@ export function ToolbarFileOps() {
     }
   };
 
-  const handleSaveProject = () => {
-    saveProjectAsJSON();
-  };
-
-  const handleLoadProject = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const rawProject = JSON.parse(event.target?.result as string);
-        const parsed = deserializeProjectFile(rawProject);
-        useEditorStore.getState().loadProject(parsed);
-        toast.success("تم تحميل ملف المشروع بنجاح");
-      } catch (err) {
-        toast.error("ملف المشروع غير صالح أو معطوب");
-        console.error("Project Load Error:", err);
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
   const handleClearCanvas = () => {
     setIsClearAlertOpen(true);
   };
@@ -247,39 +225,11 @@ export function ToolbarFileOps() {
               title="مكتبة المشاريع المحلية"
               className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
             >
-              <Database className="w-3.5 h-3.5" />
+              <Library className="w-3.5 h-3.5" />
             </Button>
           </TooltipBtn>
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} />
         </Suspense>
-
-        {/* استيراد JSON */}
-        <TooltipBtn content="فتح مشروع (.json)">
-          <label className="cursor-pointer" aria-label="فتح مشروع (.json)">
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleLoadProject}
-              className="hidden"
-            />
-            <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-background/80 h-7 px-2 text-muted-foreground hover:text-primary cursor-pointer">
-              <FolderOpen className="w-3.5 h-3.5" />
-            </div>
-          </label>
-        </TooltipBtn>
-
-        {/* تصدير JSON */}
-        <TooltipBtn content="تصدير ملف مشروع (.json)">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSaveProject}
-            aria-label="تصدير ملف مشروع (.json)"
-            className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
-          >
-            <FileJson className="w-3.5 h-3.5" />
-          </Button>
-        </TooltipBtn>
       </div>
 
       <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>

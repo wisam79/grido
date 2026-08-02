@@ -3,6 +3,7 @@ import { Image as KonvaImage, Group } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import { getKonvaFilters } from "@/lib/konva-filters";
 import { useRenderQuality } from "@/lib/render-quality";
+import { useFilterCache } from "@/hooks/use-filter-cache";
 import { MagicAiScanner } from "./magic-ai-scanner";
 
 export const KonvaCollageImage = React.memo(function KonvaCollageImage({
@@ -10,6 +11,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   imageSrc,
   width,
   height,
+  canvasWidth,
   filter,
   brightness,
   contrast,
@@ -31,6 +33,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   imageSrc: string;
   width: number;
   height: number;
+  canvasWidth: number;
   filter?: string;
   brightness?: number;
   contrast?: number;
@@ -52,7 +55,6 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const imageRef = useRef<any>(null);
   const accumulatedDrag = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
   const dragStartRef = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
-  const isDraggingFilter = useRenderQuality((s) => s.isDraggingFilter);
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = Boolean(id && enhancingElementId === id);
 
@@ -67,33 +69,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const hasFilters = filterResult.filters.length > 0;
   const hasTransform = flipX || flipY || rotation !== 0;
 
-  useEffect(() => {
-    const node = imageRef.current;
-    if (!node || !image) return;
-
-    if (!hasFilters) {
-      if (node.isCached()) {
-        try {
-          node.clearCache();
-        } catch (err) {
-          // Ignore
-        }
-      }
-      return;
-    }
-
-    try {
-      const stageScale = node.getStage()?.scaleX() || 1;
-      const deviceRatio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-      const ratio = isDraggingFilter
-        ? Math.max(0.25, Math.min(0.5, stageScale * 0.3))
-        : Math.max(0.75, Math.min(2.5, stageScale * deviceRatio * 1.2));
-      node.clearCache();
-      node.cache({ pixelRatio: ratio });
-    } catch (err) {
-      console.warn("Failed to cache collage image", err);
-    }
-  }, [image, hasFilters, isDraggingFilter, hasTransform]);
+  useFilterCache({ nodeRef: imageRef, image, hasFilters, canvasWidth });
 
   if (!image) return null;
 
@@ -244,6 +220,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
          prev.imageSrc === next.imageSrc &&
          prev.width === next.width &&
          prev.height === next.height &&
+         prev.canvasWidth === next.canvasWidth &&
          prev.filter === next.filter &&
          prev.brightness === next.brightness &&
          prev.contrast === next.contrast &&

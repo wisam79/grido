@@ -12,8 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Download, FileJson, FileImage, Loader2 } from "lucide-react";
-import { exportCanvas, downloadBlob, saveProjectAsJSON, exportSlotCanvas, applyBleedAndCropMarks } from "./export-utils";
+import { Download, FileImage, Loader2 } from "lucide-react";
+import { exportCanvas, downloadBlob, exportSlotCanvas, applyBleedAndCropMarks, CanvasTooLargeError } from "./export-utils";
 import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/stage-context";
 import { toast } from "sonner";
@@ -119,8 +119,14 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           }
         }
       } catch (e) {
-        console.error(e);
-        toast.error("حدث خطأ أثناء التصدير");
+        if (e instanceof CanvasTooLargeError) {
+          toast.error(
+            `الأبعاد كبيرة جداً للتصدير (${e.width}×${e.height} بكسل ≈ ${(e.pixelCount / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. قلّل مقاس الكانفاس أو DPI.`
+          );
+        } else {
+          console.error(e);
+          toast.error("حدث خطأ أثناء التصدير");
+        }
       } finally {
         setLoading(false);
       }
@@ -270,21 +276,6 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 />
               </div>
             )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full gap-2"
-              onClick={() => {
-                saveProjectAsJSON();
-                onOpenChange(false);
-              }}
-            >
-              <FileJson className="w-4 h-4" /> حفظ المشروع (JSON)
-            </Button>
-            <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-              احفظ المشروع كاملاً للعودة إليه لاحقاً
-            </p>
           </div>
         </div>
 

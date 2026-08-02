@@ -26,17 +26,31 @@ type PrintItem struct {
 	DragY          float64 `json:"dragY,omitempty"`
 }
 
-type PrintRequest struct {
-	PaperWidthMM    float64     `json:"paperWidthMM"`
-	PaperHeightMM   float64     `json:"paperHeightMM"`
-	DPI             int         `json:"dpi"`
+// CanvasComposition يصف محتوى كانفاس الوضع الحر (free/single) كصورة مركبة:
+// خلفية صلبة + صور بعناصرها — يرسلها الواجهة بدل لقطة الكانفس الكاملة
+// لتجنب إعادة الترميز المزدوجة (كانفاس → JPEG → إعادة ترميز في Go).
+// في هذا السياق: X/Y/W/H/CornerRadiusMM لكل عنصر تُفسَّر بكسل الكانفاس (وليس المليمتر)
+type CanvasComposition struct {
+	CanvasWidthPx   int         `json:"canvasWidthPx"`
+	CanvasHeightPx  int         `json:"canvasHeightPx"`
+	CanvasWidthMM   float64     `json:"canvasWidthMM"`
+	CanvasHeightMM  float64     `json:"canvasHeightMM"`
 	BackgroundColor string      `json:"backgroundColor"`
-	ShowCutLines    bool        `json:"showCutLines"`
-	ColorSpace      string      `json:"colorSpace,omitempty"`    // "sRGB" or "CMYK"
-	ExportFormat    string      `json:"exportFormat,omitempty"`  // "png", "jpeg", "tiff"
-	Orientation     string      `json:"orientation,omitempty"`   // "portrait" or "landscape"
-	CutLines        []CutLine   `json:"cutLines"`
 	Items           []PrintItem `json:"items"`
+}
+
+type PrintRequest struct {
+	PaperWidthMM    float64            `json:"paperWidthMM"`
+	PaperHeightMM   float64            `json:"paperHeightMM"`
+	DPI             int                `json:"dpi"`
+	BackgroundColor string             `json:"backgroundColor"`
+	ShowCutLines    bool               `json:"showCutLines"`
+	ColorSpace      string             `json:"colorSpace,omitempty"`   // "sRGB" or "CMYK"
+	ExportFormat    string             `json:"exportFormat,omitempty"` // "png", "jpeg", "tiff"
+	Orientation     string             `json:"orientation,omitempty"`  // "portrait" or "landscape"
+	CutLines        []CutLine          `json:"cutLines"`
+	Items           []PrintItem        `json:"items"`
+	Composition     *CanvasComposition `json:"composition,omitempty"`
 }
 
 type CutLine struct {

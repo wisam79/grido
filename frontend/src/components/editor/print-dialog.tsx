@@ -30,7 +30,10 @@ import {
 } from "@/components/ui/select";
 import { PAPER_SIZES } from "@/lib/templates/constants";
 import { captureStageDataUrl } from "@/lib/konva-export-utils";
+import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
 import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
+import { computeBlockPosition, computeSheetGrid, computeSlotAspect, computeSlotRectMM } from "@/lib/print-layout-math";
+import { buildSingleComposition } from "@/lib/single-print-composition";
 import { useShallow } from "zustand/react/shallow";
 
 interface PrintDialogProps {
@@ -191,13 +194,18 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     const marginPx = hasPhysical ? 0 : collageMargin;
     const gapPx = hasPhysical ? 0 : collageGap;
     const scalePxToMM = imageWidthMM / canvasWidth;
-    const availWMM = imageWidthMM - 2 * (marginPx * scalePxToMM);
-    const availHMM = imageHeightMM - 2 * (marginPx * scalePxToMM);
-    const gridWidth = cols * imageWidthMM + Math.max(0, cols - 1) * gapMM;
-    const actualRows = Math.ceil(actualCopies / cols);
-    const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
-    const offsetX = effectiveMarginMM + Math.max(0, availableWidthMM - gridWidth) / 2;
-    const offsetY = effectiveMarginMM + Math.max(0, availableHeightMM - gridHeight) / 2;
+    const marginMM = marginPx * scalePxToMM;
+    const gapMMSlot = gapPx * scalePxToMM;
+    const grid = computeSheetGrid({
+      cols,
+      actualCopies,
+      imageWidthMM,
+      imageHeightMM,
+      gapMM,
+      effectiveMarginMM,
+      availableWidthMM,
+      availableHeightMM,
+    });
 
     const shouldShowCut = printSettings.showCutLines || collageShowCutLines;
     const rawCutLines = shouldShowCut
@@ -234,27 +242,27 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     const firstFilledSlot = slots.find((s) => s.imageSrc);
 
     for (let i = 0; i < actualCopies; i++) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const blockXMM = offsetX + col * (imageWidthMM + gapMM);
-      const blockYMM = offsetY + row * (imageHeightMM + gapMM);
+      const block = computeBlockPosition(i, grid);
 
       for (const slot of slots) {
         const activeSrc = slot.imageSrc || firstFilledSlot?.imageSrc;
         if (!activeSrc) continue;
-        const slotW_MM = slot.w * availWMM - gapPx * scalePxToMM;
-        const slotH_MM = slot.h * availHMM - gapPx * scalePxToMM;
-        const slotX_MM = blockXMM + marginPx * scalePxToMM + slot.x * availWMM + (gapPx * scalePxToMM) / 2;
-        const slotY_MM = blockYMM + marginPx * scalePxToMM + slot.y * availHMM + (gapPx * scalePxToMM) / 2;
-        const slotAspect = (slot.w * canvasWidth) / (slot.h * canvasHeight);
+        const rect = computeSlotRectMM(
+          block,
+          { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
+          { widthMM: imageWidthMM, heightMM: imageHeightMM },
+          { marginXMM: marginMM, marginYMM: marginMM },
+          { gapXMM: gapMMSlot, gapYMM: gapMMSlot }
+        );
+        const slotAspect = computeSlotAspect({ w: slot.w, h: slot.h }, canvasWidth, canvasHeight);
 
         items.push(
           domain.PrintItem.createFrom({
             imageSrc: activeSrc,
-            x: slotX_MM,
-            y: slotY_MM,
-            w: slotW_MM,
-            h: slotH_MM,
+            x: rect.xMM,
+            y: rect.yMM,
+            w: rect.wMM,
+            h: rect.hMM,
             filter: slot.filter || "none",
             brightness: slot.brightness ?? 100,
             contrast: slot.contrast ?? 100,
@@ -273,7 +281,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         );
       }
     }
-    return { items, cutLines };
+    return { items, cutLines, composition: undefined };
   };
 
   const buildSingleItems = async () => {
@@ -284,46 +292,84 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       return null;
     }
 
+    // حارس الذاكرة: اللوحة المطبوعة بكسل = مقاس الطباعة × DPI — تجاوز 50MP
+    // كان يُعلّق الطباعة بصمت في مسار الالتقاط أو يرهق Go في مسار التركيب
     const exportDpi = printSettings.dpi || 300;
-    const dpiRatio = exportDpi / 300;
-    const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
-
-    let canvasDataUrl: string | null = null;
+    const printPixelW = Math.round((imageWidthMM / 25.4) * exportDpi);
+    const printPixelH = Math.round((imageHeightMM / 25.4) * exportDpi);
     try {
-      const TIMEOUT_MS = 30000;
-      canvasDataUrl = await Promise.race([
-        captureStageDataUrl(stage, targetPixelRatio, "image/jpeg", 0.95),
-        new Promise<null>((_, reject) => setTimeout(() => reject(new Error("Canvas capture timed out")), TIMEOUT_MS)),
-      ]);
-    } catch {
-      canvasDataUrl = null;
+      assertExportablePixels(printPixelW, printPixelH);
+    } catch (e) {
+      if (e instanceof CanvasTooLargeError) {
+        toast.error(
+          `أبعاد الطباعة كبيرة جداً (${printPixelW}×${printPixelH} بكسل ≈ ${(printPixelW * printPixelH / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. قلّل DPI أو مقاس الورقة.`
+        );
+        return null;
+      }
+      throw e;
     }
 
-    if (!canvasDataUrl) {
-      toast.error("تعذر التقاط الكانفاس");
-      return null;
+    // مسار العناصر المباشر (بدون لقطة كانفس): يرسل الصور الأصلية + هندستها،
+    // فيرسم Go الكانفاس مرة واحدة بدقة الطباعة بدل الترميز المزدوج.
+    // أي عنصر خارج دلالات الرسم المدعومة (نص/شكل/دوران/ظلال/شفافية...) يقع في مسار الالتقاط.
+    const composition = buildSingleComposition({
+      elements,
+      canvasWidth,
+      canvasHeight,
+      canvasWidthMM: imageWidthMM,
+      canvasHeightMM: imageHeightMM,
+      backgroundColor,
+    });
+
+    let localPath: string | null = null;
+    if (!composition.eligible) {
+      const dpiRatio = exportDpi / 300;
+      const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
+
+      let canvasDataUrl: string | null = null;
+      try {
+        const TIMEOUT_MS = 30000;
+        canvasDataUrl = await Promise.race([
+          // جودة 0.9 بدلاً من 0.95: أسرع في الترميز وحجم أصغر يمر عبر IPC —
+          // الفرق البصري غير ملحوظ عند دقة الطباعة 300 DPI
+          captureStageDataUrl(stage, targetPixelRatio, "image/jpeg", 0.9),
+          new Promise<null>((_, reject) => setTimeout(() => reject(new Error("Canvas capture timed out")), TIMEOUT_MS)),
+        ]);
+      } catch {
+        canvasDataUrl = null;
+      }
+
+      if (!canvasDataUrl) {
+        toast.error("تعذر التقاط الكانفاس");
+        return null;
+      }
+
+      localPath = await SaveImageFromBase64(canvasDataUrl);
+      if (!localPath || !localPath.startsWith("/local-image/")) {
+        toast.error("تعذر حفظ الصورة مؤقتاً");
+        return null;
+      }
     }
 
-    const localPath = await SaveImageFromBase64(canvasDataUrl);
-    if (!localPath || !localPath.startsWith("/local-image/")) {
-      toast.error("تعذر حفظ الصورة مؤقتاً");
-      return null;
-    }
-
-    const gridWidth = cols * imageWidthMM + Math.max(0, cols - 1) * gapMM;
-    const actualRows = Math.ceil(actualCopies / cols);
-    const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
-    const offsetX = effectiveMarginMM + Math.max(0, availableWidthMM - gridWidth) / 2;
-    const offsetY = effectiveMarginMM + Math.max(0, availableHeightMM - gridHeight) / 2;
+    const grid = computeSheetGrid({
+      cols,
+      actualCopies,
+      imageWidthMM,
+      imageHeightMM,
+      gapMM,
+      effectiveMarginMM,
+      availableWidthMM,
+      availableHeightMM,
+    });
 
     for (let i = 0; i < actualCopies; i++) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
+      const block = computeBlockPosition(i, grid);
       items.push(
         domain.PrintItem.createFrom({
-          imageSrc: localPath,
-          x: offsetX + col * (imageWidthMM + gapMM),
-          y: offsetY + row * (imageHeightMM + gapMM),
+          // في مسار التركيب تُرسل الخلايا بلا صورة — Go يرسم الكانفاس المركّب فيها
+          imageSrc: localPath || "",
+          x: block.xMM,
+          y: block.yMM,
           w: imageWidthMM,
           h: imageHeightMM,
           filter: "none",
@@ -360,7 +406,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       y2: l.y2,
     }));
 
-    return { items, cutLines };
+    return { items, cutLines, composition: composition.eligible ? composition.composition : undefined };
   };
 
   const handlePrintResult = (result: any) => {
@@ -454,10 +500,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         backgroundColor: backgroundColor || "#FFFFFF",
         showCutLines: printSettings.showCutLines || collageShowCutLines,
         colorSpace: colorSpace,
-        exportFormat: colorSpace === "CMYK" ? "tiff" : "png",
+        // JPEG للطباعة الملونة (sRGB): ترميز أسرع 3-5× من PNG في الخدمة وملف أصغر
+        // يخفف حمولة نافذة الطباعة — الجودة 95 عند 300 DPI كافية تماماً للصور
+        exportFormat: colorSpace === "CMYK" ? "tiff" : "jpeg",
         orientation: printSettings.orientation || "portrait",
         cutLines: buildResult.cutLines,
         items: buildResult.items,
+        composition: buildResult.composition,
       }));
 
       handlePrintResult(result);

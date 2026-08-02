@@ -1,5 +1,6 @@
 import { buildCSSFilter, cn } from "@/lib/utils";
 import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
+import { computeBlockPosition, computeSheetGrid, computeSlotRectMM } from "@/lib/print-layout-math";
 
 interface SheetPreviewProps {
   cols: number;
@@ -142,11 +143,18 @@ export function SheetPreview({
         {slots && slots.length > 0 ? (
           (() => {
             const firstFilled = slots.find((s) => s.imageSrc);
+            const grid = computeSheetGrid({
+              cols,
+              actualCopies: count,
+              imageWidthMM,
+              imageHeightMM,
+              gapMM,
+              effectiveMarginMM: marginMM,
+              availableWidthMM,
+              availableHeightMM,
+            });
             return Array.from({ length: count }).map((_, i) => {
-              const col = i % cols;
-              const row = Math.floor(i / cols);
-              const blockXMM = marginMM + Math.max(0, availableWidthMM - (cols * imageWidthMM + Math.max(0, cols - 1) * gapMM)) / 2 + col * (imageWidthMM + gapMM);
-              const blockYMM = marginMM + Math.max(0, availableHeightMM - (Math.ceil(count / cols) * imageHeightMM + Math.max(0, Math.ceil(count / cols) - 1) * gapMM)) / 2 + row * (imageHeightMM + gapMM);
+              const block = computeBlockPosition(i, grid);
 
               return slots.map((slot, index) => {
                 const activeSrc = slot.imageSrc || firstFilled?.imageSrc;
@@ -156,19 +164,19 @@ export function SheetPreview({
                 const marginY_pct = hasPhysical ? 0 : (collageMargin / canvasHeight);
                 const gapX_pct = hasPhysical ? 0 : (collageGap / canvasWidth);
                 const gapY_pct = hasPhysical ? 0 : (collageGap / canvasHeight);
-                
-                const availW_pct = 1 - 2 * marginX_pct;
-                const availH_pct = 1 - 2 * marginY_pct;
-                
-                const slotLeftMM = blockXMM + (marginX_pct + slot.x * availW_pct + gapX_pct / 2) * imageWidthMM;
-                const slotTopMM = blockYMM + (marginY_pct + slot.y * availH_pct + gapY_pct / 2) * imageHeightMM;
-                const slotWidthMM = (slot.w * availW_pct - gapX_pct) * imageWidthMM;
-                const slotHeightMM = (slot.h * availH_pct - gapY_pct) * imageHeightMM;
 
-                const left_pct = (slotLeftMM / Math.max(1, paperWidthMM)) * 100;
-                const top_pct = (slotTopMM / Math.max(1, paperHeightMM)) * 100;
-                const width_pct = (slotWidthMM / Math.max(1, paperWidthMM)) * 100;
-                const height_pct = (slotHeightMM / Math.max(1, paperHeightMM)) * 100;
+                const rect = computeSlotRectMM(
+                  block,
+                  { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
+                  { widthMM: imageWidthMM, heightMM: imageHeightMM },
+                  { marginXMM: marginX_pct * imageWidthMM, marginYMM: marginY_pct * imageHeightMM },
+                  { gapXMM: gapX_pct * imageWidthMM, gapYMM: gapY_pct * imageHeightMM }
+                );
+
+                const left_pct = (rect.xMM / Math.max(1, paperWidthMM)) * 100;
+                const top_pct = (rect.yMM / Math.max(1, paperHeightMM)) * 100;
+                const width_pct = (rect.wMM / Math.max(1, paperWidthMM)) * 100;
+                const height_pct = (rect.hMM / Math.max(1, paperHeightMM)) * 100;
 
                 return (
                   <div 
@@ -212,19 +220,23 @@ export function SheetPreview({
     );
   }
 
-  const actualRows = Math.ceil(count / cols);
-  const gridWidth = cols * imageWidthMM + Math.max(0, cols - 1) * gapMM;
-  const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
-  const offsetX = marginMM + Math.max(0, availableWidthMM - gridWidth) / 2;
-  const offsetY = marginMM + Math.max(0, availableHeightMM - gridHeight) / 2;
+  const grid = computeSheetGrid({
+    cols,
+    actualCopies: count,
+    imageWidthMM,
+    imageHeightMM,
+    gapMM,
+    effectiveMarginMM: marginMM,
+    availableWidthMM,
+    availableHeightMM,
+  });
 
   // الوضع الحر (Free mode): تكرار لقطة الكانفس الكاملة على الورقة
   const items = [];
   for (let i = 0; i < count; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = (offsetX + col * (imageWidthMM + gapMM)) * sf;
-    const y = (offsetY + row * (imageHeightMM + gapMM)) * sf;
+    const block = computeBlockPosition(i, grid);
+    const x = block.xMM * sf;
+    const y = block.yMM * sf;
     const w = imageWidthMM * sf;
     const h = imageHeightMM * sf;
 

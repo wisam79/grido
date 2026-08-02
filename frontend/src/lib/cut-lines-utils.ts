@@ -1,3 +1,5 @@
+import { computeBlockPosition, computeSheetGrid, computeSlotRectMM } from "@/lib/print-layout-math";
+
 export interface CutLineMM {
   x1: number;
   y1: number;
@@ -55,12 +57,17 @@ export function calculatePrintCutLines(params: CalculateCutLinesParams): CutLine
   } = params;
 
   const cutLines: CutLineMM[] = [];
-  const safeCols = Math.max(1, cols);
-  const actualRows = Math.max(1, Math.ceil(actualCopies / safeCols));
-  const gridWidth = safeCols * imageWidthMM + Math.max(0, safeCols - 1) * gapMM;
-  const gridHeight = actualRows * imageHeightMM + Math.max(0, actualRows - 1) * gapMM;
-  const offsetX = effectiveMarginMM + Math.max(0, availableWidthMM - gridWidth) / 2;
-  const offsetY = effectiveMarginMM + Math.max(0, availableHeightMM - gridHeight) / 2;
+  const grid = computeSheetGrid({
+    cols,
+    actualCopies,
+    imageWidthMM,
+    imageHeightMM,
+    gapMM,
+    effectiveMarginMM,
+    availableWidthMM,
+    availableHeightMM,
+  });
+  const { safeCols, actualRows, gridWidth, gridHeight, offsetX, offsetY } = grid;
 
   // 🧩 فرع الكولاج: الاعتماد على الإحداثيات الفعلية للخلايا (slots)
   if (mode === "collage" && slots && slots.length > 0) {
@@ -72,27 +79,26 @@ export function calculatePrintCutLines(params: CalculateCutLinesParams): CutLine
     const scalePxToMM = imageWidthMM / Math.max(1, canvasWidth);
     const marginPx = hasPhysical ? 0 : collageMargin;
     const gapPx = hasPhysical ? 0 : collageGap;
-    const availWMM = imageWidthMM - 2 * (marginPx * scalePxToMM);
-    const availHMM = imageHeightMM - 2 * (marginPx * scalePxToMM);
-    const gapMM_cut = gapPx * scalePxToMM;
+    const marginMM = marginPx * scalePxToMM;
+    const gapMMSlot = gapPx * scalePxToMM;
 
     for (let i = 0; i < actualCopies; i++) {
-      const col = i % safeCols;
-      const row = Math.floor(i / safeCols);
-      const blockXMM = offsetX + col * (imageWidthMM + gapMM);
-      const blockYMM = offsetY + row * (imageHeightMM + gapMM);
+      const block = computeBlockPosition(i, grid);
 
       for (const slot of slots) {
         if (!slot.imageSrc && (slot.w <= 0 || slot.h <= 0)) continue;
-        const left = blockXMM + marginPx * scalePxToMM + slot.x * availWMM + gapMM_cut / 2;
-        const top = blockYMM + marginPx * scalePxToMM + slot.y * availHMM + gapMM_cut / 2;
-        const right = left + slot.w * availWMM - gapMM_cut;
-        const bottom = top + slot.h * availHMM - gapMM_cut;
+        const rect = computeSlotRectMM(
+          block,
+          { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
+          { widthMM: imageWidthMM, heightMM: imageHeightMM },
+          { marginXMM: marginMM, marginYMM: marginMM },
+          { gapXMM: gapMMSlot, gapYMM: gapMMSlot }
+        );
 
-        colLefts.add(Math.round(left * 100) / 100);
-        colRights.add(Math.round(right * 100) / 100);
-        rowTops.add(Math.round(top * 100) / 100);
-        rowBottoms.add(Math.round(bottom * 100) / 100);
+        colLefts.add(Math.round(rect.xMM * 100) / 100);
+        colRights.add(Math.round((rect.xMM + rect.wMM) * 100) / 100);
+        rowTops.add(Math.round(rect.yMM * 100) / 100);
+        rowBottoms.add(Math.round((rect.yMM + rect.hMM) * 100) / 100);
       }
     }
 
@@ -103,20 +109,20 @@ export function calculatePrintCutLines(params: CalculateCutLinesParams): CutLine
 
     if (sortedLefts.length > 0 && sortedTops.length > 0) {
       const xCutLines: number[] = [];
-      xCutLines.push(Math.max(0, sortedLefts[0] - gapMM_cut / 2));
+      xCutLines.push(Math.max(0, sortedLefts[0] - gapMMSlot / 2));
       for (let i = 0; i < sortedRights.length - 1; i++) {
         const midX = (sortedRights[i] + sortedLefts[i + 1]) / 2;
         xCutLines.push(midX);
       }
-      xCutLines.push(Math.min(paperWidth, sortedRights[sortedRights.length - 1] + gapMM_cut / 2));
+      xCutLines.push(Math.min(paperWidth, sortedRights[sortedRights.length - 1] + gapMMSlot / 2));
 
       const yCutLines: number[] = [];
-      yCutLines.push(Math.max(0, sortedTops[0] - gapMM_cut / 2));
+      yCutLines.push(Math.max(0, sortedTops[0] - gapMMSlot / 2));
       for (let i = 0; i < sortedBottoms.length - 1; i++) {
         const midY = (sortedBottoms[i] + sortedTops[i + 1]) / 2;
         yCutLines.push(midY);
       }
-      const gridBottomY = Math.min(paperHeight, sortedBottoms[sortedBottoms.length - 1] + gapMM_cut / 2);
+      const gridBottomY = Math.min(paperHeight, sortedBottoms[sortedBottoms.length - 1] + gapMMSlot / 2);
       yCutLines.push(gridBottomY);
 
       const minX = xCutLines[0];

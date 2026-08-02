@@ -204,6 +204,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   imageSrc={slot.imageSrc}
                   width={width}
                   height={height}
+                  canvasWidth={canvasWidth}
                   filter={slot.filter}
                   brightness={slot.brightness}
                   contrast={slot.contrast}

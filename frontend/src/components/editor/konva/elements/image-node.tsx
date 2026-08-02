@@ -5,6 +5,7 @@ import Konva from "konva";
 import { ImageElement } from "@/lib/editor-store";
 import { getKonvaFilters } from "@/lib/konva-filters";
 import { useRenderQuality } from "@/lib/render-quality";
+import { useFilterCache } from "@/hooks/use-filter-cache";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import { MagicAiScanner } from "./magic-ai-scanner";
@@ -30,7 +31,6 @@ export const URLImage = React.memo(function URLImage({
   const element = _element as ImageElement;
   const [image] = useAsyncImage(element.imageSrc || "");
   const hasAnimatedRef = React.useRef(false);
-  const isDraggingFilter = useRenderQuality((s) => s.isDraggingFilter);
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = enhancingElementId === element.id;
 
@@ -82,33 +82,7 @@ export const URLImage = React.memo(function URLImage({
 
   const hasFilters = filters.length > 0;
 
-  useEffect(() => {
-    const node = elementRef.current;
-    if (!node || !image) return;
-
-    if (!hasFilters) {
-      if (node.isCached()) {
-        try {
-          node.clearCache();
-        } catch (err) {
-          // Ignore
-        }
-      }
-      return;
-    }
-
-    try {
-      const stageScale = node.getStage()?.scaleX() || 1;
-      const deviceRatio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-      const ratio = isDraggingFilter
-        ? Math.max(0.25, Math.min(0.5, stageScale * 0.3))
-        : Math.max(0.75, Math.min(2.5, stageScale * deviceRatio * 1.2));
-      node.clearCache();
-      node.cache({ pixelRatio: ratio });
-    } catch (err) {
-      console.warn("Failed to cache Konva image", err);
-    }
-  }, [image, hasFilters, elementRef, isDraggingFilter]);
+  useFilterCache({ nodeRef: elementRef, image, hasFilters, canvasWidth });
 
   const flipped = element.flipX === true;
   const flippedY = element.flipY === true;
