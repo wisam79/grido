@@ -1,8 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { 
-  ImageIcon, Paintbrush, Sliders, ImagePlus, Scissors, Copy, Sparkles, X, Rows, Columns, LayoutGrid, Wand2,
+import { Paintbrush, Sliders, ImagePlus, Scissors, Copy, Sparkles, X, Rows, Columns, LayoutGrid, Wand2,
   FlipHorizontal2, FlipVertical2, RotateCw, Undo2, ScanFace
 } from "lucide-react";
 import {

@@ -4,14 +4,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { LayoutGrid, Check, RefreshCw, FileEdit, Ruler, Save, Sparkles } from "lucide-react";
+import { LayoutGrid, Check, RefreshCw, Ruler, Save } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import type { FreeformLayout, FreeformSlot, PhotoPresetType, MixedPreset } from "../types";
 import { MIXED_COLLAGE_PRESETS, PHOTO_PRESET_LABELS } from "../lib/mixed-presets";
