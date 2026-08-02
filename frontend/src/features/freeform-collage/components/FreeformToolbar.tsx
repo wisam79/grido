@@ -40,7 +40,7 @@ interface FreeformToolbarProps {
   currentPresetType?: PhotoPresetType;
 }
 
-export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
+export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(function FreeformToolbar({
   selectedSlotId,
   canUndo,
   canRedo,
@@ -55,7 +55,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
   onAlignSlot,
   onChangePresetType,
   currentPresetType,
-}) => {
+}) {
   const presetButtons: { type: PhotoPresetType; icon: typeof ShieldCheck; tip: string }[] = [
     { type: "passport", icon: ShieldCheck, tip: "جواز سفر (50×50 مم)" },
     { type: "id", icon: BadgeCheck, tip: "هوية قياسية (35×45 مم)" },
@@ -67,7 +67,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
 
   return (
     <div className="flex items-center justify-between gap-1 p-1 bg-card border rounded-xl shadow-xs flex-wrap font-cairo">
-      {/* التراجع والتكرار + الإضافة والحذف */}
+      {/* التراجع والتكرار */}
       <div className="flex items-center gap-0.5">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -99,44 +99,12 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
           <TooltipContent side="top">إعادة (Ctrl+Y)</TooltipContent>
         </Tooltip>
 
-        <div className="h-4 w-px bg-border/60 mx-0.5" />
+        <div className="w-[1px] h-4 bg-border/60 mx-1 shrink-0" />
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
-              onClick={onSplitHorizontal}
-              disabled={!selectedSlotId}
-            >
-              <Columns className="w-3.5 h-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">تقسيم أفقي (يمين ويسار)</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
-              onClick={onSplitVertical}
-              disabled={!selectedSlotId}
-            >
-              <Rows className="w-3.5 h-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">تقسيم رأسي (أعلى وأسفل)</TooltipContent>
-        </Tooltip>
-
-        <div className="h-4 w-px bg-border/60 mx-0.5" />
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-lg cursor-pointer"
               onClick={onAddSlot}
@@ -150,7 +118,22 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="outline"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-lg text-destructive hover:bg-destructive/10 cursor-pointer"
+              onClick={onRemoveSlot}
+              disabled={!selectedSlotId}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">حذف الخلية المحددة (Del)</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-lg cursor-pointer"
               onClick={onDuplicateSlot}
@@ -161,11 +144,14 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
           </TooltipTrigger>
           <TooltipContent side="top">مضاعفة الخلية المحددة (Ctrl+D)</TooltipContent>
         </Tooltip>
+      </div>
 
+      {/* المحاذاة والتقسيم والتدوير */}
+      <div className="flex items-center gap-0.5">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-lg cursor-pointer"
               onClick={onRotateSlot}
@@ -174,7 +160,24 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
               <RotateCw className="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">تدوير الخلية 90 درجة</TooltipContent>
+          <TooltipContent side="top">تدوير اتجاه الخلية (طولي / عرضي)</TooltipContent>
+        </Tooltip>
+
+        <div className="w-[1px] h-4 bg-border/60 mx-1 shrink-0" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-lg cursor-pointer"
+              onClick={onSplitVertical}
+              disabled={!selectedSlotId}
+            >
+              <Rows className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">تقسيم إلى صفين (أعلى وأسفل)</TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -182,19 +185,18 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg text-destructive/70 hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-              onClick={onRemoveSlot}
+              className="h-7 w-7 rounded-lg cursor-pointer"
+              onClick={onSplitHorizontal}
               disabled={!selectedSlotId}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Columns className="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">حذف الخلية (Delete)</TooltipContent>
+          <TooltipContent side="top">تقسيم إلى عمودين (يمين ويسار)</TooltipContent>
         </Tooltip>
-      </div>
 
-      {/* أدوات المحاذاة والموضع */}
-      <div className="flex items-center gap-0.5">
+        <div className="w-[1px] h-4 bg-border/60 mx-1 shrink-0" />
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -207,7 +209,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
               <AlignCenter className="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">توسيع أفقياً في الورقة</TooltipContent>
+          <TooltipContent side="top">تمركز أفقياً في منتصف الورقة</TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -222,21 +224,22 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
               <AlignVerticalJustifyCenter className="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">توسيط رأسي في الورقة</TooltipContent>
+          <TooltipContent side="top">تمركز عمودياً في منتصف الورقة</TooltipContent>
         </Tooltip>
+      </div>
 
-        <div className="h-4 w-px bg-border/60 mx-0.5" />
-
-        {/* قياس الخلية */}
+      {/* اختيار مقاس مسبق للخلية المحددة */}
+      <div className="flex items-center gap-0.5">
+        <div className="w-[1px] h-4 bg-border/60 mx-1 shrink-0" />
         {presetButtons.map(({ type, icon: Icon, tip }) => (
           <Tooltip key={type}>
             <TooltipTrigger asChild>
               <Button
-                variant={currentPresetType === type ? "default" : "outline"}
+                variant={currentPresetType === type ? "secondary" : "ghost"}
                 size="icon"
                 className={cn(
                   "h-7 w-7 rounded-lg cursor-pointer transition-all",
-                  currentPresetType === type && "shadow-xs font-bold"
+                  currentPresetType === type ? "border border-primary/50 text-primary font-bold shadow-2xs" : ""
                 )}
                 onClick={() => onChangePresetType(type)}
                 disabled={!selectedSlotId}
@@ -250,4 +253,4 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = ({
       </div>
     </div>
   );
-};
+});

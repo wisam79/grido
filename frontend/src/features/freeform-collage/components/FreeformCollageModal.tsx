@@ -9,8 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { LayoutGrid, Check, RefreshCw, FileEdit, Ruler, Save } from "lucide-react";
+import { LayoutGrid, Check, RefreshCw, FileEdit, Ruler, Save, Sparkles } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import type { FreeformLayout, FreeformSlot, PhotoPresetType, MixedPreset } from "../types";
 import { MIXED_COLLAGE_PRESETS, PHOTO_PRESET_LABELS } from "../lib/mixed-presets";
@@ -29,6 +30,27 @@ import { FreeformToolbar } from "./FreeformToolbar";
 import { FreeformCanvasEditor } from "./FreeformCanvasEditor";
 import { MixedPresetsGrid } from "./MixedPresetsGrid";
 import { SaveCustomTemplate } from "../../../../wailsjs/go/main/App";
+
+interface PaperPresetOption {
+  id: string;
+  name: string;
+  w: number;
+  h: number;
+}
+
+const COMMON_PAPER_PRESETS: PaperPresetOption[] = [
+  { id: "4x6", name: "4×6 بوصة (102×152 مم)", w: 102, h: 152 },
+  { id: "5x7", name: "5×7 بوصة (127×178 مم)", w: 127, h: 178 },
+  { id: "6x8", name: "6×8 بوصة (152×203 مم)", w: 152, h: 203 },
+  { id: "8x10", name: "8×10 بوصة (203×254 مم)", w: 203, h: 254 },
+  { id: "10x15cm", name: "10×15 سم (100×150 مم)", w: 100, h: 150 },
+  { id: "13x18cm", name: "13×18 سم (130×180 مم)", w: 130, h: 180 },
+  { id: "a4", name: "ورقة A4 (210×297 مم)", w: 210, h: 297 },
+  { id: "a5", name: "ورقة A5 (148×210 مم)", w: 148, h: 210 },
+  { id: "a3", name: "ورقة A3 (297×420 مم)", w: 297, h: 420 },
+  { id: "letter", name: "Letter (216×279 مم)", w: 216, h: 279 },
+  { id: "sq10", name: "مربع (100×100 مم)", w: 100, h: 100 },
+];
 
 interface FreeformCollageModalProps {
   open: boolean;
@@ -456,20 +478,69 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[96vw] sm:max-w-[1040px] h-[93vh] max-h-[840px] overflow-hidden border border-border/60 bg-background/95 backdrop-blur-2xl rounded-2xl shadow-2xl font-cairo flex flex-col p-3.5 gap-2"
+        className="w-[96vw] sm:max-w-[1060px] h-[93vh] max-h-[850px] overflow-hidden border border-border/60 bg-background rounded-2xl shadow-2xl font-cairo flex flex-col p-3.5 gap-2.5"
         dir="rtl"
       >
-        {/* Header — رأس النافذة */}
-        <DialogHeader className="border-b border-border/40 pb-2 shrink-0 flex flex-row items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-xl bg-primary/15 text-primary">
-              <LayoutGrid className="w-4 h-4" />
-            </div>
-            <div>
-              <DialogTitle className="text-sm font-black text-foreground">محرر الكولاج الحر والأحجام المختلطة</DialogTitle>
-              <DialogDescription className="text-[10.5px] text-muted-foreground mt-0.5">
-                تأطير وتنسيق مخصص بأقصى مساحة رؤية للكانفاس
-              </DialogDescription>
+        {/* Header — رأس النافذة البسيط والمباشر مع أدوات قياس الورقة */}
+        <DialogHeader className="border-b border-border/40 pb-2.5 shrink-0 flex flex-row items-center justify-between">
+          <DialogTitle className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
+            <LayoutGrid className="w-4 h-4 text-primary" />
+            محرر الكولاج الحر
+          </DialogTitle>
+
+          {/* قياسات وأبعاد الورقة في رأس النافذة */}
+          <div className="flex items-center gap-2 bg-muted/40 px-3 py-1 rounded-xl border border-border/40 text-xs">
+            <Ruler className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="font-semibold text-muted-foreground shrink-0">ورق جاهز:</span>
+            <Select
+              value={
+                COMMON_PAPER_PRESETS.find(
+                  (p) =>
+                    (p.w === paperWidthMM && p.h === paperHeightMM) ||
+                    (p.w === paperHeightMM && p.h === paperWidthMM)
+                )?.id || "custom"
+              }
+              onValueChange={(val) => {
+                const found = COMMON_PAPER_PRESETS.find((p) => p.id === val);
+                if (found) {
+                  setPaperWidthMM(found.w);
+                  setPaperHeightMM(found.h);
+                  setActivePresetId(null);
+                }
+              }}
+            >
+              <SelectTrigger size="sm" className="h-7 text-xs font-semibold rounded-lg bg-background border-border/60 min-w-[140px] shrink-0">
+                <SelectValue placeholder="اختر قياس..." />
+              </SelectTrigger>
+              <SelectContent className="font-cairo z-[150]">
+                <SelectItem value="custom" className="text-xs font-semibold">مخصص (أرقام)</SelectItem>
+                {COMMON_PAPER_PRESETS.map((p) => (
+                  <SelectItem key={p.id} value={p.id} className="text-xs font-semibold">
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="h-3.5 w-px bg-border/60 mx-0.5 shrink-0" />
+
+            <div className="flex items-center gap-1 font-mono shrink-0" dir="ltr">
+              <PaperDimInput
+                value={paperWidthMM}
+                onCommit={(v) => {
+                  setPaperWidthMM(v);
+                  setActivePresetId(null);
+                }}
+              />
+              <span className="text-xs font-extrabold text-muted-foreground">×</span>
+              <PaperDimInput
+                value={paperHeightMM}
+                onCommit={(v) => {
+                  setPaperHeightMM(v);
+                  setActivePresetId(null);
+                }}
+              />
+              <span className="text-[11px] font-semibold text-muted-foreground">مم</span>
             </div>
           </div>
         </DialogHeader>
@@ -511,58 +582,39 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
           />
         </div>
 
-        {/* Footer — شريط سفلي موحد ونظيف بدون تراكب نصي */}
-        <DialogFooter className="border-t border-border/40 pt-2 flex items-center justify-between gap-2 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 rounded-xl text-xs gap-1.5 cursor-pointer border-border/60 hover:bg-muted/50"
-            onClick={handleSaveAsCustomTemplate}
-            disabled={isSavingTemplate || slots.length === 0}
-          >
-            <Save className="w-3.5 h-3.5 text-emerald-500" />
-            <span>حفظ كقالب مخصص</span>
-          </Button>
-
-          {/* مدخلات الاسم والأبعاد المنسقة بدقة */}
-          <div className="flex items-center gap-2 bg-muted/30 px-3 py-1 rounded-xl border border-border/40" dir="rtl">
-            <FileEdit className="w-3.5 h-3.5 text-primary shrink-0" />
+        {/* Footer — شريط سفلي موحد ونظيف بدون ازدحام */}
+        <DialogFooter className="border-t border-border/40 pt-2.5 flex items-center justify-between gap-2 shrink-0">
+          {/* حفظ كقالب مخصص على اليمين */}
+          <div className="flex items-center gap-2">
             <Input
               value={layoutName}
               onChange={(e) => setLayoutName(e.target.value)}
-              className="h-7 text-[11px] rounded-lg w-[160px] bg-background border-border/60 font-bold"
-              placeholder="اسم الكولاج..."
+              className="h-8 text-xs rounded-lg w-[140px] bg-background border-border/60 font-semibold"
+              placeholder="اسم القالب..."
             />
-
-            <div className="h-3.5 w-px bg-border/60 mx-0.5" />
-
-            <Ruler className="w-3.5 h-3.5 text-primary shrink-0" />
-            <span className="text-[11px] font-bold text-muted-foreground">أبعاد الورقة:</span>
-            <div className="flex items-center gap-1 font-mono" dir="ltr">
-              <PaperDimInput
-                value={paperWidthMM}
-                onCommit={(v) => setPaperWidthMM(v)}
-              />
-              <span className="text-[10px] font-extrabold text-muted-foreground">×</span>
-              <PaperDimInput
-                value={paperHeightMM}
-                onCommit={(v) => setPaperHeightMM(v)}
-              />
-              <span className="text-[10px] font-bold text-muted-foreground">mm</span>
-            </div>
-
-            <span className="text-[10px] font-mono font-extrabold text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 me-1">
-              {slots.length} صور
-            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-lg text-xs gap-1.5 cursor-pointer border-border/60 hover:bg-muted font-semibold"
+              onClick={handleSaveAsCustomTemplate}
+              disabled={isSavingTemplate || slots.length === 0}
+            >
+              <Save className="w-3.5 h-3.5 text-emerald-500" />
+              <span>حفظ كقالب</span>
+            </Button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 rounded-xl text-xs px-3.5 cursor-pointer" onClick={() => onOpenChange(false)}>
+          {/* أزرار الإلغاء والتطبيق على اليسار */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20 me-1">
+              {slots.length} صور
+            </span>
+            <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs px-4 cursor-pointer font-semibold" onClick={() => onOpenChange(false)}>
               إلغاء
             </Button>
             <Button
               size="sm"
-              className="h-8 rounded-xl text-xs font-bold gap-1.5 px-4 cursor-pointer shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-8 rounded-lg text-xs font-semibold gap-1.5 px-5 cursor-pointer shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={handleApplyToCanvas}
               disabled={isApplying || slots.length === 0}
             >

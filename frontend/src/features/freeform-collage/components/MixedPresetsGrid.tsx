@@ -16,7 +16,7 @@ function getPresetIcon(iconName: string) {
   return Grid2x2;
 }
 
-export const MixedPresetsGrid: React.FC<MixedPresetsGridProps> = ({ activePresetId, onSelectPreset }) => {
+export const MixedPresetsGrid: React.FC<MixedPresetsGridProps> = React.memo(function MixedPresetsGrid({ activePresetId, onSelectPreset }) {
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
       <div className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground me-1 shrink-0">
@@ -64,4 +64,4 @@ export const MixedPresetsGrid: React.FC<MixedPresetsGridProps> = ({ activePreset
       })}
     </div>
   );
-};
+});

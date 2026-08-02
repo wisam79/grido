@@ -22,9 +22,16 @@ import { toast } from "sonner";
 import { ExportPrintSheet, PrintNative } from "../../../wailsjs/go/handlers/PrintHandler";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 import { domain } from "../../../wailsjs/go/models";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PAPER_SIZES } from "@/lib/templates/constants";
 import { captureStageDataUrl } from "@/lib/konva-export-utils";
 import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
-
 import { useShallow } from "zustand/react/shallow";
 
 interface PrintDialogProps {
@@ -225,6 +232,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       y2: l.y2,
     }));
 
+    const firstFilledSlot = slots.find((s) => s.imageSrc);
+
     for (let i = 0; i < actualCopies; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
@@ -232,7 +241,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       const blockYMM = offsetY + row * (imageHeightMM + gapMM);
 
       for (const slot of slots) {
-        if (!slot.imageSrc) continue;
+        const activeSrc = slot.imageSrc || firstFilledSlot?.imageSrc;
+        if (!activeSrc) continue;
         const slotW_MM = slot.w * availWMM - gapPx * scalePxToMM;
         const slotH_MM = slot.h * availHMM - gapPx * scalePxToMM;
         const slotX_MM = blockXMM + marginPx * scalePxToMM + slot.x * availWMM + (gapPx * scalePxToMM) / 2;
@@ -241,7 +251,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
         items.push(
           domain.PrintItem.createFrom({
-            imageSrc: slot.imageSrc,
+            imageSrc: activeSrc,
             x: slotX_MM,
             y: slotY_MM,
             w: slotW_MM,
@@ -325,7 +335,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       );
     }
 
-    const shouldShowCut = printSettings.showCutLines || collageShowCutLines;
+    const shouldShowCut = mode === "collage" ? (printSettings.showCutLines || collageShowCutLines) : printSettings.showCutLines;
     const rawCutLines = shouldShowCut
       ? calculatePrintCutLines({
           mode,
@@ -433,6 +443,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         return;
       }
 
+      console.log("[PrintDialog] handlePrint → cutLines:", buildResult.cutLines.length, "showCutLines:", printSettings.showCutLines, "collageShowCutLines:", collageShowCutLines, "mode:", mode);
+      console.log("[PrintDialog] handlePrint → cutLines data:", JSON.stringify(buildResult.cutLines));
+
       const result = await ExportPrintSheet(domain.PrintRequest.createFrom({
         paperWidthMM: paperWidth,
         paperHeightMM: paperHeight,
@@ -470,31 +483,50 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] sm:max-w-[850px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border/60 bg-background rounded-2xl shadow-2xl" dir="rtl">
-        <DialogHeader className="border-b border-border/40 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                <Printer className="w-5 h-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-base font-bold tracking-tight text-foreground">
-                  إعدادات الطباعة
-                </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground/80 mt-0.5">
-                  اضبط خيارات الورق وتوزيع الصور بدقة للتصدير النهائي
-                </DialogDescription>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/40 text-xs">
+      <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border/60 bg-background rounded-2xl shadow-2xl p-0 gap-0" dir="rtl">
+        {/* رأس النافذة المباشر والنظيف */}
+        <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <DialogTitle className="text-base font-bold tracking-tight text-foreground">
+              إعدادات الطباعة
+            </DialogTitle>
+
+            {/* الإعدادات الأساسية في الرأس */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* قائمة اختيارات قياس الورقة */}
+              <Select
+                value={printSettings.paperId || "a4"}
+                onValueChange={(val) => {
+                  const selected = PAPER_SIZES.find((p) => p.id === val);
+                  if (selected) {
+                    setPrintSettings({
+                      paperId: selected.id,
+                      paperWidthMM: selected.widthMM,
+                      paperHeightMM: selected.heightMM,
+                    });
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs font-semibold w-[150px] bg-background border-border/50 shadow-2xs focus:ring-primary/20">
+                  <SelectValue placeholder="مقاس الورقة" />
+                </SelectTrigger>
+                <SelectContent className="z-[150]" dir="rtl">
+                  {PAPER_SIZES.map((size) => (
+                    <SelectItem key={size.id} value={size.id} className="text-xs font-semibold cursor-pointer">
+                      {size.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* وضع الألوان */}
+              <div className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
                 <button
                   type="button"
                   onClick={() => setColorSpace("sRGB")}
                   className={cn(
                     "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer",
-                    colorSpace === "sRGB" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    colorSpace === "sRGB" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   sRGB (شاشات)
@@ -504,14 +536,15 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   onClick={() => setColorSpace("CMYK")}
                   className={cn(
                     "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer",
-                    colorSpace === "CMYK" ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    colorSpace === "CMYK" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   CMYK (مطابع)
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/40">
+              {/* طباعة بدون هوامش */}
+              <div className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40">
                 <Switch 
                   id="borderless-mode" 
                   checked={printSettings.marginMM === 0}
@@ -522,35 +555,53 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     setPrintSettings({ marginMM: checked ? 0 : lastNonZeroMargin });
                   }}
                 />
-                <Label htmlFor="borderless-mode" className="text-xs cursor-pointer select-none">
-                  طباعة بدون هوامش
+                <Label htmlFor="borderless-mode" className="text-xs font-semibold cursor-pointer select-none">
+                  بدون هوامش
+                </Label>
+              </div>
+
+              {/* خطوط القص */}
+              <div className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40">
+                <Switch
+                  id="print-cut-lines-header"
+                  checked={mode === "collage" ? collageShowCutLines : printSettings.showCutLines}
+                  onCheckedChange={(checked) => {
+                    setPrintSettings({ showCutLines: checked });
+                    useEditorStore.getState().setCollageShowCutLines(checked);
+                  }}
+                />
+                <Label htmlFor="print-cut-lines-header" className="text-xs font-semibold cursor-pointer select-none flex items-center gap-1">
+                  <Scissors className="w-3.5 h-3.5 text-primary/80" />
+                  خطوط القص
                 </Label>
               </div>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden py-4 flex flex-col h-full">
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 pb-3 select-none">
+        {/* جسم النافذة الرئيسي */}
+        <div className="flex-1 overflow-hidden p-3.5 flex flex-col gap-3 min-h-0">
+          {/* شريط الأدوات يتم إظهاره فقط في وضع الطباعة الفردية Single Mode (لأن الكولاج يحدد الخلايا تلقائياً) */}
+          {mode !== "collage" && (
+            <div className="grid grid-cols-3 gap-2 select-none shrink-0">
               {/* عدد النسخ في الورقة */}
-              <div className="flex items-center justify-between bg-muted/30 rounded-lg border border-border/40 px-2.5 py-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground">نسخ/ورقة</span>
+              <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
+                <span className="text-xs font-semibold text-muted-foreground">نسخ/ورقة</span>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost" size="sm"
-                    className="h-6 w-6 p-0 rounded-md cursor-pointer"
+                    className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
                     disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) <= 1}
                     onClick={() => setPrintSettings({ copiesPerSheet: Math.max(1, (printSettings.copiesPerSheet ?? 1) - 1) })}
                   >
                     <Minus className="w-3 h-3" />
                   </Button>
-                  <span className="text-xs font-mono font-bold w-7 text-center">
+                  <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
                     {(printSettings.repeatMode ?? "all") === "all" ? (printSettings.copiesPerSheet ?? 1) : "—"}
                   </span>
                   <Button
                     variant="ghost" size="sm"
-                    className="h-6 w-6 p-0 rounded-md cursor-pointer"
+                    className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
                     disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= 48}
                     onClick={() => setPrintSettings({ copiesPerSheet: Math.min(48, (printSettings.copiesPerSheet ?? 1) + 1) })}
                   >
@@ -559,10 +610,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 </div>
               </div>
 
-              {/* نمط التكرار */}
-              <div className="flex items-center justify-between bg-muted/30 rounded-lg border border-border/40 px-2.5 py-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground">التكرار</span>
-                <div className="flex items-center gap-0.5 bg-muted/50 p-0.5 rounded-md">
+              {/* نمط التكرار والتعبئة */}
+              <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
+                <span className="text-xs font-semibold text-muted-foreground">التكرار</span>
+                <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30">
                   {([
                     { id: "all", icon: LayoutGrid, label: "تعبئة تلقائية" },
                     { id: "row", icon: Rows, label: "صف واحد" },
@@ -574,9 +625,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                           type="button"
                           onClick={() => setPrintSettings({ repeatMode: id })}
                           className={cn(
-                            "h-6 w-6 rounded-sm flex items-center justify-center transition-all cursor-pointer",
+                            "h-6 w-6 rounded-xs flex items-center justify-center transition-all cursor-pointer",
                             (printSettings.repeatMode ?? "all") === id
-                              ? "bg-background text-primary shadow-xs"
+                              ? "bg-background text-primary shadow-2xs font-bold"
                               : "text-muted-foreground hover:text-foreground"
                           )}
                           aria-label={label}
@@ -584,28 +635,30 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                           <Icon className="w-3.5 h-3.5" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-[11px]">{label}</TooltipContent>
+                      <TooltipContent side="bottom" className="text-[11px] font-semibold">{label}</TooltipContent>
                     </Tooltip>
                   ))}
                 </div>
               </div>
 
-              {/* المسافة بين النسخ */}
-              <div className="flex items-center justify-between bg-muted/30 rounded-lg border border-border/40 px-2.5 py-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground">المسافة (مم)</span>
+              {/* المسافة الفاصلة بين النسخ */}
+              <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
+                <span className="text-xs font-semibold text-muted-foreground">المسافة (مم)</span>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost" size="sm"
-                    className="h-6 w-6 p-0 rounded-md cursor-pointer"
+                    className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
                     disabled={(printSettings.gapMM ?? 2) <= 0}
                     onClick={() => setPrintSettings({ gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1) })}
                   >
                     <Minus className="w-3 h-3" />
                   </Button>
-                  <span className="text-xs font-mono font-bold w-7 text-center">{printSettings.gapMM ?? 2}</span>
+                  <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
+                    {printSettings.gapMM ?? 2}
+                  </span>
                   <Button
                     variant="ghost" size="sm"
-                    className="h-6 w-6 p-0 rounded-md cursor-pointer"
+                    className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
                     disabled={(printSettings.gapMM ?? 2) >= 20}
                     onClick={() => setPrintSettings({ gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1) })}
                   >
@@ -613,115 +666,111 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   </Button>
                 </div>
               </div>
-
-              {/* خطوط القص */}
-              <div className="flex items-center justify-between bg-muted/30 rounded-lg border border-border/40 px-2.5 py-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                  <Scissors className="w-3 h-3" />
-                  خطوط القص
-                </span>
-                <Switch
-                  id="print-cut-lines"
-                  checked={mode === "collage" ? collageShowCutLines : printSettings.showCutLines}
-                  onCheckedChange={(checked) => {
-                    if (mode === "collage") {
-                      useEditorStore.getState().setCollageShowCutLines(checked);
-                    } else {
-                      setPrintSettings({ showCutLines: checked });
-                    }
-                  }}
-                />
-              </div>
             </div>
+          )}
 
-            <div className="border border-border/50 rounded-xl overflow-hidden bg-muted/10 dark:bg-slate-950/30 flex flex-col h-full min-h-[400px] shadow-inner">
-              <div className="flex items-center justify-between p-3 border-b border-border/40 bg-card select-none">
-                <span className="text-xs font-bold flex items-center gap-2 text-foreground/90">
-                  <span className={cn("w-2 h-2 rounded-full", isOverflowing ? "bg-red-500 animate-ping" : "bg-emerald-500")} />
-                  معاينة الورقة المطبوعة
-                </span>
-                <div className="flex items-center gap-1.5 bg-muted/50 p-0.5 rounded-lg border border-border/30">
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-7 w-7 p-0 cursor-pointer hover:bg-background">
-                    <ZoomOut className="w-3.5 h-3.5" />
+          {/* مساحة المعاينة التفاعلية المباشرة */}
+          <div className="border border-border/50 rounded-xl overflow-hidden bg-slate-900/95 flex flex-col flex-1 shadow-inner relative">
+            {/* شريط عنوان وتكبير المعاينة */}
+            <div className="flex items-center justify-between px-3.5 py-2 border-b border-white/10 bg-slate-900/80 backdrop-blur-md select-none z-10">
+              <span className="text-xs font-bold text-slate-200 flex items-center gap-2">
+                <span className={cn("w-2 h-2 rounded-full", isOverflowing ? "bg-red-500 animate-ping" : "bg-emerald-400")} />
+                معاينة الورقة المطبوعة
+              </span>
+
+              {/* أدوات التحكم بالـ Zoom */}
+              <div className="flex items-center gap-1.5">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setZoom(1)} 
+                  className="h-6 px-2 text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer font-medium"
+                >
+                  إعادة ضبط
+                </Button>
+                <div className="flex items-center gap-1 bg-slate-800/80 p-0.5 rounded-md border border-slate-700/80">
+                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-5 w-5 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
+                    <ZoomOut className="w-3 h-3" />
                   </Button>
-                  <span className="text-[10px] w-12 text-center font-mono font-bold select-none text-muted-foreground">
+                  <span className="text-[10px] w-10 text-center font-mono font-semibold text-slate-300">
                     {Math.round(zoom * 100)}%
                   </span>
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-7 w-7 p-0 cursor-pointer hover:bg-background">
-                    <ZoomIn className="w-3.5 h-3.5" />
+                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-5 w-5 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
+                    <ZoomIn className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
+            </div>
 
-              <div className="flex-1 overflow-auto p-6 flex items-center justify-center select-none workspace-grid border-t border-border/40">
+            {/* لوحة الورقة البيضاء الممركزة داخل مساحة العمل */}
+            <div className="flex-1 overflow-auto p-6 flex items-center justify-center select-none workspace-grid relative">
+              <div
+                className="bg-white rounded-xs relative border border-slate-300/60 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-200"
+                style={{
+                  width: paperWidth * scaleFactor * zoom,
+                  height: paperHeight * scaleFactor * zoom,
+                }}
+              >
+                {/* حدود الهامش الداخلي */}
                 <div
-                  className="bg-white rounded-xs relative border border-slate-200/50 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]"
+                  className={cn("absolute border border-dashed pointer-events-none transition-colors", isOverflowing ? "border-red-400/80" : "border-slate-300/60")}
                   style={{
-                    width: paperWidth * scaleFactor * zoom,
-                    height: paperHeight * scaleFactor * zoom,
+                    left: effectiveMarginMM * scaleFactor * zoom,
+                    top: effectiveMarginMM * scaleFactor * zoom,
+                    right: effectiveMarginMM * scaleFactor * zoom,
+                    bottom: effectiveMarginMM * scaleFactor * zoom,
                   }}
-                >
-                  <div
-                    className={cn("absolute border border-dashed pointer-events-none transition-colors", isOverflowing ? "border-red-400/60" : "border-slate-300")}
-                    style={{
-                      left: effectiveMarginMM * scaleFactor * zoom,
-                      top: effectiveMarginMM * scaleFactor * zoom,
-                      right: effectiveMarginMM * scaleFactor * zoom,
-                      bottom: effectiveMarginMM * scaleFactor * zoom,
-                    }}
+                />
+                <div className="absolute inset-0 overflow-hidden rounded-xs">
+                  <SheetPreview
+                    cols={cols}
+                    rows={rows}
+                    count={actualCopies}
+                    imageWidthMM={imageWidthMM}
+                    imageHeightMM={imageHeightMM}
+                    gapMM={gapMM}
+                    zoom={zoom}
+                    showCutLines={mode === "collage" ? collageShowCutLines : printSettings.showCutLines}
+                    showEndCutLine={mode === "collage" ? collageShowEndCutLine !== false : printSettings.showEndCutLine !== false}
+                    mode={mode}
+                    backgroundColor={backgroundColor}
+                    previewImageSrc={previewImageSrc}
+                    marginMM={effectiveMarginMM}
+                    paperWidthMM={paperWidth}
+                    paperHeightMM={paperHeight}
+                    slots={slots}
+                    collageGap={collageGap}
+                    collageMargin={collageMargin}
+                    canvasWidth={canvasWidth}
+                    canvasHeight={canvasHeight}
+                    hasPhysical={!!collageTemplate?.physicalLayout}
+                    scaleFactor={scaleFactor}
                   />
-                  <div
-                    className="absolute"
-                    style={{
-                      left: effectiveMarginMM * scaleFactor * zoom,
-                      top: effectiveMarginMM * scaleFactor * zoom,
-                      right: effectiveMarginMM * scaleFactor * zoom,
-                      bottom: effectiveMarginMM * scaleFactor * zoom,
-                    }}
-                  >
-                    <SheetPreview
-                      cols={cols}
-                      rows={rows}
-                      count={actualCopies}
-                      imageWidthMM={imageWidthMM}
-                      imageHeightMM={imageHeightMM}
-                      gapMM={gapMM}
-                      zoom={zoom}
-                      showCutLines={mode === "collage" ? collageShowCutLines : printSettings.showCutLines}
-                      showEndCutLine={mode === "collage" ? collageShowEndCutLine !== false : printSettings.showEndCutLine !== false}
-                      mode={mode}
-                      backgroundColor={backgroundColor}
-                      previewImageSrc={previewImageSrc}
-                      marginMM={effectiveMarginMM}
-                      paperWidthMM={paperWidth}
-                      paperHeightMM={paperHeight}
-                      slots={slots}
-                      collageGap={collageGap}
-                      collageMargin={collageMargin}
-                      canvasWidth={canvasWidth}
-                      canvasHeight={canvasHeight}
-                      hasPhysical={!!collageTemplate?.physicalLayout}
-                      scaleFactor={scaleFactor}
-                    />
-                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-        <DialogFooter className="border-t border-border/40 pt-4 flex gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isExporting} className="cursor-pointer">
+        {/* ذيل النافذة البسيط والمباشر */}
+        <DialogFooter className="px-5 py-3 border-t border-border/40 bg-card flex items-center justify-end gap-2.5 shrink-0">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)} 
+            disabled={isExporting} 
+            className="h-8 px-4 text-xs font-semibold cursor-pointer"
+          >
             إلغاء
           </Button>
           <Button 
             onClick={handlePrint} 
-            className="gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold transition-all duration-300 shadow-md shadow-indigo-500/10 active:scale-98 cursor-pointer" 
+            className="h-8 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all duration-200 cursor-pointer rounded-lg" 
             disabled={isExporting || !previewImageSrc}
           >
             {isExporting ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> جاري التصدير...</>
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جاري التصدير...</>
             ) : (
-              <><Printer className="w-4 h-4" /> تصدير وعرض</>
+              <><Printer className="w-3.5 h-3.5" /> تصدير وعرض</>
             )}
           </Button>
         </DialogFooter>

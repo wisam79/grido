@@ -52,8 +52,9 @@ jobs:
           path: |
             frontend/public/models
             frontend/public/fonts
+            frontend/public/wasm
             frontend/public/onnxruntime-web
-          key: ${{ runner.os }}-models-fonts-v1
+          key: ${{ runner.os }}-models-fonts-v2
 
       - name: Add Go Bin & NSIS to PATH
         shell: powershell

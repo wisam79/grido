@@ -95,7 +95,7 @@ const FreeformSlotCell = memo(function FreeformSlotCell({
       onPointerCancel={onPointerCancel}
       onKeyDown={(e) => onKeyDown(e, slot.id)}
       className={cn(
-        "absolute border transition-all cursor-move flex flex-col items-center justify-center group select-none overflow-hidden touch-none p-1",
+        "absolute border transition-[background-color,border-color,box-shadow] cursor-move flex flex-col items-center justify-center group select-none overflow-hidden touch-none p-1",
         isSelected
           ? "border-2 border-primary bg-primary/20 ring-2 ring-primary/40 z-20 shadow-lg text-primary"
           : "border-slate-300 dark:border-zinc-700 bg-slate-100/90 dark:bg-zinc-800/90 hover:bg-slate-200/90 dark:hover:bg-zinc-800 text-foreground/90 z-10"
@@ -143,7 +143,7 @@ const FreeformSlotCell = memo(function FreeformSlotCell({
   );
 });
 
-export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = ({
+export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(function FreeformCanvasEditor({
   paperWidthMM,
   paperHeightMM,
   slots,
@@ -152,7 +152,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = ({
   onSlotsChange,
   onDragStart,
   onDragEnd,
-}) => {
+}) {
   const paperRef = useRef<HTMLDivElement>(null);
   const [activeSnapLines, setActiveSnapLines] = useState<SnapLine[]>([]);
   const rafId = useRef<number | null>(null);
@@ -329,7 +329,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = ({
     <div className="w-full flex items-center justify-center bg-muted/20 dark:bg-zinc-950/60 rounded-2xl relative flex-1 min-h-0 overflow-hidden p-1.5 border border-border/40">
       <div
         ref={paperRef}
-        className="relative bg-white dark:bg-zinc-900 border-2 border-slate-300 dark:border-zinc-700/80 shadow-2xl rounded-lg transition-all overflow-hidden touch-none"
+        className="relative bg-white dark:bg-zinc-900 border-2 border-slate-300 dark:border-zinc-700/80 shadow-2xl rounded-lg transition-colors overflow-hidden touch-none"
         style={{
           width: paperAspect >= 1 ? "98%" : "auto",
           height: paperAspect < 1 ? "98%" : "auto",
@@ -384,4 +384,4 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = ({
       </div>
     </div>
   );
-};
+});

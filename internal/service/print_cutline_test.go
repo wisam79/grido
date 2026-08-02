@@ -3,6 +3,7 @@ package service
 import (
 	"image"
 	"image/color"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -74,7 +75,7 @@ func TestPrintService_CutLineEdgeVisibility(t *testing.T) {
 				yLine = h - 3
 			}
 
-			foundRed := false
+			foundBlack := false
 			searchY := yLine
 			for _, dy := range []int{0, 1, -1, 2, -2} {
 				y := searchY + dy
@@ -83,18 +84,70 @@ func TestPrintService_CutLineEdgeVisibility(t *testing.T) {
 				}
 				for x := w / 4; x < 3*w/4; x += 3 {
 					r, g, b, _ := outImg.At(x, y).RGBA()
-					if int(r>>8) > 200 && int(g>>8) < 100 && int(b>>8) < 100 {
-						foundRed = true
+					if int(r>>8) < 160 && int(g>>8) < 160 && int(b>>8) < 160 {
+						foundBlack = true
 						break
 					}
 				}
-				if foundRed {
+				if foundBlack {
 					break
 				}
 			}
-			if !foundRed {
-				t.Errorf("cut line at %.0fmm: expected visible red dashed line around y=%dpx, but no red pixels found (clipped out of canvas?)", cyMM, yLine)
+			if !foundBlack {
+				t.Errorf("cut line at %.0fmm: expected visible black dashed line around y=%dpx, but no dark pixels found (clipped out of canvas?)", cyMM, yLine)
 			}
 		})
+	}
+}
+
+func TestPrintService_UserLoggedCutLines(t *testing.T) {
+	svc := NewPrintService()
+	req := domain.PrintRequest{
+		PaperWidthMM:    210.0,
+		PaperHeightMM:   297.0,
+		DPI:             300,
+		BackgroundColor: "#FFFFFF",
+		ShowCutLines:    true,
+		ColorSpace:      "CMYK",
+		ExportFormat:    "tiff",
+		CutLines: []domain.CutLine{
+			{X1: 4.01, Y1: 4, X2: 4.01, Y2: 86},
+			{X1: 37.01, Y1: 4, X2: 37.01, Y2: 86},
+			{X1: 71.01, Y1: 4, X2: 71.01, Y2: 86},
+			{X1: 105.01, Y1: 4, X2: 105.01, Y2: 86},
+			{X1: 139.01, Y1: 4, X2: 139.01, Y2: 86},
+			{X1: 172.01, Y1: 4, X2: 172.01, Y2: 86},
+			{X1: 4.01, Y1: 4, X2: 172.01, Y2: 4},
+			{X1: 4.01, Y1: 45, X2: 172.01, Y2: 45},
+			{X1: 0, Y1: 86, X2: 210, Y2: 86},
+		},
+		Items: []domain.PrintItem{},
+	}
+
+	outPath, htmlDoc, err := svc.GeneratePrintSheet(req)
+	if err != nil {
+		t.Fatalf("GeneratePrintSheet failed: %v", err)
+	}
+	t.Logf("outPath: %s", outPath)
+	t.Logf("htmlDoc len: %d", len(htmlDoc))
+
+	outImg, err := imaging.Open(outPath)
+	if err != nil {
+		t.Fatalf("failed to open output image: %v", err)
+	}
+
+	// Verify line at y=86mm (px ~ 1016)
+	bounds := outImg.Bounds()
+	yPx := int(math.Round(86.0 * 300.0 / 25.4))
+	foundDark := false
+	for x := 100; x < bounds.Dx()-100; x++ {
+		r, g, b, _ := outImg.At(x, yPx).RGBA()
+		if (r>>8) < 100 && (g>>8) < 100 && (b>>8) < 100 {
+			foundDark = true
+			break
+		}
+	}
+	if !foundDark {
+		t.Errorf("line at y=86mm not found in exported image")
 	}
 }

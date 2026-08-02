@@ -71,7 +71,7 @@ export const DEFAULT_COLLAGE_STATE = {
   collageGap: 0,
   collageMargin: 0,
   collageRadius: 0,
-  collageShowCutLines: false,
+  collageShowCutLines: true,
   collageShowEndCutLine: true,
   collageStrokeWidth: 0,
   collageStrokeColor: "#000000",

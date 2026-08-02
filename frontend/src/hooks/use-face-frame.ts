@@ -137,13 +137,6 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
       return;
     }
 
-    if (!modelCachedRef.current) {
-      toast.info("جاري تشغيل كاشف الوجه الذكي محلياً بدون إنترنت.", {
-        duration: 3000,
-        id: "face-model-notice",
-      });
-    }
-
     setIsFraming(true);
     setFrameProgress(0);
     setFrameProgressText("جاري التهيئة...");

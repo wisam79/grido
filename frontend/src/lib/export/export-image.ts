@@ -352,6 +352,60 @@ export async function exportCanvas(
     const availW = canvasWidth - 2 * margin;
     const availH = canvasHeight - 2 * margin;
 
+    const slotImageMap: Record<string, HTMLImageElement> = {};
+    const slotLoadPromises = slots
+      .filter((slot) => slot.imageSrc)
+      .map(async (slot) => {
+        try {
+          const img = await loadImage(slot.imageSrc!);
+          slotImageMap[slot.id] = img;
+        } catch (e) {
+          console.error("Failed to pre-load slot image:", slot.imageSrc, e);
+        }
+      });
+    await Promise.all(slotLoadPromises);
+
+    for (const slot of slots) {
+      const left = margin + slot.x * availW + gap / 2;
+      const top = margin + slot.y * availH + gap / 2;
+      const width = slot.w * availW - gap;
+      const height = slot.h * availH - gap;
+
+      if (slot.imageSrc && slotImageMap[slot.id]) {
+        const img = slotImageMap[slot.id];
+        ctx.save();
+        const filterStr = buildCSSFilter(slot);
+        if (filterStr && filterStr !== "none") {
+          ctx.filter = filterStr;
+        }
+        ctx.beginPath();
+        if (radius > 0) {
+          drawRoundRect(ctx, left, top, width, height, radius);
+        } else {
+          ctx.rect(left, top, width, height);
+        }
+        ctx.clip();
+        // يطبّق zoom/dragX/dragY/flipX/flipY/rotation كما في عقدة Konva (إصلاح E-7)
+        drawSlotImage(ctx, img, left, top, width, height, slot);
+        ctx.restore();
+      }
+
+      if (borderW > 0) {
+        ctx.save();
+        ctx.strokeStyle = collageStrokeColor;
+        ctx.lineWidth = borderW;
+        ctx.beginPath();
+        if (radius > 0) {
+          drawRoundRect(ctx, left, top, width, height, radius);
+        } else {
+          ctx.rect(left, top, width, height);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // رسم خطوط القص في النهاية فوق كافة الصور والحدود وضمان عدم تغطيتها
     if (collageShowCutLines && slots.length > 0) {
       ctx.save();
 
@@ -423,8 +477,8 @@ export async function exportCanvas(
             ctx.strokeStyle = "#3182ce";
             ctx.lineWidth = lineW * 1.5;
             ctx.setLineDash([12, 6]);
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvasWidth, y);
+            ctx.moveTo(0, Math.min(canvasHeight, y));
+            ctx.lineTo(canvasWidth, Math.min(canvasHeight, y));
           } else {
             ctx.strokeStyle = "#a0aec0";
             ctx.lineWidth = lineW;
@@ -436,59 +490,6 @@ export async function exportCanvas(
         }
       }
       ctx.restore();
-    }
-
-    const slotImageMap: Record<string, HTMLImageElement> = {};
-    const slotLoadPromises = slots
-      .filter((slot) => slot.imageSrc)
-      .map(async (slot) => {
-        try {
-          const img = await loadImage(slot.imageSrc!);
-          slotImageMap[slot.id] = img;
-        } catch (e) {
-          console.error("Failed to pre-load slot image:", slot.imageSrc, e);
-        }
-      });
-    await Promise.all(slotLoadPromises);
-
-    for (const slot of slots) {
-      const left = margin + slot.x * availW + gap / 2;
-      const top = margin + slot.y * availH + gap / 2;
-      const width = slot.w * availW - gap;
-      const height = slot.h * availH - gap;
-
-      if (slot.imageSrc && slotImageMap[slot.id]) {
-        const img = slotImageMap[slot.id];
-        ctx.save();
-        const filterStr = buildCSSFilter(slot);
-        if (filterStr && filterStr !== "none") {
-          ctx.filter = filterStr;
-        }
-        ctx.beginPath();
-        if (radius > 0) {
-          drawRoundRect(ctx, left, top, width, height, radius);
-        } else {
-          ctx.rect(left, top, width, height);
-        }
-        ctx.clip();
-        // يطبّق zoom/dragX/dragY/flipX/flipY/rotation كما في عقدة Konva (إصلاح E-7)
-        drawSlotImage(ctx, img, left, top, width, height, slot);
-        ctx.restore();
-      }
-
-      if (borderW > 0) {
-        ctx.save();
-        ctx.strokeStyle = collageStrokeColor;
-        ctx.lineWidth = borderW;
-        ctx.beginPath();
-        if (radius > 0) {
-          drawRoundRect(ctx, left, top, width, height, radius);
-        } else {
-          ctx.rect(left, top, width, height);
-        }
-        ctx.stroke();
-        ctx.restore();
-      }
     }
   } else {
     const sorted = [...elements]

@@ -39,6 +39,13 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
+      - name: Download Offline Assets (Fonts & Models)
+        working-directory: ./frontend
+        shell: powershell
+        run: |
+          node scripts/download-fonts.js
+          .\scripts\download-models.ps1
+
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 

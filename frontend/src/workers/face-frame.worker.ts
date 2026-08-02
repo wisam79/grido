@@ -55,15 +55,29 @@ async function getOrCreateLandmarker(wasmBaseUrl: string, modelUrl: string): Pro
       // الـ Worker وحدة ES — يجب طلب نسخة Module من الـ WASM loader
       // التي تسجّل ModuleFactory على globalThis (نفس نهج عزل الخلفية).
       const vision = await FilesetResolver.forVisionTasks(wasmBaseUrl, true);
-      const landmarker = await FaceLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: modelUrl,
-          delegate: "GPU",
-        },
-        runningMode: "IMAGE",
-        numFaces: 1,
-        minFaceDetectionConfidence: 0.5,
-      });
+      let landmarker: FaceLandmarker;
+      try {
+        landmarker = await FaceLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: modelUrl,
+            delegate: "GPU",
+          },
+          runningMode: "IMAGE",
+          numFaces: 1,
+          minFaceDetectionConfidence: 0.5,
+        });
+      } catch (gpuErr) {
+        console.warn("GPU delegate failed for FaceLandmarker, falling back to CPU:", gpuErr);
+        landmarker = await FaceLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: modelUrl,
+            delegate: "CPU",
+          },
+          runningMode: "IMAGE",
+          numFaces: 1,
+          minFaceDetectionConfidence: 0.5,
+        });
+      }
       currentLandmarker = landmarker;
       return landmarker;
     })().catch((err) => {

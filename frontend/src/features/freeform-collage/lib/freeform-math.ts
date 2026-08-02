@@ -149,20 +149,37 @@ export function resizeSlot(
   let right = slot.x + slot.w;
   let bottom = slot.y + slot.h;
 
-  if (handle.includes("w")) left = clamp(slot.x + dx, 0, right - MIN_SIZE);
-  if (handle.includes("e")) right = clamp(slot.x + slot.w + dx, left + MIN_SIZE, 1);
-  if (handle.includes("n")) top = clamp(slot.y + dy, 0, bottom - MIN_SIZE);
-  if (handle.includes("s")) bottom = clamp(slot.y + slot.h + dy, top + MIN_SIZE, 1);
+  if (handle.includes("w")) {
+    left = clamp(slot.x + dx, 0, right - MIN_SIZE);
+  }
+  if (handle.includes("e")) {
+    right = clamp(slot.x + slot.w + dx, left + MIN_SIZE, 1);
+  }
+  if (handle.includes("n")) {
+    top = clamp(slot.y + dy, 0, bottom - MIN_SIZE);
+  }
+  if (handle.includes("s")) {
+    bottom = clamp(slot.y + slot.h + dy, top + MIN_SIZE, 1);
+  }
 
   const newRect = { x: left, y: top, w: right - left, h: bottom - top };
   const adjusted = pushOutOfOthers(slots, idx, handle, newRect);
 
-  return slots.map((s, i) => (i === idx ? { ...s, x: adjusted.x, y: adjusted.y, w: adjusted.w, h: adjusted.h } : s));
+  return slots.map((s, i) =>
+    i === idx
+      ? {
+          ...s,
+          x: adjusted.x,
+          y: adjusted.y,
+          w: adjusted.w,
+          h: adjusted.h,
+        }
+      : s
+  );
 }
 
 /**
- * دفع الإطار خارج الخلايا المتداخلة — حلقة تكرارية حتى الاستقرار
- * لأن المرور الواحد قد يترك تداخلاً عند وجود عدة خلايا متجاورة
+ * دفع الإطار خارج الخلايا المتداخلة بأسلوب محافِظ على الأبعاد والحدود التقطيعية
  */
 function pushOutOfOthers(
   slots: FreeformSlot[],
@@ -172,61 +189,64 @@ function pushOutOfOthers(
 ): { x: number; y: number; w: number; h: number } {
   const others = slots.filter((_, i) => i !== editingIdx);
   let { x, y, w, h } = rect;
+  let right = x + w;
+  let bottom = y + h;
 
   const EPS = 1e-6;
   const overlaps = (o: FreeformSlot): boolean =>
     x + EPS < o.x + o.w &&
-    o.x + EPS < x + w &&
+    o.x + EPS < right &&
     y + EPS < o.y + o.h &&
-    o.y + EPS < y + h;
+    o.y + EPS < bottom;
 
-  const enforceBounds = () => {
-    w = Math.max(MIN_SIZE, Math.min(w, 1 - x));
-    h = Math.max(MIN_SIZE, Math.min(h, 1 - y));
-  };
-
-  for (let iter = 0; iter < 10; iter++) {
+  for (let iter = 0; iter < 5; iter++) {
     let changed = false;
 
     for (const o of others) {
       if (!overlaps(o)) continue;
 
-      // إيقاف عند الحافة الأقرب لاتجاه السحب فقط (المقابض لا تجمع w مع e ولا n مع s)
-      if (handle.includes("w") && x < o.x + o.w) {
-        const nx = o.x + o.w;
-        if (Math.abs(nx - x) > EPS) {
+      if (handle.includes("w")) {
+        const nx = Math.min(o.x + o.w, right - MIN_SIZE);
+        if (nx > x + EPS) {
           x = nx;
+          w = right - x;
           changed = true;
         }
-      } else if (handle.includes("e") && x + w > o.x) {
-        const nw = o.x - x;
-        if (Math.abs(nw - w) > EPS) {
-          w = nw;
+      } else if (handle.includes("e")) {
+        const nr = Math.max(o.x, x + MIN_SIZE);
+        if (nr < right - EPS) {
+          right = nr;
+          w = right - x;
           changed = true;
         }
       }
 
-      if (handle.includes("n") && y < o.y + o.h) {
-        const ny = o.y + o.h;
-        if (Math.abs(ny - y) > EPS) {
+      if (handle.includes("n")) {
+        const ny = Math.min(o.y + o.h, bottom - MIN_SIZE);
+        if (ny > y + EPS) {
           y = ny;
+          h = bottom - y;
           changed = true;
         }
-      } else if (handle.includes("s") && y + h > o.y) {
-        const nh = o.y - y;
-        if (Math.abs(nh - h) > EPS) {
-          h = nh;
+      } else if (handle.includes("s")) {
+        const nb = Math.max(o.y, y + MIN_SIZE);
+        if (nb < bottom - EPS) {
+          bottom = nb;
+          h = bottom - y;
           changed = true;
         }
       }
-
-      enforceBounds();
     }
 
     if (!changed) break;
   }
 
-  enforceBounds();
+  // الضمان النهائي لبقاء الخلية حية وداخل أبعاد الورقة تماماً
+  x = clamp(x, 0, 1 - MIN_SIZE);
+  y = clamp(y, 0, 1 - MIN_SIZE);
+  w = clamp(w, MIN_SIZE, 1 - x);
+  h = clamp(h, MIN_SIZE, 1 - y);
+
   return { x, y, w, h };
 }
 

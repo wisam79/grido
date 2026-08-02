@@ -773,13 +773,14 @@ func (s *PrintService) loadAndProcessImage(
 	return processedImg, nil
 }
 
-// drawCutLines يرسم خطوط القص المتقطعة على الكانفس
+// drawCutLines يرسم خطوط القص المتقطعة على الكانفس بالأسود النقي مع إزاحة حافة أمان
 func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 	if !req.ShowCutLines {
 		return
 	}
-	dc.SetColor(color.RGBA{R: 255, G: 0, B: 0, A: 255})
-	lineWidth := mmToPx(0.25, req.DPI)
+	// استخدام رمادي متوسط ناعم (Medium Soft Gray) لتخفيف حظوة خطوط القص وتسهيل القص
+	dc.SetColor(color.RGBA{R: 120, G: 120, B: 120, A: 255})
+	lineWidth := mmToPx(0.18, req.DPI)
 	if lineWidth < 1.0 {
 		lineWidth = 1.0
 	}
@@ -792,6 +793,8 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 
 	paperW := float64(dc.Width())
 	paperH := float64(dc.Height())
+	maxCanvasX := paperW - 1.5
+	maxCanvasY := paperH - 1.5
 
 	for _, line := range req.CutLines {
 		x1 := mmToPx(line.X1, req.DPI)
@@ -799,29 +802,27 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 		x2 := mmToPx(line.X2, req.DPI)
 		y2 := mmToPx(line.Y2, req.DPI)
 
-		if x1 < 0 {
-			x1 = 0
+		// الإزاحة داخل نطاق البكسل القابل للرسم والطباعة بدون التقطع الكسري عند الحافة السفلية/الجانبية
+		if x1 <= 0.5 {
+			x1 = 1.5
+		} else if x1 >= maxCanvasX {
+			x1 = maxCanvasX
 		}
-		if x1 >= paperW {
-			x1 = paperW - 2
+		if x2 <= 0.5 {
+			x2 = 1.5
+		} else if x2 >= maxCanvasX {
+			x2 = maxCanvasX
 		}
-		if x2 < 0 {
-			x2 = 0
+
+		if y1 <= 0.5 {
+			y1 = 1.5
+		} else if y1 >= maxCanvasY {
+			y1 = maxCanvasY
 		}
-		if x2 >= paperW {
-			x2 = paperW - 2
-		}
-		if y1 < 0 {
-			y1 = 0
-		}
-		if y1 >= paperH {
-			y1 = paperH - 2
-		}
-		if y2 < 0 {
-			y2 = 0
-		}
-		if y2 >= paperH {
-			y2 = paperH - 2
+		if y2 <= 0.5 {
+			y2 = 1.5
+		} else if y2 >= maxCanvasY {
+			y2 = maxCanvasY
 		}
 
 		dc.DrawLine(x1, y1, x2, y2)
@@ -1079,6 +1080,9 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 		}
 		dc.Clip()
 		dc.DrawImage(processedImg, int(xPx), int(yPx))
+		// ⚠️ gg v1.3.0: Pop() لا يستعيد القناع (mask) — يُبقيه متراكماً، لذا يجب مسحه يدوياً
+		// وإلا تتراكم مناطق القص وتصبح الخلايا التالية مقصوصة بالكامل (لا تُرسم إلا الأولى)
+		dc.ResetClip()
 		dc.Pop()
 
 		if item.BorderWidthMM > 0 && item.BorderColor != "" {
@@ -1089,6 +1093,16 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
 			dc.Stroke()
 		}
+	}
+
+	slog.Info("GeneratePrintSheet: before drawCutLines",
+		"showCutLines", req.ShowCutLines,
+		"cutLinesCount", len(req.CutLines),
+		"paperW", req.PaperWidthMM,
+		"paperH", req.PaperHeightMM,
+	)
+	for i, cl := range req.CutLines {
+		slog.Info("CutLine", "i", i, "x1", cl.X1, "y1", cl.Y1, "x2", cl.X2, "y2", cl.Y2)
 	}
 
 	s.drawCutLines(dc, req)

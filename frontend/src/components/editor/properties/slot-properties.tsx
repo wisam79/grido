@@ -161,38 +161,38 @@ export function SlotProperties({
 
   if (!slot.imageSrc) {
     return (
-      <div className="space-y-3 p-1 font-cairo">
+      <div className="space-y-2.5 p-0.5 font-cairo">
         {/* أبعاد الخلية الفعالة */}
-        <div className="flex items-center justify-between bg-card/80 border border-primary/20 rounded-xl px-3 py-2.5 shadow-xs">
+        <div className="flex items-center justify-between bg-muted/30 border border-border/40 rounded-xl px-3 py-2">
           <span className="text-[10px] font-bold text-muted-foreground">أبعاد الخلية للطباعة</span>
-          <div className="flex items-baseline gap-1 font-mono">
-            <span className="text-base font-black text-primary">{widthMM} × {heightMM}</span>
-            <span className="text-[10px] font-bold text-primary/80">مم</span>
-            <span className="text-[9px] text-muted-foreground/60 mr-1">({dpi} DPI)</span>
+          <div className="flex items-baseline gap-1 font-mono" dir="ltr">
+            <span className="text-sm font-black text-primary">{widthMM} × {heightMM}</span>
+            <span className="text-[10px] font-bold text-primary/80">mm</span>
+            <span className="text-[9px] text-muted-foreground/60 ml-1">({dpi} DPI)</span>
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground text-center py-6 bg-muted/15 rounded-xl border border-dashed border-border/40">
+        <div className="text-xs text-muted-foreground text-center py-5 bg-muted/15 rounded-xl border border-dashed border-border/40">
           لا توجد صورة في هذه الخلية
         </div>
         <Button
           variant="outline"
           size="sm"
-          className="w-full gap-2 h-10 rounded-xl font-bold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all"
+          className="w-full gap-2 h-9 rounded-xl font-bold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all"
           onClick={handleOpenFile}
         >
           <ImagePlus className="w-4 h-4 text-primary" />
-          رفع صورة للخلية
+          <span>رفع صورة للخلية</span>
         </Button>
         {lastEditedImage && (
           <Button
             variant="secondary"
             size="sm"
-            className="w-full gap-2 h-10 rounded-xl font-bold cursor-pointer"
+            className="w-full gap-2 h-9 rounded-xl font-bold cursor-pointer"
             onClick={handleUseLastImage}
           >
             <Copy className="w-4 h-4 text-primary" />
-            تعبئة بآخر صورة معدلة
+            <span>تعبئة بآخر صورة معدلة</span>
           </Button>
         )}
 
@@ -202,147 +202,142 @@ export function SlotProperties({
   }
 
   return (
-    <div className="space-y-3.5 font-cairo">
-      {/* شريط الأبعاد الهيدر */}
-      <div className="flex items-center justify-between bg-card/80 border border-primary/20 rounded-xl px-3 py-2.5 shadow-xs">
-        <span className="text-[10px] font-bold text-muted-foreground">أبعاد الخلية للطباعة</span>
-        <div className="flex items-baseline gap-1 font-mono">
-          <span className="text-base font-black text-primary">{widthMM} × {heightMM}</span>
-          <span className="text-[10px] font-bold text-primary/80">مم</span>
-          <span className="text-[9px] text-muted-foreground/60 mr-1 font-medium">({dpi} DPI)</span>
+    <div className="space-y-2.5 font-cairo">
+      {/* شريط الأبعاد الهيدر المدمج */}
+      <div className="flex items-center justify-between bg-card/60 border border-border/40 rounded-xl px-3 py-1.5 shadow-xs">
+        <span className="text-[10.5px] font-bold text-muted-foreground">أبعاد الطباعة</span>
+        <div className="flex items-center gap-1.5 font-mono" dir="ltr">
+          <span className="text-xs font-black text-primary">{widthMM} × {heightMM} mm</span>
+          <span className="text-[9px] font-semibold text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded-md border border-border/40 font-mono">
+            {dpi} DPI
+          </span>
         </div>
       </div>
 
-      {/* عنوان خصائص الخلية */}
-      <div className="text-xs font-bold text-foreground flex items-center gap-2 border-b border-border/15 pb-2">
-        <ImageIcon className="w-4 h-4 text-primary" />
-        <span>خصائص صورة الخلية</span>
-      </div>
-
       <Tabs defaultValue="style" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-9.5 p-[3px] bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/30">
+        <TabsList className="grid w-full grid-cols-2 h-8 p-[2px] bg-muted/50 rounded-xl border border-border/30">
           <TabsTrigger 
             value="style" 
-            className="rounded-lg py-1 text-xs font-bold gap-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-xs"
+            className="rounded-lg py-0.5 text-xs font-bold gap-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shadow-xs"
           >
             <Paintbrush className="w-3.5 h-3.5" />
-            <span>التنسيق والمظهر</span>
+            <span>المظهر والتحكم</span>
           </TabsTrigger>
           <TabsTrigger 
             value="adjust" 
-            className="rounded-lg py-1 text-xs font-bold gap-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-xs"
+            className="rounded-lg py-0.5 text-xs font-bold gap-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shadow-xs"
           >
             <Sliders className="w-3.5 h-3.5" />
             <span>تعديل الألوان</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="style" className="mt-3 space-y-3 animate-in fade-in duration-150">
-          {/* أزرار العمليات الرئيسية */}
+        <TabsContent value="style" className="mt-2.5 space-y-2.5 animate-in fade-in duration-150">
+          {/* أزرار تغيير الصورة والقص */}
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="h-10 rounded-xl border-border/60 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs"
+              className="h-8.5 rounded-xl border-border/60 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs"
               onClick={handleOpenFile}
             >
-              <ImagePlus className="w-4 h-4 text-primary" />
+              <ImagePlus className="w-3.5 h-3.5 text-primary" />
               <span>تغيير الصورة</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="h-10 rounded-xl border-border/60 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs"
+              className="h-8.5 rounded-xl border-border/60 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs"
               onClick={() => setCropOpen(true)}
             >
-              <Scissors className="w-4 h-4 text-primary" />
+              <Scissors className="w-3.5 h-3.5 text-primary" />
               <span>قص وتدوير</span>
             </Button>
           </div>
 
-          {/* تكرار الصورة في الخلايا */}
-          <div className="space-y-1.5 bg-muted/20 dark:bg-muted/10 p-2.5 rounded-xl border border-border/30">
-            <Label className="text-[10px] font-bold text-muted-foreground block text-right">تكرار الصورة في الخلايا</Label>
-            <div className="grid grid-cols-3 gap-1.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs border-border/50 hover:bg-accent"
-                      onClick={handleFillRow}
-                    >
-                      <Rows className="w-3.5 h-3.5 text-primary" />
-                      <span>الصف</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">تعبئة الصف كاملاً</TooltipContent>
-                </Tooltip>
+          {/* التكرار والتعبئة */}
+          <div className="bg-muted/20 dark:bg-muted/10 p-2 rounded-xl border border-border/30 flex items-center justify-between gap-2">
+            <span className="text-[10.5px] font-bold text-muted-foreground me-1 shrink-0">تكرار الخلية:</span>
+            <div className="flex items-center gap-1 flex-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 text-[11px] font-bold border-border/50 hover:bg-accent px-1.5"
+                    onClick={handleFillRow}
+                  >
+                    <Rows className="w-3 h-3 text-primary shrink-0" />
+                    <span>الصف</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">تعبئة الصف كاملاً</TooltipContent>
+              </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs border-border/50 hover:bg-accent"
-                      onClick={handleFillColumn}
-                    >
-                      <Columns className="w-3.5 h-3.5 text-primary" />
-                      <span>العمود</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">تعبئة العمود كاملاً</TooltipContent>
-                </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 text-[11px] font-bold border-border/50 hover:bg-accent px-1.5"
+                    onClick={handleFillColumn}
+                  >
+                    <Columns className="w-3 h-3 text-primary shrink-0" />
+                    <span>العمود</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">تعبئة العمود كاملاً</TooltipContent>
+              </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 font-bold text-xs border-border/50 hover:bg-accent"
-                      onClick={handleFillAll}
-                    >
-                      <LayoutGrid className="w-3.5 h-3.5 text-primary" />
-                      <span>الكل</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">تعبئة كافة الخلايا</TooltipContent>
-                </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 text-[11px] font-bold border-border/50 hover:bg-accent px-1.5"
+                    onClick={handleFillAll}
+                  >
+                    <LayoutGrid className="w-3 h-3 text-primary shrink-0" />
+                    <span>الكل</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">تعبئة كافة الخلايا</TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
           {renderAutoFillToggle()}
 
-          {/* عزل وتعديل الخلفية */}
-          <div className="bg-muted/20 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2.5">
-            <Label className="text-[11px] font-bold text-foreground/90 block">عزل وتعديل الخلفية</Label>
-            
+          {/* أدوات الذكاء الاصطناعي المدمجة بأسلوب نظيف ومحتوى */}
+          <div className="bg-muted/20 dark:bg-muted/10 p-2.5 rounded-xl border border-border/30 space-y-1.5">
+            <div className="flex items-center justify-between text-[10.5px] font-bold text-foreground/80 mb-0.5">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span>أدوات الذكاء الاصطناعي</span>
+              </span>
+            </div>
+
+            {/* زر عزل الخلفية */}
             <Button
               variant={isRemovingBg ? "destructive" : "outline"}
               className={cn(
-                "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-xs",
+                "w-full flex items-center justify-between px-3 h-9 rounded-xl transition-all duration-150 cursor-pointer font-bold text-xs border border-primary/50 hover:border-primary bg-primary/5 hover:bg-primary/15 text-foreground shadow-2xs",
                 isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
               )}
               onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(slot)}
-              title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية الذكي بالذكاء الاصطناعي"}
+              title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية الذكي"}
             >
               {isRemovingBg ? (
-                <div className="flex items-center gap-2.5">
-                  <X className="w-4 h-4 text-destructive-foreground group-hover:scale-110 transition-transform shrink-0" />
-                  <span>إلغاء العملية الحالية</span>
+                <div className="flex items-center gap-2">
+                  <X className="w-3.5 h-3.5 text-destructive-foreground shrink-0" />
+                  <span>إلغاء عزل الخلفية</span>
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
                     <span>عزل الخلفية الذكي</span>
                   </div>
-                  {!isLicenseActive ? (
-                    <span className="text-[8.5px] bg-primary text-primary-foreground font-black px-1.5 py-0.5 rounded-md tracking-wider uppercase">
-                      PRO
-                    </span>
-                  ) : (
-                    <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
-                      AI
-                    </span>
-                  )}
+                  <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.2 rounded font-bold font-mono">
+                    AI
+                  </span>
                 </>
               )}
             </Button>
@@ -350,235 +345,213 @@ export function SlotProperties({
             {slot.originalImageSrc && (
               <Button
                 variant="outline"
-                className="w-full h-8 text-xs font-semibold gap-1.5 flex items-center justify-center cursor-pointer rounded-lg border-border/40"
+                className="w-full h-7 text-[10.5px] font-semibold gap-1.5 flex items-center justify-center cursor-pointer rounded-lg border-border/40"
                 onClick={() => setRefineOpen(true)}
               >
-                <Paintbrush className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>تعديل يدوي</span>
+                <Paintbrush className="w-3 h-3 text-muted-foreground" />
+                <span>تعديل التحديق يدويًا</span>
               </Button>
             )}
 
             {isRemovingBg && (
-              <div className="mt-2 p-2.5 rounded-lg bg-indigo-500/[0.05] border border-indigo-500/20 space-y-1.5 animate-in fade-in duration-200">
-                <div className="flex justify-between items-center text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
+              <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 space-y-1">
+                <div className="flex justify-between items-center text-[9px] font-bold text-indigo-500">
                   <span className="animate-pulse">{bgProgressText}</span>
                   <span className="font-mono">{bgProgress}%</span>
                 </div>
-                <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-500 h-full rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${bgProgress}%` }}
-                  />
+                <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
+                  <div className="bg-indigo-500 h-full rounded-full transition-all duration-200" style={{ width: `${bgProgress}%` }} />
+                </div>
+              </div>
+            )}
+
+            {/* زر ضبط الوجه تلقائياً */}
+            <Button
+              variant={isFraming ? "destructive" : "outline"}
+              disabled={isEnhancing || isRemovingBg}
+              className={cn(
+                "w-full flex items-center justify-between px-3 h-9 rounded-xl transition-all duration-150 cursor-pointer font-bold text-xs border border-emerald-600/50 hover:border-emerald-600 bg-emerald-500/5 hover:bg-emerald-500/15 text-foreground shadow-2xs",
+                (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
+                isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+              )}
+              onClick={isFraming ? handleCancelFrame : () => handleFrameFace(slot)}
+              title="كشف الوجه وتأطيره تلقائياً وفق معايير الهوية"
+            >
+              {isFraming ? (
+                <div className="flex items-center gap-2">
+                  <X className="w-3.5 h-3.5 text-destructive-foreground shrink-0" />
+                  <span>إلغاء ضبط الوجه</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <ScanFace className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>ضبط الوجه تلقائياً</span>
+                  </div>
+                  <span className="text-[9px] bg-emerald-600/15 text-emerald-600 px-1.5 py-0.2 rounded font-bold font-mono">
+                    محلي
+                  </span>
+                </>
+              )}
+            </Button>
+
+            {isFraming && (
+              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                <div className="flex justify-between items-center text-[9px] font-bold text-emerald-600">
+                  <span className="animate-pulse">{frameProgressText}</span>
+                  <span className="font-mono">{frameProgress}%</span>
+                </div>
+                <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
+                  <div className="bg-emerald-500 h-full rounded-full transition-all duration-200" style={{ width: `${frameProgress}%` }} />
+                </div>
+              </div>
+            )}
+
+            {/* زر تحسين الجودة */}
+            <Button
+              variant="outline"
+              disabled={isEnhancing || isRemovingBg || isFraming}
+              className={cn(
+                "w-full flex items-center justify-between px-3 h-9 rounded-xl transition-all duration-150 cursor-pointer font-bold text-xs border border-primary/50 hover:border-primary bg-primary/5 hover:bg-primary/15 text-foreground shadow-2xs",
+                (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={() => handleEnhance(slot)}
+              title="تحسين وتكبير دقة الصورة بالذكاء الاصطناعي"
+            >
+              <div className="flex items-center gap-2">
+                <Wand2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>تحسين الجودة والوضوح</span>
+              </div>
+              <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.2 rounded font-bold font-mono">
+                {remainingQuota}/{dailyLimit}
+              </span>
+            </Button>
+
+            {isEnhancing && (
+              <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/20 space-y-1">
+                <div className="flex justify-between items-center text-[9px] font-bold text-violet-500">
+                  <span className="animate-pulse">{enhanceProgressText}</span>
+                  <span className="font-mono">{enhanceProgress}%</span>
+                </div>
+                <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
+                  <div className="bg-violet-500 h-full rounded-full transition-all duration-200" style={{ width: `${enhanceProgress}%` }} />
                 </div>
               </div>
             )}
           </div>
 
-          {/* الذكاء الاصطناعي والأدوات الذكية */}
-          {slot.imageSrc && (
-            <div className="bg-muted/20 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2.5">
-              <Label className="text-[11px] font-bold text-foreground/90 block">الذكاء الاصطناعي والأدوات الذكية</Label>
+          {/* القلب والتدوير — شريط أيقونات مضغوط */}
+          <div className="bg-muted/20 dark:bg-muted/10 p-2 rounded-xl border border-border/30 flex items-center justify-between gap-2">
+            <span className="text-[10.5px] font-bold text-muted-foreground me-1 shrink-0">تحويل الصورة:</span>
+            <div className="flex items-center gap-1 flex-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
+                      slot.flipX && "bg-primary/10 border-primary/50 text-primary"
+                    )}
+                    onClick={() => {
+                      onUpdate(slot.id, { flipX: !slot.flipX });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                  >
+                    <FlipHorizontal2 className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">قلب أفقي</TooltipContent>
+              </Tooltip>
 
-              {/* زر ضبط الوجه تلقائياً (تأطير الهوية) */}
-              <Button
-                variant={isFraming ? "destructive" : "outline"}
-                disabled={isEnhancing || isRemovingBg}
-                className={cn(
-                  "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-emerald-600/60 hover:border-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 text-foreground shadow-xs",
-                  (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
-                  isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
-                )}
-                onClick={isFraming ? handleCancelFrame : () => handleFrameFace(slot)}
-                title={isFraming ? "إلغاء ضبط الوجه" : "كشف الوجه وضبط مقاسه وموضعه وفق معايير الهوية تلقائياً"}
-              >
-                {isFraming ? (
-                  <div className="flex items-center gap-2.5">
-                    <X className="w-4 h-4 text-destructive-foreground group-hover:scale-110 transition-transform shrink-0" />
-                    <span>إلغاء ضبط الوجه</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2.5">
-                      <ScanFace className="w-4 h-4 text-emerald-600 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
-                      <span>ضبط الوجه تلقائياً</span>
-                    </div>
-                    <span className="text-[9px] bg-emerald-600/15 border border-emerald-600/40 text-emerald-600 px-1.5 py-0.5 rounded-md font-bold font-mono">
-                      محلي
-                    </span>
-                  </>
-                )}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
+                      slot.flipY && "bg-primary/10 border-primary/50 text-primary"
+                    )}
+                    onClick={() => {
+                      onUpdate(slot.id, { flipY: !slot.flipY });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                  >
+                    <FlipVertical2 className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">قلب عمودي</TooltipContent>
+              </Tooltip>
 
-              {isFraming && (
-                <div className="mt-2 p-2.5 rounded-lg bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08] border border-emerald-500/20 space-y-1.5 animate-in fade-in duration-200">
-                  <div className="flex justify-between items-center text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
-                    <span className="animate-pulse">{frameProgressText}</span>
-                    <span className="font-mono font-extrabold">{frameProgress}%</span>
-                  </div>
-                  <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
-                    <div 
-                      className="bg-gradient-to-r from-emerald-600 via-teal-500 to-green-400 h-full rounded-full transition-all duration-300 ease-out"
-                      style={{ width: `${frameProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
+                      (slot.rotation ?? 0) !== 0 && "bg-primary/10 border-primary/50 text-primary"
+                    )}
+                    onClick={() => {
+                      onUpdate(slot.id, { rotation: (((slot.rotation ?? 0) + 90) % 360) });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                  >
+                    <RotateCw className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">تدوير 90° ({slot.rotation ?? 0}°)</TooltipContent>
+              </Tooltip>
 
-              <Button
-                variant="outline"
-                disabled={isEnhancing || isRemovingBg || isFraming}
-                className={cn(
-                  "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-xs",
-                  (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
-                )}
-                onClick={() => handleEnhance(slot)}
-                title={`تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Wand2 className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
-                  <span>تحسين الجودة والوضوح</span>
-                </div>
-                <span className="text-[9.5px] bg-primary/20 border border-primary/40 text-primary px-2 py-0.5 rounded-md font-extrabold font-mono">
-                  {remainingQuota}/{dailyLimit} اليوم
-                </span>
-              </Button>
-
-              {isEnhancing && (
-                <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/20 space-y-1.5 animate-in fade-in duration-200">
-                  <div className="flex justify-between items-center text-[9px] font-bold text-violet-600 dark:text-violet-400">
-                    <span className="animate-pulse">{enhanceProgressText}</span>
-                    <span className="font-mono">{enhanceProgress}%</span>
-                  </div>
-                  <div className="w-full bg-muted/40 h-1.5 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-500 h-full rounded-full transition-all duration-300 ease-out"
-                      style={{ width: `${enhanceProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={!slot.flipX && !slot.flipY && !(slot.rotation ?? 0)}
+                    className="h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent disabled:opacity-40"
+                    onClick={() => {
+                      onUpdate(slot.id, { flipX: false, flipY: false, rotation: 0 });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                  >
+                    <Undo2 className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">إعادة تعيين</TooltipContent>
+              </Tooltip>
             </div>
-          )}
+          </div>
 
           {/* تكبير الصورة (Zoom) */}
-          {slot.imageSrc && (
-            <div className="bg-muted/20 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-2">
-              <SliderControl
-                label="تكبير الصورة (Zoom)"
-                value={Math.round((slot.zoom ?? 1) * 100)}
-                min={100}
-                max={300}
-                step={5}
-                onChange={(v) => {
-                  onUpdate(slot.id, { zoom: v / 100 });
-                }}
-                onCommit={() => useEditorStore.getState().pushHistory()}
-                unit="%"
-              />
-              <p className="text-[9px] text-muted-foreground/70 text-right leading-snug">
-                💡 يمكنك تحريك موضع الصورة بالسحب المباشر بالفأرة داخل الخلية.
-              </p>
-            </div>
-          )}
-
-          {/* القلب والتدوير — تُطبق على المعاينة والطباعة معاً */}
-          {slot.imageSrc && (
-            <div className="space-y-1.5 bg-muted/20 dark:bg-muted/10 p-2.5 rounded-xl border border-border/30">
-              <Label className="text-[10px] font-bold text-muted-foreground block text-right">قلب وتدوير الصورة</Label>
-              <div className="grid grid-cols-4 gap-1.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
-                        slot.flipX && "bg-primary/10 border-primary/50 text-primary"
-                      )}
-                      onClick={() => {
-                        onUpdate(slot.id, { flipX: !slot.flipX });
-                        useEditorStore.getState().pushHistory();
-                      }}
-                    >
-                      <FlipHorizontal2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">قلب أفقي</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
-                        slot.flipY && "bg-primary/10 border-primary/50 text-primary"
-                      )}
-                      onClick={() => {
-                        onUpdate(slot.id, { flipY: !slot.flipY });
-                        useEditorStore.getState().pushHistory();
-                      }}
-                    >
-                      <FlipVertical2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">قلب عمودي</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
-                        (slot.rotation ?? 0) !== 0 && "bg-primary/10 border-primary/50 text-primary"
-                      )}
-                      onClick={() => {
-                        onUpdate(slot.id, { rotation: (((slot.rotation ?? 0) + 90) % 360) });
-                        useEditorStore.getState().pushHistory();
-                      }}
-                    >
-                      <RotateCw className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">تدوير 90° ({slot.rotation ?? 0}°)</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      disabled={!slot.flipX && !slot.flipY && !(slot.rotation ?? 0)}
-                      className="h-9 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent disabled:opacity-40"
-                      onClick={() => {
-                        onUpdate(slot.id, { flipX: false, flipY: false, rotation: 0 });
-                        useEditorStore.getState().pushHistory();
-                      }}
-                    >
-                      <Undo2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">إعادة تعيين التحويلات</TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          )}
+          <div className="bg-muted/20 dark:bg-muted/10 p-2.5 rounded-xl border border-border/30 space-y-1">
+            <SliderControl
+              label="تكبير الصورة (Zoom)"
+              value={Math.round((slot.zoom ?? 1) * 100)}
+              min={100}
+              max={300}
+              step={5}
+              onChange={(v) => {
+                onUpdate(slot.id, { zoom: v / 100 });
+              }}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+              unit="%"
+            />
+          </div>
 
           {slot.imageSrc && cropOpen && (
             <Suspense fallback={null}>
               <CropDialog
-              open={cropOpen}
-              onOpenChange={setCropOpen}
-              imageSrc={slot.imageSrc}
-              originalImageSrc={slot.originalImageSrc}
-              onCropSave={async (cropped) => {
-                try {
-                  const localPath = await SaveImageFromBase64(cropped);
-                  onUpdate(slot.id, { imageSrc: localPath });
-                } catch (err) {
-                  console.error("Failed to save cropped slot image:", err);
-                  toast.error("فشل حفظ الصورة المقصوصة محلياً");
-                }
-              }}
+                open={cropOpen}
+                onOpenChange={setCropOpen}
+                imageSrc={slot.imageSrc}
+                originalImageSrc={slot.originalImageSrc}
+                onCropSave={async (cropped) => {
+                  try {
+                    const localPath = await SaveImageFromBase64(cropped);
+                    onUpdate(slot.id, { imageSrc: localPath });
+                  } catch (err) {
+                    console.error("Failed to save cropped slot image:", err);
+                    toast.error("فشل حفظ الصورة المقصوصة محلياً");
+                  }
+                }}
               />
             </Suspense>
           )}
@@ -586,21 +559,21 @@ export function SlotProperties({
           {slot.imageSrc && slot.originalImageSrc && refineOpen && (
             <Suspense fallback={null}>
               <RefineBgDialog
-              open={refineOpen}
-              onOpenChange={setRefineOpen}
-              element={slot}
-              onSave={async (newImageSrc) => {
-                onUpdate(slot.id, { imageSrc: newImageSrc });
-                useEditorStore.getState().pushHistory();
-              }}
+                open={refineOpen}
+                onOpenChange={setRefineOpen}
+                element={slot}
+                onSave={async (newImageSrc) => {
+                  onUpdate(slot.id, { imageSrc: newImageSrc });
+                  useEditorStore.getState().pushHistory();
+                }}
               />
             </Suspense>
           )}
         </TabsContent>
 
-        <TabsContent value="adjust" className="mt-3 space-y-3 animate-in fade-in duration-150">
-          <div className="bg-muted/20 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3">
-            <Label className="text-[11px] font-bold text-foreground/90 block border-b border-border/15 pb-1.5 mb-1">تعديل الألوان</Label>
+        <TabsContent value="adjust" className="mt-2.5 space-y-2.5 animate-in fade-in duration-150">
+          <div className="bg-muted/20 dark:bg-muted/10 p-2.5 rounded-xl border border-border/30 space-y-2.5">
+            <Label className="text-[11px] font-bold text-foreground/90 block border-b border-border/15 pb-1 mb-1">تعديل الألوان</Label>
             <SliderControl
               label="السطوع"
               value={slot.brightness ?? 100}
@@ -641,7 +614,7 @@ export function SlotProperties({
             <Button
               variant="outline"
               size="sm"
-              className="w-full mt-2 rounded-lg font-bold text-xs h-9"
+              className="w-full mt-1 rounded-lg font-bold text-xs h-8"
               onClick={() =>
                 onUpdate(slot.id, {
                   filter: "none",

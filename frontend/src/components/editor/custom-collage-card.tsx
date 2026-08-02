@@ -429,14 +429,14 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       <button
         type="button"
         onClick={() => setShowFreeformModal(true)}
-        className="w-full p-2.5 rounded-xl border-2 border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary transition-all cursor-pointer flex items-center justify-between shadow-xs font-bold group"
+        className="w-full h-9 px-3 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/50 text-xs font-bold transition-colors cursor-pointer flex items-center justify-between group"
       >
-        <div className="flex items-center gap-2 text-xs">
-          <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-          <span>محرر الكولاج الحر والأحجام المختلطة</span>
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span>كولاج حر ومختلط</span>
         </div>
-        <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-md font-bold">
-          جديد ✨
+        <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-extrabold">
+          جديد
         </span>
       </button>
 
