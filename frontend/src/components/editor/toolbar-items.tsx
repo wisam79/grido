@@ -6,12 +6,18 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
   Type, Square, Circle, Star, Minus, Undo2, Redo2, Trash2, Copy, ArrowUp, ArrowDown, AlignLeft, AlignCenter, AlignRight, ChevronDown, Grid3x3, Magnet, Columns, Link, Unlink, Ruler, Paintbrush,
+  Sparkles, Wand2, ScanFace, X
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { IMAGE_FILTERS } from "@/lib/templates";
 import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { useBgRemoval } from "@/hooks/use-bg-removal";
+import { useAiEnhance } from "@/hooks/use-ai-enhance";
+import { useFaceFrame } from "@/hooks/use-face-frame";
+
+const RefineBgDialog = React.lazy(() => import("./refine-bg-dialog").then((m) => ({ default: m.RefineBgDialog })));
 
 interface TooltipBtnProps {
   content: string;
@@ -180,6 +186,134 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
   );
 });
 
+const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
+  const { selectedItem } = useEditorStore(useShallow((state) => {
+    const el = state.elements.find((e) => e.id === state.selectedId);
+    const slot = state.slots?.find((s) => s.id === state.selectedId);
+    const target = state.mode === "collage" ? slot : (el?.type === "image" ? el : null);
+    return { selectedItem: target };
+  }));
+
+  const onUpdate = React.useCallback((id: string, patch: any) => {
+    const store = useEditorStore.getState();
+    if (store.mode === "collage") {
+      store.updateSlot(id, patch);
+    } else {
+      store.updateElement(id, patch);
+    }
+  }, []);
+
+  const { isRemovingBg, bgProgress, bgProgressText, handleCancelBgRemoval, handleRemoveBg } = useBgRemoval(onUpdate);
+  const { isEnhancing, enhanceProgress, enhanceProgressText, remainingQuota, dailyLimit, handleEnhance } = useAiEnhance(onUpdate);
+  const { isFraming, frameProgress, frameProgressText, handleCancelFrame, handleFrameFace } = useFaceFrame(onUpdate);
+
+  const [refineOpen, setRefineOpen] = React.useState(false);
+
+  if (!selectedItem || !selectedItem.imageSrc) return null;
+
+  return (
+    <div className="flex items-center gap-1 font-cairo">
+      {/* عزل الخلفية */}
+      <TooltipBtn content={isRemovingBg ? bgProgressText || "إلغاء عزل الخلفية" : "عزل الخلفية بالذكاء الاصطناعي"}>
+        <Button
+          variant={isRemovingBg ? "destructive" : "outline"}
+          size="sm"
+          className={cn(
+            "h-8 px-2.5 gap-1.5 border-border/60 bg-muted/20 hover:bg-accent text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+          )}
+          onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(selectedItem)}
+        >
+          {isRemovingBg ? (
+            <>
+              <X className="w-3.5 h-3.5 shrink-0" />
+              <span>إلغاء العزل ({bgProgress}%)</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span>عزل الخلفية</span>
+            </>
+          )}
+        </Button>
+      </TooltipBtn>
+
+      {/* تعديل التحديق يدويًا إذا كانت خلفيته معزولة */}
+      {selectedItem.originalImageSrc && (
+        <TooltipBtn content="تعديل تحديق العين يدويًا">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-2 gap-1 text-xs font-semibold border-border/60 bg-muted/20 hover:bg-accent text-foreground rounded-md cursor-pointer"
+            onClick={() => setRefineOpen(true)}
+          >
+            <Paintbrush className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span>تحديق يدوي</span>
+          </Button>
+        </TooltipBtn>
+      )}
+
+      {/* ضبط الوجه تلقائياً */}
+      <TooltipBtn content={isFraming ? frameProgressText || "إلغاء الضبط" : "كشف وتأطير الوجه تلقائياً وفق معايير الهوية"}>
+        <Button
+          variant={isFraming ? "destructive" : "outline"}
+          size="sm"
+          disabled={isEnhancing || isRemovingBg}
+          className={cn(
+            "h-8 px-2.5 gap-1.5 border-border/60 bg-muted/20 hover:bg-accent text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
+            isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+          )}
+          onClick={isFraming ? handleCancelFrame : () => handleFrameFace(selectedItem)}
+        >
+          {isFraming ? (
+            <>
+              <X className="w-3.5 h-3.5 shrink-0" />
+              <span>إلغاء الضبط ({frameProgress}%)</span>
+            </>
+          ) : (
+            <>
+              <ScanFace className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span>ضبط الوجه</span>
+            </>
+          )}
+        </Button>
+      </TooltipBtn>
+
+      {/* تحسين الجودة والوضوح */}
+      <TooltipBtn content="تحسين ودقة الصورة بالذكاء الاصطناعي">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isEnhancing || isRemovingBg || isFraming}
+          className={cn(
+            "h-8 px-2.5 gap-1.5 border-border/60 bg-muted/20 hover:bg-accent text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
+          )}
+          onClick={() => handleEnhance(selectedItem)}
+        >
+          <Wand2 className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span>{isEnhancing ? `تحسين... (${enhanceProgress}%)` : `تحسين الجودة (${remainingQuota}/${dailyLimit})`}</span>
+        </Button>
+      </TooltipBtn>
+
+      {selectedItem.originalImageSrc && refineOpen && (
+        <React.Suspense fallback={null}>
+          <RefineBgDialog
+            open={refineOpen}
+            onOpenChange={setRefineOpen}
+            element={selectedItem}
+            onSave={async (newImageSrc) => {
+              onUpdate(selectedItem.id, { imageSrc: newImageSrc });
+              useEditorStore.getState().pushHistory();
+            }}
+          />
+        </React.Suspense>
+      )}
+    </div>
+  );
+});
+
 const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
   const {
     hasSelection,
@@ -309,6 +443,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
       {isImageSelected && (
         <>
           <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
+          <AiToolsToolbarGroup />
           <ImageFiltersPopover />
         </>
       )}
