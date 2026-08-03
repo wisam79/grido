@@ -4,12 +4,12 @@ import { Download, Menu, X } from 'lucide-react';
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const NAV_LINKS = [
-  { href: '#features', label: 'المميزات', num: '02' },
-  { href: '#comparison', label: 'المقارنة', num: '03' },
-  { href: '#benefits', label: 'لماذا Grido', num: '04' },
-  { href: '#scenarios', label: 'حالات العمل', num: '05' },
-  { href: '#pricing', label: 'الخطط', num: '07' },
-  { href: '#faq', label: 'الأسئلة', num: '08' },
+  { href: '#features', label: 'المميزات' },
+  { href: '#comparison', label: 'المقارنة' },
+  { href: '#benefits', label: 'لماذا Grido' },
+  { href: '#scenarios', label: 'حالات العمل' },
+  { href: '#pricing', label: 'الخطط' },
+  { href: '#faq', label: 'الأسئلة' },
 ];
 
 function AnimatedLogo() {
@@ -115,10 +115,7 @@ export function Header() {
                     isActive ? 'text-white' : 'text-secondary hover:text-white'
                   }`}
                 >
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-[9px] text-tertiary" dir="ltr" aria-hidden>{link.num}</span>
-                    <span>{link.label}</span>
-                  </span>
+                  <span>{link.label}</span>
                   <span
                     className={`absolute bottom-0 inset-x-0 h-0.5 bg-white transition-transform origin-right ${
                       isActive ? 'scale-x-100' : 'scale-x-0 group-hover/link:scale-x-100'

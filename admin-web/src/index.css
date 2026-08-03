@@ -200,46 +200,46 @@ h1, h2, h3, h4, h5, h6, .font-display {
   will-change: transform;
 }
 
-/* Floating 3D Graphic Animation (design.md Section 4.5 & 6.4) */
+/* Floating 3D Graphic Animation — حركة ناعمة ومخففة جِداً */
 @keyframes float {
   from { transform: translateY(0); }
-  to   { transform: translateY(-8px); }
+  to   { transform: translateY(-2px); }
 }
 
 .benefit-icon {
-  animation: float 8s ease-in-out infinite alternate;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: float 6s ease-in-out infinite alternate;
+  transition: transform 0.2s ease-out;
 }
 
 .spotlight-card:hover .benefit-icon {
-  transform: scale(1.08) translateY(-4px);
+  transform: translateY(-2px);
 }
 
-/* 3D Perspective tilt - Active on desktop screens */
+/* 3D Perspective tilt - Active on desktop screens (تخفيف زوايا الإمالة لمنع التشتيت) */
 @media (min-width: 1024px) {
   .perspective-container {
-    perspective: 1400px;
+    perspective: 2000px;
   }
 
   .perspective-mockup {
-    transform: rotateY(-4deg) rotateX(2deg) rotateZ(0.5deg);
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: rotateY(-1deg) rotateX(0.5deg);
+    transition: transform 0.3s ease-out;
     transform-style: preserve-3d;
   }
 
   .perspective-container:hover .perspective-mockup {
-    transform: rotateY(var(--rot-y, 0deg)) rotateX(var(--rot-x, 0deg)) scale(1.01);
+    transform: rotateY(var(--rot-y, 0deg)) rotateX(var(--rot-x, 0deg)) scale(1.002);
   }
 
-  /* ── Multi-layer 3D depth (parallax inside the mockup) ── */
+  /* ── Multi-layer 3D depth (parallax inside the mockup — عمق خفيف للغاية) ── */
   .layer-depth {
     transform-style: preserve-3d;
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.3s ease-out;
     will-change: transform;
   }
-  .depth-1 { --depth: 16px; }
-  .depth-2 { --depth: 34px; }
-  .depth-3 { --depth: 56px; }
+  .depth-1 { --depth: 4px; }
+  .depth-2 { --depth: 8px; }
+  .depth-3 { --depth: 12px; }
   .perspective-container:hover .layer-depth {
     transform: translateZ(var(--depth));
   }
@@ -247,26 +247,12 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 /* ── Fake 3D title text-shadow depth (SpaceX embossed look) ── */
 .title-depth {
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.05),
-    0 2px 0 rgba(0, 0, 0, 0.6),
-    0 4px 0 rgba(0, 0, 0, 0.5),
-    0 6px 0 rgba(0, 0, 0, 0.4),
-    0 8px 24px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
-/* ── Floating particle dots (slow drift) ── */
-@keyframes particle-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
-  50%      { transform: translate(var(--drift-x, 12px), var(--drift-y, -18px)) scale(1.15); opacity: 0.9; }
-}
+/* ── Floating particle dots (إلغاء الجسيمات لتهدئة الشاشة كلياً) ── */
 .particle {
-  position: absolute;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.6);
-  animation: particle-drift var(--dur, 12s) ease-in-out infinite;
-  animation-delay: var(--delay, 0s);
-  pointer-events: none;
+  display: none !important;
 }
 
 /* ── Orbiting ring (SVG loops around a glow core) ── */
@@ -370,24 +356,22 @@ h1, h2, h3, h4, h5, h6, .font-display {
   animation: beacon-pulse 6s ease-in-out infinite;
 }
 
-/* Cinematic Reveal Animations (design.md Section 4.1 — خفيفة وسريعة: blur 4px, scale 0.99, 0.55s) */
+/* Cinematic Reveal Animations — ناعمة وفورية بدون ضبابية (No Blur) */
 @keyframes cinematicReveal {
   from {
     opacity: 0;
-    filter: blur(4px);
-    transform: scale(0.99);
+    transform: translateY(2px);
   }
   to {
     opacity: 1;
-    filter: blur(0);
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
 .reveal-on-scroll {
-  animation: cinematicReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: cinematicReveal 0.25s ease-out forwards;
   animation-play-state: paused;
-  will-change: opacity, filter, transform;
+  will-change: opacity, transform;
 }
 
 .reveal-on-scroll.is-revealed,
@@ -395,19 +379,15 @@ h1, h2, h3, h4, h5, h6, .font-display {
   animation-play-state: running;
 }
 
-/* Cinematic Sequential Stagger (mini version of the signature reveal — حركة قصيرة 8px) */
+/* Cinematic Sequential Stagger — حركة فورية فائقة النعومة */
 .reveal-on-scroll .stagger-1,
 .reveal-on-scroll .stagger-2,
 .reveal-on-scroll .stagger-3,
 .reveal-on-scroll .stagger-4,
 .reveal-on-scroll .stagger-5 {
   opacity: 0;
-  filter: blur(2px);
-  transform: translateY(8px) scale(0.99);
-  transition:
-    opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-    filter 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(2px);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .reveal-on-scroll.is-revealed .stagger-1,
@@ -421,30 +401,27 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .reveal-on-scroll.is-visible .stagger-4,
 .reveal-on-scroll.is-visible .stagger-5 {
   opacity: 1;
-  filter: blur(0);
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
 }
 
-.reveal-on-scroll.is-revealed .stagger-1, .reveal-on-scroll.is-visible .stagger-1 { transition-delay: 40ms; }
-.reveal-on-scroll.is-revealed .stagger-2, .reveal-on-scroll.is-visible .stagger-2 { transition-delay: 90ms; }
-.reveal-on-scroll.is-revealed .stagger-3, .reveal-on-scroll.is-visible .stagger-3 { transition-delay: 140ms; }
-.reveal-on-scroll.is-revealed .stagger-4, .reveal-on-scroll.is-visible .stagger-4 { transition-delay: 190ms; }
-.reveal-on-scroll.is-revealed .stagger-5, .reveal-on-scroll.is-visible .stagger-5 { transition-delay: 240ms; }
+.reveal-on-scroll.is-revealed .stagger-1, .reveal-on-scroll.is-visible .stagger-1 { transition-delay: 10ms; }
+.reveal-on-scroll.is-revealed .stagger-2, .reveal-on-scroll.is-visible .stagger-2 { transition-delay: 20ms; }
+.reveal-on-scroll.is-revealed .stagger-3, .reveal-on-scroll.is-visible .stagger-3 { transition-delay: 30ms; }
+.reveal-on-scroll.is-revealed .stagger-4, .reveal-on-scroll.is-visible .stagger-4 { transition-delay: 40ms; }
+.reveal-on-scroll.is-revealed .stagger-5, .reveal-on-scroll.is-visible .stagger-5 { transition-delay: 50ms; }
 
-/* Tab content mini cinematic reveal (design.md Section 6.2 — 0.4s, lighter blur) */
+/* Tab content mini cinematic reveal — خفيفة وسريعة */
 .tab-content-reveal {
-  animation: miniCinematicReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: miniCinematicReveal 0.2s ease-out forwards;
 }
 
 @keyframes miniCinematicReveal {
   from {
     opacity: 0;
-    filter: blur(2px);
-    transform: translateY(6px);
+    transform: translateY(2px);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: translateY(0);
   }
 }

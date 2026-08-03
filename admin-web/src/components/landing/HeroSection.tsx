@@ -123,21 +123,21 @@ export function HeroSection() {
               </span>
             </div>
 
-            {/* Headline — كتلة بصرية درامية صريحة وموجهة للنتائج */}
-            <h1 className="stagger-2 title-depth relative text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black leading-tight sm:leading-[1.12] font-display text-white">
+            {/* Headline — عنوان قصير، مختصر، مرتب، مباشر وذكي */}
+            <h1 className="stagger-2 title-depth relative text-4xl xs:text-5xl sm:text-6xl font-black leading-tight sm:leading-[1.15] font-display text-white">
               <span
                 aria-hidden
                 className="pointer-events-none absolute -top-10 right-[-15%] w-[420px] h-[340px] rounded-full opacity-60 blur-[60px] bg-gradient-to-l from-white/10 via-white/5 to-transparent"
               />
-              <span className="relative block">وفّر 90% من وقت التجهيز والطباعة</span>
-              <span className="relative mt-2 block text-secondary">
-                من الصورة إلى الورقة المطبوعة في <span className="font-mono tracking-tight text-white inline-block animate-[float_5s_ease-in-out_infinite_alternate]">3</span> ثوانٍ فقط!
+              <span className="relative block">تجهيز وطباعة الصور</span>
+              <span className="relative mt-1 block text-secondary">
+                في <span className="font-mono tracking-tight text-white inline-block animate-[float_5s_ease-in-out_infinite_alternate]">3</span> ثوانٍ فقط!
               </span>
             </h1>
 
             {/* Subtitle */}
-            <p className="stagger-3 text-sm sm:text-base text-secondary leading-relaxed max-w-xl font-sans font-medium">
-              التطبيق المخصص لأصحاب الاستوديوهات والمطابع ومكاتب التصوير. عزل خلفيات بالذكاء الاصطناعي أوفلاين، ترميم الوجوه الفوري، وتوزيع تلقائي على أوراق A4 و A3 بدعم ألوان CMYK ودون الحاجة للفوتوشوب.
+            <p className="stagger-3 text-sm sm:text-base text-secondary leading-relaxed max-w-lg font-sans font-medium">
+              توزيع تلقائي للمقاسات الرسمية، عزل بالذكاء الاصطناعي أوفلاين، وبدون فوتوشوب.
             </p>
 
             {/* SpaceX Pill CTAs with Smart Hover */}

@@ -14,14 +14,9 @@ interface SectionHeadingProps {
   index?: string;
 }
 
-export function SectionHeading({ icon: Icon, eyebrow, title, subtitle, index }: SectionHeadingProps) {
+export function SectionHeading({ icon: Icon, eyebrow, title, subtitle }: SectionHeadingProps) {
   return (
     <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16 relative z-20">
-      {index && (
-        <span className="block text-[11px] font-mono font-bold text-tertiary tracking-[3px] uppercase mb-3" dir="ltr" aria-hidden>
-          {index} —
-        </span>
-      )}
       <span className="stagger-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-subtle bg-elevated text-xs font-bold text-secondary mb-4">
         <Icon className="w-3.5 h-3.5 text-white" aria-hidden />
         <span>{eyebrow}</span>
