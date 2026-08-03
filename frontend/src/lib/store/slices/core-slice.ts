@@ -5,6 +5,7 @@ import { generateInitialSlots } from "./collage-slice";
 import { DEFAULT_PRINT_SETTINGS } from "./print-slice";
 import { DEFAULT_HISTORY_ENTRY_EXTRAS } from "./history-slice";
 import { invalidateImageCache } from "@/hooks/use-async-image";
+import { uid } from "../../utils";
 
 export interface CoreSlice {
   projectId: string | null;
