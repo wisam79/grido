@@ -116,27 +116,28 @@ export function HeroSection() {
             {/* Version Badge */}
             {/* Version Eyebrow */}
             <div className="stagger-1">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-none border border-subtle bg-elevated text-xs font-bold text-secondary">
-                <span className="text-white font-extrabold">الإصدار {version ?? '…'}</span>
-                <span className="text-tertiary">| جاهز للمهمة</span>
+              <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-md text-xs font-bold text-secondary shadow-xl">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                <span className="text-white font-extrabold">الإصدار {version ?? 'v1.3.6'}</span>
+                <span className="text-tertiary">| جاهز للعمل المباشر في مطبعتك</span>
               </span>
             </div>
 
-            {/* Headline — كتلة بصرية درامية فوق عمود ضوئي طبقي */}
-            <h1 className="stagger-2 title-depth relative text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-black leading-tight sm:leading-[1.12] font-display text-white">
+            {/* Headline — كتلة بصرية درامية صريحة وموجهة للنتائج */}
+            <h1 className="stagger-2 title-depth relative text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black leading-tight sm:leading-[1.12] font-display text-white">
               <span
                 aria-hidden
                 className="pointer-events-none absolute -top-10 right-[-15%] w-[420px] h-[340px] rounded-full opacity-60 blur-[60px] bg-gradient-to-l from-white/10 via-white/5 to-transparent"
               />
-              <span className="relative block">تنسيق صور المعاملات</span>
+              <span className="relative block">وفّر 90% من وقت التجهيز والطباعة</span>
               <span className="relative mt-2 block text-secondary">
-                في <span className="font-mono tracking-tight text-white inline-block animate-[float_5s_ease-in-out_infinite_alternate]">3</span> ثوانٍ فقط
+                من الصورة إلى الورقة المطبوعة في <span className="font-mono tracking-tight text-white inline-block animate-[float_5s_ease-in-out_infinite_alternate]">3</span> ثوانٍ فقط!
               </span>
             </h1>
 
             {/* Subtitle */}
             <p className="stagger-3 text-sm sm:text-base text-secondary leading-relaxed max-w-xl font-sans font-medium">
-              توزيع تلقائي للجوازات والبطاقات، دعم ألوان CMYK، وترميم الوجوه بالذكاء الاصطناعي.
+              التطبيق المخصص لأصحاب الاستوديوهات والمطابع ومكاتب التصوير. عزل خلفيات بالذكاء الاصطناعي أوفلاين، ترميم الوجوه الفوري، وتوزيع تلقائي على أوراق A4 و A3 بدعم ألوان CMYK ودون الحاجة للفوتوشوب.
             </p>
 
             {/* SpaceX Pill CTAs with Smart Hover */}
