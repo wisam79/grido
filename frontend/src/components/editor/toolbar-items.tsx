@@ -1,5 +1,4 @@
 import React, { useCallback } from "react";
-import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";

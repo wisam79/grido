@@ -25,7 +25,6 @@ import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
 import { useFaceFrame } from "@/hooks/use-face-frame";
-import { toast } from "sonner";
 import type { CanvasSlot, CanvasElement } from "@/lib/store/types";
 
 export const CanvasQuickBar = React.memo(function CanvasQuickBar({

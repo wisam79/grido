@@ -3,10 +3,11 @@ import { createElementSlice } from './slices/element-slice';
 import { create } from 'zustand';
 
 describe('element-slice clipboard', () => {
-  let store: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let store: ReturnType<typeof create<any>>;
 
   beforeEach(() => {
-    store = create((set: any, get: any, api: any) => ({
+    store = create((set, get, api) => ({
       ...createElementSlice(set, get, api),
       canvasWidth: 1000,
       canvasHeight: 1000,
