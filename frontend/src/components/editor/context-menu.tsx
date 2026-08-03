@@ -15,12 +15,14 @@ import {
   Columns,
   LayoutGrid,
   Loader2,
-  Scissors
+  Scissors,
+  Clipboard
 } from "lucide-react";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
+import { pasteFromClipboardOrStore } from "@/lib/clipboard-utils";
 import type { ImageElement, CanvasSlot, CanvasElement } from "@/lib/store/types";
 
 const CropDialog = lazy(() => import("./crop-dialog").then((m) => ({ default: m.CropDialog })));
@@ -47,6 +49,10 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
   const {
     duplicateElement,
     duplicateElements,
+    copySelectedElements,
+    cutSelectedElements,
+    pasteCopiedElements,
+    clipboardElements,
     removeElement,
     bringToFront,
     sendToBack,
@@ -59,6 +65,10 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
   } = useEditorStore(useShallow((state) => ({
     duplicateElement: state.duplicateElement,
     duplicateElements: state.duplicateElements,
+    copySelectedElements: state.copySelectedElements,
+    cutSelectedElements: state.cutSelectedElements,
+    pasteCopiedElements: state.pasteCopiedElements,
+    clipboardElements: state.clipboardElements,
     removeElement: state.removeElement,
     bringToFront: state.bringToFront,
     sendToBack: state.sendToBack,
@@ -321,11 +331,53 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
               </>
             )}
 
-            {/* قسم التحكم بالترتيب */}
+            {/* قسم التحكم والترتيب */}
             <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
               التحكم والترتيب
             </div>
             <div className="space-y-0.5">
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={() => handleAction(() => {
+                  copySelectedElements([target.id!]);
+                })}
+              >
+                <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
+                  <Copy className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">نسخ العنصر</span>
+              </button>
+
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-amber-500/10 hover:text-amber-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={() => handleAction(() => {
+                  cutSelectedElements([target.id!]);
+                })}
+              >
+                <div className="p-1 rounded-md bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                  <Scissors className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-amber-500 transition-colors">قص العنصر</span>
+              </button>
+
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={() => handleAction(() => {
+                  pasteFromClipboardOrStore();
+                })}
+              >
+                <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                  <Clipboard className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-emerald-500 transition-colors">لصق العنصر</span>
+              </button>
+
               <button
                 role="menuitem"
                 tabIndex={-1}
@@ -340,7 +392,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 })}
               >
                 <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
-                  <Copy className="w-3.5 h-3.5" />
+                  <Copy className="w-3.5 h-3.5 opacity-60" />
                 </div>
                 <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">تكرار العنصر</span>
               </button>
@@ -377,7 +429,6 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 className="group w-full text-right px-2.5 py-1.5 hover:bg-destructive/10 text-destructive rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
                 onClick={() => handleAction(() => {
                   const { selectedIds, removeElements } = useEditorStore.getState();
-                  // العناصر المقفلة لا تُحذف (توحيد الفلترة مع اختصار Delete)
                   const removableIds = selectedIds.filter((id) => {
                     const found = elements.find((e) => e.id === id);
                     return found && !found.locked;
@@ -583,6 +634,36 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 </div>
               </>
             )}
+          </div>
+        );
+      })()}
+
+      {/* 🔹 قائمة الكانفس عند الضغط على المساحة الفارغة */}
+      {target.type === "canvas" && (() => {
+        const hasCopied = clipboardElements && clipboardElements.length > 0;
+
+        return (
+          <div className="space-y-1.5">
+            <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+              إجراءات الصفحة
+            </div>
+            <div className="space-y-0.5">
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2.5 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                onClick={() => handleAction(() => {
+                  pasteFromClipboardOrStore();
+                })}
+              >
+                <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-150 shrink-0">
+                  <Clipboard className="w-3.5 h-3.5" />
+                </div>
+                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-emerald-500 transition-colors">
+                  لصق المحتوى {hasCopied ? `(${clipboardElements.length})` : ""}
+                </span>
+              </button>
+            </div>
           </div>
         );
       })()}

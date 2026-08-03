@@ -120,7 +120,6 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
         if (autoFill) {
           fillAllSlots(srcToUse, selectedSlot.id);
         }
-        toast.success("تم تحديث صورة الخلية بنجاح");
       }
     } catch (err) {
       console.error(err);

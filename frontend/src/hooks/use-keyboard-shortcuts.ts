@@ -3,6 +3,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
+import { pasteFromClipboardOrStore } from "@/lib/clipboard-utils";
 
 export function useKeyboardShortcuts() {
   // --- Shortcuts via react-hotkeys-hook ---
@@ -20,8 +21,6 @@ export function useKeyboardShortcuts() {
   });
 
   // Delete / Backspace — العناصر المقفلة لا تُحذف بصمت، ونُعلم المستخدم إن تبقى شيء محذوف.
-  // ignoreEventWhen: تجاهل الاختصار عندما يكون التركيز على زر/قائمة (مثلاً Backspace
-  // بعد النقر على زر في شريط الأدوات العائم كان يحذف التحديد بالخطأ).
   useHotkeys(
     "delete, backspace",
     (e) => {
@@ -63,6 +62,36 @@ export function useKeyboardShortcuts() {
     }
   });
 
+  // Copy: Ctrl+C or Cmd+C
+  useHotkeys("mod+c", (e) => {
+    const target = e.target as HTMLElement;
+    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+    const { selectedIds, copySelectedElements } = useEditorStore.getState();
+    if (selectedIds.length > 0) {
+      e.preventDefault();
+      copySelectedElements(selectedIds);
+    }
+  });
+
+  // Cut: Ctrl+X or Cmd+X
+  useHotkeys("mod+x", (e) => {
+    const target = e.target as HTMLElement;
+    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+    const { selectedIds, cutSelectedElements } = useEditorStore.getState();
+    if (selectedIds.length > 0) {
+      e.preventDefault();
+      cutSelectedElements(selectedIds);
+    }
+  });
+
+  // Paste: Ctrl+V or Cmd+V
+  useHotkeys("mod+v", async (e) => {
+    const target = e.target as HTMLElement;
+    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+    e.preventDefault();
+    await pasteFromClipboardOrStore();
+  });
+
   // Group: Ctrl+G or Cmd+G
   useHotkeys("mod+g", (e) => {
     e.preventDefault();
@@ -84,7 +113,6 @@ export function useKeyboardShortcuts() {
   });
 
   // --- Arrows (Nudging) & Paste via native events ---
-  // نحتفظ بأسهم التحريك هنا لدعم ميزة ضغط الزر المستمر والتجميع للسجل (Debounced pushHistory)
   useEffect(() => {
     let nudgeTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -164,57 +192,65 @@ export function useKeyboardShortcuts() {
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
 
       const items = e.clipboardData?.items;
-      if (!items) return;
+      let hasPastedImage = false;
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.type.indexOf("image") !== -1) {
-          const file = item.getAsFile();
-          if (file) {
-            e.preventDefault();
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-              if (event.target?.result) {
-                const b64 = event.target.result as string;
-                try {
-                  const localPath = await SaveImageFromBase64(b64);
-                  if (!localPath) return;
+      if (items) {
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type.indexOf("image") !== -1) {
+            const file = item.getAsFile();
+            if (file) {
+              e.preventDefault();
+              hasPastedImage = true;
+              const reader = new FileReader();
+              reader.onload = async (event) => {
+                if (event.target?.result) {
+                  const b64 = event.target.result as string;
+                  try {
+                    const localPath = await SaveImageFromBase64(b64);
+                    if (!localPath) return;
 
-                  const state = useEditorStore.getState();
-                  if (state.mode === "collage") {
-                    let targetSlotId = state.selectedId;
-                    if (!targetSlotId) {
-                      const emptySlot = state.slots.find((s) => !s.imageSrc);
-                      if (emptySlot) targetSlotId = emptySlot.id;
-                      else if (state.slots.length > 0) targetSlotId = state.slots[0].id;
+                    const state = useEditorStore.getState();
+                    if (state.mode === "collage") {
+                      let targetSlotId = state.selectedId;
+                      if (!targetSlotId) {
+                        const emptySlot = state.slots.find((s) => !s.imageSrc);
+                        if (emptySlot) targetSlotId = emptySlot.id;
+                        else if (state.slots.length > 0) targetSlotId = state.slots[0].id;
+                      }
+                      if (targetSlotId) state.setSlotImage(targetSlotId, localPath);
+                    } else {
+                       const img = new Image();
+                       img.onload = () => {
+                         const aspect = img.width / img.height;
+                         img.onload = null;
+                         img.onerror = null;
+                         img.src = "";
+                         state.addImageElement(localPath, aspect);
+                       };
+                       img.onerror = () => {
+                         img.onload = null;
+                         img.onerror = null;
+                         img.src = "";
+                         state.addImageElement(localPath, 1);
+                       };
+                       img.src = localPath;
                     }
-                    if (targetSlotId) state.setSlotImage(targetSlotId, localPath);
-                  } else {
-                     const img = new Image();
-                     img.onload = () => {
-                       const aspect = img.width / img.height;
-                       img.onload = null;
-                       img.onerror = null;
-                       img.src = "";
-                       state.addImageElement(localPath, aspect);
-                     };
-                     img.onerror = () => {
-                       img.onload = null;
-                       img.onerror = null;
-                       img.src = "";
-                       state.addImageElement(localPath, 1);
-                     };
-                     img.src = localPath;
+                  } catch (err) {
+                    console.error("Failed to save pasted image:", err);
                   }
-                } catch (err) {
-                  console.error("Failed to save pasted image:", err);
                 }
-              }
-            };
-            reader.readAsDataURL(file);
-            break; // معالجة أول صورة فقط
+              };
+              reader.readAsDataURL(file);
+              break; // معالجة أول صورة فقط
+            }
           }
         }
+      }
+
+      if (!hasPastedImage) {
+        e.preventDefault();
+        await pasteFromClipboardOrStore();
       }
     };
 
@@ -229,4 +265,3 @@ export function useKeyboardShortcuts() {
     };
   }, []);
 }
-

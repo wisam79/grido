@@ -21,7 +21,6 @@ export function useAutoSave() {
                 onClick: () => {
                   useEditorStore.getState().reset();
                   ClearAutoSave();
-                  toast.success("تم بدء مشروع جديد");
                 }
               }
             });

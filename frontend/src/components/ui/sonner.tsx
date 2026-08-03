@@ -7,6 +7,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
+      duration={1500}
       theme={theme as ToasterProps["theme"]}
       dir="rtl"
       className="toaster group"

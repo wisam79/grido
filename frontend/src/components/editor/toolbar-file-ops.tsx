@@ -112,7 +112,6 @@ export function ToolbarFileOps() {
           const isPhysical = freshState.collageTemplate?.physicalLayout;
           if ((isPhysical || freshSlots.length > 1) && localPaths.length === 1 && localPaths[0]) {
             freshState.fillAllSlots(localPaths[0]);
-            toast.success("تم إدراج الصورة في جميع شبكة الخلايا");
           } else {
             let srcIdx = 0;
             if (freshSelectedId && freshSlots.some((s) => s.id === freshSelectedId) && localPaths[0]) {
@@ -127,7 +126,6 @@ export function ToolbarFileOps() {
             if (srcIdx === 0 && freshSlots[0] && localPaths[0]) {
               freshState.setSlotImage(freshSlots[0].id, localPaths[0]);
             }
-            toast.success(`تم استيراد ${localPaths.length} صورة بنجاح`);
           }
         } else {
           for (const b64 of b64s) {
@@ -160,7 +158,6 @@ export function ToolbarFileOps() {
               img.src = b64;
             });
           }
-          toast.success(`تم إدراج ${b64s.length} صورة في الكانفس`);
         }
       }
     } catch (err) {
@@ -178,7 +175,6 @@ export function ToolbarFileOps() {
   const confirmClearCanvas = () => {
     useEditorStore.getState().reset();
     ClearAutoSave().catch((err) => console.error("Failed to clear autosave:", err));
-    toast.success("تم مسح مساحة العمل بالكامل");
   };
 
   return (

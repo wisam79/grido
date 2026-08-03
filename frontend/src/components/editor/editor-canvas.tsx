@@ -595,11 +595,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
       }
     }
 
-    if (targetType === "canvas") {
-      setContextMenu(null);
-      return;
-    }
-
     setContextMenu({
       position: { x, y },
       target: { type: targetType, id: targetId }

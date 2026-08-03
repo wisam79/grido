@@ -385,7 +385,6 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
     }
 
     pushHistory();
-    toast.success(targets.length > 1 ? "تمت محاذاة العناصر" : "تمت محاذاة العنصر");
   }, []);
 
   if (!hasSelection) return null;
@@ -510,7 +509,6 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
               } else {
                 removeElements(selectedIds);
               }
-              toast.success(selectedIds.length > 1 ? "تم حذف العناصر" : "تم حذف العنصر");
             }
           }}
           aria-label="حذف"
