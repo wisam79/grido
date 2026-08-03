@@ -207,7 +207,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       availableHeightMM,
     });
 
-    const shouldShowCut = printSettings.showCutLines || collageShowCutLines;
+    const shouldShowCut = printSettings.showCutLines;
     const rawCutLines = shouldShowCut
       ? calculatePrintCutLines({
           mode,
@@ -380,7 +380,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       );
     }
 
-    const shouldShowCut = mode === "collage" ? (printSettings.showCutLines || collageShowCutLines) : printSettings.showCutLines;
+    const shouldShowCut = mode === "collage" ? collageShowCutLines : printSettings.showCutLines;
     const rawCutLines = shouldShowCut
       ? calculatePrintCutLines({
           mode,
@@ -498,7 +498,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         gapMM: gapMM,
         dpi: printSettings.dpi || 300,
         backgroundColor: backgroundColor || "#FFFFFF",
-        showCutLines: printSettings.showCutLines || collageShowCutLines,
+        showCutLines: mode === "collage" ? collageShowCutLines : printSettings.showCutLines,
         colorSpace: colorSpace,
         // JPEG للطباعة الملونة (sRGB): ترميز أسرع 3-5× من PNG في الخدمة وملف أصغر
         // يخفف حمولة نافذة الطباعة — الجودة 95 عند 300 DPI كافية تماماً للصور

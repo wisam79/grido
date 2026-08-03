@@ -19,7 +19,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   gapMM: 2,
   dpi: 300,
   copiesPerSheet: 1,
-  showCutLines: true,
+  showCutLines: false,
   showEndCutLine: true,
   orientation: "portrait",
   fitToPage: true,
