@@ -1,10 +1,10 @@
 import { StateCreator } from "zustand";
 import { EditorMode, ProjectFileV1, CanvasElement, CanvasSlot, PrintSettings, HistoryEntry } from "../types";
-import { PhotoTemplate, CollageTemplate, COLLAGE_TEMPLATES, PHOTO_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
+import { PhotoTemplate, CollageTemplate, COLLAGE_TEMPLATES, PHOTO_TEMPLATES, PAPER_SIZES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
 import { generateInitialSlots } from "./collage-slice";
 import { DEFAULT_PRINT_SETTINGS } from "./print-slice";
 import { DEFAULT_HISTORY_ENTRY_EXTRAS } from "./history-slice";
-import { uid } from "../../utils";
+import { invalidateImageCache } from "@/hooks/use-async-image";
 
 export interface CoreSlice {
   projectId: string | null;
@@ -182,18 +182,36 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       }
     }
 
+    const currentDpi = get().printSettings?.dpi || 300;
+    const wMM = Math.round((w / currentDpi) * 25.4);
+    const hMM = Math.round((h / currentDpi) * 25.4);
+    const matchedPaper = PAPER_SIZES.find(
+      (p) => (p.widthMM === wMM && p.heightMM === hMM) || (p.widthMM === hMM && p.heightMM === wMM)
+    );
+    const isLandscape = w > h;
+
     set({
       canvasWidth: w,
       canvasHeight: h,
       elements: adjustedElements,
       slots: adjustedSlots,
+      printSettings: {
+        ...get().printSettings,
+        paperId: matchedPaper ? matchedPaper.id : "custom",
+        paperWidthMM: isLandscape ? Math.max(wMM, hMM) : Math.min(wMM, hMM),
+        paperHeightMM: isLandscape ? Math.min(wMM, hMM) : Math.max(wMM, hMM),
+        orientation: isLandscape ? "landscape" : "portrait",
+      },
     });
     get().pushHistory();
   },
 
   setBackgroundColor: (c) => { set({ backgroundColor: c }); get().pushHistory(); },
 
-  setLastEditedImage: (src) => set({ lastEditedImage: src }),
+  setLastEditedImage: (src) => {
+    if (src) invalidateImageCache(src);
+    set({ lastEditedImage: src });
+  },
   setLastEditedImageAspect: (aspect) => set({ lastEditedImageAspect: aspect }),
   setCanvasZoom: (zoom) => set((state) => ({
     canvasZoom: typeof zoom === "function" ? zoom(state.canvasZoom) : zoom
