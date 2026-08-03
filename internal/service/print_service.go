@@ -966,11 +966,6 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	// HTML file for native OS printing (uses file:// absolute path so external apps like mshtml.dll can load the image)
 	absImagePath := filepath.Join(outDir, htmlImageName)
 	fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(absImagePath), " ", "%20")
-	// Determine @page orientation keyword for the CSS
-	pageOrientation := "portrait"
-	if strings.EqualFold(req.Orientation, "landscape") {
-		pageOrientation = "landscape"
-	}
 
 	htmlContent := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -991,14 +986,14 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
   @media print {
     body { background: white; margin: 0; padding: 0; }
     img { box-shadow: none; margin: 0; padding: 0; }
-    @page { margin: 0; size: %.2fmm %.2fmm %s; }
+    @page { margin: 0; size: %.2fmm %.2fmm; }
   }
 </style>
 </head>
 <body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
   <img src="%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, pageOrientation, fileURI)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, fileURI)
 
 	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 
@@ -1020,14 +1015,14 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
   @media print {
     html, body { width: %.2fmm; height: %.2fmm; }
     img { width: 100%%; height: 100%%; }
-    @page { margin: 0; size: %.2fmm %.2fmm %s; }
+    @page { margin: 0; size: %.2fmm %.2fmm; }
   }
 </style>
 </head>
 <body>
   <img src="/local-image/%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, pageOrientation, htmlImageName)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, htmlImageName)
 
 	return imagePath, selfContainedHTML, nil
 }
