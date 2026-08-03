@@ -453,7 +453,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               PrintNative(result.filePath).catch(console.error);
             }
           } finally {
-            setTimeout(removeIframe, 60000);
+            setTimeout(removeIframe, 2000);
           }
         };
 

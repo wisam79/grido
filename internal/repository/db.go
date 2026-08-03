@@ -368,6 +368,20 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 		}
 	}
 
+	// 3. فحص مسارات الصور في القوالب المخصصة المحفوظة بقاعدة البيانات لمنع مسح أصول القوالب
+	dbMu.RLock()
+	currentDB := dbInstance
+	dbMu.RUnlock()
+
+	if currentDB != nil {
+		var templates []domain.CustomTemplate
+		if err := currentDB.Find(&templates).Error; err == nil {
+			for _, t := range templates {
+				collectImageFilenames("", string(t.Cells), referencedImages)
+			}
+		}
+	}
+
 	return referencedImages, nil
 }
 

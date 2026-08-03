@@ -25,10 +25,12 @@ autosave.json
 window.json
 webview_cache/
 
-# OS-specific files
+# OS-specific & Python files
 .DS_Store
 Thumbs.db
 *.log
+__pycache__/
+*.pyc
 
 # Environment variables (secrets)
 .env
