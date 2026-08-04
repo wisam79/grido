@@ -126,6 +126,14 @@ jobs:
             }
           }
 
+      - name: Upload Executable for Signing
+        id: upload-artifact
+        if: secrets.SIGNPATH_API_TOKEN != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: GridoStudio-unsigned
+          path: build/bin/GridoStudio.exe
+
       - name: Sign Executables via SignPath
         env:
           SIGNPATH_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -138,9 +146,11 @@ jobs:
           project-slug: 'Grido_Studio'
           signing-policy-slug: 'release-policy'
           artifact-configuration-slug: 'initial-version'
-          input-artifact-path: 'build/bin/GridoStudio.exe'
-          output-artifact-path: 'build/bin/GridoStudio.exe'
+          github-artifact-id: ${{ steps.upload-artifact.outputs.artifact-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          output-artifact-directory: 'build/bin/signed'
           wait-for-completion: true
+
 
       - name: Generate SHA256 Checksums
         shell: powershell
