@@ -161,9 +161,13 @@ jobs:
           SIGNPATH_ORG: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
         shell: powershell
         run: |
-          Get-ChildItem -Path "build\bin\signed" | ForEach-Object { Write-Host "signed: $($_.Name)" }
-          Get-ChildItem -Path "build\bin\signed\*.exe" | ForEach-Object {
-            Copy-Item $_.FullName "build\bin\$($_.Name)" -Force
+          if (Test-Path "build\bin\signed") {
+            Get-ChildItem -Path "build\bin\signed" | ForEach-Object { Write-Host "signed: $($_.Name)" }
+            Get-ChildItem -Path "build\bin\signed\*.exe" | ForEach-Object {
+              Copy-Item $_.FullName "build\bin\$($_.Name)" -Force
+            }
+          } else {
+            Write-Host "Warning: build\bin\signed does not exist. Signing step might have failed or skipped."
           }
           if (Test-Path "build\bin\GridoStudio.exe") {
             Copy-Item "build\bin\GridoStudio.exe" "build\bin\Grido Studio.exe" -Force
