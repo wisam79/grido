@@ -59,6 +59,7 @@ export interface ImageElement extends BaseCanvasElement {
   contrast?: number;
   saturation?: number;
   blur?: number;
+  bgColor?: string;
 }
 
 export interface TextElement extends BaseCanvasElement {
@@ -111,6 +112,7 @@ export interface CanvasSlot {
   flipY?: boolean;
   rotation?: number;
   originalImageSrc?: string;
+  bgColor?: string;
 }
 
 export type EditorMode = "single" | "collage";

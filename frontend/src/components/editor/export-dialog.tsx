@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Download, FileImage, Loader2 } from "lucide-react";
+import { Download, FileImage, Loader2, AlertTriangle } from "lucide-react";
 import { exportCanvas, downloadBlob, exportSlotCanvas, applyBleedAndCropMarks, CanvasTooLargeError } from "./export-utils";
 import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/stage-context";
@@ -237,8 +237,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
 
           <div className="border-t pt-3 space-y-3">
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg text-[10px] text-amber-800 dark:text-amber-200">
-              ⚠️ تنبيه للمطابع: سيتم تصدير الصورة بصيغة RGB. إذا كانت مطبعتك تشترط CMYK، يرجى تحويل الملف لاحقاً في برامج مثل Photoshop.
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg text-[10px] text-amber-800 dark:text-amber-200 flex items-start gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <span>تنبيه للمطابع: سيتم تصدير الصورة بصيغة RGB. إذا كانت مطبعتك تشترط CMYK، يرجى تحويل الملف لاحقاً في برامج مثل Photoshop.</span>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-muted/30 transition-colors">

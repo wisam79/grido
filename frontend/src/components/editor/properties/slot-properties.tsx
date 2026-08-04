@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ImagePlus, Scissors, Copy, Rows, Columns, LayoutGrid,
-  FlipHorizontal2, FlipVertical2, RotateCw, Undo2
+  FlipHorizontal2, FlipVertical2, RotateCw, Undo2, Palette, Check
 } from "lucide-react";
 import {
   Tooltip,
@@ -362,6 +362,83 @@ export function SlotProperties({
         </div>
 
         {renderAutoFillToggle()}
+      </div>
+
+      {/* 3.5 كرت لون خلفية صورة الهوية المعزولة */}
+      <div className="bg-card/70 border border-border/50 rounded-2xl p-3 shadow-2xs space-y-2.5">
+        <div className="flex items-center justify-between border-b border-border/20 pb-1.5">
+          <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
+            <Palette className="w-3.5 h-3.5 text-primary" />
+            <span>خلفية صورة الهوية</span>
+          </Label>
+          <span className="text-[9.5px] text-muted-foreground font-mono">الخلفيات الرسمية</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {[
+            { id: "trans", label: "شفاف", val: "transparent" },
+            { id: "white", label: "أبيض للجوازات", val: "#ffffff" },
+            { id: "blue", label: "أزرق رسمي", val: "#1d4ed8" },
+            { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
+            { id: "gray", label: "رمادي", val: "#e5e7eb" },
+          ].map((colorItem) => {
+            const currBg = (slot as any).bgColor || "transparent";
+            const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
+            return (
+              <button
+                key={colorItem.id}
+                type="button"
+                title={colorItem.label}
+                onClick={() => {
+                  // تحديث لون خلفية كافة الخلايا إذا كان التكرار مفعّلاً، أو التحديث للخلية المحددة
+                  const freshStore = useEditorStore.getState();
+                  if (autoFill) {
+                    freshStore.slots.forEach((s) => {
+                      freshStore.updateSlot(s.id, { bgColor: colorItem.val });
+                    });
+                  } else {
+                    onUpdate(slot.id, { bgColor: colorItem.val });
+                  }
+                  freshStore.pushHistory();
+                }}
+                className={cn(
+                  "w-7 h-7 rounded-xl border border-border/60 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95",
+                  isActive && "ring-2 ring-primary ring-offset-1 border-primary font-bold"
+                )}
+                style={{
+                  backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
+                  backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
+                  backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
+                  backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
+                }}
+              >
+                {isActive && (
+                  <Check className={cn("w-3.5 h-3.5 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                )}
+              </button>
+            );
+          })}
+
+          {/* Color Picker مخصص */}
+          <div className="flex items-center gap-1 border border-border/60 rounded-xl px-1.5 py-0.5 bg-background/50" title="لون مخصص">
+            <input
+              type="color"
+              value={(slot as any).bgColor === "transparent" || !(slot as any).bgColor ? "#ffffff" : (slot as any).bgColor}
+              onChange={(e) => {
+                const freshStore = useEditorStore.getState();
+                if (autoFill) {
+                  freshStore.slots.forEach((s) => {
+                    freshStore.updateSlot(s.id, { bgColor: e.target.value });
+                  });
+                } else {
+                  onUpdate(slot.id, { bgColor: e.target.value });
+                }
+              }}
+              onBlur={() => useEditorStore.getState().pushHistory()}
+              className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent p-0"
+            />
+          </div>
+        </div>
       </div>
 
       {/* 4. كرت تعديل الألوان والسطوع */}

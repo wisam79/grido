@@ -205,7 +205,18 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 			outIdx := outRowOffset + x*4
 			maskIdx := maskRowOffset + x
 
-			alpha := maskPix[maskIdx]
+			rawAlpha := float64(maskPix[maskIdx])
+
+			// ✂️ منحنى تشذيب وتنعيم حواف القناع لمنع الهالة البيضاء حول الشعر (Alpha Remapping & Defringe)
+			var alpha uint8
+			if rawAlpha < 60 {
+				alpha = 0
+			} else if rawAlpha > 200 {
+				alpha = 255
+			} else {
+				v := (rawAlpha - 60.0) / (200.0 - 60.0)
+				alpha = uint8(v * 255.0)
+			}
 
 			outPix[outIdx] = srcPix[srcIdx]
 			outPix[outIdx+1] = srcPix[srcIdx+1]

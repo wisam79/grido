@@ -18,7 +18,8 @@ import {
   ArrowDown, 
   X,
   Eraser,
-  ScanFace
+  ScanFace,
+  Loader2
 } from "lucide-react";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
@@ -91,7 +92,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     updateElement(id, patch);
   };
 
-  const { isRemovingBg, handleRemoveBg } = useBgRemoval(selectedSlot ? onUpdateSlot : onUpdateElement);
+  const { isRemovingBg, handleRemoveBg, bgProgress } = useBgRemoval(selectedSlot ? onUpdateSlot : onUpdateElement);
   const { isEnhancing, handleEnhance, remainingQuota, dailyLimit } = useAiEnhance(selectedSlot ? onUpdateSlot : onUpdateElement);
   const { isFraming, handleFrameFace, handleCancelFrame } = useFaceFrame(selectedSlot ? onUpdateSlot : onUpdateElement);
 
@@ -214,8 +215,8 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => handleRemoveBg(selectedSlot)}
                       className="h-8 px-2.5 gap-1.5 rounded-full hover:bg-indigo-500/10 text-indigo-500 font-bold text-xs"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>عزل الخلفية</span>
+                      {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      <span>{isRemovingBg ? (bgProgress > 0 ? `${Math.round(bgProgress)}%` : "جاري العزل...") : "عزل الخلفية"}</span>
                       {!licenseActive ? (
                         <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded tracking-wider uppercase">
                           PRO

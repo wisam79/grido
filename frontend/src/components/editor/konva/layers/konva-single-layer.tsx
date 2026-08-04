@@ -65,7 +65,6 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
         const handleClick = createElementClick(el.id);
 
         const elementProps = {
-          key: el.id,
           element: el,
           isSelected: selectedIds.includes(el.id),
           onMouseDown: handleMouseDown,
@@ -85,20 +84,19 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
         };
 
         if (el.type === "image" && el.imageSrc) {
-          return <URLImage {...elementProps} />;
+          return <URLImage key={el.id} {...elementProps} />;
         }
         if (el.type === "text") {
           return (
-            <React.Fragment key={el.id}>
-              <KonvaTextElement
-                {...elementProps}
-                onDblClick={() => handleDoubleClick(el)}
-              />
-            </React.Fragment>
+            <KonvaTextElement
+              key={el.id}
+              {...elementProps}
+              onDblClick={() => handleDoubleClick(el)}
+            />
           );
         }
         if (el.type === "shape") {
-          return <KonvaShapeElement {...elementProps} />;
+          return <KonvaShapeElement key={el.id} {...elementProps} />;
         }
         return null;
       })}
@@ -129,8 +127,11 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                 const absScaleX = Math.abs(sx);
                 const absScaleY = Math.abs(sy);
 
-                const newW = node.width() * absScaleX;
-                const newH = node.height() * absScaleY;
+                const baseW = (typeof node.width === "function" && node.width() > 0) ? node.width() : el.width * canvasWidth;
+                const baseH = (typeof node.height === "function" && node.height() > 0) ? node.height() : el.height * canvasHeight;
+
+                const newW = Math.max(10, baseW * absScaleX);
+                const newH = Math.max(10, baseH * absScaleY);
 
                 node.width(newW);
                 if (el.type === "text") {

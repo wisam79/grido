@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Image as KonvaImage, Group } from "react-konva";
+import { Image as KonvaImage, Group, Rect } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { ImageElement } from "@/lib/editor-store";
@@ -92,52 +92,67 @@ export const URLImage = React.memo(function URLImage({
   const nodeH = element.height * canvasHeight;
 
   return (
-    <Group>
+    <Group
+      ref={elementRef}
+      x={nodeX}
+      y={nodeY}
+      width={nodeW}
+      height={nodeH}
+      scaleX={flipped ? -1 : 1}
+      scaleY={flippedY ? -1 : 1}
+      rotation={element.rotation || 0}
+      opacity={element.opacity}
+      visible={element.visible !== false}
+      id={element.id}
+      draggable={!element.locked && isSelected}
+      onDragStart={onDragStart}
+      dragBoundFunc={dragBoundFunc}
+      onDragMove={onDragMove}
+      onDragEnd={onDragEnd}
+      onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
+      onClick={onClick}
+      onTap={onTap}
+    >
+      {element.bgColor && element.bgColor !== "transparent" && (
+        <Rect
+          x={0}
+          y={0}
+          width={nodeW}
+          height={nodeH}
+          fill={element.bgColor}
+          cornerRadius={element.cornerRadius || 0}
+          listening={false}
+        />
+      )}
       <KonvaImage
-        ref={elementRef}
         image={image}
-        x={nodeX}
-        y={nodeY}
+        x={0}
+        y={0}
         width={nodeW}
         height={nodeH}
-        scaleX={flipped ? -1 : 1}
-        scaleY={flippedY ? -1 : 1}
-        rotation={element.rotation}
-        opacity={element.opacity}
-        visible={element.visible !== false}
-        id={element.id}
         perfectDrawEnabled={false}
-        globalCompositeOperation={element.globalCompositeOperation as any || "source-over"}
         shadowColor={element.shadowColor}
         shadowBlur={element.shadowBlur || 0}
         shadowOffsetX={element.shadowOffsetX || 0}
         shadowOffsetY={element.shadowOffsetY || 0}
         shadowOpacity={element.shadowOpacity ?? 0}
         cornerRadius={element.cornerRadius || 0}
-        onMouseDown={onMouseDown}
-        onTouchStart={onTouchStart}
-        onClick={onClick}
-        onTap={onTap}
         filters={filters}
         brightness={filterProps.brightness}
         contrast={filterProps.contrast}
         blurRadius={element.blur || 0}
         hue={(filterProps as any).hue}
         saturation={(filterProps as any).saturation}
-        draggable={!element.locked && isSelected}
-        onDragStart={onDragStart}
-        dragBoundFunc={dragBoundFunc}
-        onDragMove={onDragMove}
-        onDragEnd={onDragEnd}
       />
       {isEnhancing && (
         <MagicAiScanner
           targetNodeRef={elementRef}
-          x={element.x * canvasWidth}
-          y={element.y * canvasHeight}
+          x={0}
+          y={0}
           width={nodeW}
           height={nodeH}
-          rotation={element.rotation}
+          rotation={0}
         />
       )}
     </Group>

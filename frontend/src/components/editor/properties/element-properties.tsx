@@ -328,38 +328,6 @@ export function ElementProperties({
                 />
               </div>
             )}
-
-            <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3.5 animate-in fade-in duration-200">
-              <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">طريقة الدمج (Blend Mode)</Label>
-              <div className="relative">
-                <select
-                  value={element.globalCompositeOperation || "source-over"}
-                  onChange={(e) => {
-                    onUpdate(element.id, { globalCompositeOperation: e.target.value });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  className="w-full h-9 px-3 text-xs rounded-lg border border-border bg-background focus:ring-1 focus:ring-primary appearance-none cursor-pointer"
-                  dir="ltr"
-                >
-                  <option value="source-over">عادي (Normal)</option>
-                  <option value="multiply">مضاعفة (Multiply)</option>
-                  <option value="screen">تفتيح (Screen)</option>
-                  <option value="overlay">تراكب (Overlay)</option>
-                  <option value="darken">تغميق (Darken)</option>
-                  <option value="lighten">تفتيح (Lighten)</option>
-                  <option value="color-dodge">حرق اللون (Color Dodge)</option>
-                  <option value="color-burn">حرق اللون (Color Burn)</option>
-                  <option value="hard-light">ضوء قاسي (Hard Light)</option>
-                  <option value="soft-light">ضوء ناعم (Soft Light)</option>
-                  <option value="difference">الفرق (Difference)</option>
-                  <option value="exclusion">استبعاد (Exclusion)</option>
-                  <option value="hue">صبغة (Hue)</option>
-                  <option value="saturation">تشبع (Saturation)</option>
-                  <option value="color">لون (Color)</option>
-                  <option value="luminosity">إضاءة (Luminosity)</option>
-                </select>
-              </div>
-            </div>
           </TabsContent>
           </Tabs>
       </div>

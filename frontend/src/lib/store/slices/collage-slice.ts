@@ -330,6 +330,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         brightness: targetSlot?.brightness ?? 100,
         contrast: targetSlot?.contrast ?? 100,
         saturation: targetSlot?.saturation ?? 100,
+        bgColor: targetSlot?.bgColor ?? sl.bgColor,
       })),
     }));
     get().pushHistory();
@@ -348,6 +349,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
               brightness: targetSlot.brightness ?? 100,
               contrast: targetSlot.contrast ?? 100,
               saturation: targetSlot.saturation ?? 100,
+              bgColor: targetSlot.bgColor ?? sl.bgColor,
             }
           : sl
       ),
@@ -368,6 +370,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
               brightness: targetSlot.brightness ?? 100,
               contrast: targetSlot.contrast ?? 100,
               saturation: targetSlot.saturation ?? 100,
+              bgColor: targetSlot.bgColor ?? sl.bgColor,
             }
           : sl
       ),

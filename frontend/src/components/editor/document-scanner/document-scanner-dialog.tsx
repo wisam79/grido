@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Check,
   Eye,
+  RotateCcw,
   Maximize2,
   FileText,
   CreditCard,
@@ -28,6 +29,7 @@ import {
   detectDocumentAuto,
 } from "./perspective-transform";
 import { toast } from "sonner";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface DocumentScannerDialogProps {
   open: boolean;
@@ -438,33 +440,60 @@ export function DocumentScannerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border/60 bg-card/98 backdrop-blur-xs p-3 shadow-2xl transition-all duration-150"
+        className="sm:max-w-[1180px] w-[90vw] h-[86vh] max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border/60 bg-card/98 backdrop-blur-md p-4 shadow-2xl transition-all duration-150"
         dir="rtl"
       >
-        <DialogHeader className="pb-2 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
+        {/* Top Header */}
+        <DialogHeader className="pb-3 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+            <DialogTitle className="flex items-center gap-2.5 text-base font-bold text-foreground">
+              <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-2xs">
                 <ScanLine className="w-4 h-4" />
               </div>
-              <span>ماسح وتقويم المستندات (Document Scanner)</span>
+              <div className="flex flex-col">
+                <span>ماسح وتقويم المستندات (Document Scanner)</span>
+                <span className="text-[11px] font-normal text-muted-foreground mt-0.5">
+                  استعدال المنظور وتحديد حدود الورقة وتبييض الخلفية تلقائياً للطباعة
+                </span>
+              </div>
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              قم بسحب الأركان الأربعة لتحديد حدود الورقة، واستعدال المنظور وتبييض الخلفية تلقائياً.
-            </DialogDescription>
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-3 py-1.5 min-h-0 h-full">
+        {/* Main Work Area */}
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-3 py-2 min-h-0 h-full">
+          {/* Canvas Main Container */}
           <div
             ref={containerRef}
-            className="flex-1 bg-zinc-950/90 dark:bg-black/80 rounded-xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/40 relative shadow-inner p-1.5"
+            className="flex-1 bg-zinc-950/95 dark:bg-black/90 rounded-2xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/40 relative shadow-inner p-2 select-none"
           >
+            {/* Top Floating Status Badge */}
+            <div className="absolute top-3 inset-x-0 mx-auto w-fit z-20 pointer-events-none">
+              <div className="px-3.5 py-1.5 rounded-full bg-background/80 dark:bg-zinc-900/90 border border-border/60 text-[11px] font-medium text-foreground/90 shadow-md backdrop-blur-md flex items-center gap-2">
+                {isDetecting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 text-primary animate-spin" />
+                    <span>جاري فحص الحواف وتحديد أركان المستند تلقائياً...</span>
+                  </>
+                ) : isPreviewMode ? (
+                  <>
+                    <Eye className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>معاينة المستند بعد الاستعدال والمعالجة</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <span>اسحب الدبابيس الأربعة لضبط حدود المستند بدقة</span>
+                  </>
+                )}
+              </div>
+            </div>
+
             {isPreviewMode && previewSrc ? (
               <img
                 src={previewSrc}
                 alt="المستند المستعدل"
-                className="max-h-full max-w-full object-contain rounded-lg shadow-lg border border-border/20"
+                className="max-h-full max-w-full object-contain rounded-xl shadow-2xl border border-border/30 animate-in fade-in-50 duration-200"
               />
             ) : (
               <canvas
@@ -473,127 +502,156 @@ export function DocumentScannerDialog({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 className={cn(
-                  "touch-none rounded-lg cursor-crosshair",
+                  "touch-none rounded-xl cursor-crosshair transition-opacity duration-150",
                   activeCorner !== null && "cursor-grabbing"
                 )}
               />
             )}
 
+            {/* Loupe Glass Magnifier */}
             <div
               className={cn(
-                "absolute pointer-events-none transition-opacity duration-150 rounded-full border-2 border-primary bg-zinc-950/90 shadow-2xl z-50 overflow-hidden",
+                "absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-zinc-950/95 shadow-2xl z-50 overflow-hidden ring-4 ring-primary/20",
                 loupePos && activeCorner !== null ? "opacity-100 scale-100" : "opacity-0 scale-90"
               )}
               style={{
                 left: loupePos ? `${loupePos.x}px` : "0px",
                 top: loupePos ? `${loupePos.y}px` : "0px",
-                width: "110px",
-                height: "110px",
+                width: "115px",
+                height: "115px",
               }}
             >
               <canvas ref={loupeCanvasRef} className="w-full h-full" />
             </div>
           </div>
 
-          <div className="w-full md:w-56 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/40 overflow-y-auto h-full min-h-0">
-            {/* 1. الكشف والتعديل */}
-            <div className="space-y-1.5">
-              <Label className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+          {/* Right Control Sidebar */}
+          <div className="w-full md:w-64 flex flex-col gap-3.5 shrink-0 bg-card/50 dark:bg-card/30 p-3.5 rounded-2xl border border-border/40 overflow-y-auto h-full min-h-0">
+            {/* 1. كشف الحواف والأركان */}
+            <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
+              <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span>كشف الحواف</span>
+                <span>كشف الأركان</span>
               </Label>
-              <div className="grid grid-cols-2 gap-1.5">
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="h-8.5 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-                  onClick={handleAutoDetect}
-                  disabled={isDetecting}
-                  title="كشف تلقائي لأركان المستند"
-                >
-                  {isDetecting ? (
-                    <RefreshCw className="w-3.5 h-3.5 shrink-0 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  )}
-                  <span>{isDetecting ? "جاري الكشف..." : "كشف تلقائي"}</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8.5 rounded-xl border-border/60 hover:bg-accent text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
-                  onClick={handleResetCorners}
-                  title="إعادة ضبط الأركان للأجزاء الخارجية"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <span>إعادة ضبط</span>
-                </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="h-9 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-primary hover:bg-primary/90"
+                      onClick={handleAutoDetect}
+                      disabled={isDetecting}
+                    >
+                      {isDetecting ? (
+                        <RefreshCw className="w-3.5 h-3.5 shrink-0 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                      <span>{isDetecting ? "جاري الكشف" : "كشف تلقائي"}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">كشف أركان المستند آلياً بالذكاء الاصطناعي</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 rounded-xl border-border/60 hover:bg-accent text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                      onClick={handleResetCorners}
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <span>إعادة ضبط</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">إعادة توزيع الأركان على كامل الصورة</TooltipContent>
+                </Tooltip>
               </div>
             </div>
 
-            {/* 2. فلاتر الماسح */}
-            <div className="space-y-1.5">
-              <Label className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+            {/* 2. فلاتر وتصفية الورقة */}
+            <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
+              <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span>معالجة الورقة</span>
+                <span>معالجة وتصفية الورقة</span>
               </Label>
-              <div className="grid grid-cols-1 gap-1.5">
-                <Button
-                  variant={filter === "original" ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-semibold justify-start px-3 gap-2 cursor-pointer transition-all border-border/50",
-                    filter === "original" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
-                  )}
-                  onClick={() => handleFilterChange("original")}
-                  title="الألوان الأصلية للمستند"
-                >
-                  <FileText className="w-3.5 h-3.5 shrink-0" />
-                  <span>الألوان الأصلية</span>
-                </Button>
+              <div className="flex flex-col gap-1.5">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={filter === "original" ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "h-9 rounded-xl text-[11px] font-semibold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
+                        filter === "original" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-accent/60 text-foreground/80"
+                      )}
+                      onClick={() => handleFilterChange("original")}
+                    >
+                      <FileText className="w-3.5 h-3.5 shrink-0" />
+                      <div className="flex flex-col items-start leading-tight">
+                        <span>الألوان الأصلية</span>
+                      </div>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">الاحتفاظ بألوان وإضاءة الصورة الأصلية</TooltipContent>
+                </Tooltip>
 
-                <Button
-                  variant={filter === "magic" ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-bold justify-start px-3 gap-2 cursor-pointer transition-all border-border/50",
-                    filter === "magic" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
-                  )}
-                  onClick={() => handleFilterChange("magic")}
-                  title="ماسح ضوئي ذكي وتبييض الورقة"
-                >
-                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  <span>ماسح ضوئي ذكي (Magic)</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={filter === "magic" ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "h-9 rounded-xl text-[11px] font-bold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
+                        filter === "magic" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
+                      )}
+                      onClick={() => handleFilterChange("magic")}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-300" />
+                      <div className="flex flex-col items-start leading-tight">
+                        <span>ماسح ذكي (Magic)</span>
+                      </div>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">تبييض الورقة وإزالة الظلال وتحسين وضوح النص</TooltipContent>
+                </Tooltip>
 
-                <Button
-                  variant={filter === "bw" ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-semibold justify-start px-3 gap-2 cursor-pointer transition-all border-border/50",
-                    filter === "bw" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
-                  )}
-                  onClick={() => handleFilterChange("bw")}
-                  title="أبيض وأسود عالي التباين"
-                >
-                  <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
-                  <span>أبيض وأسود (B&W)</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={filter === "bw" ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "h-9 rounded-xl text-[11px] font-semibold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
+                        filter === "bw" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-accent/60 text-foreground/80"
+                      )}
+                      onClick={() => handleFilterChange("bw")}
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+                      <div className="flex flex-col items-start leading-tight">
+                        <span>أبيض وأسود (B&W)</span>
+                      </div>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">تحويل المستند لأبيض وأسود عالي التباين</TooltipContent>
+                </Tooltip>
               </div>
             </div>
 
-            {/* 3. نسبة الأبعاد */}
-            <div className="space-y-2">
-              <Label className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Maximize2 className="w-3.5 h-3.5 text-primary" />
-                <span>أبعاد القياس</span>
+            {/* 3. نسبة الأبعاد والقياس */}
+            <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
+              <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
+                <Maximize2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>قياس ونسبة المستند</span>
               </Label>
               <div className="grid grid-cols-2 gap-1.5">
                 <Button
                   variant={aspect === "free" ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-bold cursor-pointer transition-all border-border/50",
+                    "h-8.5 rounded-xl text-[11px] font-bold cursor-pointer transition-all border-border/40",
                     aspect === "free" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
                   )}
                   onClick={() => handleAspectChange("free")}
@@ -605,7 +663,7 @@ export function DocumentScannerDialog({
                   variant={aspect === "a4_p" ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-semibold cursor-pointer transition-all border-border/50",
+                    "h-8.5 rounded-xl text-[11px] font-semibold cursor-pointer transition-all border-border/40",
                     aspect === "a4_p" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
                   )}
                   onClick={() => handleAspectChange("a4_p")}
@@ -617,7 +675,7 @@ export function DocumentScannerDialog({
                   variant={aspect === "a4_l" ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-semibold cursor-pointer transition-all border-border/50",
+                    "h-8.5 rounded-xl text-[11px] font-semibold cursor-pointer transition-all border-border/40",
                     aspect === "a4_l" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
                   )}
                   onClick={() => handleAspectChange("a4_l")}
@@ -629,7 +687,7 @@ export function DocumentScannerDialog({
                   variant={aspect === "id_card" ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/50",
+                    "h-8.5 rounded-xl text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/40",
                     aspect === "id_card" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
                   )}
                   onClick={() => handleAspectChange("id_card")}
@@ -642,22 +700,32 @@ export function DocumentScannerDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2.5 border-t border-border/40 pt-3.5 flex items-center justify-between w-full">
+        {/* Footer Bar */}
+        <DialogFooter className="gap-3 border-t border-border/40 pt-3 flex items-center justify-between w-full shrink-0">
           <div>
             <Button
               variant="secondary"
               onClick={handleTogglePreview}
-              className="rounded-xl h-10 px-5 text-xs font-semibold cursor-pointer gap-2 border border-border/50 shadow-sm"
+              className="rounded-xl h-10 px-4 text-xs font-semibold cursor-pointer gap-2 border border-border/50 shadow-xs hover:bg-accent flex items-center"
             >
-              <Eye className="w-4 h-4 text-primary" />
-              <span>{isPreviewMode ? "رجوع للتعديل ↩" : "معاينة الاستعدال 👁️"}</span>
+              {isPreviewMode ? (
+                <>
+                  <RotateCcw className="w-4 h-4 text-primary" />
+                  <span>رجوع للتعديل</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 text-primary" />
+                  <span>معاينة الاستعدال</span>
+                </>
+              )}
             </Button>
           </div>
           <div className="flex items-center gap-2.5">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="rounded-xl h-10 px-5 text-xs font-semibold cursor-pointer"
+              className="rounded-xl h-10 px-4 text-xs font-semibold cursor-pointer"
             >
               إلغاء
             </Button>
@@ -675,3 +743,4 @@ export function DocumentScannerDialog({
     </Dialog>
   );
 }
+

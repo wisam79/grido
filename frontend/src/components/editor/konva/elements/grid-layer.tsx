@@ -1,5 +1,5 @@
 import React from "react";
-import { FastLayer, Shape } from "react-konva";
+import { Layer, Shape } from "react-konva";
 
 export const GridLayer = React.memo(function GridLayer({
   showGrid,
@@ -26,9 +26,9 @@ export const GridLayer = React.memo(function GridLayer({
   const numW = Math.ceil(canvasWidth / gridSize);
 
   return (
-    <FastLayer listening={false} name="grid-layer" hitStrokeWidth={0}>
+    <Layer listening={false} name="grid-layer" hitStrokeWidth={0}>
       <Shape
-        sceneFunc={(context, shape) => {
+        sceneFunc={(context, _shape) => {
           if (gridType === "lines") {
             context.strokeStyle = gridColor;
             context.lineWidth = 0.4;
@@ -67,7 +67,7 @@ export const GridLayer = React.memo(function GridLayer({
             context.fillStyle = gridColor;
             context.globalAlpha = gridOpacity;
 
-            // النقاط الفرعية — مسار واحد فقط مع كسر المسار اليدوي
+            // النقاط الفرعية — مسار واحد فقط
             context.beginPath();
             for (let i = 0; i <= numH; i++) {
               for (let j = 0; j <= numW; j++) {
@@ -99,6 +99,6 @@ export const GridLayer = React.memo(function GridLayer({
           context.closePath();
         }}
       />
-    </FastLayer>
+    </Layer>
   );
 });

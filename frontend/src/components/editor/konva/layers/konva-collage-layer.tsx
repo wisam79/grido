@@ -198,6 +198,16 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               onDblClick={() => handleSlotDblClick?.(slot.id)}
               onWheel={(e) => handleSlotWheel(slot, e)}
             >
+              {(slot as any).bgColor && (slot as any).bgColor !== "transparent" && (
+                <Rect
+                  x={0}
+                  y={0}
+                  width={width}
+                  height={height}
+                  fill={(slot as any).bgColor}
+                  listening={false}
+                />
+              )}
               {slot.imageSrc ? (
                 <KonvaCollageImage
                   id={slot.id}

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
   Sparkles, RefreshCw, Sun, Contrast, Droplet, 
-  EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine, ScanFace
+  EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine, ScanFace, Palette, Check, Loader2
 } from "lucide-react";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
@@ -233,8 +233,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         >
           {isRemovingBg ? (
             <div className="flex items-center gap-2.5">
-              <X className="w-4 h-4 text-destructive-foreground group-hover:scale-110 transition-transform shrink-0" />
-              <span>إلغاء العملية الحالية</span>
+              <Loader2 className="w-4 h-4 text-destructive-foreground animate-spin shrink-0" />
+              <span>{bgProgress > 0 ? `جاري العزل ${Math.round(bgProgress)}%` : "جاري العزل..."} (إلغاء)</span>
             </div>
           ) : (
             <>
@@ -320,6 +320,66 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             تلقائي
           </span>
         </Button>
+
+        {/* قسم لون خلفية الصورة للشخصية / المعزولة */}
+        <div className="space-y-2 pt-1 border-t border-border/25">
+          <div className="flex items-center justify-between">
+            <Label className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-primary" />
+              <span>خلفية الصورة المعزولة</span>
+            </Label>
+            <span className="text-[9.5px] text-muted-foreground font-medium">هويات / جوازات</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {[
+              { id: "trans", label: "شفاف", val: "transparent" },
+              { id: "white", label: "أبيض للجوازات", val: "#ffffff" },
+              { id: "blue", label: "أزرق رسمي", val: "#1d4ed8" },
+              { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
+              { id: "gray", label: "رمادي", val: "#e5e7eb" },
+            ].map((colorItem) => {
+              const currBg = element.bgColor || "transparent";
+              const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
+              return (
+                <button
+                  key={colorItem.id}
+                  type="button"
+                  title={colorItem.label}
+                  onClick={() => {
+                    onUpdate(element.id, { bgColor: colorItem.val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className={cn(
+                    "w-6.5 h-6.5 rounded-lg border border-border/60 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95",
+                    isActive && "ring-2 ring-primary ring-offset-1 border-primary"
+                  )}
+                  style={{
+                    backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
+                    backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
+                    backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
+                    backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
+                  }}
+                >
+                  {isActive && (
+                    <Check className={cn("w-3 h-3 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                  )}
+                </button>
+              );
+            })}
+
+            {/* Custom Color Input */}
+            <div className="flex items-center gap-1 border border-border/60 rounded-lg px-1.5 py-0.5 bg-background/50" title="لون مخصص">
+              <input
+                type="color"
+                value={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
+                onChange={(e) => onUpdate(element.id, { bgColor: e.target.value })}
+                onBlur={() => useEditorStore.getState().pushHistory()}
+                className="w-4 h-4 rounded cursor-pointer border-0 bg-transparent p-0"
+              />
+            </div>
+          </div>
+        </div>
 
         {/* أزرار القص وتغيير الصورة */}
         <div className="grid grid-cols-2 gap-2 pt-0.5">

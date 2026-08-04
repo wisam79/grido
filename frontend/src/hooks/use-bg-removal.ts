@@ -3,6 +3,25 @@ import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { ApplyMaskToImage } from "../../wailsjs/go/main/App";
 import { preloadImageIntoCache } from "./use-async-image";
+import { create } from "zustand";
+
+interface BgRemovalState {
+  isRemovingBg: boolean;
+  bgProgress: number;
+  bgProgressText: string;
+  setIsRemovingBg: (val: boolean) => void;
+  setBgProgress: (val: number) => void;
+  setBgProgressText: (val: string) => void;
+}
+
+export const useBgRemovalState = create<BgRemovalState>((set) => ({
+  isRemovingBg: false,
+  bgProgress: 0,
+  bgProgressText: "",
+  setIsRemovingBg: (val) => set({ isRemovingBg: val }),
+  setBgProgress: (val) => set({ bgProgress: val }),
+  setBgProgressText: (val) => set({ bgProgressText: val }),
+}));
 
 /**
  * useBgRemoval — يشغّل عزل الخلفية داخل Web Worker حقيقي (bg-removal.worker.ts)
@@ -68,22 +87,18 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
     onUpdateRef.current = onUpdate;
   }, [onUpdate]);
 
-  const [isRemovingBg, setIsRemovingBg] = useState(false);
-  const [bgProgress, setBgProgress] = useState(0);
-  const [bgProgressText, setBgProgressText] = useState("");
+  const isRemovingBg = useBgRemovalState((s) => s.isRemovingBg);
+  const bgProgress = useBgRemovalState((s) => s.bgProgress);
+  const bgProgressText = useBgRemovalState((s) => s.bgProgressText);
+  const setIsRemovingBg = useBgRemovalState((s) => s.setIsRemovingBg);
+  const setBgProgress = useBgRemovalState((s) => s.setBgProgress);
+  const setBgProgressText = useBgRemovalState((s) => s.setBgProgressText);
   const modelCachedRef = useRef(false);
   const activeRequestRef = useRef<number>(0);
 
   useEffect(() => {
     return () => {
-      // عنصر مفكوك أثناء عملية جارية — نُسقط طلبه من السجل ونحرر القفل المشترك
-      // إن كان هو مالكه (وإلا تبقى العمليات الأخرى محظورة للأبد).
-      const reqId = activeRequestRef.current;
-      if (reqId) {
-        pendingBgRequests.delete(reqId);
-        if (busyRequestId === reqId) busyRequestId = 0;
-        activeRequestRef.current = 0;
-      }
+      // نترك الطلب الجاري يستكمل في الخلفية دون إلغائه عند إغلاق القوائم المنبثقة (مثل ContextMenu)
     };
   }, []);
 
@@ -186,6 +201,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
             patch.originalImageSrc = element.imageSrc;
           }
           onUpdateRef.current(element.id, patch);
+          useEditorStore.getState().updateElement(element.id, patch);
           useEditorStore.getState().pushHistory();
           toast.success("تم عزل خلفية الصورة بنجاح ✨");
 

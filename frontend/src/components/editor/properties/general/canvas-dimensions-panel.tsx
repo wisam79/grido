@@ -328,7 +328,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                     if (activePresetId === "custom") {
                       return (
                         <>
-                          <span className="text-[11px] font-bold">مخصص 📐</span>
+                          <span className="text-[11px] font-bold">مخصص</span>
                           <span className="text-[8.5px] text-primary/80 font-medium">مقاس حر</span>
                         </>
                       );
@@ -350,7 +350,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   }}
                   className="text-xs text-right justify-end font-bold cursor-pointer"
                 >
-                  📐 مقاس مخصص (Custom Size)
+                  مقاس مخصص (Custom Size)
                 </DropdownMenuItem>
                 {PAPER_SIZES.map((p) => {
                   const nameParts = p.name.split(" (");

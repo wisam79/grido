@@ -63,7 +63,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
 
       if (resolvedCv && typeof resolvedCv.Mat === "function") {
         cached = resolvedCv as CvRuntime;
-        console.log("[OpenCV] Runtime successfully initialized 🎯");
+        console.log("[OpenCV] Runtime successfully initialized");
         return cached;
       }
 
@@ -102,7 +102,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
         const finalCv = (cvRuntime && cvRuntime.Mat ? cvRuntime : (globalThis as any).cv) as CvRuntime;
         if (finalCv && (finalCv as any).Mat) {
           cached = finalCv;
-          console.log("[OpenCV] Runtime ready after onRuntimeInitialized 🎯");
+          console.log("[OpenCV] Runtime ready after onRuntimeInitialized");
           return finalCv;
         }
       }
