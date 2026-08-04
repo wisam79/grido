@@ -126,12 +126,14 @@ jobs:
             }
           }
 
-      - name: Upload Executable for Signing
+      - name: Upload Executables for Signing
         id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
           name: GridoStudio-unsigned
-          path: build/bin/GridoStudio.exe
+          path: |
+            build/bin/GridoStudio.exe
+            build/bin/GridoStudio-installer.exe
 
       - name: Sign Executables via SignPath
         env:
