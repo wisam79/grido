@@ -60,3 +60,5 @@ scratch_transcript.txt
 package.json
 package-lock.json
 .kilocode/
+.kilo/
+.gemini/
