@@ -410,7 +410,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         doc.write(result.htmlDoc);
         doc.close();
 
+        let removeTimer: ReturnType<typeof setTimeout> | undefined;
         const removeIframe = () => {
+          if (removeTimer) {
+            clearTimeout(removeTimer);
+            removeTimer = undefined;
+          }
           if (document.body.contains(iframe)) {
             document.body.removeChild(iframe);
           }
@@ -429,14 +434,23 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             if (result.filePath && typeof PrintNative === "function") {
               PrintNative(result.filePath).catch(console.error);
             }
-          } finally {
-            setTimeout(removeIframe, 2000);
+} finally {
+            // WebView2 لا يحجب JS أثناء print() كما يفعل كروم — إزالة الإطار بعد
+            // 2000ms كانت تدمر معاينة نافذة الطباعة قبل اكتمال تحميل الصورة فتبقى
+            // على «تحميل» للأبد. التنظيف يتم عبر afterprint عند إغلاق الحوار +
+            // شبكة أمان 60 ثانية.
+            removeTimer = setTimeout(removeIframe, 60000);
           }
         };
 
         const img = doc.querySelector("img");
         if (img) {
+          let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
           const runPrint = () => {
+            if (fallbackTimer) {
+              clearTimeout(fallbackTimer);
+              fallbackTimer = undefined;
+            }
             if (img.decode) {
               img.decode().then(triggerPrint).catch(triggerPrint);
             } else {
@@ -447,8 +461,16 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             runPrint();
           } else {
             img.onload = runPrint;
-            img.onerror = triggerPrint;
-            setTimeout(runPrint, 300);
+            img.onerror = () => {
+              if (fallbackTimer) {
+                clearTimeout(fallbackTimer);
+                fallbackTimer = undefined;
+              }
+              triggerPrint();
+            };
+            // ورقة الطباعة تُضمَّن كـ Base64 قد يتجاوز 10MB عند 300DPI — مهلة 300ms
+            // كانت تستدعي print() قبل فك ترميز الصورة فيظل حوار الطباعة «تحميلاً».
+            fallbackTimer = setTimeout(runPrint, 10000);
           }
         } else {
           triggerPrint();

@@ -128,14 +128,16 @@ jobs:
 
       - name: Upload Executable for Signing
         id: upload-artifact
-        if: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: GridoStudio-unsigned
           path: build/bin/GridoStudio.exe
 
       - name: Sign Executables via SignPath
-        if: ${{ secrets.SIGNPATH_API_TOKEN != '' && secrets.SIGNPATH_ORGANIZATION_ID != '' }}
+        env:
+          SIGNPATH_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORG: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+        if: env.SIGNPATH_TOKEN != '' && env.SIGNPATH_ORG != ''
         uses: SignPath/github-action-submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -147,6 +149,22 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           output-artifact-directory: 'build/bin/signed'
           wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1800
+
+      - name: Deploy Signed Executable
+        if: env.SIGNPATH_TOKEN != '' && env.SIGNPATH_ORG != ''
+        env:
+          SIGNPATH_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORG: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+        shell: powershell
+        run: |
+          Get-ChildItem -Path "build\bin\signed" | ForEach-Object { Write-Host "signed: $($_.Name)" }
+          Get-ChildItem -Path "build\bin\signed\*.exe" | ForEach-Object {
+            Copy-Item $_.FullName "build\bin\$($_.Name)" -Force
+          }
+          if (Test-Path "build\bin\GridoStudio.exe") {
+            Copy-Item "build\bin\GridoStudio.exe" "build\bin\Grido Studio.exe" -Force
+          }
 
 
       - name: Generate SHA256 Checksums

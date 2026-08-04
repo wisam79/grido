@@ -5,15 +5,22 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [react({ fastRefresh: false })],
   resolve: {
-    alias: {
-      '@': resolve(__dirname, './src')
-    }
+    mainFields: ['module', 'jsnext:main', 'jsnext', 'main'],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      { find: /^konva$/, replacement: resolve(__dirname, './node_modules/konva/lib/index.js') }
+    ]
   },
   test: {
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
     globals: true,
     css: true,
+    server: {
+      deps: {
+        inline: ['konva', 'react-konva']
+      }
+    },
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
