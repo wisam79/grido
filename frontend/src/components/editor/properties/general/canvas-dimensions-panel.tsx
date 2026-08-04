@@ -156,16 +156,13 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   };
 
   const handleSwapDimensions = () => {
+    // setCanvasSize يزامن أبعاد الورقة والاتجاه من نسبة الكانفاس الجديدة تلقائياً
     setCanvasSize(canvasHeight, canvasWidth);
     if (template) setTemplate(null);
 
     const temp = widthVal;
     setWidthVal(heightVal);
     setHeightVal(temp);
-
-    setPrintSettings({
-      orientation: printSettings.orientation === "portrait" ? "landscape" : "portrait",
-    });
   };
 
   const activePreset = PAPER_SIZES.find((p) => {

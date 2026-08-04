@@ -1,20 +1,27 @@
 import { describe, it, expect } from "vitest";
 import { calculatePrintCutLines } from "../src/lib/cut-lines-utils";
+import { computeSheetGrid } from "../src/lib/print-layout-math";
 
 describe("calculatePrintCutLines", () => {
   it("should calculate correct cut lines for single mode on A4 paper", () => {
     const lines = calculatePrintCutLines({
       mode: "single",
-      cols: 2,
       actualCopies: 2,
       imageWidthMM: 80,
       imageHeightMM: 60,
       gapMM: 5,
-      effectiveMarginMM: 10,
-      availableWidthMM: 190,
-      availableHeightMM: 277,
       paperWidth: 210,
       paperHeight: 297,
+      grid: computeSheetGrid({
+        cols: 2,
+        actualCopies: 2,
+        imageWidthMM: 80,
+        imageHeightMM: 60,
+        gapMM: 5,
+        effectiveMarginMM: 10,
+        availableWidthMM: 190,
+        availableHeightMM: 277,
+      }),
     });
 
     expect(lines.length).toBeGreaterThan(0);
@@ -40,14 +47,10 @@ describe("calculatePrintCutLines", () => {
 
     const lines = calculatePrintCutLines({
       mode: "collage",
-      cols: 1,
       actualCopies: 1,
       imageWidthMM: 180,
       imageHeightMM: 120,
       gapMM: 2,
-      effectiveMarginMM: 10,
-      availableWidthMM: 190,
-      availableHeightMM: 277,
       paperWidth: 210,
       paperHeight: 297,
       slots,
@@ -56,6 +59,16 @@ describe("calculatePrintCutLines", () => {
       canvasWidth: 1800,
       canvasHeight: 1200,
       hasPhysical: false,
+      grid: computeSheetGrid({
+        cols: 1,
+        actualCopies: 1,
+        imageWidthMM: 180,
+        imageHeightMM: 120,
+        gapMM: 2,
+        effectiveMarginMM: 10,
+        availableWidthMM: 190,
+        availableHeightMM: 277,
+      }),
     });
 
     expect(lines.length).toBeGreaterThan(0);
@@ -73,17 +86,23 @@ describe("calculatePrintCutLines", () => {
   it("should omit bottom end cut line when showEndCutLine is false", () => {
     const lines = calculatePrintCutLines({
       mode: "single",
-      cols: 2,
       actualCopies: 2,
       imageWidthMM: 80,
       imageHeightMM: 60,
       gapMM: 5,
-      effectiveMarginMM: 10,
-      availableWidthMM: 190,
-      availableHeightMM: 277,
       paperWidth: 210,
       paperHeight: 297,
       showEndCutLine: false,
+      grid: computeSheetGrid({
+        cols: 2,
+        actualCopies: 2,
+        imageWidthMM: 80,
+        imageHeightMM: 60,
+        gapMM: 5,
+        effectiveMarginMM: 10,
+        availableWidthMM: 190,
+        availableHeightMM: 277,
+      }),
     });
 
     const bottomLine = lines.find((l) => l.isBottomEnd);

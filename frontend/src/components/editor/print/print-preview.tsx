@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { buildCSSFilter, cn } from "@/lib/utils";
 import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
-import { computeBlockPosition, computeSheetGrid, computeSlotRectMM } from "@/lib/print-layout-math";
+import { computeBlockPosition, computeSlotRectMM } from "@/lib/print-layout-math";
+import type { SheetGrid } from "@/lib/print-layout-math";
 
 interface SheetPreviewProps {
-  cols: number;
-  rows: number;
+  grid: SheetGrid;
   count: number;
   imageWidthMM: number;
   imageHeightMM: number;
@@ -15,7 +16,6 @@ interface SheetPreviewProps {
   mode: "single" | "collage";
   backgroundColor: string;
   previewImageSrc: string;
-  marginMM?: number;
   paperWidthMM?: number;
   paperHeightMM?: number;
   slots?: any[];
@@ -28,8 +28,7 @@ interface SheetPreviewProps {
 }
 
 export function SheetPreview({
-  cols,
-  rows,
+  grid,
   count,
   imageWidthMM,
   imageHeightMM,
@@ -40,7 +39,6 @@ export function SheetPreview({
   mode,
   backgroundColor,
   previewImageSrc,
-  marginMM = 0,
   paperWidthMM = 210,
   paperHeightMM = 297,
   slots,
@@ -52,21 +50,62 @@ export function SheetPreview({
   scaleFactor = 1.5,
 }: SheetPreviewProps) {
   const sf = scaleFactor * zoom;
-  const availableWidthMM = paperWidthMM - 2 * marginMM;
-  const availableHeightMM = paperHeightMM - 2 * marginMM;
+  // الأبعاد الطبيعية للصور بعد تحميلها (naturalWidth/Height) — تُستخدم لتحويل
+  // سحب dragX/dragY شبكة البكسل إلى إزاحة نقل (%) مطابقة لمنطق Konva/التصدير
+  const [naturalSizes, setNaturalSizes] = useState<Record<string, { w: number; h: number }>>({});
+
+  const collageSlotTransform = (slot: any, rect: { wMM: number; hMM: number }) => {
+    const zoomVal = slot.zoom && slot.zoom > 0 ? slot.zoom : 1;
+    const normRot = (((slot.rotation || 0) % 360) + 360) % 360;
+    const isQuarter = normRot === 90 || normRot === 270;
+
+    if (isQuarter) {
+      // الخلية المدوّرة 90/270: صندوق الصورة يتبدل (h×w) مع قلب النسبة ليطابق
+      // تبديل Konva isRotated90or270 ? height/width : width/height — عندها
+      // object-cover يقتص بنفس نافذة المحرر ويجب إبقاء الصندوق متمركزاً في الخلية
+      const boxWpct = (rect.hMM / Math.max(0.01, rect.wMM)) * 100;
+      const boxHpct = (rect.wMM / Math.max(0.01, rect.hMM)) * 100;
+      return {
+        width: `${boxWpct}%`,
+        height: `${boxHpct}%`,
+        transform: `scale(${zoomVal}) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1}) rotate(${slot.rotation || 0}deg) translate(-50%, -50%)`,
+        stylePos: { left: "50%", top: "50%" },
+      };
+    }
+
+    // السحب (dragX/dragY) بنقاط بكسل المصدر → إزاحة (%) من نافذة القصّ؛
+    // المحصورة داخل منطقة القصّ cover (بدون فراغات) — نفس صيغة drawSlotImage
+    const nat = naturalSizes[slot.id];
+    let panX = 0;
+    let panY = 0;
+    if (nat && nat.w > 0 && nat.h > 0 && zoomVal > 1) {
+      const imgAspect = nat.w / nat.h;
+      const boxAspect = rect.wMM / Math.max(0.01, rect.hMM);
+      const coverW = imgAspect > boxAspect ? nat.h * boxAspect : nat.w;
+      const coverH = imgAspect > boxAspect ? nat.h : nat.w / boxAspect;
+      const sw = coverW / zoomVal;
+      const sh = coverH / zoomVal;
+      const maxDragX = Math.max(0, (nat.w - sw) / 2);
+      const maxDragY = Math.max(0, (nat.h - sh) / 2);
+      const dx = Math.max(-maxDragX, Math.min(maxDragX, slot.dragX || 0));
+      const dy = Math.max(-maxDragY, Math.min(maxDragY, slot.dragY || 0));
+      panX = (100 * zoomVal * dx) / coverW;
+      panY = (100 * zoomVal * dy) / coverH;
+    }
+
+    return {
+      transform: `translate(${panX}%, ${panY}%) scale(${zoomVal}) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1}) rotate(${slot.rotation || 0}deg)`,
+      stylePos: undefined,
+    };
+  };
 
   const rawCutLines = showCutLines
     ? calculatePrintCutLines({
         mode,
-        cols,
-        rows,
         actualCopies: count,
         imageWidthMM,
         imageHeightMM,
         gapMM,
-        effectiveMarginMM: marginMM,
-        availableWidthMM,
-        availableHeightMM,
         paperWidth: paperWidthMM,
         paperHeight: paperHeightMM,
         showEndCutLine,
@@ -76,6 +115,7 @@ export function SheetPreview({
         canvasWidth,
         canvasHeight,
         hasPhysical,
+        grid,
       })
     : [];
 
@@ -142,22 +182,11 @@ export function SheetPreview({
       >
         {slots && slots.length > 0 ? (
           (() => {
-            const firstFilled = slots.find((s) => s.imageSrc);
-            const grid = computeSheetGrid({
-              cols,
-              actualCopies: count,
-              imageWidthMM,
-              imageHeightMM,
-              gapMM,
-              effectiveMarginMM: marginMM,
-              availableWidthMM,
-              availableHeightMM,
-            });
             return Array.from({ length: count }).map((_, i) => {
               const block = computeBlockPosition(i, grid);
 
               return slots.map((slot, index) => {
-                const activeSrc = slot.imageSrc || firstFilled?.imageSrc;
+                const activeSrc = slot.imageSrc;
                 if (!activeSrc) return null;
 
                 const marginX_pct = hasPhysical ? 0 : (collageMargin / canvasWidth);
@@ -178,6 +207,8 @@ export function SheetPreview({
                 const width_pct = (rect.wMM / Math.max(1, paperWidthMM)) * 100;
                 const height_pct = (rect.hMM / Math.max(1, paperHeightMM)) * 100;
 
+                const slotTransform = collageSlotTransform(slot, { wMM: rect.wMM, hMM: rect.hMM });
+
                 return (
                   <div 
                     key={`copy-${i}-slot-${index}`} 
@@ -195,8 +226,19 @@ export function SheetPreview({
                     alt=""
                     className="w-full h-full object-cover"
                     style={{
-                      transform: `scale(${slot.zoom || 1}) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1}) rotate(${slot.rotation || 0}deg)`,
+                      ...(slotTransform.stylePos || { left: 0, top: 0 }),
+                      width: slotTransform.width,
+                      height: slotTransform.height,
+                      transform: slotTransform.transform,
                       filter: buildCSSFilter(slot),
+                    }}
+                    onLoad={(e) => {
+                      const el = e.currentTarget;
+                      const w = el.naturalWidth;
+                      const h = el.naturalHeight;
+                      if (w > 0 && h > 0) {
+                        setNaturalSizes((prev) => ({ ...prev, [slot.id]: { w, h } }));
+                      }
                     }}
                   />
                 </div>
@@ -220,35 +262,23 @@ export function SheetPreview({
     );
   }
 
-  const grid = computeSheetGrid({
-    cols,
-    actualCopies: count,
-    imageWidthMM,
-    imageHeightMM,
-    gapMM,
-    effectiveMarginMM: marginMM,
-    availableWidthMM,
-    availableHeightMM,
-  });
-
-  // الوضع الحر (Free mode): تكرار لقطة الكانفس الكاملة على الورقة
   const items = [];
   for (let i = 0; i < count; i++) {
     const block = computeBlockPosition(i, grid);
-    const x = block.xMM * sf;
-    const y = block.yMM * sf;
-    const w = imageWidthMM * sf;
-    const h = imageHeightMM * sf;
+    const left_pct = (block.xMM / Math.max(1, paperWidthMM)) * 100;
+    const top_pct = (block.yMM / Math.max(1, paperHeightMM)) * 100;
+    const width_pct = (imageWidthMM / Math.max(1, paperWidthMM)) * 100;
+    const height_pct = (imageHeightMM / Math.max(1, paperHeightMM)) * 100;
 
     items.push(
       <div
         key={i}
-        className="absolute overflow-hidden"
+        className="absolute overflow-hidden shadow-xs"
         style={{
-          left: x,
-          top: y,
-          width: w,
-          height: h,
+          left: `${left_pct}%`,
+          top: `${top_pct}%`,
+          width: `${width_pct}%`,
+          height: `${height_pct}%`,
           backgroundColor: backgroundColor || "#FFFFFF",
           boxSizing: "border-box",
         }}
@@ -257,7 +287,7 @@ export function SheetPreview({
           <img
             src={previewImageSrc}
             alt=""
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         ) : (
           <div className="w-full h-full bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-[10px] text-muted-foreground font-cairo">
@@ -269,7 +299,13 @@ export function SheetPreview({
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div 
+      className="relative w-full h-full overflow-hidden"
+      style={{
+        backgroundColor: backgroundColor || "#FFFFFF",
+        boxSizing: "border-box",
+      }}
+    >
       {items}
       {cutLineElements}
     </div>

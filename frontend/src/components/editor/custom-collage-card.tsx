@@ -8,8 +8,8 @@ import { CollageTemplate, PAPER_SIZES } from "@/lib/templates";
 import { FreeformCollageModal } from "@/features/freeform-collage";
 
 function DocumentPresetGraphic({ type, active }: { type: string; active: boolean }) {
-  const activeBorder = active ? "border-primary/80 bg-primary/20" : "border-muted-foreground/40 bg-muted/30";
-  const activeIcon = active ? "text-primary" : "text-muted-foreground/60";
+  const activeBorder = active ? "border-primary bg-primary/25 shadow-2xs" : "border-muted-foreground/40 bg-muted/30";
+  const activeIcon = active ? "text-primary font-bold" : "text-muted-foreground/60";
 
   if (type === "stretch") {
     return (

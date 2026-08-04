@@ -199,8 +199,12 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       printSettings: {
         ...get().printSettings,
         paperId: matchedPaper ? matchedPaper.id : "custom",
-        paperWidthMM: isLandscape ? Math.max(wMM, hMM) : Math.min(wMM, hMM),
-        paperHeightMM: isLandscape ? Math.min(wMM, hMM) : Math.max(wMM, hMM),
+        // الأبعاد الأصلية (غير المقلوبة) دائماً: العرض ≤ الارتفاع، والاتجاه
+        // علم مستقل — تخزين أبعاد مقلوبة هنا مع علم الاتجاه كان يقلبهما
+        // usePrintLayout مرة ثانية (انعكاس مزدوج) فتظهر المعاينة بعكس حالة
+        // الكانفاس عند اختيار الاتجاه لأول مرة
+        paperWidthMM: Math.min(wMM, hMM),
+        paperHeightMM: Math.max(wMM, hMM),
         orientation: isLandscape ? "landscape" : "portrait",
       },
     });
@@ -357,7 +361,17 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       template: restoredTemplate,
       collageTemplate: restoredCollageTemplate,
       printSettings: project.printSettings
-        ? { ...DEFAULT_PRINT_SETTINGS, ...project.printSettings }
+        ? (() => {
+          const saved = { ...DEFAULT_PRINT_SETTINGS, ...project.printSettings };
+          // ترحيل المشاريع المحفوظة بصيغة قديمة: أبعاد مقلوبة في paperWidthMM
+          // (مع orientation=landscape) — تُطبع عمودية خطأً — نعيد الأبعاد الأصلية
+          if (saved.paperWidthMM && saved.paperHeightMM && saved.paperWidthMM > saved.paperHeightMM) {
+            const w = saved.paperWidthMM;
+            saved.paperWidthMM = saved.paperHeightMM;
+            saved.paperHeightMM = w;
+          }
+          return saved;
+        })()
         : DEFAULT_PRINT_SETTINGS,
       selectedId: null,
       selectedIds: [],

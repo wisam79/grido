@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { exportCanvas } from "../src/lib/export/export-image";
 import { useEditorStore } from "../src/lib/editor-store";
-import { computeSlotRectMM } from "../src/lib/print-layout-math";
+import { computeSlotRectMM, computeSheetGrid } from "../src/lib/print-layout-math";
 import { calculatePrintCutLines } from "../src/lib/cut-lines-utils";
 
 const CANVAS_W = 2480;
@@ -133,14 +133,10 @@ function recordedCutLineSegments(calls: DrawCall[]) {
 function expectedCutLineSegments(slots: unknown[]) {
   return calculatePrintCutLines({
     mode: "collage",
-    cols: 1,
     actualCopies: 1,
     imageWidthMM: CANVAS_W,
     imageHeightMM: CANVAS_H,
     gapMM: 50,
-    effectiveMarginMM: 0,
-    availableWidthMM: CANVAS_W,
-    availableHeightMM: CANVAS_H,
     paperWidth: CANVAS_W,
     paperHeight: CANVAS_H,
     showEndCutLine: true,
@@ -150,6 +146,16 @@ function expectedCutLineSegments(slots: unknown[]) {
     canvasWidth: CANVAS_W,
     canvasHeight: CANVAS_H,
     hasPhysical: false,
+    grid: computeSheetGrid({
+      cols: 1,
+      actualCopies: 1,
+      imageWidthMM: CANVAS_W,
+      imageHeightMM: CANVAS_H,
+      gapMM: 50,
+      effectiveMarginMM: 0,
+      availableWidthMM: CANVAS_W,
+      availableHeightMM: CANVAS_H,
+    }),
   }).map((l) => [Math.round(l.x1), Math.round(l.y1), Math.round(l.x2), Math.round(l.y2)]);
 }
 

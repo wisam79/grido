@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { PhotoTemplate } from "@/lib/templates";
 import { PrintSettings, EditorMode } from "@/lib/editor-store";
 import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
+import { computeSheetGrid } from "@/lib/print-layout-math";
 
 interface UsePrintLayoutProps {
   template: PhotoTemplate | null;
@@ -50,6 +51,11 @@ export function usePrintLayout({
 
     const fitToPage = printSettings.fitToPage !== false;
     const shouldFit = fitToPage && mode === "single" && printSettings.copiesPerSheet === 1 && repeatMode === "all";
+    // عند تجاوز التصميم (صورة فردية أو كانفاس الكولاج) مساحة الطباعة للورقة
+    // المختارة — نطابق للأسفل إجبارياً حفاظاً على النسبة. بدونها تُقصّ الخلايا
+    // في المعاينة ويرفض الخادم الطلب بـ invalid item geometry.
+    const overflowsAvailable =
+      originalImageWidthMM > availableWidthMM + 0.5 || originalImageHeightMM > availableHeightMM + 0.5;
 
     let imageWidthMM = originalImageWidthMM;
     let imageHeightMM = originalImageHeightMM;
@@ -60,32 +66,50 @@ export function usePrintLayout({
       const scale = Math.min(scaleX, scaleY);
       imageWidthMM = originalImageWidthMM * scale;
       imageHeightMM = originalImageHeightMM * scale;
+    } else if (overflowsAvailable) {
+      // تنزيل فقط (لا تكبير): إذا كان التصميم أصغر من الورقة يبقى بحجمه
+      const scaleX = availableWidthMM / originalImageWidthMM;
+      const scaleY = availableHeightMM / originalImageHeightMM;
+      const scale = Math.min(scaleX, scaleY, 1);
+      imageWidthMM = originalImageWidthMM * scale;
+      imageHeightMM = originalImageHeightMM * scale;
     }
 
     const cellW = imageWidthMM + gapMM;
     const cellH = imageHeightMM + gapMM;
-    // عدد الخلايا: (المتاح + فجوة) مقسوماً على الخلية لأن آخر خلية لا تحتاج فجوة خلفها
-    const tempCols = cellW > 0 ? Math.min(48, Math.max(1, Math.floor((availableWidthMM + gapMM) / cellW))) : 1;
-    const tempRows = cellH > 0 ? Math.min(48, Math.max(1, Math.floor((availableHeightMM + gapMM) / cellH))) : 1;
-    const autoCount = Math.max(1, tempCols * tempRows);
+    // عدد الخلايا الممكنة على الورقة: (المتاح + فجوة) مقسوماً على الخلية لأن
+    // آخر خلية لا تحتاج فجوة خلفها — صيغة واحدة يستهلكها كل الفروع أدناه
+    const fitCols = cellW > 0 ? Math.min(48, Math.max(1, Math.floor((availableWidthMM + gapMM) / cellW))) : 1;
+    const fitRows = cellH > 0 ? Math.min(48, Math.max(1, Math.floor((availableHeightMM + gapMM) / cellH))) : 1;
+    const autoCount = Math.max(1, fitCols * fitRows);
 
-    let actualCopies = 1;
     let cols = 1;
-    let rows = 1;
+    let actualCopies = 1;
 
     if (repeatMode === "row") {
-      cols = Math.min(48, Math.max(1, Math.floor((availableWidthMM + gapMM) / (imageWidthMM + gapMM))));
-      rows = 1;
-      actualCopies = cols;
+      cols = fitCols;
+      actualCopies = fitCols;
     } else if (repeatMode === "column") {
       cols = 1;
-      rows = Math.min(48, Math.max(1, Math.floor((availableHeightMM + gapMM) / (imageHeightMM + gapMM))));
-      actualCopies = rows;
+      actualCopies = fitRows;
     } else {
-      cols = Math.max(1, Math.floor((availableWidthMM + gapMM) / (imageWidthMM + gapMM)));
+      cols = fitCols;
       actualCopies = Math.min(printSettings.copiesPerSheet ?? 1, autoCount);
-      rows = Math.ceil(actualCopies / Math.max(1, cols));
     }
+
+    // المصدر الوحيد للشبكة: كل المستهلكين (print-dialog / print-preview / cut-lines-utils)
+    // يعتمدون على هذا الكائن ولا يعيدون حساب صيغ الشبكة بأنفسهم.
+    const grid = computeSheetGrid({
+      cols,
+      actualCopies,
+      imageWidthMM,
+      imageHeightMM,
+      gapMM,
+      effectiveMarginMM,
+      availableWidthMM,
+      availableHeightMM,
+    });
+    const rows = grid.actualRows;
 
     return {
       dpi,
@@ -101,6 +125,7 @@ export function usePrintLayout({
       actualCopies,
       cols,
       rows,
+      grid,
       paperWidth,
       paperHeight,
     };

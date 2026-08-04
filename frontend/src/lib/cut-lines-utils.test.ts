@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calculatePrintCutLines } from "./cut-lines-utils";
+import { computeSheetGrid } from "@/lib/print-layout-math";
 
 const A4 = { paperWidth: 210, paperHeight: 297 };
 
@@ -38,10 +39,8 @@ describe("calculatePrintCutLines", () => {
     const offsetX = effectiveMarginMM + Math.max(0, availableWidthMM - gridWidth) / 2; // 13.5
     const offsetY = effectiveMarginMM + Math.max(0, availableHeightMM - gridHeight) / 2; // 102.5
 
-    const lines = calculatePrintCutLines({
-      mode: "single",
+    const grid = computeSheetGrid({
       cols,
-      rows,
       actualCopies,
       imageWidthMM,
       imageHeightMM,
@@ -49,8 +48,17 @@ describe("calculatePrintCutLines", () => {
       effectiveMarginMM,
       availableWidthMM,
       availableHeightMM,
+    });
+
+    const lines = calculatePrintCutLines({
+      mode: "single",
+      actualCopies,
+      imageWidthMM,
+      imageHeightMM,
+      gapMM,
       paperWidth: A4.paperWidth,
       paperHeight: A4.paperHeight,
+      grid,
     });
 
     assertValid(lines, A4.paperWidth, A4.paperHeight);
@@ -87,18 +95,14 @@ describe("calculatePrintCutLines", () => {
 
     const noEnd = calculatePrintCutLines({
       mode: "single",
-      cols,
-      rows,
       actualCopies,
       imageWidthMM,
       imageHeightMM,
       gapMM,
-      effectiveMarginMM,
-      availableWidthMM,
-      availableHeightMM,
       paperWidth: A4.paperWidth,
       paperHeight: A4.paperHeight,
       showEndCutLine: false,
+      grid,
     });
     expect(noEnd.filter((l) => l.isBottomEnd)).toHaveLength(0);
     expect(noEnd).toHaveLength(8);
@@ -107,17 +111,22 @@ describe("calculatePrintCutLines", () => {
   it("single mode: full-page A4 canvas -> cut lines at the 4 paper edges", () => {
     const lines = calculatePrintCutLines({
       mode: "single",
-      cols: 1,
-      rows: 1,
       actualCopies: 1,
       imageWidthMM: 210,
       imageHeightMM: 297,
       gapMM: 2,
-      effectiveMarginMM: 0,
-      availableWidthMM: 210,
-      availableHeightMM: 297,
       paperWidth: 210,
       paperHeight: 297,
+      grid: computeSheetGrid({
+        cols: 1,
+        actualCopies: 1,
+        imageWidthMM: 210,
+        imageHeightMM: 297,
+        gapMM: 2,
+        effectiveMarginMM: 0,
+        availableWidthMM: 210,
+        availableHeightMM: 297,
+      }),
     });
 
     assertValid(lines, 210, 297);
@@ -150,15 +159,10 @@ describe("calculatePrintCutLines", () => {
 
     const lines = calculatePrintCutLines({
       mode: "collage",
-      cols,
-      rows: 1,
       actualCopies,
       imageWidthMM,
       imageHeightMM,
       gapMM: 2,
-      effectiveMarginMM,
-      availableWidthMM,
-      availableHeightMM,
       paperWidth: 100,
       paperHeight: 150,
       slots,
@@ -166,6 +170,16 @@ describe("calculatePrintCutLines", () => {
       collageGap,
       canvasWidth,
       canvasHeight,
+      grid: computeSheetGrid({
+        cols,
+        actualCopies,
+        imageWidthMM,
+        imageHeightMM,
+        gapMM: 2,
+        effectiveMarginMM,
+        availableWidthMM,
+        availableHeightMM,
+      }),
     });
 
     assertValid(lines, 100, 150);

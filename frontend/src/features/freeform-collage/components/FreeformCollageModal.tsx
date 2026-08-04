@@ -454,11 +454,17 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
             showCutLines: false,
           }),
           paperId: "custom",
-          paperWidthMM,
-          paperHeightMM,
+          // نفس اتفاقية الأنظمة: أبعاد أصلية (العرض ≤ الارتفاع) + علم اتجاه مستقل
+          // — استخدمنا أبعاد التصميم مباشرة مع اشتقاق الاتجاه فكان يقلب عمودية
+          // الورقة في الوضع الأفقي (انعكاس مزدوج مع تبديل usePrintLayout)
+          paperWidthMM: Math.min(paperWidthMM, paperHeightMM),
+          paperHeightMM: Math.max(paperWidthMM, paperHeightMM),
           orientation: paperHeightMM >= paperWidthMM ? "portrait" : "landscape",
-          fitToPage: false,
         },
+        // خلايا الكولاج الحر تحمل فجواتها داخل إحداثياتها — لا نضيف هامش/فجوة
+        // صورة فوقها وإلا انزاحت عن التصميم في المحرر والمعاينة والطباعة
+        collageGap: 0,
+        collageMargin: 0,
       });
 
       store.setCollageTemplate(gridoTemplate);

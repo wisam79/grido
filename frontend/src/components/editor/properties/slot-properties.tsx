@@ -139,10 +139,10 @@ export function SlotProperties({
   const heightMM = Math.round((slot.h * canvasHeight / dpi) * 25.4);
 
   const renderAutoFillToggle = () => (
-    <div className="flex items-center justify-between bg-muted/20 p-2 rounded-xl border border-border/30 font-cairo select-none" dir="rtl">
+    <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
       <div className="flex items-center gap-1.5 text-right">
         <Copy className="w-3.5 h-3.5 text-primary shrink-0" />
-        <span className="text-xs font-semibold text-foreground">تعبئة تلقائية عند الرفع</span>
+        <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية عند الرفع</span>
       </div>
       <Switch 
         checked={autoFill}
@@ -156,10 +156,10 @@ export function SlotProperties({
 
   if (!slot.imageSrc) {
     return (
-      <div className="space-y-2.5 p-0.5 font-cairo">
+      <div className="space-y-3 p-1 font-cairo">
         {/* أبعاد الخلية الفعالة */}
-        <div className="flex items-center justify-between bg-card border border-border/40 rounded-xl px-3 py-2 shadow-2xs">
-          <span className="text-[11px] font-semibold text-muted-foreground">أبعاد الخلية</span>
+        <div className="flex items-center justify-between bg-card border border-border/40 rounded-2xl px-3.5 py-2.5 shadow-2xs">
+          <span className="text-xs font-semibold text-muted-foreground">أبعاد الخلية</span>
           <div className="flex items-baseline gap-1 font-mono" dir="ltr">
             <span className="text-sm font-black text-primary">{widthMM} × {heightMM}</span>
             <span className="text-[10px] font-semibold text-primary/80">mm</span>
@@ -167,7 +167,7 @@ export function SlotProperties({
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground text-center py-5 bg-muted/15 rounded-xl border border-dashed border-border/40">
+        <div className="text-xs text-muted-foreground text-center py-6 bg-muted/10 rounded-2xl border border-dashed border-border/40">
           لا توجد صورة في هذه الخلية
         </div>
         <Button
@@ -191,57 +191,60 @@ export function SlotProperties({
           </Button>
         )}
 
-        {renderAutoFillToggle()}
+        <div className="bg-card border border-border/40 rounded-2xl p-3 shadow-2xs">
+          {renderAutoFillToggle()}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3 font-cairo select-none h-full flex flex-col overflow-y-auto pr-0.5">
-      {/* شريط الأبعاد الهيدر المدمج */}
-      <div className="flex items-center justify-between bg-card/60 border border-border/40 rounded-xl px-3 py-2 shadow-2xs shrink-0">
-        <span className="text-[11px] font-semibold text-muted-foreground">أبعاد الطباعة</span>
-        <div className="flex items-center gap-1.5 font-mono" dir="ltr">
-          <span className="text-xs font-black text-primary">{widthMM} × {heightMM} mm</span>
-          <span className="text-[9px] font-semibold text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded-md border border-border/40 font-mono">
-            {dpi} DPI
-          </span>
+    <div className="space-y-3.5 font-cairo select-none h-full flex flex-col overflow-y-auto pr-0.5 pb-4">
+      {/* 1. كرت الأبعاد والإجراءات الرئيسية */}
+      <div className="bg-card/70 border border-border/50 rounded-2xl p-3 shadow-2xs space-y-2.5">
+        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+          <span className="text-[11px] font-bold text-muted-foreground">أبعاد الطباعة</span>
+          <div className="flex items-center gap-1.5 font-mono" dir="ltr">
+            <span className="text-xs font-black text-primary">{widthMM} × {heightMM} mm</span>
+            <span className="text-[9px] font-semibold text-muted-foreground/80 bg-muted px-1.5 py-0.5 rounded-md border border-border/40 font-mono">
+              {dpi} DPI
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8.5 rounded-xl border-border/60 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
+            onClick={handleOpenFile}
+          >
+            <ImagePlus className="w-3.5 h-3.5 text-primary" />
+            <span>تغيير الصورة</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8.5 rounded-xl border-border/60 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
+            onClick={() => setCropOpen(true)}
+          >
+            <Scissors className="w-3.5 h-3.5 text-primary" />
+            <span>قص وتدوير</span>
+          </Button>
         </div>
       </div>
 
-      {/* أزرار تغيير الصورة والقص */}
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8.5 rounded-xl border-border/60 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs"
-          onClick={handleOpenFile}
-        >
-          <ImagePlus className="w-3.5 h-3.5 text-primary" />
-          <span>تغيير الصورة</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8.5 rounded-xl border-border/60 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs"
-          onClick={() => setCropOpen(true)}
-        >
-          <Scissors className="w-3.5 h-3.5 text-primary" />
-          <span>قص وتدوير</span>
-        </Button>
-      </div>
-
-      {/* القلب والتدوير — شريط أيقونات مضغوط */}
-      <div className="bg-muted/20 p-2.5 rounded-xl border border-border/30 flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-muted-foreground me-1 shrink-0">تحويل:</span>
-        <div className="flex items-center gap-1 flex-1">
+      {/* 2. كرت التحويل والقلب */}
+      <div className="bg-card/70 border border-border/50 rounded-2xl p-3 shadow-2xs space-y-2">
+        <Label className="text-xs font-bold text-foreground/90 block">التحويل والاتجاه</Label>
+        <div className="flex items-center gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
                 className={cn(
-                  "h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
-                  slot.flipX && "bg-primary/10 border-primary/50 text-primary"
+                  "h-8 flex-1 rounded-xl transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
+                  slot.flipX && "bg-primary/10 border-primary/50 text-primary font-bold"
                 )}
                 onClick={() => {
                   onUpdate(slot.id, { flipX: !slot.flipX });
@@ -259,8 +262,8 @@ export function SlotProperties({
               <Button
                 variant="outline"
                 className={cn(
-                  "h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
-                  slot.flipY && "bg-primary/10 border-primary/50 text-primary"
+                  "h-8 flex-1 rounded-xl transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
+                  slot.flipY && "bg-primary/10 border-primary/50 text-primary font-bold"
                 )}
                 onClick={() => {
                   onUpdate(slot.id, { flipY: !slot.flipY });
@@ -278,8 +281,8 @@ export function SlotProperties({
               <Button
                 variant="outline"
                 className={cn(
-                  "h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
-                  (slot.rotation ?? 0) !== 0 && "bg-primary/10 border-primary/50 text-primary"
+                  "h-8 flex-1 rounded-xl transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent",
+                  (slot.rotation ?? 0) !== 0 && "bg-primary/10 border-primary/50 text-primary font-bold"
                 )}
                 onClick={() => {
                   onUpdate(slot.id, { rotation: (((slot.rotation ?? 0) + 90) % 360) });
@@ -297,7 +300,7 @@ export function SlotProperties({
               <Button
                 variant="outline"
                 disabled={!slot.flipX && !slot.flipY && !(slot.rotation ?? 0)}
-                className="h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent disabled:opacity-40"
+                className="h-8 flex-1 rounded-xl transition-all cursor-pointer flex items-center justify-center border-border/50 hover:bg-accent disabled:opacity-40"
                 onClick={() => {
                   onUpdate(slot.id, { flipX: false, flipY: false, rotation: 0 });
                   useEditorStore.getState().pushHistory();
@@ -306,65 +309,64 @@ export function SlotProperties({
                 <Undo2 className="w-3.5 h-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">إعادة تعيين</TooltipContent>
+            <TooltipContent side="top" className="text-[11px]">إعادة تعيين الاتجاه</TooltipContent>
           </Tooltip>
         </div>
       </div>
 
-      {/* التكرار والتعبئة */}
-      <div className="bg-muted/20 p-2.5 rounded-xl border border-border/30 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-semibold text-muted-foreground me-1 shrink-0">تكرار الخلية:</span>
-          <div className="flex items-center gap-1 flex-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/50 hover:bg-accent px-1.5"
-                  onClick={handleFillRow}
-                >
-                  <Rows className="w-3 h-3 text-primary shrink-0" />
-                  <span>الصف</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-[11px]">تعبئة الصف كاملاً</TooltipContent>
-            </Tooltip>
+      {/* 3. كرت تكرار الخلية والتعبئة */}
+      <div className="bg-card/70 border border-border/50 rounded-2xl p-3 shadow-2xs space-y-2.5">
+        <Label className="text-xs font-bold text-foreground/90 block">تكرار الخلية</Label>
+        <div className="grid grid-cols-3 gap-1.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-8 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/50 hover:bg-accent hover:border-primary/40 px-1"
+                onClick={handleFillRow}
+              >
+                <Rows className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>الصف</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[11px]">تعبئة الصف كاملاً</TooltipContent>
+          </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/50 hover:bg-accent px-1.5"
-                  onClick={handleFillColumn}
-                >
-                  <Columns className="w-3 h-3 text-primary shrink-0" />
-                  <span>العمود</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-[11px]">تعبئة العمود كاملاً</TooltipContent>
-            </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-8 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/50 hover:bg-accent hover:border-primary/40 px-1"
+                onClick={handleFillColumn}
+              >
+                <Columns className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>العمود</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[11px]">تعبئة العمود كاملاً</TooltipContent>
+          </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-7.5 flex-1 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/50 hover:bg-accent px-1.5"
-                  onClick={handleFillAll}
-                >
-                  <LayoutGrid className="w-3 h-3 text-primary shrink-0" />
-                  <span>الكل</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-[11px]">تعبئة كافة الخلايا</TooltipContent>
-            </Tooltip>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-8 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/50 hover:bg-accent hover:border-primary/40 px-1"
+                onClick={handleFillAll}
+              >
+                <LayoutGrid className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>الكل</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[11px]">تعبئة كافة الخلايا</TooltipContent>
+          </Tooltip>
         </div>
+
         {renderAutoFillToggle()}
       </div>
 
-      {/* تعديل الألوان والفلاتر */}
-      <div className="bg-muted/20 p-2.5 rounded-xl border border-border/30 space-y-2.5">
-        <Label className="text-xs font-bold text-foreground/90 block border-b border-border/15 pb-1">تعديل الألوان</Label>
+      {/* 4. كرت تعديل الألوان والسطوع */}
+      <div className="bg-card/70 border border-border/50 rounded-2xl p-3 shadow-2xs space-y-3">
+        <Label className="text-xs font-bold text-foreground/90 block border-b border-border/20 pb-1.5">تعديل الألوان والسطوع</Label>
         <SliderControl
           label="السطوع"
           value={slot.brightness ?? 100}
@@ -403,9 +405,9 @@ export function SlotProperties({
         />
 
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="w-full rounded-lg font-semibold text-xs h-7.5 border-border/40 hover:bg-muted"
+          className="w-full rounded-xl font-semibold text-xs h-7.5 border border-border/30 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors mt-1"
           onClick={() =>
             onUpdate(slot.id, {
               filter: "none",
@@ -419,8 +421,8 @@ export function SlotProperties({
         </Button>
       </div>
 
-      {/* تكبير الصورة (Zoom) */}
-      <div className="bg-muted/20 p-2.5 rounded-xl border border-border/30 space-y-1">
+      {/* 5. كرت تكبير الصورة (Zoom) */}
+      <div className="bg-card/70 border border-border/50 rounded-2xl p-3 shadow-2xs">
         <SliderControl
           label="تكبير الصورة (Zoom)"
           value={Math.round((slot.zoom ?? 1) * 100)}

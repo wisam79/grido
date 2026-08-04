@@ -98,7 +98,9 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 	return cmykImg
 }
 
-// ApplyPureBlackCutLines enforces pure black (C:0 M:0 Y:0 K:255) for cut lines in CMYK space
+// ApplyPureBlackCutLines enforces pure black (C:0 M:0 Y:0 K:255) for cut lines in CMYK space.
+// It mirrors the dashed rhythm used by drawCutLines (1.5mm dash + 1.5mm gap) so the printed
+// marks stay consistent between the sRGB preview and the CMYK/TIFF export.
 func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 	if !req.ShowCutLines || len(req.CutLines) == 0 {
 		return
@@ -108,16 +110,27 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 	if lineWidth < 1.0 {
 		lineWidth = 1.0
 	}
+	dashSize := mmToPx(1.5, req.DPI)
+	if dashSize < 1.0 {
+		dashSize = 1.0
+	}
 
 	bounds := cmykImg.Bounds()
 	maxW, maxH := bounds.Dx(), bounds.Dy()
 	pureBlack := color.CMYK{C: 0, M: 0, Y: 0, K: 255}
 
+	// داخل الدش؟ يعيد true فقط ضمن مقطع "الخط" (on) وليس الفجوة (off) — يطابق
+	// نفس النمط المتقطع الذي ترسمه gg في drawCutLines على مسار sRGB.
+	inDash := func(t float64) bool {
+		mod := math.Mod(t, 2*dashSize)
+		return mod >= 0 && mod < dashSize
+	}
+
 	for _, line := range req.CutLines {
-		x1 := int(math.Round(mmToPx(line.X1, req.DPI)))
-		y1 := int(math.Round(mmToPx(line.Y1, req.DPI)))
-		x2 := int(math.Round(mmToPx(line.X2, req.DPI)))
-		y2 := int(math.Round(mmToPx(line.Y2, req.DPI)))
+		x1 := math.Round(mmToPx(line.X1, req.DPI))
+		y1 := math.Round(mmToPx(line.Y1, req.DPI))
+		x2 := math.Round(mmToPx(line.X2, req.DPI))
+		y2 := math.Round(mmToPx(line.Y2, req.DPI))
 
 		halfW := int(math.Round(lineWidth / 2.0))
 		if halfW < 1 {
@@ -125,20 +138,32 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 		}
 
 		if x1 == x2 { // Vertical cut line
-			for y := math.Max(0, float64(y1)); y <= math.Min(float64(maxH-1), float64(y2)); y++ {
+			startY := int(math.Max(0, float64(y1)))
+			endY := int(math.Min(float64(maxH-1), float64(y2)))
+			px := int(x1)
+			for y := startY; y <= endY; y++ {
+				if !inDash(float64(y) - y1) {
+					continue
+				}
 				for dx := -halfW; dx <= halfW; dx++ {
-					px := x1 + dx
-					if px >= 0 && px < maxW {
-						cmykImg.SetCMYK(px, int(y), pureBlack)
+					cx := px + dx
+					if cx >= 0 && cx < maxW {
+						cmykImg.SetCMYK(cx, y, pureBlack)
 					}
 				}
 			}
 		} else if y1 == y2 { // Horizontal cut line
-			for x := math.Max(0, float64(x1)); x <= math.Min(float64(maxW-1), float64(x2)); x++ {
+			startX := int(math.Max(0, float64(x1)))
+			endX := int(math.Min(float64(maxW-1), float64(x2)))
+			py := int(y1)
+			for x := startX; x <= endX; x++ {
+				if !inDash(float64(x) - x1) {
+					continue
+				}
 				for dy := -halfW; dy <= halfW; dy++ {
-					py := y1 + dy
-					if py >= 0 && py < maxH {
-						cmykImg.SetCMYK(int(x), py, pureBlack)
+					cy := py + dy
+					if cy >= 0 && cy < maxH {
+						cmykImg.SetCMYK(x, cy, pureBlack)
 					}
 				}
 			}
@@ -558,6 +583,16 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 	return img, nil
 }
 
+// isQuarterRotation يعيد true عندما يكون التدوير 90° أو 270° (mod 360)
+// — عندها يتبدل بُعد الصورة المعالجة وتُرسم متمركزة على الخلية
+func isQuarterRotation(rotation float64) bool {
+	rotDeg := int(math.Round(rotation)) % 360
+	if rotDeg < 0 {
+		rotDeg += 360
+	}
+	return rotDeg == 90 || rotDeg == 270
+}
+
 // computeCropFromSlot يحسب منطقة الاقتصاص بناءً على نسبة الخانة والزوم والسحب
 func computeCropFromSlot(item domain.PrintItem, img image.Image) (cropX, cropY, cropW, cropH float64) {
 	cropX = item.CropX
@@ -570,6 +605,12 @@ func computeCropFromSlot(item domain.PrintItem, img image.Image) (cropX, cropY, 
 		imgH := float64(img.Bounds().Dy())
 		imgAspect := imgW / imgH
 		slotAspect := item.SlotAspect
+		// 🛡️ إصلاح: عند التدوير 90/270 تتبدل نسبة الخلية الفعالة — Konva يبدّلها
+		// (isRotated90or270 ? height/width : width/height) قبل حساب نافذة القصّ،
+		// فكانت الطباعة تقصّ الخلايا المدوّرة بنسبة خاطئة مقابل المحرر
+		if isQuarterRotation(item.Rotation) {
+			slotAspect = 1 / slotAspect
+		}
 
 		sw := imgW
 		sh := imgH
@@ -650,6 +691,22 @@ func applyImageProcessing(img image.Image, item domain.PrintItem, targetW, targe
 		img = imaging.Crop(img, rect)
 	}
 
+		// 🛡️ إصلاح: تدوير الصورة قبل التحجيم وتبديل الأبعاد المستهدفة عند 90/270 درجة
+	// كان التدوير يُطبّق بعد التحجيم مما يسبب عدم تطابق الأبعاد للصور المدوّرة 90/270
+	if item.Rotation != 0 {
+		// 🛡️ إصلاح: imaging.Rotate يدور عكس عقارب الساعة للزوايا الموجبة، بينما
+		// Konva/CSS/Canvas تدور مع عقارب الساعة — النفي يجعل الطباعة تطابق المحرر
+		img = imaging.Rotate(img, -item.Rotation, color.Transparent)
+		rotDeg := int(math.Round(item.Rotation)) % 360
+		rotAbs := rotDeg
+		if rotAbs < 0 {
+			rotAbs = -rotAbs
+		}
+		if rotAbs == 90 || rotAbs == 270 {
+			targetW, targetH = targetH, targetW
+		}
+	}
+
 	bounds := img.Bounds()
 	var resizedImg image.Image
 	if bounds.Dx() == targetW && bounds.Dy() == targetH {
@@ -665,9 +722,6 @@ func applyImageProcessing(img image.Image, item domain.PrintItem, targetW, targe
 	}
 	if item.FlipY {
 		processedImg = imaging.FlipV(processedImg)
-	}
-	if item.Rotation != 0 {
-		processedImg = imaging.Rotate(processedImg, item.Rotation, color.Transparent)
 	}
 
 	return processedImg
@@ -967,6 +1021,16 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	absImagePath := filepath.Join(outDir, htmlImageName)
 	fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(absImagePath), " ", "%20")
 
+	// 🛡️ تضمين الصورة كـ Inline Base64 يضمن عدم طباعة صفحة فارغة مطلقاً بسبب تأخر التحميل عبر الشبكة/القرص
+	imageSrcForHTML := fileURI
+	if imgData, err := os.ReadFile(absImagePath); err == nil && len(imgData) > 0 {
+		mimeType := "image/png"
+		if strings.HasSuffix(strings.ToLower(htmlImageName), ".jpg") || strings.HasSuffix(strings.ToLower(htmlImageName), ".jpeg") {
+			mimeType = "image/jpeg"
+		}
+		imageSrcForHTML = fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(imgData))
+	}
+
 	htmlContent := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -993,11 +1057,11 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 <body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
   <img src="%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, fileURI)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
 
 	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 
-	// HTML مع مسار local-image للعرض داخل WebView2 عبر iframe
+	// HTML مع مسار Inline Base64 للعرض والطباعة الفورية داخل WebView2 عبر iframe
 	selfContainedHTML := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -1020,9 +1084,9 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 </style>
 </head>
 <body>
-  <img src="/local-image/%s" />
+  <img src="%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, htmlImageName)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
 
 	return imagePath, selfContainedHTML, nil
 }
@@ -1147,7 +1211,15 @@ func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi i
 		dc.DrawRectangle(xPx, yPx, wPx, hPx)
 	}
 	dc.Clip()
-	dc.DrawImage(img, int(xPx), int(yPx))
+	// 🛡️ إصلاح: الصورة المدوّرة 90/270 بُعدها المبدّل أكبر/أصغر من الخلية؛ تُرسم
+	// متمركزة على الخلية لتطابق المحرر (Konva يدور حول المركز) — كان الرسم
+	// بمحاذاة الزاوية فيزيح المحتوى المدوّر عن موضعه في المعاينة
+	drawX, drawY := xPx, yPx
+	if isQuarterRotation(item.Rotation) {
+		drawX = xPx + (wPx-float64(img.Bounds().Dx()))/2
+		drawY = yPx + (hPx-float64(img.Bounds().Dy()))/2
+	}
+	dc.DrawImage(img, int(drawX), int(drawY))
 	dc.ResetClip()
 	dc.Pop()
 
@@ -1218,6 +1290,12 @@ func (s *PrintService) composeCanvas(
 		wPx := float64(int(math.Round(item.W * scale)))
 		hPx := float64(int(math.Round(item.H * scale)))
 
+		drawX, drawY := xPx, yPx
+		if isQuarterRotation(item.Rotation) {
+			drawX = xPx + (wPx-float64(processedImg.Bounds().Dx()))/2
+			drawY = yPx + (hPx-float64(processedImg.Bounds().Dy()))/2
+		}
+
 		dc.Push()
 		rPx := item.CornerRadiusMM * scale
 		if rPx > 0 {
@@ -1226,7 +1304,7 @@ func (s *PrintService) composeCanvas(
 			dc.DrawRectangle(xPx, yPx, wPx, hPx)
 		}
 		dc.Clip()
-		dc.DrawImage(processedImg, int(xPx), int(yPx))
+		dc.DrawImage(processedImg, int(drawX), int(drawY))
 		dc.ResetClip()
 		dc.Pop()
 
@@ -1324,7 +1402,7 @@ func setJpegDPI(jpegData []byte, dpi int) ([]byte, error) {
 	return result, nil
 }
 
-// PrintNative launches the OS native Win32 print dialog for a generated file on disk
+// PrintNative launches the OS native print dialog for a generated file on disk
 func (s *PrintService) PrintNative(filePath string) error {
 	if filePath == "" {
 		return fmt.Errorf("مسار ملف الطباعة غير صالح")
@@ -1338,18 +1416,35 @@ func (s *PrintService) PrintNative(filePath string) error {
 	if runtime.GOOS == "windows" {
 		ext := strings.ToLower(filepath.Ext(cleanPath))
 		targetPath := cleanPath
-		if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tiff" {
-			// Create a temporary 100% scale HTML file for native mshtml printing
-			htmlPath := cleanPath + ".html"
-			// 🛡️ تهريب آمن للمسار في HTML/URL — يمنع حقن وسوم عند مسارات تحمل أحرف خاصة
-			fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(cleanPath), " ", "%20")
-			escapedURI := html.EscapeString(fileURI)
-			htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;}html,body{margin:0;padding:0;width:100%%;height:100%%;}img{width:100%%;height:100%%;object-fit:contain;}</style></head><body onload="window.print()"><img src="%s"/></body></html>`, escapedURI)
-			_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
-			targetPath = htmlPath
+		if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tiff" || ext == ".tif" {
+			htmlPath := strings.TrimSuffix(cleanPath, filepath.Ext(cleanPath)) + ".html"
+			if _, err := os.Stat(htmlPath); err == nil {
+				targetPath = htmlPath
+			} else {
+				fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(cleanPath), " ", "%20")
+				escapedURI := html.EscapeString(fileURI)
+				htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;size:auto;}html,body{margin:0;padding:0;width:100%%;height:100%%;}img{width:100%%;height:100%%;object-fit:contain;}</style></head><body onload="setTimeout(function(){window.print();window.close();},500)"><img src="%s"/></body></html>`, escapedURI)
+				_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
+				targetPath = htmlPath
+			}
 		}
 
-		cmd := exec.Command("rundll32.exe", "mshtml.dll,PrintHTML", targetPath)
+		// Try launching with modern Edge first (supports full CSS @page size & orientation)
+		edgePaths := []string{
+			`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`,
+			`C:\Program Files\Microsoft\Edge\Application\msedge.exe`,
+		}
+		for _, edgePath := range edgePaths {
+			if _, err := os.Stat(edgePath); err == nil {
+				cmd := exec.Command(edgePath, targetPath)
+				if err := cmd.Start(); err == nil {
+					return nil
+				}
+			}
+		}
+
+		// Fallback to launching default browser which executes window.print() natively
+		cmd := exec.Command("cmd", "/c", "start", "", targetPath)
 		if err := cmd.Start(); err != nil {
 			return fmt.Errorf("تعذر إطلاق نافذة طباعة الويندوز: %w", err)
 		}

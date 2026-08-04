@@ -95,7 +95,10 @@ export async function captureStageDataUrl(
 
   try {
     const dataUrl = await withHiddenOverlays(stage, targetPixelRatio, async () => {
-      const exportCanvas = stage.toCanvas({ pixelRatio: targetPixelRatio });
+      // 🛡️ إصلاح: تحديد targetPixelRatio بحد أقصى 4 لمنع انهيار الذاكرة
+      // كان يستخدم القيمة غير المحددة مباشرة في toCanvas مما يسبب OOM عند DPI عالي
+      const safePixelRatio = Math.min(4, Math.max(1, targetPixelRatio));
+      const exportCanvas = stage.toCanvas({ pixelRatio: safePixelRatio });
       const blob = await new Promise<Blob | null>((resolve) => {
         exportCanvas.toBlob(resolve, mimeType, quality);
       });

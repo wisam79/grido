@@ -3,7 +3,7 @@ import { CanvasElement, ImageElement, useEditorStore } from "@/lib/editor-store"
 import { buildCSSFilter } from "@/lib/utils";
 import { captureStageDataUrl } from "@/lib/konva-export-utils";
 import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
-import { computeSlotRectMM } from "@/lib/print-layout-math";
+import { computeSheetGrid, computeSlotRectMM } from "@/lib/print-layout-math";
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
 import { VECTOR_SHAPES } from "@/lib/svg-paths";
 
@@ -417,16 +417,10 @@ export async function exportCanvas(
 
       const cutLines = calculatePrintCutLines({
         mode: "collage",
-        cols: 1,
         actualCopies: 1,
         imageWidthMM: canvasWidth,
         imageHeightMM: canvasHeight,
         gapMM: gap,
-        // لا ورقة طباعة هنا — الكانفاس هو الكولاج نفسه، لذا لا هامش ورقة ولا
-        // توسيط (هامش الكولاج collageMargin يُمرَّر وحده ويُطبَّق داخل computeSlotRectMM)
-        effectiveMarginMM: 0,
-        availableWidthMM: canvasWidth,
-        availableHeightMM: canvasHeight,
         paperWidth: canvasWidth,
         paperHeight: canvasHeight,
         showEndCutLine: collageShowEndCutLine,
@@ -436,6 +430,17 @@ export async function exportCanvas(
         canvasWidth,
         canvasHeight,
         hasPhysical,
+        // لا ورقة طباعة هنا — الكانفاس هو الكولاج نفسه، فشبكة 1×1 بلا هوامش
+        grid: computeSheetGrid({
+          cols: 1,
+          actualCopies: 1,
+          imageWidthMM: canvasWidth,
+          imageHeightMM: canvasHeight,
+          gapMM: gap,
+          effectiveMarginMM: 0,
+          availableWidthMM: canvasWidth,
+          availableHeightMM: canvasHeight,
+        }),
       });
 
       const lineW = Math.max(1, Math.round(canvasWidth / 1200));

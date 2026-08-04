@@ -218,7 +218,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           variant={isRemovingBg ? "destructive" : "outline"}
           size="sm"
           className={cn(
-            "h-8 px-2.5 gap-1.5 border-border/60 bg-muted/20 hover:bg-accent text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/70 dark:border-primary/70 bg-transparent dark:bg-transparent hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-xs",
             isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(selectedItem)}
@@ -243,10 +243,10 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-2 gap-1 text-xs font-semibold border-border/60 bg-muted/20 hover:bg-accent text-foreground rounded-md cursor-pointer"
+            className="h-8 px-2 gap-1 text-xs font-semibold border border-primary/70 dark:border-primary/70 bg-transparent dark:bg-transparent hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-xs"
             onClick={() => setRefineOpen(true)}
           >
-            <Paintbrush className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
             <span>تحديق يدوي</span>
           </Button>
         </TooltipBtn>
@@ -259,7 +259,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           size="sm"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border-border/60 bg-muted/20 hover:bg-accent text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/70 dark:border-primary/70 bg-transparent dark:bg-transparent hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-xs",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
             isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
@@ -286,7 +286,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           size="sm"
           disabled={isEnhancing || isRemovingBg || isFraming}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border-border/60 bg-muted/20 hover:bg-accent text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/70 dark:border-primary/70 bg-transparent dark:bg-transparent hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-xs",
             (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(selectedItem)}

@@ -32,7 +32,7 @@ import { PAPER_SIZES } from "@/lib/templates/constants";
 import { captureStageDataUrl } from "@/lib/konva-export-utils";
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
 import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
-import { computeBlockPosition, computeSheetGrid, computeSlotAspect, computeSlotRectMM } from "@/lib/print-layout-math";
+import { computeBlockPosition, computeSlotAspect, computeSlotRectMM } from "@/lib/print-layout-math";
 import { buildSingleComposition } from "@/lib/single-print-composition";
 import { useShallow } from "zustand/react/shallow";
 
@@ -88,7 +88,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [lastNonZeroMargin, setLastNonZeroMargin] = useState<number>(() =>
     printSettings.marginMM > 0 ? printSettings.marginMM : DEFAULT_PRINT_SETTINGS.marginMM
   );
-  const handlePrintRef = useRef<() => void>(() => {});
+  const handlePrintRef = useRef<() => void>(() => { });
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -172,12 +172,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     imageHeightMM,
     gapMM,
     actualCopies,
-    cols,
-    rows,
     availableWidthMM,
     availableHeightMM,
     effectiveMarginMM,
     dpi,
+    grid,
     paperWidth,
     paperHeight,
   } = usePrintLayout({
@@ -193,43 +192,37 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     const hasPhysical = Boolean(collageTemplate?.physicalLayout);
     const marginPx = hasPhysical ? 0 : collageMargin;
     const gapPx = hasPhysical ? 0 : collageGap;
-    const scalePxToMM = imageWidthMM / canvasWidth;
-    const marginMM = marginPx * scalePxToMM;
-    const gapMMSlot = gapPx * scalePxToMM;
-    const grid = computeSheetGrid({
-      cols,
-      actualCopies,
-      imageWidthMM,
-      imageHeightMM,
-      gapMM,
-      effectiveMarginMM,
-      availableWidthMM,
-      availableHeightMM,
-    });
+    // 🛡️ إصلاح: مقياسان منفصلان لكل محور — كان يستخدم مقياس العرض لكلا المحورين
+    // مما يسبب انحرافاً عمودياً في مواضع الخلايا بين المعاينة والطباعة
+    const scaleXPxToMM = imageWidthMM / canvasWidth;
+    const scaleYPxToMM = imageHeightMM / canvasHeight;
+    const marginXMM = marginPx * scaleXPxToMM;
+    const marginYMM = marginPx * scaleYPxToMM;
+    const gapXMM = gapPx * scaleXPxToMM;
+    const gapYMM = gapPx * scaleYPxToMM;
 
-    const shouldShowCut = printSettings.showCutLines;
+    // 🛡️ إصلاح: استخدام collageShowCutLines في وضع الكولاج بدل printSettings.showCutLines
+    // كان يسبب عدم تطابق خطوط القص بين المعاينة والطباعة
+    const shouldShowCut = collageShowCutLines;
     const rawCutLines = shouldShowCut
       ? calculatePrintCutLines({
-          mode,
-          cols,
-          rows,
-          actualCopies,
-          imageWidthMM,
-          imageHeightMM,
-          gapMM,
-          effectiveMarginMM,
-          availableWidthMM,
-          availableHeightMM,
-          paperWidth,
-          paperHeight,
-          showEndCutLine: printSettings.showEndCutLine !== false,
-          slots,
-          collageMargin,
-          collageGap,
-          canvasWidth,
-          canvasHeight,
-          hasPhysical,
-        })
+        mode,
+        actualCopies,
+        imageWidthMM,
+        imageHeightMM,
+        gapMM,
+        paperWidth,
+        paperHeight,
+        // 🛡️ إصلاح: استخدام collageShowEndCutLine في وضع الكولاج
+        showEndCutLine: collageShowEndCutLine !== false,
+        slots,
+        collageMargin,
+        collageGap,
+        canvasWidth,
+        canvasHeight,
+        hasPhysical,
+        grid,
+      })
       : [];
 
     const cutLines: domain.CutLine[] = rawCutLines.map((l) => ({
@@ -239,20 +232,18 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       y2: l.y2,
     }));
 
-    const firstFilledSlot = slots.find((s) => s.imageSrc);
-
     for (let i = 0; i < actualCopies; i++) {
       const block = computeBlockPosition(i, grid);
 
       for (const slot of slots) {
-        const activeSrc = slot.imageSrc || firstFilledSlot?.imageSrc;
+        const activeSrc = slot.imageSrc;
         if (!activeSrc) continue;
         const rect = computeSlotRectMM(
           block,
           { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
           { widthMM: imageWidthMM, heightMM: imageHeightMM },
-          { marginXMM: marginMM, marginYMM: marginMM },
-          { gapXMM: gapMMSlot, gapYMM: gapMMSlot }
+          { marginXMM, marginYMM },
+          { gapXMM, gapYMM }
         );
         const slotAspect = computeSlotAspect({ w: slot.w, h: slot.h }, canvasWidth, canvasHeight);
 
@@ -271,8 +262,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             zoom: slot.zoom || 1,
             dragX: slot.dragX || 0,
             dragY: slot.dragY || 0,
-            cornerRadiusMM: collageRadius * scalePxToMM,
-            borderWidthMM: collageStrokeWidth * scalePxToMM,
+            // القطر والإطار قيم سقيّة (scalar) — مقياس العرض كافٍ لها
+            cornerRadiusMM: collageRadius * scaleXPxToMM,
+            borderWidthMM: collageStrokeWidth * scaleXPxToMM,
             borderColor: collageStrokeColor,
             flipX: slot.flipX,
             flipY: slot.flipY,
@@ -351,17 +343,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       }
     }
 
-    const grid = computeSheetGrid({
-      cols,
-      actualCopies,
-      imageWidthMM,
-      imageHeightMM,
-      gapMM,
-      effectiveMarginMM,
-      availableWidthMM,
-      availableHeightMM,
-    });
-
     for (let i = 0; i < actualCopies; i++) {
       const block = computeBlockPosition(i, grid);
       items.push(
@@ -383,20 +364,16 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     const shouldShowCut = mode === "collage" ? collageShowCutLines : printSettings.showCutLines;
     const rawCutLines = shouldShowCut
       ? calculatePrintCutLines({
-          mode,
-          cols,
-          rows,
-          actualCopies,
-          imageWidthMM,
-          imageHeightMM,
-          gapMM,
-          effectiveMarginMM,
-          availableWidthMM,
-          availableHeightMM,
-          paperWidth,
-          paperHeight,
-          showEndCutLine: printSettings.showEndCutLine !== false,
-        })
+        mode,
+        actualCopies,
+        imageWidthMM,
+        imageHeightMM,
+        gapMM,
+        paperWidth,
+        paperHeight,
+        showEndCutLine: printSettings.showEndCutLine !== false,
+        grid,
+      })
       : [];
 
     const cutLines: domain.CutLine[] = rawCutLines.map((l) => ({
@@ -459,15 +436,30 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
         const img = doc.querySelector("img");
         if (img) {
-          if (img.complete) {
-            triggerPrint();
+          const runPrint = () => {
+            if (img.decode) {
+              img.decode().then(triggerPrint).catch(triggerPrint);
+            } else {
+              triggerPrint();
+            }
+          };
+          if (img.complete && img.naturalWidth > 0) {
+            runPrint();
           } else {
-            img.onload = triggerPrint;
+            img.onload = runPrint;
             img.onerror = triggerPrint;
-            setTimeout(triggerPrint, 500);
+            setTimeout(runPrint, 300);
           }
         } else {
           triggerPrint();
+        }
+      } else {
+        // 🛡️ إصلاح: فشل إنشاء iframe — التراجع للطباعة الأصلية بدل إظهار نجاح كاذب
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+        if (result.filePath && typeof PrintNative === "function") {
+          PrintNative(result.filePath).catch(console.error);
         }
       }
     } else if (result.filePath && typeof PrintNative === "function") {
@@ -484,6 +476,21 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     try {
       const buildResult = mode === "collage" ? await buildItems() : await buildSingleItems();
       if (!buildResult) {
+        setIsExporting(false);
+        return;
+      }
+
+      // حارس هندسي قبل الإرسال لـ Go: العنصر المتجاوز لحدود الورقة لن يرفضه
+      // الخادم برسالة تقنية فحسب بل كان سيفشل التصدير بأكمله — نمنعه مبكراً برسالة واضحة
+      const overflowItem = buildResult.items.find(
+        (it) => it.w <= 0 || it.h <= 0 || it.w > paperWidth + 0.1 || it.h > paperHeight + 0.1
+      );
+      if (overflowItem) {
+        const msg =
+          mode === "collage"
+            ? `لا يمكن التصدير: بعض خلايا الكولاج تتجاوز حدود الورقة (${paperWidth}×${paperHeight} مم). اختر ورقة أكبر أو صغّر الخلايا في المحرر الحر.`
+            : `لا يمكن التصدير: الصورة أكبر من مساحة الطباعة (${paperWidth}×${paperHeight} مم). اختر ورقة أكبر أو عدّل الإعدادات.`;
+        toast.error(msg);
         setIsExporting(false);
         return;
       }
@@ -593,8 +600,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
               {/* طباعة بدون هوامش */}
               <div className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40">
-                <Switch 
-                  id="borderless-mode" 
+                <Switch
+                  id="borderless-mode"
                   checked={printSettings.marginMM === 0}
                   onCheckedChange={(checked) => {
                     if (checked && printSettings.marginMM > 0) {
@@ -728,10 +735,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
               {/* أدوات التحكم بالـ Zoom */}
               <div className="flex items-center gap-1.5">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setZoom(1)} 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setZoom(1)}
                   className="h-6 px-2 text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer font-medium"
                 >
                   إعادة ضبط
@@ -771,8 +778,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 />
                 <div className="absolute inset-0 overflow-hidden rounded-xs">
                   <SheetPreview
-                    cols={cols}
-                    rows={rows}
+                    grid={grid}
                     count={actualCopies}
                     imageWidthMM={imageWidthMM}
                     imageHeightMM={imageHeightMM}
@@ -783,7 +789,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     mode={mode}
                     backgroundColor={backgroundColor}
                     previewImageSrc={previewImageSrc}
-                    marginMM={effectiveMarginMM}
                     paperWidthMM={paperWidth}
                     paperHeightMM={paperHeight}
                     slots={slots}
@@ -802,17 +807,17 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
         {/* ذيل النافذة البسيط والمباشر */}
         <DialogFooter className="px-5 py-3 border-t border-border/40 bg-card flex items-center justify-end gap-2.5 shrink-0">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)} 
-            disabled={isExporting} 
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isExporting}
             className="h-8 px-4 text-xs font-semibold cursor-pointer"
           >
             إلغاء
           </Button>
-          <Button 
-            onClick={handlePrint} 
-            className="h-8 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all duration-200 cursor-pointer rounded-lg" 
+          <Button
+            onClick={handlePrint}
+            className="h-8 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all duration-200 cursor-pointer rounded-lg"
             disabled={isExporting || !previewImageSrc}
           >
             {isExporting ? (
