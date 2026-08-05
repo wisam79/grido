@@ -80,9 +80,11 @@ export const URLImage = React.memo(function URLImage({
     return { filters: res.filters, filterProps: res };
   }, [element.filter, element.brightness, element.contrast, element.saturation, element.blur]);
 
+  const imageNodeRef = React.useRef<any>(null);
+  const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}_${element.width}_${element.height}`;
   const hasFilters = filters.length > 0;
 
-  useFilterCache({ nodeRef: elementRef, image, hasFilters, canvasWidth });
+  useFilterCache({ nodeRef: imageNodeRef, image, hasFilters, canvasWidth, filterKey });
 
   const flipped = element.flipX === true;
   const flippedY = element.flipY === true;
@@ -126,6 +128,7 @@ export const URLImage = React.memo(function URLImage({
         />
       )}
       <KonvaImage
+        ref={imageNodeRef}
         image={image}
         x={0}
         y={0}

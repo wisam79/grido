@@ -1,5 +1,5 @@
 import React from "react";
-import { Layer, Shape } from "react-konva";
+import { FastLayer, Shape } from "react-konva";
 
 export const ColumnsLayer = React.memo(function ColumnsLayer({
   showColumns,
@@ -24,7 +24,7 @@ export const ColumnsLayer = React.memo(function ColumnsLayer({
   const colW = (availW - (columnsCount - 1) * columnsGutter) / columnsCount;
 
   return (
-    <Layer listening={false} name="columns-layer" hitStrokeWidth={0}>
+    <FastLayer listening={false} name="columns-layer" hitStrokeWidth={0}>
       <Shape
         sceneFunc={(context, _shape) => {
           context.fillStyle = columnsColor;
@@ -35,6 +35,6 @@ export const ColumnsLayer = React.memo(function ColumnsLayer({
           context.closePath();
         }}
       />
-    </Layer>
+    </FastLayer>
   );
 });

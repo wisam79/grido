@@ -14,6 +14,7 @@ interface EditorTransformerProps {
   isText: boolean;
   onTransformEnd: (e: any) => void;
   setActiveGuides?: (guides: SnapGuide[]) => void;
+  altPressedRef?: React.MutableRefObject<boolean>;
 }
 
 // تحويل أسماء مقابض Konva إلى اتجاهات البوصلة المستخدمة في محرك المحاذاة
@@ -41,6 +42,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   isText,
   onTransformEnd,
   setActiveGuides,
+  altPressedRef,
 }: EditorTransformerProps) {
   const badgeRef = React.useRef<any>(null);
   const textRef = React.useRef<any>(null);
@@ -108,6 +110,9 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     };
 
     const handleTransform = () => {
+      if (transformer && altPressedRef) {
+        transformer.centeredScaling(altPressedRef.current);
+      }
       updateInfo();
     };
 
@@ -147,6 +152,9 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         borderStrokeWidth={1.5}
         borderDash={isLocked ? [5, 4] : undefined}
         padding={6}
+        keepRatio={true}
+        shiftBehavior="inverted"
+        ignoreStroke={true}
         rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
         rotateAnchorOffset={28}
         enabledAnchors={
@@ -170,9 +178,12 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             anchor.height(4);
             anchor.offsetX(7);
             anchor.offsetY(2);
-          } else if (anchor.hasName("rotater")) {
+          } else if (anchor.hasName("rotater") || (anchor.name && anchor.name().includes("rotater"))) {
+            anchor.width(12);
+            anchor.height(12);
+            anchor.offsetX(6);
+            anchor.offsetY(6);
             anchor.cornerRadius(6);
-            anchor.size(10);
             anchor.fill(primaryColor);
             anchor.stroke("#ffffff");
             anchor.strokeWidth(2);

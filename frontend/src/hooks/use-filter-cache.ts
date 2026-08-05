@@ -13,9 +13,10 @@ import { useRenderQuality } from "@/lib/render-quality";
 interface CacheableKonvaNode {
   getStage?: () => { width: () => number } | null;
   width?: () => number;
+  height?: () => number;
   isCached?: () => boolean;
   clearCache?: () => void;
-  cache?: (opts: { pixelRatio: number }) => void;
+  cache?: (opts: { x?: number; y?: number; width?: number; height?: number; pixelRatio: number }) => void;
 }
 
 interface UseFilterCacheOptions {
@@ -23,11 +24,12 @@ interface UseFilterCacheOptions {
   image: HTMLImageElement | null | undefined;
   hasFilters: boolean;
   canvasWidth: number;
+  filterKey?: string | number;
 }
 
 const ZOOM_DEBOUNCE_MS = 120;
 
-export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth }: UseFilterCacheOptions) {
+export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth, filterKey }: UseFilterCacheOptions) {
   const isDraggingFilter = useRenderQuality((s) => s.isDraggingFilter);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,21 +51,22 @@ export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth }: UseF
       ? Math.max(0.25, Math.min(0.5, displayScale * deviceRatio * 0.3))
       : Math.max(0.75, Math.min(2.5, displayScale * deviceRatio * 1.2));
 
-    // لا تُخبز بدقة أعلى من دقة الصورة المصدر نفسها (توفير ذاكرة بلا فائدة)
-    const nodeW = typeof node.width === "function" ? node.width() : 1;
-    if (image && image.naturalWidth > 0 && nodeW > 0) {
-      ratio = Math.min(ratio, Math.max(0.25, image.naturalWidth / nodeW));
-    }
+    const nodeW = typeof node.width === "function" ? node.width() : 0;
+    const nodeH = typeof node.height === "function" ? node.height() : 0;
 
     try {
       node.clearCache?.();
-      node.cache?.({ pixelRatio: ratio });
+      if (nodeW > 0 && nodeH > 0) {
+        node.cache?.({ x: 0, y: 0, width: nodeW, height: nodeH, pixelRatio: ratio });
+      } else {
+        node.cache?.({ pixelRatio: ratio });
+      }
     } catch (err) {
       console.warn("Failed to cache Konva image", err);
     }
   }, [nodeRef, image, canvasWidth, isDraggingFilter]);
 
-  // إعادة الكاش فوراً عند تغيّر الصورة/الفلاتر/سحب شريط الفلتر
+  // إعادة الكاش فوراً عند تغيّر الصورة/الفلاتر/مفتاح الفلتر/سحب شريط الفلتر
   useEffect(() => {
     const node = nodeRef.current;
     if (!node) return;
@@ -80,7 +83,7 @@ export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth }: UseF
     }
 
     recache();
-  }, [hasFilters, recache, nodeRef]);
+  }, [hasFilters, filterKey, recache, nodeRef]);
 
   // إعادة الكاش بعد استقرار التكبير (Debounce) — الاشتراك المباشر في الستور
   // يمنع إعادة تصيير كل العناصر عند كل خطوة تكبير

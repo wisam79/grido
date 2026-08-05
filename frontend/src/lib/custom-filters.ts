@@ -1,6 +1,6 @@
 import Konva from "konva";
 
-// تسجيل فلتر مخصص لتنعيم وتجميل البشرة ذكياً (Skin-Aware Bilateral-Like Smoothing Filter)
+// تسجيل فلتر مخصص لتنعيم وتجميل البشرة ذكياً (Skin Glow & Smooth Filter)
 if (typeof Konva !== "undefined" && Konva.Filters) {
   (Konva.Filters as any).SkinGlow = function (this: any, imageData: ImageData) {
     const data = imageData.data;
@@ -8,25 +8,20 @@ if (typeof Konva !== "undefined" && Konva.Filters) {
     const height = imageData.height;
     const len = width * height;
 
-    // حساب مسبق لعلامة لون البشرة — Uint8Array بدلاً من Uint8Array كامل
     const isSkin = new Uint8Array(len);
     let skinCount = 0;
     for (let i = 0; i < len; i++) {
       const idx = i * 4;
       const r = data[idx], g = data[idx + 1], b = data[idx + 2];
-      if (r > 95 && g > 40 && b > 20 && r > g && r > b) {
-        const min = g < b ? g : b;
-        if (r - min > 15 && r - g > 15) {
-          isSkin[i] = 1;
-          skinCount++;
-        }
+      // نطاق لون البشرة الشامل والمتوافق مع مختلف درجات الإضاءة
+      if (r > 60 && g > 35 && b > 15 && r > g && (r - Math.min(g, b)) > 8) {
+        isSkin[i] = 1;
+        skinCount++;
       }
     }
 
-    // إذا كانت البيكسلات القليلة جداً، لا داعي للمعالجة
-    if (skinCount < len * 0.01) return;
+    if (skinCount === 0) return;
 
-    // نسخة مصغرة — RGB فقط (3 قنوات بدلاً من 4) لتوفير 25% من الذاكرة
     const rgbBuffer = new Uint8Array(len * 3);
     for (let i = 0; i < len; i++) {
       const idx = i * 4;
@@ -36,18 +31,21 @@ if (typeof Konva !== "undefined" && Konva.Filters) {
       rgbBuffer[bufIdx + 2] = data[idx + 2];
     }
 
-    // تطبيق فلتر التنعيم الانتقائي (Selective Box Blur)
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = 1; x < width - 1; x++) {
-        const i = y * width + x;
+    // تنعيم وإشراق دقيق بنطاق 2 بكسل لشكل البشرة النضر
+    const R = 2;
+    for (let y = R; y < height - R; y += 1) {
+      const rowOffset = y * width;
+      for (let x = R; x < width - R; x += 1) {
+        const i = rowOffset + x;
         if (isSkin[i] === 0) continue;
 
         const idx = i * 4;
         let sumR = 0, sumG = 0, sumB = 0, count = 0;
 
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            const ni = (y + dy) * width + (x + dx);
+        for (let dy = -R; dy <= R; dy++) {
+          const nRow = (y + dy) * width;
+          for (let dx = -R; dx <= R; dx++) {
+            const ni = nRow + (x + dx);
             if (isSkin[ni] === 1) {
               const nBufIdx = ni * 3;
               sumR += rgbBuffer[nBufIdx];
@@ -59,9 +57,13 @@ if (typeof Konva !== "undefined" && Konva.Filters) {
         }
 
         if (count > 0) {
-          data[idx] = (sumR / count) | 0;
-          data[idx + 1] = (sumG / count) | 0;
-          data[idx + 2] = (sumB / count) | 0;
+          const avgR = sumR / count;
+          const avgG = sumG / count;
+          const avgB = sumB / count;
+          // دمج تنعيم إشراقة النضارة + تعزيز تورّد البشرة الطبيعي
+          data[idx] = Math.min(255, Math.round(data[idx] * 0.35 + avgR * 0.65 + 6));
+          data[idx + 1] = Math.min(255, Math.round(data[idx + 1] * 0.35 + avgG * 0.65 + 4));
+          data[idx + 2] = Math.min(255, Math.round(data[idx + 2] * 0.35 + avgB * 0.65 + 2));
         }
       }
     }

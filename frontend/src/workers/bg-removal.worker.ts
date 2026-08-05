@@ -137,14 +137,14 @@ async function handleSegment(req: SegmentRequest) {
 
       for (let i = 0; i < bgMaskData.length; i++) {
         const fgProb = 1.0 - bgMaskData[i];
-        // تضييق نطاق التنعيم لحماية الملامح: أقل من 20% يُحذف، أكثر من 60% يكون صلباً
-        if (fgProb < 0.2) {
+        // توازن دقيق ومحسوب (0.35 إلى 0.68): إزالة حافة البكسلات البيضاء دون اقتطاع الشعر أو الملابس
+        if (fgProb < 0.35) {
           maskBytes[i] = 0;
-        } else if (fgProb > 0.6) {
+        } else if (fgProb > 0.68) {
           maskBytes[i] = 255;
         } else {
-          const normalized = (fgProb - 0.2) / (0.6 - 0.2);
-          const smooth = normalized * normalized * (3 - 2 * normalized); // Smoothstep
+          const normalized = (fgProb - 0.35) / (0.68 - 0.35);
+          const smooth = normalized * normalized * (3 - 2 * normalized); // Smoothstep S-curve
           maskBytes[i] = Math.round(smooth * 255);
         }
       }

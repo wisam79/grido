@@ -66,10 +66,11 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
     filter, brightness, contrast, saturation
   }), [filter, brightness, contrast, saturation]);
 
+  const filterKey = `${filter}_${brightness}_${contrast}_${saturation}`;
   const hasFilters = filterResult.filters.length > 0;
   const hasTransform = flipX || flipY || rotation !== 0;
 
-  useFilterCache({ nodeRef: imageRef, image, hasFilters, canvasWidth });
+  useFilterCache({ nodeRef: imageRef, image, hasFilters, canvasWidth, filterKey });
 
   if (!image) return null;
 

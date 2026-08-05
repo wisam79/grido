@@ -29,20 +29,29 @@ import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "..
 
 import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
-import { LayoutGrid, Paintbrush, FolderHeart, ArrowUpRight } from "lucide-react";
+import { LayoutGrid, FolderHeart, ArrowUpRight, Palette, Paintbrush } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
-import { PopoverColorPicker } from "./properties/shared-controls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ColorWheelPicker, PopoverColorPicker } from "./properties/shared-controls";
+import { LayersList } from "./properties/layers-list";
 
 export function TemplatePanel() {
-  const { setCollageTemplate, collageTemplate, backgroundColor, setBackgroundColor, slots, mode, elements } = useEditorStore(useShallow((state) => ({
+  const { 
+    setCollageTemplate, 
+    collageTemplate, 
+    slots, 
+    mode, 
+    elements,
+    backgroundColor,
+    setBackgroundColor,
+  } = useEditorStore(useShallow((state) => ({
     setCollageTemplate: state.setCollageTemplate,
     collageTemplate: state.collageTemplate,
-    backgroundColor: state.backgroundColor,
-    setBackgroundColor: state.setBackgroundColor,
     slots: state.slots,
     mode: state.mode,
     elements: state.elements,
+    backgroundColor: state.backgroundColor,
+    setBackgroundColor: state.setBackgroundColor,
   })));
 
   const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
@@ -119,28 +128,27 @@ export function TemplatePanel() {
 
   return (
     <div className="flex flex-col h-full bg-card select-none">
-      {/* Scrollable Sidebar Content */}
-      <ScrollArea className="flex-1">
-        <div className="p-3 pb-8 space-y-4">
-          {/* Color Picker Section */}
-          <div className="space-y-1.5 font-cairo">
-            <PopoverColorPicker
-              color={backgroundColor}
-              onChange={setBackgroundColor}
-              className="w-full h-9 rounded-xl border-border/60 bg-background/60 hover:bg-accent/30 hover:border-primary/30"
-              label={
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
-                  <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span>لون خلفية مساحة العمل</span>
-                </div>
-              }
-            />
-          </div>
+      {mode === "collage" ? (
+        <ScrollArea className="flex-1">
+          <div className="p-3 pb-8 space-y-4 font-cairo">
+            {/* Color Picker Section */}
+            <div className="space-y-1.5">
+              <PopoverColorPicker
+                color={backgroundColor}
+                onChange={setBackgroundColor}
+                className="w-full h-9 rounded-xl border-border/60 bg-background/60 hover:bg-accent/30 hover:border-primary/30"
+                label={
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                    <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span>لون خلفية مساحة العمل</span>
+                  </div>
+                }
+              />
+            </div>
 
-          <Separator className="bg-border/25" />
+            <Separator className="bg-border/25" />
 
-          {/* Grid Settings Section */}
-          <div className="space-y-3.5">
+            <div className="space-y-3.5">
             <CustomCollageCard 
               onSelect={setCollageTemplate} 
               activeTemplateId={collageTemplate?.id} 
@@ -291,9 +299,38 @@ export function TemplatePanel() {
                 </DialogContent>
               </Dialog>
             </div>
+            </div>
           </div>
+        </ScrollArea>
+      ) : (
+        <div className="flex flex-col h-full p-3 font-cairo select-none" dir="rtl">
+          <ScrollArea className="flex-1">
+            <div className="space-y-4 pr-0.5">
+              {/* قسم عجلة تلوين خلفية الكانفاس */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 pb-2 border-b border-border/40">
+                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                    <Palette className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-extrabold text-foreground">
+                    لون خلفية مساحة العمل
+                  </span>
+                </div>
+
+                <ColorWheelPicker
+                  color={backgroundColor}
+                  onChange={setBackgroundColor}
+                />
+              </div>
+
+              <Separator className="bg-border/30 my-2" />
+
+              {/* قسم إدارة طبقات الكانفاس */}
+              <LayersList />
+            </div>
+          </ScrollArea>
         </div>
-      </ScrollArea>
+      )}
 
       <AlertDialog open={pendingTemplate !== null} onOpenChange={(open) => { if (!open) setPendingTemplate(null); }}>
         <AlertDialogContent dir="rtl" className="font-cairo">

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -174,13 +175,10 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 	srcBounds := srcImg.Bounds()
 	srcW, srcH := srcBounds.Dx(), srcBounds.Dy()
 
-	var maskResized *image.Gray = maskImg
+	var finalMask *image.Gray = maskImg
 	if maskW != srcW || maskH != srcH {
-		maskResized = ResizeGrayLinear(maskImg, srcW, srcH)
+		finalMask = ResizeGrayLinear(maskImg, srcW, srcH)
 	}
-
-	maskBlurred := BlurGray(maskResized)
-	maskResized = nil
 	maskImg = nil
 
 	srcNRGBA, ok := srcImg.(*image.NRGBA)
@@ -192,12 +190,12 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 	outImg := image.NewNRGBA(image.Rect(0, 0, srcW, srcH))
 
 	srcPix := srcNRGBA.Pix
-	maskPix := maskBlurred.Pix
+	maskPix := finalMask.Pix
 	outPix := outImg.Pix
 
 	for y := 0; y < srcH; y++ {
 		srcRowOffset := y * srcNRGBA.Stride
-		maskRowOffset := y * maskBlurred.Stride
+		maskRowOffset := y * finalMask.Stride
 		outRowOffset := y * outImg.Stride
 
 		for x := 0; x < srcW; x++ {
@@ -207,20 +205,49 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 
 			rawAlpha := float64(maskPix[maskIdx])
 
-			// ✂️ منحنى تشذيب وتنعيم حواف القناع لمنع الهالة البيضاء حول الشعر (Alpha Remapping & Defringe)
+			// ✂️ منحنى تشذيب وتنعيم حواف القناع ومكافحة الهالة البيضاء حول الشعر (Alpha Remapping & Edge Defringe)
 			var alpha uint8
-			if rawAlpha < 60 {
+			r := srcPix[srcIdx]
+			g := srcPix[srcIdx+1]
+			b := srcPix[srcIdx+2]
+
+			if rawAlpha < 65 {
 				alpha = 0
-			} else if rawAlpha > 200 {
+			} else if rawAlpha > 215 {
 				alpha = 255
 			} else {
-				v := (rawAlpha - 60.0) / (200.0 - 60.0)
-				alpha = uint8(v * 255.0)
+				// منحنى Smoothstep التكعيبي s(v) = v^2 * (3 - 2v) للانتقال الطبيعي الحوافي
+				v := (rawAlpha - 65.0) / 150.0
+				smoothV := v * v * (3.0 - 2.0*v)
+				alpha = uint8(math.Round(smoothV * 255.0))
+
+				// 🛡️ مكافحة تسرب الضوء الحوافي الدقيقة للشعر (Hair Edge Spill Suppression):
+				// للبكسلات الانتقالية الشبه شفافة وحواف الشعر المجعد القادمة من خلفيات فاتحة (lum > 130)،
+				// نكبح السطوع الفائق لمنع تكون هالة بيضاء/رمادية نهائياً فوق الخلفيات الداكنة.
+				lum := (uint32(r)*299 + uint32(g)*587 + uint32(b)*114) / 1000
+				if lum > 130 {
+					suppression := float64(lum-130) * (1.0 - smoothV) * 0.65
+					if float64(r) > suppression {
+						r = uint8(float64(r) - suppression)
+					} else {
+						r = 0
+					}
+					if float64(g) > suppression {
+						g = uint8(float64(g) - suppression)
+					} else {
+						g = 0
+					}
+					if float64(b) > suppression {
+						b = uint8(float64(b) - suppression)
+					} else {
+						b = 0
+					}
+				}
 			}
 
-			outPix[outIdx] = srcPix[srcIdx]
-			outPix[outIdx+1] = srcPix[srcIdx+1]
-			outPix[outIdx+2] = srcPix[srcIdx+2]
+			outPix[outIdx] = r
+			outPix[outIdx+1] = g
+			outPix[outIdx+2] = b
 			outPix[outIdx+3] = alpha
 		}
 	}

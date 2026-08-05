@@ -52,15 +52,16 @@ export function getKonvaFilters(options: FilterOptions) {
   }
   if (useGrayscale) filters.push(Konva.Filters.Grayscale);
   if (useSepia) filters.push(Konva.Filters.Sepia);
-  if (totalBrightness !== 100) filters.push(Konva.Filters.Brighten);
+  const brightnessFilter = (Konva.Filters as any).Brightness || Konva.Filters.Brighten;
+  if (totalBrightness !== 100) filters.push(brightnessFilter);
   if (totalContrast !== 100) filters.push(Konva.Filters.Contrast);
   if (totalSaturation !== 100 || totalHue !== 0) filters.push(Konva.Filters.HSL);
 
   return {
     filters,
-    brightness: totalBrightness !== 100 ? (totalBrightness - 100) / 100 : 0,
+    brightness: brightnessFilter === (Konva.Filters as any).Brightness ? totalBrightness / 100 : (totalBrightness - 100) / 100,
     contrast: totalContrast !== 100 ? totalContrast - 100 : 0,
     hue: totalHue,
-    saturation: totalSaturation !== 100 ? Math.log2(Math.max(1, totalSaturation) / 100) : 0,
+    saturation: totalSaturation !== 100 ? (totalSaturation - 100) / 100 : 0,
   };
 }

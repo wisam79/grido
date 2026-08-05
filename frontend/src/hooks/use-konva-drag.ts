@@ -139,7 +139,7 @@ export function useKonvaDrag({
           node.y(Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - fH, nodeStart.y + dy)));
         }
       });
-      e.target.getLayer().batchDraw();
+      e.target.getLayer()?.batchDraw();
     }
 
     if (snapToGrid) {

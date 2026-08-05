@@ -111,6 +111,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
           stageScale={displayW / canvasWidth}
           isText={isText}
           setActiveGuides={setActiveGuides}
+          altPressedRef={altPressedRef}
           onTransformEnd={() => {
             if (!trRef.current) return;
             const nodes = trRef.current.nodes();

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { Stage } from "react-konva";
+import Konva from "konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/stage-context";
 import { SnapGuide } from "@/lib/snap-utils";
@@ -36,6 +37,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const pendingSlotZoomsRef = useRef(new Map<string, number>());
 
   useEffect(() => {
+    Konva.pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
     const pendingSlotZooms = pendingSlotZoomsRef.current;
     return () => {
       if (wheelTimeoutRef.current) {
@@ -224,6 +226,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       scaleY={displayH / canvasHeight}
       onMouseDown={handleStageMouseDown}
       onTouchStart={handleStageMouseDown}
+      dragDistance={5}
       onContextMenu={(e) => {
         e.evt.preventDefault();
         onContextMenu?.(e);
