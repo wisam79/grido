@@ -139,6 +139,9 @@ export default function LandingPage() {
         </div>
         <TrustMarquee />
         <div className="reveal-on-scroll">
+          <BenefitsGrid />
+        </div>
+        <div className="reveal-on-scroll">
           <HowItWorksSection />
         </div>
         <div className="reveal-on-scroll">
@@ -146,9 +149,6 @@ export default function LandingPage() {
         </div>
         <div className="reveal-on-scroll">
           <ComparisonSection />
-        </div>
-        <div className="reveal-on-scroll">
-          <BenefitsGrid />
         </div>
         <div className="reveal-on-scroll">
           <TestimonialsSection />
