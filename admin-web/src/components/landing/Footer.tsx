@@ -10,6 +10,7 @@ const PRODUCT_LINKS = [
 const SUPPORT_LINKS = [
   { href: '#pricing', label: 'خطط الترخيص' },
   { href: '#faq', label: 'الأسئلة الشائعة' },
+  { href: 'https://wa.me/9647811942002', label: 'واتساب: 07811942002', external: true },
   { href: 'mailto:support@grido.cloud-ip.cc', label: 'الدعم الفني' },
 ];
 
@@ -61,7 +62,13 @@ export function Footer() {
             <h3 className="text-[11px] font-extrabold text-white">الدعم</h3>
             <nav className="flex flex-col gap-2" aria-label="روابط الدعم">
               {SUPPORT_LINKS.map((link) => (
-                <a key={link.label} href={link.href} className="text-xs font-medium text-tertiary hover:text-white transition-colors w-fit">
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target={link.external ? '_blank' : undefined}
+                  rel={link.external ? 'noopener noreferrer' : undefined}
+                  className="text-xs font-medium text-tertiary hover:text-white transition-colors w-fit"
+                >
                   {link.label}
                 </a>
               ))}

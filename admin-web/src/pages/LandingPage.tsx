@@ -13,6 +13,7 @@ import { PricingSection } from '../components/landing/PricingSection';
 import { FaqSection } from '../components/landing/FaqSection';
 import { CtaBanner } from '../components/landing/CtaBanner';
 import { Footer } from '../components/landing/Footer';
+import { WhatsAppFloatingButton } from '../components/landing/WhatsAppButton';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
@@ -167,6 +168,7 @@ export default function LandingPage() {
       </main>
 
       <Footer />
+      <WhatsAppFloatingButton />
 
       {/* Floating Bottom Quick Download SpaceX Pill CTA */}
       {showFloatingCta && (
