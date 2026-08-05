@@ -47,7 +47,7 @@ export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth, filter
     const displayScale = stageW > 0 ? Math.max(0.05, stageW / canvasWidth) : 1;
     const deviceRatio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
 
-    let ratio = isDraggingFilter
+    const ratio = isDraggingFilter
       ? Math.max(0.25, Math.min(0.5, displayScale * deviceRatio * 0.3))
       : Math.max(0.75, Math.min(2.5, displayScale * deviceRatio * 1.2));
 
