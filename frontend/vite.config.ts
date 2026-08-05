@@ -65,33 +65,7 @@ export default defineConfig({
     }
   },
   build: {
-    target: 'esnext',
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('konva') || id.includes('react-konva')) {
-              return 'vendor-konva';
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-            if (id.includes('@radix-ui') || id.includes('framer-motion')) {
-              return 'vendor-ui';
-            }
-            if (id.includes('react-dom') || id.includes('react-router') || id.includes('scheduler')) {
-              return 'vendor-react';
-            }
-            if (id.includes('jspdf') || id.includes('html2canvas')) {
-              return 'vendor-pdf';
-            }
-            if (id.includes('@mediapipe') || id.includes('@tensorflow')) {
-              return 'vendor-ai';
-            }
-          }
-        }
-      }
-    }
+    target: 'esnext'
   },
   optimizeDeps: {
     exclude: ['@techstark/opencv-js'],
