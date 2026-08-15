@@ -49,7 +49,9 @@ export function SlotProperties({
     return localStorage.getItem("grido_auto_fill_grid") !== "false";
   });
   
-  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
+  const user = useEditorStore((state) => state.user);
+  const isLicenseActiveFn = useEditorStore((state) => state.isLicenseActive);
+  const isLicenseActive = isLicenseActiveFn();
 
   const {
     isRemovingBg,

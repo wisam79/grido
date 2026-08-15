@@ -54,25 +54,32 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
   const [status, setStatus] = useState<"loading" | "loaded" | "failed">("loading");
 
   useEffect(() => {
+    let isCurrent = true;
+
     if (!src) {
       queueMicrotask(() => {
+        if (!isCurrent) return;
         setImage(undefined);
         setStatus("failed");
       });
-      return;
+      return () => {
+        isCurrent = false;
+      };
     }
 
     const cacheKey = `${src}__${crossOrigin || ""}`;
     const cached = imageCache.get(cacheKey);
     if (cached && cached.complete) {
       queueMicrotask(() => {
+        if (!isCurrent) return;
         setImage(cached);
         setStatus("loaded");
       });
-      return;
+      return () => {
+        isCurrent = false;
+      };
     }
 
-    let isCurrent = true;
     queueMicrotask(() => {
       if (isCurrent) setStatus("loading");
     });

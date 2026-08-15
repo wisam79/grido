@@ -1,5 +1,5 @@
 import React from "react";
-import { FastLayer, Shape } from "react-konva";
+import { Layer, Shape } from "react-konva";
 
 export const GridLayer = React.memo(function GridLayer({
   showGrid,
@@ -26,7 +26,7 @@ export const GridLayer = React.memo(function GridLayer({
   const numW = Math.ceil(canvasWidth / gridSize);
 
   return (
-    <FastLayer listening={false} name="grid-layer" hitStrokeWidth={0}>
+    <Layer listening={false} name="grid-layer" hitStrokeWidth={0}>
       <Shape
         sceneFunc={(context, _shape) => {
           if (gridType === "lines") {
@@ -99,6 +99,6 @@ export const GridLayer = React.memo(function GridLayer({
           context.closePath();
         }}
       />
-    </FastLayer>
+    </Layer>
   );
 });

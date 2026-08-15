@@ -338,7 +338,7 @@ export function AppMockup() {
                     <div key={rowIdx} className="grid grid-cols-6 gap-1.5 p-1 bg-white border border-neutral-200 rounded-xs relative">
                       {[1, 2, 3, 4, 5, 6].map((colIdx) => (
                         <div key={colIdx} className="aspect-[3/4] overflow-hidden relative border border-neutral-300 rounded-xs shadow-xs group">
-                          <img src={PASSPORT_IMG} alt="User Passport Photo" className="w-full h-full object-cover block" loading="lazy" />
+                          <img src={PASSPORT_IMG} alt="User Passport Photo" width={120} height={160} className="w-full h-full object-cover block" loading="lazy" decoding="async" />
                         </div>
                       ))}
                     </div>

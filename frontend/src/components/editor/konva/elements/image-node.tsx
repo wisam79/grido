@@ -156,6 +156,7 @@ export const URLImage = React.memo(function URLImage({
           width={nodeW}
           height={nodeH}
           rotation={0}
+          cornerRadius={element.cornerRadius || 0}
         />
       )}
     </Group>

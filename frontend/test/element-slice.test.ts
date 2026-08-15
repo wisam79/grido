@@ -74,4 +74,41 @@ describe('ElementSlice Unit Tests', () => {
     const el1Back = useEditorStore.getState().elements.find((e) => e.id === firstId);
     expect(el1Back!.zIndex).toBeLessThan(el2!.zIndex);
   });
+
+  it('updates image filters (brightness, contrast, saturation, cornerRadius)', () => {
+    useEditorStore.getState().addImageElement('/local-image/sample.jpg', 1);
+    const imgEl = useEditorStore.getState().elements[0];
+    expect(imgEl.type).toBe('image');
+
+    useEditorStore.getState().updateElement(imgEl.id, {
+      brightness: 0.2,
+      contrast: 0.1,
+      saturation: 1.2,
+      blur: 2,
+      cornerRadius: 12,
+    });
+
+    const updated = useEditorStore.getState().elements.find((e) => e.id === imgEl.id) as any;
+    expect(updated.brightness).toBe(0.2);
+    expect(updated.contrast).toBe(0.1);
+    expect(updated.saturation).toBe(1.2);
+    expect(updated.blur).toBe(2);
+    expect(updated.cornerRadius).toBe(12);
+  });
+
+  it('toggles locked state and flips element horizontally/vertically', () => {
+    useEditorStore.getState().addImageElement('/local-image/sample.jpg', 1);
+    const imgEl = useEditorStore.getState().elements[0];
+
+    useEditorStore.getState().updateElement(imgEl.id, {
+      locked: true,
+      flipX: true,
+      flipY: false,
+    });
+
+    const updated = useEditorStore.getState().elements.find((e) => e.id === imgEl.id) as any;
+    expect(updated.locked).toBe(true);
+    expect(updated.flipX).toBe(true);
+    expect(updated.flipY).toBe(false);
+  });
 });

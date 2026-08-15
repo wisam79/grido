@@ -39,11 +39,13 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
     template && template.width > 0 && template.height > 0 ? template.width / template.height : undefined;
   
   const [prevOpen, setPrevOpen] = useState(open);
+  const [prevImageSrc, setPrevImageSrc] = useState(imageSrc);
   const [aspect, setAspect] = useState<number | undefined>(templateAspect);
   const [currentSrc, setCurrentSrc] = useState(imageSrc);
 
-  if (open !== prevOpen) {
+  if (open !== prevOpen || (open && imageSrc !== prevImageSrc)) {
     setPrevOpen(open);
+    setPrevImageSrc(imageSrc);
     if (open) {
       setAspect(templateAspect);
       setCurrentSrc(imageSrc);

@@ -8,6 +8,7 @@ vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
+    info: vi.fn(),
   },
 }));
 
@@ -59,6 +60,7 @@ describe("export-utils - Image/Project Export Utilities Tests", () => {
     const blob = await exportCanvas("png", 0.95, null);
     
     expect(spy).toHaveBeenCalledWith("canvas");
+    expect(blob).toBeInstanceOf(Blob);
     spy.mockRestore();
   });
 
@@ -74,17 +76,28 @@ describe("export-utils - Image/Project Export Utilities Tests", () => {
     expect(result).toBe("success");
   });
 
-  it("should trigger toast notifications for quickExportPNG success and failures", async () => {
+  it("should trigger toast notifications for quickExportPNG success, cancel, and failures", async () => {
     const mockSaveFileDialog = vi.fn().mockResolvedValue("success");
     (window as any).go.main.App.SaveFileDialog = mockSaveFileDialog;
 
-    // Trigger quickExportPNG
+    // Case 1: Success
     await quickExportPNG();
     expect(toast.success).toHaveBeenCalledWith("تم تصدير الصورة بنجاح");
 
     // Case 2: SaveFileDialog returns error
+    vi.clearAllMocks();
     mockSaveFileDialog.mockResolvedValue("error");
     await quickExportPNG();
-    // No success toast should be displayed
+    expect(toast.error).toHaveBeenCalledWith("فشل تصدير الصورة");
+    expect(toast.success).not.toHaveBeenCalled();
+
+    // Case 3: User cancelled dialog (returns empty string)
+    vi.clearAllMocks();
+    mockSaveFileDialog.mockResolvedValue("");
+    await quickExportPNG();
+    expect(toast.info).toHaveBeenCalledWith("تم إلغاء تصدير الصورة");
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });
+

@@ -17,6 +17,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
             width: w,
             height: h,
           }),
+          drawImage: () => {},
           putImageData: () => {},
           getImageData: () => ({
             data: new Uint8ClampedArray(100 * 100 * 4),
@@ -118,5 +119,63 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
       expect(resultCanvas.width).toBe(50);
       expect(resultCanvas.height).toBe(50);
     }).not.toThrow();
+  });
+
+  it("should correctly infer smart document aspect ratios (A4, ID card, Square)", async () => {
+    const { inferSmartDocumentAspect } = await import(
+      "../src/components/editor/document-scanner/perspective-transform"
+    );
+
+    // A4 Portrait ratio ~ 1 / 1.414 = 0.707
+    const a4PortraitCorners: Point[] = [
+      { x: 0, y: 0 },
+      { x: 210, y: 0 },
+      { x: 210, y: 297 },
+      { x: 0, y: 297 },
+    ];
+    expect(inferSmartDocumentAspect(a4PortraitCorners)).toBe("a4_p");
+
+    // A4 Landscape ratio ~ 1.414
+    const a4LandscapeCorners: Point[] = [
+      { x: 0, y: 0 },
+      { x: 297, y: 0 },
+      { x: 297, y: 210 },
+      { x: 0, y: 210 },
+    ];
+    expect(inferSmartDocumentAspect(a4LandscapeCorners)).toBe("a4_l");
+
+    // ID Card ratio ~ 85.6 / 54 = 1.58
+    const idCardCorners: Point[] = [
+      { x: 0, y: 0 },
+      { x: 86, y: 0 },
+      { x: 86, y: 54 },
+      { x: 0, y: 54 },
+    ];
+    expect(inferSmartDocumentAspect(idCardCorners)).toBe("id_card");
+
+    // Square ratio ~ 1.0
+    const squareCorners: Point[] = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 },
+    ];
+    expect(inferSmartDocumentAspect(squareCorners)).toBe("square");
+  });
+
+  it("should run detectDocumentAuto and return valid detection results", async () => {
+    const { detectDocumentAuto } = await import(
+      "../src/components/editor/document-scanner/perspective-transform"
+    );
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 200;
+    canvas.height = 200;
+
+    const res = await detectDocumentAuto(canvas, 200, 200);
+    expect(res).toBeDefined();
+    expect(res.corners).toBeDefined();
+    expect(res.corners?.length).toBe(4);
+    expect(["opencv", "js", "default"]).toContain(res.method);
   });
 });

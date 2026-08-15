@@ -108,4 +108,63 @@ describe("calculatePrintCutLines", () => {
     const bottomLine = lines.find((l) => l.isBottomEnd);
     expect(bottomLine).toBeUndefined();
   });
+
+  it("strictly clamps all cut line coordinates within physical paper bounds", () => {
+    // شبكة بأبعاد تتجاوز حدود الورقة ظاهرياً (مثل محاولة طباعة صورة بارتفاع 300 مم على ورق 297 مم)
+    const lines = calculatePrintCutLines({
+      mode: "single",
+      actualCopies: 4,
+      imageWidthMM: 100,
+      imageHeightMM: 150,
+      gapMM: 10,
+      paperWidth: 210,
+      paperHeight: 297,
+      grid: computeSheetGrid({
+        cols: 2,
+        actualCopies: 4,
+        imageWidthMM: 100,
+        imageHeightMM: 150,
+        gapMM: 10,
+        effectiveMarginMM: 10,
+        availableWidthMM: 190,
+        availableHeightMM: 277,
+      }),
+    });
+
+    for (const line of lines) {
+      expect(line.x1).toBeGreaterThanOrEqual(0);
+      expect(line.x1).toBeLessThanOrEqual(210);
+      expect(line.x2).toBeGreaterThanOrEqual(0);
+      expect(line.x2).toBeLessThanOrEqual(210);
+
+      expect(line.y1).toBeGreaterThanOrEqual(0);
+      expect(line.y1).toBeLessThanOrEqual(297);
+      expect(line.y2).toBeGreaterThanOrEqual(0);
+      expect(line.y2).toBeLessThanOrEqual(297);
+    }
+  });
+
+  it("handles zero copies gracefully and returns empty cut lines array", () => {
+    const lines = calculatePrintCutLines({
+      mode: "single",
+      actualCopies: 0,
+      imageWidthMM: 80,
+      imageHeightMM: 60,
+      gapMM: 5,
+      paperWidth: 210,
+      paperHeight: 297,
+      grid: computeSheetGrid({
+        cols: 2,
+        actualCopies: 0,
+        imageWidthMM: 80,
+        imageHeightMM: 60,
+        gapMM: 5,
+        effectiveMarginMM: 10,
+        availableWidthMM: 190,
+        availableHeightMM: 277,
+      }),
+    });
+
+    expect(lines).toEqual([]);
+  });
 });

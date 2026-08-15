@@ -28,7 +28,13 @@ interface CancelRequest {
   requestId: number;
 }
 
-type WorkerRequest = SegmentRequest | CancelRequest;
+interface WarmupRequest {
+  type: "warmup";
+  wasmBaseUrl: string;
+  modelUrl: string;
+}
+
+type WorkerRequest = SegmentRequest | CancelRequest | WarmupRequest;
 
 const ctx: Worker = self as unknown as Worker;
 
@@ -109,7 +115,7 @@ async function handleSegment(req: SegmentRequest) {
     }
 
     const offscreen = new OffscreenCanvas(targetW, targetH);
-    const octx = offscreen.getContext("2d");
+    const octx = offscreen.getContext("2d", { willReadFrequently: true });
     if (!octx) throw new Error("تعذر إنشاء سياق الرسم داخل الـ Worker");
     octx.drawImage(imageBitmap, 0, 0, targetW, targetH);
     imageBitmap.close();
@@ -154,15 +160,15 @@ async function handleSegment(req: SegmentRequest) {
 
     if (isCancelled()) return;
 
-    // تحويل بايتات القناع إلى Base64 على كتل لمنع تجاوز المكدس
+    // تحويل بايتات القناع إلى Base64 بحجم كتل آمن ومضاد لفيض المكدس (Call Stack Overflow Protection)
     postProgress(requestId, 95, "تجهيز القناع... (95%)");
-    const CHUNK_SIZE = 0x8000;
-    const chunks: string[] = [];
+    const CHUNK_SIZE = 0x2000; // 8192 - حجم مثالي وآمن كلياً في محركات JS
+    let binary = "";
     for (let i = 0; i < maskBytes.length; i += CHUNK_SIZE) {
-      chunks.push(String.fromCharCode(...maskBytes.subarray(i, i + CHUNK_SIZE)));
+      binary += String.fromCharCode(...maskBytes.subarray(i, i + CHUNK_SIZE));
     }
 
-    postResult(requestId, { maskBase64: btoa(chunks.join("")), targetW, targetH, inferredMs });
+    postResult(requestId, { maskBase64: btoa(binary), targetW, targetH, inferredMs });
   } catch (err) {
     if (!isCancelled()) {
       const message = err instanceof Error ? err.message : String(err);
@@ -177,6 +183,11 @@ ctx.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const data = e.data;
   if (data.type === "segment") {
     void handleSegment(data);
+  } else if (data.type === "warmup") {
+    // ⚡ تهيئة واستدعاء مسبق للنموذج أثناء خمول التطبيق لتصفير زمن أول نقرة
+    void getOrCreateSegmenter(data.wasmBaseUrl, data.modelUrl).catch((err) => {
+      console.debug("[BG-Removal Worker] Warmup deferred:", err);
+    });
   } else if (data.type === "cancel") {
     // إبطال أي عملية جارية بنفس الـ id (الإلغاء القسري الكامل يتم عبر terminate من المضيف)
     if (activeRequestId === data.requestId) {

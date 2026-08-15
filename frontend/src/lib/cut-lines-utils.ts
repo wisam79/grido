@@ -52,6 +52,8 @@ export function calculatePrintCutLines(params: CalculateCutLinesParams): CutLine
     grid,
   } = params;
 
+  if (actualCopies <= 0) return [];
+
   const cutLines: CutLineMM[] = [];
   const { safeCols, actualRows, gridWidth, gridHeight, offsetX, offsetY } = grid;
 

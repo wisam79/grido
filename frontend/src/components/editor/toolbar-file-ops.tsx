@@ -86,10 +86,6 @@ export function ToolbarFileOps() {
         const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
 
         if (freshMode === "collage") {
-          if (freshMode !== "collage") {
-            freshState.setMode("collage");
-          }
-
           let localPaths: string[] = [];
           if (isWailsDesktop) {
             for (const b64 of b64s) {

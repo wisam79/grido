@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ interface ExportDialogProps {
 }
 
 export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
+  const isCancelledRef = useRef(false);
   const [format, setFormat] = useState<"png" | "jpg">("png");
   const [quality, setQuality] = useState(95);
   const [loading, setLoading] = useState(false);
@@ -43,10 +44,15 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     slots: state.slots,
   })));
 
+  // تصفير مؤشرات التحميل عند إعادة فتح/غلق النافذة لمنع تعليق الأزرار (AGENTS.md #36)
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(false);
-    setProgress(0);
+    if (!open) {
+      isCancelledRef.current = true;
+      setLoading(false);
+      setProgress(0);
+    } else {
+      isCancelledRef.current = false;
+    }
   }, [open]);
 
   const handleExport = async () => {
@@ -65,8 +71,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           let successCount = 0;
           for (let i = 0; i < validSlots.length; i++) {
+            if (isCancelledRef.current) break;
             const slot = validSlots[i];
             const blob = await exportSlotCanvas(slot.id, format, quality / 100);
+            if (isCancelledRef.current) break;
             if (blob) {
               const ext = format === "png" ? "png" : "jpg";
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
@@ -74,10 +82,15 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               if (res === "success") successCount++;
               else if (res === "") break; // ألغى المستخدم الحوار — لا نواصل الدفعة
             }
+            if (isCancelledRef.current) break;
             setProgress(((i + 1) / validSlots.length) * 100);
             
             // Give browser time to process the download UI
             await new Promise(r => setTimeout(r, 250));
+          }
+          
+          if (isCancelledRef.current) {
+            return;
           }
           
           if (successCount > 0) {

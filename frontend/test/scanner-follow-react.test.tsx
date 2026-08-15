@@ -145,4 +145,58 @@ describe("MagicAiScanner via react-konva", () => {
 
     root.unmount();
   });
+
+  it("keeps scanner group at local coordinates (0, 0) and applies cornerRadius when encapsulated as direct child", async () => {
+    let stageRef: any = null;
+    let parentGroupRef: any = null;
+
+    const ChildComp = () => {
+      const parentRef = useRef<any>(null);
+      parentGroupRef = parentRef;
+
+      return (
+        <Stage ref={(s: any) => { stageRef = s; }} width={800} height={600}>
+          <Layer>
+            <Group ref={parentRef} x={250} y={180} width={200} height={200}>
+              <KonvaImage
+                id="img-child"
+                image={({ width: 200, height: 200 } as any)}
+                x={0}
+                y={0}
+                width={200}
+                height={200}
+              />
+              <MagicAiScanner
+                targetNodeRef={parentRef}
+                x={0}
+                y={0}
+                width={200}
+                height={200}
+                cornerRadius={16}
+                rotation={0}
+              />
+            </Group>
+          </Layer>
+        </Stage>
+      );
+    };
+
+    root.render(<ChildComp />);
+    await waitFrames(4);
+
+    const layer = stageRef!.getLayers()[0];
+    const groups = layer.find("Group");
+    const parentGroup = parentGroupRef.current;
+    expect(parentGroup).toBeTruthy();
+    expect(parentGroup.x()).toBe(250);
+    expect(parentGroup.y()).toBe(180);
+
+    // The child scanner group inside parentGroup must remain at local (0, 0)
+    const childScanner = groups.find((g: any) => g !== parentGroup);
+    expect(childScanner).toBeTruthy();
+    expect(childScanner.x()).toBe(0);
+    expect(childScanner.y()).toBe(0);
+
+    root.unmount();
+  });
 });

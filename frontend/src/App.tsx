@@ -319,14 +319,14 @@ export default function App() {
       >
         <div className="flex items-center justify-between px-4 py-2 relative">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-primary shrink-0 shadow-xs" />
+            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
             <h1 className="text-xs font-bold text-foreground tracking-wide">
               Grido Studio | استوديو الهوية
             </h1>
           </div>
 
           {/* وضع العمل */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-muted p-1 rounded-xl border border-border z-10 title-bar-controls" dir="rtl">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-muted/80 backdrop-blur-xs p-1 rounded-xl border border-border/80 z-10 title-bar-controls" dir="rtl">
             <Button
               variant="ghost"
               size="sm"
@@ -343,7 +343,7 @@ export default function App() {
               {mode === "collage" && (
                 <motion.div
                   layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-background border border-border/80 rounded-lg -z-10"
+                  className="absolute inset-0 bg-background border border-border/80 rounded-lg shadow-2xs -z-10"
                   transition={{ type: "spring", stiffness: 450, damping: 35 }}
                 />
               )}
@@ -367,7 +367,7 @@ export default function App() {
               {mode === "single" && (
                 <motion.div
                   layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-background border border-border/80 rounded-lg -z-10"
+                  className="absolute inset-0 bg-background border border-border/80 rounded-lg shadow-2xs -z-10"
                   transition={{ type: "spring", stiffness: 450, damping: 35 }}
                 />
               )}
@@ -482,7 +482,7 @@ export default function App() {
         </aside>
 
         {/* الكانفس - الوسط */}
-        <section className="flex-1 flex flex-col min-w-0 bg-slate-300 dark:bg-zinc-950 animate-fade-in relative z-10">
+        <section className="flex-1 flex flex-col min-w-0 bg-background relative z-10">
           <div className="flex-1 relative">
             <ErrorBoundary>
               <EditorCanvas />
@@ -490,46 +490,61 @@ export default function App() {
           </div>
 
           {/* شريط الحالة السفلي - نمط Figma مضغوط وأنيق */}
-          <div className="border-t border-border/80 bg-card px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-7">
+          <div className="border-t border-border/80 bg-card/95 backdrop-blur-xs px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-7.5 shadow-2xs">
             {/* مؤشر الحالة والنوع */}
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-foreground/80 bg-muted/80 px-2 py-0.5 rounded-md border border-border/50 shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>جاهز</span>
               </span>
-              <span className="text-[10px] font-mono text-muted-foreground font-semibold" dir="ltr">
+              <span className="text-[10px] font-mono text-muted-foreground font-semibold px-1.5 py-0.5 rounded bg-muted/40 border border-border/30" dir="ltr">
                 {canvasWidth} × {canvasHeight} px
+              </span>
+              <span className="hidden sm:inline-block text-[10px] font-semibold text-muted-foreground/80">
+                {Math.round((canvasWidth / 300) * 25.4)} × {Math.round((canvasHeight / 300) * 25.4)} مم (300 DPI)
               </span>
             </div>
 
             {/* أدوات الزوم وإعادة الضبط */}
-            <div className="flex items-center gap-1 bg-muted/50 border border-border/50 rounded-lg p-0.5 shadow-2xs">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
-                onClick={() => setCanvasZoom(Math.max(0.1, canvasZoom - 0.1))}
-                title="تصغير (Zoom Out)"
+                className="hidden md:flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted px-2 py-0.5 rounded-md border border-border/40 transition-colors cursor-pointer"
+                onClick={() => window.dispatchEvent(new CustomEvent("grido:open-shortcuts"))}
+                title="عرض اختصارات لوحة المفاتيح"
               >
-                <ZoomOut className="w-3.5 h-3.5" />
+                <span>اختصارات</span>
+                <kbd className="font-mono text-[9px] bg-background/80 px-1 rounded border border-border/60">?</kbd>
               </button>
 
-              <button
-                type="button"
-                className="text-[11px] font-mono font-bold w-12 text-center select-none cursor-pointer hover:bg-background hover:text-primary py-0.5 rounded-md transition-all border border-transparent hover:border-border/30"
-                onClick={() => setCanvasZoom(1)}
-                title="إعادة ضبط المقياس إلى 100% (انقر مرتين)"
-              >
-                {Math.round(canvasZoom * 100)}%
-              </button>
+              <div className="flex items-center gap-0.5 bg-muted/60 border border-border/60 rounded-lg p-0.5 shadow-2xs">
+                <button
+                  type="button"
+                  className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer text-muted-foreground"
+                  onClick={() => setCanvasZoom(Math.max(0.1, canvasZoom - 0.1))}
+                  title="تصغير (Zoom Out)"
+                >
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
 
-              <button
-                type="button"
-                className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
-                onClick={() => setCanvasZoom(Math.min(5, canvasZoom + 0.1))}
-                title="تكبير (Zoom In)"
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-              </button>
+                <button
+                  type="button"
+                  className="text-[11px] font-mono font-bold w-12 text-center select-none cursor-pointer hover:bg-background hover:text-primary py-0.5 rounded-md transition-all border border-transparent hover:border-border/30"
+                  onClick={() => setCanvasZoom(1)}
+                  title="إعادة ضبط المقياس إلى 100% (انقر مرتين)"
+                >
+                  {Math.round(canvasZoom * 100)}%
+                </button>
+
+                <button
+                  type="button"
+                  className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer text-muted-foreground"
+                  onClick={() => setCanvasZoom(Math.min(5, canvasZoom + 0.1))}
+                  title="تكبير (Zoom In)"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </section>

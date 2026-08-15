@@ -22,11 +22,16 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
 
   inFlight = (async () => {
     try {
-      const modPromise = import("@techstark/opencv-js");
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("OpenCV WASM load timeout")), LOAD_TIMEOUT_MS);
-      });
-      const rawMod = (await Promise.race([modPromise, timeoutPromise])) as any;
+      let rawMod: any = null;
+      try {
+        const modPromise = import("@techstark/opencv-js");
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("OpenCV WASM load timeout")), LOAD_TIMEOUT_MS);
+        });
+        rawMod = await Promise.race([modPromise, timeoutPromise]);
+      } catch {
+        rawMod = (globalThis as any).cv;
+      }
 
       let candidate = rawMod?.default || rawMod || (globalThis as any).cv;
 
@@ -38,8 +43,12 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
 
       let cvRuntime: any = null;
 
-      if (candidate instanceof Promise) {
-        cvRuntime = await candidate;
+      if (candidate && typeof candidate.then === "function") {
+        try {
+          cvRuntime = await candidate;
+        } catch {
+          cvRuntime = candidate;
+        }
       } else if (typeof candidate === "function") {
         try {
           cvRuntime = await candidate();
@@ -118,4 +127,14 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
   })();
 
   return inFlight;
+}
+
+/**
+ * ⚡ استدعاء وتحميل مسبق لـ OpenCV WASM في الخلفية أثناء خمول التطبيق
+ */
+export function warmupOpenCV(): void {
+  if (typeof window === "undefined") return;
+  void loadOpenCV().catch((err) => {
+    console.debug("[OpenCV] Warmup deferred:", err);
+  });
 }

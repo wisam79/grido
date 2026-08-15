@@ -1,20 +1,35 @@
 import { useState } from 'react';
-import { Crop, LayoutGrid, Wand2, Printer, CheckCircle2, ArrowLeftRight, Sliders, ShieldCheck, Sparkles, MoveHorizontal, MousePointer2, RotateCcw, Layers, ZoomIn } from 'lucide-react';
+import {
+  Sliders,
+  CheckCircle2,
+  Printer,
+  MoveHorizontal,
+  Wand2,
+  Scan,
+  Grid,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { SectionHeading } from './SectionHeading';
 
 type TabId = 'id' | 'collage' | 'ai' | 'cmyk';
 
-const TABS: { id: TabId; label: string; icon: typeof Crop }[] = [
-  { id: 'id', label: 'الهوية والرسميات', icon: Crop },
-  { id: 'collage', label: 'الكولاج والشبكات', icon: LayoutGrid },
-  { id: 'ai', label: 'ترميم الوجوه', icon: Wand2 },
-  { id: 'cmyk', label: 'ألوان المطابع', icon: Printer },
+interface TabItem {
+  id: TabId;
+  label: string;
+  badge?: string;
+  icon: LucideIcon;
+}
+
+const TABS: TabItem[] = [
+  { id: 'id', label: 'صور الهوية والفيزا', badge: '3 ثوانٍ', icon: Scan },
+  { id: 'collage', label: 'مصمم الكولاج والشبكات', badge: 'ديناميكي', icon: Grid },
+  { id: 'ai', label: 'ترميم الوجه وعزل الخلفية', badge: 'CodeFormer', icon: Wand2 },
+  { id: 'cmyk', label: 'محرك ألوان المطابع CMYK', badge: '300 DPI', icon: Printer },
 ];
 
 const TAB_CONTENT: Record<
   TabId,
   {
-    badge: string;
     title: string;
     punch: string;
     metric: { value: string; label: string };
@@ -22,109 +37,87 @@ const TAB_CONTENT: Record<
   }
 > = {
   id: {
-    badge: 'توليد تلقائي 40×32 / 35×45 / فيزا',
-    title: 'قص وتوسيط الصورة بنقرة واحدة',
-    punch: 'تعرّف تلقائي على الوجه والأكتاف، ثم تُجهَّز الورقة كاملة للطباعة فوراً.',
-    metric: { value: '8 صور', label: 'في ورقة A4 واحدة جاهزة للطباعة' },
+    title: 'تنسيق صور المعاملات وجوازات السفر في 3 ثوانٍ',
+    punch: 'تحديد فوري للمقاسات الرسمية (40×32 ملم، 35×45 ملم، والفيزا) مع تثبيت أبعاد الرأس والأكتاف وفقاً لمعايير ICAO الدولية بدون أي تشويه.',
+    metric: { value: '3 ثوانٍ', label: 'زمن تجهيز ورقة المعاملات الكاملة' },
     points: [
-      'توسيط ذكي مع تثبيت النسب الرسمية',
-      'خلفيات رسمية موحدة بنقرة واحدة',
-      'تجهيز فوري للطباعة (A4 / 10×15)',
+      'ضبط بيومتري تلقائي لمحاذاة العينين والأنف والذقن',
+      'توزيع ذكي على أوراق A4 و 10×15 و 13×18 بدون أي هدر',
+      'توليد تلقائي لعلامات القص والتقصي السريع',
     ],
   },
   collage: {
-    badge: 'تنسيق شبكي محترف',
-    title: 'قوالب كولاج ديناميكية قابلة للتخصيص',
-    punch: 'ألبومات وكروت بمحاذاة ذكية ومساطر تلقائية — وكل ملّيمتر في الورقة مستثمر.',
-    metric: { value: '0%', label: 'هدر ورق الطباعة مع التوزيع الذكي' },
+    title: 'مصمم كولاج ذكي وشبكات طباعة احترافية',
+    punch: 'صمم شبكات كولاج متقدمة، ألبومات عريضة، وبوسترات مجمعة بحرية كاملة مع دعم التبديل التلقائي وإعادة التوزيع الفوري للصور بنقرة واحدة.',
+    metric: { value: '0% هدر', label: 'استغلال مساحة الورقة بالكامل' },
     points: [
-      'سحب وإسقاط مع استنباط الأبعاد فورياً',
-      'محاذاة ومساطر شاشة ذكية (Figma-like)',
-      'توزيع تلقائي بلا هدر — 100%',
+      'قوالب ديناميكية تتكيف مع عدد الصور المرفوعة',
+      'تحكم كامل في المسافات الهامشية واستدارة الحواف',
+      'معالجة مجمعة وتحسين كافة الصور دفعة واحدة',
     ],
   },
   ai: {
-    badge: 'محرك CodeFormer + Real-ESRGAN',
-    title: 'استعادة تفاصيل الوجه وضبط الإضاءة',
-    punch: 'ترميم فوري يحافظ على ملامح الشخصية — بدون تأثير شمعي وبدون رفع الصور.',
-    metric: { value: '100%', label: 'معالجة محلية على جهازك — بلا سحابة' },
+    title: 'ترميم الملامح بالذكاء الاصطناعي مع حفظ مسام البشرة',
+    punch: 'مسار معالجة مزدوج يدمج CodeFormer مع Real-ESRGAN بنسبة دمج مدروسة (65% وجه مرمم + 35% مسام أصلية) لمنع الوجه الشمعي الكارتوني.',
+    metric: { value: '4K HD', label: 'وضوح فائق لملامح الوجه والعيون' },
     points: [
-      'معالجة مزدوجة مخصصة لصور الهوية',
-      'تحسين الإضاءة ورسم تفاصيل المسام',
-      'خصوصية كاملة — الصور لا تغادر جهازك',
+      'استعادة الصور القديمة والتالفة من الهواتف القديمة',
+      'عزل ذكي للخلفية وتطبيق اللون الأبيض أو الأزرق الرسمي',
+      'إصلاح فوري للظلال القوية واختلال توازن الإضاءة',
     ],
   },
   cmyk: {
-    badge: 'تصدير CMYK للمطابع التجارية',
-    title: 'نمط ألوان CMYK والأسود الخالص',
-    punch: 'تحويل دقيق يطابق الشاشة بالمطبوع، مع أسود خالص على خطوط القص.',
-    metric: { value: 'K=100%', label: 'أسود خالص على خطوط القص — بلا تلطخ' },
+    title: 'محرك ألوان المطابع الحقيقي CMYK بدقة 300 DPI',
+    punch: 'تصدير بصيغ TIFF و High-JPEG الجاهزة للطباعة فوراً مع فرض الأسود الخالص (K=100%) على خطوط القص لتفادي تلطخ الحواف عند التقطيع.',
+    metric: { value: '300 DPI', label: 'دقة طباعة تجارية حقيقية' },
     points: [
-      'تحويل مطابع حقيقي ومطابقة البروفات',
-      'تصدير TIFF و High-JPEG بدقة 300DPI',
-      'فرض الأسود الخالص على أسياخ التقصي',
+      'مطابقة كاملة لملف الألوان القياسي Coated FOGRA39',
+      'علامات تسجيل ليزرية للمطابع والمعامل التجارية',
+      'متوافق مع طابعات Epson, Canon, DNP, Noritsu',
     ],
   },
 };
 
-const PASSPORT_IMG = '/sample-passport.png';
-
-const TOOLS: { icon: typeof Crop; label: string; active?: boolean }[] = [
-  { icon: MousePointer2, label: 'تحديد', active: true },
-  { icon: Crop, label: 'قص' },
-  { icon: RotateCcw, label: 'تدوير' },
-  { icon: Layers, label: 'الطبقات' },
-];
+const PASSPORT_IMG = '/biometric-cutout-blend.jpg';
+const CMYK_PHOTO = '/cmyk-print-lab-macro.jpg';
+const STUDIO_CUTTER_SHEET = '/studio-cutter-sheet.jpg';
 
 export function FeaturesTabs() {
   const [activeTab, setActiveTab] = useState<TabId>('id');
-  const [tabKey, setTabKey] = useState<number>(0);
-
-  // Tab 1 (ID Photos) Interactive States
   const [idBgColor, setIdBgColor] = useState<'white' | 'blue' | 'gray'>('white');
   const [idPaperSize, setIdPaperSize] = useState<'A4' | '10x15'>('A4');
-
-  // Tab 2 (Collage) Interactive State
   const [collageLayout, setCollageLayout] = useState<'hero' | 'grid' | 'album'>('hero');
-
-  // Tab 3 (AI Restoration) Interactive Split Slider State
-  const [aiSplitPos, setAiSplitPos] = useState<number>(50);
-
-  // Tab 4 (CMYK) Interactive Channel State
+  const [aiSplitPos, setAiSplitPos] = useState<number>(55);
   const [cmykChannel, setCmykChannel] = useState<'all' | 'c' | 'm' | 'y' | 'k'>('all');
   const [showCropMarks, setShowCropMarks] = useState<boolean>(true);
 
-  const handleTabChange = (id: TabId) => {
-    setActiveTab(id);
-    setTabKey((prev) => prev + 1);
-  };
-
   const content = TAB_CONTENT[activeTab];
 
-  // Helper for background color mapping in ID photos preview
   const getBgStyle = () => {
     switch (idBgColor) {
       case 'blue': return 'bg-[#1d4ed8]';
-      case 'gray': return 'bg-[#6b7280]';
+      case 'gray': return 'bg-[#4b5563]';
       default: return 'bg-[#ffffff]';
     }
   };
 
   return (
-    <section id="features" className="relative section-rhythm border-t border-subtle bg-transparent overflow-hidden">
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+    <section id="features" className="section-band border-t border-[rgba(214,235,253,0.19)] bg-[#000000] text-[#f0f0f0]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          icon={Sparkles}
-          eyebrow="المميزات الرئيسية"
-          title={<>استكشف قوة <span className="text-secondary">GRIDO STUDIO</span></>}
-          subtitle="أدوات الذكاء الاصطناعي والأتمتة لتضاعف إنتاجية استوديوهات التصوير."
+          eyebrow="الأدوات والوظائف"
+          title="أدوات استوديو متكاملة في بيئة عمل موحدة"
+          subtitle="صُمم كل جزء في البرنامج ليخدم السرعة والدقة الفائقة التي يحتاجها أصحاب الاستوديوهات والمطابع يومياً."
           index="02"
         />
 
-        {/* SpaceX Monochromatic Pill Tabs Bar */}
-        <div className="stagger-4 flex justify-center mb-8 sm:mb-16 relative z-20">
-          <div role="tablist" aria-label="ميزات Grido Studio" className="p-1.5 rounded-full bg-elevated border border-subtle flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto justify-start sm:justify-center">
+        {/* Tab Navigation Ribbon */}
+        <div className="flex justify-center mb-8 sm:mb-12">
+          <div
+            role="tablist"
+            aria-label="أدوات المحرر الرئيسية"
+            className="p-1 rounded-full bg-[#191b1e] border border-[rgba(214,235,253,0.19)] flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full"
+          >
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -132,644 +125,369 @@ export function FeaturesTabs() {
                 <button
                   key={tab.id}
                   role="tab"
-                  id={`feature-tab-${tab.id}`}
                   aria-selected={isActive}
-                  aria-controls="features-tabpanel"
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`px-5 py-2.5 rounded-full font-extrabold text-xs sm:text-sm transition-all duration-300 flex items-center gap-2 shrink-0 cursor-pointer ${
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-2 rounded-full text-xs font-mono transition-colors flex items-center gap-2 shrink-0 cursor-pointer ${
                     isActive
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-tertiary hover:text-white hover:bg-elevated/70'
+                      ? 'bg-[#000000] text-[#f0f0f0] border border-[rgba(214,235,253,0.19)]'
+                      : 'text-[#a1a4a5] hover:text-[#f0f0f0]'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? 'text-black' : 'text-tertiary'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#00a3ff]' : 'text-[#a1a4a5]'}`} />
                   <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                        isActive
+                          ? 'bg-[#00a3ff] text-white'
+                          : 'bg-[#000000] text-[#a1a4a5] border border-[rgba(214,235,253,0.19)]'
+                      }`}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Studio Canvas App Window Frame Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-elevated border border-subtle shadow-2xl group/window">
-          {/* Top Window Bar (Chrome UI) */}
-          <div className="h-11 sm:h-14 bg-elevated/90 border-b border-subtle px-4 sm:px-6 flex items-center justify-between gap-3 text-xs text-tertiary relative z-10 font-mono">
-            <div className="flex items-center gap-3 min-w-0">
-              {/* OS Traffic Lights */}
-              <div className="flex items-center gap-1.5 shrink-0" aria-hidden>
-                <span className="w-3 h-3 rounded-full bg-[#ff5f57] shadow-[inset_0_0_2px_rgba(0,0,0,0.35)]" />
-                <span className="w-3 h-3 rounded-full bg-[#febc2e] shadow-[inset_0_0_2px_rgba(0,0,0,0.35)]" />
-                <span className="w-3 h-3 rounded-full bg-[#28c840] shadow-[inset_0_0_2px_rgba(0,0,0,0.35)]" />
-              </div>
-
-              <span className="ms-2 sm:ms-3 text-[10px] sm:text-[11px] text-secondary font-bold truncate">
-                مساحة عمل GRIDO STUDIO — {content.badge}
+        {/* Main 2-Column Split Workspace */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          {/* Left Column: Editorial Feature Pitch */}
+          <div className="lg:col-span-5 flex flex-col justify-between p-6 sm:p-8 rounded-lg bg-[#191b1e] border border-[rgba(214,235,253,0.19)]">
+            <div className="space-y-4">
+              <span className="resend-badge font-mono">
+                {TABS.find((t) => t.id === activeTab)?.label}
               </span>
+
+              <h3 className="text-2xl sm:text-3xl font-normal font-serif text-[#f0f0f0] leading-snug">
+                {content.title}
+              </h3>
+
+              <p className="text-sm text-[#a1a4a5] leading-relaxed">
+                {content.punch}
+              </p>
+
+              <div className="space-y-2.5 pt-2">
+                {content.points.map((point) => (
+                  <div key={point} className="flex items-start gap-2.5 text-sm text-[#f0f0f0]">
+                    <CheckCircle2 className="w-4 h-4 text-[#00a3ff] shrink-0 mt-0.5" />
+                    <span>{point}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-bold shrink-0">
-              <span className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-md bg-secondary border border-subtle text-secondary">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-                {content.metric.value}
-              </span>
-              <span className="hidden lg:flex items-center px-3 py-1 rounded-md bg-secondary border border-subtle text-secondary">
-                {idPaperSize === 'A4' ? 'A4 (210 × 297 ملم)' : '10 × 15 سم'}
-              </span>
-              <span className="flex items-center px-3 py-1 rounded-md bg-white text-black font-extrabold">
-                300 DPI
+            {/* Metric Card */}
+            <div className="mt-8 pt-6 border-t border-[rgba(214,235,253,0.1)] flex items-center justify-between">
+              <div>
+                <div className="text-3xl sm:text-4xl font-normal font-serif text-[#f0f0f0] tracking-tight">
+                  {content.metric.value}
+                </div>
+                <div className="text-xs text-[#a1a4a5] mt-0.5">
+                  {content.metric.label}
+                </div>
+              </div>
+              <span className="resend-badge font-mono">
+                جاهز فوراً
               </span>
             </div>
           </div>
 
-          {/* Main Grid Content with tab reveal animation key */}
-          <div
-            key={tabKey}
-            role="tabpanel"
-            id="features-tabpanel"
-            aria-labelledby={`feature-tab-${activeTab}`}
-            className="tab-content-reveal p-4 sm:p-8 grid lg:grid-cols-12 gap-6 sm:gap-8 items-center"
-          >
-            {/* Visual Interactive Preview Column Card (7 Cols) — Workspace UI */}
-            <div className="lg:col-span-7 bg-secondary rounded-xl border border-subtle relative overflow-hidden min-h-[420px] sm:min-h-[480px] group flex flex-col">
-              {/* Workspace Ruler Bar */}
-              <div className="relative h-6 shrink-0 bg-[#141414] border-b border-subtle select-none pointer-events-none z-20">
-                <div className="ruler-ticks absolute inset-x-3 top-1 bottom-1.5" aria-hidden />
-                <div className="absolute inset-0 flex items-end justify-between px-4 sm:px-6 pb-1 text-[8px] font-mono text-tertiary" dir="ltr" aria-hidden>
-                  <span>0</span>
-                  <span>50</span>
-                  <span>100</span>
-                  <span>150</span>
-                  <span>210</span>
-                </div>
-              </div>
-
-              {/* Workspace Canvas Body: Blueprint Grid + Tab Panels */}
-              <div className="flex-1 flex min-h-0 editor-grid-bg">
-
-              {/* ------------------------------------------------------------- */}
-              {/* 1. ID Photos Interactive Studio Sheet Preview */}
-              {/* ------------------------------------------------------------- */}
-              {activeTab === 'id' && (
-                <div className="w-full max-w-lg mx-auto space-y-4">
-                  {/* Interactive Control Toolbar */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-elevated border border-subtle text-xs font-mono">
-                    <div className="flex items-center gap-2">
-                      <span className="text-tertiary text-[10px] font-bold">الخلفية الموحدة:</span>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => setIdBgColor('white')}
-                          className={`w-5 h-5 rounded-full bg-white border cursor-pointer transition-transform ${idBgColor === 'white' ? 'scale-125 border-white ring-2 ring-white/50' : 'border-neutral-400 opacity-70'}`}
-                          title="خلفية بيضاء رسمية"
-                        />
-                        <button
-                          onClick={() => setIdBgColor('blue')}
-                          className={`w-5 h-5 rounded-full bg-[#1d4ed8] border cursor-pointer transition-transform ${idBgColor === 'blue' ? 'scale-125 border-white ring-2 ring-white/50' : 'border-neutral-400 opacity-70'}`}
-                          title="خلفية زرقاء رسمية"
-                        />
-                        <button
-                          onClick={() => setIdBgColor('gray')}
-                          className={`w-5 h-5 rounded-full bg-[#6b7280] border cursor-pointer transition-transform ${idBgColor === 'gray' ? 'scale-125 border-white ring-2 ring-white/50' : 'border-neutral-400 opacity-70'}`}
-                          title="خلفية رمادية رسمية"
-                        />
-                      </div>
+          {/* Right Column: Interactive Preview Canvas */}
+          <div className="lg:col-span-7 rounded-lg bg-[#191b1e] border border-[rgba(214,235,253,0.19)] p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden">
+            
+            {/* TAB 1: ID PHOTOS PREVIEW WITH PRECISION BIOMETRIC SVG OVERLAYS */}
+            {activeTab === 'id' && (
+              <div className="space-y-4">
+                {/* Controls toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#a1a4a5]">الخلفية:</span>
+                    <div className="flex items-center gap-1.5 p-1 rounded-md bg-[#191b1e] border border-[rgba(214,235,253,0.19)]">
+                      <button
+                        onClick={() => setIdBgColor('white')}
+                        className={`w-4 h-4 rounded bg-white cursor-pointer transition-all ${idBgColor === 'white' ? 'ring-2 ring-[#00a3ff]' : 'opacity-70'}`}
+                        title="أبيض"
+                      />
+                      <button
+                        onClick={() => setIdBgColor('blue')}
+                        className={`w-4 h-4 rounded bg-[#1d4ed8] cursor-pointer transition-all ${idBgColor === 'blue' ? 'ring-2 ring-[#00a3ff]' : 'opacity-70'}`}
+                        title="أزرق"
+                      />
+                      <button
+                        onClick={() => setIdBgColor('gray')}
+                        className={`w-4 h-4 rounded bg-[#4b5563] cursor-pointer transition-all ${idBgColor === 'gray' ? 'ring-2 ring-[#00a3ff]' : 'opacity-70'}`}
+                        title="رمادي"
+                      />
                     </div>
+                  </div>
 
-                    <div className="flex items-center gap-1 bg-secondary p-1 rounded-lg border border-subtle">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#a1a4a5]">الورقة:</span>
+                    <div className="flex p-0.5 rounded-md bg-[#191b1e] border border-[rgba(214,235,253,0.19)]">
                       <button
                         onClick={() => setIdPaperSize('A4')}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold transition-colors ${idPaperSize === 'A4' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
+                        className={`px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${idPaperSize === 'A4' ? 'bg-[#00a3ff] text-white' : 'text-[#a1a4a5]'}`}
                       >
-                        ورقة A4 (8 صور)
+                        A4
                       </button>
                       <button
                         onClick={() => setIdPaperSize('10x15')}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold transition-colors ${idPaperSize === '10x15' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
+                        className={`px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${idPaperSize === '10x15' ? 'bg-[#00a3ff] text-white' : 'text-[#a1a4a5]'}`}
                       >
-                        10×15 سم (4 صور)
+                        10×15
                       </button>
                     </div>
                   </div>
+                </div>
 
-                  {/* Studio Canvas Paper Sheet — ورقة بيضاء حقيقية للطباعة */}
-                  <div className="relative bg-white p-4 sm:p-5 rounded-xl shadow-[0_24px_60px_-16px_rgba(0,0,0,0.9)] space-y-3">
-                    {/* Print Crop Marks on Sheet Corners */}
-                    <span aria-hidden className="absolute -top-1 -start-1 w-3 h-3 border-t-2 border-s-2 border-black/50 rounded-tr" />
-                    <span aria-hidden className="absolute -top-1 -end-1 w-3 h-3 border-t-2 border-e-2 border-black/50 rounded-tl" />
-                    <span aria-hidden className="absolute -bottom-1 -start-1 w-3 h-3 border-b-2 border-s-2 border-black/50 rounded-br" />
-                    <span aria-hidden className="absolute -bottom-1 -end-1 w-3 h-3 border-b-2 border-e-2 border-black/50 rounded-bl" />
+                {/* Simulated Sheet Canvas with Vector Laser Cutmarks & ICAO Crosshairs */}
+                <div className="relative rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] p-4 sm:p-5 flex items-center justify-center min-h-[300px]">
+                  <div className={`grid ${idPaperSize === 'A4' ? 'grid-cols-4' : 'grid-cols-2'} gap-2.5 max-w-md w-full bg-white p-3 rounded shadow-lg relative`}>
+                    {/* SVG Corner Crop Target */}
+                    <svg className="absolute -top-2 -start-2 w-4 h-4 pointer-events-none text-black" viewBox="0 0 16 16">
+                      <path d="M0 8h6M8 0v6M8 10v6M10 8h6" stroke="currentColor" strokeWidth="1" />
+                    </svg>
 
-                    <div className="flex items-center justify-between text-xs border-b border-neutral-200 pb-2.5 font-mono">
-                      <span className="font-bold text-neutral-900 flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-neutral-900" />
-                        ورقة طباعة معاملات {idPaperSize}
-                      </span>
-                      <span className="text-[10px] font-mono text-white bg-neutral-900 px-2.5 py-0.5 rounded-md">
-                        40 × 32 ملم • 300DPI
-                      </span>
+                    {Array.from({ length: idPaperSize === 'A4' ? 8 : 4 }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={`relative rounded overflow-hidden aspect-[3/4] ${getBgStyle()} border border-neutral-300 flex items-center justify-center p-0.5`}
+                      >
+                        <img
+                          src={PASSPORT_IMG}
+                          alt="Passport Photo Preview"
+                          className="w-full h-full object-cover"
+                        />
+
+                        {/* First Slot SVG Biometric Calibration HUD */}
+                        {idx === 0 && (
+                          <svg className="absolute inset-0 w-full h-full pointer-events-none stroke-[#00a3ff]" viewBox="0 0 100 133" fill="none">
+                            {/* Head Crown Guide */}
+                            <line x1="20" y1="22" x2="80" y2="22" strokeWidth="0.8" strokeDasharray="2 2" />
+                            {/* Eye Axis with crosshair */}
+                            <line x1="15" y1="48" x2="85" y2="48" strokeWidth="0.8" />
+                            <circle cx="38" cy="48" r="3" strokeWidth="0.8" />
+                            <circle cx="62" cy="48" r="3" strokeWidth="0.8" />
+                            {/* Nose Centerline */}
+                            <line x1="50" y1="35" x2="50" y2="85" strokeWidth="0.8" strokeDasharray="2 2" />
+                            {/* Chin baseline */}
+                            <line x1="25" y1="88" x2="75" y2="88" strokeWidth="0.8" />
+                            {/* Head Oval */}
+                            <ellipse cx="50" cy="54" rx="26" ry="34" strokeWidth="0.8" strokeDasharray="3 2" />
+                          </svg>
+                        )}
+
+                        <span className="absolute bottom-0.5 inset-x-0 bg-black/85 text-[7px] font-mono text-center text-white py-0.5">
+                          40×32 ملم
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: SMART COLLAGE PREVIEW WITH WORKBENCH SHEET */}
+            {activeTab === 'collage' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)]">
+                  <span className="text-xs text-[#a1a4a5]">طريقة العرض:</span>
+                  <div className="flex p-0.5 rounded-md bg-[#191b1e] border border-[rgba(214,235,253,0.19)]">
+                    {(['hero', 'grid', 'album'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => setCollageLayout(mode)}
+                        className={`px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
+                          collageLayout === mode ? 'bg-[#00a3ff] text-white' : 'text-[#a1a4a5]'
+                        }`}
+                      >
+                        {mode === 'hero' ? 'طاولة القص الفعلية' : mode === 'grid' ? 'شبكي متساوٍ' : 'ألبوم عريض'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="relative rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] overflow-hidden min-h-[300px] flex items-center justify-center p-2">
+                  {collageLayout === 'hero' && (
+                    <div className="relative w-full h-[320px] rounded overflow-hidden">
+                      <img src={STUDIO_CUTTER_SHEET} alt="Studio Paper Cutter Workbench" className="w-full h-full object-cover rounded" />
+                      <div className="absolute bottom-3 start-3 bg-black/85 backdrop-blur-sm border border-white/10 px-3 py-1.5 rounded text-xs font-mono text-[#f0f0f0]">
+                        دقة التقطيع بالمليمتر: <span className="text-[#00a3ff]">±0.00 mm Zero Error</span>
+                      </div>
                     </div>
+                  )}
 
-                    {/* Photos Grid with Unclipped Photo Framing */}
-                    <div className={`grid gap-3 pt-1 ${idPaperSize === 'A4' ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-2'}`}>
-                      {(idPaperSize === 'A4' ? [1, 2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4]).map((n) => (
-                        <div
-                          key={n}
-                          className={`aspect-[3/4] ${getBgStyle()} rounded-lg border border-neutral-300 overflow-hidden relative group/img shadow-md transition-colors duration-300 flex items-center justify-center p-0.5 laser-bleed-wrapper`}
-                        >
-                          <img
-                            src={PASSPORT_IMG}
-                            alt="Passport Preview"
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-contain transition-transform duration-300 group-hover/img:scale-105"
-                          />
-
-                          {/* Dimension Overlay */}
-                          <div className="absolute bottom-0 inset-x-0 bg-black/90 text-[7px] font-mono text-center text-white py-0.5 font-bold">
-                            40 × 32 ملم
-                          </div>
-
-                          {/* Auto Crop Guide box overlay on 1st photo slot */}
-                          {n === 1 && (
-                            <div className="absolute inset-1 border border-dashed border-white rounded pointer-events-none flex items-center justify-center">
-                              <span className="bg-white text-black text-[7px] font-mono font-extrabold px-1 py-0.5 rounded shadow">
-                                توسيط تلقائي
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Laser Bleed Lines */}
-                          <div className="laser-bleed-line laser-bleed-top" style={{ top: '2px' }} />
-                          <div className="laser-bleed-line laser-bleed-bottom" style={{ bottom: '12px' }} />
-                          <div className="laser-bleed-line laser-bleed-left" style={{ left: '2px' }} />
-                          <div className="laser-bleed-line laser-bleed-right" style={{ right: '2px' }} />
+                  {collageLayout === 'grid' && (
+                    <div className="grid grid-cols-3 gap-2.5 max-w-md w-full">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="rounded bg-[#191b1e] border border-[rgba(214,235,253,0.19)] p-2 aspect-square relative overflow-hidden">
+                          <img src={PASSPORT_IMG} alt={`Grid ${i}`} className="w-full h-full object-cover rounded opacity-80" />
+                          <span className="absolute bottom-1 start-1 bg-black/80 text-[8px] font-mono text-white px-1 rounded">
+                            خلايا متساوية
+                          </span>
                         </div>
                       ))}
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* 2. Collage Interactive Layout Preview (Unclipped Framing) */}
-              {/* ------------------------------------------------------------- */}
-              {activeTab === 'collage' && (
-                <div className="w-full max-w-lg mx-auto space-y-4">
-                  {/* Layout Preset Selector Buttons */}
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-elevated border border-subtle text-xs font-mono">
-                    <span className="text-tertiary text-[10px] font-bold px-1">تخطيط الكولاج:</span>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => setCollageLayout('hero')}
-                        className={`px-3 py-1 rounded-md text-[10px] font-extrabold transition-colors ${collageLayout === 'hero' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
-                      >
-                        رئيسية + 2
-                      </button>
-                      <button
-                        onClick={() => setCollageLayout('grid')}
-                        className={`px-3 py-1 rounded-md text-[10px] font-extrabold transition-colors ${collageLayout === 'grid' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
-                      >
-                        شبكة 4X4 متساوية
-                      </button>
-                      <button
-                        onClick={() => setCollageLayout('album')}
-                        className={`px-3 py-1 rounded-md text-[10px] font-extrabold transition-colors ${collageLayout === 'album' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
-                      >
-                        ألبوم أفقي
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Collage Editor Sheet Canvas */}
-                  <div className="bg-elevated p-4 sm:p-5 rounded-xl border border-subtle space-y-3 relative shadow-xl">
-                    <div className="flex items-center justify-between text-xs border-b border-subtle pb-2.5 font-mono">
-                      <span className="font-bold text-white flex items-center gap-1.5">
-                        <LayoutGrid className="w-4 h-4 text-white" />
-                        تنسيق شبكي ديناميكي
-                      </span>
-                      <span className="text-[10px] font-mono text-white bg-secondary px-2.5 py-0.5 rounded-md border border-subtle">
-                        Gap: 3.5مم • الهامش: 5مم
-                      </span>
-                    </div>
-
-                    {/* Layout Variant Renderers with Ambient Blur Background + Full Unclipped Photo Framing */}
-                    {collageLayout === 'hero' && (
-                      <div className="grid grid-cols-12 gap-3 pt-1">
-                        {/* Hero Main Slot (120 x 80 mm) */}
-                        <div className="col-span-12 h-40 bg-primary rounded-xl border border-subtle overflow-hidden relative group/hero shadow-md flex items-center justify-center p-2 laser-bleed-wrapper">
-                          <img
-                            src={PASSPORT_IMG}
-                            alt="Collage Main Blur BG"
-                            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 scale-125 pointer-events-none"
-                          />
-                          <img
-                            src={PASSPORT_IMG}
-                            alt="Collage Main"
-                            className="relative z-10 max-h-full max-w-full object-contain transition-transform duration-300 group-hover/hero:scale-105 drop-shadow-md rounded"
-                          />
-                          <div className="absolute top-2 right-2 px-2.5 py-1 rounded-md bg-white text-black text-[9px] font-mono font-extrabold z-20">
-                            الفتحة الرئيسية (120 × 80 ملم)
-                          </div>
-                          <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/90 text-[8px] font-mono text-white border border-subtle z-20">
-                            DPI: 300
-                          </div>
-                          <div className="laser-bleed-line laser-bleed-top" style={{ top: '8px' }} />
-                          <div className="laser-bleed-line laser-bleed-bottom" style={{ bottom: '8px' }} />
-                          <div className="laser-bleed-line laser-bleed-left" style={{ left: '8px' }} />
-                          <div className="laser-bleed-line laser-bleed-right" style={{ right: '8px' }} />
-                        </div>
-
-                        {/* Sub Slots */}
-                        <div className="col-span-6 h-28 bg-primary rounded-xl border border-subtle overflow-hidden relative group/sub flex items-center justify-center p-2 laser-bleed-wrapper">
-                          <img src={PASSPORT_IMG} alt="Sub slot 1 blur" className="absolute inset-0 w-full h-full object-cover blur-lg opacity-25 scale-125 pointer-events-none" />
-                          <img src={PASSPORT_IMG} alt="Sub slot 1" className="relative z-10 max-h-full max-w-full object-contain group-hover/sub:scale-105 transition-transform drop-shadow" />
-                          <span className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/90 text-[8px] text-white font-mono z-20">60 × 40 mm</span>
-                          <div className="laser-bleed-line laser-bleed-top" style={{ top: '8px' }} />
-                          <div className="laser-bleed-line laser-bleed-bottom" style={{ bottom: '8px' }} />
-                          <div className="laser-bleed-line laser-bleed-left" style={{ left: '8px' }} />
-                          <div className="laser-bleed-line laser-bleed-right" style={{ right: '8px' }} />
-                        </div>
-                        <div className="col-span-6 h-28 bg-primary rounded-xl border border-subtle overflow-hidden relative group/sub flex items-center justify-center p-2 laser-bleed-wrapper">
-                          <img src={PASSPORT_IMG} alt="Sub slot 2 blur" className="absolute inset-0 w-full h-full object-cover blur-lg opacity-25 scale-125 pointer-events-none" />
-                          <img src={PASSPORT_IMG} alt="Sub slot 2" className="relative z-10 max-h-full max-w-full object-contain group-hover/sub:scale-105 transition-transform drop-shadow" />
-                          <span className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/90 text-[8px] text-white font-mono z-20">60 × 40 mm</span>
-                          <div className="laser-bleed-line laser-bleed-top" style={{ top: '8px' }} />
-                          <div className="laser-bleed-line laser-bleed-bottom" style={{ bottom: '8px' }} />
-                          <div className="laser-bleed-line laser-bleed-left" style={{ left: '8px' }} />
-                          <div className="laser-bleed-line laser-bleed-right" style={{ right: '8px' }} />
-                        </div>
-                      </div>
-                    )}
-
-                    {collageLayout === 'grid' && (
-                      <div className="grid grid-cols-2 gap-3 pt-1">
-                        {[1, 2, 3, 4].map((slot) => (
-                          <div key={slot} className="h-32 bg-primary rounded-xl border border-subtle overflow-hidden relative group/slot shadow-sm flex items-center justify-center p-2 laser-bleed-wrapper">
-                            <img src={PASSPORT_IMG} alt={`Grid slot ${slot} blur`} className="absolute inset-0 w-full h-full object-cover blur-lg opacity-25 scale-125 pointer-events-none" />
-                            <img src={PASSPORT_IMG} alt={`Grid slot ${slot}`} className="relative z-10 max-h-full max-w-full object-contain group-hover/slot:scale-105 transition-transform duration-300 drop-shadow" />
-                            <span className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/90 text-[8px] text-white font-mono z-20">90 × 60 mm</span>
-                            {slot === 1 && (
-                              <div className="absolute top-2 left-2 px-2 py-0.5 bg-white text-black text-[8px] font-mono font-extrabold rounded z-20">
-                                محاذاة ذكية
-                              </div>
-                            )}
-                            <div className="laser-bleed-line laser-bleed-top" style={{ top: '8px' }} />
-                            <div className="laser-bleed-line laser-bleed-bottom" style={{ bottom: '8px' }} />
-                            <div className="laser-bleed-line laser-bleed-left" style={{ left: '8px' }} />
-                            <div className="laser-bleed-line laser-bleed-right" style={{ right: '8px' }} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {collageLayout === 'album' && (
-                      <div className="grid grid-cols-3 gap-3 pt-1">
-                        {[1, 2, 3].map((slot) => (
-                          <div key={slot} className="h-44 bg-primary rounded-xl border border-subtle overflow-hidden relative group/album shadow-sm flex items-center justify-center p-2 laser-bleed-wrapper">
-                            <img src={PASSPORT_IMG} alt={`Album slot ${slot} blur`} className="absolute inset-0 w-full h-full object-cover blur-lg opacity-25 scale-125 pointer-events-none" />
-                            <img src={PASSPORT_IMG} alt={`Album slot ${slot}`} className="relative z-10 max-h-full max-w-full object-contain group-hover/album:scale-105 transition-transform duration-300 drop-shadow" />
-                            <span className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/90 text-[8px] text-white font-mono z-20">100 × 150 mm</span>
-                            <div className="laser-bleed-line laser-bleed-top" style={{ top: '8px' }} />
-                            <div className="laser-bleed-line laser-bleed-bottom" style={{ bottom: '8px' }} />
-                            <div className="laser-bleed-line laser-bleed-left" style={{ left: '8px' }} />
-                            <div className="laser-bleed-line laser-bleed-right" style={{ right: '8px' }} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* ------------------------------------------------------------- */}
-              {/* 3. AI Restoration Pixel-Perfect Split Polygon Slider Preview */}
-              {/* ------------------------------------------------------------- */}
-              {activeTab === 'ai' && (
-                <div className="w-full max-w-lg mx-auto space-y-4" dir="ltr">
-                  {/* Instruction Bar */}
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-elevated border border-subtle text-xs font-mono" dir="rtl">
-                    <span className="text-white font-bold flex items-center gap-1.5">
-                      <MoveHorizontal className="w-4 h-4 text-white" />
-                      اسحب الشريط لملاحظة الفرق الفوري:
-                    </span>
-                    <span className="text-[10px] font-mono text-tertiary bg-secondary px-2 py-0.5 rounded border border-subtle">
-                      CodeFormer w=0.85
-                    </span>
-                  </div>
-
-                  {/* Interactive Before / After Split Slider Container */}
-                  <div className="bg-elevated p-4 sm:p-5 rounded-xl border border-subtle space-y-3 relative shadow-xl select-none">
-                    <div className="flex items-center justify-between text-xs border-b border-subtle pb-2.5 font-mono" dir="rtl">
-                      <span className="font-bold text-white flex items-center gap-1.5">
-                        <Wand2 className="w-4 h-4 text-white" />
-                        معاينة الترميم المباشر (قبل / بعد)
-                      </span>
-                      <span className="text-[10px] font-mono text-white bg-primary px-2.5 py-0.5 rounded-md border border-subtle">
-                        معالجة مزدوجة AI
-                      </span>
-                    </div>
-
-                    {/* Interactive 100% Pixel-Aligned Split View Container */}
-                    <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-subtle bg-primary">
-                      
-                      {/* Layer 1: After Image Layer (HD Restored) - Always Positioned at Inset 0 */}
-                      <div className="absolute inset-0 flex items-center justify-center p-2">
-                        <img
-                          src={PASSPORT_IMG}
-                          alt="After HD Blur BG"
-                          className="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-125 pointer-events-none"
-                        />
-                        <img
-                          src={PASSPORT_IMG}
-                          alt="After HD"
-                          className="relative z-10 max-h-full max-w-full object-contain contrast-[1.12] brightness-[1.05]"
-                        />
-                        <span className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-white text-black font-mono text-[9px] font-extrabold shadow z-30">
-                          بعد (CodeFormer HD)
+                  {collageLayout === 'album' && (
+                    <div className="grid grid-cols-2 gap-3 max-w-md w-full">
+                      <div className="rounded bg-[#191b1e] border border-[rgba(214,235,253,0.19)] p-3 aspect-[3/4] relative overflow-hidden flex flex-col justify-end">
+                        <img src={PASSPORT_IMG} alt="Left page" className="w-full h-full object-cover rounded opacity-85 absolute inset-0" />
+                        <span className="relative z-10 bg-black/85 text-[10px] font-mono text-[#00a3ff] px-2 py-1 rounded">
+                          صفحة اليمين (A4)
                         </span>
                       </div>
-
-                      {/* Layer 2: Before Image Layer (Old/Damaged) - Clipped from the inline-start (right in RTL) */}
-                      <div
-                        className="absolute inset-0 flex items-center justify-center p-2 z-20 pointer-events-none"
-                        style={{
-                          clipPath: `polygon(${aiSplitPos}% 0, 100% 0, 100% 100%, ${aiSplitPos}% 100%)`,
-                        }}
-                      >
-                        <img
-                          src={PASSPORT_IMG}
-                          alt="Before Old Blur BG"
-                          className="absolute inset-0 w-full h-full object-cover blur-2xl grayscale opacity-30 scale-125 pointer-events-none"
-                        />
-                        <img
-                          src={PASSPORT_IMG}
-                          alt="Before Old"
-                          className="relative z-10 max-h-full max-w-full object-contain blur-[2px] grayscale contrast-75 opacity-70"
-                        />
-                        <span className="absolute top-3 right-3 px-2.5 py-1 rounded-md bg-black/90 font-mono text-[9px] font-bold text-tertiary shadow z-30">
-                          قبل (صورة قديمة/تالفة)
+                      <div className="rounded bg-[#191b1e] border border-[rgba(214,235,253,0.19)] p-3 aspect-[3/4] relative overflow-hidden flex flex-col justify-end">
+                        <img src={PASSPORT_IMG} alt="Right page" className="w-full h-full object-cover rounded opacity-85 absolute inset-0" />
+                        <span className="relative z-10 bg-black/85 text-[10px] font-mono text-[#a1a4a5] px-2 py-1 rounded">
+                          صفحة اليسار (A4)
                         </span>
                       </div>
-
-                      {/* Center Split Drag Handle Line */}
-                      <div
-                        className="absolute inset-y-0 w-0.5 bg-white cursor-ew-resize flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,1)] z-40 pointer-events-none"
-                        style={{ right: `${aiSplitPos}%` }}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-2xl border border-black/20">
-                          <ArrowLeftRight className="w-4 h-4 text-black" />
-                        </div>
-                      </div>
                     </div>
-
-                    {/* Interactive Slider Input */}
-                    <div className="pt-2 flex items-center gap-3 font-mono text-xs text-tertiary" dir="rtl">
-                      <span>قبل</span>
-                      <input
-                        type="range"
-                        min="5"
-                        max="95"
-                        value={aiSplitPos}
-                        onChange={(e) => setAiSplitPos(Number(e.target.value))}
-                        aria-label="المقارنة قبل وبعد الترميم بالذكاء الاصطناعي"
-                        aria-valuetext={`قبل ${aiSplitPos}% / بعد ${100 - aiSplitPos}%`}
-                        className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-white"
-                      />
-                      <span>بعد (HD)</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* 4. CMYK Interactive Channels Inspection Preview */}
-              {/* ------------------------------------------------------------- */}
-              {activeTab === 'cmyk' && (
-                <div className="w-full max-w-lg mx-auto space-y-4">
-                  {/* Channel Selector Controls */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-elevated border border-subtle text-xs font-mono">
-                    <span className="text-tertiary text-[10px] font-bold">قناة الألوان:</span>
-                    <div className="flex flex-wrap items-center gap-1">
-                      <button
-                        onClick={() => setCmykChannel('all')}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold transition-colors ${cmykChannel === 'all' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
-                      >
-                        CMYK كامل
-                      </button>
-                      <button
-                        onClick={() => setCmykChannel('c')}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold transition-colors ${cmykChannel === 'c' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
-                      >
-                        سماوي (C)
-                      </button>
-                      <button
-                        onClick={() => setCmykChannel('m')}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold transition-colors ${cmykChannel === 'm' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
-                      >
-                        أرجواني (M)
-                      </button>
-                      <button
-                        onClick={() => setCmykChannel('y')}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold transition-colors ${cmykChannel === 'y' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
-                      >
-                        أصفر (Y)
-                      </button>
-                      <button
-                        onClick={() => setCmykChannel('k')}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold transition-colors ${cmykChannel === 'k' ? 'bg-white text-black' : 'text-tertiary hover:text-white'}`}
-                      >
-                        أسود (K=100%)
-                      </button>
-                    </div>
-                  </div>
+            {/* TAB 3: AI RESTORATION PREVIEW WITH INTERACTIVE LOUPE */}
+            {activeTab === 'ai' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] text-xs">
+                  <span className="text-[#a1a4a5] flex items-center gap-1.5 font-mono">
+                    <Sliders className="w-3.5 h-3.5 text-[#00a3ff]" />
+                    معاينة استعادة الملامح الطبيعية:
+                  </span>
+                  <span className="font-mono text-[#00a3ff] px-2 py-0.5 rounded bg-[#191b1e] border border-[rgba(214,235,253,0.19)]">
+                    {aiSplitPos}% دقة HD
+                  </span>
+                </div>
 
-                  {/* CMYK Preview Sheet */}
-                  <div className="bg-elevated p-4 sm:p-5 rounded-xl border border-subtle space-y-3 relative shadow-xl">
-                    <div className="flex items-center justify-between text-xs border-b border-subtle pb-2.5 font-mono">
-                      <span className="font-bold text-white flex items-center gap-1.5">
-                        <Printer className="w-4 h-4 text-white" />
-                        فاحص قنوات ألوان المطابع
+                <div className="relative rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] overflow-hidden select-none min-h-[300px] flex items-center justify-center p-4">
+                  <div className="relative w-full max-w-xs aspect-[3/4] rounded overflow-hidden border border-[rgba(214,235,253,0.19)] shadow-2xl">
+                    {/* Restored Base */}
+                    <img
+                      src={PASSPORT_IMG}
+                      alt="AI Restored High Quality"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+
+                    {/* Raw Layer Clipped */}
+                    <div
+                      className="absolute inset-0 overflow-hidden border-e border-[#00a3ff]"
+                      style={{ width: `${aiSplitPos}%` }}
+                    >
+                      <img
+                        src={PASSPORT_IMG}
+                        alt="Raw Blur"
+                        className="absolute inset-0 w-full h-full object-cover filter contrast-75 brightness-90 blur-[1px] grayscale-[35%]"
+                        style={{ width: '100%', minWidth: '320px' }}
+                      />
+                      <span className="absolute top-2 start-2 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono text-[#a1a4a5] border border-[rgba(214,235,253,0.19)]">
+                        الأصلية (قبل)
                       </span>
-                      <button
-                        onClick={() => setShowCropMarks((v) => !v)}
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors cursor-pointer ${showCropMarks ? 'bg-white text-black border-white' : 'text-tertiary border-subtle'}`}
-                      >
-                        علامات القص +3مم: {showCropMarks ? 'تشغيل' : 'إيقاف'}
-                      </button>
                     </div>
 
-                    {/* Channel Simulation Filtered Photo with Ambient Blur BG */}
-                    <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-subtle bg-primary flex items-center justify-center p-3 laser-bleed-wrapper">
-                      <img
-                        src={PASSPORT_IMG}
-                        alt="CMYK Channel Blur BG"
-                        className={`absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-125 pointer-events-none transition-all duration-500 ${
-                          cmykChannel === 'c'
-                            ? 'hue-rotate-180'
-                            : cmykChannel === 'm'
-                            ? 'hue-rotate-270'
-                            : cmykChannel === 'y'
-                            ? 'sepia-100'
-                            : cmykChannel === 'k'
-                            ? 'grayscale-100'
-                            : ''
-                        }`}
-                      />
-                      <img
-                        src={PASSPORT_IMG}
-                        alt="CMYK Channel Inspection"
-                        className={`relative z-10 max-h-full max-w-full object-contain transition-all duration-500 rounded ${
-                          cmykChannel === 'c'
-                            ? 'hue-rotate-180 saturate-200'
-                            : cmykChannel === 'm'
-                            ? 'hue-rotate-270 saturate-200'
-                            : cmykChannel === 'y'
-                            ? 'sepia-100 saturate-200'
-                            : cmykChannel === 'k'
-                            ? 'grayscale-100 contrast-150'
-                            : 'contrast-105'
-                        }`}
-                      />
-
-                      {/* Optional Bleed & Crop Lines Overlay */}
-                      {showCropMarks && (
-                        <>
-                          <div className="absolute inset-4 border border-dashed border-white/60 pointer-events-none flex flex-col justify-between p-1 z-20">
-                            <div className="flex justify-between text-[8px] font-mono text-white">
-                              <span>خط القص +3مم</span>
-                              <span>امتداد K=100%</span>
-                            </div>
-                            <div className="flex justify-between text-[8px] font-mono text-white">
-                              <span>TIFF 300DPI</span>
-                              <span>جاهز للمطبعة</span>
-                            </div>
-                          </div>
-                          
-                          {/* Animated Laser Bleed Lines */}
-                          <div className="laser-bleed-line laser-bleed-top" style={{ top: '16px' }} />
-                          <div className="laser-bleed-line laser-bleed-bottom" style={{ bottom: '16px' }} />
-                          <div className="laser-bleed-line laser-bleed-left" style={{ left: '16px' }} />
-                          <div className="laser-bleed-line laser-bleed-right" style={{ right: '16px' }} />
-                        </>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 pt-1 font-mono text-[11px]">
-                      <div className="flex items-center justify-between text-secondary">
-                        <span>سماوي (C): 45%</span>
-                        <div className="w-36 h-2 bg-secondary rounded-full border border-subtle overflow-hidden">
-                          <div className="h-full bg-white/70 w-[45%]" />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-secondary">
-                        <span>أرجواني (M): 62%</span>
-                        <div className="w-36 h-2 bg-secondary rounded-full border border-subtle overflow-hidden">
-                          <div className="h-full bg-white/85 w-[62%]" />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-secondary">
-                        <span>أصفر (Y): 78%</span>
-                        <div className="w-36 h-2 bg-secondary rounded-full border border-subtle overflow-hidden">
-                          <div className="h-full bg-white/90 w-[78%]" />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-white font-bold">
-                        <span>أسود (K): 100% خالص</span>
-                        <div className="w-36 h-2 bg-secondary rounded-full border border-white overflow-hidden">
-                          <div className="h-full bg-white w-[100%]" />
-                        </div>
+                    {/* Split Line */}
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-[#00a3ff] pointer-events-none"
+                      style={{ left: `${aiSplitPos}%` }}
+                    >
+                      <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#000000] border-2 border-[#00a3ff] flex items-center justify-center shadow-lg">
+                        <MoveHorizontal className="w-3 h-3 text-[#00a3ff]" />
                       </div>
                     </div>
+
+                    <span className="absolute bottom-2 end-2 px-2 py-0.5 rounded bg-[#00a3ff] text-[10px] font-mono text-white">
+                      مُرممة (65/35)
+                    </span>
                   </div>
                 </div>
-              )}
 
-                {/* Vertical Tool Rail (على حافة الكانفاس) */}
-                <aside className="hidden sm:flex flex-col items-center gap-1 p-2 border-s border-subtle bg-elevated/70 shrink-0" aria-label="شريط الأدوات">
-                  {TOOLS.map((tool) => {
-                    const ToolIcon = tool.icon;
-                    return (
-                      <button
-                        key={tool.label}
-                        type="button"
-                        aria-label={tool.label}
-                        title={tool.label}
-                        className={`w-8 h-8 flex items-center justify-center rounded-md transition-colors cursor-pointer ${
-                          tool.active ? 'bg-white text-black' : 'text-tertiary hover:bg-elevated hover:text-white'
-                        }`}
-                      >
-                        <ToolIcon className="w-4 h-4" />
-                      </button>
-                    );
-                  })}
-                  <span className="w-6 h-px bg-white/10 my-1" aria-hidden />
+                <input
+                  type="range"
+                  min="5"
+                  max="95"
+                  value={aiSplitPos}
+                  onChange={(e) => setAiSplitPos(Number(e.target.value))}
+                  className="w-full h-1 bg-[#000000] rounded appearance-none cursor-pointer accent-[#00a3ff]"
+                  aria-label="مقارنة الترميم"
+                />
+              </div>
+            )}
+
+            {/* TAB 4: CMYK PRINT ENGINE WITH AUTHENTIC MACRO PRINT-LAB PHOTOGRAPHY */}
+            {activeTab === 'cmyk' && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-[#a1a4a5]">قناة اللون:</span>
+                    <div className="flex p-0.5 rounded-md bg-[#191b1e] border border-[rgba(214,235,253,0.19)]">
+                      {(['all', 'c', 'm', 'y', 'k'] as const).map((ch) => (
+                        <button
+                          key={ch}
+                          onClick={() => setCmykChannel(ch)}
+                          className={`px-2.5 py-1 rounded text-xs font-mono uppercase transition-colors cursor-pointer ${
+                            cmykChannel === ch ? 'bg-[#00a3ff] text-white' : 'text-[#a1a4a5]'
+                          }`}
+                        >
+                          {ch}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <button
-                    type="button"
-                    aria-label="تكبير العرض"
-                    title="تكبير العرض"
-                    className="w-8 h-8 flex items-center justify-center rounded-md text-tertiary hover:bg-elevated hover:text-white transition-colors cursor-pointer"
+                    onClick={() => setShowCropMarks((v) => !v)}
+                    className={`px-3 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
+                      showCropMarks ? 'bg-[#00a3ff]/20 text-[#00a3ff] border border-[#00a3ff]/40' : 'bg-[#191b1e] text-[#a1a4a5]'
+                    }`}
                   >
-                    <ZoomIn className="w-4 h-4" />
+                    {showCropMarks ? '✓ علامات تسجيل الألوان نشطة' : 'علامات التسجيل معطلة'}
                   </button>
-                </aside>
-              </div>
-
-              {/* Workspace Bottom Status Bar */}
-              <div className="h-7 shrink-0 bg-elevated/90 border-t border-subtle flex items-center justify-between px-3 sm:px-4 text-[9px] font-mono text-tertiary relative z-10">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-                  توليد تلقائي مفعّل
-                </span>
-                <span className="flex items-center gap-3" dir="ltr">
-                  <span className="hidden sm:inline">X: 210مم</span>
-                  <span className="hidden sm:inline">Y: 297مم</span>
-                  <span>Zoom 100%</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Feature Description & Big System Metric (5 Cols) */}
-            <div className="lg:col-span-5 space-y-6 text-right ps-0 lg:ps-4 relative z-10">
-              {/* System Badge */}
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-elevated border border-subtle text-white text-xs font-bold">
-                <Sliders className="w-3.5 h-3.5 text-white" />
-                <span>{content.badge}</span>
-              </span>
-
-              {/* Title */}
-              <h3 className="text-2xl sm:text-4xl font-black font-display text-white leading-tight">
-                {content.title}
-              </h3>
-
-              {/* Big System Metric — مرساة بصرية تُقرأ قبل أي نص */}
-              <div className="border-y border-subtle py-6">
-                <div className="text-4xl sm:text-5xl font-black font-mono text-white tracking-tight">
-                  {content.metric.value}
                 </div>
-                <div className="mt-1.5 text-xs sm:text-sm font-bold text-tertiary">
-                  {content.metric.label}
-                </div>
-              </div>
 
-              {/* One-Line Punch */}
-              <p className="text-secondary text-sm sm:text-base font-sans leading-relaxed font-medium">
-                {content.punch}
-              </p>
+                {/* Macro Photographic Print Lab Frame */}
+                <div className="relative rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] overflow-hidden min-h-[300px] flex items-center justify-center">
+                  <img
+                    src={CMYK_PHOTO}
+                    alt="CMYK Print Lab Macro Proof"
+                    className="w-full h-full object-cover max-h-[340px]"
+                  />
 
-              {/* Bullet Points */}
-              <ul className="space-y-3.5">
-                {content.points.map((point) => (
-                  <li key={point} className="flex items-start gap-3 text-xs sm:text-sm font-bold text-white">
-                    <div className="p-1 rounded-full bg-elevated border border-subtle text-white shrink-0 mt-0.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                  {/* Laser Registration Calibration HUD Overlay */}
+                  {showCropMarks && (
+                    <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
+                      <div className="flex items-center justify-between">
+                        <div className="bg-[#000000]/80 backdrop-blur-sm border border-[#00a3ff]/40 px-2.5 py-1 rounded text-[10px] font-mono text-[#f0f0f0]">
+                          PROFILE: <strong className="text-[#00a3ff]">Coated FOGRA39</strong>
+                        </div>
+                        <div className="bg-[#00a3ff] text-white px-2 py-0.5 rounded text-[10px] font-mono font-semibold">
+                          300 DPI READY
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] font-mono text-[#a1a4a5]">
+                        <div className="bg-[#000000]/80 backdrop-blur-sm px-2 py-1 rounded border border-white/10">
+                          CUT LINES: <span className="text-[#00a3ff]">K=100% Pure Black</span>
+                        </div>
+                        <div className="bg-[#000000]/80 backdrop-blur-sm px-2 py-1 rounded border border-white/10">
+                          REGISTRATION: <span className="text-[#00a3ff]">±0.05 mm Precision</span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="leading-relaxed">{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                  )}
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
     </section>
   );
 }
+

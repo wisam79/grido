@@ -1,520 +1,447 @@
 @import "tailwindcss";
 @import "@fontsource-variable/alyamama";
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+/* Thmanyah Serif Display (Headlines & High-Contrast Titles) */
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyahserifdisplay-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyahserifdisplay-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyahserifdisplay-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyahserifdisplay-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Thmanyah Sans (UI & Clean Body) */
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyahsans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyahsans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyahsans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Thmanyah Serif Text (Body & Editorial Copy) */
+@font-face {
+  font-family: 'Thmanyah Serif Text';
+  src: url('/fonts/thmanyahseriftext-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Text';
+  src: url('/fonts/thmanyahseriftext-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Text';
+  src: url('/fonts/thmanyahseriftext-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme inline {
-  --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'Alyamama Variable', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-sans: 'Thmanyah Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif;
+  --font-display: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif;
   --font-mono: 'JetBrains Mono', 'Space Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* Colors defined specifically to prevent Tailwind text/bg conflicts */
-  --color-bg-primary: #000000;
-  --color-bg-secondary: #121214;
-  --color-bg-elevated: #18181b;
+  /* Resend Design System Tokens */
+  --color-primary: #00a3ff;            /* Surgical Blue Primary CTA */
+  --color-primary-hover: #3b9eff;      /* Blue Mid (Hover) */
+  --color-blue-soft: #0081fd6b;        /* Blue Soft (Focus / Rings) */
+  --color-on-primary: #ffffff;
 
-  --color-border-subtle: #383842;
-  --color-border-glow: rgba(255, 255, 255, 0.5);
+  --color-ink: #f0f0f0;                /* Near-White Copy */
+  --color-body: #a1a4a5;               /* Secondary Text */
+  --color-mute: #52595b;               /* Placeholder & Muted Text */
 
-  /* لون العلامة الوحيد — يطابق أزرق واجهة التطبيق الفعلية داخل الـ Mockup والتوهجات */
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
+  --color-canvas: #000000;             /* Pure Photographic Black */
+  --color-canvas-raised: #191b1e;      /* Lifted Card & Chrome Surface */
+  --color-surface-card: #191b1e;
 
-  /* نقطة كسر صغيرة جداً — مستخدمة في عنوان الهيرو وعرض الـ Mockup */
+  --color-hairline: #b0c7d925;         /* System Low-Opacity Divider */
+  --color-hairline-card: rgba(214, 235, 253, 0.19); /* Translucent Blue-Tinted Card Border */
+
+  --color-link: #00a3ff;
+  --color-success: #11ff992d;
+  --color-error: #ff204756;
+  --color-warning: #ffc53d;
+  --color-orange-accent: #ff801f;
+
   --breakpoint-xs: 24rem;
 }
 
 :root {
-  /* Surface Background Colors */
-  --color-bg-primary: #000000;
-  --color-bg-secondary: #121214;
-  --color-bg-elevated: #18181b;
-
-  /* Typography Text Colors (design.md Section 2) */
-  --color-text-primary-var: #ffffff;
-  --color-text-secondary-var: #f0f0fa;
-  --color-text-tertiary-var: #999999;
-
-  /* Borders */
-  --color-border-subtle: #383842;
-  --color-border-glow: rgba(255, 255, 255, 0.5);
-
-  /* Mouse coordinates */
-  --mouse-x: 50%;
-  --mouse-y: 50%;
+  --color-canvas: #000000;
+  --color-canvas-raised: #191b1e;
+  --color-ink: #f0f0f0;
+  --color-body: #a1a4a5;
+  --color-mute: #52595b;
+  --color-primary: #00a3ff;
+  --color-hairline-card: rgba(214, 235, 253, 0.19);
+  --color-hairline: #b0c7d925;
 }
 
-/* Explicit Utility Classes for Surface & Typography Tokens */
-.bg-primary { background-color: var(--color-bg-primary) !important; }
-.bg-secondary { background-color: var(--color-bg-secondary) !important; }
-.bg-elevated { background-color: var(--color-bg-elevated) !important; }
-
-.text-primary { color: var(--color-text-primary-var) !important; }
-.text-secondary { color: var(--color-text-secondary-var) !important; }
-.text-tertiary { color: var(--color-text-tertiary-var) !important; }
-
-.border-subtle { border-color: var(--color-border-subtle) !important; }
-
-/* Vertical Rhythm (design.md Section 5.2 — 80px → 160px cinematic spacing) */
-.section-rhythm {
-  padding-block: clamp(80px, 10vw, 160px);
+/* Thmanyah Text Background Highlights (Dark Obsidian Identity) */
+.text-highlight {
+  background-color: rgba(0, 163, 255, 0.12);
+  color: #38bdf8;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 163, 255, 0.25);
+  display: inline;
 }
+
+.editorial-tag {
+  background-color: #191b1e;
+  border: 1px solid rgba(214, 235, 253, 0.19);
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: #f0f0f0;
+}
+
+
 
 * {
   box-sizing: border-box;
 }
 
 html, body {
-  font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary-var);
+  background-color: #000000;
+  color: #f0f0f0;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
   width: 100%;
 }
 
-h1, h2, h3, h4, h5, h6, .font-display {
-  font-family: 'Alyamama Variable', 'IBM Plex Sans Arabic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+h1, h2, h3, h4, h5, h6, .font-serif, .display-xl, .display-lg, .display-md, .display-sm {
+  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', Georgia, serif !important;
+  font-feature-settings: "liga" 1, "dlig" 1, "calt" 1, "swsh" 1, "cswh" 1, "ss01" 1, "ss02" 1, "ss03" 1, "ss04" 1, "cv01" 1, "cv02" 1 !important;
+  font-variant-ligatures: common-ligatures contextual discretionary-ligatures !important;
+  text-rendering: optimizeLegibility !important;
 }
 
-.font-mono {
-  font-family: 'JetBrains Mono', 'Space Mono', ui-monospace, SFMono-Regular, monospace;
+button, input, select, textarea, p, span, a, .font-sans {
+  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif;
+  font-feature-settings: "liga" 1, "calt" 1;
 }
 
-/* رابط «تخطَّ إلى المحتوى» — مخفي حتى التركيز عليه بلوحة المفاتيح (a11y) */
-.skip-link {
-  position: fixed;
-  top: 8px;
-  inset-inline-start: 8px;
-  z-index: 100;
-  transform: translateY(-200%);
-  transition: transform 0.2s ease;
-  background: #ffffff;
-  color: #000000;
-  font-weight: 800;
+.font-mono, code, pre, [dir="ltr"] .font-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+
+/* Resend Headline Voice: High-contrast serif with weight 400 and tight negative tracking */
+h1, h2, h3, h4, h5, h6, .font-serif, .font-display {
+  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
+  font-weight: 400;
+  font-feature-settings: "liga" 1, "dlig" 1, "calt" 1, "swsh" 1, "cswh" 1, "ss01" 1, "ss02" 1 !important;
+}
+
+
+.display-xl {
+  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
+  font-size: clamp(48px, 6.5vw, 96px);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.96px;
+}
+
+.display-lg {
+  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
+  font-size: clamp(36px, 4.5vw, 56px);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -2.8px;
+}
+
+
+.display-md {
+  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
+  font-size: clamp(28px, 3.2vw, 36px);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -1.4px;
+}
+
+.display-sm {
+  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.6px;
+}
+
+.body-lg {
+  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif !important;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 27px;
+  color: #a1a4a5;
+}
+
+.body-md {
+  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif !important;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #a1a4a5;
+}
+
+.body-sm {
+  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif !important;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+
+}
+
+.body-sm-strong {
+  font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 21px;
+}
+
+.caption {
+  font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif;
   font-size: 12px;
-  padding: 8px 16px;
-  border-radius: 999px;
-}
-.skip-link:focus-visible {
-  transform: translateY(0);
-  outline: 2px solid #ffffff;
-  outline-offset: 2px;
+  font-weight: 400;
+  line-height: 18px;
 }
 
-/* Hide scrollbar for clean mobile horizontal scroll */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.caption-strong {
+  font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
 }
 
-/* Workspace blueprint grid + ruler ticks (FeaturesTabs studio workspace card) */
-.editor-grid-bg {
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 26px 26px;
+/* Resend Components */
+/* 1. button-primary: 4px flat cornered, surgical blue fill, white text, 14px / 600 */
+.button-primary, .resend-btn-primary {
+  background-color: #00a3ff !important;
+  color: #ffffff !important;
+  font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 20px !important;
+  border-radius: 4px !important;
+  padding: 12px 20px !important;
+  border: 1px solid transparent !important;
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  text-decoration: none !important;
 }
 
-.ruler-ticks {
-  background-image: repeating-linear-gradient(to right, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 8px);
-  background-position: bottom;
-  background-size: 100% 65%;
-  background-repeat: no-repeat;
+.button-primary:hover, .resend-btn-primary:hover {
+  background-color: #3b9eff !important;
 }
 
-/* Glassmorphism Dark Mockup Surface (design.md Section 6.1) */
-.app-mockup {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border-subtle);
-  backdrop-filter: blur(20px);
-  border-radius: 16px;
+.button-primary:active, .resend-btn-primary:active {
+  transform: scale(0.99);
 }
 
-/* Spotlight Glow Cards (design.md Section 4.2 & 4.3) */
-.spotlight-card {
-  position: relative;
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 16px;
-  overflow: hidden;
-  isolation: isolate;
-  transition: border-color 0.3s ease, transform 0.3s ease;
+/* 2. nav-cta-get-started: white pill CTA in navigation */
+.nav-cta-get-started, .resend-btn-white-pill {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 20px !important;
+  border-radius: 9999px !important;
+  padding: 6px 16px !important;
+  border: 1px solid transparent !important;
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  text-decoration: none !important;
 }
 
-.spotlight-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(255, 255, 255, 0.06),
-    transparent 40%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 0;
+.nav-cta-get-started:hover, .resend-btn-white-pill:hover {
+  background-color: #f0f0f0 !important;
 }
 
-.spotlight-card:hover::before {
-  opacity: 1;
+/* 3. button-secondary: transparent ghost pill */
+.button-secondary, .resend-btn-ghost {
+  background-color: transparent !important;
+  color: #f0f0f0 !important;
+  font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  border-radius: 9999px !important;
+  padding: 6px 16px !important;
+  border: 1px solid transparent !important;
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  text-decoration: none !important;
 }
 
-.spotlight-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: radial-gradient(
-    250px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    var(--color-border-glow),
-    transparent 40%
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 1;
+.button-secondary:hover, .resend-btn-ghost:hover {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-.spotlight-card:hover::after {
-  opacity: 1;
+/* 4. banner-announcement: raised surface with hairline-card border */
+.banner-announcement, .resend-announcement {
+  background-color: #191b1e !important;
+  color: #f0f0f0 !important;
+  border: 1px solid rgba(214, 235, 253, 0.19) !important;
+  border-radius: 9999px !important;
+  padding: 6px 16px !important;
+  font-size: 14px !important;
+  font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: border-color 0.2s ease !important;
 }
 
-/* Magnetic Button Base (design.md Section 4.4) */
-.magnetic-pill {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  will-change: transform;
+.banner-announcement:hover, .resend-announcement:hover {
+  border-color: rgba(214, 235, 253, 0.35) !important;
 }
 
-/* Floating 3D Graphic Animation — حركة ناعمة ومخففة جِداً */
-@keyframes float {
-  from { transform: translateY(0); }
-  to   { transform: translateY(-2px); }
+/* 5. feature-card & card: #191b1e with hairline-card border and 8px radius */
+.feature-card, .resend-card {
+  background-color: #191b1e !important;
+  color: #f0f0f0 !important;
+  border: 1px solid rgba(214, 235, 253, 0.19) !important;
+  border-radius: 8px !important;
+  padding: 24px !important;
+  transition: border-color 0.2s ease !important;
 }
 
-.benefit-icon {
-  animation: float 6s ease-in-out infinite alternate;
-  transition: transform 0.2s ease-out;
+.feature-card:hover, .resend-card:hover {
+  border-color: rgba(214, 235, 253, 0.35) !important;
 }
 
-.spotlight-card:hover .benefit-icon {
-  transform: translateY(-2px);
+/* 6. code-block / terminal surface */
+.code-block, .resend-code {
+  background-color: #191b1e !important;
+  color: #f0f0f0 !important;
+  border: 1px solid rgba(214, 235, 253, 0.19) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 12px !important;
 }
 
-/* 3D Perspective tilt - Active on desktop screens (تخفيف زوايا الإمالة لمنع التشتيت) */
-@media (min-width: 1024px) {
-  .perspective-container {
-    perspective: 2000px;
-  }
-
-  .perspective-mockup {
-    transform: rotateY(-1deg) rotateX(0.5deg);
-    transition: transform 0.3s ease-out;
-    transform-style: preserve-3d;
-  }
-
-  .perspective-container:hover .perspective-mockup {
-    transform: rotateY(var(--rot-y, 0deg)) rotateX(var(--rot-x, 0deg)) scale(1.002);
-  }
-
-  /* ── Multi-layer 3D depth (parallax inside the mockup — عمق خفيف للغاية) ── */
-  .layer-depth {
-    transform-style: preserve-3d;
-    transition: transform 0.3s ease-out;
-    will-change: transform;
-  }
-  .depth-1 { --depth: 4px; }
-  .depth-2 { --depth: 8px; }
-  .depth-3 { --depth: 12px; }
-  .perspective-container:hover .layer-depth {
-    transform: translateZ(var(--depth));
-  }
+/* 7. form-input */
+.form-input, .resend-input {
+  background-color: #191b1e !important;
+  color: #f0f0f0 !important;
+  border: 1px solid rgba(214, 235, 253, 0.19) !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  height: 40px !important;
+  outline: none !important;
 }
 
-/* ── Fake 3D title text-shadow depth (SpaceX embossed look) ── */
-.title-depth {
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+.form-input:focus, .resend-input:focus {
+  border-color: #00a3ff !important;
+  box-shadow: 0 0 0 2px rgba(0, 163, 255, 0.2) !important;
 }
 
-/* ── Floating particle dots (إلغاء الجسيمات لتهدئة الشاشة كلياً) ── */
-.particle {
-  display: none !important;
+/* 8. badge */
+.resend-badge {
+  background-color: #191b1e !important;
+  color: #a1a4a5 !important;
+  border: 1px solid rgba(214, 235, 253, 0.19) !important;
+  border-radius: 9999px !important;
+  padding: 2px 10px !important;
+  font-size: 12px !important;
 }
 
-/* ── Orbiting ring (SVG loops around a glow core) ── */
-@keyframes orbit {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to   { transform: translate(-50%, -50%) rotate(360deg); }
-}
-.orbit-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: var(--size, 220px);
-  height: var(--size, 220px);
-  transform: translate(-50%, -50%);
-  animation: orbit var(--orbit-dur, 32s) linear infinite;
-  pointer-events: none;
-}
-.orbit-ring .orbit-dot {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 24px rgba(255, 255, 255, 0.35);
+/* Section Spacing */
+.section-band {
+  padding-top: 64px;
+  padding-bottom: 64px;
+  background-color: #000000;
 }
 
-/* ── Subtle scanline sweep across a surface ── */
-@keyframes scanline {
-  0%   { transform: translateY(-100%); }
-  100% { transform: translateY(400%); }
-}
-.scanline {
-  position: absolute;
-  inset-inline: 0;
-  height: 25%;
-  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.04), transparent);
-  animation: scanline 10s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* ── Benefit card ring background ── */
-.benefit-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 150%;
-  padding-top: 150%;
-  transform: translate(-50%, -50%);
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(255, 255, 255, 0.06) 60deg,
-    transparent 120deg,
-    transparent 180deg,
-    rgba(255, 255, 255, 0.05) 240deg,
-    transparent 300deg
-  );
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  pointer-events: none;
-}
-.spotlight-card:hover .benefit-ring {
-  opacity: 1;
-  animation: orbit 30s linear infinite;
-}
-
-/* ── Infinite marquee track ── */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-.marquee-track {
-  animation: marquee 48s linear infinite;
-}
-.marquee-track:hover {
-  animation-play-state: paused;
-}
-
-/* ── HUD Floating chips parallax ── */
-.float-chip {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
-  animation: float 9s ease-in-out infinite alternate;
-}
-
-/* ── Marquee edge fade ── */
-.marquee-mask {
-  mask-image: linear-gradient(to left, transparent, black 12%, black 88%, transparent);
-  -webkit-mask-image: linear-gradient(to left, transparent, black 12%, black 88%, transparent);
-}
-
-/* ── Glow pulse for CTA banner beacon (opacity-only for cheap compositing) ── */
-@keyframes beacon-pulse {
-  0%, 100% { opacity: 0.35; }
-  50%      { opacity: 0.6; }
-}
-.beacon-glow {
-  animation: beacon-pulse 6s ease-in-out infinite;
-}
-
-/* Cinematic Reveal Animations — ناعمة وفورية بدون ضبابية (No Blur) */
-@keyframes cinematicReveal {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (min-width: 768px) {
+  .section-band {
+    padding-top: 96px;
+    padding-bottom: 96px;
   }
 }
 
-.reveal-on-scroll {
-  animation: cinematicReveal 0.25s ease-out forwards;
-  animation-play-state: paused;
-  will-change: opacity, transform;
-}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-.reveal-on-scroll.is-revealed,
-.reveal-on-scroll.is-visible {
-  animation-play-state: running;
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #000000; }
+::-webkit-scrollbar-thumb { background: #191b1e; border: 1px solid rgba(214, 235, 253, 0.19); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #52595b; }
 
-/* Cinematic Sequential Stagger — حركة فورية فائقة النعومة */
-.reveal-on-scroll .stagger-1,
-.reveal-on-scroll .stagger-2,
-.reveal-on-scroll .stagger-3,
-.reveal-on-scroll .stagger-4,
-.reveal-on-scroll .stagger-5 {
-  opacity: 0;
-  transform: translateY(2px);
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-}
-
-.reveal-on-scroll.is-revealed .stagger-1,
-.reveal-on-scroll.is-revealed .stagger-2,
-.reveal-on-scroll.is-revealed .stagger-3,
-.reveal-on-scroll.is-revealed .stagger-4,
-.reveal-on-scroll.is-revealed .stagger-5,
-.reveal-on-scroll.is-visible .stagger-1,
-.reveal-on-scroll.is-visible .stagger-2,
-.reveal-on-scroll.is-visible .stagger-3,
-.reveal-on-scroll.is-visible .stagger-4,
-.reveal-on-scroll.is-visible .stagger-5 {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.reveal-on-scroll.is-revealed .stagger-1, .reveal-on-scroll.is-visible .stagger-1 { transition-delay: 10ms; }
-.reveal-on-scroll.is-revealed .stagger-2, .reveal-on-scroll.is-visible .stagger-2 { transition-delay: 20ms; }
-.reveal-on-scroll.is-revealed .stagger-3, .reveal-on-scroll.is-visible .stagger-3 { transition-delay: 30ms; }
-.reveal-on-scroll.is-revealed .stagger-4, .reveal-on-scroll.is-visible .stagger-4 { transition-delay: 40ms; }
-.reveal-on-scroll.is-revealed .stagger-5, .reveal-on-scroll.is-visible .stagger-5 { transition-delay: 50ms; }
-
-/* Tab content mini cinematic reveal — خفيفة وسريعة */
-.tab-content-reveal {
-  animation: miniCinematicReveal 0.2s ease-out forwards;
-}
-
-@keyframes miniCinematicReveal {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-  .perspective-mockup { transform: none !important; }
-  .reveal-on-scroll { opacity: 1 !important; filter: none !important; transform: none !important; }
-  .benefit-icon { animation: none !important; }
-  .particle, .orbit-ring, .scanline, .benefit-ring, .marquee-track, .beacon-glow { animation: none !important; }
-}
-
-/* Custom scrollbar for desktop */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #000000; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
-
-/* --- WOW Factor UI Animations --- */
-
-/* Aurora Light Beams (monochrome — design.md Section 1.2, static glow for GPU safety) */
-.aurora-bg {
-  position: absolute;
-  inset: -50%;
-  background: 
-    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.055), transparent 50%),
-    radial-gradient(ellipse at 20% 40%, rgba(255, 255, 255, 0.04), transparent 40%),
-    radial-gradient(ellipse at 80% 60%, rgba(255, 255, 255, 0.05), transparent 60%);
-  filter: blur(60px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* 3D Tilt Glow */
-.tilt-glow-layer {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    400px circle at var(--tilt-x, 50%) var(--tilt-y, 50%),
-    rgba(255, 255, 255, 0.15),
-    transparent 50%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 10;
-}
-.perspective-container:hover .tilt-glow-layer {
-  opacity: 1;
-}
-
-/* Laser Bleed Lines */
-@keyframes laser-scan {
-  0% { opacity: 0.2; box-shadow: 0 0 0px transparent; }
-  50% { opacity: 1; box-shadow: 0 0 8px rgba(255, 50, 50, 0.8); }
-  100% { opacity: 0.2; box-shadow: 0 0 0px transparent; }
-}
-
-.laser-bleed-line {
-  position: absolute;
-  background-color: rgba(255, 50, 50, 0.7);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 20;
-}
-
-.laser-bleed-wrapper:hover .laser-bleed-line {
-  opacity: 1;
-  animation: laser-scan 1.5s infinite ease-in-out;
-}
-
-.laser-bleed-top { top: 3mm; left: 0; right: 0; height: 1px; }
-.laser-bleed-bottom { bottom: 3mm; left: 0; right: 0; height: 1px; }
-.laser-bleed-left { left: 3mm; top: 0; bottom: 0; width: 1px; }
-.laser-bleed-right { right: 3mm; top: 0; bottom: 0; width: 1px; }
-
-/* --- GPU & Layer Compositing Optimizations --- */
-.perspective-mockup, .float-chip, .aurora-bg, .orbit-ring, .beacon-glow {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-.perspective-mockup {
-  will-change: transform;
-  transform-style: preserve-3d;
-}
-
-.float-chip {
-  will-change: transform;
 }
 

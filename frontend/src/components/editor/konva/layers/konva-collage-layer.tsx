@@ -67,7 +67,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   const availH = canvasHeight - 2 * margin;
 
   // ✂️ حساب خطوط الشبكة الممتدة المفردة لمنتصف الفجوة 50% (Single Midpoint Cut Lines)
-  const renderCutLines = () => {
+  const cutLinesData = React.useMemo(() => {
     if (!collageShowCutLines || slots.length === 0) return null;
 
     const colLefts = new Set<number>();
@@ -117,6 +117,13 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
     const maxX = xCutLines[xCutLines.length - 1];
     const minY = yCutLines[0];
     const maxY = yCutLines[yCutLines.length - 1];
+
+    return { xCutLines, yCutLines, minX, maxX, minY, maxY };
+  }, [collageShowCutLines, slots, margin, availW, availH, gap]);
+
+  const renderCutLines = () => {
+    if (!cutLinesData) return null;
+    const { xCutLines, yCutLines, minX, maxX, minY, maxY } = cutLinesData;
 
     return (
       <Group listening={false}>

@@ -237,24 +237,25 @@ func (s *MediaService) SaveImageFromBase64(base64Data string) (string, error) {
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
 	tmpPath := newPath + ".tmp"
+	defer func() {
+		_ = os.Remove(tmpPath)
+	}()
 
 	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return "", fmt.Errorf("open tmp file: %w", err)
 	}
 	if _, err := f.Write(decoded); err != nil {
-		f.Close()
+		_ = f.Close()
 		return "", fmt.Errorf("write tmp file: %w", err)
 	}
 	if err := f.Sync(); err != nil {
-		f.Close()
+		_ = f.Close()
 		return "", fmt.Errorf("sync tmp file: %w", err)
 	}
 	if err := f.Close(); err != nil {
 		return "", fmt.Errorf("close tmp file: %w", err)
 	}
-
-	defer os.Remove(tmpPath)
 
 	if err := os.Rename(tmpPath, newPath); err != nil {
 		return "", fmt.Errorf("rename file: %w", err)

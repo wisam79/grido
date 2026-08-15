@@ -254,24 +254,31 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 
 	newName := fmt.Sprintf("img_%d.png", time.Now().UnixNano())
 	newPath := filepath.Join(mediaDir, newName)
+	tmpPath := newPath + ".tmp"
+	defer func() {
+		_ = os.Remove(tmpPath)
+	}()
 
-	f, err := os.Create(newPath)
+	f, err := os.Create(tmpPath)
 	if err != nil {
 		return "", fmt.Errorf("create file for saving: %w", err)
 	}
 
-	var encodeErr error
-	defer func() {
-		f.Close()
-		if encodeErr != nil {
-			os.Remove(newPath)
-		}
-	}()
-
 	encoder := png.Encoder{CompressionLevel: png.BestSpeed}
-	encodeErr = encoder.Encode(f, outImg)
-	if encodeErr != nil {
-		return "", fmt.Errorf("save final image: %w", encodeErr)
+	if err := encoder.Encode(f, outImg); err != nil {
+		_ = f.Close()
+		return "", fmt.Errorf("encode final image: %w", err)
+	}
+	if err := f.Sync(); err != nil {
+		_ = f.Close()
+		return "", fmt.Errorf("sync final image: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		return "", fmt.Errorf("close final image: %w", err)
+	}
+
+	if err := os.Rename(tmpPath, newPath); err != nil {
+		return "", fmt.Errorf("save final image: %w", err)
 	}
 
 	return "/local-image/" + newName, nil

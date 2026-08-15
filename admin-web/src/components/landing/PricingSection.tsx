@@ -1,4 +1,4 @@
-import { Check, Crown, Download } from 'lucide-react';
+import { Check, Download, MessageCircle } from 'lucide-react';
 import { SectionHeading } from './SectionHeading';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
@@ -12,86 +12,97 @@ interface Plan {
   highlighted?: boolean;
 }
 
-// الخطط الحقيقية كما في التطبيق — الحصص اليومية مطابقة للخادم (5/15/50)
 const PLANS: Plan[] = [
   {
     id: 'trial',
     title: 'التجريبية (7 أيام)',
-    audience: 'تجربة مجانية كاملة الميزات',
+    audience: 'تجربة مجانية كاملة الميزات بدون قيود',
     features: [
       'تجربة مجانية كاملة لمدة 7 أيام',
-      'قص وتنسيق صور الهوية والمعاملات',
-      'مصمم كولاج ديناميكي كامل',
-      'طباعة عالية الدقة 300DPI مع خطوط القص',
-      'الذكاء الاصطناعي لترميم الوجوه والتجميع',
+      'قص وتنسيق صور الهوية والمعاملات في 3 ثوانٍ',
+      'مصمم كولاج شبكي ديناميكي كامل',
+      'طباعة عالية الدقة 300DPI مع علامات القص',
+      'ترميم الوجوه بالذكاء الاصطناعي',
+      'يعمل محلياً بالكامل بدون إنترنت',
     ],
-    cta: { label: 'ابدأ التجربة المجانية (7 أيام)', href: GITHUB_RELEASE_DOWNLOAD_URL, external: true },
+    cta: { label: 'ابدأ التجربة المجانية', href: GITHUB_RELEASE_DOWNLOAD_URL, external: true },
   },
   {
     id: 'pro',
-    title: 'الاحترافية',
-    audience: 'للاستوديوهات العاملة يومياً',
+    title: 'الاحترافية (PRO)',
+    audience: 'للاستوديوهات ومحلات التصوير العاملة يومياً',
     features: [
-      'كل المزايا بدون حد زمني',
+      'تفعيل دائم بدون أي حد زمني',
       'تصدير نظيف بدون أي علامة مائية',
-      'عزل الخلفية بالذكاء الاصطناعي محلياً',
-      'ترميم الوجوه بالذكاء الاصطناعي يومياً',
+      'عزل الخلفية بالذكاء الاصطناعي محلياً وبنقرة واحدة',
+      'ترميم ملامح الوجه بالذكاء الاصطناعي يومياً',
       'ترميم الكولاج دفعة واحدة (AI Batch)',
-      'تحديثات تلقائية موقعة وموثوقة',
+      'تحديثات تلقائية مجانية وموقعة رقمياً',
+      'دعم فني مباشر عبر واتساب',
     ],
-    cta: { label: 'تواصل للتفعيل الفوري', href: '#faq' },
+    cta: {
+      label: 'تفعيل النسخة الاحترافية',
+      href: 'https://wa.me/9647811942002?text=' + encodeURIComponent('مرحباً، أود تفعيل النسخة الاحترافية (Pro) لتطبيق Grido Studio'),
+      external: true,
+    },
     highlighted: true,
   },
   {
     id: 'enterprise',
-    title: 'المؤسسات',
-    audience: 'للمطابع وسلاسل الاستوديوهات',
+    title: 'المؤسسات والمطابع',
+    audience: 'للمطابع التجارية وسلاسل الاستوديوهات',
     features: [
-      'كل مزايا النسخة الاحترافية',
-      'ترميم مكثف بالذكاء الاصطناعي يومياً',
+      'كل مزايا النسخة الاحترافية بالكامل',
+      'ترميم مكثف بالذكاء الاصطناعي مع حصص موسعة',
+      'تراخيص متعددة لعدة أجهزة بنفس المعمل',
       'خيار التفعيل الدائم (مدى الحياة)',
-      'أولوية قصوى في الدعم الفني',
+      'أولوية قصوى في الدعم الفني والتخصيص',
     ],
-    cta: { label: 'تواصل مع الوكيل المعتمد', href: '#faq' },
+    cta: {
+      label: 'تواصل مع الوكيل المعتمد',
+      href: 'https://wa.me/9647811942002?text=' + encodeURIComponent('مرحباً، أود الاستفسار عن باقة المؤسسات والمطابع (Enterprise) لتطبيق Grido Studio'),
+      external: true,
+    },
   },
 ];
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="relative section-rhythm border-t border-subtle bg-transparent overflow-hidden">
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="pricing" className="section-band border-t border-[rgba(214,235,253,0.19)] bg-[#000000] text-[#f0f0f0]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          icon={Crown}
-          eyebrow="خطط الترخيص والتجربة"
-          title={<>تجربة مجانية لمدة 7 أيام… ثم تفعيل سليم لعملك</>}
-          subtitle="جرب جميع الميزات والذكاء الاصطناعي مجاناً لمدة أسبوع كامل، ثم فعّل الباقة المناسبة لمطبعتك."
-          index="07"
+          eyebrow="خطط الترخيص والتفعيل"
+          title="تجربة مجانية لمدة 7 أيام… ثم تفعيل دائم لمطبعتك"
+          subtitle="جرّب كافة الميزات والذكاء الاصطناعي مجاناً لمدة أسبوع كامل، ثم اختر الباقة المناسبة لحجم عملك."
+          index="06"
         />
 
-        <div className="stagger-4 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
           {PLANS.map((plan) => (
             <article
               key={plan.id}
-              className={`spotlight-card rounded-2xl p-6 sm:p-8 flex flex-col text-right relative overflow-hidden bg-secondary transition-transform duration-500 hover:scale-[1.02] ${
-                plan.highlighted ? 'border border-white/60' : 'border border-subtle'
+              className={`rounded-lg p-6 sm:p-8 flex flex-col text-right relative bg-[#191b1e] border ${
+                plan.highlighted
+                  ? 'border-[#00a3ff]'
+                  : 'border-[rgba(214,235,253,0.19)]'
               }`}
             >
               {plan.highlighted && (
-                <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-white text-black text-[10px] font-extrabold">
+                <span className="absolute top-4 left-4 px-2.5 py-0.5 rounded bg-[#00a3ff] text-white text-[10px] font-mono">
                   الأكثر طلباً
                 </span>
               )}
 
-              <div className="relative z-10 flex flex-col h-full space-y-5">
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-black font-display text-white">{plan.title}</h3>
-                  <p className="text-tertiary text-xs font-medium">{plan.audience}</p>
+              <div className="flex flex-col h-full space-y-6">
+                <div className="space-y-1">
+                  <h3 className="text-xl font-normal font-serif text-[#f0f0f0]">{plan.title}</h3>
+                  <p className="text-[#a1a4a5] text-xs">{plan.audience}</p>
                 </div>
 
-                <ul className="space-y-3 pt-4 border-t border-subtle flex-1">
+                <ul className="space-y-3 pt-4 border-t border-[rgba(214,235,253,0.19)] flex-1">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-xs sm:text-sm font-semibold text-secondary">
-                      <Check className="w-4 h-4 text-white shrink-0 mt-0.5" />
+                    <li key={feature} className="flex items-start gap-2 text-xs sm:text-sm text-[#a1a4a5]">
+                      <Check className="w-4 h-4 text-[#00a3ff] shrink-0 mt-0.5" />
                       <span className="leading-relaxed">{feature}</span>
                     </li>
                   ))}
@@ -100,13 +111,17 @@ export function PricingSection() {
                 <a
                   href={plan.cta.href}
                   {...(plan.cta.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className={`magnetic-pill mt-2 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-extrabold text-sm transition-all duration-300 cursor-pointer ${
+                  className={`mt-4 flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer ${
                     plan.highlighted
-                      ? 'bg-white text-black border border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.35)]'
-                      : 'bg-elevated text-secondary border border-subtle hover:border-white hover:text-white'
+                      ? 'button-primary !w-full'
+                      : 'button-secondary !w-full'
                   }`}
                 >
-                  {plan.cta.external && <Download className="w-3.5 h-3.5 shrink-0" />}
+                  {plan.highlighted ? (
+                    <MessageCircle className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <Download className="w-4 h-4 shrink-0" />
+                  )}
                   <span>{plan.cta.label}</span>
                 </a>
               </div>
@@ -114,10 +129,11 @@ export function PricingSection() {
           ))}
         </div>
 
-        <p className="stagger-5 mt-8 text-center text-[11px] font-extrabold text-tertiary">
-          الأسعار عند التفعيل عبر الوكيل المعتمد — بدون اشتراكات شهرية مفروضة
+        <p className="mt-8 text-center text-xs font-mono text-[#a1a4a5]">
+          تفعيل فوري عبر الوكيل المعتمد • بدون أي اشتراكات إجبارية أو رسوم خفية
         </p>
       </div>
     </section>
   );
 }
+

@@ -81,6 +81,23 @@ if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", handleBeforeUnload);
 }
 
+/**
+ * ⚡ استدعاء مسبق للنموذج في الخلفية أثناء خمول التطبيق لتصفير زمن أول نقرة
+ */
+export function warmupBgRemovalWorker() {
+  try {
+    if (typeof window === "undefined" || typeof Worker === "undefined") return;
+    const worker = getWorker();
+    worker.postMessage({
+      type: "warmup",
+      wasmBaseUrl: `${window.location.origin}/wasm`,
+      modelUrl: `${window.location.origin}/models/selfie_multiclass.tflite`,
+    });
+  } catch (err) {
+    console.debug("[useBgRemoval] Warmup skipped:", err);
+  }
+}
+
 export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void) {
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => {

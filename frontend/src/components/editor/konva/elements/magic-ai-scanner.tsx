@@ -9,6 +9,7 @@ interface MagicAiScannerProps {
   width: number;
   height: number;
   rotation?: number;
+  cornerRadius?: number;
 }
 
 export const MagicAiScanner = React.memo(function MagicAiScanner({
@@ -18,6 +19,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
   width,
   height,
   rotation = 0,
+  cornerRadius = 0,
 }: MagicAiScannerProps) {
   const groupRef = useRef<Konva.Group>(null);
   const borderRef = useRef<Konva.Rect>(null);
@@ -30,6 +32,8 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
   useEffect(() => {
     const group = groupRef.current;
     if (!group) return;
+
+    const layer = group.getLayer() || group.getStage()?.getLayers()[0];
 
     const anim = new Konva.Animation((frame) => {
       if (!frame) return;
@@ -47,14 +51,14 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
       if (circle2Ref.current) circle2Ref.current.y((currentScanPos - 20 + height) % height);
       if (circle3Ref.current) circle3Ref.current.y((currentScanPos * 1.3) % height);
 
-      // Sync position instantly if target node is moving (dragging)
-      if (targetNodeRef?.current) {
+      // Sync position instantly if target node is moving (dragging) and is a sibling, not the parent
+      if (targetNodeRef?.current && group.getParent() !== targetNodeRef.current) {
         group.x(targetNodeRef.current.x());
         group.y(targetNodeRef.current.y());
         group.rotation(targetNodeRef.current.rotation());
       }
 
-    }, group.getLayer());
+    }, layer || undefined);
 
     anim.start();
 
@@ -72,6 +76,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
         y={0}
         width={width}
         height={height}
+        cornerRadius={cornerRadius}
         stroke="#38bdf8"
         strokeWidth={3}
         opacity={0.6}

@@ -618,6 +618,28 @@ export function inferSmartDocumentAspect(corners: Point[]): "free" | "a4_p" | "a
  *  OpenCV WASM detection (primary) with JS fallback
  * ============================================================ */
 
+function runJsDetection(
+  src: HTMLCanvasElement | HTMLImageElement,
+  sw: number,
+  sh: number,
+  originalWidth: number,
+  originalHeight: number
+): Point[] | null {
+  const jsCanvas = document.createElement("canvas");
+  jsCanvas.width = sw;
+  jsCanvas.height = sh;
+  const jsCtx = jsCanvas.getContext("2d", { willReadFrequently: true });
+  let jsCorners: Point[] | null = null;
+  if (jsCtx) {
+    jsCtx.drawImage(src, 0, 0, sw, sh);
+    const smallData = jsCtx.getImageData(0, 0, sw, sh);
+    jsCorners = autoDetectDocumentCorners(smallData, sw, sh, originalWidth, originalHeight);
+  }
+  jsCanvas.width = 0;
+  jsCanvas.height = 0;
+  return jsCorners;
+}
+
 export interface DetectionResult {
   corners: Point[] | null;
   confidence: number;
@@ -634,32 +656,22 @@ export async function detectDocumentAuto(
   const sw = Math.max(1, Math.round(originalWidth * procScale));
   const sh = Math.max(1, Math.round(originalHeight * procScale));
 
-  // Run JS detector on small image data
-  const jsCanvas = document.createElement("canvas");
-  jsCanvas.width = sw;
-  jsCanvas.height = sh;
-  const jsCtx = jsCanvas.getContext("2d");
-  let jsCorners: Point[] | null = null;
-  if (jsCtx) {
-    jsCtx.drawImage(src, 0, 0, sw, sh);
-    const smallData = jsCtx.getImageData(0, 0, sw, sh);
-    jsCorners = autoDetectDocumentCorners(smallData, sw, sh, originalWidth, originalHeight);
-  }
-  jsCanvas.width = 0;
-  jsCanvas.height = 0;
-
   const cv = await loadOpenCV();
   if (!cv) {
+    const jsCorners = runJsDetection(src, sw, sh, originalWidth, originalHeight);
     return { corners: jsCorners, confidence: 0.5, method: "js" };
   }
 
-  // OpenCV path: Process on downscaled canvas for super-fast performance (<20ms)
+  // OpenCV path: Process on downscaled canvas for super-fast performance (<15ms)
   try {
     const cvCanvas = document.createElement("canvas");
     cvCanvas.width = sw;
     cvCanvas.height = sh;
-    const cvCtx = cvCanvas.getContext("2d");
-    if (!cvCtx) return { corners: jsCorners, confidence: 0.5, method: "js" };
+    const cvCtx = cvCanvas.getContext("2d", { willReadFrequently: true });
+    if (!cvCtx) {
+      const jsCorners = runJsDetection(src, sw, sh, originalWidth, originalHeight);
+      return { corners: jsCorners, confidence: 0.5, method: "js" };
+    }
     cvCtx.drawImage(src, 0, 0, sw, sh);
 
     const srcMat = cv.imread(cvCanvas);
@@ -698,40 +710,23 @@ export async function detectDocumentAuto(
 
         if (approx.rows === 4) {
           const area = cv.contourArea(approx);
-          if (area >= imgArea * 0.08 && area <= imgArea * 0.98) {
-            const pts: Point[] = [];
-            const data32 = approx.data32S;
-            if (data32 && data32.length >= 8) {
-              for (let r = 0; r < 4; r++) {
-                pts.push({ x: data32[r * 2], y: data32[r * 2 + 1] });
-              }
-              const sorted = sortCornerPoints(pts);
+          const areaRatio = area / imgArea;
 
-              // Check angles near 90 deg
-              let angleDev = 0;
-              for (let k = 0; k < 4; k++) {
-                const prev = sorted[(k + 3) % 4];
-                const curr = sorted[k];
-                const next = sorted[(k + 1) % 4];
-                const v1x = prev.x - curr.x, v1y = prev.y - curr.y;
-                const v2x = next.x - curr.x, v2y = next.y - curr.y;
-                const dot = v1x * v2x + v1y * v2y;
-                const m1 = Math.hypot(v1x, v1y), m2 = Math.hypot(v2x, v2y);
-                const angle = (m1 && m2) ? Math.acos(Math.max(-1, Math.min(1, dot / (m1 * m2)))) * (180 / Math.PI) : 0;
-                angleDev += Math.abs(90 - angle);
+          if (areaRatio > 0.08 && areaRatio < 0.98) {
+            const isConv = cv.isContourConvex(approx);
+            if (isConv) {
+              const pts: Point[] = [];
+              for (let j = 0; j < 4; j++) {
+                pts.push({
+                  x: Math.round(approx.data32S[j * 2] / procScale),
+                  y: Math.round(approx.data32S[j * 2 + 1] / procScale),
+                });
               }
-              const avgDev = angleDev / 4;
-              const skewness = avgDev / 90;
 
-              if (skewness < 0.6) {
-                const score = (area / imgArea) * (1 - skewness * 0.5);
-                if (score > bestScore) {
-                  bestScore = score;
-                  bestCorners = sorted.map((p) => ({
-                    x: Math.min(originalWidth, Math.max(0, Math.round(p.x / procScale))),
-                    y: Math.min(originalHeight, Math.max(0, Math.round(p.y / procScale))),
-                  }));
-                }
+              const score = areaRatio;
+              if (score > bestScore) {
+                bestScore = score;
+                bestCorners = sortCornerPoints(pts);
               }
             }
           }
@@ -743,10 +738,19 @@ export async function detectDocumentAuto(
 
     evaluateContours(contours);
 
-    // Method B: Adaptive Threshold (helps with low contrast / shadows)
-    if (bestScore < 0.15) {
+    // Method B: Adaptive Threshold (for low contrast / shadow images)
+    if (!bestCorners || bestScore < 0.2) {
       const thresh = new cv.Mat();
-      cv.adaptiveThreshold(blurred, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2);
+      cv.adaptiveThreshold(
+        gray,
+        thresh,
+        255,
+        cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv.THRESH_BINARY,
+        11,
+        2
+      );
+
       const contoursAdaptive = new cv.MatVector();
       const hierAdaptive = new cv.Mat();
       cv.findContours(thresh, contoursAdaptive, hierAdaptive, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
@@ -778,10 +782,12 @@ export async function detectDocumentAuto(
     console.warn("[OpenCV] Auto detection exception, using JS fallback:", err);
   }
 
+  const jsCorners = runJsDetection(src, sw, sh, originalWidth, originalHeight);
   return {
     corners: jsCorners,
     confidence: 0.5,
     method: jsCorners ? "js" : "default",
   };
 }
+
 

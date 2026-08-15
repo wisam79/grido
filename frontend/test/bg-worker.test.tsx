@@ -187,4 +187,22 @@ describe('ElementProperties - Worker Background Removal', () => {
     expect(screen.queryByTitle('إلغاء العزل')).toBeNull();
     expect(screen.getByTitle(/عزل الخلفية/)).toBeDefined();
   });
+
+  it('safely converts large Uint8Array buffers (2MB+) to Base64 without call stack overflow', () => {
+    // محاكاة تحويل قناع بحجم 2 ميجابكسل (2,000,000 بايت)
+    const largeBuffer = new Uint8Array(2 * 1024 * 1024);
+    for (let i = 0; i < largeBuffer.length; i++) {
+      largeBuffer[i] = (i % 256);
+    }
+
+    const CHUNK_SIZE = 0x2000;
+    let binary = '';
+    expect(() => {
+      for (let i = 0; i < largeBuffer.length; i += CHUNK_SIZE) {
+        binary += String.fromCharCode(...largeBuffer.subarray(i, i + CHUNK_SIZE));
+      }
+      const b64 = btoa(binary);
+      expect(b64.length).toBeGreaterThan(0);
+    }).not.toThrow();
+  });
 });

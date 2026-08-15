@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Text as KonvaText, Rect as KonvaRect } from "react-konva";
+import { Text as KonvaText, Rect as KonvaRect, Group } from "react-konva";
 import Konva from "konva";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
@@ -15,7 +15,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   onTap, 
   onChange, 
   canvasWidth: stageCanvasWidth, 
-  canvasHeight,
+  canvasHeight, 
   setActiveGuides, 
   elementRef, 
   snapToGrid, 
@@ -28,7 +28,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const editingTextId = useEditorStore((state) => state.editingTextId);
   const canvasWidth = useEditorStore((state) => state.canvasWidth) || 2480;
   const hasAnimatedRef = React.useRef(false);
-  const bgRef = useRef<any>(null);
+  const textRef = useRef<any>(null);
 
   const {
     onDragStart,
@@ -69,9 +69,9 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   useEffect(() => {
-    const node = elementRef.current;
-    if (node) {
-      const actualHeight = node.height() / canvasHeight;
+    const textNode = textRef.current;
+    if (textNode) {
+      const actualHeight = textNode.height() / canvasHeight;
       // تجاهل إذا كان الارتفاع المحسوب مطابقاً لما قامنا بتعيينه سابقاً
       if (lastSetHeightRef.current !== null && Math.abs(actualHeight - lastSetHeightRef.current) < 0.001) {
         return;
@@ -81,7 +81,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         onChangeRef.current({ height: actualHeight });
       }
     }
-  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight, elementRef]);
+  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight]);
 
   const flipped = element.flipX === true;
   const flippedY = element.flipY === true;
@@ -102,103 +102,78 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     renderText = rawText.replace(/ /g, extraSpaces);
   }
 
-  // خلفية النص الاختيارية — مستطيل غير تفاعلي خلف النص بنفس الحدود والدوران.
-  // ⚠️ تُزامَن يدوياً مع موضع عقدة النص أثناء السحب/التحويل لأن الـ store يبقى
-  // على الإحداثيات القديمة حتى dragEnd — بدون المزامنة تتخلف الخلفية «عنصراً ثانياً».
   const hasBg = !!element.textBgColor && element.textBgColor !== "transparent";
   const sharedX = flipped ? (element.x + element.width) * stageCanvasWidth : element.x * stageCanvasWidth;
   const sharedY = flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight;
   const sharedScaleY = flippedY ? -1 : 1;
   const sharedOpacity = editingTextId === element.id ? 0 : element.opacity;
 
-  // مزامنة الخلفية عبر أحداث Konva المباشرة على عقدة النص — تعمل من أي مصدر حركة:
-  // سحب فردي (onDragMove)، سحب جماعي (تُحرَّك العقدة من معالج العنصر القائد)،
-  // أو تحويل Transformer أثناء السحب. تحديث الـ store عند dragEnd/transformEnd
-  // يعيد ضبط الخلفية بقيم props النهائية تلقائياً.
-  useEffect(() => {
-    const textNode = elementRef.current;
-    if (!textNode || !hasBg) return;
-    const handler = () => {
-      const bgNode = bgRef.current;
-      if (!bgNode) return;
-      bgNode.x(textNode.x());
-      bgNode.y(textNode.y());
-      bgNode.rotation(textNode.rotation());
-      bgNode.scaleX(textNode.scaleX());
-      bgNode.scaleY(textNode.scaleY());
-      textNode.getLayer()?.batchDraw();
-    };
-    textNode.on("xChange.grido yChange.grido rotationChange.grido scaleXChange.grido scaleYChange.grido", handler);
-    return () => {
-      textNode.off("xChange.grido yChange.grido rotationChange.grido scaleXChange.grido scaleYChange.grido");
-    };
-  }, [hasBg, element.id, elementRef]);
-
   return (
-    <>
-      {hasBg && (
-        <KonvaRect
-          ref={bgRef}
-          x={sharedX}
-          y={sharedY}
-          width={w}
-          height={h}
-          scaleX={flipped ? -1 : 1}
-          scaleY={sharedScaleY}
-          rotation={element.rotation}
-          opacity={sharedOpacity}
-          visible={element.visible !== false}
-          fill={element.textBgColor}
-          listening={false}
-          perfectDrawEnabled={false}
-        />
-      )}
-    <KonvaText
+    <Group
       ref={elementRef}
-      text={renderText}
       x={sharedX}
       y={sharedY}
       width={w}
+      height={h}
       scaleX={flipped ? -1 : 1}
       scaleY={sharedScaleY}
-      rotation={element.rotation}
+      rotation={element.rotation || 0}
       opacity={sharedOpacity}
       visible={element.visible !== false}
       id={element.id}
-      perfectDrawEnabled={false}
-      globalCompositeOperation={element.globalCompositeOperation as any || "source-over"}
-      shadowColor={element.shadowColor}
-      shadowBlur={element.shadowBlur || 0}
-      shadowOffsetX={element.shadowOffsetX || 0}
-      shadowOffsetY={element.shadowOffsetY || 0}
-      shadowOpacity={element.shadowOpacity ?? 0}
+      draggable={!element.locked && isSelected}
+      onDragStart={onDragStart}
+      dragBoundFunc={dragBoundFunc}
+      onDragMove={onDragMove}
+      onDragEnd={onDragEnd}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       onClick={onClick}
       onTap={onTap}
       onDblClick={onDblClick}
       onDblTap={onDblClick}
-      fontSize={element.fontSize || 16}
-      fontStyle={[
-        element.fontStyle === "italic" ? "italic" : "",
-        element.fontWeight ? String(element.fontWeight) : "400",
-      ].filter(Boolean).join(" ")}
-      {...getFillProps(element, w, h)}
-      fontFamily={element.fontFamily || "sans-serif"}
-      align={element.textAlign || "center"}
-      lineHeight={element.lineHeight ?? 1.2}
-      letterSpacing={effectiveLetterSpacing}
-      stroke={element.strokeWidth ? (element.stroke || "#000000") : undefined}
-      strokeWidth={element.strokeWidth || undefined}
-      textDecoration={element.textDecoration || ""}
-      wrap="none"
-      ellipsis={true}
-      draggable={!element.locked && isSelected}
-      onDragStart={onDragStart}
-      dragBoundFunc={dragBoundFunc}
-      onDragMove={onDragMove}
-      onDragEnd={onDragEnd}
-    />
-    </>
+    >
+      {hasBg && (
+        <KonvaRect
+          x={0}
+          y={0}
+          width={w}
+          height={h}
+          fill={element.textBgColor}
+          listening={false}
+          perfectDrawEnabled={false}
+        />
+      )}
+      <KonvaText
+        ref={textRef}
+        x={0}
+        y={0}
+        width={w}
+        text={renderText}
+        perfectDrawEnabled={false}
+        globalCompositeOperation={element.globalCompositeOperation as any || "source-over"}
+        shadowColor={element.shadowColor}
+        shadowBlur={element.shadowBlur || 0}
+        shadowOffsetX={element.shadowOffsetX || 0}
+        shadowOffsetY={element.shadowOffsetY || 0}
+        shadowOpacity={element.shadowOpacity ?? 0}
+        fontSize={element.fontSize || 16}
+        fontStyle={[
+          element.fontStyle === "italic" ? "italic" : "",
+          element.fontWeight ? String(element.fontWeight) : "400",
+        ].filter(Boolean).join(" ")}
+        {...getFillProps(element, w, h)}
+        fontFamily={element.fontFamily || "sans-serif"}
+        align={element.textAlign || "center"}
+        lineHeight={element.lineHeight ?? 1.2}
+        letterSpacing={effectiveLetterSpacing}
+        stroke={element.strokeWidth ? (element.stroke || "#000000") : undefined}
+        strokeWidth={element.strokeWidth || undefined}
+        textDecoration={element.textDecoration || ""}
+        wrap="none"
+        ellipsis={true}
+        listening={false}
+      />
+    </Group>
   );
 }, propsAreEqual);

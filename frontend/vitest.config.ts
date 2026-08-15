@@ -16,6 +16,7 @@ export default defineConfig({
     setupFiles: ['./test/setup.ts'],
     globals: true,
     css: true,
+    pool: 'threads',
     server: {
       deps: {
         inline: ['konva', 'react-konva']

@@ -130,7 +130,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   return createPortal(
     <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[9000] no-print font-cairo select-none animate-in fade-in-50 slide-in-from-top-3 duration-200">
-      <div className="bg-card/95 backdrop-blur-xl border border-primary/30 shadow-2xl rounded-full px-3 py-1.5 flex items-center gap-1.5 text-foreground">
+      <div className="bg-card/90 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-[0_12px_36px_rgba(0,0,0,0.22)] rounded-full px-3.5 py-1.5 flex items-center gap-1.5 text-foreground ring-1 ring-black/5 dark:ring-white/5">
         
         {/* وضع الكولاج - الخلية المحددة */}
         {selectedSlot && (

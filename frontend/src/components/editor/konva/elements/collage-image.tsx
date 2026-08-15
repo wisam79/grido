@@ -198,6 +198,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
           y={0}
           width={width}
           height={height}
+          cornerRadius={cornerRadius}
         />
       )}
     </Group>

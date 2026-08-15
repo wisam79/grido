@@ -22,8 +22,14 @@ describe('UI Components Unit Tests', () => {
   });
 
   it('renders Badge component with default and custom variants', () => {
-    render(<Badge variant="secondary">ميزة جديدة</Badge>);
+    const { rerender } = render(<Badge variant="secondary">ميزة جديدة</Badge>);
     expect(screen.getByText('ميزة جديدة')).toBeInTheDocument();
+
+    rerender(<Badge variant="destructive">تحذير</Badge>);
+    expect(screen.getByText('تحذير')).toBeInTheDocument();
+
+    rerender(<Badge variant="outline">إطار</Badge>);
+    expect(screen.getByText('إطار')).toBeInTheDocument();
   });
 
   it('renders Input component and handles text change', () => {
@@ -41,9 +47,15 @@ describe('UI Components Unit Tests', () => {
     expect(screen.getByText('البريد الإلكتروني')).toBeInTheDocument();
   });
 
-  it('renders Separator component correctly', () => {
-    const { container } = render(<Separator orientation="horizontal" />);
-    expect(container.firstChild).toBeInTheDocument();
+  it('renders Separator component with horizontal and vertical orientation', () => {
+    const { container, rerender } = render(<Separator orientation="horizontal" />);
+    const sep = container.querySelector('[data-slot="separator"]');
+    expect(sep).toBeInTheDocument();
+    expect(sep).toHaveAttribute('data-orientation', 'horizontal');
+
+    rerender(<Separator orientation="vertical" />);
+    const sepVert = container.querySelector('[data-slot="separator"]');
+    expect(sepVert).toHaveAttribute('data-orientation', 'vertical');
   });
 
   it('renders Switch component and toggles checked state', () => {

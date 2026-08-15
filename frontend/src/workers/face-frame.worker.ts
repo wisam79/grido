@@ -38,7 +38,13 @@ interface CancelRequest {
   requestId: number;
 }
 
-type WorkerRequest = FrameRequest | CancelRequest;
+interface WarmupRequest {
+  type: "warmup";
+  wasmBaseUrl: string;
+  modelUrl: string;
+}
+
+type WorkerRequest = FrameRequest | CancelRequest | WarmupRequest;
 
 const ctx: Worker = self as unknown as Worker;
 
@@ -177,15 +183,15 @@ async function handleFrame(req: FrameRequest) {
     const pngBlob = await outCanvas.convertToBlob({ type: "image/png" });
     const buffer = new Uint8Array(await pngBlob.arrayBuffer());
 
-    // تحويل البايتات إلى Base64 على كتل لمنع تجاوز المكدس.
-    const CHUNK_SIZE = 0x8000;
-    const chunks: string[] = [];
+    // تحويل البايتات إلى Base64 بحجم كتل آمن ومضاد لفيض المكدس
+    const CHUNK_SIZE = 0x2000;
+    let binary = "";
     for (let i = 0; i < buffer.length; i += CHUNK_SIZE) {
-      chunks.push(String.fromCharCode(...buffer.subarray(i, i + CHUNK_SIZE)));
+      binary += String.fromCharCode(...buffer.subarray(i, i + CHUNK_SIZE));
     }
 
     postResult(requestId, {
-      pngBase64: btoa(chunks.join("")),
+      pngBase64: btoa(binary),
       outW: cropW,
       outH: cropH,
       detectedMs,
@@ -207,6 +213,11 @@ ctx.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const data = e.data;
   if (data.type === "frame") {
     void handleFrame(data);
+  } else if (data.type === "warmup") {
+    // ⚡ تهيئة واستدعاء مسبق لنموذج الوجه أثناء خمول التطبيق
+    void getOrCreateLandmarker(data.wasmBaseUrl, data.modelUrl).catch((err) => {
+      console.debug("[Face-Frame Worker] Warmup deferred:", err);
+    });
   } else if (data.type === "cancel") {
     if (activeRequestId === data.requestId) {
       activeRequestId = 0;

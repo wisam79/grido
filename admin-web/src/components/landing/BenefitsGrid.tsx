@@ -1,103 +1,84 @@
-import { Sparkles } from 'lucide-react';
+import { Monitor, LayoutGrid, Sparkles, Zap, Printer } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { SectionHeading } from './SectionHeading';
 
 const BENEFITS: {
-  img: string;
+  icon: LucideIcon;
   title: string;
   description: string;
 }[] = [
   {
-    img: '/3d-monitor.png',
-    title: 'يدعم كل الأجهزة',
-    description: 'يعمل على جميع إصدارات ويندوز، خفيف ولا يستهلك موارد الجهاز.',
+    icon: Monitor,
+    title: 'خفيف ويدعم كل الأجهزة',
+    description: 'يعمل بسلاسة فائقة على جميع إصدارات ويندوز، خفيف ولا يستهلك الرام والمعالج.',
   },
   {
-    img: '/3d-edit.png',
-    title: 'سهولة الاستخدام',
-    description: 'واجهة هندسية نظيفة تناسب الجميع بدون الحاجة لخبرة فوتوشوب.',
+    icon: LayoutGrid,
+    title: 'واجهة هندسية فائقة السهولة',
+    description: 'واجهة نظيفة قائمة على الأيقونات تناسب الجميع بدون الحاجة لأي خبرة سابقة في فوتوشوب.',
   },
   {
-    img: '/3d-shield.png',
-    title: 'جودة احترافية HD',
-    description: 'تحسين تلقائي لملامح الوجه وتوازن الألوان والإضاءة بالذكاء الاصطناعي.',
+    icon: Sparkles,
+    title: 'جودة استوديو وترميم HD',
+    description: 'استعادة ملامح الوجه ومسام البشرة الطبيعية وتوازن الإضاءة بالذكاء الاصطناعي.',
   },
   {
-    img: '/3d-zap.png',
-    title: 'توفير الوقت والجهد',
-    description: 'أتمتة كاملة في توزيع الصور والقص والحفظ بنقرة واحدة خلال 3 ثوانٍ.',
+    icon: Zap,
+    title: 'توفير الوقت والأرباح',
+    description: 'أتمتة كاملة لقص وتوزيع الصور والحفظ بنقرة واحدة خلال 3 ثوانٍ فقط.',
   },
   {
-    img: '/3d-printer.png',
+    icon: Printer,
     title: 'جاهز للطباعة فوراً',
-    description: 'إعدادات احترافية تدعم CMYK و DPI عالية تناسب جميع المطابع والمعامل.',
+    description: 'دعم كامل لمعايير CMYK و 300 DPI الاحترافية المتوافقة مع جميع طابعات الاستوديوهات.',
   },
 ];
 
 export function BenefitsGrid() {
   return (
-    <section id="benefits" className="relative section-rhythm border-t border-subtle bg-transparent overflow-hidden">
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <section id="benefits" className="section-band border-t border-[rgba(214,235,253,0.19)] bg-[#000000] text-[#f0f0f0]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <SectionHeading
-          icon={Sparkles}
-          eyebrow="المزايا المتقدمة"
-          title={<>لماذا يختار أصحاب الاستوديوهات <span className="text-secondary">GRIDO STUDIO</span>؟</>}
-          subtitle="سرعة فائقة، دقة عالية، وبدون تعقيد."
-          index="04"
+          eyebrow="المزايا والقدرات"
+          title="لماذا يختار أصحاب الاستوديوهات Grido Studio؟"
+          subtitle="سرعة خارقة، دقة متناهية، وتوفير حقيقي للوقت والجهد والمصروفات."
+          index="05"
         />
 
-        {/* 5 Cards Row adhering to design.md Section 6.4 */}
-        <div className="stagger-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {BENEFITS.map((benefit, index) => (
-            <div
-              key={benefit.title}
-              className="spotlight-card rounded-2xl p-6 sm:p-7 flex flex-row sm:flex-col items-center justify-start sm:justify-between text-right sm:text-center group relative overflow-hidden gap-4 sm:gap-0 cursor-default bg-secondary border border-subtle hover:scale-[1.03] transition-transform duration-500"
-            >
-              {/* حلقة SVG مدارية دوّارة تظهر عند hover خلف الأيقونة */}
-              <span aria-hidden className="benefit-ring" />
-
-              {/* High Resolution 3D Studio Graphic Asset with Float Animation + Parallax Glow */}
+        {/* 5 Cards Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {BENEFITS.map((benefit, index) => {
+            const Icon = benefit.icon;
+            return (
               <div
-                className="benefit-icon relative w-16 h-16 sm:w-28 sm:h-28 sm:mb-5 shrink-0 flex items-center justify-center"
-                style={{ animationDelay: `${index * 0.25}s` }}
+                key={benefit.title}
+                className="rounded-lg p-6 flex flex-col items-start justify-between text-start relative bg-[#191b1e] border border-[rgba(214,235,253,0.19)] transition-colors min-h-[220px]"
               >
-                {/* هالة بيضاء خلف الأيقونة تشتد عند hover */}
-                <span
-                  aria-hidden
-                  className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.14),transparent_70%)] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-110"
-                />
-                <img
-                  src={benefit.img}
-                  alt={benefit.title}
-                  loading="lazy"
-                  decoding="async"
-                  width={112}
-                  height={112}
-                  className="relative z-10 w-full h-full object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.9)] transition-all duration-500 group-hover:drop-shadow-[0_24px_40px_rgba(255,255,255,0.25)] group-hover:rotate-[6deg]"
-                />
-                {/* انعكاس أرضي خفيف تحت الأيقونة */}
-                <span
-                  aria-hidden
-                  className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4/5 h-3 rounded-[100%] bg-black/70 blur-md opacity-60 group-hover:opacity-90 group-hover:scale-110 transition-all duration-500"
-                />
-              </div>
+                {/* Header Icon + Number */}
+                <div className="w-full flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] flex items-center justify-center text-[#00a3ff]">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-mono text-[#52595b]" dir="ltr">
+                    0{index + 1}
+                  </span>
+                </div>
 
-              <div className="relative z-10 space-y-1.5">
-                <h3 className="text-base sm:text-lg font-bold font-display text-white transition-colors duration-300">
-                  {benefit.title}
-                </h3>
-                <p className="text-tertiary group-hover:text-secondary transition-colors duration-300 text-xs leading-relaxed font-sans font-medium">
-                  {benefit.description}
-                </p>
+                <div className="space-y-1.5 mt-6">
+                  <h3 className="text-base font-normal font-serif text-[#f0f0f0]">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-xs text-[#a1a4a5] leading-relaxed">
+                    {benefit.description}
+                  </p>
+                </div>
               </div>
-
-              {/* رقم البطاقة التسلسلي بأسلوب HUD */}
-              <span aria-hidden className="absolute top-4 left-4 text-[9px] font-mono font-bold text-tertiary/60 tracking-[2px]" dir="ltr">
-                0{index + 1}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
+
+

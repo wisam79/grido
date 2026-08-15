@@ -89,6 +89,23 @@ if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", handleBeforeUnload);
 }
 
+/**
+ * ⚡ استدعاء مسبق لنموذج كشف الوجه في الخلفية أثناء خمول التطبيق
+ */
+export function warmupFaceFrameWorker() {
+  try {
+    if (typeof window === "undefined" || typeof Worker === "undefined") return;
+    const worker = getWorker();
+    worker.postMessage({
+      type: "warmup",
+      wasmBaseUrl: `${window.location.origin}/wasm`,
+      modelUrl: `${window.location.origin}/models/face_landmarker.task`,
+    });
+  } catch (err) {
+    console.debug("[useFaceFrame] Warmup skipped:", err);
+  }
+}
+
 type FramingTarget = CanvasElement | CanvasSlot;
 
 export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void) {

@@ -1,46 +1,24 @@
 import { useEffect, useState } from 'react';
-import { Download, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const NAV_LINKS = [
-  { href: '#features', label: 'المميزات' },
-  { href: '#comparison', label: 'المقارنة' },
-  { href: '#benefits', label: 'لماذا Grido' },
-  { href: '#scenarios', label: 'حالات العمل' },
-  { href: '#pricing', label: 'الخطط' },
-  { href: '#faq', label: 'الأسئلة' },
+  { href: '#top', label: 'مساحة العمل' },
+  { href: '#features', label: 'المقاسات' },
+  { href: '#how-it-works', label: 'مسار الإنتاج' },
+  { href: '#pricing', label: 'الأسعار' },
 ];
-
-function AnimatedLogo() {
-  return (
-    <a href="#top" className="flex items-center gap-3 group select-none relative">
-      <div className="relative w-9 h-9 flex items-center justify-center">
-        <img
-          src="/favicon.png"
-          alt="Grido Logo"
-          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
-        />
-      </div>
-
-      <div className="flex flex-col leading-none">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xl font-extrabold font-display text-white tracking-tight transition-colors">
-            Grido Studio
-          </span>
-        </div>
-        <span className="mt-1 text-[9px] font-bold text-tertiary">
-          استوديو الصور الذكي
-        </span>
-      </div>
-    </a>
-  );
-}
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
+
+  useEffect(() => {
+    // Ensure document root is always dark
+    document.documentElement.classList.remove('light');
+  }, []);
 
   useEffect(() => {
     let ticking = false;
@@ -58,9 +36,9 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Scrollspy: تظليل رابط القسم الظاهر حالياً في الشاشة
+  // Scrollspy
   useEffect(() => {
-    const ids = NAV_LINKS.map((l) => l.href.slice(1));
+    const ids = ['top', 'features', 'how-it-works', 'pricing'];
     const sections = ids
       .map((id) => document.getElementById(id))
       .filter((el): el is HTMLElement => el !== null);
@@ -72,37 +50,30 @@ export function Header() {
           if (entry.isIntersecting) setActiveSection(`#${entry.target.id}`);
         });
       },
-      // نطاق ضيّق وسط الشاشة حتى لا يتبدّل التظليل إلا عند توسّط القسم فعلياً
-      { rootMargin: '-40% 0px -55% 0px' }
+      { rootMargin: '-35% 0px -50% 0px' }
     );
     sections.forEach((s) => observer.observe(s));
     return () => observer.disconnect();
   }, []);
 
-  const handleMagneticMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const relX = e.clientX - rect.left - rect.width / 2;
-    const relY = e.clientY - rect.top - rect.height / 2;
-    e.currentTarget.style.transform = `translate(${relX * 0.12}px, ${relY * 0.12}px)`;
-  };
-
-  const handleMagneticMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.currentTarget.style.transform = 'translate(0px, 0px)';
-  };
-
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 transition-colors duration-200 ${
         scrolled
-          ? 'bg-secondary/95 backdrop-blur-md border-b border-subtle'
-          : 'bg-transparent border-b border-transparent'
+          ? 'bg-[#000000]/95 backdrop-blur-md border-b border-[rgba(214,235,253,0.19)]'
+          : 'bg-[#000000] border-b border-[rgba(214,235,253,0.08)]'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-        <div className="h-20 flex items-center justify-between">
-          <AnimatedLogo />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="h-[64px] flex items-center justify-between">
+          {/* Logo with wide tracking */}
+          <a href="#top" className="flex items-center gap-2 select-none">
+            <span className="font-mono text-sm tracking-[0.25em] font-semibold text-[#f0f0f0] uppercase">
+              GRIDO STUDIO
+            </span>
+          </a>
 
-          {/* Clean nav links with SpaceX monospace tracking + scrollspy */}
+          {/* Centered Technical Nav Links */}
           <nav className="hidden md:flex items-center gap-8" aria-label="التنقل الرئيسي">
             {NAV_LINKS.map((link) => {
               const isActive = activeSection === link.href;
@@ -111,70 +82,67 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   aria-current={isActive ? 'true' : undefined}
-                  className={`text-xs font-bold transition-colors relative py-1 group/link ${
-                    isActive ? 'text-white' : 'text-secondary hover:text-white'
+                  className={`text-xs font-mono tracking-[0.15em] uppercase transition-colors ${
+                    isActive
+                      ? 'text-[#00a3ff]'
+                      : 'text-[#a1a4a5] hover:text-[#f0f0f0]'
                   }`}
                 >
-                  <span>{link.label}</span>
-                  <span
-                    className={`absolute bottom-0 inset-x-0 h-0.5 bg-white transition-transform origin-right ${
-                      isActive ? 'scale-x-100' : 'scale-x-0 group-hover/link:scale-x-100'
-                    }`}
-                  />
+                  {link.label}
                 </a>
               );
             })}
           </nav>
 
+          {/* Right Action: Boxed 4px Blue Button "OPEN STUDIO" */}
           <div className="flex items-center gap-3">
-            {/* SpaceX Pill CTA Download button */}
             <a
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              onMouseMove={handleMagneticMouseMove}
-              onMouseLeave={handleMagneticMouseLeave}
-              className="magnetic-pill hidden sm:flex items-center gap-2 px-6 py-2.5 rounded-full bg-white hover:bg-[#f0f0fa] text-black text-xs font-extrabold transition-shadow duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] cursor-pointer relative border border-white"
-              aria-label="تحميل البرنامج"
+              className="hidden sm:inline-flex items-center justify-center border border-[#00a3ff] text-[#00a3ff] hover:bg-[#00a3ff]/10 text-xs font-mono tracking-wider uppercase px-5 py-2 rounded-[4px] transition-all"
+              aria-label="فتح الاستوديو"
             >
-              <Download className="w-3.5 h-3.5 text-black relative z-10" />
-              <span className="relative z-10">تحميل التطبيق</span>
+              فتح الاستوديو
             </a>
 
+
+            {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-none bg-elevated text-secondary border border-subtle cursor-pointer"
+              className="md:hidden w-8 h-8 flex items-center justify-center rounded-[4px] bg-[#191b1e] text-[#f0f0f0] border border-[rgba(214,235,253,0.19)] cursor-pointer"
               aria-label="القائمة"
               aria-expanded={menuOpen}
             >
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
           </div>
         </div>
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden pb-4 pt-2 border-t border-subtle bg-secondary">
-            <nav className="flex flex-col gap-1">
+          <div className="md:hidden pb-4 pt-2 border-t border-[rgba(214,235,253,0.19)] bg-[#000000]">
+            <nav className="flex flex-col gap-2">
               {NAV_LINKS.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="px-4 py-3 text-xs font-bold text-secondary hover:bg-elevated transition-colors"
+                  className="px-3 py-2 text-xs font-mono tracking-[0.15em] uppercase text-[#a1a4a5] hover:text-[#f0f0f0] hover:bg-[#191b1e] transition-colors rounded"
                 >
                   {link.label}
                 </a>
               ))}
-              <a
-                href={GITHUB_RELEASE_DOWNLOAD_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white text-black font-extrabold text-xs"
-              >
-                <Download className="w-4 h-4 text-black" />
-                تحميل التطبيق
-              </a>
+              <div className="pt-2">
+                <a
+                  href={GITHUB_RELEASE_DOWNLOAD_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-center border border-[#00a3ff] text-[#00a3ff] hover:bg-[#00a3ff]/10 text-xs font-mono tracking-[0.15em] uppercase py-2.5 rounded-[4px]"
+                >
+                  OPEN STUDIO
+                </a>
+              </div>
             </nav>
           </div>
         )}
@@ -182,3 +150,5 @@ export function Header() {
     </header>
   );
 }
+
+
