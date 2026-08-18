@@ -401,11 +401,10 @@ func moveUnreferencedToTrash(mediaDir, trashDir string, referenced map[string]bo
 
 		filename := f.Name()
 		filePath := filepath.Join(mediaDir, filename)
-		// نقل الملفات غير المشار إليها والتي مضى عليها أكثر من 7 أيام للحجر الصحي
-		if info, err := os.Stat(filePath); err == nil {
-			if time.Since(info.ModTime()) < 7*24*time.Hour {
-				continue
-			}
+		// نقل الملفات غير المشار إليها والتي مضى عليها أكثر من 7 أيام للحجر الصحي (حماية ملفات المشاريع المستقلة)
+		info, err := os.Stat(filePath)
+		if err != nil || time.Since(info.ModTime()) < 7*24*time.Hour {
+			continue
 		}
 
 		if !referenced[filename] {

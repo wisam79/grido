@@ -101,13 +101,30 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     const { history, historyIndex } = state;
 
     const snapshot = captureSnapshot(state);
-    const snapshotString = JSON.stringify(snapshot);
 
-    // Avoid pushing identical states
+    // Avoid pushing identical states with fast structural check
     if (history.length > 0 && historyIndex >= 0) {
       const current = history[historyIndex];
-      if (JSON.stringify(current) === snapshotString) {
-        return; // No change
+      if (
+        current.elements.length === snapshot.elements.length &&
+        current.slots.length === snapshot.slots.length &&
+        current.mode === snapshot.mode &&
+        current.canvasWidth === snapshot.canvasWidth &&
+        current.canvasHeight === snapshot.canvasHeight &&
+        current.backgroundColor === snapshot.backgroundColor &&
+        current.collageGap === snapshot.collageGap &&
+        current.collageMargin === snapshot.collageMargin &&
+        current.collageRadius === snapshot.collageRadius &&
+        current.collageShowCutLines === snapshot.collageShowCutLines &&
+        current.collageShowEndCutLine === snapshot.collageShowEndCutLine &&
+        current.collageStrokeWidth === snapshot.collageStrokeWidth &&
+        current.collageStrokeColor === snapshot.collageStrokeColor &&
+        current.lastEditedImage === snapshot.lastEditedImage &&
+        current.lastEditedImageAspect === snapshot.lastEditedImageAspect
+      ) {
+        if (JSON.stringify(current) === JSON.stringify(snapshot)) {
+          return; // No change
+        }
       }
     }
 

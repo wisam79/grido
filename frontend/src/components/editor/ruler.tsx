@@ -35,21 +35,26 @@ function getRulerSteps(pixelsPerMM: number) {
 }
 
 export const HorizontalRuler = React.memo(function HorizontalRuler({ width, mmWidth, pxWidth, unit = "mm" }: HorizontalRulerProps) {
-  const ticks = useMemo(() => {
+  const { subPath, midPath, labelElements } = useMemo(() => {
     // المدى الكلي حسب الوحدة المختارة: ملم فعلية أو بكسلات الكانفس
     const span = unit === "px" ? (pxWidth || 0) : mmWidth;
-    if (!width || !span || width <= 0 || span <= 0) return [];
+    if (!width || !span || width <= 0 || span <= 0) {
+      return { subPath: "", midPath: "", labelElements: [] };
+    }
     const pixelsPerUnit = width / span;
     const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerUnit);
 
-    const items = [];
+    let subD = "";
+    let midD = "";
+    const labels: React.ReactNode[] = [];
+
     for (let i = 0; i <= span; i += subStep) {
       const x = i * pixelsPerUnit;
       const isLabel = Math.abs(i % labelStep) < 0.001 || Math.abs((i % labelStep) - labelStep) < 0.001;
       const isMid = !isLabel && (Math.abs(i % midStep) < 0.001 || Math.abs((i % midStep) - midStep) < 0.001);
 
       if (isLabel) {
-        items.push(
+        labels.push(
           <g key={`h-lbl-${i}`}>
             <line
               x1={x}
@@ -71,34 +76,13 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({ width, mmWi
           </g>
         );
       } else if (isMid) {
-        items.push(
-          <line
-            key={`h-mid-${i}`}
-            x1={x}
-            y1={14}
-            x2={x}
-            y2={24}
-            stroke="currentColor"
-            className="stroke-muted-foreground/45"
-            strokeWidth={1}
-          />
-        );
+        midD += `M${x} 14V24`;
       } else {
-        items.push(
-          <line
-            key={`h-sub-${i}`}
-            x1={x}
-            y1={18}
-            x2={x}
-            y2={24}
-            stroke="currentColor"
-            className="stroke-muted-foreground/30"
-            strokeWidth={1}
-          />
-        );
+        subD += `M${x} 18V24`;
       }
     }
-    return items;
+
+    return { subPath: subD, midPath: midD, labelElements: labels };
   }, [width, mmWidth, pxWidth, unit]);
 
   return (
@@ -107,7 +91,23 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({ width, mmWi
       height={24}
       className="bg-card text-card-foreground overflow-hidden border-b border-border"
     >
-      {ticks}
+      {subPath && (
+        <path
+          d={subPath}
+          stroke="currentColor"
+          className="stroke-muted-foreground/30"
+          strokeWidth={1}
+        />
+      )}
+      {midPath && (
+        <path
+          d={midPath}
+          stroke="currentColor"
+          className="stroke-muted-foreground/45"
+          strokeWidth={1}
+        />
+      )}
+      {labelElements}
       <line
         id="h-ruler-cursor"
         x1={0}
@@ -132,20 +132,25 @@ interface VerticalRulerProps {
 }
 
 export const VerticalRuler = React.memo(function VerticalRuler({ height, mmHeight, pxHeight, unit = "mm" }: VerticalRulerProps) {
-  const ticks = useMemo(() => {
+  const { subPath, midPath, labelElements } = useMemo(() => {
     const span = unit === "px" ? (pxHeight || 0) : mmHeight;
-    if (!height || !span || height <= 0 || span <= 0) return [];
+    if (!height || !span || height <= 0 || span <= 0) {
+      return { subPath: "", midPath: "", labelElements: [] };
+    }
     const pixelsPerUnit = height / span;
     const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerUnit);
 
-    const items = [];
+    let subD = "";
+    let midD = "";
+    const labels: React.ReactNode[] = [];
+
     for (let i = 0; i <= span; i += subStep) {
       const y = i * pixelsPerUnit;
       const isLabel = Math.abs(i % labelStep) < 0.001 || Math.abs((i % labelStep) - labelStep) < 0.001;
       const isMid = !isLabel && (Math.abs(i % midStep) < 0.001 || Math.abs((i % midStep) - midStep) < 0.001);
 
       if (isLabel) {
-        items.push(
+        labels.push(
           <g key={`v-lbl-${i}`}>
             <line
               x1={8}
@@ -169,34 +174,13 @@ export const VerticalRuler = React.memo(function VerticalRuler({ height, mmHeigh
           </g>
         );
       } else if (isMid) {
-        items.push(
-          <line
-            key={`v-mid-${i}`}
-            x1={14}
-            y1={y}
-            x2={24}
-            y2={y}
-            stroke="currentColor"
-            className="stroke-muted-foreground/45"
-            strokeWidth={1}
-          />
-        );
+        midD += `M14 ${y}H24`;
       } else {
-        items.push(
-          <line
-            key={`v-sub-${i}`}
-            x1={18}
-            y1={y}
-            x2={24}
-            y2={y}
-            stroke="currentColor"
-            className="stroke-muted-foreground/30"
-            strokeWidth={1}
-          />
-        );
+        subD += `M18 ${y}H24`;
       }
     }
-    return items;
+
+    return { subPath: subD, midPath: midD, labelElements: labels };
   }, [height, mmHeight, pxHeight, unit]);
 
   return (
@@ -205,7 +189,23 @@ export const VerticalRuler = React.memo(function VerticalRuler({ height, mmHeigh
       height={height}
       className="bg-card text-card-foreground overflow-hidden border-l border-border"
     >
-      {ticks}
+      {subPath && (
+        <path
+          d={subPath}
+          stroke="currentColor"
+          className="stroke-muted-foreground/30"
+          strokeWidth={1}
+        />
+      )}
+      {midPath && (
+        <path
+          d={midPath}
+          stroke="currentColor"
+          className="stroke-muted-foreground/45"
+          strokeWidth={1}
+        />
+      )}
+      {labelElements}
       <line
         id="v-ruler-cursor"
         x1={0}

@@ -52,15 +52,29 @@ async function getOrCreateSegmenter(wasmBaseUrl: string, modelUrl: string): Prom
       // من الـ WASM loader (vision_wasm_module_internal.js) التي تسجّل ModuleFactory على
       // globalThis عند import، وإلا يرمي FilesetResolver خطأ "ModuleFactory not set".
       const vision = await FilesetResolver.forVisionTasks(wasmBaseUrl, true);
-      const seg = await ImageSegmenter.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: modelUrl,
-          delegate: "GPU",
-        },
-        runningMode: "IMAGE",
-        outputCategoryMask: false,
-        outputConfidenceMasks: true,
-      });
+      let seg: ImageSegmenter;
+      try {
+        seg = await ImageSegmenter.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: modelUrl,
+            delegate: "GPU",
+          },
+          runningMode: "IMAGE",
+          outputCategoryMask: false,
+          outputConfidenceMasks: true,
+        });
+      } catch (gpuErr) {
+        console.warn("GPU delegate failed for ImageSegmenter, falling back to CPU:", gpuErr);
+        seg = await ImageSegmenter.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: modelUrl,
+            delegate: "CPU",
+          },
+          runningMode: "IMAGE",
+          outputCategoryMask: false,
+          outputConfidenceMasks: true,
+        });
+      }
       currentSegmenter = seg;
       return seg;
     })().catch((err) => {

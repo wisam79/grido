@@ -25,7 +25,12 @@ export function useAutoSave() {
               }
             });
           } catch (e) {
-            console.error("Failed to parse autosave data:", e);
+            console.error("Failed to parse autosave data, clearing corrupt draft:", e);
+            try {
+              await ClearAutoSave();
+            } catch {
+              // ignore
+            }
           }
         }
       } catch (err) {

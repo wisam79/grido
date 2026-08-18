@@ -104,10 +104,6 @@ export default function LandingPage() {
       dir="rtl"
       className="relative min-h-screen overflow-x-hidden bg-[#000000] font-sans text-[#f0f0f0] selection:bg-[#00a3ff]/30 selection:text-white"
     >
-      <a href="#features" className="skip-link">
-        تخطَّ إلى المحتوى
-      </a>
-
       {/* Top Scroll Progress Bar */}
       <div className="fixed top-0 inset-x-0 h-0.5 bg-[#191b1e] z-[60] pointer-events-none">
         <div

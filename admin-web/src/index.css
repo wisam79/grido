@@ -1,94 +1,10 @@
 @import "tailwindcss";
-@import "@fontsource-variable/alyamama";
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
-
-/* Thmanyah Serif Display (Headlines & High-Contrast Titles) */
-@font-face {
-  font-family: 'Thmanyah Serif Display';
-  src: url('/fonts/thmanyahserifdisplay-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Thmanyah Serif Display';
-  src: url('/fonts/thmanyahserifdisplay-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Thmanyah Serif Display';
-  src: url('/fonts/thmanyahserifdisplay-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Thmanyah Serif Display';
-  src: url('/fonts/thmanyahserifdisplay-Black.woff2') format('woff2');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* Thmanyah Sans (UI & Clean Body) */
-@font-face {
-  font-family: 'Thmanyah Sans';
-  src: url('/fonts/thmanyahsans-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Thmanyah Sans';
-  src: url('/fonts/thmanyahsans-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Thmanyah Sans';
-  src: url('/fonts/thmanyahsans-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* Thmanyah Serif Text (Body & Editorial Copy) */
-@font-face {
-  font-family: 'Thmanyah Serif Text';
-  src: url('/fonts/thmanyahseriftext-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Thmanyah Serif Text';
-  src: url('/fonts/thmanyahseriftext-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Thmanyah Serif Text';
-  src: url('/fonts/thmanyahseriftext-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
 
 @theme inline {
-  --font-sans: 'Thmanyah Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif;
-  --font-display: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif;
+  --font-sans: 'IBM Plex Sans Arabic', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Space Mono', ui-monospace, SFMono-Regular, monospace;
 
   /* Resend Design System Tokens */
@@ -153,7 +69,7 @@
 }
 
 html, body {
-  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -165,15 +81,14 @@ html, body {
   width: 100%;
 }
 
-h1, h2, h3, h4, h5, h6, .font-serif, .display-xl, .display-lg, .display-md, .display-sm {
-  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', Georgia, serif !important;
-  font-feature-settings: "liga" 1, "dlig" 1, "calt" 1, "swsh" 1, "cswh" 1, "ss01" 1, "ss02" 1, "ss03" 1, "ss04" 1, "cv01" 1, "cv02" 1 !important;
-  font-variant-ligatures: common-ligatures contextual discretionary-ligatures !important;
+h1, h2, h3, h4, h5, h6, .font-serif, .font-display, .display-xl, .display-lg, .display-md, .display-sm {
+  font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-feature-settings: "liga" 1, "calt" 1 !important;
   text-rendering: optimizeLegibility !important;
 }
 
 button, input, select, textarea, p, span, a, .font-sans {
-  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif;
+  font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-feature-settings: "liga" 1, "calt" 1;
 }
 
@@ -181,50 +96,39 @@ button, input, select, textarea, p, span, a, .font-sans {
   font-family: 'JetBrains Mono', monospace !important;
 }
 
-
-/* Resend Headline Voice: High-contrast serif with weight 400 and tight negative tracking */
-h1, h2, h3, h4, h5, h6, .font-serif, .font-display {
-  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
-  font-weight: 400;
-  font-feature-settings: "liga" 1, "dlig" 1, "calt" 1, "swsh" 1, "cswh" 1, "ss01" 1, "ss02" 1 !important;
-}
-
-
 .display-xl {
-  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
+  font-family: 'IBM Plex Sans Arabic', sans-serif !important;
   font-size: clamp(48px, 6.5vw, 96px);
-  font-weight: 400;
-  line-height: 1.02;
-  letter-spacing: -0.96px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 .display-lg {
-  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
+  font-family: 'IBM Plex Sans Arabic', sans-serif !important;
   font-size: clamp(36px, 4.5vw, 56px);
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1.2;
-  letter-spacing: -2.8px;
+  letter-spacing: -0.02em;
 }
 
-
 .display-md {
-  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
+  font-family: 'IBM Plex Sans Arabic', sans-serif !important;
   font-size: clamp(28px, 3.2vw, 36px);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.25;
-  letter-spacing: -1.4px;
+  letter-spacing: -0.01em;
 }
 
 .display-sm {
-  font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif !important;
+  font-family: 'IBM Plex Sans Arabic', sans-serif !important;
   font-size: 24px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.25;
-  letter-spacing: -0.6px;
 }
 
 .body-lg {
-  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', sans-serif !important;
   font-size: 18px;
   font-weight: 400;
   line-height: 27px;
@@ -232,7 +136,7 @@ h1, h2, h3, h4, h5, h6, .font-serif, .font-display {
 }
 
 .body-md {
-  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', sans-serif !important;
   font-size: 16px;
   font-weight: 400;
   line-height: 24px;
@@ -240,11 +144,10 @@ h1, h2, h3, h4, h5, h6, .font-serif, .font-display {
 }
 
 .body-sm {
-  font-family: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', sans-serif !important;
   font-size: 14px;
   font-weight: 400;
   line-height: 21px;
-
 }
 
 .body-sm-strong {

@@ -16,7 +16,7 @@ export const ProjectFileSchema = ProjectSchema.extend({
 export type ProjectFileV1 = z.infer<typeof ProjectFileSchema>;
 
 // Serialization from Editor Store state
-export function serializeEditorState(state: EditorState): ProjectFileV1 {
+export function serializeEditorState(state: EditorState, embeddedAssets?: Record<string, string>): ProjectFileV1 {
   const projectFile: ProjectFileV1 = {
     version: CURRENT_PROJECT_VERSION,
     savedAt: new Date().toISOString(),
@@ -29,6 +29,7 @@ export function serializeEditorState(state: EditorState): ProjectFileV1 {
     template: state.template,
     collageTemplate: state.collageTemplate,
     printSettings: state.printSettings,
+    embeddedAssets,
     
     // Grid settings
     showGrid: state.showGrid,

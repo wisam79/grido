@@ -1,38 +1,54 @@
-import { useState, useEffect } from "react";
-import { WindowMinimise, WindowToggleMaximise, Quit as WindowClose } from "../../wailsjs/runtime/runtime";
+import { useState, useEffect, useCallback } from "react";
+import { WindowMinimise, WindowToggleMaximise, Quit as WindowClose, WindowIsMaximised } from "../../wailsjs/runtime/runtime";
 
 export function useWindowControls() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isFocused, setIsFocused] = useState(true);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const checkMaximized = useCallback(async () => {
+    try {
+      if (typeof window !== "undefined" && (window as any).runtime?.WindowIsMaximised) {
+        const max = await WindowIsMaximised();
+        setIsMaximized(Boolean(max));
+        return;
+      }
+    } catch {
+      // fallback
+    }
 
-    const handleResize = () => {
+    if (typeof window !== "undefined") {
       const isMax =
         window.outerWidth >= window.screen.availWidth &&
         window.outerHeight >= window.screen.availHeight;
       setIsMaximized(isMax);
-    };
-    window.addEventListener("resize", handleResize);
-    handleResize();
+    }
+  }, []);
 
-    const handleFocus = () => setIsFocused(true);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    checkMaximized();
+
+    window.addEventListener("resize", checkMaximized);
+    const handleFocus = () => {
+      setIsFocused(true);
+      checkMaximized();
+    };
     const handleBlur = () => setIsFocused(false);
     window.addEventListener("focus", handleFocus);
     window.addEventListener("blur", handleBlur);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", checkMaximized);
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("blur", handleBlur);
     };
-  }, []);
+  }, [checkMaximized]);
 
   const handleMinimize = () => WindowMinimise();
-  const handleMaximize = () => {
+  const handleMaximize = async () => {
     WindowToggleMaximise();
-    setIsMaximized((prev) => !prev);
+    setTimeout(checkMaximized, 100);
   };
   const handleClose = () => WindowClose();
 

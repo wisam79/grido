@@ -170,6 +170,7 @@ export const ProjectSchema = z.object({
   collageShowCutLines: z.boolean().optional().default(false),
   collageStrokeWidth: z.number().optional().default(0),
   collageStrokeColor: z.string().optional().default("#000000"),
+  embeddedAssets: z.record(z.string(), z.string()).optional(),
 });
 
 export type ProjectData = z.infer<typeof ProjectSchema>;

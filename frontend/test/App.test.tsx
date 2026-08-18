@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from '../src/App';
 import React from 'react';
@@ -210,7 +210,9 @@ describe('Component Testing: UI Rendering', () => {
     
     // Open the templates dialog
     const openBtn = await screen.findByText('قوالب الكولاج والطباعة');
-    fireEvent.click(openBtn);
+    await act(async () => {
+      fireEvent.click(openBtn);
+    });
 
     expect(screen.getAllByText('طقم هوية ومعاملات عراقية (مختلط)')[0]).toBeInTheDocument();
     expect(screen.getAllByText('ورقة البطاقة الوطنية وجواز السفر (8 صور)')[0]).toBeInTheDocument();

@@ -28,11 +28,12 @@ export const ColumnsLayer = React.memo(function ColumnsLayer({
       <Shape
         sceneFunc={(context, _shape) => {
           context.fillStyle = columnsColor;
+          context.beginPath();
           for (let i = 0; i < columnsCount; i++) {
             const xPos = columnsMargin + i * (colW + columnsGutter);
-            context.fillRect(xPos, 0, colW, canvasHeight);
+            context.rect(xPos, 0, colW, canvasHeight);
           }
-          context.closePath();
+          context.fill();
         }}
       />
     </Layer>

@@ -33,6 +33,18 @@ import (
 	"github.com/fogleman/gg"
 )
 
+// rgbToRichCMYK converts RGB to CMYK with Photographic Rich Black enhancement for deep shadows
+func rgbToRichCMYK(r, g, b uint8) (uint8, uint8, uint8, uint8) {
+	c, m, yVal, k := color.RGBToCMYK(r, g, b)
+	if k > 220 && c < 50 && m < 50 && yVal < 50 {
+		richFactor := float64(k-220) / 35.0
+		c = uint8(math.Min(255, float64(c)+40.0*richFactor))
+		m = uint8(math.Min(255, float64(m)+30.0*richFactor))
+		yVal = uint8(math.Min(255, float64(yVal)+30.0*richFactor))
+	}
+	return c, m, yVal, k
+}
+
 // ConvertRGBAtoCMYK converts an image.Image to an image.CMYK instance using parallel workers and direct slice access
 func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 	bounds := src.Bounds()
@@ -69,7 +81,7 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 						r := rgba.Pix[srcOffset+x*4]
 						g := rgba.Pix[srcOffset+x*4+1]
 						b := rgba.Pix[srcOffset+x*4+2]
-						c, m, yVal, k := color.RGBToCMYK(r, g, b)
+						c, m, yVal, k := rgbToRichCMYK(r, g, b)
 						cmykOffset := dstOffset + x*4
 						cmykImg.Pix[cmykOffset] = c
 						cmykImg.Pix[cmykOffset+1] = m
@@ -82,7 +94,7 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 					dstOffset := y * cmykImg.Stride
 					for x := 0; x < w; x++ {
 						r, g, b, _ := src.At(x, y).RGBA()
-						c, m, yVal, k := color.RGBToCMYK(uint8(r>>8), uint8(g>>8), uint8(b>>8))
+						c, m, yVal, k := rgbToRichCMYK(uint8(r>>8), uint8(g>>8), uint8(b>>8))
 						cmykOffset := dstOffset + x*4
 						cmykImg.Pix[cmykOffset] = c
 						cmykImg.Pix[cmykOffset+1] = m
