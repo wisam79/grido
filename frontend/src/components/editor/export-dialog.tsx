@@ -48,6 +48,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   useEffect(() => {
     if (!open) {
       isCancelledRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       setProgress(0);
     } else {
