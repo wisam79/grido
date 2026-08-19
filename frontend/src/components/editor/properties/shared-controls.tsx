@@ -247,7 +247,7 @@ export function ColorWheelPicker({
   const displayColor = isTransparent ? "#FFFFFF" : color;
 
   return (
-    <div className="p-3.5 bg-card rounded-2xl border border-border/60 mt-2 flex flex-col gap-3.5 w-full shadow-sm animate-in fade-in duration-200">
+    <div className="p-3 bg-card rounded-xl border border-border/60 mt-1 flex flex-col gap-2.5 w-full shadow-sm animate-in fade-in duration-200">
       <div className="custom-color-picker w-full">
         <HexColorPicker
           color={isTransparent ? "#ffffff" : color}
@@ -259,25 +259,25 @@ export function ColorWheelPicker({
         />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={() => {
             setInputValue("transparent");
             onChange("transparent");
           }}
           className={cn(
-            "w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 shadow-xs cursor-pointer transition-all active:scale-95",
+            "w-7.5 h-7.5 rounded-md border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95",
             isTransparent
               ? "border-primary bg-primary/10 text-primary font-bold"
               : "border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
           title="خلفية شفافة"
         >
-          <PaintBucket className="w-4 h-4" />
+          <PaintBucket className="w-3.5 h-3.5" />
         </button>
 
-        <div className="flex-1 flex items-center gap-2 bg-background border border-border/60 rounded-lg px-2.5 h-9 shadow-inner focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
-          <span className="text-xs font-bold text-muted-foreground/60 select-none">HEX:</span>
+        <div className="flex-1 flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-7.5 shadow-2xs focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
+          <span className="text-[10px] font-bold text-muted-foreground/60 select-none">HEX:</span>
           <input
             type="text"
             value={inputValue}
@@ -286,7 +286,7 @@ export function ColorWheelPicker({
             placeholder="#HEX"
           />
           <div
-            className="w-4.5 h-4.5 rounded-md border border-border shadow-xs shrink-0 relative overflow-hidden"
+            className="w-4 h-4 rounded-[3px] border border-border shadow-2xs shrink-0 relative overflow-hidden"
             style={{
               backgroundColor: displayColor,
             }}
@@ -296,7 +296,7 @@ export function ColorWheelPicker({
                 className="absolute inset-0"
                 style={{
                   backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
-                  backgroundSize: "6px 6px"
+                  backgroundSize: "4px 4px"
                 }}
               />
             )}

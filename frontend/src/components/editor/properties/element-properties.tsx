@@ -24,15 +24,15 @@ export function ElementProperties({
   const hasAdjustTab = element.type === "image";
 
   return (
-    <div className="space-y-4">
-      <div className="text-xs font-extrabold text-primary flex items-center gap-1.5 border-b border-border/15 pb-2.5">
-        {element.type === "image" && (<><ImageIcon className="w-4 h-4 text-primary" /> <span>خصائص الصورة</span></>)}
-        {element.type === "text" && (<><Type className="w-4 h-4 text-primary" /> <span>خصائص النص</span></>)}
-        {element.type === "shape" && (<><Palette className="w-4 h-4 text-primary" /> <span>خصائص الشكل</span></>)}
+    <div className="space-y-3 font-cairo">
+      <div className="text-xs font-bold text-foreground/90 flex items-center gap-1.5 border-b border-border/25 pb-2">
+        {element.type === "image" && (<><ImageIcon className="w-3.5 h-3.5 text-primary/80" /> <span>خصائص الصورة</span></>)}
+        {element.type === "text" && (<><Type className="w-3.5 h-3.5 text-primary/80" /> <span>خصائص النص</span></>)}
+        {element.type === "shape" && (<><Palette className="w-3.5 h-3.5 text-primary/80" /> <span>خصائص الشكل</span></>)}
       </div>
 
       {element.locked && (
-        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-lg flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center gap-2">
             <Lock className="w-3.5 h-3.5 shrink-0" />
             <span>هذا العنصر مقفل. إلغاء القفل للتعديل.</span>
@@ -54,14 +54,14 @@ export function ElementProperties({
       <div className={cn(element.locked && "pointer-events-none opacity-50 select-none")}>
         <Tabs defaultValue="style" className="w-full">
             <TabsList className={cn(
-              "grid w-full h-10 p-[3px] bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/40 backdrop-blur-xs",
+              "grid w-full h-8 p-0.5 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/40",
               hasAdjustTab ? "grid-cols-4" : "grid-cols-3"
             )}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex w-full h-full">
-                    <TabsTrigger value="style" className="flex-1 rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
-                      <Paintbrush className="w-4 h-4" />
+                    <TabsTrigger value="style" className="flex-1 rounded-md py-1 cursor-pointer transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground">
+                      <Paintbrush className="w-3.5 h-3.5" />
                     </TabsTrigger>
                   </div>
                 </TooltipTrigger>
@@ -72,8 +72,8 @@ export function ElementProperties({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex w-full h-full">
-                      <TabsTrigger value="adjust" className="flex-1 rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
-                        <Sliders className="w-4 h-4" />
+                      <TabsTrigger value="adjust" className="flex-1 rounded-md py-1 cursor-pointer transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground">
+                        <Sliders className="w-3.5 h-3.5" />
                       </TabsTrigger>
                     </div>
                   </TooltipTrigger>
@@ -84,8 +84,8 @@ export function ElementProperties({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex w-full h-full">
-                    <TabsTrigger value="effects" className="flex-1 rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
-                      <Sparkles className="w-4 h-4" />
+                    <TabsTrigger value="effects" className="flex-1 rounded-md py-1 cursor-pointer transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground">
+                      <Sparkles className="w-3.5 h-3.5" />
                     </TabsTrigger>
                   </div>
                 </TooltipTrigger>
@@ -95,8 +95,8 @@ export function ElementProperties({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex w-full h-full">
-                    <TabsTrigger value="arrange" className="flex-1 rounded-lg py-1.5 cursor-pointer transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground shadow-2xs">
-                      <Move className="w-4 h-4" />
+                    <TabsTrigger value="arrange" className="flex-1 rounded-md py-1 cursor-pointer transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground">
+                      <Move className="w-3.5 h-3.5" />
                     </TabsTrigger>
                   </div>
                 </TooltipTrigger>

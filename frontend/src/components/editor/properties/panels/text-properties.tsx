@@ -55,11 +55,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
   };
 
   return (
-    <div className="space-y-3 font-cairo animate-in fade-in duration-200 w-full min-w-0">
+    <div className="space-y-2.5 font-cairo animate-in fade-in duration-200 w-full min-w-0">
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* بطاقة 1: النص والخط والتنسيق (Fluent 2 Studio Card) */}
+      {/* بطاقة 1: النص والخط والتنسيق (Precision Figma-Grade Card) */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <div className="bg-card/40 dark:bg-card/25 border border-border/40 backdrop-blur-md rounded-2xl p-3 space-y-2.5 shadow-sm">
+      <div className="bg-card/40 dark:bg-card/25 border border-border/40 backdrop-blur-md rounded-xl p-2.5 space-y-2 shadow-2xs">
         
         {/* السطر 1: حقل النص مع زر ملاءمة العرض */}
         <div className="flex items-center gap-1.5">
@@ -69,14 +69,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               value={element.text || ""}
               onChange={(e) => onUpdate(element.id, { text: e.target.value })}
               onBlur={() => useEditorStore.getState().pushHistory()}
-              className="w-full h-8.5 bg-background/80 hover:bg-background focus:bg-background border border-border/50 hover:border-primary/40 focus:border-primary rounded-xl px-3 text-xs font-semibold text-foreground placeholder:text-muted-foreground/50 outline-hidden transition-all shadow-2xs"
+              className="w-full h-8 bg-background/80 hover:bg-background focus:bg-background border border-border/50 hover:border-primary/40 focus:border-primary rounded-lg px-2.5 text-xs font-semibold text-foreground placeholder:text-muted-foreground/50 outline-hidden transition-all shadow-2xs"
               placeholder="اكتب النص هنا..."
             />
           </div>
           <button
             type="button"
             onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
-            className="h-8.5 px-2.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+            className="h-8 px-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
             title="ملاءمة عرض الصندوق للنص"
           >
             <Shrink className="w-3.5 h-3.5" />
@@ -87,7 +87,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
         <TextFontSelector element={element} onUpdate={onUpdate} />
 
         {/* السطر 3: سمك الخط وحجم الخط */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           {/* سمك الخط Dropdown */}
           <div className="relative">
             <select
@@ -96,7 +96,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 onUpdate(element.id, { fontWeight: Number(e.target.value) });
                 useEditorStore.getState().pushHistory();
               }}
-              className="w-full h-8.5 bg-background/80 hover:bg-background border border-border/50 hover:border-primary/40 focus:border-primary rounded-xl px-3 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-2xs"
+              className="w-full h-8 bg-background/80 hover:bg-background border border-border/50 hover:border-primary/40 focus:border-primary rounded-lg px-2.5 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-2xs"
             >
               {WEIGHT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -104,15 +104,15 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 </option>
               ))}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-3 h-3 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           {/* حجم الخط Stepper */}
-          <div className="flex items-center justify-between h-8.5 bg-background/80 border border-border/50 rounded-xl px-1.5 shadow-2xs">
+          <div className="flex items-center justify-between h-8 bg-background/80 border border-border/50 rounded-lg px-1.5 shadow-2xs">
             <button
               type="button"
               onClick={() => changeFontSize(-2)}
-              className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-all cursor-pointer"
+              className="w-5.5 h-5.5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-all cursor-pointer"
               title="تصغير الخط"
             >
               <Minus className="w-3 h-3" />
@@ -126,14 +126,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   if (!isNaN(val)) onUpdate(element.id, { fontSize: Math.max(8, Math.min(200, val)) });
                 }}
                 onBlur={() => useEditorStore.getState().pushHistory()}
-                className="w-10 text-center text-xs font-bold text-foreground bg-transparent outline-hidden font-mono"
+                className="w-9 text-center text-xs font-bold text-foreground bg-transparent outline-hidden font-mono"
               />
               <span className="text-[10px] text-muted-foreground/80 font-semibold">px</span>
             </div>
             <button
               type="button"
               onClick={() => changeFontSize(2)}
-              className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-all cursor-pointer"
+              className="w-5.5 h-5.5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-all cursor-pointer"
               title="تكبير الخط"
             >
               <Plus className="w-3 h-3" />
@@ -142,9 +142,9 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
         </div>
 
         {/* السطر 4: تباعد الأسطر والكلمات */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           {/* تباعد الأسطر */}
-          <div className="flex items-center justify-between h-8.5 bg-background/80 border border-border/50 rounded-xl px-2 shadow-2xs">
+          <div className="flex items-center justify-between h-8 bg-background/80 border border-border/50 rounded-lg px-2 shadow-2xs">
             <span className="text-[10.5px] text-muted-foreground font-semibold flex items-center gap-1 shrink-0">
               <MoveVertical className="w-3 h-3 text-primary/70" />
               <span>الأسطر</span>
@@ -153,17 +153,17 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               <button
                 type="button"
                 onClick={() => changeLineHeight(-0.1)}
-                className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+                className="w-4.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
               >
                 <Minus className="w-2.5 h-2.5" />
               </button>
-              <span className="w-7 text-center text-[11px] font-bold text-foreground font-mono">
+              <span className="w-6 text-center text-[11px] font-bold text-foreground font-mono">
                 {currentLineHeight}
               </span>
               <button
                 type="button"
                 onClick={() => changeLineHeight(0.1)}
-                className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+                className="w-4.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
               >
                 <Plus className="w-2.5 h-2.5" />
               </button>
@@ -171,7 +171,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           </div>
 
           {/* تباعد الكلمات/الحروف */}
-          <div className="flex items-center justify-between h-8.5 bg-background/80 border border-border/50 rounded-xl px-2 shadow-2xs">
+          <div className="flex items-center justify-between h-8 bg-background/80 border border-border/50 rounded-lg px-2 shadow-2xs">
             <span className="text-[10.5px] text-muted-foreground font-semibold flex items-center gap-1 shrink-0">
               <MoveHorizontal className="w-3 h-3 text-primary/70" />
               <span>{isArabic ? "الكلمات" : "الحروف"}</span>
@@ -184,11 +184,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   onUpdate(element.id, { letterSpacing: next });
                   useEditorStore.getState().pushHistory();
                 }}
-                className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+                className="w-4.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
               >
                 <Minus className="w-2.5 h-2.5" />
               </button>
-              <span className="w-7 text-center text-[11px] font-bold text-foreground font-mono">
+              <span className="w-6 text-center text-[11px] font-bold text-foreground font-mono">
                 {element.letterSpacing ?? 0}
               </span>
               <button
@@ -198,7 +198,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   onUpdate(element.id, { letterSpacing: next });
                   useEditorStore.getState().pushHistory();
                 }}
-                className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+                className="w-4.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
               >
                 <Plus className="w-2.5 h-2.5" />
               </button>
@@ -207,7 +207,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
         </div>
 
         {/* السطر 5: شريط النمط والمحاذاة (Segmented Bar) */}
-        <div className="flex items-center justify-between p-1 bg-muted/40 dark:bg-muted/20 rounded-xl border border-border/40 shadow-2xs">
+        <div className="flex items-center justify-between p-0.5 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/40 shadow-2xs">
           {/* أزرار النمط */}
           <div className="flex items-center gap-0.5">
             <button
@@ -217,10 +217,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs font-bold",
+                "w-6.5 h-6.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold",
                 isBold
-                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
-                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                  ? "bg-background text-foreground shadow-2xs font-extrabold"
+                  : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
               )}
               title="عريض (Bold)"
             >
@@ -234,10 +234,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                "w-6.5 h-6.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs",
                 isItalic
-                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
-                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                  ? "bg-background text-foreground shadow-2xs font-extrabold"
+                  : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
               )}
               title="مائل (Italic)"
             >
@@ -251,10 +251,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                "w-6.5 h-6.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs",
                 isUnderline
-                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
-                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                  ? "bg-background text-foreground shadow-2xs font-extrabold"
+                  : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
               )}
               title="تحته خط (Underline)"
             >
@@ -268,10 +268,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                "w-6.5 h-6.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs",
                 isLineThrough
-                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
-                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                  ? "bg-background text-foreground shadow-2xs font-extrabold"
+                  : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
               )}
               title="شطب (Strikethrough)"
             >
@@ -279,7 +279,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             </button>
           </div>
 
-          <div className="w-px h-4 bg-border/60 mx-0.5" />
+          <div className="w-px h-3.5 bg-border/60 mx-0.5" />
 
           {/* أزرار المحاذاة */}
           <div className="flex items-center gap-0.5">
@@ -290,10 +290,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                "w-6.5 h-6.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs",
                 textAlign === "right"
-                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
-                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                  ? "bg-background text-foreground shadow-2xs font-extrabold"
+                  : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
               )}
               title="محاذاة لليمين"
             >
@@ -307,10 +307,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                "w-6.5 h-6.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs",
                 textAlign === "center"
-                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
-                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                  ? "bg-background text-foreground shadow-2xs font-extrabold"
+                  : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
               )}
               title="توسيط"
             >
@@ -324,10 +324,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                "w-6.5 h-6.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs",
                 textAlign === "left"
-                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
-                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                  ? "bg-background text-foreground shadow-2xs font-extrabold"
+                  : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
               )}
               title="محاذاة لليسار"
             >
@@ -335,7 +335,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             </button>
           </div>
 
-          <div className="w-px h-4 bg-border/60 mx-0.5" />
+          <div className="w-px h-3.5 bg-border/60 mx-0.5" />
 
           {/* زر الأرقام المشرقية */}
           <button
@@ -345,10 +345,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               useEditorStore.getState().pushHistory();
             }}
             className={cn(
-              "h-7 px-2 rounded-lg flex items-center justify-center gap-0.5 transition-all cursor-pointer text-[10.5px] font-bold",
+              "h-6.5 px-1.5 rounded-md flex items-center justify-center gap-0.5 transition-all cursor-pointer text-[10px] font-bold",
               isArabicNumerals
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-2xs font-extrabold"
+                : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
             )}
             title="تحويل الأرقام إلى (١ ٢ ٣)"
           >
@@ -359,14 +359,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
       </div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* بطاقة 2: المظهر والتأثيرات (Clean Color Swatches & Rows) */}
+      {/* بطاقة 2: المظهر والتأثيرات (Clean Studio Property Rows) */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <div className="bg-card/40 dark:bg-card/25 border border-border/40 backdrop-blur-md rounded-2xl p-2.5 space-y-1.5 shadow-sm">
+      <div className="bg-card/40 dark:bg-card/25 border border-border/40 backdrop-blur-md rounded-xl p-2 space-y-1 shadow-2xs">
         
         {/* صف 1: تعبئة ولون النص */}
-        <div className="flex items-center justify-between h-9 px-2.5 rounded-xl bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
+        <div className="flex items-center justify-between h-8 px-2 rounded-lg bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
           <span className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-primary" />
+            <Palette className="w-3.5 h-3.5 text-primary/80" />
             <span>تعبئة النص</span>
           </span>
 
@@ -374,11 +374,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="w-6.5 h-6.5 rounded-lg border border-border/80 p-0.5 bg-background hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 flex items-center justify-center shrink-0"
+                className="w-6 h-6 rounded-md border border-border/80 p-0.5 bg-background hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 flex items-center justify-center shrink-0"
                 title="تغيير لون وتعبئة النص"
               >
                 <div
-                  className="w-full h-full rounded-md border border-black/10 dark:border-white/10 shadow-2xs"
+                  className="w-full h-full rounded-[4px] border border-black/10 dark:border-white/10 shadow-2xs"
                   style={{
                     background:
                       element.fillType === "linear" || element.fillType === "radial"
@@ -388,7 +388,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 />
               </button>
             </PopoverTrigger>
-            <PopoverContent side="left" className="w-64 p-3 font-cairo shadow-2xl rounded-2xl border-border/60">
+            <PopoverContent side="left" className="w-64 p-3 font-cairo shadow-2xl rounded-xl border-border/60">
               <GradientPicker
                 fillType={element.fillType || "solid"}
                 color={element.color || "#000000"}
@@ -426,9 +426,9 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
         </div>
 
         {/* صف 2: خلفية وتظليل النص */}
-        <div className="flex items-center justify-between h-9 px-2.5 rounded-xl bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
+        <div className="flex items-center justify-between h-8 px-2 rounded-lg bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
           <span className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
-            <PaintBucket className="w-3.5 h-3.5 text-primary" />
+            <PaintBucket className="w-3.5 h-3.5 text-primary/80" />
             <span>خلفية النص</span>
           </span>
 
@@ -445,7 +445,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 />
 
                 {/* استدارة الحواف Stepper */}
-                <div className="flex items-center h-6.5 bg-background border border-border/60 rounded-lg px-1 gap-0.5 shadow-2xs" title="استدارة الحواف">
+                <div className="flex items-center h-6 bg-background border border-border/60 rounded-md px-1 gap-0.5 shadow-2xs" title="استدارة الحواف">
                   <button
                     type="button"
                     onClick={() => {
@@ -453,11 +453,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       onUpdate(element.id, { textBgRadius: next });
                       useEditorStore.getState().pushHistory();
                     }}
-                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                    className="w-3.5 h-4 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <Minus className="w-2 h-2" />
                   </button>
-                  <span className="text-[9.5px] font-bold font-mono text-foreground w-4 text-center">
+                  <span className="text-[9.5px] font-bold font-mono text-foreground w-3.5 text-center">
                     {element.textBgRadius ?? 6}
                   </span>
                   <button
@@ -467,7 +467,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       onUpdate(element.id, { textBgRadius: next });
                       useEditorStore.getState().pushHistory();
                     }}
-                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                    className="w-3.5 h-4 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <Plus className="w-2 h-2" />
                   </button>
@@ -490,9 +490,9 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "h-6.5 px-2.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                "h-6 px-2 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
                 hasBadge
-                  ? "bg-primary text-primary-foreground border-primary"
+                  ? "bg-foreground/10 text-foreground border-border/80 font-bold"
                   : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
               )}
             >
@@ -502,9 +502,9 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
         </div>
 
         {/* صف 3: إطار النص */}
-        <div className="flex items-center justify-between h-9 px-2.5 rounded-xl bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
+        <div className="flex items-center justify-between h-8 px-2 rounded-lg bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
           <span className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
-            <Square className="w-3.5 h-3.5 text-primary" />
+            <Square className="w-3.5 h-3.5 text-primary/80" />
             <span>إطار النص</span>
           </span>
 
@@ -521,7 +521,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 />
 
                 {/* سمك الإطار Stepper */}
-                <div className="flex items-center h-6.5 bg-background border border-border/60 rounded-lg px-1 gap-0.5 shadow-2xs" title="سمك الإطار">
+                <div className="flex items-center h-6 bg-background border border-border/60 rounded-md px-1 gap-0.5 shadow-2xs" title="سمك الإطار">
                   <button
                     type="button"
                     onClick={() => {
@@ -529,11 +529,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       onUpdate(element.id, { strokeWidth: next });
                       useEditorStore.getState().pushHistory();
                     }}
-                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                    className="w-3.5 h-4 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <Minus className="w-2 h-2" />
                   </button>
-                  <span className="text-[9.5px] font-bold font-mono text-foreground w-6 text-center">
+                  <span className="text-[9.5px] font-bold font-mono text-foreground w-5 text-center">
                     {element.strokeWidth ?? 2}px
                   </span>
                   <button
@@ -543,7 +543,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       onUpdate(element.id, { strokeWidth: next });
                       useEditorStore.getState().pushHistory();
                     }}
-                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                    className="w-3.5 h-4 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <Plus className="w-2 h-2" />
                   </button>
@@ -562,9 +562,9 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "h-6.5 px-2.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                "h-6 px-2 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
                 hasStroke
-                  ? "bg-primary text-primary-foreground border-primary"
+                  ? "bg-foreground/10 text-foreground border-border/80 font-bold"
                   : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
               )}
             >
@@ -574,9 +574,9 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
         </div>
 
         {/* صف 4: ظل النص */}
-        <div className="flex items-center justify-between h-9 px-2.5 rounded-xl bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
+        <div className="flex items-center justify-between h-8 px-2 rounded-lg bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
           <span className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <Sparkles className="w-3.5 h-3.5 text-primary/80" />
             <span>ظل النص</span>
           </span>
 
@@ -593,7 +593,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 />
 
                 {/* تمويه الظل Stepper */}
-                <div className="flex items-center h-6.5 bg-background border border-border/60 rounded-lg px-1 gap-0.5 shadow-2xs" title="تمويه الظل">
+                <div className="flex items-center h-6 bg-background border border-border/60 rounded-md px-1 gap-0.5 shadow-2xs" title="تمويه الظل">
                   <button
                     type="button"
                     onClick={() => {
@@ -601,11 +601,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       onUpdate(element.id, { shadowBlur: next });
                       useEditorStore.getState().pushHistory();
                     }}
-                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                    className="w-3.5 h-4 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <Minus className="w-2 h-2" />
                   </button>
-                  <span className="text-[9.5px] font-bold font-mono text-foreground w-6 text-center">
+                  <span className="text-[9.5px] font-bold font-mono text-foreground w-5 text-center">
                     {element.shadowBlur ?? 8}px
                   </span>
                   <button
@@ -615,7 +615,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       onUpdate(element.id, { shadowBlur: next });
                       useEditorStore.getState().pushHistory();
                     }}
-                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                    className="w-3.5 h-4 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <Plus className="w-2 h-2" />
                   </button>
@@ -640,9 +640,9 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "h-6.5 px-2.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                "h-6 px-2 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
                 hasShadow
-                  ? "bg-primary text-primary-foreground border-primary"
+                  ? "bg-foreground/10 text-foreground border-border/80 font-bold"
                   : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
               )}
             >

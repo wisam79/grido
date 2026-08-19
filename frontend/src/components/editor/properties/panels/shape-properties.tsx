@@ -59,14 +59,14 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-[3px] border-2 border-primary/70" />
               <span>لون الحدود</span>
             </span>
             <PopoverColorPicker
               color={element.stroke || element.fill || "#3b82f6"}
               onChange={(val) => onUpdate(element.id, { stroke: val })}
-              className="w-32 h-8"
+              swatchOnly
             />
           </div>
         </div>
