@@ -3,13 +3,13 @@ import { Image as KonvaImage, Group, Rect } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import Konva from "konva";
 import { ImageElement } from "@/lib/editor-store";
-import { getKonvaFilters } from "@/lib/konva-filters";
-import { useRenderQuality } from "@/lib/render-quality";
+import { getKonvaFilters } from "@/lib/filters/konva-filters";
+import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { useFilterCache } from "@/hooks/use-filter-cache";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import { MagicAiScanner } from "./magic-ai-scanner";
-import "@/lib/custom-filters";
+import "@/lib/filters/custom-filters";
 
 export const URLImage = React.memo(function URLImage({ 
   element: _element, 

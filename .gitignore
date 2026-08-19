@@ -39,13 +39,6 @@ diff.patch
 frontend/wailsjs/
 frontend/coverage/
 
-# Environment variables (secrets)
-.env
-.env.*
-diff.patch
-frontend/wailsjs/
-frontend/coverage/
-
 # Agent config (contains API keys — use env vars instead)
 opencode.json
 

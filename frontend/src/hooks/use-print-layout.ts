@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { PhotoTemplate } from "@/lib/templates";
 import { PrintSettings, EditorMode } from "@/lib/editor-store";
 import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
-import { computeSheetGrid } from "@/lib/print-layout-math";
+import { computeSheetGrid } from "@/lib/print/print-layout-math";
 
 interface UsePrintLayoutProps {
   template: PhotoTemplate | null;

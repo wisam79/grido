@@ -11,7 +11,7 @@ import { ShapeElement } from "@/lib/editor-store";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import { getFillProps } from "./fill-utils";
-import { VECTOR_SHAPES } from "@/lib/svg-paths";
+import { VECTOR_SHAPES } from "@/lib/io/svg-paths";
 
 export const KonvaShapeElement = React.memo(function KonvaShapeElement({ 
   element: _element, 

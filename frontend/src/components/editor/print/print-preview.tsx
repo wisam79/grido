@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { buildCSSFilter, cn } from "@/lib/utils";
-import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
-import { computeBlockPosition, computeSlotRectMM } from "@/lib/print-layout-math";
-import type { SheetGrid } from "@/lib/print-layout-math";
+import { calculatePrintCutLines } from "@/lib/print/cut-lines-utils";
+import { computeBlockPosition, computeSlotRectMM } from "@/lib/print/print-layout-math";
+import type { SheetGrid } from "@/lib/print/print-layout-math";
 
 interface SheetPreviewProps {
   grid: SheetGrid;

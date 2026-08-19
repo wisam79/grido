@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Transformer as KonvaTransformer, Group, Rect, Text } from "react-konva";
 import Konva from "konva";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { getSnapPositionsWithTargets, SnapGuide, SnapTarget } from "@/lib/snap-utils";
+import { getSnapPositionsWithTargets, SnapGuide, SnapTarget } from "@/lib/canvas/snap-utils";
 
 interface EditorTransformerProps {
   trRef: React.RefObject<Konva.Transformer | null>;

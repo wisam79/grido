@@ -4,7 +4,7 @@ import {
   computeSheetGrid,
   computeSlotAspect,
   computeSlotRectMM,
-} from "../src/lib/print-layout-math";
+} from "../src/lib/print/print-layout-math";
 
 describe("computeSheetGrid", () => {
   it("centers a small grid within the available area (A4, margin 10)", () => {

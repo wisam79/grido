@@ -1,6 +1,6 @@
 import React from "react";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { getSnapPositionsWithTargets, SnapTarget } from "@/lib/snap-utils";
+import { getSnapPositionsWithTargets, SnapTarget } from "@/lib/canvas/snap-utils";
 import { KonvaEventObject } from "konva/lib/Node";
 
 interface UseKonvaDragProps {

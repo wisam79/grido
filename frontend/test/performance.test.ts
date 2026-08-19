@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore } from '../src/lib/editor-store';
-import { serializeEditorState } from '../src/lib/project-serializer';
-import { getSnapPositions } from '../src/lib/snap-utils';
+import { serializeEditorState } from '../src/lib/io/project-serializer';
+import { getSnapPositions } from '../src/lib/canvas/snap-utils';
 
 describe('Performance Benchmarks', () => {
   beforeEach(() => {

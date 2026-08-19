@@ -3,7 +3,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
-import { pasteFromClipboardOrStore } from "@/lib/clipboard-utils";
+import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 
 export function useKeyboardShortcuts() {
   // --- Shortcuts via react-hotkeys-hook ---

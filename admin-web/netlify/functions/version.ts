@@ -102,7 +102,7 @@ export const handler: Handler = async () => {
         sha256: installerSHA256,
       }),
     };
-  } catch (err: any) {
+  } catch {
     return {
       statusCode: 500,
       headers: {

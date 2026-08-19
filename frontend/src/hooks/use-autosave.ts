@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { debounce } from "@/lib/utils";
-import { deserializeProjectFile, serializeEditorState } from "@/lib/project-serializer";
+import { deserializeProjectFile, serializeEditorState } from "@/lib/io/project-serializer";
 import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from "../../wailsjs/go/main/App";
 import { toast } from "sonner";
 

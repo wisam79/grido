@@ -21,11 +21,11 @@ import {
   FlipHorizontal2,
   Crosshair,
 } from "lucide-react";
-import { openImageFileDialog } from "@/lib/file-dialog-utils";
+import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
-import { pasteFromClipboardOrStore } from "@/lib/clipboard-utils";
+import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 import type { ImageElement, CanvasSlot, CanvasElement } from "@/lib/store/types";
 
 const CropDialog = lazy(() => import("../dialogs/crop-dialog").then((m) => ({ default: m.CropDialog })));

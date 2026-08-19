@@ -59,7 +59,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('gestureend', (e) => e.preventDefault());
 }
 
-import { StageProvider } from './lib/stage-context'
+import { StageProvider } from '@/lib/canvas/stage-context'
 
 if (typeof window !== "undefined" && !(window as any).go) {
   window.addEventListener("contextmenu", (e) => {

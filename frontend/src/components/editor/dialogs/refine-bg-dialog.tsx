@@ -45,8 +45,10 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
 
-  // Global keyboard shortcuts and mouse wheel zoom
+  // Global keyboard shortcuts and mouse wheel zoom & loading state cleanup
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsSaving(false);
     if (!open) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -514,7 +514,7 @@ export default function AdminDashboard() {
       localStorage.setItem('grido_free_ai_limit', freeAiLimit.toString());
       localStorage.setItem('grido_pro_ai_limit', proAiLimit.toString());
       alert('تم حفظ إعدادات النظام الحية بنجاح!');
-    } catch (err: any) {
+    } catch {
       alert('حدث خطأ أثناء حفظ الإعدادات.');
     } finally {
       setSavingSettings(false);

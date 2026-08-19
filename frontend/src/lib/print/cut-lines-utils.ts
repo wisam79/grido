@@ -1,5 +1,5 @@
-import { computeBlockPosition, computeSlotRectMM } from "@/lib/print-layout-math";
-import type { SheetGrid } from "@/lib/print-layout-math";
+import { computeBlockPosition, computeSlotRectMM } from "@/lib/print/print-layout-math";
+import type { SheetGrid } from "@/lib/print/print-layout-math";
 
 export type CutLineStyle = "dashed" | "dotted" | "solid" | "cropmarks";
 

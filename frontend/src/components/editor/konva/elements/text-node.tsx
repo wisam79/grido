@@ -6,6 +6,7 @@ import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import { getFillProps } from "./fill-utils";
 import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
+import { loadGoogleFont } from "@/lib/io/fonts";
 
 export const KonvaTextElement = React.memo(function KonvaTextElement({ 
   element: _element, 
@@ -62,6 +63,13 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       });
     }
   }, [elementRef, element.opacity, element.flipX, element.flipY, editingTextId, element.id]);
+  
+  // Ensure font and weight variants are loaded dynamically
+  useEffect(() => {
+    if (element.fontFamily) {
+      loadGoogleFont(element.fontFamily);
+    }
+  }, [element.fontFamily, element.fontWeight]);
   
   // Sync auto height back to store so bounding boxes and overlays stay perfect
   const lastSetHeightRef = useRef<number | null>(null);

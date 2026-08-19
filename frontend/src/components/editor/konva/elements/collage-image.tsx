@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useMemo } from "react";
 import { Image as KonvaImage, Group } from "react-konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
-import { getKonvaFilters } from "@/lib/konva-filters";
-import { useRenderQuality } from "@/lib/render-quality";
+import { getKonvaFilters } from "@/lib/filters/konva-filters";
+import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { useFilterCache } from "@/hooks/use-filter-cache";
 import { MagicAiScanner } from "./magic-ai-scanner";
 

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { AccountLicenseModal } from '../src/components/editor/account-license-modal';
+import { AccountLicenseModal } from '../src/components/editor/dialogs/account-license-modal';
 import { useEditorStore } from '../src/lib/editor-store';
 import * as LicenseHandler from '../wailsjs/go/handlers/LicenseHandler';
 

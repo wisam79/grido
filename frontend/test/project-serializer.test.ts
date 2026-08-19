@@ -6,7 +6,7 @@ import {
   domainProjectToProjectFile,
   projectFileToDomainProject,
   ProjectFileV1,
-} from "../src/lib/project-serializer";
+} from "../src/lib/io/project-serializer";
 import { EditorState } from "../src/lib/editor-store";
 import { domain } from "../wailsjs/go/models";
 

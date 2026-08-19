@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from "react";
 import { useEditorStore } from "@/lib/editor-store";
-import { useRenderQuality } from "@/lib/render-quality";
+import { useRenderQuality } from "@/lib/canvas/render-quality";
 
 // إدارة كاش Konva للعقد ذات الفلاتر بدقة تتبع التكبير الفعلي للمعاينة.
 //
@@ -64,7 +64,7 @@ export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth, filter
     } catch (err) {
       console.warn("Failed to cache Konva image", err);
     }
-  }, [nodeRef, image, canvasWidth, isDraggingFilter]);
+  }, [nodeRef, canvasWidth, isDraggingFilter]);
 
   // إعادة الكاش فوراً عند تغيّر الصورة/الفلاتر/مفتاح الفلتر/سحب شريط الفلتر
   useEffect(() => {
@@ -83,7 +83,7 @@ export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth, filter
     }
 
     recache();
-  }, [hasFilters, filterKey, recache, nodeRef]);
+  }, [hasFilters, filterKey, image, recache, nodeRef]);
 
   // إعادة الكاش بعد استقرار التكبير (Debounce) — الاشتراك المباشر في الستور
   // يمنع إعادة تصيير كل العناصر عند كل خطوة تكبير

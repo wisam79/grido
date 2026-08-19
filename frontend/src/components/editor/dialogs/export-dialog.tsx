@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { Download, FileImage, Loader2, AlertTriangle } from "lucide-react";
 import { exportCanvas, downloadBlob, exportSlotCanvas, applyBleedAndCropMarks, CanvasTooLargeError } from "@/lib/export";
 import { useEditorStore } from "@/lib/editor-store";
-import { useStageRef } from "@/lib/stage-context";
+import { useStageRef } from "@/lib/canvas/stage-context";
 import { toast } from "sonner";
 
 import { useShallow } from "zustand/react/shallow";

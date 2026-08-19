@@ -2,10 +2,10 @@ import React, { useRef, useEffect } from "react";
 import { Stage } from "react-konva";
 import Konva from "konva";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import { useStageRef } from "@/lib/stage-context";
-import { SnapGuide } from "@/lib/snap-utils";
+import { useStageRef } from "@/lib/canvas/stage-context";
+import { SnapGuide } from "@/lib/canvas/snap-utils";
 import { useShallow } from "zustand/react/shallow";
-import "@/lib/custom-filters";
+import "@/lib/filters/custom-filters";
 
 import { KonvaBackgroundLayer } from "./layers/konva-background-layer";
 import { KonvaCollageLayer } from "./layers/konva-collage-layer";

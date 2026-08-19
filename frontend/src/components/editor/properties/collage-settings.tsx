@@ -1,6 +1,6 @@
 import { Sparkles, Columns, Move, Square, Maximize2, Scissors, PaintBucket } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
-import { useRenderQuality } from "@/lib/render-quality";
+import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";
 import { Slider } from "@/components/ui/slider";

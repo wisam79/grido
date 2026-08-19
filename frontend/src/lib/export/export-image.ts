@@ -1,11 +1,11 @@
 import type Konva from "konva";
 import { CanvasElement, ImageElement, useEditorStore } from "@/lib/editor-store";
 import { buildCSSFilter } from "@/lib/utils";
-import { captureStageDataUrl } from "@/lib/konva-export-utils";
-import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
-import { computeSheetGrid, computeSlotRectMM } from "@/lib/print-layout-math";
+import { captureStageDataUrl } from "@/lib/canvas/konva-export-utils";
+import { calculatePrintCutLines } from "@/lib/print/cut-lines-utils";
+import { computeSheetGrid, computeSlotRectMM } from "@/lib/print/print-layout-math";
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
-import { VECTOR_SHAPES } from "@/lib/svg-paths";
+import { VECTOR_SHAPES } from "@/lib/io/svg-paths";
 import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
 
 // [FIX #9] تحويل Data URL إلى Blob مباشرة في الذاكرة بدلاً من fetch غير الضروري

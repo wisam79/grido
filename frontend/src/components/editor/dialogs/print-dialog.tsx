@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor-store";
 import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
-import { useStageRef } from "@/lib/stage-context";
+import { useStageRef } from "@/lib/canvas/stage-context";
 import { usePrintLayout } from "@/hooks/use-print-layout";
 import { cn } from "@/lib/utils";
 import { Printer, ZoomIn, ZoomOut, Loader2, Plus, Minus, LayoutGrid, Rows, Columns, Scissors } from "lucide-react";
@@ -30,11 +30,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PAPER_SIZES } from "@/lib/templates/constants";
-import { captureStageDataUrl } from "@/lib/konva-export-utils";
+import { captureStageDataUrl } from "@/lib/canvas/konva-export-utils";
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
-import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
-import { computeBlockPosition, computeSlotAspect, computeSlotRectMM } from "@/lib/print-layout-math";
-import { buildSingleComposition } from "@/lib/single-print-composition";
+import { calculatePrintCutLines } from "@/lib/print/cut-lines-utils";
+import { computeBlockPosition, computeSlotAspect, computeSlotRectMM } from "@/lib/print/print-layout-math";
+import { buildSingleComposition } from "@/lib/print/single-print-composition";
 
 interface PrintDialogProps {
   open: boolean;

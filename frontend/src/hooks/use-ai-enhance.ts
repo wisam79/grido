@@ -105,7 +105,7 @@ export async function prepareImageForAiUpload(src: string, maxDim = 2048, qualit
   });
 }
 
-import { useRenderQuality } from "@/lib/render-quality";
+import { useRenderQuality } from "@/lib/canvas/render-quality";
 
 export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void) {
   const onUpdateRef = useRef(onUpdate);

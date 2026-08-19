@@ -93,7 +93,7 @@ export const handler: Handler = async (event) => {
         Location: asset.browser_download_url || `https://github.com/${repoOwner}/${repoName}/releases/latest`,
       },
     };
-  } catch (err: any) {
+  } catch {
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'خطأ غير متوقع في خادم Netlify' }),

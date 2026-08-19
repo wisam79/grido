@@ -392,9 +392,16 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        ctx.font = `${el.fontWeight || 400} ${el.fontSize || 32}px ${el.fontFamily || "Cairo"}`;
-        const metrics = ctx.measureText(el.text || "");
-        newWidth = Math.min(0.85, Math.max(0.04, (metrics.width + 48) / canvasW));
+        let textToMeasure = el.text || "";
+        if (el.arabicNumerals) {
+          textToMeasure = textToMeasure.replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d, 10)]);
+        }
+        const fontStylePrefix = el.fontStyle === "italic" ? "italic " : "";
+        ctx.font = `${fontStylePrefix}${el.fontWeight || 400} ${el.fontSize || 32}px ${el.fontFamily || "Cairo, Tajawal, sans-serif"}`;
+        const metrics = ctx.measureText(textToMeasure);
+        const letterSpacingExtra = (el.letterSpacing || 0) * textToMeasure.length;
+        const totalW = metrics.width + Math.max(0, letterSpacingExtra);
+        newWidth = Math.min(0.95, Math.max(0.04, (totalW + 48) / canvasW));
       }
     }
 

@@ -169,15 +169,15 @@ vi.mock('../src/components/editor/konva/konva-canvas', () => ({
 }));
 
 // Mock ProjectsDialog to render trigger synchronously under lazy evaluation
-vi.mock('../src/components/editor/projects-dialog', () => ({
+vi.mock('../src/components/editor/dialogs/projects-dialog', () => ({
   ProjectsDialog: ({ trigger }: any) => trigger || null,
 }));
 
 // Mock ExportDialog and PrintDialog to avoid useStageRef errors during testing
-vi.mock('../src/components/editor/export-dialog', () => ({
+vi.mock('../src/components/editor/dialogs/export-dialog', () => ({
   ExportDialog: () => null,
 }));
-vi.mock('../src/components/editor/print-dialog', () => ({
+vi.mock('../src/components/editor/dialogs/print-dialog', () => ({
   PrintDialog: () => null,
 }));
 

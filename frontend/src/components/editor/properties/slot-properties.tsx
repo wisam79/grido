@@ -11,10 +11,10 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
-import { openImageFileDialog } from "@/lib/file-dialog-utils";
+import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { toast } from "sonner";
 import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
-import { useRenderQuality } from "@/lib/render-quality";
+import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { SliderControl } from "./shared-controls";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
@@ -29,8 +29,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const CropDialog = lazy(() => import("../crop-dialog").then((module) => ({ default: module.CropDialog })));
-const RefineBgDialog = lazy(() => import("../refine-bg-dialog").then((module) => ({ default: module.RefineBgDialog })));
+const CropDialog = lazy(() => import("../dialogs/crop-dialog").then((module) => ({ default: module.CropDialog })));
+const RefineBgDialog = lazy(() => import("../dialogs/refine-bg-dialog").then((module) => ({ default: module.RefineBgDialog })));
 
 export function SlotProperties({
   slot,

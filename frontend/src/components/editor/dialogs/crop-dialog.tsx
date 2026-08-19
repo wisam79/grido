@@ -38,23 +38,21 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
   const templateAspect =
     template && template.width > 0 && template.height > 0 ? template.width / template.height : undefined;
   
-  const [prevOpen, setPrevOpen] = useState(open);
-  const [prevImageSrc, setPrevImageSrc] = useState(imageSrc);
   const [aspect, setAspect] = useState<number | undefined>(templateAspect);
   const [currentSrc, setCurrentSrc] = useState(imageSrc);
   const [straightenAngle, setStraightenAngle] = useState(0);
   const [baseRotation, setBaseRotation] = useState(0);
 
-  if (open !== prevOpen || (open && imageSrc !== prevImageSrc)) {
-    setPrevOpen(open);
-    setPrevImageSrc(imageSrc);
+  // إعادة ضبط الحالة عند فتح النافذة أو تغيير الصورة
+  useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAspect(templateAspect);
       setCurrentSrc(imageSrc);
       setStraightenAngle(0);
       setBaseRotation(0);
     }
-  }
+  }, [open, imageSrc, templateAspect]);
 
   const handleRestoreOriginal = () => {
     if (originalImageSrc) {

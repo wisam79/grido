@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProjectsDialog } from "../dialogs/projects-dialog";
 import { ClearAutoSave, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
-import { openImageFileDialog } from "@/lib/file-dialog-utils";
+import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 
 interface TooltipBtnProps {
   content: string;

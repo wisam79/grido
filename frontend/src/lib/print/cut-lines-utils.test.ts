@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calculatePrintCutLines } from "./cut-lines-utils";
-import { computeSheetGrid } from "@/lib/print-layout-math";
+import { computeSheetGrid } from "@/lib/print/print-layout-math";
 
 const A4 = { paperWidth: 210, paperHeight: 297 };
 

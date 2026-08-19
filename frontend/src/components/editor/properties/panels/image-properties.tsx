@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { ImageElement, useEditorStore } from "@/lib/editor-store";
-import { useRenderQuality } from "@/lib/render-quality";
+import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
@@ -11,15 +11,15 @@ import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
-import { openImageFileDialog } from "@/lib/file-dialog-utils";
+import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
 import { useFaceFrame } from "@/hooks/use-face-frame";
 
 // أدوات الصور الثقيلة لا تُحمّل إلا عند فتحها، بدلاً من تأخير المحرر عند البدء.
-const CropDialog = lazy(() => import("../../crop-dialog").then((module) => ({ default: module.CropDialog })));
+const CropDialog = lazy(() => import("../../dialogs/crop-dialog").then((module) => ({ default: module.CropDialog })));
 const DocumentScannerDialog = lazy(() => import("../../document-scanner").then((module) => ({ default: module.DocumentScannerDialog })));
-const RefineBgDialog = lazy(() => import("../../refine-bg-dialog").then((module) => ({ default: module.RefineBgDialog })));
+const RefineBgDialog = lazy(() => import("../../dialogs/refine-bg-dialog").then((module) => ({ default: module.RefineBgDialog })));
 interface ImagePropertiesProps {
   element: ImageElement;
   onUpdate: (id: string, patch: Partial<ImageElement>) => void;

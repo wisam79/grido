@@ -1,5 +1,5 @@
 import { PhotoTemplate, CollageTemplate } from "../templates";
-import { ProjectFileV1 } from "../project-serializer";
+import { ProjectFileV1 } from "../io/project-serializer";
 
 export interface ProjectStateData {
   mode: EditorMode;

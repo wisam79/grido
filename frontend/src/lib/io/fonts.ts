@@ -325,7 +325,7 @@ export const ARABIC_FONTS: FontOption[] = [
 const loadedFonts = new Set<string>();
 
 /**
- * Loads Google Font dynamically on demand when selected by the user
+ * Loads Google Font dynamically on demand with full weight range (100-900)
  */
 export function loadGoogleFont(fontFamily: string) {
   if (typeof document === "undefined" || !fontFamily) return;
@@ -333,7 +333,7 @@ export function loadGoogleFont(fontFamily: string) {
   // Extract clean font name from CSS family string, e.g. "Cairo, sans-serif" -> "Cairo"
   const cleanName = fontFamily.split(",")[0].trim().replace(/['"]/g, "");
 
-  // All 12 offline fonts bundled in assets/fonts:
+  // Offline fonts bundled in assets/fonts:
   const offlineMatch = ARABIC_FONTS.find(
     (f) => f.isOffline && (f.family.includes(cleanName) || f.englishName.toLowerCase() === cleanName.toLowerCase())
   );
@@ -347,13 +347,16 @@ export function loadGoogleFont(fontFamily: string) {
       (f) => f.family.includes(cleanName) || f.englishName.toLowerCase() === cleanName.toLowerCase() || f.id === cleanName.toLowerCase()
     );
     const googleName = fontObj?.googleFontName || cleanName.replace(/ /g, "+");
-    const linkId = `google-font-${googleName.toLowerCase()}`;
-    if (document.getElementById(linkId)) return;
+    const linkId = `google-font-${googleName.toLowerCase().replace(/\s+/g, "-")}`;
+    if (document.getElementById(linkId)) {
+      loadedFonts.add(cleanName);
+      return;
+    }
 
     const link = document.createElement("link");
     link.id = linkId;
     link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@300;400;500;600;700;800;900&display=swap`;
+    link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
     document.head.appendChild(link);
     loadedFonts.add(cleanName);
   } catch (err) {

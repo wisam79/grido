@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { exportCanvas, downloadBlob, quickExportPNG } from "../src/components/editor/export-utils";
+import { exportCanvas, downloadBlob, quickExportPNG } from "../src/lib/export";
 import { useEditorStore } from "../src/lib/editor-store";
 import { toast } from "sonner";
 

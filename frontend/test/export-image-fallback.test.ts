@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { exportCanvas } from "../src/lib/export/export-image";
 import { useEditorStore } from "../src/lib/editor-store";
-import { computeSlotRectMM, computeSheetGrid } from "../src/lib/print-layout-math";
-import { calculatePrintCutLines } from "../src/lib/cut-lines-utils";
+import { computeSlotRectMM, computeSheetGrid } from "../src/lib/print/print-layout-math";
+import { calculatePrintCutLines } from "../src/lib/print/cut-lines-utils";
 
 const CANVAS_W = 2480;
 const CANVAS_H = 3508;

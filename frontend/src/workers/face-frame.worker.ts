@@ -7,7 +7,7 @@
  */
 
 import type { FaceLandmarker } from "@mediapipe/tasks-vision";
-import { faceBoxFromLandmarks, computeIdCropRect } from "../lib/face-frame-utils";
+import { faceBoxFromLandmarks, computeIdCropRect } from "../lib/filters/face-frame-utils";
 
 export interface FaceFrameResult {
   /** صورة PNG مقصوصة بصيغة Base64 */

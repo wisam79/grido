@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { calculatePrintCutLines } from "../src/lib/cut-lines-utils";
-import { computeSheetGrid } from "../src/lib/print-layout-math";
+import { calculatePrintCutLines } from "../src/lib/print/cut-lines-utils";
+import { computeSheetGrid } from "../src/lib/print/print-layout-math";
 
 describe("calculatePrintCutLines", () => {
   it("should calculate correct cut lines for single mode on A4 paper", () => {

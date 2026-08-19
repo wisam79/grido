@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorStore } from "@/lib/editor-store";
-import { serializeEditorState, projectFileToDomainProject, domainProjectToProjectFile } from "@/lib/project-serializer";
+import { serializeEditorState, projectFileToDomainProject, domainProjectToProjectFile } from "@/lib/io/project-serializer";
 import { SaveProject, GetAllProjects, DeleteProject } from "../../../../wailsjs/go/handlers/ProjectHandler";
 import { ExportBackup, ImportBackup, ResetLibrary } from "../../../../wailsjs/go/handlers/BackupHandler";
 import { SaveFileDialog } from "../../../../wailsjs/go/main/App";

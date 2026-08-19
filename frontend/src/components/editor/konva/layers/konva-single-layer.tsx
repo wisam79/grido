@@ -1,7 +1,7 @@
 import React from "react";
 import { Layer } from "react-konva";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { SnapGuide } from "@/lib/snap-utils";
+import { SnapGuide } from "@/lib/canvas/snap-utils";
 import { URLImage, KonvaTextElement, KonvaShapeElement } from "../konva-elements";
 import { EditorTransformer } from "../elements/editor-transformer";
 
