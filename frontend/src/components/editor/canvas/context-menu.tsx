@@ -19,9 +19,7 @@ import {
   Clipboard,
   RotateCw,
   FlipHorizontal2,
-  FlipVertical2,
   Crosshair,
-  ArrowLeftRight
 } from "lucide-react";
 import { openImageFileDialog } from "@/lib/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
