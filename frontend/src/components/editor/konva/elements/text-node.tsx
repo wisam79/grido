@@ -81,7 +81,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         onChangeRef.current({ height: actualHeight });
       }
     }
-  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight]);
+  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight, element.wrap]);
 
   const flipped = element.flipX === true;
   const flippedY = element.flipY === true;
@@ -179,8 +179,8 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         stroke={element.strokeWidth ? (element.stroke || "#000000") : undefined}
         strokeWidth={element.strokeWidth || undefined}
         textDecoration={element.textDecoration || ""}
-        wrap="none"
-        ellipsis={true}
+        wrap={element.wrap || "word"}
+        ellipsis={false}
       />
     </Group>
   );

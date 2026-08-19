@@ -80,6 +80,7 @@ export interface TextElement extends BaseCanvasElement {
   fontStyle?: "normal" | "italic";
   textDecoration?: "none" | "underline" | "line-through";
   textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
+  wrap?: "word" | "char" | "none";
   shadowColor?: string;
   shadowBlur?: number;
   shadowOffsetX?: number;
