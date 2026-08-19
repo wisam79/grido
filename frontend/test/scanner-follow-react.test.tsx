@@ -3,7 +3,6 @@ import React, { useRef } from "react";
 import { createRoot, Root } from "react-dom/client";
 import { Stage, Layer, Group, Image as KonvaImage } from "react-konva";
 import { MagicAiScanner } from "../src/components/editor/konva/elements/magic-ai-scanner";
-import Konva from "konva/lib/index.js";
 
 const noop = () => {};
 class MockContext2D {

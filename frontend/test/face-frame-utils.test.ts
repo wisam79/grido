@@ -3,7 +3,6 @@ import {
   computeIdCropRect,
   faceBoxFromLandmarks,
   ICAO_BASE_EYE_LEVEL,
-  MAX_ZOOM,
 } from "../src/lib/filters/face-frame-utils";
 
 describe("computeIdCropRect - Human Expert Photography Engine", () => {

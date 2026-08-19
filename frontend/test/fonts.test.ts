@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, isFontLoaded } from "../src/lib/io/fonts";
+import { describe, it, expect, beforeEach } from "vitest";
+import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont } from "../src/lib/io/fonts";
 
 describe("Font Engine Tests", () => {
   beforeEach(() => {

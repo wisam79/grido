@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
-import { ARABIC_FONTS, FONT_CATEGORIES, FontCategory, loadGoogleFont, FontOption } from "@/lib/io/fonts";
+import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from "@/lib/io/fonts";
 import { Search, ChevronDown, Star, Clock, X, Sparkles, Cloud, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

@@ -69,6 +69,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
   const [showSizeSlider, setShowSizeSlider] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFontSizeInput(String(currentFontSize));
   }, [currentFontSize]);
 
