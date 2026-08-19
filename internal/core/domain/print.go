@@ -45,6 +45,7 @@ type PrintRequest struct {
 	DPI             int                `json:"dpi"`
 	BackgroundColor string             `json:"backgroundColor"`
 	ShowCutLines    bool               `json:"showCutLines"`
+	CutLineStyle    string             `json:"cutLineStyle,omitempty"` // "dashed", "dotted", "solid", "cropmarks"
 	ColorSpace      string             `json:"colorSpace,omitempty"`   // "sRGB" or "CMYK"
 	ExportFormat    string             `json:"exportFormat,omitempty"` // "png", "jpeg", "tiff"
 	Orientation     string             `json:"orientation,omitempty"`  // "portrait" or "landscape"

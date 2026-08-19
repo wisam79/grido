@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { ContextMenu, ContextMenuPosition, ContextMenuTarget } from "../context-menu";
+import { ContextMenu, ContextMenuPosition, ContextMenuTarget } from "./context-menu";
 
 interface CanvasContextMenuProps {
   contextMenu: {

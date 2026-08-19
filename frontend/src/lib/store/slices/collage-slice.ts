@@ -42,6 +42,13 @@ export interface CollageSlice {
   setCollageShowEndCutLine: (show: boolean) => void;
   setCollageStrokeWidth: (width: number) => void;
   setCollageStrokeColor: (color: string) => void;
+
+  swapSlots: (slotIdA: string, slotIdB: string) => void;
+  fillEmptySlots: (src: string, sourceSlotId?: string) => void;
+  rotateSlot: (slotId: string, angleDelta?: number) => void;
+  flipSlotX: (slotId: string) => void;
+  flipSlotY: (slotId: string) => void;
+  resetSlotAdjustments: (slotId: string) => void;
 }
 
 const initialCollage = COLLAGE_TEMPLATES[0];
@@ -462,4 +469,133 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   setCollageShowEndCutLine: (show) => { set({ collageShowEndCutLine: show }); get().pushHistory(); },
   setCollageStrokeWidth: (width) => { set({ collageStrokeWidth: width }); get().pushHistory(); },
   setCollageStrokeColor: (color) => { set({ collageStrokeColor: color }); get().pushHistory(); },
+
+  swapSlots: (slotIdA: string, slotIdB: string) => {
+    if (!slotIdA || !slotIdB || slotIdA === slotIdB) return;
+    const currentSlots = get().slots;
+    const slotA = currentSlots.find((s) => s.id === slotIdA);
+    const slotB = currentSlots.find((s) => s.id === slotIdB);
+    if (!slotA || !slotB) return;
+
+    set((state) => ({
+      slots: state.slots.map((sl) => {
+        if (sl.id === slotIdA) {
+          return {
+            ...sl,
+            imageSrc: slotB.imageSrc,
+            filter: slotB.filter || "none",
+            brightness: slotB.brightness ?? 100,
+            contrast: slotB.contrast ?? 100,
+            saturation: slotB.saturation ?? 100,
+            zoom: slotB.zoom ?? 1,
+            dragX: slotB.dragX ?? 0,
+            dragY: slotB.dragY ?? 0,
+            flipX: slotB.flipX ?? false,
+            flipY: slotB.flipY ?? false,
+            rotation: slotB.rotation ?? 0,
+            originalImageSrc: slotB.originalImageSrc,
+            bgColor: slotB.bgColor,
+          };
+        }
+        if (sl.id === slotIdB) {
+          return {
+            ...sl,
+            imageSrc: slotA.imageSrc,
+            filter: slotA.filter || "none",
+            brightness: slotA.brightness ?? 100,
+            contrast: slotA.contrast ?? 100,
+            saturation: slotA.saturation ?? 100,
+            zoom: slotA.zoom ?? 1,
+            dragX: slotA.dragX ?? 0,
+            dragY: slotA.dragY ?? 0,
+            flipX: slotA.flipX ?? false,
+            flipY: slotA.flipY ?? false,
+            rotation: slotA.rotation ?? 0,
+            originalImageSrc: slotA.originalImageSrc,
+            bgColor: slotA.bgColor,
+          };
+        }
+        return sl;
+      }),
+    }));
+    get().pushHistory();
+  },
+
+  fillEmptySlots: (src: string, sourceSlotId?: string) => {
+    if (!src) return;
+    const sourceSlot = sourceSlotId ? get().slots.find((s) => s.id === sourceSlotId) : null;
+    set((state) => ({
+      slots: state.slots.map((sl) => {
+        if (sl.imageSrc) return sl;
+        return {
+          ...sl,
+          imageSrc: src,
+          filter: sourceSlot?.filter || "none",
+          brightness: sourceSlot?.brightness ?? 100,
+          contrast: sourceSlot?.contrast ?? 100,
+          saturation: sourceSlot?.saturation ?? 100,
+          bgColor: sourceSlot?.bgColor ?? sl.bgColor,
+        };
+      }),
+    }));
+    get().pushHistory();
+  },
+
+  rotateSlot: (slotId: string, angleDelta: number = 90) => {
+    set((state) => ({
+      slots: state.slots.map((sl) => {
+        if (sl.id !== slotId) return sl;
+        const currentRot = sl.rotation || 0;
+        const newRot = ((currentRot + angleDelta) % 360 + 360) % 360;
+        return {
+          ...sl,
+          rotation: newRot,
+          dragX: 0,
+          dragY: 0,
+        };
+      }),
+    }));
+    get().pushHistory();
+  },
+
+  flipSlotX: (slotId: string) => {
+    set((state) => ({
+      slots: state.slots.map((sl) =>
+        sl.id === slotId ? { ...sl, flipX: !sl.flipX } : sl
+      ),
+    }));
+    get().pushHistory();
+  },
+
+  flipSlotY: (slotId: string) => {
+    set((state) => ({
+      slots: state.slots.map((sl) =>
+        sl.id === slotId ? { ...sl, flipY: !sl.flipY } : sl
+      ),
+    }));
+    get().pushHistory();
+  },
+
+  resetSlotAdjustments: (slotId: string) => {
+    set((state) => ({
+      slots: state.slots.map((sl) =>
+        sl.id === slotId
+          ? {
+              ...sl,
+              filter: "none",
+              brightness: 100,
+              contrast: 100,
+              saturation: 100,
+              zoom: 1,
+              dragX: 0,
+              dragY: 0,
+              flipX: false,
+              flipY: false,
+              rotation: 0,
+            }
+          : sl
+      ),
+    }));
+    get().pushHistory();
+  },
 });

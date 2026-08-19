@@ -34,29 +34,34 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   const isArabicText = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(textEl.text || "");
   const spacingVal = textEl.letterSpacing || 0;
   const bgColor = textEl.textBgColor && textEl.textBgColor !== "transparent" ? textEl.textBgColor : "transparent";
+  const scaleRatio = Math.min(displayW / canvasWidth, displayH / canvasHeight);
+  const radiusPx = (textEl.textBgRadius || 0) * scaleRatio;
 
   return (
     <textarea
       autoFocus
-      className="absolute z-50 bg-transparent resize-none outline-none ring-0 m-0 p-0 border-0"
+      className="absolute z-50 bg-transparent resize-none outline-none ring-0 m-0 p-0 border-0 transition-shadow duration-150"
       style={{
         backgroundColor: bgColor,
+        borderRadius: radiusPx > 0 ? `${radiusPx}px` : "3px",
         left: `${textEl.x * displayW}px`,
         top: `${textEl.y * displayH}px`,
         width: `${textEl.width * displayW}px`,
         height: `${textEl.height * displayH}px`,
         transform: `rotate(${textEl.rotation || 0}deg)`,
         transformOrigin: "top left",
-        fontSize: `${(textEl.fontSize || 20) * Math.min(displayW / canvasWidth, displayH / canvasHeight)}px`,
+        fontSize: `${(textEl.fontSize || 20) * scaleRatio}px`,
         fontFamily: textEl.fontFamily || "Arial",
         fontWeight: textEl.fontWeight || 400,
+        fontStyle: textEl.fontStyle || "normal",
+        textDecoration: textEl.textDecoration || "none",
+        textTransform: textEl.textTransform || "none",
         color: textEl.color || "#000000",
         textAlign: textEl.textAlign || "center",
         lineHeight: textEl.lineHeight || 1.2,
         letterSpacing: isArabicText ? "0px" : `${spacingVal}px`,
         wordSpacing: isArabicText ? `${spacingVal}px` : undefined,
-        // تمييز بصري عبر ظل بدل border/padding حتى لا ينزاح المحرر عن موضع النص الفعلي
-        boxShadow: "0 0 0 2px hsl(var(--primary))",
+        boxShadow: "0 0 0 2px #2563eb, 0 4px 16px rgba(37,99,235,0.25)",
       }}
       defaultValue={textEl.text}
       onFocus={(e) => {
@@ -76,7 +81,6 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         }
         if (e.key === "Escape") {
           e.preventDefault();
-          // التزام نفس منطق onBlur: حفظ المكتوب ثم إغلاق — لا يضيع نص المستخدم
           updateElement(textEl.id, { text: e.currentTarget.value });
           pushHistory();
           setEditingTextId(null);

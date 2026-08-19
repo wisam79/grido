@@ -13,6 +13,7 @@ interface SheetPreviewProps {
   zoom: number;
   showCutLines: boolean;
   showEndCutLine?: boolean;
+  cutLineStyle?: "dashed" | "dotted" | "solid" | "cropmarks";
   mode: "single" | "collage";
   backgroundColor: string;
   previewImageSrc: string;
@@ -36,6 +37,7 @@ export function SheetPreview({
   zoom,
   showCutLines,
   showEndCutLine = true,
+  cutLineStyle = "dashed",
   mode,
   backgroundColor,
   previewImageSrc,
@@ -109,6 +111,7 @@ export function SheetPreview({
         paperWidth: paperWidthMM,
         paperHeight: paperHeightMM,
         showEndCutLine,
+        cutLineStyle: cutLineStyle || "dashed",
         slots,
         collageMargin,
         collageGap,
@@ -118,6 +121,13 @@ export function SheetPreview({
         grid,
       })
     : [];
+
+  const borderStyleClass =
+    cutLineStyle === "dotted"
+      ? "border-dotted"
+      : cutLineStyle === "solid" || cutLineStyle === "cropmarks"
+      ? "border-solid"
+      : "border-dashed";
 
   const cutLineElements = rawCutLines.map((line, idx) => {
     const isVertical = Math.abs(line.x1 - line.x2) < 0.01;
@@ -141,7 +151,10 @@ export function SheetPreview({
       return (
         <div
           key={`v-cut-${idx}`}
-          className="absolute border-l border-dashed border-slate-400/70 pointer-events-none z-20"
+          className={cn(
+            "absolute border-l border-slate-400/70 pointer-events-none z-20",
+            borderStyleClass
+          )}
           style={{
             left: leftVal,
             top: topVal,
@@ -159,7 +172,7 @@ export function SheetPreview({
             "absolute pointer-events-none z-20",
             isBottomEnd
               ? "border-t-2 border-blue-500/80 border-dashed"
-              : "border-t border-dashed border-slate-400/70"
+              : cn("border-t border-slate-400/70", borderStyleClass)
           )}
           style={{
             top: topVal,

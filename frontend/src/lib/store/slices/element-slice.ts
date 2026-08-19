@@ -2,6 +2,8 @@ import { StateCreator } from "zustand";
 import { CanvasElement, ShapeElement, ImageElement } from "../types";
 import { uid } from "../../utils";
 
+export type TextPresetType = "heading" | "subheading" | "body" | "badge" | "watermark" | "studio-date";
+
 export interface ElementSlice {
   elements: CanvasElement[];
   selectedId: string | null;
@@ -11,6 +13,7 @@ export interface ElementSlice {
 
   addImageElement: (src: string, imageAspectRatio?: number) => void;
   addTextElement: (text?: string) => void;
+  addTextPreset: (preset: TextPresetType) => void;
   addShapeElement: (shape: ShapeElement["shape"], svgPath?: string) => void;
   updateElement: (id: string, patch: Partial<CanvasElement>) => void;
   updateElements: (patches: { id: string; patch: Partial<CanvasElement> }[]) => void;
@@ -132,6 +135,113 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       lineHeight: 1.2,
       letterSpacing: 0,
     };
+    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
+    get().pushHistory();
+  },
+
+  addTextPreset: (preset: TextPresetType) => {
+    const id = uid();
+    const state = get();
+    const canvasW = state.canvasWidth || 2480;
+
+    let text = "نص جديد";
+    let fontSize = 32;
+    let fontWeight = 700;
+    let color = "#0f172a";
+    let fontFamily = "Cairo, sans-serif";
+    let textBgColor = "transparent";
+    let textBgRadius = 0;
+    let textBgPadding = 0;
+    let opacity = 1;
+    let rotation = 0;
+    let height = 0.05;
+
+    switch (preset) {
+      case "heading":
+        text = "عنوان رئيسي";
+        fontSize = 48;
+        fontWeight = 800;
+        fontFamily = "Cairo, sans-serif";
+        color = "#0f172a";
+        height = 0.07;
+        break;
+      case "subheading":
+        text = "عنوان فرعي للتصميم";
+        fontSize = 28;
+        fontWeight = 600;
+        fontFamily = "Almarai, sans-serif";
+        color = "#334155";
+        height = 0.05;
+        break;
+      case "body":
+        text = "اكتب هنا وصفاً أو ملاحظات إضافية للتصميم...";
+        fontSize = 18;
+        fontWeight = 400;
+        fontFamily = "\"IBM Plex Sans Arabic\", sans-serif";
+        color = "#475569";
+        height = 0.04;
+        break;
+      case "badge":
+        text = "استوديو احترافي ★";
+        fontSize = 20;
+        fontWeight = 700;
+        fontFamily = "Tajawal, sans-serif";
+        color = "#ffffff";
+        textBgColor = "#2563eb";
+        textBgRadius = 999;
+        textBgPadding = 10;
+        height = 0.045;
+        break;
+      case "watermark":
+        text = "GRIDO STUDIO · مسودة";
+        fontSize = 36;
+        fontWeight = 800;
+        fontFamily = "Alexandria, sans-serif";
+        color = "#94a3b8";
+        opacity = 0.25;
+        rotation = -35;
+        height = 0.06;
+        break;
+      case "studio-date":
+        text = `📅 ${new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" })}`;
+        fontSize = 16;
+        fontWeight = 600;
+        fontFamily = "Cairo, sans-serif";
+        color = "#1e293b";
+        textBgColor = "rgba(241, 245, 249, 0.95)";
+        textBgRadius = 8;
+        textBgPadding = 8;
+        height = 0.04;
+        break;
+    }
+
+    const charWidth = fontSize * 0.9;
+    const estimatedPx = Math.max(160, Math.min(canvasW * 0.7, text.length * charWidth + 60));
+    const initialW = estimatedPx / canvasW;
+
+    const newEl: CanvasElement = {
+      id,
+      type: "text",
+      x: 0.5 - initialW / 2,
+      y: 0.45,
+      width: initialW,
+      height,
+      rotation,
+      opacity,
+      zIndex: nextZIndex(get().elements),
+      text,
+      fontSize,
+      fontWeight,
+      color,
+      fontFamily,
+      textAlign: "center",
+      textBgColor,
+      textBgRadius,
+      textBgPadding,
+      lineHeight: 1.2,
+      letterSpacing: 0,
+    };
+
     set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
     get().pushHistory();
   },

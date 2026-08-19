@@ -1,5 +1,5 @@
 import React from "react";
-import { HorizontalRuler, VerticalRuler, RulerUnit } from "../ruler";
+import { HorizontalRuler, VerticalRuler, RulerUnit } from "./ruler";
 
 interface ViewportFixedRulersProps {
   showRuler: boolean;

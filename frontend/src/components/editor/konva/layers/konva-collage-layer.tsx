@@ -295,16 +295,20 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
 
             {/* Selection indicator Ring */}
             {isSelected && (
-              <Rect
-                x={left - 1}
-                y={top - 1}
-                width={width + 2}
-                height={height + 2}
-                stroke="#3b82f6"
-                strokeWidth={2}
-                cornerRadius={radius + 1}
-                listening={false}
-              />
+              <Group listening={false}>
+                <Rect
+                  x={left - 1.5}
+                  y={top - 1.5}
+                  width={width + 3}
+                  height={height + 3}
+                  stroke="#0078d4"
+                  strokeWidth={2}
+                  cornerRadius={radius + 1.5}
+                  shadowColor="#0078d4"
+                  shadowBlur={4}
+                  shadowOpacity={0.4}
+                />
+              </Group>
             )}
           </Group>
         );

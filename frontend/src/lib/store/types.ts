@@ -71,12 +71,20 @@ export interface TextElement extends BaseCanvasElement {
   fontFamily?: string;
   textAlign?: "right" | "center" | "left";
   textBgColor?: string;
+  textBgRadius?: number;
+  textBgPadding?: number;
   lineHeight?: number;
   letterSpacing?: number;
   stroke?: string;
   strokeWidth?: number;
   fontStyle?: "normal" | "italic";
   textDecoration?: "none" | "underline" | "line-through";
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
+  shadowColor?: string;
+  shadowBlur?: number;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  shadowOpacity?: number;
 }
 
 export interface ShapeElement extends BaseCanvasElement {
@@ -147,6 +155,7 @@ export interface PrintSettings {
   copiesPerSheet: number;
   showCutLines: boolean;
   showEndCutLine?: boolean;
+  cutLineStyle?: "dashed" | "dotted" | "solid" | "cropmarks";
   orientation: "portrait" | "landscape";
   fitToPage?: boolean;
   repeatMode?: "all" | "row" | "column";

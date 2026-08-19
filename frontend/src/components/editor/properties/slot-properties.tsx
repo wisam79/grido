@@ -2,7 +2,8 @@ import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ImagePlus, Scissors, Copy, Rows, Columns, LayoutGrid,
-  FlipHorizontal2, FlipVertical2, RotateCw, Undo2, Palette, Check
+  FlipHorizontal2, FlipVertical2, RotateCw, Undo2, Palette, Check,
+  ArrowLeftRight, Crosshair, Trash2, Sparkles
 } from "lucide-react";
 import {
   Tooltip,
@@ -21,6 +22,12 @@ import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
 import { useFaceFrame } from "@/hooks/use-face-frame";
 import { Switch } from "@/components/ui/switch";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const CropDialog = lazy(() => import("../crop-dialog").then((module) => ({ default: module.CropDialog })));
 const RefineBgDialog = lazy(() => import("../refine-bg-dialog").then((module) => ({ default: module.RefineBgDialog })));
@@ -32,8 +39,23 @@ export function SlotProperties({
   slot: CanvasSlot;
   onUpdate: (id: string, patch: Partial<CanvasSlot>) => void;
 }) {
-  const { fillAllSlots, fillRowSlots, fillColumnSlots, setSlotImage, lastEditedImage, canvasWidth, canvasHeight, printSettings } = useEditorStore(useShallow((state) => ({
+  const {
+    slots,
+    swapSlots,
+    fillAllSlots,
+    fillEmptySlots,
+    fillRowSlots,
+    fillColumnSlots,
+    setSlotImage,
+    lastEditedImage,
+    canvasWidth,
+    canvasHeight,
+    printSettings
+  } = useEditorStore(useShallow((state) => ({
+    slots: state.slots,
+    swapSlots: state.swapSlots,
     fillAllSlots: state.fillAllSlots,
+    fillEmptySlots: state.fillEmptySlots,
     fillRowSlots: state.fillRowSlots,
     fillColumnSlots: state.fillColumnSlots,
     setSlotImage: state.setSlotImage,
@@ -316,10 +338,46 @@ export function SlotProperties({
         </div>
       </div>
 
-      {/* 3. كرت تكرار الخلية والتعبئة */}
+      {/* 3. كرت تكرار الخلية والتبديل والتعبئة */}
       <div className="bg-card/70 border border-border/50 rounded-2xl p-3 shadow-2xs space-y-2.5">
-        <Label className="text-xs font-bold text-foreground/90 block">تكرار الخلية</Label>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-bold text-foreground/90 block">تكرار وتبديل الخلية</Label>
+          {slots.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6.5 px-2 text-[10px] rounded-lg gap-1 border-border/50 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
+                >
+                  <ArrowLeftRight className="w-3 h-3" />
+                  <span>تبديل الموضع</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 font-cairo text-xs">
+                <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground border-b border-border/20">
+                  اختر الخلية للتبديل معها:
+                </div>
+                {slots
+                  .filter((s) => s.id !== slot.id)
+                  .map((otherSlot, idx) => (
+                    <DropdownMenuItem
+                      key={otherSlot.id}
+                      onClick={() => swapSlots(slot.id, otherSlot.id)}
+                      className="cursor-pointer flex items-center justify-between text-xs py-1.5"
+                    >
+                      <span className="font-semibold">الخلية #{otherSlot.cellIndex + 1 || idx + 1}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {otherSlot.imageSrc ? "ممتلئة" : "فارغة"}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+
+        <div className="grid grid-cols-4 gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -353,6 +411,24 @@ export function SlotProperties({
               <Button
                 variant="outline"
                 className="h-8 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/50 hover:bg-accent hover:border-primary/40 px-1"
+                onClick={() => {
+                  if (slot.imageSrc) {
+                    fillEmptySlots(slot.imageSrc, slot.id);
+                  }
+                }}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>الفارغة</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[11px]">تعبئة الخانات الفارغة فقط</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-8 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/50 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillAll}
               >
                 <LayoutGrid className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -360,6 +436,43 @@ export function SlotProperties({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">تعبئة كافة الخلايا</TooltipContent>
+          </Tooltip>
+        </div>
+
+        <div className="flex items-center gap-1.5 pt-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7.5 flex-1 rounded-xl text-[11px] font-semibold border-border/40 hover:bg-accent gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                onClick={() => {
+                  onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
+                  useEditorStore.getState().pushHistory();
+                }}
+              >
+                <Crosshair className="w-3 h-3 text-primary" />
+                <span>توسيط الصورة</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[11px]">تصفير الإزاحة وتوسيط الصورة داخل الخانة</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7.5 px-2.5 rounded-xl text-[11px] font-semibold border-border/40 hover:bg-destructive/10 hover:border-destructive/40 text-destructive cursor-pointer"
+                onClick={() => {
+                  onUpdate(slot.id, { imageSrc: undefined });
+                  useEditorStore.getState().pushHistory();
+                }}
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[11px]">إفراغ الخلية</TooltipContent>
           </Tooltip>
         </div>
 

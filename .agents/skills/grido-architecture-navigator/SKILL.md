@@ -30,18 +30,26 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
 ---
 
 ### 🔹 React Frontend (`/frontend/src`)
-- **`src/lib/store/`**: إدارة الحالة المركزية عبر Zustand (`useEditorStore`):
-  - [editor-store.ts](file:///c:/projects/grido/frontend/src/lib/store/editor-store.ts): المتجر الرئيسي التجميعي للـ Slices.
-  - `slices/core-slice.ts`: الأبعاد، العناصر، النمط (`mode`: `single` | `collage`), الألوان، الحفظ والتحميل.
-  - `slices/history-slice.ts`: التراجع والإعادة (Undo/Redo) بنسخ سطحي محفّز.
-  - `slices/license-slice.ts`: مصادقة المستخدم، التراخيص، والدخول عبر جوجل.
-  - `slices/ui-slice.ts`: النوافذ المنبثقة، التكبير (Zoom)، المساطر، والحوارات.
-- **`src/components/editor/`**: مكونات المحرر الرئيسي:
-  - [editor-canvas.tsx](file:///c:/projects/grido/frontend/src/components/editor/editor-canvas.tsx): مساحة العمل والتفاعلات الرئيسية والسحب والإسقاط (Drop Zone).
-  - `konva/konva-canvas.tsx`: محرك الرسم بـ Konva Stage & Layers.
-  - `konva/konva-grid.tsx`: شبكة النقاط المحفزة رسومياً بـ `beginPath()` واحد.
-  - `print-dialog.tsx`: نافذة إعدادات ورقة الطباعة واختيار sRGB / CMYK.
-  - `account-license-modal.tsx`: نافذة الحساب والتراخيص وتأكيد المصادقة.
+- **`src/lib/`**: المكتبات والخدمات المنطقية المنظمة حسب الاختصاص:
+  - **`store/`**: إدارة الحالة المركزية عبر Zustand (`useEditorStore`):
+    - [editor-store.ts](file:///c:/projects/grido/frontend/src/lib/store/editor-store.ts): المتجر الرئيسي التجميعي للـ Slices.
+    - `slices/core-slice.ts`: الأبعاد، العناصر، النمط (`mode`: `single` | `collage`), الألوان، الحفظ والتحميل.
+    - `slices/history-slice.ts`: التراجع والإعادة (Undo/Redo) بنسخ سطحي محفّز.
+    - `slices/license-slice.ts`: مصادقة المستخدم، التراخيص، والدخول عبر جوجل.
+    - `slices/ui-slice.ts`: النوافذ المنبثقة، التكبير (Zoom)، المساطر، والحوارات.
+  - **`print/`**: محركات الطباعة والقص (`print-layout-math.ts`, `cut-lines-utils.ts`, `single-print-composition.ts`).
+  - **`canvas/`**: هندسة الكانفاس والمحاذاة والتصدير (`snap-utils.ts`, `stage-context.tsx`, `render-quality.ts`, `konva-export-utils.ts`).
+  - **`filters/`**: فلاتر الصور وتأطير الوجوه الذكي (`custom-filters.ts`, `konva-filters.ts`, `face-frame-utils.ts`).
+  - **`io/`**: خدمات الملفات والحافظة والخطوط والمشاريع (`file-dialog-utils.ts`, `clipboard-utils.ts`, `project-serializer.ts`, `fonts.ts`).
+  - **`templates/`**: قوالب الهوية والكولاج وشبكات الطباعة القياسية.
+- **`src/components/editor/`**: مكونات المحرر المنظمة هرمياً:
+  - **`dialogs/`**: النوافذ المنبثقة (`print-dialog.tsx`, `export-dialog.tsx`, `crop-dialog.tsx`, `refine-bg-dialog.tsx`, `projects-dialog.tsx`, `account-license-modal.tsx`, `keyboard-shortcuts-dialog.tsx`).
+  - **`panels/`**: الألواح الجانبية وبطاقات القوالب (`template-panel.tsx`, `properties-panel.tsx`, `layers-panel.tsx`, `collage-template-card.tsx`, `custom-collage-card.tsx`, `photo-type-miniature.tsx`).
+  - **`toolbar/`**: شريط الأدوات وعمليات الملفات (`toolbar.tsx`, `toolbar-items.tsx`, `toolbar-file-ops.tsx`).
+  - **`system/`**: خدمات النظام ونوافذ ويندوز (`update-notifier.tsx`, `window-resize-handles.tsx`).
+  - **`canvas/`**: مساحة العمل والكانفاس (`editor-canvas.tsx`, `context-menu.tsx`, `canvas-rulers.tsx`, `canvas-quick-bar.tsx`, `text-editing-overlay.tsx`).
+  - **`properties/`**: لوحات التحكم بالخصائص والألوان والتأثيرات (`element-properties.tsx`, `slot-properties.tsx`, `collage-settings.tsx`, `gradient-picker.tsx`, `shared-controls.tsx`).
+  - **`konva/`**: محرك الرسم بـ Konva (`konva-canvas.tsx`, `konva-grid.tsx`, عقد العناصر `elements/`).
 - **`wailsjs/go/`**: الواجهات المولدة تلقائياً بواسطة Wails للتواصل بين JS ↔ Go (`main/App` و `models.ts`).
 
 ---

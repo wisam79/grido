@@ -37,6 +37,37 @@ export function ImageAdjustProperties({
           تعديل الألوان
         </Label>
       )}
+
+      {/* قوالب تدرج لوني سريعة للاستوديوهات */}
+      <div className="space-y-1.5 pb-2 border-b border-border/20">
+        <span className="text-[10px] font-bold text-muted-foreground block">قوالب ألوان الاستوديو</span>
+        <div className="grid grid-cols-2 gap-1.5">
+          {[
+            { label: "استوديو دافئ", b: 104, c: 106, s: 108 },
+            { label: "جواز سفر حيوي", b: 108, c: 115, s: 118 },
+            { label: "إشراق ناعم", b: 110, c: 95, s: 102 },
+            { label: "أبيض وأسود", b: 105, c: 120, s: 0 },
+          ].map((preset) => (
+            <Button
+              key={preset.label}
+              variant="outline"
+              size="sm"
+              className="h-7 text-[10px] font-bold rounded-lg border-border/50 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer"
+              onClick={() => {
+                onUpdate(element.id, {
+                  brightness: preset.b,
+                  contrast: preset.c,
+                  saturation: preset.s,
+                });
+                useEditorStore.getState().pushHistory();
+              }}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       <SliderControl
         label="السطوع"
         icon={<Sun className="w-3.5 h-3.5 text-muted-foreground/75" />}

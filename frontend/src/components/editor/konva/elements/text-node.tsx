@@ -102,7 +102,17 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     renderText = rawText.replace(/ /g, extraSpaces);
   }
 
+  if (element.textTransform === "uppercase") {
+    renderText = renderText.toUpperCase();
+  } else if (element.textTransform === "lowercase") {
+    renderText = renderText.toLowerCase();
+  } else if (element.textTransform === "capitalize") {
+    renderText = renderText.replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
   const hasBg = !!element.textBgColor && element.textBgColor !== "transparent";
+  const bgPadding = element.textBgPadding || 0;
+  const bgRadius = element.textBgRadius || 0;
   const sharedX = flipped ? (element.x + element.width) * stageCanvasWidth : element.x * stageCanvasWidth;
   const sharedY = flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight;
   const sharedScaleY = flippedY ? -1 : 1;
@@ -133,17 +143,16 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       onDblClick={onDblClick}
       onDblTap={onDblClick}
     >
-      {hasBg && (
-        <KonvaRect
-          x={0}
-          y={0}
-          width={w}
-          height={h}
-          fill={element.textBgColor}
-          listening={false}
-          perfectDrawEnabled={false}
-        />
-      )}
+      {/* Hit area and background badge for seamless clicking and dragging */}
+      <KonvaRect
+        x={-bgPadding}
+        y={-bgPadding}
+        width={w + bgPadding * 2}
+        height={h + bgPadding * 2}
+        cornerRadius={bgRadius}
+        fill={hasBg ? element.textBgColor : "rgba(0,0,0,0.0001)"}
+        perfectDrawEnabled={false}
+      />
       <KonvaText
         ref={textRef}
         x={0}
@@ -172,7 +181,6 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         textDecoration={element.textDecoration || ""}
         wrap="none"
         ellipsis={true}
-        listening={false}
       />
     </Group>
   );

@@ -138,8 +138,13 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
           const proposedX = startX - dxLocal * (sw / width);
           const proposedY = startY - dyLocal * (sh / height);
 
-          const clampedX = Math.max(-maxDragX, Math.min(maxDragX, proposedX));
-          const clampedY = Math.max(-maxDragY, Math.min(maxDragY, proposedY));
+          let snapX = proposedX;
+          if (Math.abs(snapX) < (maxDragX * 0.05 + 8)) snapX = 0;
+          let snapY = proposedY;
+          if (Math.abs(snapY) < (maxDragY * 0.05 + 8)) snapY = 0;
+
+          const clampedX = Math.max(-maxDragX, Math.min(maxDragX, snapX));
+          const clampedY = Math.max(-maxDragY, Math.min(maxDragY, snapY));
 
           accumulatedDrag.current = { dragX: clampedX, dragY: clampedY };
 

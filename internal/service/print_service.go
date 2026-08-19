@@ -112,6 +112,8 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 
 // ApplyPureBlackCutLines enforces pure black (C:0 M:0 Y:0 K:255) for cut lines in CMYK space.
 // It mirrors the dashed rhythm used by drawCutLines (1.5mm dash + 1.5mm gap) so the printed
+// ApplyPureBlackCutLines enforces pure black (C:0 M:0 Y:0 K:255) for cut lines in CMYK space.
+// It mirrors the dashed rhythm used by drawCutLines (1.5mm dash + 1.5mm gap) so the printed
 // marks stay consistent between the sRGB preview and the CMYK/TIFF export.
 func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 	if !req.ShowCutLines || len(req.CutLines) == 0 {
@@ -131,9 +133,15 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 	maxW, maxH := bounds.Dx(), bounds.Dy()
 	pureBlack := color.CMYK{C: 0, M: 0, Y: 0, K: 255}
 
-	// داخل الدش؟ يعيد true فقط ضمن مقطع "الخط" (on) وليس الفجوة (off) — يطابق
-	// نفس النمط المتقطع الذي ترسمه gg في drawCutLines على مسار sRGB.
+	style := strings.ToLower(strings.TrimSpace(req.CutLineStyle))
 	inDash := func(t float64) bool {
+		if style == "solid" || style == "cropmarks" {
+			return true
+		}
+		if style == "dotted" {
+			mod := math.Mod(t, 2*dashSize)
+			return mod >= 0 && mod < (0.4 * dashSize)
+		}
 		mod := math.Mod(t, 2*dashSize)
 		return mod >= 0 && mod < dashSize
 	}
@@ -847,7 +855,6 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 	if !req.ShowCutLines {
 		return
 	}
-	// استخدام رمادي متوسط ناعم (Medium Soft Gray) لتخفيف حظوة خطوط القص وتسهيل القص
 	dc.SetColor(color.RGBA{R: 120, G: 120, B: 120, A: 255})
 	lineWidth := mmToPx(0.18, req.DPI)
 	if lineWidth < 1.0 {
@@ -858,7 +865,15 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 		dashSize = 1.0
 	}
 	dc.SetLineWidth(lineWidth)
-	dc.SetDash(dashSize, dashSize)
+
+	style := strings.ToLower(strings.TrimSpace(req.CutLineStyle))
+	if style == "solid" || style == "cropmarks" {
+		// no dash
+	} else if style == "dotted" {
+		dc.SetDash(dashSize*0.4, dashSize*1.6)
+	} else {
+		dc.SetDash(dashSize, dashSize)
+	}
 
 	paperW := float64(dc.Width())
 	paperH := float64(dc.Height())

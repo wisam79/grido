@@ -21,6 +21,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   copiesPerSheet: 1,
   showCutLines: false,
   showEndCutLine: true,
+  cutLineStyle: "dashed",
   orientation: "portrait",
   fitToPage: true,
   repeatMode: "all",

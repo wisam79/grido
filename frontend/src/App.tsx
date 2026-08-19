@@ -1,13 +1,19 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
-import { Toolbar } from "@/components/editor/toolbar";
-import { TemplatePanel } from "@/components/editor/template-panel";
-import { PropertiesPanel } from "@/components/editor/properties-panel";
-import { EditorCanvas } from "@/components/editor/editor-canvas";
+import { 
+  Toolbar, 
+  TemplatePanel, 
+  PropertiesPanel, 
+  EditorCanvas,
+  AccountLicenseModal,
+  UpdateNotifier,
+  KeyboardShortcutsDialog,
+  WindowResizeHandles
+} from "@/components/editor";
 import { ErrorBoundary } from "@/components/error-boundary";
 
-const ExportDialog = lazy(() => import("@/components/editor/export-dialog").then(module => ({ default: module.ExportDialog })));
-const PrintDialog = lazy(() => import("@/components/editor/print-dialog").then(module => ({ default: module.PrintDialog })));
+const ExportDialog = lazy(() => import("@/components/editor/dialogs/export-dialog").then(module => ({ default: module.ExportDialog })));
+const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog").then(module => ({ default: module.PrintDialog })));
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -32,12 +38,8 @@ import { useAutoSave } from "@/hooks/use-autosave";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-import { AccountLicenseModal } from "@/components/editor/account-license-modal";
-import { UpdateNotifier } from "@/components/editor/update-notifier";
 import { toast } from "sonner";
 import { User, ShieldCheck, Lock, Key, Loader2 } from "lucide-react";
-import { KeyboardShortcutsDialog } from "@/components/editor/keyboard-shortcuts-dialog";
-import { WindowResizeHandles } from "@/components/editor/window-resize-handles";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function App() {
