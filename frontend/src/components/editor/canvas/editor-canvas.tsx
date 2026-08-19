@@ -7,7 +7,7 @@ import { KonvaCanvas } from "../konva/konva-canvas";
 import { useShallow } from "zustand/react/shallow";
 import { ContextMenuPosition, ContextMenuTarget } from "./context-menu";
 import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from "./canvas-rulers";
-import type { RulerUnit } from "./ruler";
+import { RulerUnit } from "./ruler";
 import { TextEditingOverlay } from "./text-editing-overlay";
 import { CanvasContextMenu } from "./canvas-context-menu";
 
@@ -39,8 +39,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
     typeof localStorage !== "undefined" && localStorage.getItem("grido_ruler_unit") === "px" ? "px" : "mm"
   );
   const toggleRulerUnit = useCallback(() => {
-    setRulerUnit((prev) => {
-      const next = prev === "mm" ? "px" : "mm";
+    setRulerUnit((prev: RulerUnit) => {
+      const next: RulerUnit = prev === "mm" ? "px" : "mm";
       try { localStorage.setItem("grido_ruler_unit", next); } catch { /* تجاهل قيود التخزين */ }
       return next;
     });

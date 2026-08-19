@@ -128,13 +128,15 @@ export function PopoverColorPicker({
   onChange,
   className,
   disabled,
-  label
+  label,
+  swatchOnly,
 }: {
   color: string;
   onChange: (hex: string) => void;
   className?: string;
   disabled?: boolean;
   label?: React.ReactNode;
+  swatchOnly?: boolean;
 }) {
   const colorOnOpenRef = useRef<string | null>(null);
 
@@ -151,30 +153,52 @@ export function PopoverColorPicker({
         <button
           disabled={disabled}
           className={cn(
-            "flex items-center justify-between gap-2 px-3 h-10 rounded-lg border border-border/60 bg-background hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+            swatchOnly
+              ? "w-6.5 h-6.5 rounded-lg border border-border/80 p-0.5 bg-background hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0"
+              : "flex items-center justify-between gap-2 px-3 h-10 rounded-lg border border-border/60 bg-background hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
             className
           )}
+          title="تغيير اللون"
         >
-          {label && <div className="text-xs font-bold text-muted-foreground shrink-0">{label}</div>}
-          
-          <div className="flex-1 flex items-center justify-end gap-1.5 font-mono text-xs font-bold text-foreground/80" dir="ltr">
-            {color.toUpperCase()}
-          </div>
-          
-          <div
-            className="w-5 h-5 rounded-md border border-border/80 shrink-0 relative overflow-hidden"
-            style={{ backgroundColor: color === "transparent" ? "#ffffff" : color }}
-          >
-            {color === "transparent" && (
-              <div 
-                className="w-full h-full"
-                style={{
-                  backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
-                  backgroundSize: "4px 4px"
-                }}
-              />
-            )}
-          </div>
+          {swatchOnly ? (
+            <div
+              className="w-full h-full rounded-md border border-black/10 dark:border-white/10 shadow-2xs relative overflow-hidden"
+              style={{ backgroundColor: color === "transparent" ? "#ffffff" : color }}
+            >
+              {color === "transparent" && (
+                <div 
+                  className="w-full h-full"
+                  style={{
+                    backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+                    backgroundSize: "4px 4px"
+                  }}
+                />
+              )}
+            </div>
+          ) : (
+            <>
+              {label && <div className="text-xs font-bold text-muted-foreground shrink-0">{label}</div>}
+              
+              <div className="flex-1 flex items-center justify-end gap-1.5 font-mono text-xs font-bold text-foreground/80" dir="ltr">
+                {color.toUpperCase()}
+              </div>
+              
+              <div
+                className="w-5 h-5 rounded-md border border-border/80 shrink-0 relative overflow-hidden"
+                style={{ backgroundColor: color === "transparent" ? "#ffffff" : color }}
+              >
+                {color === "transparent" && (
+                  <div 
+                    className="w-full h-full"
+                    style={{
+                      backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+                      backgroundSize: "4px 4px"
+                    }}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0 border-0 bg-transparent shadow-none" sideOffset={8} align="end">

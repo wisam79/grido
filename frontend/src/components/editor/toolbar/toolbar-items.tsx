@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
   Type, Square, Circle, Star, Minus, Undo2, Redo2, Trash2, Copy, AlignLeft, AlignCenter, AlignRight, ChevronDown, Grid3x3, Magnet, Columns, Link, Unlink, Ruler, Paintbrush,
-  Sparkles, Wand2, ScanFace, X, Heading1, Heading2, FileText, Calendar, Shield
+  Sparkles, Wand2, ScanFace, X, Heading1, Heading2, FileText, Calendar, Shield, Crown, SunMedium, CircleDot, Layers, Camera, Tag
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -65,8 +65,8 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             </DropdownMenuTrigger>
           </div>
         </TooltipBtn>
-        <DropdownMenuContent align="start" className="w-48 font-cairo">
-          <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">قوالب النصوص الجاهزة</div>
+        <DropdownMenuContent align="start" className="w-56 font-cairo max-h-96 overflow-y-auto custom-scrollbar">
+          <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">قوالب العناوين والفقرات</div>
           <DropdownMenuItem onClick={() => addTextPreset("heading")} className="gap-2 text-[11px] font-bold cursor-pointer">
             <Heading1 className="w-4 h-4 text-primary" />
             <span>عنوان رئيسي (48px)</span>
@@ -79,10 +79,36 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             <FileText className="w-4 h-4 text-muted-foreground" />
             <span>نص وصفي / ملاحظة (18px)</span>
           </DropdownMenuItem>
+
           <DropdownMenuSeparator />
+          <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">قوالب استوديو فاخرة</div>
+          <DropdownMenuItem onClick={() => addTextPreset("gold-luxury")} className="gap-2 text-[11px] font-bold text-amber-600 dark:text-amber-400 cursor-pointer">
+            <Crown className="w-4 h-4 text-amber-500" />
+            <span>عنوان ذهبي ملكي فاخر</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => addTextPreset("neon-glow")} className="gap-2 text-[11px] font-bold text-sky-600 dark:text-sky-400 cursor-pointer">
+            <SunMedium className="w-4 h-4 text-sky-500" />
+            <span>توهج نيون مضيء ★</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => addTextPreset("stamp-circle")} className="gap-2 text-[11px] font-bold text-rose-600 dark:text-rose-400 cursor-pointer">
+            <CircleDot className="w-4 h-4 text-rose-500" />
+            <span>ختم دائري رسمي ◯</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => addTextPreset("3d-title")} className="gap-2 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer">
+            <Layers className="w-4 h-4 text-indigo-500" />
+            <span>عنوان بارز ثلاثي الأبعاد 3D</span>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("badge")} className="gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer">
             <Sparkles className="w-4 h-4 text-blue-500" />
-            <span>شارة / ختم استوديو ★</span>
+            <span>شارة كبسولية / عرض</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => addTextPreset("photographer-tag")} className="gap-2 text-[11px] cursor-pointer">
+            <Camera className="w-4 h-4 text-purple-500" />
+            <span>توقيع وتوثيق المصور</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => addTextPreset("caption-card")} className="gap-2 text-[11px] cursor-pointer">
+            <Tag className="w-4 h-4 text-emerald-500" />
+            <span>بطاقة تعريفية مع إطار</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("watermark")} className="gap-2 text-[11px] text-muted-foreground cursor-pointer">
             <Shield className="w-4 h-4 text-muted-foreground" />

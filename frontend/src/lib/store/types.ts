@@ -73,8 +73,13 @@ export interface TextElement extends BaseCanvasElement {
   textBgColor?: string;
   textBgRadius?: number;
   textBgPadding?: number;
+  textBgPaddingX?: number;
+  textBgPaddingY?: number;
+  textBgBorderColor?: string;
+  textBgBorderWidth?: number;
   lineHeight?: number;
   letterSpacing?: number;
+  wordSpacing?: number;
   stroke?: string;
   strokeWidth?: number;
   fontStyle?: "normal" | "italic";
@@ -86,6 +91,11 @@ export interface TextElement extends BaseCanvasElement {
   shadowOffsetX?: number;
   shadowOffsetY?: number;
   shadowOpacity?: number;
+  shadowGlow?: boolean;
+  curve?: number; // -100 to 100 percentage of curvature
+  curveRadius?: number;
+  curveDirection?: "up" | "down";
+  arabicNumerals?: boolean; // true to convert digits to Arabic-Indic ٠-٩
 }
 
 export interface ShapeElement extends BaseCanvasElement {

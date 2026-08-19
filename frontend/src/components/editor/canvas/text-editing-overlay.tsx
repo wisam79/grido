@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { CanvasElement } from "@/lib/editor-store";
 
 interface TextEditingOverlayProps {
@@ -26,66 +26,103 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   pushHistory,
   setEditingTextId,
 }: TextEditingOverlayProps) {
-  if (printMode || !editingTextId) return null;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const textEl = elements.find((e) => e.id === editingTextId);
-  if (!textEl || textEl.type !== "text") return null;
+  const isValid = !printMode && !!editingTextId && !!textEl && textEl.type === "text";
+
+  // Auto-focus and adjust height on mount
+  useEffect(() => {
+    if (isValid && textareaRef.current) {
+      const textarea = textareaRef.current;
+      textarea.focus();
+      textarea.select();
+      
+      // Auto-grow height based on scrollHeight
+      if (textarea.scrollHeight > textarea.clientHeight) {
+        textarea.style.height = `${textarea.scrollHeight + 4}px`;
+      }
+    }
+  }, [isValid, editingTextId]);
+
+  if (!isValid || !textEl) return null;
 
   const isArabicText = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(textEl.text || "");
   const spacingVal = textEl.letterSpacing || 0;
   const bgColor = textEl.textBgColor && textEl.textBgColor !== "transparent" ? textEl.textBgColor : "transparent";
   const scaleRatio = Math.min(displayW / canvasWidth, displayH / canvasHeight);
   const radiusPx = (textEl.textBgRadius || 0) * scaleRatio;
+  const paddingXPx = (textEl.textBgPaddingX ?? textEl.textBgPadding ?? 0) * scaleRatio;
+  const paddingYPx = (textEl.textBgPaddingY ?? textEl.textBgPadding ?? 0) * scaleRatio;
+
+  const flippedX = textEl.flipX === true;
+  const flippedY = textEl.flipY === true;
+
+  const leftPx = flippedX ? (textEl.x + textEl.width) * displayW : textEl.x * displayW;
+  const topPx = flippedY ? (textEl.y + textEl.height) * displayH : textEl.y * displayH;
+  const widthPx = textEl.width * displayW;
+  const minHeightPx = Math.max(30, textEl.height * displayH);
+
+  const handleCommit = (newText: string) => {
+    if (newText !== textEl.text) {
+      updateElement(textEl.id, { text: newText });
+      pushHistory();
+    }
+    setEditingTextId(null);
+  };
 
   return (
-    <textarea
-      autoFocus
-      className="absolute z-50 bg-transparent resize-none outline-none ring-0 m-0 p-0 border-0 transition-shadow duration-150"
+    <div
+      className="absolute z-50 pointer-events-auto font-cairo"
       style={{
-        backgroundColor: bgColor,
-        borderRadius: radiusPx > 0 ? `${radiusPx}px` : "3px",
-        left: `${textEl.x * displayW}px`,
-        top: `${textEl.y * displayH}px`,
-        width: `${textEl.width * displayW}px`,
-        height: `${textEl.height * displayH}px`,
-        transform: `rotate(${textEl.rotation || 0}deg)`,
+        left: `${leftPx}px`,
+        top: `${topPx}px`,
+        width: `${widthPx}px`,
+        transform: `rotate(${textEl.rotation || 0}deg) scale(${flippedX ? -1 : 1}, ${flippedY ? -1 : 1})`,
         transformOrigin: "top left",
-        fontSize: `${(textEl.fontSize || 20) * scaleRatio}px`,
-        fontFamily: textEl.fontFamily || "Arial",
-        fontWeight: textEl.fontWeight || 400,
-        fontStyle: textEl.fontStyle || "normal",
-        textDecoration: textEl.textDecoration || "none",
-        textTransform: textEl.textTransform || "none",
-        color: textEl.color || "#000000",
-        textAlign: textEl.textAlign || "center",
-        lineHeight: textEl.lineHeight || 1.2,
-        letterSpacing: isArabicText ? "0px" : `${spacingVal}px`,
-        wordSpacing: isArabicText ? `${spacingVal}px` : undefined,
-        boxShadow: "0 0 0 2px #2563eb, 0 4px 16px rgba(37,99,235,0.25)",
       }}
-      defaultValue={textEl.text}
-      onFocus={(e) => {
-        e.target.select();
-      }}
-      onBlur={(e) => {
-        updateElement(textEl.id, { text: e.target.value });
-        pushHistory();
-        setEditingTextId(null);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          updateElement(textEl.id, { text: e.currentTarget.value });
-          pushHistory();
-          setEditingTextId(null);
-        }
-        if (e.key === "Escape") {
-          e.preventDefault();
-          updateElement(textEl.id, { text: e.currentTarget.value });
-          pushHistory();
-          setEditingTextId(null);
-        }
-      }}
-    />
+    >
+      <textarea
+        ref={textareaRef}
+        className="w-full bg-transparent resize-none outline-none ring-0 m-0 border-0 transition-shadow duration-150 custom-scrollbar block"
+        style={{
+          backgroundColor: bgColor,
+          borderRadius: radiusPx > 0 ? `${radiusPx}px` : "4px",
+          padding: `${paddingYPx}px ${paddingXPx}px`,
+          minHeight: `${minHeightPx}px`,
+          fontSize: `${(textEl.fontSize || 20) * scaleRatio}px`,
+          fontFamily: textEl.fontFamily || "Cairo, sans-serif",
+          fontWeight: textEl.fontWeight || 400,
+          fontStyle: textEl.fontStyle || "normal",
+          textDecoration: textEl.textDecoration || "none",
+          textTransform: textEl.textTransform || "none",
+          color: textEl.color || "#000000",
+          textAlign: textEl.textAlign || "center",
+          lineHeight: textEl.lineHeight || 1.2,
+          letterSpacing: isArabicText ? "0px" : `${spacingVal}px`,
+          wordSpacing: isArabicText ? `${spacingVal}px` : undefined,
+          boxShadow: "0 0 0 2px #2563eb, 0 4px 20px rgba(37,99,235,0.35)",
+        }}
+        defaultValue={textEl.text}
+        onInput={(e) => {
+          const target = e.currentTarget;
+          target.style.height = "auto";
+          target.style.height = `${Math.max(minHeightPx, target.scrollHeight)}px`;
+        }}
+        onBlur={(e) => {
+          handleCommit(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleCommit(e.currentTarget.value);
+          }
+          if (e.key === "Escape") {
+            e.preventDefault();
+            handleCommit(e.currentTarget.value);
+          }
+        }}
+      />
+    </div>
   );
 });

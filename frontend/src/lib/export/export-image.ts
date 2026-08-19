@@ -6,6 +6,7 @@ import { calculatePrintCutLines } from "@/lib/cut-lines-utils";
 import { computeSheetGrid, computeSlotRectMM } from "@/lib/print-layout-math";
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
 import { VECTOR_SHAPES } from "@/lib/svg-paths";
+import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
 
 // [FIX #9] تحويل Data URL إلى Blob مباشرة في الذاكرة بدلاً من fetch غير الضروري
 export function dataURLToBlob(dataUrl: string): Blob {
@@ -530,64 +531,137 @@ export async function exportCanvas(
         }
       } else if (el.type === "text") {
         const fontSize = el.fontSize || 32;
-        // خلفية النص الاختيارية — عقدة مستقلة في Konva: تُرسم بلا ظل ولا نمط دمج مخصص
-        if (el.textBgColor && el.textBgColor !== "transparent") {
+        const hasBg = !!el.textBgColor && el.textBgColor !== "transparent";
+        const bgPadX = el.textBgPaddingX ?? el.textBgPadding ?? 0;
+        const bgPadY = el.textBgPaddingY ?? el.textBgPadding ?? 0;
+        const bgRadius = el.textBgRadius ?? 0;
+        const bgBorderW = el.textBgBorderWidth ?? 0;
+        const bgBorderCol = el.textBgBorderColor ?? "#000000";
+
+        // خلفية وشارة النص الاختيارية
+        if (hasBg) {
           ctx.save();
           ctx.globalCompositeOperation = "source-over";
           ctx.shadowColor = "transparent";
           ctx.shadowBlur = 0;
           ctx.shadowOffsetX = 0;
           ctx.shadowOffsetY = 0;
-          ctx.fillStyle = el.textBgColor;
-          ctx.fillRect(0, 0, w, h);
+          ctx.fillStyle = el.textBgColor!;
+          drawRoundRect(ctx, -bgPadX, -bgPadY, w + bgPadX * 2, h + bgPadY * 2, bgRadius);
+          ctx.fill();
+
+          if (bgBorderW > 0) {
+            ctx.strokeStyle = bgBorderCol;
+            ctx.lineWidth = bgBorderW;
+            ctx.stroke();
+          }
           ctx.restore();
         }
-        const fontStyle = el.fontStyle === "italic" ? "italic " : "";
-        ctx.font = `${fontStyle}${el.fontWeight || 700} ${fontSize}px ${el.fontFamily || "Cairo, Tajawal, sans-serif"}`;
-        // التدرج يسري على تعبئة النص أيضاً (getFillProps مشتركة بين العقد في Konva)
-        ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.color || "#000000";
-        ctx.textAlign = (el.textAlign as CanvasTextAlign) || "center";
-        ctx.textBaseline = "middle";
-        ctx.direction = "rtl";
-        const lines = (el.text || "").split("\n");
-        const lineHeight = fontSize * (el.lineHeight ?? 1.2);
-        const startY = h / 2 - ((lines.length - 1) * lineHeight) / 2;
-        const textX = el.textAlign === "left" ? 0 : el.textAlign === "right" ? w : w / 2;
-        const strokeW = el.strokeWidth || 0;
-        if (strokeW > 0) {
-          ctx.strokeStyle = el.stroke || "#000000";
-          ctx.lineWidth = strokeW;
-          ctx.lineJoin = "round";
+
+        let rawText = el.text || "";
+        if (el.arabicNumerals) {
+          rawText = rawText.replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d, 10)]);
         }
-        // زخرفة النص تُرسم يدوياً — Canvas2D لا يدعم textDecoration كما في Konva
-        const deco = el.textDecoration || "none";
-        const decoThickness = Math.max(1, fontSize / 16);
-        lines.forEach((line, i) => {
-          const lineY = startY + i * lineHeight;
-          ctx.fillText(line, textX, lineY);
-          if (strokeW > 0) ctx.strokeText(line, textX, lineY);
-          if (deco !== "none" && line.trim()) {
-            const lineW = ctx.measureText(line).width;
-            const fromX =
-              el.textAlign === "left"
-                ? textX
-                : el.textAlign === "right"
-                  ? textX - lineW
-                  : textX - lineW / 2;
-            const decoY = deco === "underline" ? lineY + fontSize / 2 : lineY;
-            ctx.save();
-            ctx.strokeStyle =
-              typeof ctx.fillStyle === "string"
-                ? ctx.fillStyle
-                : el.color || "#000000";
-            ctx.lineWidth = decoThickness;
-            ctx.beginPath();
-            ctx.moveTo(fromX, decoY);
-            ctx.lineTo(fromX + lineW, decoY);
-            ctx.stroke();
-            ctx.restore();
+
+        const fontStyle = el.fontStyle === "italic" ? "italic " : "";
+        const fontFamily = el.fontFamily || "Cairo, Tajawal, sans-serif";
+        const isCurved = typeof el.curve === "number" && el.curve !== 0;
+
+        if (isCurved) {
+          drawCurvedText(ctx, {
+            text: rawText,
+            x: 0,
+            y: 0,
+            width: w,
+            height: h,
+            fontSize,
+            fontFamily,
+            fontWeight: el.fontWeight || 700,
+            fontStyle: el.fontStyle || "normal",
+            color: el.color || "#000000",
+            stroke: el.strokeWidth ? (el.stroke || "#000000") : undefined,
+            strokeWidth: el.strokeWidth || 0,
+            textAlign: el.textAlign || "center",
+            curve: el.curve || 0,
+            letterSpacing: el.letterSpacing || 0,
+          });
+        } else {
+          ctx.font = `${fontStyle}${el.fontWeight || 700} ${fontSize}px ${fontFamily}`;
+          ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.color || "#000000";
+          ctx.textAlign = (el.textAlign as CanvasTextAlign) || "center";
+          ctx.textBaseline = "middle";
+          ctx.direction = "rtl";
+
+          if (el.shadowColor && ((el.shadowBlur ?? 0) > 0 || (el.shadowOpacity ?? 0) > 0)) {
+            ctx.shadowColor = el.shadowColor;
+            ctx.shadowBlur = el.shadowBlur || 0;
+            ctx.shadowOffsetX = el.shadowGlow ? 0 : (el.shadowOffsetX || 0);
+            ctx.shadowOffsetY = el.shadowGlow ? 0 : (el.shadowOffsetY || 0);
           }
-        });
+
+          // تقسيم الأسطر مع مراعاة التفاف الكلمات (Word-wrap)
+          const rawParagraphs = rawText.split("\n");
+          const wrappedLines: string[] = [];
+
+          for (const para of rawParagraphs) {
+            const words = para.split(" ");
+            let currentLine = "";
+
+            for (let i = 0; i < words.length; i++) {
+              const testLine = currentLine ? `${currentLine} ${words[i]}` : words[i];
+              const testW = ctx.measureText(testLine).width;
+
+              if (testW > w && i > 0) {
+                wrappedLines.push(currentLine);
+                currentLine = words[i];
+              } else {
+                currentLine = testLine;
+              }
+            }
+            wrappedLines.push(currentLine);
+          }
+
+          const lineHeight = fontSize * (el.lineHeight ?? 1.2);
+          const startY = h / 2 - ((wrappedLines.length - 1) * lineHeight) / 2;
+          const textX = el.textAlign === "left" ? 0 : el.textAlign === "right" ? w : w / 2;
+          const strokeW = el.strokeWidth || 0;
+          if (strokeW > 0) {
+            ctx.strokeStyle = el.stroke || "#000000";
+            ctx.lineWidth = strokeW;
+            ctx.lineJoin = "round";
+          }
+
+          const deco = el.textDecoration || "none";
+          const decoThickness = Math.max(1, fontSize / 16);
+
+          wrappedLines.forEach((line, i) => {
+            const lineY = startY + i * lineHeight;
+            ctx.fillText(line, textX, lineY);
+            if (strokeW > 0) ctx.strokeText(line, textX, lineY);
+
+            if (deco !== "none" && line.trim()) {
+              const lineW = ctx.measureText(line).width;
+              const fromX =
+                el.textAlign === "left"
+                  ? textX
+                  : el.textAlign === "right"
+                    ? textX - lineW
+                    : textX - lineW / 2;
+              const decoY = deco === "underline" ? lineY + fontSize / 2 : lineY;
+              ctx.save();
+              ctx.strokeStyle =
+                typeof ctx.fillStyle === "string"
+                  ? ctx.fillStyle
+                  : el.color || "#000000";
+              ctx.lineWidth = decoThickness;
+              ctx.beginPath();
+              ctx.moveTo(fromX, decoY);
+              ctx.lineTo(fromX + lineW, decoY);
+              ctx.stroke();
+              ctx.restore();
+            }
+          });
+        }
       } else if (el.type === "shape") {
         ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.fill || "#6366f1";
         ctx.strokeStyle = el.stroke || "#000000";

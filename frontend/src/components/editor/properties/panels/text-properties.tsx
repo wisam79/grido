@@ -1,206 +1,394 @@
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import React from "react";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import { 
-  Type, Shrink, Palette, SlidersHorizontal, FlipHorizontal, FlipVertical
+  Shrink, Palette, ChevronDown, Square, Sparkles, PaintBucket,
+  AlignRight, AlignCenter, AlignLeft, Bold, Italic, Underline, Strikethrough,
+  Minus, Plus, Hash, MoveVertical, MoveHorizontal
 } from "lucide-react";
-import { SliderControl } from "../shared-controls";
+import { PopoverColorPicker } from "../shared-controls";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-picker";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-// Sub-components (Modular Architecture)
+// Sub-components
 import { TextFontSelector } from "./text/text-font-selector";
-import { TextSpacingControls } from "./text/text-spacing-controls";
-import { TextStrokeControls } from "./text/text-stroke-controls";
-import { TextStyleControls } from "./text/text-style-controls";
-import { TextShadowControls } from "./text/text-shadow-controls";
-import { TextBadgeControls } from "./text/text-badge-controls";
 
 interface TextPropertiesProps {
   element: TextElement;
   onUpdate: (id: string, patch: Partial<TextElement>) => void;
 }
 
+const WEIGHT_OPTIONS = [
+  { value: 300, label: "300 خفيف" },
+  { value: 400, label: "400 عادي" },
+  { value: 600, label: "600 متوسط" },
+  { value: 700, label: "700 عريض" },
+  { value: 900, label: "900 أسود" },
+];
+
 export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
-  const isFlippedX = element.flipX === true;
-  const isFlippedY = element.flipY === true;
+  const isBold = (element.fontWeight || 400) >= 700;
+  const isItalic = element.fontStyle === "italic";
+  const isUnderline = element.textDecoration === "underline";
+  const isLineThrough = element.textDecoration === "line-through";
+  const textAlign = element.textAlign || "center";
+  const isArabicNumerals = element.arabicNumerals === true;
+  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(element.text || "");
+
+  const hasStroke = (element.strokeWidth ?? 0) > 0;
+  const hasShadow = (element.shadowBlur ?? 0) > 0 || (element.shadowOpacity ?? 0) > 0;
+  const hasBadge = !!element.textBgColor && element.textBgColor !== "transparent";
+
+  const currentFontSize = element.fontSize ?? 32;
+  const currentLineHeight = element.lineHeight ?? 1.2;
+
+  const changeFontSize = (delta: number) => {
+    const next = Math.max(8, Math.min(200, currentFontSize + delta));
+    onUpdate(element.id, { fontSize: next });
+    useEditorStore.getState().pushHistory();
+  };
+
+  const changeLineHeight = (delta: number) => {
+    const next = Math.max(0.8, Math.min(3.0, Math.round((currentLineHeight + delta) * 10) / 10));
+    onUpdate(element.id, { lineHeight: next });
+    useEditorStore.getState().pushHistory();
+  };
 
   return (
-    <div className="space-y-3 font-cairo animate-in fade-in duration-200 w-full min-w-0 max-w-full overflow-x-hidden">
-      <Tabs defaultValue="font" className="w-full min-w-0 max-w-full overflow-x-hidden">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl h-10 border border-border/40 mb-3 shadow-2xs">
-          <TabsTrigger 
-            value="font" 
-            className="rounded-lg text-[11px] font-bold py-1.5 cursor-pointer flex items-center justify-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shadow-sm transition-all"
-          >
-            <Type className="w-3.5 h-3.5" />
-            <span>الخط</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="spacing" 
-            className="rounded-lg text-[11px] font-bold py-1.5 cursor-pointer flex items-center justify-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shadow-sm transition-all"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>التباعد</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="color" 
-            className="rounded-lg text-[11px] font-bold py-1.5 cursor-pointer flex items-center justify-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shadow-sm transition-all"
-          >
-            <Palette className="w-3.5 h-3.5" />
-            <span>التأثيرات</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Tab 1: المحتوى والخط */}
-        <TabsContent value="font" className="space-y-3 mt-0 focus-visible:outline-hidden w-full min-w-0 max-w-full overflow-x-hidden">
-          {/* محتوى النص */}
-          <div className="bg-card/70 dark:bg-muted/10 p-3 rounded-xl border border-border/40 space-y-2 shadow-2xs w-full min-w-0 max-w-full overflow-x-hidden">
-            <div className="flex items-center justify-between gap-2 w-full min-w-0">
-              <Label className="text-[11px] font-bold text-foreground/90 block truncate">محتوى النص</Label>
-              <button
-                type="button"
-                onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
-                className="text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-md border border-primary/30 flex items-center gap-1 cursor-pointer transition-all shadow-2xs shrink-0 whitespace-nowrap"
-                title="إزالة المساحات الفارغة الزائدة وملاءمة عرض المربع مع الكلمات"
-              >
-                <Shrink className="w-3 h-3" />
-                <span>ملاءمة المربع</span>
-              </button>
-            </div>
-            <Textarea
+    <div className="space-y-3 font-cairo animate-in fade-in duration-200 w-full min-w-0">
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* بطاقة 1: النص والخط والتنسيق (Fluent 2 Studio Card) */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <div className="bg-card/40 dark:bg-card/25 border border-border/40 backdrop-blur-md rounded-2xl p-3 space-y-2.5 shadow-sm">
+        
+        {/* السطر 1: حقل النص مع زر ملاءمة العرض */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative flex-1">
+            <input
+              type="text"
               value={element.text || ""}
-              onChange={(e) => {
-                onUpdate(element.id, { text: e.target.value });
-              }}
+              onChange={(e) => onUpdate(element.id, { text: e.target.value })}
               onBlur={() => useEditorStore.getState().pushHistory()}
-              className="text-xs min-h-[60px] max-h-[110px] resize-none bg-background/80 font-medium w-full min-w-0 max-w-full break-all overflow-y-auto custom-scrollbar"
+              className="w-full h-8.5 bg-background/80 hover:bg-background focus:bg-background border border-border/50 hover:border-primary/40 focus:border-primary rounded-xl px-3 text-xs font-semibold text-foreground placeholder:text-muted-foreground/50 outline-hidden transition-all shadow-2xs"
               placeholder="اكتب النص هنا..."
             />
           </div>
+          <button
+            type="button"
+            onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
+            className="h-8.5 px-2.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+            title="ملاءمة عرض الصندوق للنص"
+          >
+            <Shrink className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-          {/* اختيار الخط الحجم والسمك */}
-          <div className="bg-card/70 dark:bg-muted/10 p-3 rounded-xl border border-border/40 space-y-3 shadow-2xs">
-            <TextFontSelector element={element} onUpdate={onUpdate} />
+        {/* السطر 2: نوع الخط */}
+        <TextFontSelector element={element} onUpdate={onUpdate} />
 
-            <div className="space-y-1.5">
-              <SliderControl
-                label="حجم الخط"
-                value={element.fontSize ?? 32}
-                min={8}
-                max={140}
-                step={1}
-                unit="px"
-                onChange={(v) => onUpdate(element.id, { fontSize: v })}
-                onCommit={() => useEditorStore.getState().pushHistory()}
+        {/* السطر 3: سمك الخط وحجم الخط */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* سمك الخط Dropdown */}
+          <div className="relative">
+            <select
+              value={element.fontWeight || 700}
+              onChange={(e) => {
+                onUpdate(element.id, { fontWeight: Number(e.target.value) });
+                useEditorStore.getState().pushHistory();
+              }}
+              className="w-full h-8.5 bg-background/80 hover:bg-background border border-border/50 hover:border-primary/40 focus:border-primary rounded-xl px-3 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-2xs"
+            >
+              {WEIGHT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* حجم الخط Stepper */}
+          <div className="flex items-center justify-between h-8.5 bg-background/80 border border-border/50 rounded-xl px-1.5 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => changeFontSize(-2)}
+              className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-all cursor-pointer"
+              title="تصغير الخط"
+            >
+              <Minus className="w-3 h-3" />
+            </button>
+            <div className="flex items-center justify-center gap-0.5">
+              <input
+                type="number"
+                value={currentFontSize}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) onUpdate(element.id, { fontSize: Math.max(8, Math.min(200, val)) });
+                }}
+                onBlur={() => useEditorStore.getState().pushHistory()}
+                className="w-10 text-center text-xs font-bold text-foreground bg-transparent outline-hidden font-mono"
               />
-              <div className="grid grid-cols-6 gap-1 pt-0.5">
-                {[14, 18, 24, 32, 48, 72].map((sz) => (
-                  <button
-                    key={sz}
-                    type="button"
-                    onClick={() => {
-                      onUpdate(element.id, { fontSize: sz });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                    className={cn(
-                      "h-6 text-[10px] rounded-md border transition-all text-center font-bold cursor-pointer shadow-2xs",
-                      element.fontSize === sz
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border/60 bg-background hover:bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {sz}
-                  </button>
-                ))}
-              </div>
+              <span className="text-[10px] text-muted-foreground/80 font-semibold">px</span>
             </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground font-semibold">سمك الخط</Label>
-              <div className="grid grid-cols-5 gap-1">
-                {[300, 400, 600, 700, 900].map((w) => (
-                  <button
-                    key={w}
-                    type="button"
-                    onClick={() => {
-                      onUpdate(element.id, { fontWeight: w });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                    className={cn(
-                      "h-8 text-xs rounded-md border transition-all text-center font-bold shadow-2xs cursor-pointer",
-                      element.fontWeight === w
-                        ? "border-primary bg-primary/15 text-primary"
-                        : "border-border/60 bg-background hover:bg-accent/80 text-muted-foreground"
-                    )}
-                    style={{ fontWeight: w }}
-                    title={w === 300 ? "خفيف" : w === 400 ? "عادي" : w === 600 ? "متوسط" : w === 700 ? "عريض" : "أسود داكن"}
-                  >
-                    {w === 300 ? "300" : w === 400 ? "400" : w === 600 ? "600" : w === 700 ? "700" : "900"}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => changeFontSize(2)}
+              className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-all cursor-pointer"
+              title="تكبير الخط"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
           </div>
-        </TabsContent>
+        </div>
 
-        {/* Tab 2: التباعد والمحاذاة */}
-        <TabsContent value="spacing" className="space-y-3 mt-0 focus-visible:outline-hidden">
-          <div className="bg-card/70 dark:bg-muted/10 p-3.5 rounded-xl border border-border/40 space-y-4 shadow-2xs">
-            <TextStyleControls element={element} onUpdate={onUpdate} />
-            <TextSpacingControls element={element} onUpdate={onUpdate} />
-
-            {/* قلب النص أفقي/رأسي */}
-            <div className="space-y-1.5 pt-2 border-t border-border/20">
-              <Label className="text-[10px] text-muted-foreground font-semibold">اتجاه وقلب النص</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onUpdate(element.id, { flipX: !isFlippedX });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  className={cn(
-                    "h-8 rounded-lg border flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs",
-                    isFlippedX
-                      ? "border-primary bg-primary/15 text-primary"
-                      : "border-border/60 bg-background hover:bg-muted text-muted-foreground"
-                  )}
-                >
-                  <FlipHorizontal className="w-3.5 h-3.5" />
-                  <span>قلب أفقي</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onUpdate(element.id, { flipY: !isFlippedY });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  className={cn(
-                    "h-8 rounded-lg border flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs",
-                    isFlippedY
-                      ? "border-primary bg-primary/15 text-primary"
-                      : "border-border/60 bg-background hover:bg-muted text-muted-foreground"
-                  )}
-                >
-                  <FlipVertical className="w-3.5 h-3.5" />
-                  <span>قلب رأسي</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Tab 3: الألوان والإطار والخلفية والظل */}
-        <TabsContent value="color" className="space-y-3 mt-0 focus-visible:outline-hidden">
-          <div className="bg-card/70 dark:bg-muted/10 p-3.5 rounded-xl border border-border/40 space-y-4 shadow-2xs">
-            {/* لون وتعبئة النص */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
-                <Type className="w-3 h-3 text-primary/70" />
-                <span>لون وتعبئة النص</span>
+        {/* السطر 4: تباعد الأسطر والكلمات */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* تباعد الأسطر */}
+          <div className="flex items-center justify-between h-8.5 bg-background/80 border border-border/50 rounded-xl px-2 shadow-2xs">
+            <span className="text-[10.5px] text-muted-foreground font-semibold flex items-center gap-1 shrink-0">
+              <MoveVertical className="w-3 h-3 text-primary/70" />
+              <span>الأسطر</span>
+            </span>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => changeLineHeight(-0.1)}
+                className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+              >
+                <Minus className="w-2.5 h-2.5" />
+              </button>
+              <span className="w-7 text-center text-[11px] font-bold text-foreground font-mono">
+                {currentLineHeight}
               </span>
+              <button
+                type="button"
+                onClick={() => changeLineHeight(0.1)}
+                className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+              >
+                <Plus className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* تباعد الكلمات/الحروف */}
+          <div className="flex items-center justify-between h-8.5 bg-background/80 border border-border/50 rounded-xl px-2 shadow-2xs">
+            <span className="text-[10.5px] text-muted-foreground font-semibold flex items-center gap-1 shrink-0">
+              <MoveHorizontal className="w-3 h-3 text-primary/70" />
+              <span>{isArabic ? "الكلمات" : "الحروف"}</span>
+            </span>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = Math.max(-5, (element.letterSpacing ?? 0) - 1);
+                  onUpdate(element.id, { letterSpacing: next });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+              >
+                <Minus className="w-2.5 h-2.5" />
+              </button>
+              <span className="w-7 text-center text-[11px] font-bold text-foreground font-mono">
+                {element.letterSpacing ?? 0}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = Math.min(30, (element.letterSpacing ?? 0) + 1);
+                  onUpdate(element.id, { letterSpacing: next });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+              >
+                <Plus className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* السطر 5: شريط النمط والمحاذاة (Segmented Bar) */}
+        <div className="flex items-center justify-between p-1 bg-muted/40 dark:bg-muted/20 rounded-xl border border-border/40 shadow-2xs">
+          {/* أزرار النمط */}
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { fontWeight: isBold ? 400 : 800 });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs font-bold",
+                isBold
+                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+              )}
+              title="عريض (Bold)"
+            >
+              <Bold className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { fontStyle: isItalic ? "normal" : "italic" });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                isItalic
+                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+              )}
+              title="مائل (Italic)"
+            >
+              <Italic className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { textDecoration: isUnderline ? "none" : "underline" });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                isUnderline
+                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+              )}
+              title="تحته خط (Underline)"
+            >
+              <Underline className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { textDecoration: isLineThrough ? "none" : "line-through" });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                isLineThrough
+                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+              )}
+              title="شطب (Strikethrough)"
+            >
+              <Strikethrough className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="w-px h-4 bg-border/60 mx-0.5" />
+
+          {/* أزرار المحاذاة */}
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { textAlign: "right" });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                textAlign === "right"
+                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+              )}
+              title="محاذاة لليمين"
+            >
+              <AlignRight className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { textAlign: "center" });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                textAlign === "center"
+                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+              )}
+              title="توسيط"
+            >
+              <AlignCenter className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { textAlign: "left" });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer text-xs",
+                textAlign === "left"
+                  ? "bg-primary text-primary-foreground shadow-xs scale-105"
+                  : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+              )}
+              title="محاذاة لليسار"
+            >
+              <AlignLeft className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="w-px h-4 bg-border/60 mx-0.5" />
+
+          {/* زر الأرقام المشرقية */}
+          <button
+            type="button"
+            onClick={() => {
+              onUpdate(element.id, { arabicNumerals: !isArabicNumerals });
+              useEditorStore.getState().pushHistory();
+            }}
+            className={cn(
+              "h-7 px-2 rounded-lg flex items-center justify-center gap-0.5 transition-all cursor-pointer text-[10.5px] font-bold",
+              isArabicNumerals
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "hover:bg-background/80 text-muted-foreground hover:text-foreground"
+            )}
+            title="تحويل الأرقام إلى (١ ٢ ٣)"
+          >
+            <Hash className="w-3 h-3" />
+            <span>١٢٣</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* بطاقة 2: المظهر والتأثيرات (Clean Color Swatches & Rows) */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <div className="bg-card/40 dark:bg-card/25 border border-border/40 backdrop-blur-md rounded-2xl p-2.5 space-y-1.5 shadow-sm">
+        
+        {/* صف 1: تعبئة ولون النص */}
+        <div className="flex items-center justify-between h-9 px-2.5 rounded-xl bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
+          <span className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
+            <Palette className="w-3.5 h-3.5 text-primary" />
+            <span>تعبئة النص</span>
+          </span>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="w-6.5 h-6.5 rounded-lg border border-border/80 p-0.5 bg-background hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 flex items-center justify-center shrink-0"
+                title="تغيير لون وتعبئة النص"
+              >
+                <div
+                  className="w-full h-full rounded-md border border-black/10 dark:border-white/10 shadow-2xs"
+                  style={{
+                    background:
+                      element.fillType === "linear" || element.fillType === "radial"
+                        ? "linear-gradient(135deg, #3b82f6, #8b5cf6)"
+                        : element.color || "#000000",
+                  }}
+                />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="left" className="w-64 p-3 font-cairo shadow-2xl rounded-2xl border-border/60">
               <GradientPicker
                 fillType={element.fillType || "solid"}
                 color={element.color || "#000000"}
@@ -233,19 +421,236 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 }}
                 onCommitAngle={() => useEditorStore.getState().pushHistory()}
               />
-            </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
-            {/* شارة وخلفية النص المستديرة */}
-            <TextBadgeControls element={element} onUpdate={onUpdate} />
+        {/* صف 2: خلفية وتظليل النص */}
+        <div className="flex items-center justify-between h-9 px-2.5 rounded-xl bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
+          <span className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
+            <PaintBucket className="w-3.5 h-3.5 text-primary" />
+            <span>خلفية النص</span>
+          </span>
 
-            {/* إطار وحدود النص */}
-            <TextStrokeControls element={element} onUpdate={onUpdate} />
+          <div className="flex items-center gap-1.5">
+            {hasBadge && (
+              <>
+                <PopoverColorPicker
+                  color={element.textBgColor || "#2563eb"}
+                  onChange={(val: string) => {
+                    onUpdate(element.id, { textBgColor: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  swatchOnly
+                />
 
-            {/* ظل النص الاحترافي */}
-            <TextShadowControls element={element} onUpdate={onUpdate} />
+                {/* استدارة الحواف Stepper */}
+                <div className="flex items-center h-6.5 bg-background border border-border/60 rounded-lg px-1 gap-0.5 shadow-2xs" title="استدارة الحواف">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.max(0, (element.textBgRadius ?? 6) - 2);
+                      onUpdate(element.id, { textBgRadius: next });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <Minus className="w-2 h-2" />
+                  </button>
+                  <span className="text-[9.5px] font-bold font-mono text-foreground w-4 text-center">
+                    {element.textBgRadius ?? 6}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.min(30, (element.textBgRadius ?? 6) + 2);
+                      onUpdate(element.id, { textBgRadius: next });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <Plus className="w-2 h-2" />
+                  </button>
+                </div>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                if (hasBadge) {
+                  onUpdate(element.id, { textBgColor: "transparent", textBgBorderWidth: 0 });
+                } else {
+                  onUpdate(element.id, {
+                    textBgColor: "#2563eb",
+                    textBgRadius: element.textBgRadius ?? 6,
+                    textBgPadding: element.textBgPadding ?? 6,
+                  });
+                }
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "h-6.5 px-2.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                hasBadge
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
+              )}
+            >
+              {hasBadge ? "مفعّلة" : "إضافة"}
+            </button>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+
+        {/* صف 3: إطار النص */}
+        <div className="flex items-center justify-between h-9 px-2.5 rounded-xl bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
+          <span className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
+            <Square className="w-3.5 h-3.5 text-primary" />
+            <span>إطار النص</span>
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            {hasStroke && (
+              <>
+                <PopoverColorPicker
+                  color={element.stroke || "#000000"}
+                  onChange={(val: string) => {
+                    onUpdate(element.id, { stroke: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  swatchOnly
+                />
+
+                {/* سمك الإطار Stepper */}
+                <div className="flex items-center h-6.5 bg-background border border-border/60 rounded-lg px-1 gap-0.5 shadow-2xs" title="سمك الإطار">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.max(0.5, (element.strokeWidth ?? 2) - 0.5);
+                      onUpdate(element.id, { strokeWidth: next });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <Minus className="w-2 h-2" />
+                  </button>
+                  <span className="text-[9.5px] font-bold font-mono text-foreground w-6 text-center">
+                    {element.strokeWidth ?? 2}px
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.min(20, (element.strokeWidth ?? 2) + 0.5);
+                      onUpdate(element.id, { strokeWidth: next });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <Plus className="w-2 h-2" />
+                  </button>
+                </div>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                if (hasStroke) {
+                  onUpdate(element.id, { strokeWidth: 0 });
+                } else {
+                  onUpdate(element.id, { stroke: element.stroke || "#000000", strokeWidth: 2 });
+                }
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "h-6.5 px-2.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                hasStroke
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
+              )}
+            >
+              {hasStroke ? "مفعّل" : "إضافة"}
+            </button>
+          </div>
+        </div>
+
+        {/* صف 4: ظل النص */}
+        <div className="flex items-center justify-between h-9 px-2.5 rounded-xl bg-background/40 hover:bg-background/70 border border-border/30 transition-colors">
+          <span className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <span>ظل النص</span>
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            {hasShadow && (
+              <>
+                <PopoverColorPicker
+                  color={element.shadowColor || "#000000"}
+                  onChange={(val: string) => {
+                    onUpdate(element.id, { shadowColor: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  swatchOnly
+                />
+
+                {/* تمويه الظل Stepper */}
+                <div className="flex items-center h-6.5 bg-background border border-border/60 rounded-lg px-1 gap-0.5 shadow-2xs" title="تمويه الظل">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.max(0, (element.shadowBlur ?? 8) - 2);
+                      onUpdate(element.id, { shadowBlur: next });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <Minus className="w-2 h-2" />
+                  </button>
+                  <span className="text-[9.5px] font-bold font-mono text-foreground w-6 text-center">
+                    {element.shadowBlur ?? 8}px
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.min(40, (element.shadowBlur ?? 8) + 2);
+                      onUpdate(element.id, { shadowBlur: next });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className="w-3.5 h-4.5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <Plus className="w-2 h-2" />
+                  </button>
+                </div>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                if (hasShadow) {
+                  onUpdate(element.id, { shadowBlur: 0, shadowOpacity: 0 });
+                } else {
+                  onUpdate(element.id, { 
+                    shadowColor: element.shadowColor || "#000000",
+                    shadowBlur: 8,
+                    shadowOpacity: 0.6,
+                    shadowOffsetX: 2,
+                    shadowOffsetY: 2,
+                  });
+                }
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "h-6.5 px-2.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                hasShadow
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
+              )}
+            >
+              {hasShadow ? "مفعّل" : "إضافة"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
