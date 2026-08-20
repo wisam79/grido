@@ -22,7 +22,7 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
 
     await page.fill('#proj-name', 'مشروع اختباري');
 
-    await page.getByRole('button', { name: 'حفظ في قاعدة البيانات' }).click();
+    await page.getByRole('button', { name: /حفظ المشروع|حفظ في قاعدة البيانات/ }).click();
 
     await expect(page.getByText('تم حفظ المشروع بنجاح في قاعدة البيانات المحلية')).toBeVisible();
   });
