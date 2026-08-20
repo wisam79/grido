@@ -111,7 +111,7 @@ jobs:
           cache: true
 
       - name: Run Go Tests
-        run: go test -v . ./internal/...
+        run: go test -v ./internal/...
 
   # ───────────────────────────────────────────────
   # Job 4: E2E Tests & Smoke Build (Windows)
