@@ -40,6 +40,8 @@ export interface ElementSlice {
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   selectElement: (id: string | null) => void;
+  selectAllElements: () => void;
+  setSelectedIds: (ids: string[]) => void;
   toggleElementSelection: (id: string) => void;
   groupSelectedElements: () => void;
   ungroupSelectedElements: () => void;
@@ -47,6 +49,8 @@ export interface ElementSlice {
   autoFitTextWidth: (id: string, textWidthPx?: number) => void;
   centerElementHorizontally: (id: string) => void;
   centerElementVertically: (id: string) => void;
+  alignSelectedElements: (alignment: "left" | "center" | "right" | "top" | "middle" | "bottom") => void;
+  distributeSelectedElements: (axis: "horizontal" | "vertical") => void;
 }
 
 export const DEFAULT_ELEMENT_STATE = {
@@ -714,6 +718,21 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     }
   },
 
+  selectAllElements: () => {
+    const visibleIds = get().elements.filter((el) => el.visible !== false).map((el) => el.id);
+    set({
+      selectedId: visibleIds.length === 1 ? visibleIds[0] : null,
+      selectedIds: visibleIds,
+    });
+  },
+
+  setSelectedIds: (ids: string[]) => {
+    set({
+      selectedId: ids.length === 1 ? ids[0] : null,
+      selectedIds: ids,
+    });
+  },
+
   toggleElementSelection: (id) => {
     set((s) => {
       const el = s.elements.find((e: CanvasElement) => e.id === id);
@@ -782,4 +801,119 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   },
 
   setEditingTextId: (id) => set({ editingTextId: id }),
+
+  alignSelectedElements: (alignment) => {
+    const state = get();
+    const targetIds = state.selectedIds.length > 0 ? state.selectedIds : (state.selectedId ? [state.selectedId] : []);
+    const elementsToAlign = state.elements.filter((e: CanvasElement) => targetIds.includes(e.id) && !e.locked);
+    if (elementsToAlign.length === 0) return;
+
+    let minX = Math.min(...elementsToAlign.map(e => e.x));
+    let maxX = Math.max(...elementsToAlign.map(e => e.x + e.width));
+    let minY = Math.min(...elementsToAlign.map(e => e.y));
+    let maxY = Math.max(...elementsToAlign.map(e => e.y + e.height));
+    let centerX = (minX + maxX) / 2;
+    let centerY = (minY + maxY) / 2;
+
+    if (elementsToAlign.length === 1) {
+      minX = 0;
+      maxX = 1;
+      minY = 0;
+      maxY = 1;
+      centerX = 0.5;
+      centerY = 0.5;
+    }
+
+    const patches = elementsToAlign.map((el) => {
+      let nextX = el.x;
+      let nextY = el.y;
+
+      switch (alignment) {
+        case "left":
+          nextX = minX;
+          break;
+        case "center":
+          nextX = centerX - el.width / 2;
+          break;
+        case "right":
+          nextX = maxX - el.width;
+          break;
+        case "top":
+          nextY = minY;
+          break;
+        case "middle":
+          nextY = centerY - el.height / 2;
+          break;
+        case "bottom":
+          nextY = maxY - el.height;
+          break;
+      }
+
+      return {
+        id: el.id,
+        patch: { x: nextX, y: nextY },
+      };
+    });
+
+    get().updateElements(patches);
+    get().pushHistory();
+  },
+
+  distributeSelectedElements: (axis) => {
+    const state = get();
+    const targetIds = state.selectedIds.length >= 3 ? state.selectedIds : [];
+    const elementsToDistribute = state.elements.filter((e: CanvasElement) => targetIds.includes(e.id) && !e.locked);
+    if (elementsToDistribute.length < 3) return;
+
+    const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
+
+    if (axis === "horizontal") {
+      const sorted = [...elementsToDistribute].sort((a, b) => a.x - b.x);
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const totalSpan = (last.x + last.width) - first.x;
+      const totalWidths = sorted.reduce((sum, el) => sum + el.width, 0);
+      const remainingSpace = totalSpan - totalWidths;
+      const gap = remainingSpace / (sorted.length - 1);
+
+      let currentX = first.x;
+      sorted.forEach((el, index) => {
+        if (index === 0 || index === sorted.length - 1) {
+          currentX += el.width + gap;
+        } else {
+          patches.push({
+            id: el.id,
+            patch: { x: currentX },
+          });
+          currentX += el.width + gap;
+        }
+      });
+    } else {
+      const sorted = [...elementsToDistribute].sort((a, b) => a.y - b.y);
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const totalSpan = (last.y + last.height) - first.y;
+      const totalHeights = sorted.reduce((sum, el) => sum + el.height, 0);
+      const remainingSpace = totalSpan - totalHeights;
+      const gap = remainingSpace / (sorted.length - 1);
+
+      let currentY = first.y;
+      sorted.forEach((el, index) => {
+        if (index === 0 || index === sorted.length - 1) {
+          currentY += el.height + gap;
+        } else {
+          patches.push({
+            id: el.id,
+            patch: { y: currentY },
+          });
+          currentY += el.height + gap;
+        }
+      });
+    }
+
+    if (patches.length > 0) {
+      get().updateElements(patches);
+      get().pushHistory();
+    }
+  },
 });

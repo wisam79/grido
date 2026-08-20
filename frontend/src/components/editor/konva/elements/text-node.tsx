@@ -23,6 +23,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   snapToGrid, 
   gridSize, 
   altPressedRef, 
+  shiftPressedRef,
   onDblClick, 
   getKonvaNode 
 }: ElementProps) {
@@ -43,6 +44,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     snapToGrid,
     gridSize,
     altPressedRef,
+    shiftPressedRef,
     getKonvaNode,
     setActiveGuides,
   });

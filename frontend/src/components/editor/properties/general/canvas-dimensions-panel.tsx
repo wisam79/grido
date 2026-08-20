@@ -321,7 +321,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                       return (
                         <>
                           <span className="text-[11px] font-bold">أخرى...</span>
-                          <span className="text-[8.5px] text-muted-foreground/80 font-medium">باقي المقاسات</span>
+                          <span className="text-[8.5px] text-muted-foreground/80 font-medium">مقاسات أخرى</span>
                         </>
                       );
                     }
@@ -329,7 +329,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                       return (
                         <>
                           <span className="text-[11px] font-bold">مخصص</span>
-                          <span className="text-[8.5px] text-primary/80 font-medium">مقاس حر</span>
+                          <span className="text-[8.5px] text-primary/80 font-medium">مخصص</span>
                         </>
                       );
                     }
@@ -337,7 +337,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                     return (
                       <>
                         <span className="text-[11px] font-bold truncate max-w-[80px]">{activePaper?.name.split(" (")[0]}</span>
-                        <span className="text-[8.5px] text-primary/80 font-medium">مقاس قياسي</span>
+                        <span className="text-[8.5px] text-primary/80 font-medium">قياسي</span>
                       </>
                     );
                   })()}
@@ -350,7 +350,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   }}
                   className="text-xs text-right justify-end font-bold cursor-pointer rounded-md"
                 >
-                  مقاس مخصص (Custom Size)
+                  مقاس مخصص
                 </DropdownMenuItem>
                 {PAPER_SIZES.map((p) => {
                   const nameParts = p.name.split(" (");

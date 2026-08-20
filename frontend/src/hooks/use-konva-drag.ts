@@ -10,6 +10,7 @@ interface UseKonvaDragProps {
   snapToGrid?: boolean;
   gridSize?: number;
   altPressedRef: React.RefObject<boolean>;
+  shiftPressedRef?: React.RefObject<boolean>;
   getKonvaNode: (id: string) => any;
   setActiveGuides: (guides: any[]) => void;
 }
@@ -21,6 +22,7 @@ export function useKonvaDrag({
   snapToGrid,
   gridSize,
   altPressedRef,
+  shiftPressedRef,
   getKonvaNode,
   setActiveGuides,
 }: UseKonvaDragProps) {
@@ -71,6 +73,18 @@ export function useKonvaDrag({
     const stageScale = getKonvaNode(element.id)?.getStage()?.scaleX() || 1;
     let xLogical = pos.x / stageScale;
     let yLogical = pos.y / stageScale;
+
+    // قفل المحاور عند الضغط على Shift (Axis Lock: Horizontal or Vertical)
+    if (shiftPressedRef?.current && dragStartPositionsRef.current[element.id]) {
+      const startPos = dragStartPositionsRef.current[element.id];
+      const dx = Math.abs(xLogical - startPos.x);
+      const dy = Math.abs(yLogical - startPos.y);
+      if (dx > dy) {
+        yLogical = startPos.y;
+      } else {
+        xLogical = startPos.x;
+      }
+    }
 
     if (snapToGrid && gridSize && gridSize > 0) {
       xLogical = Math.round(xLogical / gridSize) * gridSize;

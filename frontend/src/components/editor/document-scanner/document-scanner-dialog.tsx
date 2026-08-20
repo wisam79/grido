@@ -610,7 +610,7 @@ export function DocumentScannerDialog({
                     >
                       <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-300" />
                       <div className="flex flex-col items-start leading-tight">
-                        <span>ماسح ذكي (Magic)</span>
+                        <span>ماسح ذكي</span>
                       </div>
                     </Button>
                   </TooltipTrigger>
@@ -630,7 +630,7 @@ export function DocumentScannerDialog({
                     >
                       <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
                       <div className="flex flex-col items-start leading-tight">
-                        <span>أبيض وأسود (B&W)</span>
+                        <span>أبيض وأسود</span>
                       </div>
                     </Button>
                   </TooltipTrigger>
@@ -655,7 +655,7 @@ export function DocumentScannerDialog({
                   )}
                   onClick={() => handleAspectChange("free")}
                 >
-                  تلقائي / حر
+                  حر
                 </Button>
 
                 <Button
@@ -692,7 +692,7 @@ export function DocumentScannerDialog({
                   onClick={() => handleAspectChange("id_card")}
                 >
                   <CreditCard className="w-3 h-3" />
-                  <span>هوية ID</span>
+                  <span>بطاقة هوية</span>
                 </Button>
               </div>
             </div>
@@ -715,7 +715,7 @@ export function DocumentScannerDialog({
               ) : (
                 <>
                   <Eye className="w-3.5 h-3.5 text-primary" />
-                  <span>معاينة الاستعدال</span>
+                  <span>معاينة</span>
                 </>
               )}
             </Button>
@@ -734,7 +734,7 @@ export function DocumentScannerDialog({
               className="rounded-md h-8 px-5 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
             >
               <Check className="w-3.5 h-3.5" />
-              <span>تطبيق وعزل المستند</span>
+              <span>تطبيق الاستعدال</span>
             </Button>
           </div>
         </DialogFooter>

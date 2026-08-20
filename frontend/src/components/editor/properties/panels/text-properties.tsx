@@ -578,12 +578,13 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
       {/* تبويب 2: الألوان والتعبئة (Colors & Gradients) */}
       {/* ───────────────────────────────────────────────────────────── */}
       {activeTab === "color" && (
-        <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-3 shadow-xs fluent-specular animate-in fade-in duration-150">
-          <div className="space-y-2.5">
+        <div className="space-y-2.5 animate-in fade-in duration-150">
+          {/* 🎴 بطاقة 1: لون النص والتعبئة */}
+          <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
                 <Palette className="w-3.5 h-3.5 text-primary" />
-                <span>اللون والتعبئة</span>
+                <span>لون النص والتعبئة</span>
               </span>
 
               <Popover>
@@ -643,7 +644,10 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
 
+          {/* 🎴 بطاقة 2: الشفافية والألوان السريعة */}
+          <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             {/* الشفافية */}
             <div className="space-y-1 p-2 bg-muted/20 rounded-lg border border-border/30">
               <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
@@ -665,7 +669,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             </div>
 
             {/* ألوان سريعة */}
-            <div className="grid grid-cols-4 gap-1.5 pt-1">
+            <div className="grid grid-cols-4 gap-1.5 pt-0.5">
               {STUDIO_PALETTE.map((c) => {
                 const isCurrent = (element.color || "#000000").toLowerCase() === c.color.toLowerCase() && (element.fillType === "solid" || !element.fillType);
                 return (
@@ -703,13 +707,13 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
       {/* تبويب 3: التأثيرات والشارات والأختام (Effects & Badges) */}
       {/* ───────────────────────────────────────────────────────────── */}
       {activeTab === "effects" && (
-        <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-3 shadow-xs fluent-specular animate-in fade-in duration-150">
+        <div className="space-y-2.5 animate-in fade-in duration-150">
           
-          {/* تأثير 1: الخلفية والشارة */}
-          <div className="space-y-2 p-2.5 bg-muted/20 rounded-lg border border-border/40">
+          {/* 🎴 بطاقة 1: الخلفية والشارة */}
+          <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
-                <PaintBucket className="w-3.5 h-3.5 text-primary/80" />
+              <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+                <PaintBucket className="w-3.5 h-3.5 text-primary" />
                 <span>الخلفية والشارة</span>
               </span>
 
@@ -754,7 +758,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             </div>
 
             {hasBadge && (
-              <div className="space-y-2.5 pt-1 border-t border-border/30 animate-in fade-in duration-150">
+              <div className="space-y-2.5 pt-2 border-t border-border/30 animate-in fade-in duration-150">
                 {/* تباعد أفقي X */}
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-[10px]">
@@ -809,11 +813,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             )}
           </div>
 
-          {/* تأثير 2: الإطار والحدود */}
-          <div className="space-y-2 p-2.5 bg-muted/20 rounded-lg border border-border/40">
+          {/* 🎴 بطاقة 2: الإطار والحدود */}
+          <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
-                <Square className="w-3.5 h-3.5 text-primary/80" />
+              <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+                <Square className="w-3.5 h-3.5 text-primary" />
                 <span>الإطار والحدود</span>
               </span>
 
@@ -852,7 +856,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             </div>
 
             {hasStroke && (
-              <div className="space-y-1 pt-1 border-t border-border/30 animate-in fade-in duration-150">
+              <div className="space-y-1 pt-2 border-t border-border/30 animate-in fade-in duration-150">
                 <div className="flex justify-between items-center text-[10px]">
                   <span className="text-muted-foreground font-semibold">السمك</span>
                   <span className="font-mono font-bold text-foreground">{element.strokeWidth ?? 2}px</span>
@@ -870,11 +874,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             )}
           </div>
 
-          {/* تأثير 3: الظل والتوهج */}
-          <div className="space-y-2 p-2.5 bg-muted/20 rounded-lg border border-border/40">
+          {/* 🎴 بطاقة 3: الظل والتوهج */}
+          <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary/80" />
+              <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
                 <span>الظل والتوهج</span>
               </span>
 
@@ -942,7 +946,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             </div>
 
             {hasShadow && (
-              <div className="space-y-1.5 pt-1 border-t border-border/30 animate-in fade-in duration-150">
+              <div className="space-y-1.5 pt-2 border-t border-border/30 animate-in fade-in duration-150">
                 <div className="flex items-center justify-between text-[10px]">
                   <span className="text-muted-foreground font-semibold">التمويه</span>
                   <span className="font-mono font-bold">{element.shadowBlur ?? 10}px</span>
@@ -960,11 +964,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             )}
           </div>
 
-          {/* تأثير 4: تقويس النص */}
-          <div className="space-y-2 p-2.5 bg-muted/20 rounded-lg border border-border/40">
+          {/* 🎴 بطاقة 4: تقويس النص */}
+          <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
-                <RotateCw className="w-3.5 h-3.5 text-primary/80" />
+              <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+                <RotateCw className="w-3.5 h-3.5 text-primary" />
                 <span>تقويس النص</span>
               </span>
 
@@ -990,7 +994,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             </div>
 
             {hasCurve && (
-              <div className="space-y-2 pt-1 border-t border-border/30 animate-in fade-in duration-150">
+              <div className="space-y-2 pt-2 border-t border-border/30 animate-in fade-in duration-150">
                 {/* زوايا جاهزة */}
                 <div className="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar text-[10px]">
                   {CURVE_PRESETS.map((cp) => (

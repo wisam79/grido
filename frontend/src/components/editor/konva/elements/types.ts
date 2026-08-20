@@ -17,6 +17,7 @@ export interface ElementProps {
   snapToGrid?: boolean;
   gridSize?: number;
   altPressedRef: React.RefObject<boolean>;
+  shiftPressedRef?: React.RefObject<boolean>;
   onDblClick?: () => void;
   getKonvaNode: (id: string) => any;
 }

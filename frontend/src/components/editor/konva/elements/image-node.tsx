@@ -26,6 +26,7 @@ export const URLImage = React.memo(function URLImage({
   snapToGrid, 
   gridSize, 
   altPressedRef, 
+  shiftPressedRef,
   getKonvaNode 
 }: ElementProps) {
   const element = _element as ImageElement;
@@ -46,6 +47,7 @@ export const URLImage = React.memo(function URLImage({
     snapToGrid,
     gridSize,
     altPressedRef,
+    shiftPressedRef,
     getKonvaNode,
     setActiveGuides,
   });

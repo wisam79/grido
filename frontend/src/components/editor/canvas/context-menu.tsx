@@ -20,6 +20,7 @@ import {
   RotateCw,
   FlipHorizontal2,
   Crosshair,
+  Layers,
 } from "lucide-react";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
@@ -658,7 +659,9 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
 
       {/* 🔹 قائمة الكانفس عند الضغط على المساحة الفارغة */}
       {target.type === "canvas" && (() => {
+        const state = useEditorStore.getState();
         const hasCopied = clipboardElements && clipboardElements.length > 0;
+        const hasElements = state.mode === "single" && state.elements.length > 0;
 
         return (
           <div className="space-y-1">
@@ -666,6 +669,44 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
               إجراءات الصفحة
             </div>
             <div className="space-y-0.5">
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
+                onClick={() => handleAction(async () => {
+                  const [b64] = await openImageFileDialog(false);
+                  if (b64) {
+                    let srcToUse = b64;
+                    if (b64.startsWith("data:image/")) {
+                      try {
+                        const localPath = await SaveImageFromBase64(b64);
+                        if (localPath) srcToUse = localPath;
+                      } catch {
+                        // Fallback
+                      }
+                    }
+                    const img = new Image();
+                    img.onload = () => {
+                      const aspect = img.width / img.height;
+                      img.onload = null;
+                      img.onerror = null;
+                      img.src = "";
+                      state.addImageElement(srcToUse, aspect);
+                    };
+                    img.onerror = () => {
+                      img.onload = null;
+                      img.onerror = null;
+                      img.src = "";
+                      state.addImageElement(srcToUse, 1);
+                    };
+                    img.src = srcToUse;
+                  }
+                })}
+              >
+                <ImagePlus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                <span className="truncate">إضافة صورة جديدة</span>
+              </button>
+
               <button
                 role="menuitem"
                 tabIndex={-1}
@@ -679,6 +720,20 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                   لصق المحتوى {hasCopied ? `(${clipboardElements.length})` : ""}
                 </span>
               </button>
+
+              {hasElements && (
+                <button
+                  role="menuitem"
+                  tabIndex={-1}
+                  className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
+                  onClick={() => handleAction(() => {
+                    state.selectAllElements();
+                  })}
+                >
+                  <Layers className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                  <span className="truncate">تحديد كافة العناصر (Ctrl+A)</span>
+                </button>
+              )}
             </div>
           </div>
         );

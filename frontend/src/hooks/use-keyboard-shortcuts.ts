@@ -62,6 +62,17 @@ export function useKeyboardShortcuts() {
     }
   });
 
+  // Select All: Ctrl+A or Cmd+A (Canvas elements only when outside text inputs)
+  useHotkeys("mod+a", (e) => {
+    const target = e.target as HTMLElement;
+    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+    const { mode, elements, selectAllElements } = useEditorStore.getState();
+    if (mode === "single" && elements.length > 0) {
+      e.preventDefault();
+      selectAllElements();
+    }
+  });
+
   // Copy: Ctrl+C or Cmd+C
   useHotkeys("mod+c", (e) => {
     const target = e.target as HTMLElement;

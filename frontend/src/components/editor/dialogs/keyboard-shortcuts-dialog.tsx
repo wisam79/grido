@@ -28,13 +28,16 @@ export function KeyboardShortcutsDialog() {
   }, []);
 
   const shortcuts = [
+    { label: "تحديد كافة العناصر", keys: ["Ctrl", "A"] },
     { label: "تراجع عن الإجراء", keys: ["Ctrl", "Z"] },
     { label: "إعادة الإجراء", keys: ["Ctrl", "Y"] },
     { label: "حذف العنصر المحدد", keys: ["Delete"] },
-    { label: "تكرار العنصر (Duplicate)", keys: ["Ctrl", "D"] },
-    { label: "تجميع العناصر (Group)", keys: ["Ctrl", "G"] },
-    { label: "فك تجميع العناصر (Ungroup)", keys: ["Ctrl", "Shift", "G"] },
+    { label: "تكرار العنصر", keys: ["Ctrl", "D"] },
+    { label: "تجميع العناصر", keys: ["Ctrl", "G"] },
+    { label: "فك التجميع", keys: ["Ctrl", "Shift", "G"] },
     { label: "حفظ المشروع", keys: ["Ctrl", "S"] },
+    { label: "تصدير صورة", keys: ["Ctrl", "E"] },
+    { label: "طباعة المستند", keys: ["Ctrl", "P"] },
     { label: "تحريك دقيق للعنصر", keys: ["الأسهم"] },
     { label: "تحريك سريع للعنصر", keys: ["Shift", "الأسهم"] },
     { label: "لصق صورة من الحافظة", keys: ["Ctrl", "V"] },
@@ -80,7 +83,7 @@ export function KeyboardShortcutsDialog() {
         
         <div className="mt-4 bg-primary/10 border border-primary/20 rounded-xl p-3 text-center fluent-specular">
           <p className="text-[11px] text-primary/90 font-bold">
-            يمكنك إظهار هذه القائمة في أي وقت بالضغط على 
+            إظهار هذه القائمة بالضغط على 
             <kbd className="mx-1 px-1.5 py-0.5 bg-background rounded-md border border-border/60 text-[10px] font-mono font-bold shadow-2xs">Ctrl + /</kbd>
           </p>
         </div>

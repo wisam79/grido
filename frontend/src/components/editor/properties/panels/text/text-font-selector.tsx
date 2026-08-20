@@ -240,7 +240,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 setSearchQuery(e.target.value);
                 setFocusedIndex(-1);
               }}
-              placeholder="ابحث عن خط (كايرو، أميري، نسخ...)"
+              placeholder="بحث في الخطوط..."
               className="w-full h-8 bg-background/90 border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md pr-8 pl-8 text-xs text-foreground placeholder:text-muted-foreground/60 outline-hidden transition-all shadow-2xs"
             />
             {searchQuery ? (

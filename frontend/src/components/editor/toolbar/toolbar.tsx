@@ -47,29 +47,29 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
       {/* المجموعة 6: الحفظ والتصدير والطباعة */}
       <div className="flex items-center gap-1.5">
-        <TooltipBtn content="حفظ المشروع محلياً">
+        <TooltipBtn content="حفظ المشروع (Ctrl+S)">
           <Button 
             variant="outline" 
             size="icon" 
             onClick={onSave} 
-            aria-label="حفظ المشروع محلياً"
+            aria-label="حفظ المشروع"
             className="h-8 w-8 border-border/60 hover:bg-accent/60 rounded-md cursor-pointer transition-all text-muted-foreground hover:text-foreground shadow-2xs"
           >
             <Save className="w-3.5 h-3.5" />
           </Button>
         </TooltipBtn>
-        <TooltipBtn content="تصدير كصورة عالية الجودة">
+        <TooltipBtn content="تصدير صورة (Ctrl+E)">
           <Button 
             variant="outline" 
             size="icon" 
             onClick={onExport} 
-            aria-label="تصدير كصورة"
+            aria-label="تصدير صورة"
             className="h-8 w-8 border-border/60 hover:bg-accent/60 rounded-md cursor-pointer transition-all text-muted-foreground hover:text-foreground shadow-2xs"
           >
             <Download className="w-3.5 h-3.5" />
           </Button>
         </TooltipBtn>
-        <TooltipBtn content="بدء إعدادات وطباعة المستند (Ctrl + P)">
+        <TooltipBtn content="طباعة المستند (Ctrl+P)">
           <Button 
             variant="default" 
             size="sm" 

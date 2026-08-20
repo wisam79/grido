@@ -19,8 +19,25 @@ import {
   X,
   Eraser,
   ScanFace,
-  Loader2
+  Loader2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
+  Layers,
+  Group,
+  Ungroup,
+  RotateCw,
+  FlipHorizontal,
+  RotateCcw,
+  Eye
 } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
@@ -54,6 +71,11 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     bringToFront,
     sendToBack,
     selectElement,
+    alignSelectedElements,
+    distributeSelectedElements,
+    groupSelectedElements,
+    rotateSlot,
+    flipSlotX,
     licenseActive,
   } = useEditorStore(
     useShallow((state) => ({
@@ -75,6 +97,11 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       bringToFront: state.bringToFront,
       sendToBack: state.sendToBack,
       selectElement: state.selectElement,
+      alignSelectedElements: state.alignSelectedElements,
+      distributeSelectedElements: state.distributeSelectedElements,
+      groupSelectedElements: state.groupSelectedElements,
+      rotateSlot: state.rotateSlot,
+      flipSlotX: state.flipSlotX,
       licenseActive: state.isLicenseActive(),
     }))
   );
@@ -272,6 +299,82 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => rotateSlot(selectedSlot.id, 90)}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                    >
+                      <RotateCw className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => flipSlotX(selectedSlot.id)}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                    >
+                      <FlipHorizontal className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">قلب أفقي</TooltipContent>
+                </Tooltip>
+
+                {selectedSlot.originalImageSrc && (
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            updateSlot(selectedSlot.id, {
+                              imageSrc: selectedSlot.originalImageSrc,
+                              originalImageSrc: undefined,
+                              bgColor: undefined
+                            });
+                            useEditorStore.getState().pushHistory();
+                            toast.success("تمت استعادة الصورة الأصلية");
+                          }}
+                          className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">استعادة الصورة الأصلية</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onMouseDown={() => {
+                            const curr = selectedSlot.imageSrc;
+                            updateSlot(selectedSlot.id, { imageSrc: selectedSlot.originalImageSrc });
+                            const restore = () => {
+                              updateSlot(selectedSlot.id, { imageSrc: curr });
+                              window.removeEventListener("mouseup", restore);
+                            };
+                            window.addEventListener("mouseup", restore);
+                          }}
+                          className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">اضغط مطولاً لمعاينة الأصل</TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => updateSlot(selectedSlot.id, { imageSrc: undefined, originalImageSrc: undefined })}
                       className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
                     >
@@ -285,8 +388,187 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
           </>
         )}
 
-        {/* وضع التعديل الحر - عنصر عادي */}
-        {selectedElement && (
+        {/* وضع التحديد المتعدد (Multi-Selection Mode) */}
+        {selectedIds.length > 1 && (
+          <>
+            <div className="flex items-center gap-1 text-[11px] font-bold px-1.5 text-primary">
+              <Layers className="w-3.5 h-3.5" />
+              <span>{selectedIds.length} عناصر</span>
+            </div>
+
+            <Separator orientation="vertical" className="h-4 bg-border/40" />
+
+            {/* أزرار المحاذاة */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => alignSelectedElements("left")}
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                >
+                  <AlignLeft className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">محاذاة لليسار</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => alignSelectedElements("center")}
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                >
+                  <AlignCenter className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">محاذاة للوسط أفقياً</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => alignSelectedElements("right")}
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                >
+                  <AlignRight className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">محاذاة لليمين</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => alignSelectedElements("top")}
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                >
+                  <AlignStartVertical className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">محاذاة للأعلى</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => alignSelectedElements("middle")}
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                >
+                  <AlignCenterVertical className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">محاذاة للمنتصف عمودياً</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => alignSelectedElements("bottom")}
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                >
+                  <AlignEndVertical className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">محاذاة للأسفل</TooltipContent>
+            </Tooltip>
+
+            {/* التوزيع المتساوي (عند تحديد 3 عناصر أو أكثر) */}
+            {selectedIds.length >= 3 && (
+              <>
+                <Separator orientation="vertical" className="h-4 bg-border/40" />
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => distributeSelectedElements("horizontal")}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                    >
+                      <AlignHorizontalDistributeCenter className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">توزيع أفقي متساوٍ</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => distributeSelectedElements("vertical")}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                    >
+                      <AlignVerticalDistributeCenter className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">توزيع عمودي متساوٍ</TooltipContent>
+                </Tooltip>
+              </>
+            )}
+
+            <Separator orientation="vertical" className="h-4 bg-border/40" />
+
+            {/* تجميع */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={groupSelectedElements}
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                >
+                  <Group className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">تجميع العناصر (Group)</TooltipContent>
+            </Tooltip>
+
+            {/* تكرار */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => duplicateElements(selectedIds)}
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">تكرار العناصر</TooltipContent>
+            </Tooltip>
+
+            {/* حذف */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeElements(selectedIds)}
+                  className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">حذف العناصر</TooltipContent>
+            </Tooltip>
+          </>
+        )}
+
+        {/* وضع التعديل الحر - عنصر فردي */}
+        {selectedElement && selectedIds.length <= 1 && (
           <>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -328,6 +610,40 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تكرار العنصر</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    updateElement(selectedElement.id, { rotation: (selectedElement.rotation + 90) % 360 });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                >
+                  <RotateCw className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    updateElement(selectedElement.id, { flipX: !selectedElement.flipX });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className={cn("h-7 w-7 p-0 rounded-md hover:bg-accent", selectedElement.flipX && "bg-primary/10 text-primary")}
+                >
+                  <FlipHorizontal className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">قلب أفقي</TooltipContent>
             </Tooltip>
 
             {selectedElement.type === "image" && selectedElement.imageSrc && (
@@ -390,6 +706,54 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   </TooltipTrigger>
                   <TooltipContent side="bottom">كشف الوجه وضبط مقاسه وموضعه تلقائياً وفق معايير الهوية</TooltipContent>
                 </Tooltip>
+
+                {selectedElement.originalImageSrc && (
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            updateElement(selectedElement.id, {
+                              imageSrc: selectedElement.originalImageSrc,
+                              originalImageSrc: undefined,
+                              bgColor: "transparent"
+                            });
+                            useEditorStore.getState().pushHistory();
+                            toast.success("تمت استعادة الصورة الأصلية");
+                          }}
+                          className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">استعادة الصورة الأصلية</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onMouseDown={() => {
+                            const curr = selectedElement.imageSrc;
+                            updateElement(selectedElement.id, { imageSrc: selectedElement.originalImageSrc });
+                            const restore = () => {
+                              updateElement(selectedElement.id, { imageSrc: curr });
+                              window.removeEventListener("mouseup", restore);
+                            };
+                            window.addEventListener("mouseup", restore);
+                          }}
+                          className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">اضغط مطولاً لمعاينة الأصل</TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
               </>
             )}
 

@@ -21,10 +21,7 @@ function TooltipBtn({ content, children }: { content: string; children: React.Re
       <TooltipTrigger asChild>
         {React.cloneElement(children, { "aria-label": content })}
       </TooltipTrigger>
-      <TooltipContent
-        side="top"
-        className="font-cairo text-[10px] py-1 px-2.5 bg-primary text-primary-foreground border-0 shadow-sm rounded font-medium"
-      >
+      <TooltipContent side="top">
         {content}
       </TooltipContent>
     </Tooltip>

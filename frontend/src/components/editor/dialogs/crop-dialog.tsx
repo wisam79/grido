@@ -142,7 +142,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
               <span>قص وتدوير الصورة</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              تحديد أبعاد القص والتدوير بحسب أبعاد القالب القياسية أو الأبعاد الحرة.
+              قص وتدوير وضبط استقامة الصورة
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -203,7 +203,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       <ZoomIn className="w-3.5 h-3.5 text-foreground/80" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">تكبير (Zoom In)</TooltipContent>
+                  <TooltipContent side="top">تكبير</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -217,7 +217,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       <ZoomOut className="w-3.5 h-3.5 text-foreground/80" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">تصغير (Zoom Out)</TooltipContent>
+                  <TooltipContent side="top">تصغير</TooltipContent>
                 </Tooltip>
               </div>
             </div>
@@ -313,7 +313,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   title="إعادة تحديد القص والتدوير للحالة الكاملة الأولية"
                 >
                   <RefreshCw className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span>إعادة ضبط مربع القص ↺</span>
+                  <span>إعادة ضبط القص</span>
                 </Button>
 
                 {originalImageSrc && (
@@ -325,7 +325,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     title="استرجاع الصورة الأصلية الكاملة"
                   >
                     <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-                    <span>استعادة الصورة الأصلية</span>
+                    <span>استعادة الأصل</span>
                   </Button>
                 )}
               </div>
@@ -343,7 +343,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>حفظ القص</span>
+            <span>تطبيق القص</span>
           </Button>
         </DialogFooter>
       </DialogContent>

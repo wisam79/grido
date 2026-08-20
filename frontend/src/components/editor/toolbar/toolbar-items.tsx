@@ -29,10 +29,7 @@ function TooltipBtn({ content, children }: TooltipBtnProps) {
       <TooltipTrigger asChild>
         {children}
       </TooltipTrigger>
-      <TooltipContent 
-        side="bottom" 
-        className="font-cairo text-[11px] py-1.5 px-3 bg-primary text-primary-foreground border-0 shadow-md rounded-md font-medium"
-      >
+      <TooltipContent side="bottom">
         {content}
       </TooltipContent>
     </Tooltip>

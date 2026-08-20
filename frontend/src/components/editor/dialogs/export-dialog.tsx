@@ -113,11 +113,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               printSettings.dpi
             );
             const ext = format === "png" ? "png" : "jpg";
+            const dateStr = new Date().toISOString().slice(0, 10);
             const name = template
-              ? `${template.widthMM}x${template.heightMM}mm-${Date.now()}.${ext}`
+              ? `Grido_${(template.name || "Template").replace(/\s+/g, "_")}_${template.widthMM}x${template.heightMM}mm_${dateStr}.${ext}`
               : mode === "collage"
-              ? `collage-${Date.now()}.${ext}`
-              : `photo-${Date.now()}.${ext}`;
+              ? `Grido_Collage_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`
+              : `Grido_Design_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`;
             const res = await downloadBlob(finalBlob, name);
             setProgress(100);
             if (res === "success") {
@@ -253,22 +254,31 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
 
           <div className="border-t border-border/40 pt-3 space-y-2.5">
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
+            {(template?.dpi || printSettings.dpi || 300) < 150 && (
+              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-[11px] text-destructive flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="leading-tight font-medium">
+                  الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُوصى بـ 300 DPI للطباعة الاحترافية.
+                </span>
+              </div>
+            )}
+
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <span className="leading-tight">تنبيه للمطابع: سيتم تصدير الصورة بصيغة RGB. إذا كانت مطبعتك تشترط CMYK، يرجى تحويل الملف لاحقاً في برامج مثل Photoshop.</span>
+              <span className="leading-tight">تصدير الصورة بنظام الألوان القياسي RGB للطباعة الرقمية.</span>
             </div>
 
             <div className="flex items-center justify-between p-3 border border-border/60 rounded-xl bg-card hover:bg-muted/30 transition-colors">
               <div className="space-y-0.5 text-right">
-                <Label className="text-xs font-semibold cursor-pointer">علامات القص (Crop Marks)</Label>
-                <p className="text-[10px] text-muted-foreground">رسم خطوط إرشادية حول منطقة النزيف</p>
+                <Label className="text-xs font-semibold cursor-pointer">علامات القص الإرشادية</Label>
+                <p className="text-[10px] text-muted-foreground">خطوط إرشادية حول منطقة النزيف</p>
               </div>
               <Switch checked={showCropMarks} onCheckedChange={setShowCropMarks} />
             </div>
 
             <div className="p-3 border border-border/60 rounded-xl bg-card space-y-2.5">
               <div className="flex justify-between items-center text-right">
-                <Label className="text-xs font-semibold">منطقة النزيف (Bleed Area)</Label>
+                <Label className="text-xs font-semibold">هامش النزيف والقص</Label>
                 <span className="text-[11px] font-mono bg-muted px-2 py-0.5 rounded-md font-bold">{bleedMM} mm</span>
               </div>
               <Slider
@@ -284,8 +294,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             {mode === "collage" && (
               <div className="flex items-center justify-between p-3 border border-border/60 rounded-xl bg-card hover:bg-muted/30 transition-colors">
                 <div className="space-y-0.5 text-right">
-                  <Label className="text-xs font-semibold cursor-pointer">تصدير الدفعات (Batch Export)</Label>
-                  <p className="text-[10px] text-muted-foreground">تصدير كل صورة كملف منفصل</p>
+                  <Label className="text-xs font-semibold cursor-pointer">تصدير الصور كملفات منفصلة</Label>
+                  <p className="text-[10px] text-muted-foreground">حفظ كل صورة في الكولاج كملف مستقل</p>
                 </div>
                 <Switch 
                   checked={batchExport} 

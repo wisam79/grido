@@ -152,47 +152,59 @@ export function CollageSettings() {
   })));
 
   return (
-    <div className="flex flex-col gap-3.5 border-t border-border/20 pt-3.5 font-cairo" dir="rtl">
-      {/* Section Header */}
-      <div className="flex items-center gap-1.5 justify-start">
-        <Sparkles className="w-3.5 h-3.5 text-primary" />
-        <span className="text-[11px] font-extrabold uppercase tracking-wide text-foreground/70">
-          تنسيق الكولاج
-        </span>
+    <div className="flex flex-col gap-3 font-cairo" dir="rtl">
+      {/* 🎴 بطاقة 1: المسافات والاستدارة */}
+      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
+        <div className="flex items-center gap-1.5 justify-start border-b border-border/20 pb-1.5">
+          <Columns className="w-3.5 h-3.5 text-primary" />
+          <span className="text-[11px] font-bold text-foreground/85">
+            المسافات والاستدارة
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <PanelSlider
+            label="المسافات بين الصور"
+            icon={<Columns className="w-3.5 h-3.5" />}
+            value={collageGap}
+            min={0}
+            max={60}
+            step={2}
+            unit="px"
+            onChange={setCollageGap}
+          />
+          <PanelSlider
+            label="الهامش الخارجي"
+            icon={<Move className="w-3.5 h-3.5" />}
+            value={collageMargin}
+            min={0}
+            max={100}
+            step={2}
+            unit="px"
+            onChange={setCollageMargin}
+          />
+          <PanelSlider
+            label="استدارة الزوايا"
+            icon={<Square className="w-3.5 h-3.5" />}
+            value={collageRadius}
+            min={0}
+            max={50}
+            step={2}
+            unit="px"
+            onChange={setCollageRadius}
+          />
+        </div>
       </div>
 
-      {/* Sliders Container */}
-      <div className="flex flex-col gap-2.5">
-        <PanelSlider
-          label="المسافات بين الصور"
-          icon={<Columns className="w-3.5 h-3.5" />}
-          value={collageGap}
-          min={0}
-          max={60}
-          step={2}
-          unit="px"
-          onChange={setCollageGap}
-        />
-        <PanelSlider
-          label="الهامش الخارجي"
-          icon={<Move className="w-3.5 h-3.5" />}
-          value={collageMargin}
-          min={0}
-          max={100}
-          step={2}
-          unit="px"
-          onChange={setCollageMargin}
-        />
-        <PanelSlider
-          label="استدارة الزوايا"
-          icon={<Square className="w-3.5 h-3.5" />}
-          value={collageRadius}
-          min={0}
-          max={50}
-          step={2}
-          unit="px"
-          onChange={setCollageRadius}
-        />
+      {/* 🎴 بطاقة 2: إطار وحدود الخلايا */}
+      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
+        <div className="flex items-center gap-1.5 justify-start border-b border-border/20 pb-1.5">
+          <Maximize2 className="w-3.5 h-3.5 text-primary" />
+          <span className="text-[11px] font-bold text-foreground/85">
+            إطار وحدود الصور
+          </span>
+        </div>
+
         <PanelSlider
           label="سُمك الإطار"
           icon={<Maximize2 className="w-3.5 h-3.5" />}
@@ -203,65 +215,52 @@ export function CollageSettings() {
           unit="px"
           onChange={setCollageStrokeWidth}
         />
+
+        {/* Frame Color Row — shown only when stroke is active */}
+        {collageStrokeWidth > 0 && (
+          <div className="flex items-center justify-between gap-2 border-t border-border/20 pt-2 animate-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-1">
+              {[
+                { hex: "#e10e0e", label: "أحمر" },
+                { hex: "#000000", label: "أسود" },
+                { hex: "#9ca3af", label: "رمادي" },
+                { hex: "#2563eb", label: "أزرق" },
+                { hex: "#ffffff", label: "أبيض" },
+              ].map(({ hex, label }) => (
+                <button
+                  key={hex}
+                  type="button"
+                  onClick={() => setCollageStrokeColor(hex)}
+                  title={label}
+                  className={cn(
+                    "w-4 h-4 rounded-full border border-black/15 dark:border-white/20 transition-transform cursor-pointer hover:scale-125 shadow-2xs",
+                    collageStrokeColor.toLowerCase() === hex.toLowerCase() && "ring-2 ring-primary ring-offset-1 scale-110"
+                  )}
+                  style={{ backgroundColor: hex }}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/45 rounded-md px-2 w-28 h-7.5 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background">
+              <input
+                type="text"
+                value={collageStrokeColor}
+                onChange={(e) => setCollageStrokeColor(e.target.value)}
+                className="w-full bg-transparent border-0 p-0 text-[11px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-bold"
+              />
+              <input
+                type="color"
+                value={collageStrokeColor}
+                onChange={(e) => setCollageStrokeColor(e.target.value)}
+                className="w-3.5 h-3.5 rounded-full border border-border/25 cursor-pointer p-0 bg-transparent shrink-0"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Frame Color Row — shown only when stroke is active */}
-      {collageStrokeWidth > 0 && (
-        <div className="flex items-center justify-between gap-2 border-t border-border/10 pt-2.5 animate-in slide-in-from-top-2 duration-200">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted/30 text-muted-foreground hover:text-foreground cursor-help shrink-0">
-                <PaintBucket className="w-3.5 h-3.5" />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="font-cairo text-xs font-bold">
-              لون الإطار
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Quick Color Swatches */}
-          <div className="flex items-center gap-1">
-            {[
-              { hex: "#e10e0e", label: "أحمر" },
-              { hex: "#000000", label: "أسود" },
-              { hex: "#9ca3af", label: "رمادي" },
-              { hex: "#2563eb", label: "أزرق" },
-              { hex: "#ffffff", label: "أبيض" },
-            ].map(({ hex, label }) => (
-              <button
-                key={hex}
-                type="button"
-                onClick={() => setCollageStrokeColor(hex)}
-                title={label}
-                className={cn(
-                  "w-4 h-4 rounded-full border border-black/15 dark:border-white/20 transition-transform cursor-pointer hover:scale-125 shadow-2xs",
-                  collageStrokeColor.toLowerCase() === hex.toLowerCase() && "ring-2 ring-primary ring-offset-1 scale-110"
-                )}
-                style={{ backgroundColor: hex }}
-              />
-            ))}
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/45 rounded-md px-2 w-28 h-8 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background">
-            <input
-              type="text"
-              value={collageStrokeColor}
-              onChange={(e) => setCollageStrokeColor(e.target.value)}
-              className="w-full bg-transparent border-0 p-0 text-[11px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-bold"
-            />
-            <input
-              type="color"
-              value={collageStrokeColor}
-              onChange={(e) => setCollageStrokeColor(e.target.value)}
-              className="w-4 h-4 rounded-full border border-border/25 cursor-pointer p-0 bg-transparent shrink-0"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Cut Lines Toggle Group */}
-      <div className="bg-card border border-border/60 rounded-xl p-3 shadow-2xs space-y-2 font-cairo fluent-specular">
-        {/* Primary Toggle: Cut Lines */}
+      {/* 🎴 بطاقة 3: خطوط وعلامات القص */}
+      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs space-y-2.5 font-cairo fluent-specular">
         <div className="flex items-center justify-between gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -284,11 +283,11 @@ export function CollageSettings() {
 
         {/* Nested Sub-option: Blue End Line */}
         {collageShowCutLines && (
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30 animate-in fade-in-50 duration-150 pr-2">
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/20 animate-in fade-in-50 duration-150 pr-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 text-muted-foreground cursor-help">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
+                  <span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
                   <span className="text-[11px] font-bold text-foreground/90">خط نهاية الطباعة (الأزرق)</span>
                 </div>
               </TooltipTrigger>
@@ -305,8 +304,8 @@ export function CollageSettings() {
         )}
       </div>
 
-      {/* Batch AI Enhance */}
-      <div className="pt-2 border-t border-border/20">
+      {/* 🎴 بطاقة 4: ترميم الكولاج بالذكاء الاصطناعي */}
+      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular">
         <BatchAiEnhanceButton />
       </div>
     </div>

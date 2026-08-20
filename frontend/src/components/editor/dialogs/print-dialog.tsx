@@ -607,7 +607,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     colorSpace === "sRGB" ? "bg-background text-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  sRGB (شاشات)
+                  sRGB
                 </button>
                 <button
                   type="button"
@@ -617,7 +617,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     colorSpace === "CMYK" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  CMYK (مطابع)
+                  CMYK
                 </button>
               </div>
 
@@ -659,9 +659,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     onChange={(e) => setPrintSettings({ cutLineStyle: e.target.value as any })}
                     className="bg-background text-[11px] font-semibold border border-border/50 rounded-md px-1.5 py-0.5 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
                   >
-                    <option value="dashed">متقطع (قياسي)</option>
-                    <option value="dotted">منقط ناعم</option>
-                    <option value="solid">متصل رفيع</option>
+                    <option value="dashed">متقطع</option>
+                    <option value="dotted">منقط</option>
+                    <option value="solid">متصل</option>
                   </select>
                 )}
               </div>

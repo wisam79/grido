@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
   Sparkles, RefreshCw, Sun, Contrast, Droplet, 
-  EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine, ScanFace, Palette, Check, Loader2
+  Eye, EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine, ScanFace, Palette, Check, Loader2, RotateCcw
 } from "lucide-react";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
@@ -243,12 +243,13 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
    };
 
   return (
-    <div className="space-y-3.5 animate-in fade-in duration-200">
-      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl space-y-3 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between border-b border-border/30 pb-2">
+    <div className="space-y-3 font-cairo animate-in fade-in duration-200">
+      {/* 🎴 بطاقة 1: أدوات المعالجة والذكاء الاصطناعي */}
+      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
+        <div className="flex items-center justify-between border-b border-border/20 pb-1.5">
           <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span>تحرير ومعالجة الصورة</span>
+            <span>المعالجة والذكاء الاصطناعي</span>
           </Label>
         </div>
         
@@ -260,7 +261,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
-          title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية الذكي للذكاء الاصطناعي"}
+          title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية الذكي"}
         >
           {isRemovingBg ? (
             <div className="flex items-center gap-2">
@@ -316,7 +317,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
-          title={isFraming ? "إلغاء ضبط الوجه" : "كشف الوجه وضبط مقاسه وموضعه وفق معايير الهوية تلقائياً"}
+          title={isFraming ? "إلغاء ضبط الوجه" : "كشف الوجه وتأطيره وفق معايير الهوية"}
         >
           {isFraming ? (
             <div className="flex items-center gap-2">
@@ -352,68 +353,124 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           </span>
         </Button>
 
-        {/* قسم لون خلفية الصورة للشخصية / المعزولة */}
-        <div className="space-y-2 pt-1 border-t border-border/25">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-bold text-foreground/85 flex items-center gap-1.5">
-              <Palette className="w-3.5 h-3.5 text-primary" />
-              <span>خلفية الصورة المعزولة</span>
-            </Label>
-            <span className="text-[10px] text-muted-foreground font-medium">هويات / جوازات</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {[
-              { id: "trans", label: "شفاف", val: "transparent" },
-              { id: "white", label: "أبيض للجوازات", val: "#ffffff" },
-              { id: "blue", label: "أزرق رسمي", val: "#1d4ed8" },
-              { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
-              { id: "gray", label: "رمادي", val: "#e5e7eb" },
-            ].map((colorItem) => {
-              const currBg = element.bgColor || "transparent";
-              const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
-              return (
-                <button
-                  key={colorItem.id}
-                  type="button"
-                  title={colorItem.label}
-                  onClick={() => {
-                    onUpdate(element.id, { bgColor: colorItem.val });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  className={cn(
-                    "w-7 h-7 rounded-md border border-border/80 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95",
-                    isActive && "ring-2 ring-primary ring-offset-1 border-primary"
-                  )}
-                  style={{
-                    backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
-                    backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
-                    backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
-                    backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
-                  }}
-                >
-                  {isActive && (
-                    <Check className={cn("w-3.5 h-3.5 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
-                  )}
-                </button>
-              );
-            })}
-
-            {/* Custom Color Input */}
-            <div className="flex items-center gap-1 border border-border/80 rounded-md px-1.5 h-7 bg-background" title="لون مخصص">
-              <input
-                type="color"
-                value={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
-                onChange={(e) => onUpdate(element.id, { bgColor: e.target.value })}
-                onBlur={() => useEditorStore.getState().pushHistory()}
-                className="w-4 h-4 rounded cursor-pointer border-0 bg-transparent p-0"
+        {/* أشرطة تقدم العمليات */}
+        {isRemovingBg && (
+          <div className="p-2.5 rounded-xl bg-indigo-500/[0.03] dark:bg-indigo-500/[0.05] border border-indigo-500/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+            <div className="flex justify-between items-center text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
+              <span className="animate-pulse">{bgProgressText}</span>
+              <span className="font-mono">{bgProgress}%</span>
+            </div>
+            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+              <div 
+                className="bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-500 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${bgProgress}%` }}
               />
             </div>
           </div>
+        )}
+
+        {isEnhancing && (
+          <div className="p-2.5 rounded-xl bg-violet-500/[0.05] dark:bg-violet-500/[0.08] border border-violet-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+            <div className="flex justify-between items-center text-[9px] font-bold text-violet-600 dark:text-violet-400">
+              <span className="animate-pulse">{enhanceProgressText}</span>
+              <span className="font-mono font-extrabold">{enhanceProgress}%</span>
+            </div>
+            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+              <div 
+                className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-500 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${enhanceProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {isFraming && (
+          <div className="p-2.5 rounded-xl bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08] border border-emerald-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+            <div className="flex justify-between items-center text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="animate-pulse">{frameProgressText}</span>
+              <span className="font-mono font-extrabold">{frameProgress}%</span>
+            </div>
+            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+              <div 
+                className="bg-gradient-to-r from-emerald-600 via-teal-500 to-green-400 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${frameProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 🎴 بطاقة 2: خلفية صورة الهوية */}
+      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
+        <div className="flex items-center justify-between border-b border-border/20 pb-1.5">
+          <Label className="text-xs font-bold text-foreground/85 flex items-center gap-1.5">
+            <Palette className="w-3.5 h-3.5 text-primary" />
+            <span>خلفية الصورة المعزولة</span>
+          </Label>
+          <span className="text-[10px] text-muted-foreground font-mono">الخلفيات الرسمية</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {[
+            { id: "trans", label: "شفاف", val: "transparent" },
+            { id: "white", label: "أبيض للجوازات", val: "#ffffff" },
+            { id: "blue", label: "أزرق رسمي", val: "#1d4ed8" },
+            { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
+            { id: "gray", label: "رمادي", val: "#e5e7eb" },
+          ].map((colorItem) => {
+            const currBg = element.bgColor || "transparent";
+            const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
+            return (
+              <button
+                key={colorItem.id}
+                type="button"
+                title={colorItem.label}
+                onClick={() => {
+                  onUpdate(element.id, { bgColor: colorItem.val });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={cn(
+                  "w-7 h-7 rounded-md border border-border/80 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95",
+                  isActive && "ring-2 ring-primary ring-offset-1 border-primary"
+                )}
+                style={{
+                  backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
+                  backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
+                  backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
+                  backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
+                }}
+              >
+                {isActive && (
+                  <Check className={cn("w-3.5 h-3.5 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                )}
+              </button>
+            );
+          })}
+
+          {/* Custom Color Input */}
+          <div className="flex items-center gap-1 border border-border/80 rounded-md px-1.5 h-7 bg-background" title="لون مخصص">
+            <input
+              type="color"
+              value={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
+              onChange={(e) => onUpdate(element.id, { bgColor: e.target.value })}
+              onBlur={() => useEditorStore.getState().pushHistory()}
+              className="w-4 h-4 rounded cursor-pointer border-0 bg-transparent p-0"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 🎴 بطاقة 3: القص وتغيير ومقارنة الصورة */}
+      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
+        <div className="flex items-center justify-between border-b border-border/20 pb-1.5">
+          <Label className="text-xs font-bold text-foreground/85 flex items-center gap-1.5">
+            <Scissors className="w-3.5 h-3.5 text-primary" />
+            <span>القص وتغيير الصورة</span>
+          </Label>
         </div>
 
         {/* أزرار القص وتغيير الصورة */}
-        <div className="grid grid-cols-2 gap-2 pt-0.5">
+        <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -437,58 +494,55 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         </div>
 
         {element.originalImageSrc && (
-          <Button
-            variant="outline"
-            className="w-full mt-0.5 h-8 text-xs font-semibold transition-all duration-200 flex items-center justify-start px-3 gap-2 cursor-pointer rounded-md border-border/60 hover:border-primary/40 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-            onClick={() => setRefineOpen(true)}
-          >
-            <Paintbrush className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-            <span>تعديل يدوي وحواف</span>
-          </Button>
-        )}
+          <div className="space-y-1.5 pt-1.5 border-t border-border/20 animate-in fade-in duration-150">
+            <div className="grid grid-cols-2 gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-md border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                onClick={() => {
+                  onUpdate(element.id, {
+                    imageSrc: element.originalImageSrc,
+                    originalImageSrc: undefined,
+                    bgColor: "transparent"
+                  });
+                  useEditorStore.getState().pushHistory();
+                  toast.success("تمت استعادة الصورة الأصلية بنجاح");
+                }}
+                title="استعادة الصورة الأصلية وإلغاء العزل أو الترميم"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>استعادة الأصل</span>
+              </Button>
 
-        {isRemovingBg && (
-          <div className="mt-2 p-2.5 rounded-xl bg-indigo-500/[0.03] dark:bg-indigo-500/[0.05] border border-indigo-500/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
-              <span className="animate-pulse">{bgProgressText}</span>
-              <span className="font-mono">{bgProgress}%</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary active:text-primary-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                onMouseDown={() => {
+                  const curr = element.imageSrc;
+                  onUpdate(element.id, { imageSrc: element.originalImageSrc });
+                  const restore = () => {
+                    onUpdate(element.id, { imageSrc: curr });
+                    window.removeEventListener("mouseup", restore);
+                  };
+                  window.addEventListener("mouseup", restore);
+                }}
+                title="اضغط مطولاً للمقارنة مع الصورة الأصلية"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>مقارنة الأصل</span>
+              </Button>
             </div>
-            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
-              <div 
-                className="bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-500 h-full rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${bgProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
 
-        {isEnhancing && (
-          <div className="mt-2 p-2.5 rounded-xl bg-violet-500/[0.05] dark:bg-violet-500/[0.08] border border-violet-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[9px] font-bold text-violet-600 dark:text-violet-400">
-              <span className="animate-pulse">{enhanceProgressText}</span>
-              <span className="font-mono font-extrabold">{enhanceProgress}%</span>
-            </div>
-            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
-              <div 
-                className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-500 h-full rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${enhanceProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {isFraming && (
-          <div className="mt-2 p-2.5 rounded-xl bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08] border border-emerald-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
-              <span className="animate-pulse">{frameProgressText}</span>
-              <span className="font-mono font-extrabold">{frameProgress}%</span>
-            </div>
-            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
-              <div 
-                className="bg-gradient-to-r from-emerald-600 via-teal-500 to-green-400 h-full rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${frameProgress}%` }}
-              />
-            </div>
+            <Button
+              variant="outline"
+              className="w-full h-8 text-xs font-semibold transition-all duration-200 flex items-center justify-start px-3 gap-2 cursor-pointer rounded-md border-border/60 hover:border-primary/40 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              onClick={() => setRefineOpen(true)}
+            >
+              <Paintbrush className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+              <span>تعديل يدوي وحواف</span>
+            </Button>
           </div>
         )}
       </div>

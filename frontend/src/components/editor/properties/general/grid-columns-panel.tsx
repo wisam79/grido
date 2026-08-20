@@ -88,7 +88,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
             className={cn(
               "flex-1 py-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs font-semibold",
               activeGridTab === "grid"
-                ? "bg-card text-foreground shadow-2xs"
+                ? "bg-background text-primary shadow-xs font-bold border border-border/80 ring-1 ring-primary/25"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -101,7 +101,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
             className={cn(
               "flex-1 py-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs font-semibold",
               activeGridTab === "columns"
-                ? "bg-card text-foreground shadow-2xs"
+                ? "bg-background text-primary shadow-xs font-bold border border-border/80 ring-1 ring-primary/25"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >

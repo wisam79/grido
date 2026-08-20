@@ -612,10 +612,10 @@ export function SlotProperties({
         </Button>
       </div>
 
-      {/* 5. كرت تكبير الصورة (Zoom) */}
+      {/* 5. كرت تكبير الصورة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular">
         <SliderControl
-          label="تكبير الصورة (Zoom)"
+          label="تكبير الصورة"
           value={Math.round((slot.zoom ?? 1) * 100)}
           min={100}
           max={300}

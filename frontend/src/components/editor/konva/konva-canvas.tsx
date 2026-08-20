@@ -127,31 +127,35 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const trRef = useRef<any>(null);
   const elementsRefs = useRef<Record<string, any>>({});
   const altPressedRef = useRef(false);
+  const shiftPressedRef = useRef(false);
   const stageContextRef = useStageRef();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Alt") altPressedRef.current = true;
+      if (e.key === "Shift") shiftPressedRef.current = true;
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Alt") altPressedRef.current = false;
+      if (e.key === "Shift") shiftPressedRef.current = false;
     };
-    // مع Alt+Tab يُسرق حدث keyup فيبقى Alt «عالقاً» وتُلغى المغناطيس بصمت —
-    // نصفّر المرجع عند فقدان النافذة للتركيز أو إخفائها.
-    const resetAlt = () => {
+    // مع Alt+Tab يُسرق حدث keyup فيبقى Alt/Shift «عالقاً» —
+    // نصفّر المراجع عند فقدان النافذة للتركيز أو إخفائها.
+    const resetKeys = () => {
       altPressedRef.current = false;
+      shiftPressedRef.current = false;
     };
     const handleVisibility = () => {
-      if (document.hidden) resetAlt();
+      if (document.hidden) resetKeys();
     };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-    window.addEventListener("blur", resetAlt);
+    window.addEventListener("blur", resetKeys);
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
-      window.removeEventListener("blur", resetAlt);
+      window.removeEventListener("blur", resetKeys);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
@@ -285,6 +289,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
           trRef={trRef}
           elementsRefs={elementsRefs}
           altPressedRef={altPressedRef}
+          shiftPressedRef={shiftPressedRef}
           setActiveGuides={setActiveGuides}
           handleDoubleClick={handleDoubleClick}
           handleElementChange={handleElementChange}

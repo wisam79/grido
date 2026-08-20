@@ -212,7 +212,7 @@ export function TemplatePanel() {
 
                     <TabsContent value="saved" className="mt-4 focus-visible:outline-hidden">
                       <div className="flex justify-between items-center mb-3">
-                        <p className="text-[11px] text-muted-foreground">قوالبك المحفوظة للاستخدام المتكرر</p>
+                        <span className="text-[11px] font-bold text-foreground/80">القوالب المحفوظة</span>
                         <div className="flex gap-2">
                           <input 
                             type="file" 
@@ -278,7 +278,7 @@ export function TemplatePanel() {
 
                       {savedTemplates.length === 0 ? (
                         <div className="text-xs text-muted-foreground text-center py-10 border border-dashed border-border/60 rounded-xl bg-muted/5">
-                          لا توجد قوالب محفوظة بعد. يمكنك إنشاء قالب مخصص وحفظه.
+                          لا توجد قوالب مخصصة محفوظة
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">

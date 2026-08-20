@@ -28,6 +28,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   snapToGrid, 
   gridSize, 
   altPressedRef, 
+  shiftPressedRef,
   getKonvaNode 
 }: ElementProps) {
   const element = _element as ShapeElement;
@@ -49,6 +50,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     snapToGrid,
     gridSize,
     altPressedRef,
+    shiftPressedRef,
     getKonvaNode,
     setActiveGuides,
   });

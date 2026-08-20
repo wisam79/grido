@@ -320,10 +320,10 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
 
             <TabsContent value="save" className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label htmlFor="proj-name" className="text-xs font-semibold">اسم المشروع الجديد</Label>
+                <Label htmlFor="proj-name" className="text-xs font-semibold">اسم المشروع</Label>
                 <Input
                   id="proj-name"
-                  placeholder="أدخل اسماً مميزاً للمشروع..."
+                  placeholder="اسم المشروع..."
                   className="h-8 text-xs rounded-md"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
@@ -339,7 +339,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                 ) : (
                   <>
                     <Save className="w-3.5 h-3.5" />
-                    <span>حفظ في قاعدة البيانات</span>
+                    <span>حفظ المشروع</span>
                   </>
                 )}
               </Button>
@@ -384,11 +384,11 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                 </div>
               ) : projectsList.length === 0 ? (
                 <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground text-xs">
-                  لا توجد مشاريع محفوظة حالياً في قاعدة البيانات.
+                  لا توجد مشاريع محفوظة
                 </div>
               ) : filteredProjects.length === 0 ? (
                 <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-xs">
-                  لم يتم العثور على أي مشاريع تطابق بحثك.
+                  لم يتم العثور على نتائج
                 </div>
               ) : (
                 <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -447,7 +447,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                 <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
                   <div>
                     <h4 className="text-xs font-bold text-foreground/90">تصدير نسخة احتياطية</h4>
-                    <p className="text-[11px] text-muted-foreground">حفظ جميع مشاريعك المحلية في ملف خارجي</p>
+                    <p className="text-[11px] text-muted-foreground">حفظ جميع المشاريع في ملف JSON</p>
                   </div>
                   <Button 
                     size="sm" 
@@ -472,7 +472,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                 <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
                   <div>
                     <h4 className="text-xs font-bold text-foreground/90">استيراد نسخة احتياطية</h4>
-                    <p className="text-[11px] text-muted-foreground">دمج أو استبدال المشاريع من ملف خارجي</p>
+                    <p className="text-[11px] text-muted-foreground">استعادة المشاريع من ملف JSON</p>
                   </div>
                   <label className="cursor-pointer">
                     <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
@@ -492,7 +492,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                 <div className="p-3 border rounded-xl bg-red-500/5 border-red-500/20 flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-red-600 dark:text-red-400">تهيئة مكتبة المشاريع</h4>
-                    <p className="text-[11px] text-red-500/70">حذف جميع المشاريع المحفوظة نهائياً من هذا الجهاز</p>
+                    <p className="text-[11px] text-red-500/70">حذف جميع المشاريع المحفوظة نهائياً</p>
                   </div>
                   <Button 
                     variant="destructive" 

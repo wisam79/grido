@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
   ImageIcon, Type, Palette, Sparkles, Eye, RotateCw, FlipHorizontal, FlipVertical, Square,
-  Paintbrush, Sliders, Move, Lock, Droplet
+  Paintbrush, Sliders, Move, Lock, Droplet,
+  AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical
 } from "lucide-react";
 import { SliderControl, PopoverColorPicker } from "./shared-controls";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ export function ElementProperties({
 }) {
   const [activeTab, setActiveTab] = useState<string>("style");
   const hasAdjustTab = element.type === "image";
+  const alignSelectedElements = useEditorStore((state) => state.alignSelectedElements);
 
   return (
     <div className="space-y-3 font-cairo">
@@ -153,78 +155,105 @@ export function ElementProperties({
             </TabsContent>
           )}
 
-          <TabsContent value="arrange" className="mt-3.5 space-y-3.5">
-            <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3.5 animate-in fade-in duration-200">
-              <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">التحويل والموضع</Label>
-              <SliderControl
-                label="التدوير"
-                icon={<RotateCw className="w-3.5 h-3.5 text-muted-foreground/75" />}
-                value={element.rotation}
-                min={-180}
-                max={180}
-                step={1}
-                unit="°"
-                onChange={(v) => onUpdate(element.id, { rotation: v })}
-                onCommit={() => useEditorStore.getState().pushHistory()}
-              />
-              <SliderControl
-                label="الشفافية"
-                icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" />}
-                value={Math.round(element.opacity * 100)}
-                min={0}
-                max={100}
-                step={1}
-                unit="%"
-                onChange={(v) => onUpdate(element.id, { opacity: v / 100 })}
-                onCommit={() => useEditorStore.getState().pushHistory()}
-              />
-              
-              <div className="flex items-center gap-2 pt-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    onUpdate(element.id, { rotation: (element.rotation + 90) % 360 });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  title="تدوير 90 درجة"
-                  className="h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                >
-                  <RotateCw className="w-3.5 h-3.5 text-muted-foreground" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    onUpdate(element.id, { flipX: !element.flipX });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  title="قلب أفقي"
-                  className={cn(
-                    "h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                    element.flipX && "bg-primary/10 border-primary/50 text-primary"
-                  )}
-                >
-                  <FlipHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    onUpdate(element.id, { flipY: !element.flipY });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  title="قلب عمودي"
-                  className={cn(
-                    "h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                    element.flipY && "bg-primary/10 border-primary/50 text-primary"
-                  )}
-                >
-                  <FlipVertical className="w-3.5 h-3.5 text-muted-foreground" />
-                </Button>
+          <TabsContent value="arrange" className="mt-3.5 space-y-3">
+            {/* بطاقة 1: الموضع والمحاذاة السريعة */}
+            <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
+              <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+                <Move className="w-3.5 h-3.5 text-primary" />
+                <span>الموضع والمحاذاة</span>
+              </Label>
+
+              {/* أزرار المحاذاة السريعة للكانفاس */}
+              <div className="flex items-center justify-between bg-muted/40 p-1 rounded-lg border border-border/40">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => alignSelectedElements("left")}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                    >
+                      <AlignLeft className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليسار</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => alignSelectedElements("center")}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                    >
+                      <AlignCenter className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للوسط أفقياً</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => alignSelectedElements("right")}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                    >
+                      <AlignRight className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليمين</TooltipContent>
+                </Tooltip>
+
+                <div className="w-[1px] h-4 bg-border/50" />
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => alignSelectedElements("top")}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                    >
+                      <AlignStartVertical className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأعلى</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => alignSelectedElements("middle")}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                    >
+                      <AlignCenterVertical className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للمنتصف عمودياً</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => alignSelectedElements("bottom")}
+                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                    >
+                      <AlignEndVertical className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأسفل</TooltipContent>
+                </Tooltip>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-[10.5px] pt-1">
+              {/* شبكة الإحداثيات والأبعاد */}
+              <div className="grid grid-cols-2 gap-2 text-[10.5px]">
                 <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all" title="الإحداثي الأفقي X">
                   <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">X:</span>
                   <input
@@ -273,14 +302,95 @@ export function ElementProperties({
                 </div>
               </div>
             </div>
+
+            {/* بطاقة 2: التدوير والشفافية */}
+            <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
+              <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+                <RotateCw className="w-3.5 h-3.5 text-primary" />
+                <span>التدوير والشفافية</span>
+              </Label>
+
+              <SliderControl
+                label="التدوير"
+                icon={<RotateCw className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                value={element.rotation}
+                min={-180}
+                max={180}
+                step={1}
+                unit="°"
+                onChange={(v) => onUpdate(element.id, { rotation: v })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
+              />
+              
+              <div className="flex items-center gap-2 pt-0.5">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    onUpdate(element.id, { rotation: (element.rotation + 90) % 360 });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  title="تدوير 90 درجة"
+                  className="h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                >
+                  <RotateCw className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    onUpdate(element.id, { flipX: !element.flipX });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  title="قلب أفقي"
+                  className={cn(
+                    "h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                    element.flipX && "bg-primary/10 border-primary/50 text-primary"
+                  )}
+                >
+                  <FlipHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    onUpdate(element.id, { flipY: !element.flipY });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  title="قلب عمودي"
+                  className={cn(
+                    "h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                    element.flipY && "bg-primary/10 border-primary/50 text-primary"
+                  )}
+                >
+                  <FlipVertical className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+              </div>
+
+              <SliderControl
+                label="الشفافية"
+                icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                value={Math.round(element.opacity * 100)}
+                min={0}
+                max={100}
+                step={1}
+                unit="%"
+                onChange={(v) => onUpdate(element.id, { opacity: v / 100 })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
+              />
+            </div>
           </TabsContent>
 
-          <TabsContent value="effects" className="mt-3.5 space-y-3.5">
-            <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3.5 animate-in fade-in duration-200">
-              <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">الظلال (Drop Shadow)</Label>
+          <TabsContent value="effects" className="mt-3.5 space-y-3">
+            {/* بطاقة 1: الظل والإضاءة */}
+            <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
+              <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span>الظل والوهج</span>
+              </Label>
               
               <div className="flex items-center justify-between gap-4" title="لون الظل">
-                <span className="text-[11px] font-bold text-muted-foreground">لون الظل الأساسي:</span>
+                <span className="text-[11px] font-semibold text-muted-foreground">لون الظل</span>
                 <PopoverColorPicker
                   color={element.shadowColor || "#000000"}
                   onChange={(val) => onUpdate(element.id, { shadowColor: val })}
@@ -289,7 +399,7 @@ export function ElementProperties({
               </div>
 
               <SliderControl
-                label="شفافية الظل"
+                label="الشفافية"
                 icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" />}
                 value={Math.round((element.shadowOpacity ?? 0) * 100)}
                 min={0}
@@ -301,7 +411,7 @@ export function ElementProperties({
               />
               
               <SliderControl
-                label="تمويه الظل (Blur)"
+                label="التمويه"
                 icon={<Droplet className="w-3.5 h-3.5 text-muted-foreground/75" />}
                 value={element.shadowBlur || 0}
                 min={0}
@@ -313,7 +423,7 @@ export function ElementProperties({
               />
 
               <SliderControl
-                label="إزاحة الظل (X)"
+                label="إزاحة أفقية"
                 icon={<Move className="w-3.5 h-3.5 text-muted-foreground/75" />}
                 value={element.shadowOffsetX || 0}
                 min={-50}
@@ -325,7 +435,7 @@ export function ElementProperties({
               />
 
               <SliderControl
-                label="إزاحة الظل (Y)"
+                label="إزاحة عمودية"
                 icon={<Move className="w-3.5 h-3.5 text-muted-foreground/75" />}
                 value={element.shadowOffsetY || 0}
                 min={-50}
@@ -337,11 +447,15 @@ export function ElementProperties({
               />
             </div>
 
+            {/* بطاقة 2: استدارة الحواف */}
             {(element.type === "image" || element.type === "shape") && (
-              <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3.5 animate-in fade-in duration-200">
-                <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">تدوير الزوايا</Label>
+              <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
+                <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+                  <Square className="w-3.5 h-3.5 text-primary" />
+                  <span>استدارة الحواف</span>
+                </Label>
                 <SliderControl
-                  label="قطر الزاوية (Radius)"
+                  label="قطر الزاوية"
                   icon={<Square className="w-3.5 h-3.5 text-muted-foreground/75" />}
                   value={element.cornerRadius || 0}
                   min={0}

@@ -16,6 +16,7 @@ interface KonvaSingleLayerProps {
   trRef: React.RefObject<any>;
   elementsRefs: React.MutableRefObject<Record<string, any>>;
   altPressedRef: React.MutableRefObject<boolean>;
+  shiftPressedRef: React.MutableRefObject<boolean>;
   setActiveGuides: (guides: SnapGuide[]) => void;
   handleDoubleClick: (el: CanvasElement) => void;
   handleElementChange: (id: string, patch: Partial<CanvasElement>) => void;
@@ -35,6 +36,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
   trRef,
   elementsRefs,
   altPressedRef,
+  shiftPressedRef,
   setActiveGuides,
   handleDoubleClick,
   handleElementChange,
@@ -79,6 +81,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
           snapToGrid,
           gridSize,
           altPressedRef,
+          shiftPressedRef,
           getKonvaNode: (id: string) => elementsRefs.current[id],
           elementRef: createElementRef(el.id),
         };

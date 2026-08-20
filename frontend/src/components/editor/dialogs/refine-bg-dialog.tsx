@@ -513,7 +513,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 onClick={() => setTool("erase")}
               >
                 <Eraser className="w-4 h-4" />
-                ممحاة (إزالة)
+                ممحاة
               </Button>
               <Button
                 variant={tool === "defringe" ? "default" : "outline"}
@@ -521,7 +521,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 onClick={() => setTool("defringe")}
               >
                 <Feather className="w-4 h-4" />
-                تشذيب الحواف (Defringe)
+                تشذيب الحواف
               </Button>
               <Button
                 variant={tool === "restore" ? "default" : "outline"}
@@ -529,7 +529,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 onClick={() => setTool("restore")}
               >
                 <Paintbrush className="w-4 h-4" />
-                فرشاة (استرجاع)
+                استرجاع
               </Button>
               <Button
                 variant={tool === "magic" ? "default" : "outline"}
@@ -537,7 +537,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 onClick={() => setTool("magic")}
               >
                 <Sparkles className="w-4 h-4" />
-                القص الذكي (سحري)
+                تحديد ذكي
               </Button>
               <Button
                 variant={tool === "pan" ? "default" : "outline"}
@@ -545,7 +545,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 onClick={() => setTool("pan")}
               >
                 <MousePointer2 className="w-4 h-4" />
-                تحريك (Pan)
+                تحريك
               </Button>
             </div>
 
@@ -597,7 +597,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             {tool === "magic" && (
               <div className="space-y-3 bg-background p-3 rounded-xl border border-border/40">
                 <div className="flex justify-between items-center">
-                  <span className="text-[11px] font-bold text-foreground/80">الفارق اللوني (التسامح)</span>
+                  <span className="text-[11px] font-bold text-foreground/80">الفارق اللوني</span>
                   <span className="text-[10px] font-mono font-bold text-muted-foreground">{tolerance}</span>
                 </div>
                 <input
