@@ -12,8 +12,8 @@ interface ShapePropertiesProps {
 export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
   return (
     <div className="space-y-3.5 animate-in fade-in duration-200">
-      <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3">
-        <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-2">المظهر واللون</Label>
+      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3">
+        <Label className="text-xs font-bold text-foreground/90 block border-b border-border/20 pb-1.5 mb-2">المظهر واللون</Label>
         
         <div className="space-y-3">
           <div className="space-y-1.5">

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from "@/lib/io/fonts";
 import { Search, ChevronDown, Star, Clock, X, Sparkles, Cloud, CheckCircle2 } from "lucide-react";
@@ -23,6 +23,9 @@ export const TextFontSelector = React.memo(function TextFontSelector({
   const [previewText, setPreviewText] = useState<string>("");
   const [showCustomPreviewInput, setShowCustomPreviewInput] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+
+  const originalFamilyRef = useRef<string>(element.fontFamily || "");
+  const hasCommittedRef = useRef<boolean>(false);
 
   // Favorites state
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -80,15 +83,21 @@ export const TextFontSelector = React.memo(function TextFontSelector({
     });
   }, []);
 
-  useEffect(() => {
-    if (isOpen) {
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      originalFamilyRef.current = element.fontFamily || "";
+      hasCommittedRef.current = false;
       setTimeout(() => searchInputRef.current?.focus(), 60);
     } else {
+      if (!hasCommittedRef.current && originalFamilyRef.current) {
+        onUpdate(element.id, { fontFamily: originalFamilyRef.current });
+      }
       setSearchQuery("");
       setShowCustomPreviewInput(false);
       setFocusedIndex(-1);
     }
-  }, [isOpen]);
+    setIsOpen(open);
+  };
 
   const allCategoryPills = useMemo(() => {
     const pills: { id: string; name: string; icon?: React.ReactNode; count?: number }[] = [
@@ -128,42 +137,58 @@ export const TextFontSelector = React.memo(function TextFontSelector({
     });
   }, [activeCategory, favorites, recents, searchQuery]);
 
+  const handlePreviewFont = (font: FontOption) => {
+    if (!font.isOffline) {
+      loadGoogleFont(font.family);
+    }
+    onUpdate(element.id, { fontFamily: font.family });
+  };
+
   const handleSelectFont = (font: FontOption) => {
     if (!font.isOffline) {
       loadGoogleFont(font.family);
     }
+    hasCommittedRef.current = true;
     addRecent(font.id);
     onUpdate(element.id, { fontFamily: font.family });
     useEditorStore.getState().pushHistory();
     setIsOpen(false);
   };
 
-  // Keyboard navigation
+  // Keyboard navigation with live canvas preview
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) return;
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setFocusedIndex((prev) => (prev < filteredFonts.length - 1 ? prev + 1 : 0));
+      const nextIdx = focusedIndex < filteredFonts.length - 1 ? focusedIndex + 1 : 0;
+      setFocusedIndex(nextIdx);
+      if (filteredFonts[nextIdx]) {
+        handlePreviewFont(filteredFonts[nextIdx]);
+      }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setFocusedIndex((prev) => (prev > 0 ? prev - 1 : filteredFonts.length - 1));
+      const nextIdx = focusedIndex > 0 ? focusedIndex - 1 : filteredFonts.length - 1;
+      setFocusedIndex(nextIdx);
+      if (filteredFonts[nextIdx]) {
+        handlePreviewFont(filteredFonts[nextIdx]);
+      }
     } else if (e.key === "Enter" && focusedIndex >= 0 && focusedIndex < filteredFonts.length) {
       e.preventDefault();
       handleSelectFont(filteredFonts[focusedIndex]);
     } else if (e.key === "Escape") {
-      setIsOpen(false);
+      handleOpenChange(false);
     }
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         {/* Compact Trigger Button */}
         <button
           type="button"
           className={cn(
-            "w-full h-8.5 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 rounded-lg px-2.5 text-xs text-foreground font-semibold flex items-center justify-between shadow-2xs transition-all cursor-pointer group",
+            "w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between shadow-2xs transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
             isOpen && "border-primary ring-2 ring-primary/20 bg-background"
           )}
         >
@@ -200,7 +225,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         align="start"
         sideOffset={6}
         collisionPadding={12}
-        className="w-[305px] max-w-[calc(100vw-24px)] bg-card/95 backdrop-blur-2xl border border-border/80 rounded-xl shadow-2xl z-[99999] p-2.5 space-y-2 font-cairo"
+        className="w-[305px] max-w-[calc(100vw-24px)] bg-card/95 backdrop-blur-2xl border border-border/80 rounded-xl shadow-2xl z-[99999] p-2.5 space-y-2 font-cairo fluent-specular"
         onKeyDown={handleKeyDown}
       >
         {/* Search Box & Custom Preview Toggle */}
@@ -216,7 +241,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 setFocusedIndex(-1);
               }}
               placeholder="ابحث عن خط (كايرو، أميري، نسخ...)"
-              className="w-full h-8 bg-background/90 border border-border/60 hover:border-primary/50 focus:border-primary rounded-lg pr-8 pl-8 text-xs text-foreground placeholder:text-muted-foreground/60 outline-hidden transition-all shadow-2xs"
+              className="w-full h-8 bg-background/90 border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md pr-8 pl-8 text-xs text-foreground placeholder:text-muted-foreground/60 outline-hidden transition-all shadow-2xs"
             />
             {searchQuery ? (
               <button
@@ -243,7 +268,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
 
           {/* Custom Preview Text Field */}
           {showCustomPreviewInput && (
-            <div className="flex items-center gap-1 p-1 bg-muted/40 rounded-lg border border-border/40 animate-in fade-in duration-150">
+            <div className="flex items-center gap-1 p-1 bg-muted/40 rounded-md border border-border/40 animate-in fade-in duration-150">
               <input
                 type="text"
                 value={previewText}
@@ -276,7 +301,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 setFocusedIndex(-1);
               }}
               className={cn(
-                "px-2 py-1 rounded-md whitespace-nowrap font-bold transition-all cursor-pointer shrink-0 shadow-2xs flex items-center gap-1",
+                "px-2 py-1 rounded-md whitespace-nowrap font-bold transition-all cursor-pointer shrink-0 shadow-2xs flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                 activeCategory === cat.id
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40"
@@ -311,12 +336,12 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 <div
                   key={font.id}
                   onMouseEnter={() => {
-                    if (!font.isOffline) loadGoogleFont(font.family);
                     setFocusedIndex(idx);
+                    handlePreviewFont(font);
                   }}
                   onClick={() => handleSelectFont(font)}
                   className={cn(
-                    "w-full text-right px-2.5 py-2 rounded-lg transition-all flex items-center justify-between cursor-pointer group border select-none",
+                    "w-full text-right px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none",
                     isSelected
                       ? "bg-primary/15 border-primary/50 text-primary shadow-2xs"
                       : isFocused

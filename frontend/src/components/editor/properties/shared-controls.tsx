@@ -154,15 +154,15 @@ export function PopoverColorPicker({
           disabled={disabled}
           className={cn(
             swatchOnly
-              ? "w-6.5 h-6.5 rounded-lg border border-border/80 p-0.5 bg-background hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0"
-              : "flex items-center justify-between gap-2 px-3 h-10 rounded-lg border border-border/60 bg-background hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+              ? "w-7 h-7 rounded-md border border-border/80 p-0.5 bg-background hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              : "flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border/80 bg-background hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
             className
           )}
           title="تغيير اللون"
         >
           {swatchOnly ? (
             <div
-              className="w-full h-full rounded-md border border-black/10 dark:border-white/10 shadow-2xs relative overflow-hidden"
+              className="w-full h-full rounded-xs border border-black/10 dark:border-white/10 shadow-2xs relative overflow-hidden"
               style={{ backgroundColor: color === "transparent" ? "#ffffff" : color }}
             >
               {color === "transparent" && (
@@ -177,14 +177,14 @@ export function PopoverColorPicker({
             </div>
           ) : (
             <>
-              {label && <div className="text-xs font-bold text-muted-foreground shrink-0">{label}</div>}
+              {label && <div className="text-xs font-semibold text-muted-foreground shrink-0">{label}</div>}
               
-              <div className="flex-1 flex items-center justify-end gap-1.5 font-mono text-xs font-bold text-foreground/80" dir="ltr">
+              <div className="flex-1 flex items-center justify-end gap-1.5 font-mono text-xs font-semibold text-foreground/80" dir="ltr">
                 {color.toUpperCase()}
               </div>
               
               <div
-                className="w-5 h-5 rounded-md border border-border/80 shrink-0 relative overflow-hidden"
+                className="w-4.5 h-4.5 rounded-xs border border-border/80 shrink-0 relative overflow-hidden"
                 style={{ backgroundColor: color === "transparent" ? "#ffffff" : color }}
               >
                 {color === "transparent" && (
@@ -228,26 +228,27 @@ export function ColorWheelPicker({
   const handleHexInput = (val: string) => {
     setInputValue(val);
     
-    let cleanVal = val.trim();
+    const cleanVal = val.trim();
     if (cleanVal === "transparent") {
       onChange("transparent");
       return;
     }
 
-    if (!cleanVal.startsWith("#")) {
-      cleanVal = "#" + cleanVal;
+    let hexVal = cleanVal;
+    if (!hexVal.startsWith("#")) {
+      hexVal = "#" + hexVal;
     }
 
-    const isValidHex = /^#([0-9A-F]{3}){1,2}$/i.test(cleanVal);
+    const isValidHex = /^#([0-9A-F]{3}){1,2}$/i.test(hexVal);
     if (isValidHex) {
-      onChange(cleanVal.toUpperCase());
+      onChange(hexVal.toUpperCase());
     }
   };
 
   const displayColor = isTransparent ? "#FFFFFF" : color;
 
   return (
-    <div className="p-3 bg-card rounded-xl border border-border/60 mt-1 flex flex-col gap-2.5 w-full shadow-sm animate-in fade-in duration-200">
+    <div className="p-2.5 bg-card/95 backdrop-blur-2xl rounded-xl border border-border/80 dark:border-white/10 mt-1 flex flex-col gap-2 w-full shadow-2xl fluent-specular animate-in fade-in duration-200">
       <div className="custom-color-picker w-full">
         <HexColorPicker
           color={isTransparent ? "#ffffff" : color}
@@ -261,12 +262,13 @@ export function ColorWheelPicker({
 
       <div className="flex items-center gap-1.5">
         <button
+          type="button"
           onClick={() => {
             setInputValue("transparent");
             onChange("transparent");
           }}
           className={cn(
-            "w-7.5 h-7.5 rounded-md border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95",
+            "w-8 h-8 rounded-md border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
             isTransparent
               ? "border-primary bg-primary/10 text-primary font-bold"
               : "border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -276,7 +278,7 @@ export function ColorWheelPicker({
           <PaintBucket className="w-3.5 h-3.5" />
         </button>
 
-        <div className="flex-1 flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-7.5 shadow-2xs focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
+        <div className="flex-1 flex items-center gap-1.5 bg-background border border-border/80 rounded-md px-2 h-8 shadow-2xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all">
           <span className="text-[10px] font-bold text-muted-foreground/60 select-none">HEX:</span>
           <input
             type="text"
@@ -304,16 +306,17 @@ export function ColorWheelPicker({
         </div>
       </div>
 
-      <div className="space-y-2 pt-2 border-t border-border/20">
+      <div className="space-y-1.5 pt-1.5 border-t border-border/20">
         <span className="text-xs font-bold text-muted-foreground block">ألوان سريعة</span>
         <div className="grid grid-cols-9 gap-1.5">
           <button
+            type="button"
             onClick={() => {
               setInputValue("transparent");
               onChange("transparent");
             }}
             className={cn(
-              "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer relative overflow-hidden active:scale-90",
+              "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer relative overflow-hidden active:scale-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
               isTransparent 
                 ? "ring-2 ring-primary ring-offset-1 border-primary scale-95" 
                 : "border-border/40 hover:scale-105"
@@ -334,12 +337,13 @@ export function ColorWheelPicker({
             return (
               <button
                 key={bg.value}
+                type="button"
                 onClick={() => {
                   setInputValue(bg.value);
                   onChange(bg.value);
                 }}
                 className={cn(
-                  "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer active:scale-90",
+                  "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                   isActive 
                     ? "ring-2 ring-primary ring-offset-1 border-primary scale-95" 
                     : "border-border/40 hover:scale-105"

@@ -8,9 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { LayoutGrid, Check, RefreshCw, Ruler, Save } from "lucide-react";
+import { LayoutGrid, Check, RefreshCw, Save } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import type { FreeformLayout, FreeformSlot, PhotoPresetType, MixedPreset } from "../types";
 import { MIXED_COLLAGE_PRESETS, PHOTO_PRESET_LABELS } from "../lib/mixed-presets";
@@ -28,76 +27,15 @@ import {
 import { FreeformToolbar } from "./FreeformToolbar";
 import { FreeformCanvasEditor } from "./FreeformCanvasEditor";
 import { MixedPresetsGrid } from "./MixedPresetsGrid";
+import { FreeformPaperSelector } from "./FreeformPaperSelector";
 import { SaveCustomTemplate } from "../../../../wailsjs/go/main/App";
-
-interface PaperPresetOption {
-  id: string;
-  name: string;
-  w: number;
-  h: number;
-}
-
-const COMMON_PAPER_PRESETS: PaperPresetOption[] = [
-  { id: "4x6", name: "4×6 بوصة (102×152 مم)", w: 102, h: 152 },
-  { id: "5x7", name: "5×7 بوصة (127×178 مم)", w: 127, h: 178 },
-  { id: "6x8", name: "6×8 بوصة (152×203 مم)", w: 152, h: 203 },
-  { id: "8x10", name: "8×10 بوصة (203×254 مم)", w: 203, h: 254 },
-  { id: "10x15cm", name: "10×15 سم (100×150 مم)", w: 100, h: 150 },
-  { id: "13x18cm", name: "13×18 سم (130×180 مم)", w: 130, h: 180 },
-  { id: "a4", name: "ورقة A4 (210×297 مم)", w: 210, h: 297 },
-  { id: "a5", name: "ورقة A5 (148×210 مم)", w: 148, h: 210 },
-  { id: "a3", name: "ورقة A3 (297×420 مم)", w: 297, h: 420 },
-  { id: "letter", name: "Letter (216×279 مم)", w: 216, h: 279 },
-  { id: "sq10", name: "مربع (100×100 مم)", w: 100, h: 100 },
-];
 
 interface FreeformCollageModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const clampPaperDim = (value: number): number => {
-  if (!Number.isFinite(value)) return 20;
-  return Math.min(1000, Math.max(20, Math.round(value)));
-};
-
 const HISTORY_LIMIT = 100;
-
-/**
- * حقل إدخال أبعاد يسمح بالكتابة الحرة ويُثبّت القيمة عند الفقد/Enter
- */
-function PaperDimInput({ value, onCommit }: { value: number; onCommit: (v: number) => void }) {
-  const [text, setText] = useState(String(value));
-  const [focused, setFocused] = useState(false);
-  const [prevValue, setPrevValue] = useState(value);
-
-  // مزامنة النص عند تغيّر القيمة من الخارج (أثناء إعادة العرض — النمط الرسمي لـ React)
-  if (value !== prevValue) {
-    setPrevValue(value);
-    if (!focused) setText(String(value));
-  }
-
-  return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      dir="ltr"
-      value={text}
-      className="h-7 text-[11px] rounded-lg w-[55px] font-mono font-bold text-center bg-background border-border/60"
-      onFocus={() => setFocused(true)}
-      onChange={(e) => setText(e.target.value.replace(/[^\d]/g, "").slice(0, 4))}
-      onBlur={() => {
-        setFocused(false);
-        const v = clampPaperDim(Number(text || "0"));
-        setText(String(v));
-        onCommit(v);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
-      }}
-    />
-  );
-}
 
 export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open, onOpenChange }) => {
   const [paperWidthMM, setPaperWidthMM] = useState<number>(100);
@@ -124,8 +62,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
 
   const slots = historyState.present;
 
-  // مرايا Ref ثابتة تسمح للمعالجات (والاختصارات) بالبقاء مستقرة
-  // دون إعادة اشتراك/إنشاء في كل إطار سحب (تسريب أداء سابق)
+  // مرايا Ref ثابتة تسمح للمعالجات والاختصارات بالبقاء مستقرة دون إعادة اشتراك في كل إطار سحب
   const slotsRef = useRef(slots);
   const selectedSlotIdRef = useRef(selectedSlotId);
   useEffect(() => {
@@ -167,6 +104,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     });
   }, []);
 
+  // تصفير وإعادة ضبط حالات التحميل والمتغيرات عند فتح/إغلاق النافذة
   useEffect(() => {
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -192,9 +130,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     }
   }, [open]);
 
-  const handleSelectPreset = (preset: MixedPreset) => {
-    // تبديل القالب يُعيد التعيين مباشرة دون تلويث سجل التراجع —
-    // وإلا عاد التراجع بالخلايا القديمة مع ورقة وأبعاد القالب الجديد (تناقض)
+  const handleSelectPreset = useCallback((preset: MixedPreset) => {
     setActivePresetId(preset.id);
     setPaperWidthMM(preset.paperWidthMM);
     setPaperHeightMM(preset.paperHeightMM);
@@ -205,7 +141,13 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       future: [],
     });
     setSelectedSlotId(preset.slots[0]?.id || null);
-  };
+  }, []);
+
+  const handlePaperDimensionsChange = useCallback((w: number, h: number) => {
+    setPaperWidthMM(w);
+    setPaperHeightMM(h);
+    setActivePresetId(null);
+  }, []);
 
   const handleSplitHorizontal = useCallback(() => {
     const selectedId = selectedSlotIdRef.current;
@@ -282,7 +224,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     setActivePresetId(null);
   }, [updateSlotsWithHistory, paperWidthMM, paperHeightMM]);
 
-  // إعادة مزامنة التحديد بعد التراجع/الإعادة/الحذف — لا تُبقي التحديد على خلية غير موجودة
+  // إعادة مزامنة التحديد بعد التراجع/الإعادة/الحذف
   useEffect(() => {
     if (selectedSlotId && !slots.some((s) => s.id === selectedSlotId)) {
       queueMicrotask(() => setSelectedSlotId(slots[0]?.id ?? null));
@@ -350,7 +292,6 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
           return { ...s, x: nx, y: ny };
         });
 
-        // تحديث المعاينة فوراً والتجميع لسجل التراجع بـ Debounce (400ms)
         setHistoryState((prev) => ({ ...prev, present: nextSlots }));
         setActivePresetId(null);
 
@@ -396,14 +337,11 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     }
   };
 
-  // callbacks سحب مستقرة — تتجنب إعادة إنشاء الاشتراكات في كل إطار
   const handleDragStart = useCallback(() => {
-    // لقطة قبل السحب — تُدفع كخطوة تراجع واحدة عند الانتهاء
     dragStartSlotsRef.current = slotsRef.current.map((s) => ({ ...s }));
   }, []);
 
   const handleSlotsChange = useCallback((next: FreeformSlot[]) => {
-    // معاينة حيّة فقط أثناء السحب دون تلويث سجل التراجع
     setHistoryState((prev) => ({ ...prev, present: next }));
   }, []);
 
@@ -441,7 +379,6 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       const newW = Math.max(64, Math.round((paperWidthMM * dpi) / 25.4));
       const newH = Math.max(64, Math.round((paperHeightMM * dpi) / 25.4));
 
-      // تحديث أبعاد الكانفس وإعدادات الطباعة ذرية في الـ Store قبل تطبيق القالب لضمان خطوة تراجع واحدة
       useEditorStore.setState({
         canvasWidth: newW,
         canvasHeight: newH,
@@ -454,15 +391,10 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
             showCutLines: false,
           }),
           paperId: "custom",
-          // نفس اتفاقية الأنظمة: أبعاد أصلية (العرض ≤ الارتفاع) + علم اتجاه مستقل
-          // — استخدمنا أبعاد التصميم مباشرة مع اشتقاق الاتجاه فكان يقلب عمودية
-          // الورقة في الوضع الأفقي (انعكاس مزدوج مع تبديل usePrintLayout)
           paperWidthMM: Math.min(paperWidthMM, paperHeightMM),
           paperHeightMM: Math.max(paperWidthMM, paperHeightMM),
           orientation: paperHeightMM >= paperWidthMM ? "portrait" : "landscape",
         },
-        // خلايا الكولاج الحر تحمل فجواتها داخل إحداثياتها — لا نضيف هامش/فجوة
-        // صورة فوقها وإلا انزاحت عن التصميم في المحرر والمعاينة والطباعة
         collageGap: 0,
         collageMargin: 0,
       });
@@ -483,76 +415,27 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[96vw] sm:max-w-[1060px] h-[93vh] max-h-[850px] overflow-hidden border border-border/60 bg-background rounded-2xl shadow-2xl font-cairo flex flex-col p-3.5 gap-2.5"
+        className="w-[96vw] sm:max-w-[1060px] h-[93vh] max-h-[850px] overflow-hidden border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl rounded-2xl shadow-2xl font-cairo flex flex-col p-3.5 gap-2.5 fluent-specular"
         dir="rtl"
       >
-        {/* Header — رأس النافذة البسيط والمباشر مع أدوات قياس الورقة */}
+        {/* Header — رأس النافذة المنظم مع محدد أبعاد الورقة المليمتري */}
         <DialogHeader className="border-b border-border/40 pb-2.5 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
             <LayoutGrid className="w-4 h-4 text-primary" />
             محرر الكولاج الحر
           </DialogTitle>
 
-          {/* قياسات وأبعاد الورقة في رأس النافذة */}
-          <div className="flex items-center gap-2 bg-muted/40 px-3 py-1 rounded-xl border border-border/40 text-xs">
-            <Ruler className="w-3.5 h-3.5 text-primary shrink-0" />
-            <span className="font-semibold text-muted-foreground shrink-0">ورق جاهز:</span>
-            <Select
-              value={
-                COMMON_PAPER_PRESETS.find(
-                  (p) =>
-                    (p.w === paperWidthMM && p.h === paperHeightMM) ||
-                    (p.w === paperHeightMM && p.h === paperWidthMM)
-                )?.id || "custom"
-              }
-              onValueChange={(val) => {
-                const found = COMMON_PAPER_PRESETS.find((p) => p.id === val);
-                if (found) {
-                  setPaperWidthMM(found.w);
-                  setPaperHeightMM(found.h);
-                  setActivePresetId(null);
-                }
-              }}
-            >
-              <SelectTrigger size="sm" className="h-7 text-xs font-semibold rounded-lg bg-background border-border/60 min-w-[140px] shrink-0">
-                <SelectValue placeholder="اختر قياس..." />
-              </SelectTrigger>
-              <SelectContent className="font-cairo z-[150]">
-                <SelectItem value="custom" className="text-xs font-semibold">مخصص (أرقام)</SelectItem>
-                {COMMON_PAPER_PRESETS.map((p) => (
-                  <SelectItem key={p.id} value={p.id} className="text-xs font-semibold">
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="h-3.5 w-px bg-border/60 mx-0.5 shrink-0" />
-
-            <div className="flex items-center gap-1 font-mono shrink-0" dir="ltr">
-              <PaperDimInput
-                value={paperWidthMM}
-                onCommit={(v) => {
-                  setPaperWidthMM(v);
-                  setActivePresetId(null);
-                }}
-              />
-              <span className="text-xs font-extrabold text-muted-foreground">×</span>
-              <PaperDimInput
-                value={paperHeightMM}
-                onCommit={(v) => {
-                  setPaperHeightMM(v);
-                  setActivePresetId(null);
-                }}
-              />
-              <span className="text-[11px] font-semibold text-muted-foreground">مم</span>
-            </div>
-          </div>
+          {/* قياسات وأبعاد الورقة عبر المكون المستقل */}
+          <FreeformPaperSelector
+            paperWidthMM={paperWidthMM}
+            paperHeightMM={paperHeightMM}
+            onPaperDimensionsChange={handlePaperDimensionsChange}
+          />
         </DialogHeader>
 
-        {/* Content — محتوى الكانفس وأشرطة الأدوات */}
+        {/* Content — محتوى الكانفس وأشرطة الأدوات والشبكات */}
         <div className="flex flex-col flex-1 min-h-0 gap-2">
-          {/* شريط الأدوات العلوي المدمج */}
+          {/* شريط الأدوات والقوالب المدمج */}
           <div className="flex items-center justify-between gap-2 shrink-0 bg-muted/20 p-1 rounded-xl border border-border/40 flex-wrap">
             <MixedPresetsGrid activePresetId={activePresetId} onSelectPreset={handleSelectPreset} />
 
@@ -587,25 +470,34 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
           />
         </div>
 
-        {/* Footer — شريط سفلي موحد ونظيف بدون ازدحام */}
+        {/* Footer — شريط سفلي متوافق مع Fluent 2 Standard Ramp */}
         <DialogFooter className="border-t border-border/40 pt-2.5 flex items-center justify-between gap-2 shrink-0">
           {/* حفظ كقالب مخصص على اليمين */}
           <div className="flex items-center gap-2">
             <Input
               value={layoutName}
               onChange={(e) => setLayoutName(e.target.value)}
-              className="h-8 text-xs rounded-lg w-[140px] bg-background border-border/60 font-semibold"
+              className="h-8 text-xs rounded-md w-[150px] bg-background border-border/60 font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               placeholder="اسم القالب..."
             />
             <Button
               variant="outline"
               size="sm"
-              className="h-8 rounded-lg text-xs gap-1.5 cursor-pointer border-border/60 hover:bg-muted font-semibold"
+              className="h-8 rounded-md text-xs gap-1.5 cursor-pointer border-border/60 hover:bg-muted font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={handleSaveAsCustomTemplate}
               disabled={isSavingTemplate || slots.length === 0}
             >
-              <Save className="w-3.5 h-3.5 text-emerald-500" />
-              <span>حفظ كقالب</span>
+              {isSavingTemplate ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-500" />
+                  <span>جاري الحفظ ...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>حفظ كقالب</span>
+                </>
+              )}
             </Button>
           </div>
 
@@ -614,19 +506,24 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
             <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20 me-1">
               {slots.length} صور
             </span>
-            <Button variant="outline" size="sm" className="h-8 rounded-lg text-xs px-4 cursor-pointer font-semibold" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-md text-xs px-4 cursor-pointer font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              onClick={() => onOpenChange(false)}
+            >
               إلغاء
             </Button>
             <Button
               size="sm"
-              className="h-8 rounded-lg text-xs font-semibold gap-1.5 px-5 cursor-pointer shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-8 rounded-md text-xs font-semibold gap-1.5 px-5 cursor-pointer shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={handleApplyToCanvas}
               disabled={isApplying || slots.length === 0}
             >
               {isApplying ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>جاري التطبيق...</span>
+                  <span>جاري التطبيق ...</span>
                 </>
               ) : (
                 <>

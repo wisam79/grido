@@ -161,7 +161,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
 
     setIsRemovingBg(true);
     setBgProgress(0);
-    setBgProgressText("جاري التهيئة...");
+    setBgProgressText("جاري التهيئة ...");
 
     const requestId = nextRequestId++;
     busyRequestId = requestId;
@@ -218,7 +218,6 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
             patch.originalImageSrc = element.imageSrc;
           }
           onUpdateRef.current(element.id, patch);
-          useEditorStore.getState().updateElement(element.id, patch);
           useEditorStore.getState().pushHistory();
           toast.success("تم عزل خلفية الصورة بنجاح ✨");
 

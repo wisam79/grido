@@ -214,7 +214,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       role="menu"
       tabIndex={-1}
       aria-label="قائمة السياق الموحدة"
-      className="fixed z-[9999] w-[190px] bg-card/95 backdrop-blur-2xl border border-border/60 shadow-[0_20px_50px_rgba(0,0,0,0.35)] rounded-2xl p-2 text-xs font-cairo overflow-hidden select-none animate-in fade-in-80 zoom-in-95 duration-150 outline-none space-y-1.5"
+      className="fixed z-[9999] w-[200px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-xl p-1 text-xs font-cairo overflow-hidden select-none animate-in fade-in-80 zoom-in-95 duration-150 outline-none space-y-1 shadow-fluent-28 fluent-specular"
       style={{
         left: `${left}px`,
         top: `${top}px`,
@@ -229,18 +229,18 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
         const imgEl = el?.type === "image" ? (el as ImageElement) : null;
 
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {/* قسم الذكاء الاصطناعي إن كان عنصراً صورياً */}
             {imgEl?.imageSrc && (
               <>
-                <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+                <div className="px-2 pt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   معالجة الصور
                 </div>
                 <div className="space-y-0.5">
                   <button
                     role="menuitem"
                     tabIndex={-1}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => {
                       setCropTarget({
                         imageSrc: imgEl.imageSrc,
@@ -292,99 +292,87 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                       });
                     }}
                   >
-                    <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                      <Scissors className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-emerald-500 transition-colors">قص وتدوير الصورة</span>
+                    <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">قص وتدوير الصورة</span>
                   </button>
 
                   <button
                     role="menuitem"
                     tabIndex={-1}
                     disabled={isRemovingBg}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-purple-500/10 hover:text-purple-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none disabled:opacity-50"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background text-xs font-semibold disabled:opacity-40"
                     onClick={() => {
                       handleRemoveBg(imgEl);
                       onClose();
                     }}
                   >
-                    <div className="p-1 rounded-md bg-purple-500/10 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                      {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-purple-500 transition-colors">عزل الخلفية (AI)</span>
+                    {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" /> : <Sparkles className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />}
+                    <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية (AI)"}</span>
                   </button>
 
                   <button
                     role="menuitem"
                     tabIndex={-1}
                     disabled={isEnhancing}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-amber-500/10 hover:text-amber-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none disabled:opacity-50"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background text-xs font-semibold disabled:opacity-40"
                     onClick={() => {
                       handleEnhance(imgEl);
                       onClose();
                     }}
                   >
-                    <div className="p-1 rounded-md bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                      {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-amber-500 transition-colors">ترميم الوجه (AI)</span>
+                    {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" /> : <Wand2 className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />}
+                    <span className="truncate">{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه (AI)"}</span>
                   </button>
                 </div>
-                <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent my-1" role="separator" />
+                <div className="h-px bg-border/40 my-1" role="separator" />
               </>
             )}
 
             {/* قسم التحكم والترتيب */}
-            <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+            <div className="px-2 pt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
               التحكم والترتيب
             </div>
             <div className="space-y-0.5">
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={() => handleAction(() => {
                   copySelectedElements([target.id!]);
                 })}
               >
-                <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
-                  <Copy className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">نسخ العنصر</span>
+                <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                <span className="truncate">نسخ العنصر</span>
               </button>
 
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-amber-500/10 hover:text-amber-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={() => handleAction(() => {
                   cutSelectedElements([target.id!]);
                 })}
               >
-                <div className="p-1 rounded-md bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                  <Scissors className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-amber-500 transition-colors">قص العنصر</span>
+                <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                <span className="truncate">قص العنصر</span>
               </button>
 
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={() => handleAction(() => {
                   pasteFromClipboardOrStore();
                 })}
               >
-                <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                  <Clipboard className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-emerald-500 transition-colors">لصق العنصر</span>
+                <Clipboard className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                <span className="truncate">لصق العنصر</span>
               </button>
 
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={() => handleAction(() => {
                   const { selectedIds } = useEditorStore.getState();
                   if (selectedIds.length > 1) {
@@ -394,42 +382,36 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                   }
                 })}
               >
-                <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
-                  <Copy className="w-3.5 h-3.5 opacity-60" />
-                </div>
-                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">تكرار العنصر</span>
+                <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                <span className="truncate">تكرار العنصر</span>
               </button>
               
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={() => handleAction(() => bringToFront(target.id!))}
               >
-                <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
-                  <ArrowUpToLine className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">إحضار للأمام</span>
+                <ArrowUpToLine className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                <span className="truncate">إحضار للأمام</span>
               </button>
               
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={() => handleAction(() => sendToBack(target.id!))}
               >
-                <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
-                  <ArrowDownToLine className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">إرسال للخلف</span>
+                <ArrowDownToLine className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                <span className="truncate">إرسال للخلف</span>
               </button>
 
-              <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent my-1" role="separator" />
+              <div className="h-px bg-border/40 my-1" role="separator" />
               
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-destructive/10 text-destructive rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-destructive/10 text-destructive rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={() => handleAction(() => {
                   const { selectedIds, removeElements } = useEditorStore.getState();
                   const removableIds = selectedIds.filter((id) => {
@@ -445,10 +427,8 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                   }
                 })}
               >
-                <div className="p-1 rounded-md bg-destructive/10 text-destructive group-hover:bg-destructive group-hover:text-white transition-colors duration-150 shrink-0">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-extrabold text-[11.5px] leading-tight">حذف العنصر</span>
+                <Trash2 className="w-3.5 h-3.5 text-destructive shrink-0" />
+                <span className="truncate font-bold">حذف العنصر</span>
               </button>
             </div>
           </div>
@@ -461,16 +441,16 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
         const slot = state.slots?.find((s) => s.id === target.id);
 
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {/* قسم إدارة الصورة والذكاء الاصطناعي */}
-            <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+            <div className="px-2 pt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
               الصورة والذكاء الاصطناعي
             </div>
             <div className="space-y-0.5">
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-blue-500/10 hover:text-blue-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={async () => {
                   const [b64] = await openImageFileDialog(false);
                   if (b64) {
@@ -480,7 +460,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                         const localPath = await SaveImageFromBase64(b64);
                         if (localPath) srcToUse = localPath;
                       } catch {
-                        // Fallback to original base64 if local save fails
+                        // Fallback
                       }
                     }
                     setSlotImage(target.id!, srcToUse);
@@ -488,10 +468,8 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                   }
                 }}
               >
-                <div className="p-1 rounded-md bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                  <ImagePlus className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-blue-500 transition-colors">استبدال الصورة</span>
+                <ImagePlus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                <span className="truncate">استبدال الصورة</span>
               </button>
 
               {slot?.imageSrc && (
@@ -499,7 +477,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                   <button
                     role="menuitem"
                     tabIndex={-1}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => {
                       if (!slot.imageSrc) return;
                       setCropTarget({
@@ -533,17 +511,15 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                       });
                     }}
                   >
-                    <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                      <Scissors className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-emerald-500 transition-colors">قص وتدوير الصورة</span>
+                    <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">قص وتدوير الصورة</span>
                   </button>
 
                   <button
                     role="menuitem"
                     tabIndex={-1}
                     disabled={isRemovingBg}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-purple-500/10 hover:text-purple-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none disabled:opacity-50"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background text-xs font-semibold disabled:opacity-40"
                     onClick={() => {
                       if (slot) {
                         handleRemoveBg(slot);
@@ -551,17 +527,15 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                       }
                     }}
                   >
-                    <div className="p-1 rounded-md bg-purple-500/10 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                      {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-purple-500 transition-colors">عزل الخلفية (AI)</span>
+                    {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" /> : <Sparkles className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />}
+                    <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية (AI)"}</span>
                   </button>
 
                   <button
                     role="menuitem"
                     tabIndex={-1}
                     disabled={isEnhancing}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-amber-500/10 hover:text-amber-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none disabled:opacity-50"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background text-xs font-semibold disabled:opacity-40"
                     onClick={() => {
                       if (slot) {
                         handleEnhance(slot);
@@ -569,10 +543,8 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                       }
                     }}
                   >
-                    <div className="p-1 rounded-md bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                      {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-amber-500 transition-colors">ترميم الوجه (AI)</span>
+                    {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" /> : <Wand2 className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />}
+                    <span className="truncate">{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه (AI)"}</span>
                   </button>
                 </>
               )}
@@ -580,58 +552,50 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-rose-500/10 hover:text-rose-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-destructive/10 text-destructive rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={() => handleActionWithHistory(() => updateSlot(target.id!, { imageSrc: undefined, originalImageSrc: undefined }))}
               >
-                <div className="p-1 rounded-md bg-rose-500/10 text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                  <Eraser className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-rose-500 transition-colors">تفريغ الخلية</span>
+                <Eraser className="w-3.5 h-3.5 text-destructive shrink-0" />
+                <span className="truncate">تفريغ الخلية</span>
               </button>
             </div>
 
             {/* قسم التحويل والمحاذاة */}
             {slot?.imageSrc && (
               <>
-                <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent my-1" />
-                <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+                <div className="h-px bg-border/40 my-1" />
+                <div className="px-2 pt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   التحويل والمحاذاة
                 </div>
                 <div className="space-y-0.5">
                   <button
                     role="menuitem"
                     tabIndex={-1}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => handleActionWithHistory(() => updateSlot(target.id!, { dragX: 0, dragY: 0, zoom: 1 }))}
                   >
-                    <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
-                      <Crosshair className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">توسيط الصورة</span>
+                    <Crosshair className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">توسيط الصورة</span>
                   </button>
 
                   <button
                     role="menuitem"
                     tabIndex={-1}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => handleActionWithHistory(() => updateSlot(target.id!, { rotation: (((slot.rotation ?? 0) + 90) % 360) }))}
                   >
-                    <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
-                      <RotateCw className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">تدوير 90° ({slot.rotation ?? 0}°)</span>
+                    <RotateCw className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">تدوير 90° ({slot.rotation ?? 0}°)</span>
                   </button>
 
                   <button
                     role="menuitem"
                     tabIndex={-1}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => handleActionWithHistory(() => updateSlot(target.id!, { flipX: !slot.flipX }))}
                   >
-                    <div className="p-1 rounded-md bg-muted/80 text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
-                      <FlipHorizontal2 className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">قلب أفقي</span>
+                    <FlipHorizontal2 className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">قلب أفقي</span>
                   </button>
                 </div>
               </>
@@ -640,58 +604,50 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
             {/* قسم التعبئة والتكرار الخطي */}
             {slot?.imageSrc && (
               <>
-                <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent my-1" />
+                <div className="h-px bg-border/40 my-1" />
 
-                <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+                <div className="px-2 pt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   التعبئة والتكرار
                 </div>
                 <div className="space-y-0.5">
                   <button
                     role="menuitem"
                     tabIndex={-1}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-primary/10 hover:text-primary rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => handleActionWithHistory(() => state.fillAllSlots(slot.imageSrc!, target.id!))}
                   >
-                    <div className="p-1 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150 shrink-0">
-                      <LayoutGrid className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-primary transition-colors">تعبئة الورقة بالكامل</span>
+                    <LayoutGrid className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">تعبئة الورقة بالكامل</span>
                   </button>
 
                   <button
                     role="menuitem"
                     tabIndex={-1}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => handleActionWithHistory(() => state.fillEmptySlots(slot.imageSrc!, target.id!))}
                   >
-                    <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                      <Sparkles className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-emerald-500 transition-colors">تعبئة الخانات الفارغة فقط</span>
+                    <Sparkles className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">تعبئة الخانات الفارغة فقط</span>
                   </button>
 
                   <button
                     role="menuitem"
                     tabIndex={-1}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-blue-500/10 hover:text-blue-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => handleActionWithHistory(() => state.fillRowSlots(target.id!, slot.imageSrc!))}
                   >
-                    <div className="p-1 rounded-md bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                      <Rows className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-blue-500 transition-colors">تعبئة الصف الحالي</span>
+                    <Rows className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">تعبئة الصف الحالي</span>
                   </button>
 
                   <button
                     role="menuitem"
                     tabIndex={-1}
-                    className="group w-full text-right px-2.5 py-1.5 hover:bg-indigo-500/10 hover:text-indigo-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                    className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => handleActionWithHistory(() => state.fillColumnSlots(target.id!, slot.imageSrc!))}
                   >
-                    <div className="p-1 rounded-md bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                      <Columns className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-indigo-500 transition-colors">تعبئة العمود الحالي</span>
+                    <Columns className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <span className="truncate">تعبئة العمود الحالي</span>
                   </button>
                 </div>
               </>
@@ -705,23 +661,21 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
         const hasCopied = clipboardElements && clipboardElements.length > 0;
 
         return (
-          <div className="space-y-1.5">
-            <div className="px-2 pt-0.5 text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+          <div className="space-y-1">
+            <div className="px-2 pt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
               إجراءات الصفحة
             </div>
             <div className="space-y-0.5">
               <button
                 role="menuitem"
                 tabIndex={-1}
-                className="group w-full text-right px-2.5 py-1.5 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl flex items-center gap-2.5 transition-all duration-150 cursor-pointer outline-none"
+                className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                 onClick={() => handleAction(() => {
                   pasteFromClipboardOrStore();
                 })}
               >
-                <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-150 shrink-0">
-                  <Clipboard className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-bold text-[11.5px] leading-tight text-foreground group-hover:text-emerald-500 transition-colors">
+                <Clipboard className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                <span className="truncate">
                   لصق المحتوى {hasCopied ? `(${clipboardElements.length})` : ""}
                 </span>
               </button>

@@ -102,7 +102,7 @@ const LayerRow = React.memo(function LayerRow({
       onDrop={(e) => onDrop(e, el.id)}
       onClick={onSelect}
       className={cn(
-        "group flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all cursor-pointer select-none",
+        "group flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-all cursor-pointer select-none",
         "border border-transparent",
         isSelected
           ? "bg-primary/12 border-primary/30 shadow-xs"
@@ -152,7 +152,7 @@ const LayerRow = React.memo(function LayerRow({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-              className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               <Copy className="w-3 h-3" />
             </button>
@@ -166,7 +166,7 @@ const LayerRow = React.memo(function LayerRow({
               type="button"
               onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
               className={cn(
-                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer",
+                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                 isHidden ? "text-destructive/60" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -184,7 +184,7 @@ const LayerRow = React.memo(function LayerRow({
               type="button"
               onClick={(e) => { e.stopPropagation(); onToggleLock(); }}
               className={cn(
-                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer",
+                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                 isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -201,7 +201,7 @@ const LayerRow = React.memo(function LayerRow({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+              className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               <Trash2 className="w-3 h-3" />
             </button>

@@ -70,8 +70,10 @@ export function drawSlotImage(
   h: number,
   slot: { zoom?: number; dragX?: number; dragY?: number; flipX?: boolean; flipY?: boolean; rotation?: number }
 ) {
+  const normRot = (((slot.rotation || 0) % 360) + 360) % 360;
+  const isRotated90or270 = normRot === 90 || normRot === 270;
   const imgAspect = img.width / img.height;
-  const slotAspect = w / h;
+  const slotAspect = isRotated90or270 ? h / w : w / h;
   let sw = img.width;
   let sh = img.height;
   if (imgAspect > slotAspect) {

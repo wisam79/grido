@@ -8,7 +8,8 @@ import {
   AccountLicenseModal,
   UpdateNotifier,
   KeyboardShortcutsDialog,
-  WindowResizeHandles
+  WindowResizeHandles,
+  ZoomControls
 } from "@/components/editor";
 import { ErrorBoundary } from "@/components/error-boundary";
 
@@ -28,8 +29,6 @@ import {
   X,
   LayoutGrid,
   Images,
-  ZoomIn,
-  ZoomOut,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
@@ -117,31 +116,31 @@ export default function App() {
 
   if (isInitializing) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background text-foreground font-cairo">
-        <div className="relative flex flex-col items-center">
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background text-foreground font-cairo select-none" dir="rtl">
+        <div className="relative flex flex-col items-center max-w-xs text-center px-4">
           <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mb-6 border border-primary/20 shadow-2xl shadow-primary/20"
+            transition={{ duration: 0.35, ease: [0.1, 0.9, 0.2, 1] }}
+            className="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-2xl flex items-center justify-center mb-5 border border-primary/20 shadow-lg shadow-primary/10"
           >
-            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </motion.div>
           <motion.h1 
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-2xl font-black tracking-tight"
+            transition={{ delay: 0.15, duration: 0.35, ease: "easeOut" }}
+            className="text-xl font-extrabold tracking-tight"
           >
             Grido Studio
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="text-sm text-muted-foreground mt-2 animate-pulse"
+            transition={{ delay: 0.3, duration: 0.35 }}
+            className="text-xs text-muted-foreground mt-1.5 font-medium"
           >
-            جاري تهيئة مساحة العمل...
+            جاري تهيئة مساحة العمل ...
           </motion.p>
         </div>
       </div>
@@ -157,12 +156,12 @@ export default function App() {
         {!isMaximized && <WindowResizeHandles />}
         {/* الرأس الموحد للنافذة */}
         <header
-          className={`border-b bg-card/90 backdrop-blur-md no-print title-bar-draggable select-none transition-opacity duration-200 ${
+          className={`border-b bg-card/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 fluent-specular ${
             !isFocused ? "opacity-75" : ""
           }`}
           onDoubleClick={handleMaximize}
         >
-          <div className="flex items-center justify-between px-4 py-2 relative">
+          <div className="flex items-center justify-between px-4 py-1.5 relative">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 animate-pulse" />
               <h1 className="text-xs font-bold text-foreground/80">
@@ -216,7 +215,7 @@ export default function App() {
 
         {/* شاشة التفعيل المركزية */}
         <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-right p-6">
-          <div className="w-full max-w-md bg-card border border-border/60 p-8 rounded-2xl shadow-2xl space-y-6 text-center">
+          <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-2xl space-y-6 text-center fluent-specular">
             <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
               <Lock className="w-10 h-10" />
             </div>
@@ -270,14 +269,17 @@ export default function App() {
                     placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
                     value={lockKey}
                     onChange={(e) => setLockKey(e.target.value.toUpperCase())}
-                    className="w-full pr-9 pl-4 py-2 text-xs border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase text-foreground"
+                    className="w-full pr-9 pl-4 h-8 text-xs border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase text-foreground"
                   />
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer shadow-xs" disabled={lockLoading}>
+              <Button type="submit" className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer shadow-xs gap-1.5 rounded-md" disabled={lockLoading}>
                 {lockLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>جاري التفعيل ...</span>
+                  </>
                 ) : (
                   "تفعيل الترخيص الفوري"
                 )}
@@ -285,12 +287,12 @@ export default function App() {
             </form>
 
             <div className="border-t border-border/40 pt-4 flex flex-col gap-2">
-              <Button variant="outline" className="w-full text-xs font-semibold h-9 cursor-pointer" onClick={() => setAccountModalOpen(true)}>
+              <Button variant="outline" className="w-full text-xs font-semibold h-8 rounded-md cursor-pointer" onClick={() => setAccountModalOpen(true)}>
                 إدارة الحساب
               </Button>
               
               {user && user.token && (
-                <Button variant="ghost" className="w-full text-xs text-red-500 hover:bg-red-500/5 h-9 cursor-pointer" onClick={() => logoutAccount()}>
+                <Button variant="ghost" className="w-full text-xs text-red-500 hover:bg-red-500/5 h-8 rounded-md cursor-pointer" onClick={() => logoutAccount()}>
                   تسجيل الخروج
                 </Button>
               )}
@@ -311,24 +313,24 @@ export default function App() {
         dir="rtl"
       >
       {!isMaximized && <WindowResizeHandles />}
-      {/* الرأس */}
+      {/* الرأس الموحد للنافذة بتصميم Fluent 2 Acrylic */}
       <header
         className={cn(
-          "border-b border-border/80 bg-card no-print title-bar-draggable select-none transition-opacity duration-200 z-30 native-header-elevated",
+          "border-b bg-card/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
           !isFocused && "opacity-75"
         )}
         onDoubleClick={handleMaximize}
       >
-        <div className="flex items-center justify-between px-4 py-2 relative">
+        <div className="flex items-center justify-between px-3 py-1.5 relative">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
+            <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
             <h1 className="text-xs font-bold text-foreground tracking-wide">
               Grido Studio | استوديو الهوية
             </h1>
           </div>
 
-          {/* وضع العمل */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-muted/80 backdrop-blur-xs p-1 rounded-xl border border-border/80 z-10 title-bar-controls" dir="rtl">
+          {/* وضع العمل - Fluent 2 Segmented Control */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-muted/60 dark:bg-muted/30 backdrop-blur-md p-1 rounded-xl border border-black/5 dark:border-white/10 z-10 title-bar-controls fluent-specular" dir="rtl">
             <Button
               variant="ghost"
               size="sm"
@@ -336,7 +338,7 @@ export default function App() {
               aria-label="وضع الكولاج"
               title="وضع الكولاج"
               className={cn(
-                "h-7 px-3 rounded-lg cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[11px] z-10 relative transition-all duration-200 select-none",
+                "h-7 px-3 rounded-md cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[11px] z-10 relative transition-all duration-150 select-none",
                 mode === "collage"
                   ? "text-primary font-black"
                   : "text-muted-foreground hover:text-foreground"
@@ -345,8 +347,8 @@ export default function App() {
               {mode === "collage" && (
                 <motion.div
                   layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-background border border-border/80 rounded-lg shadow-2xs -z-10"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  className="absolute inset-0 bg-background border border-black/5 dark:border-white/10 rounded-md shadow-xs -z-10"
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
               <LayoutGrid className="w-3.5 h-3.5" />
@@ -360,7 +362,7 @@ export default function App() {
               aria-label="وضع التعديل الحر"
               title="وضع التعديل الحر"
               className={cn(
-                "h-7 px-3 rounded-lg cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[11px] z-10 relative transition-all duration-200 select-none",
+                "h-7 px-3 rounded-md cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[11px] z-10 relative transition-all duration-150 select-none",
                 mode === "single"
                   ? "text-primary font-black"
                   : "text-muted-foreground hover:text-foreground"
@@ -369,8 +371,8 @@ export default function App() {
               {mode === "single" && (
                 <motion.div
                   layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-background border border-border/80 rounded-lg shadow-2xs -z-10"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  className="absolute inset-0 bg-background border border-black/5 dark:border-white/10 rounded-md shadow-xs -z-10"
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
               <Images className="w-3.5 h-3.5" />
@@ -378,12 +380,12 @@ export default function App() {
             </Button>
           </div>
 
-          <div className="flex items-center gap-2 title-bar-controls">
+          <div className="flex items-center gap-1.5 title-bar-controls">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setAccountModalOpen(true)}
-              className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted relative"
+              className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
               title="الحساب والتراخيص"
             >
               {isLicenseActive ? (
@@ -399,7 +401,7 @@ export default function App() {
               variant="ghost"
               size="sm"
               onClick={toggleTheme}
-              className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
+              className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
             >
               {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
@@ -407,7 +409,7 @@ export default function App() {
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden gap-1.5 h-7 px-2"
+              className="lg:hidden gap-1.5 h-7 px-2 rounded-md"
               onClick={() => setMobileTemplatesOpen(true)}
             >
               <PanelsTopLeft className="w-3.5 h-3.5" />
@@ -416,7 +418,7 @@ export default function App() {
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden gap-1.5 h-7 px-2"
+              className="lg:hidden gap-1.5 h-7 px-2 rounded-md"
               onClick={() => setMobilePropsOpen(true)}
             >
               <Settings2 className="w-3.5 h-3.5" />
@@ -424,14 +426,14 @@ export default function App() {
             </Button>
 
             {/* Separator */}
-            <div className="w-px h-5 bg-border mx-1" />
+            <div className="w-px h-4 bg-border/60 mx-0.5" />
 
             {/* Window Buttons */}
             <Button
               variant="ghost"
               size="sm"
               onClick={handleMinimize}
-              className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
+              className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title="تصغير"
             >
               <Minus className="w-4 h-4" />
@@ -440,7 +442,7 @@ export default function App() {
               variant="ghost"
               size="sm"
               onClick={handleMaximize}
-              className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
+              className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title={isMaximized ? "استعادة" : "تكبير"}
             >
               {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Square className="w-3 h-3" />}
@@ -449,7 +451,7 @@ export default function App() {
               variant="ghost"
               size="sm"
               onClick={handleClose}
-              className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white"
+              className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors"
               title="إغلاق"
             >
               <X className="w-4 h-4" />
@@ -479,7 +481,7 @@ export default function App() {
       {/* المحتوى الرئيسي */}
       <main className="flex-1 flex overflow-hidden">
         {/* اللوحة اليسرى - القوالب (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-l border-border/80 native-depth-sidebar flex-col no-print animate-panel-right z-20">
+        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-l border-border/70 native-depth-sidebar flex-col no-print animate-panel-right z-20">
           <TemplatePanel />
         </aside>
 
@@ -491,27 +493,27 @@ export default function App() {
             </ErrorBoundary>
           </div>
 
-          {/* شريط الحالة السفلي - نمط Figma مضغوط وأنيق */}
-          <div className="border-t border-border/80 bg-card/95 backdrop-blur-xs px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-7.5 shadow-2xs">
+          {/* شريط الحالة السفلي - Fluent 2 Status Bar */}
+          <div className="border-t border-border/70 bg-card/90 backdrop-blur-md px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-7.5 shadow-xs">
             {/* مؤشر الحالة والنوع */}
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-foreground/80 bg-muted/80 px-2 py-0.5 rounded-md border border-border/50 shadow-2xs">
+            <div className="flex items-center gap-2 font-cairo">
+              <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold text-foreground/90 bg-muted/60 dark:bg-muted/40 px-2.5 py-0.5 rounded-full border border-black/5 dark:border-white/10 shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>جاهز</span>
               </span>
-              <span className="text-[10px] font-mono text-muted-foreground font-semibold px-1.5 py-0.5 rounded bg-muted/40 border border-border/30" dir="ltr">
+              <span className="text-[10px] font-mono text-muted-foreground font-semibold px-2 py-0.5 rounded-md bg-muted/40 border border-border/30" dir="ltr">
                 {canvasWidth} × {canvasHeight} px
               </span>
-              <span className="hidden sm:inline-block text-[10px] font-semibold text-muted-foreground/80">
-                {Math.round((canvasWidth / 300) * 25.4)} × {Math.round((canvasHeight / 300) * 25.4)} مم (300 DPI)
+              <span className="hidden sm:inline-flex items-center text-[10px] font-mono font-medium text-muted-foreground/80 bg-muted/20 px-2 py-0.5 rounded-md border border-border/20" dir="ltr">
+                {Math.round((canvasWidth / 300) * 25.4)} × {Math.round((canvasHeight / 300) * 25.4)} mm · 300 DPI
               </span>
             </div>
 
             {/* أدوات الزوم وإعادة الضبط */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 font-cairo">
               <button
                 type="button"
-                className="hidden md:flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted px-2 py-0.5 rounded-md border border-border/40 transition-colors cursor-pointer"
+                className="hidden md:flex items-center gap-1 text-[10.5px] font-semibold text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/80 px-2 py-0.5 rounded-md border border-border/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                 onClick={() => window.dispatchEvent(new CustomEvent("grido:open-shortcuts"))}
                 title="عرض اختصارات لوحة المفاتيح"
               >
@@ -519,40 +521,13 @@ export default function App() {
                 <kbd className="font-mono text-[9px] bg-background/80 px-1 rounded border border-border/60">?</kbd>
               </button>
 
-              <div className="flex items-center gap-0.5 bg-muted/60 border border-border/60 rounded-lg p-0.5 shadow-2xs">
-                <button
-                  type="button"
-                  className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer text-muted-foreground"
-                  onClick={() => setCanvasZoom(Math.max(0.1, canvasZoom - 0.1))}
-                  title="تصغير (Zoom Out)"
-                >
-                  <ZoomOut className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  type="button"
-                  className="text-[11px] font-mono font-bold w-12 text-center select-none cursor-pointer hover:bg-background hover:text-primary py-0.5 rounded-md transition-all border border-transparent hover:border-border/30"
-                  onClick={() => setCanvasZoom(1)}
-                  title="إعادة ضبط المقياس إلى 100% (انقر مرتين)"
-                >
-                  {Math.round(canvasZoom * 100)}%
-                </button>
-
-                <button
-                  type="button"
-                  className="hover:bg-background hover:text-foreground p-1 rounded-md transition-colors cursor-pointer text-muted-foreground"
-                  onClick={() => setCanvasZoom(Math.min(5, canvasZoom + 0.1))}
-                  title="تكبير (Zoom In)"
-                >
-                  <ZoomIn className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <ZoomControls />
             </div>
           </div>
         </section>
 
         {/* اللوحة اليمنى - الخصائص (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-r border-border/80 native-depth-sidebar flex-col no-print animate-panel-left shadow-sm z-20">
+        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-r border-border/70 native-depth-sidebar flex-col no-print animate-panel-left shadow-sm z-20">
           <PropertiesPanel />
         </aside>
       </main>

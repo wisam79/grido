@@ -49,6 +49,18 @@ const SortableLayerItem = React.memo(
       <div
         ref={setNodeRef}
         style={style}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            if (e.shiftKey || e.ctrlKey || e.metaKey) {
+              toggleElementSelection(el.id);
+            } else {
+              selectElement(el.id);
+            }
+          }
+        }}
         onClick={(e) => {
           if (e.shiftKey || e.ctrlKey || e.metaKey) {
             toggleElementSelection(el.id);
@@ -56,7 +68,7 @@ const SortableLayerItem = React.memo(
             selectElement(el.id);
           }
         }}
-        className={`flex items-center justify-between p-2.5 rounded-lg border text-right cursor-pointer transition-colors duration-200 ${
+        className={`flex items-center justify-between p-2.5 rounded-md border text-right cursor-pointer transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none ${
           isSelected
             ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
             : "border-transparent bg-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
@@ -86,7 +98,7 @@ const SortableLayerItem = React.memo(
             <Button
               variant="ghost"
               size="icon"
-              className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
+              className={`w-7 h-7 rounded-md hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
               onClick={(e) => toggleLock(el, e)}
             >
               {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
@@ -96,7 +108,7 @@ const SortableLayerItem = React.memo(
             <Button
               variant="ghost"
               size="icon"
-              className={`w-7.5 h-7.5 rounded-md hover:bg-muted ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
+              className={`w-7 h-7 rounded-md hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
               onClick={(e) => toggleVisibility(el, e)}
             >
               {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
@@ -106,7 +118,7 @@ const SortableLayerItem = React.memo(
             <Button
               variant="ghost"
               size="icon"
-              className="w-7.5 h-7.5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
+              className="w-7 h-7 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
               onClick={(e) => deleteLayer(el.id, e)}
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -228,7 +240,7 @@ export function LayersList() {
   };
 
   return (
-    <div className="bg-card/30 p-3 rounded-xl border border-border/40 space-y-2 select-none">
+    <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-2 select-none">
       {/* Clickable Header */}
       <button
         type="button"

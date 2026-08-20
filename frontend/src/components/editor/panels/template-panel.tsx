@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { COLLAGE_TEMPLATES, CollageTemplate } from "@/lib/templates";
@@ -51,6 +51,7 @@ export function TemplatePanel() {
   })));
 
   const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // حوار تأكيد عند تبديل القالب إذا كان سيُسقط صوراً موجودة أو عناصر الوضع الحر (P2-14)
   const [pendingTemplate, setPendingTemplate] = useState<CollageTemplate | null>(null);
@@ -126,15 +127,15 @@ export function TemplatePanel() {
     <div className="flex flex-col h-full bg-card select-none">
       {mode === "collage" ? (
         <ScrollArea className="flex-1">
-          <div className="p-3 pb-8 space-y-4 font-cairo">
+          <div className="p-4 pb-8 space-y-4 font-cairo">
             {/* Color Picker Section */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <PopoverColorPicker
                 color={backgroundColor}
                 onChange={setBackgroundColor}
-                className="w-full h-9 rounded-xl border-border/60 bg-background/60 hover:bg-accent/30 hover:border-primary/30"
+                className="w-full h-8 rounded-md border-border/80 bg-background/50 hover:bg-accent/40 hover:border-primary/40 shadow-2xs"
                 label={
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
                     <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
                     <span>لون خلفية مساحة العمل</span>
                   </div>
@@ -142,51 +143,51 @@ export function TemplatePanel() {
               />
             </div>
 
-            <Separator className="bg-border/25" />
+            <Separator className="bg-border/30" />
 
-            <div className="space-y-3.5">
+            <div className="space-y-4">
             <CustomCollageCard 
               onSelect={setCollageTemplate} 
               activeTemplateId={collageTemplate?.id} 
               onSaveTemplate={handleSaveTemplate}
             />
 
-            <Separator className="bg-border/25" />
+            <Separator className="bg-border/30" />
 
-            <div className="space-y-2.5 font-cairo pt-1.5">
+            <div className="space-y-2 font-cairo pt-1">
               <Dialog onOpenChange={(open) => { if (open) loadTemplates(); }}>
                 <DialogTrigger asChild>
                   <button
                     type="button"
-                    className="w-full flex items-center justify-between px-3 py-3 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted/70 hover:border-primary/30 text-foreground transition-all cursor-pointer active:scale-[0.98] shadow-xs"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-md border border-border/80 bg-muted/40 hover:bg-muted/70 hover:border-primary/40 text-foreground transition-all cursor-pointer active:scale-[0.98] shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                       <FolderHeart className="w-4 h-4 text-primary" />
-                      <span className="text-[11px] font-bold">قوالب الكولاج والطباعة</span>
+                      <span className="text-xs font-bold">قوالب الكولاج والطباعة</span>
                     </div>
                     <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
                   </button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl font-cairo" dir="rtl">
+                <DialogContent className="max-w-2xl font-cairo rounded-2xl border fluent-specular" dir="rtl">
                   <DialogHeader>
                     <DialogTitle className="text-right text-base font-bold flex items-center gap-2">
                       <FolderHeart className="w-5 h-5 text-primary" />
                       قوالب الكولاج والطباعة
                     </DialogTitle>
-                    <DialogDescription className="text-right text-[11px]">
+                    <DialogDescription className="text-right text-xs text-muted-foreground">
                       اختر من نماذج الطباعة الرسمية المجهزة أو قوالب الكولاج التي قمت بحفظها مسبقاً.
                     </DialogDescription>
                   </DialogHeader>
 
-                  <Tabs defaultValue="official" className="w-full mt-3">
-                    <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 rounded-xl h-10 border border-border/40">
-                      <TabsTrigger value="official" className="rounded-lg font-bold text-xs cursor-pointer py-1.5">
+                  <Tabs defaultValue="official" className="w-full mt-2">
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/60 p-1 rounded-lg h-8 border border-border/40">
+                      <TabsTrigger value="official" className="rounded-md font-bold text-xs cursor-pointer py-1">
                         نماذج الطباعة الرسمية
                       </TabsTrigger>
-                      <TabsTrigger value="saved" className="rounded-lg font-bold text-xs cursor-pointer py-1.5 flex items-center justify-center gap-1.5">
+                      <TabsTrigger value="saved" className="rounded-md font-bold text-xs cursor-pointer py-1 flex items-center justify-center gap-1.5">
                         قوالبي المحفوظة
                         {savedTemplates.length > 0 && (
-                          <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-bold">
+                          <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.2 rounded-full font-bold">
                             {savedTemplates.length}
                           </span>
                         )}
@@ -211,11 +212,12 @@ export function TemplatePanel() {
 
                     <TabsContent value="saved" className="mt-4 focus-visible:outline-hidden">
                       <div className="flex justify-between items-center mb-3">
-                        <p className="text-[10px] text-muted-foreground">قوالبك المحفوظة للاستخدام المتكرر</p>
+                        <p className="text-[11px] text-muted-foreground">قوالبك المحفوظة للاستخدام المتكرر</p>
                         <div className="flex gap-2">
                           <input 
                             type="file" 
                             accept=".json" 
+                            ref={fileInputRef}
                             id="import-templates" 
                             className="hidden" 
                             onChange={async (e) => {
@@ -240,9 +242,13 @@ export function TemplatePanel() {
                               e.target.value = "";
                             }}
                           />
-                          <label htmlFor="import-templates" className="h-7 px-2 text-[10px] font-bold rounded-lg border border-border bg-muted/30 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all">
+                          <button 
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="h-7 px-2.5 text-[11px] font-bold rounded-md border border-border/80 bg-muted/40 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
+                          >
                             استيراد
-                          </label>
+                          </button>
                           <button
                             type="button"
                             onClick={async () => {
@@ -263,7 +269,7 @@ export function TemplatePanel() {
                                 toast.error("حدث خطأ أثناء التصدير");
                               }
                             }}
-                            className="h-7 px-2 text-[10px] font-bold rounded-lg border border-border bg-muted/30 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all"
+                            className="h-7 px-2.5 text-[11px] font-bold rounded-md border border-border/80 bg-muted/40 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
                           >
                             تصدير الكل
                           </button>
@@ -271,7 +277,7 @@ export function TemplatePanel() {
                       </div>
 
                       {savedTemplates.length === 0 ? (
-                        <div className="text-[11px] text-muted-foreground text-center py-10 border border-dashed border-border/60 rounded-2xl bg-muted/5">
+                        <div className="text-xs text-muted-foreground text-center py-10 border border-dashed border-border/60 rounded-xl bg-muted/5">
                           لا توجد قوالب محفوظة بعد. يمكنك إنشاء قالب مخصص وحفظه.
                         </div>
                       ) : (
@@ -299,16 +305,16 @@ export function TemplatePanel() {
           </div>
         </ScrollArea>
       ) : (
-        <div className="flex flex-col h-full p-3 font-cairo select-none" dir="rtl">
+        <div className="flex flex-col h-full p-4 font-cairo select-none" dir="rtl">
           <ScrollArea className="flex-1">
             <div className="space-y-4 pr-0.5">
               {/* قسم عجلة تلوين خلفية الكانفاس */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 pb-2 border-b border-border/40">
-                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                  <div className="p-1.5 rounded-md bg-primary/10 text-primary">
                     <Palette className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-extrabold text-foreground">
+                  <span className="text-xs font-bold text-foreground">
                     لون خلفية مساحة العمل
                   </span>
                 </div>
@@ -329,12 +335,12 @@ export function TemplatePanel() {
       )}
 
       <AlertDialog open={pendingTemplate !== null} onOpenChange={(open) => { if (!open) setPendingTemplate(null); }}>
-        <AlertDialogContent dir="rtl" className="font-cairo">
+        <AlertDialogContent dir="rtl" className="font-cairo rounded-2xl border fluent-specular">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-right text-base font-bold">
               {droppedCount > 0 ? "تبديل قالب الكولاج" : "الانتقال إلى وضع الكولاج"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-right text-[12px] leading-relaxed">
+            <AlertDialogDescription className="text-right text-xs text-muted-foreground leading-relaxed">
               {droppedCount > 0 && mode === "collage"
                 ? `سيتم إسقاط ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} موجودة لا تتسع للقالب الجديد. هل تريد المتابعة؟`
                 : droppedCount > 0
@@ -343,9 +349,9 @@ export function TemplatePanel() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl cursor-pointer">إلغاء</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer rounded-md h-8 text-xs font-semibold">إلغاء</AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-xl cursor-pointer"
+              className="cursor-pointer rounded-md h-8 text-xs font-semibold"
               onClick={() => {
                 if (pendingTemplate) setCollageTemplate(pendingTemplate);
                 setPendingTemplate(null);

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eraser, Paintbrush, ZoomIn, ZoomOut, Save, X, Undo, MousePointer2, Sparkles, Feather } from "lucide-react";
+import { Eraser, Paintbrush, ZoomIn, ZoomOut, Save, X, Undo, MousePointer2, Sparkles, Feather, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { cn } from "@/lib/utils";
@@ -491,13 +491,13 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
   return (
     <Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
-      <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-background border-border overflow-hidden" dir="rtl" showCloseButton={false}>
+      <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden fluent-specular" dir="rtl" showCloseButton={false}>
         <DialogHeader className="p-4 border-b border-border/40 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-sm font-bold flex items-center gap-2">
             <Paintbrush className="w-4 h-4 text-primary" />
             تعديل القص يدوياً
           </DialogTitle>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md" onClick={() => onOpenChange(false)}>
             <X className="w-4 h-4" />
           </Button>
         </DialogHeader>
@@ -509,7 +509,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               <span className="text-[11px] font-bold text-muted-foreground block mb-2">نوع الأداة</span>
               <Button
                 variant={tool === "erase" ? "default" : "outline"}
-                className={cn("w-full justify-start h-9 text-xs font-semibold gap-2 cursor-pointer", tool === "erase" && "bg-primary text-primary-foreground")}
+                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "erase" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("erase")}
               >
                 <Eraser className="w-4 h-4" />
@@ -517,7 +517,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               </Button>
               <Button
                 variant={tool === "defringe" ? "default" : "outline"}
-                className={cn("w-full justify-start h-9 text-xs font-semibold gap-2 cursor-pointer", tool === "defringe" && "bg-primary text-primary-foreground")}
+                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "defringe" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("defringe")}
               >
                 <Feather className="w-4 h-4" />
@@ -525,7 +525,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               </Button>
               <Button
                 variant={tool === "restore" ? "default" : "outline"}
-                className={cn("w-full justify-start h-9 text-xs font-semibold gap-2 cursor-pointer", tool === "restore" && "bg-primary text-primary-foreground")}
+                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "restore" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("restore")}
               >
                 <Paintbrush className="w-4 h-4" />
@@ -533,7 +533,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               </Button>
               <Button
                 variant={tool === "magic" ? "default" : "outline"}
-                className={cn("w-full justify-start h-9 text-xs font-semibold gap-2 cursor-pointer", tool === "magic" && "bg-primary text-primary-foreground")}
+                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "magic" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("magic")}
               >
                 <Sparkles className="w-4 h-4" />
@@ -541,7 +541,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               </Button>
               <Button
                 variant={tool === "pan" ? "default" : "outline"}
-                className={cn("w-full justify-start h-9 text-xs font-semibold gap-2 cursor-pointer", tool === "pan" && "bg-primary text-primary-foreground")}
+                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "pan" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("pan")}
               >
                 <MousePointer2 className="w-4 h-4" />
@@ -565,7 +565,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                     title={item.label}
                     onClick={() => setPreviewBg(item.id as any)}
                     className={cn(
-                      "h-7 rounded-lg border border-border/60 transition-all flex items-center justify-center cursor-pointer shadow-2xs",
+                      "h-7 rounded-md border border-border/60 transition-all flex items-center justify-center cursor-pointer shadow-2xs",
                       previewBg === item.id && "ring-2 ring-primary border-primary font-bold"
                     )}
                     style={{
@@ -720,13 +720,22 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
           </div>
         </div>
 
-        <DialogFooter className="p-4 border-t border-border/40 bg-muted/10 shrink-0 flex items-center justify-between sm:justify-between">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-xs font-semibold hover:bg-red-500/10 hover:text-red-600">
-            <X className="w-4 h-4 ml-1.5" /> إلغاء
+        <DialogFooter className="p-3 border-t border-border/40 bg-card shrink-0 flex items-center justify-between sm:justify-between">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs font-semibold h-8 px-4 rounded-md">
+            <X className="w-3.5 h-3.5 ml-1" /> إلغاء
           </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="text-xs font-bold px-6 shadow-md shadow-primary/20">
-            {isSaving ? "جاري الحفظ..." : "حفظ التعديلات"}
-            <Save className="w-4 h-4 mr-1.5" />
+          <Button onClick={handleSave} disabled={isSaving} className="text-xs font-semibold h-8 px-5 rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5">
+            {isSaving ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>جاري الحفظ ...</span>
+              </>
+            ) : (
+              <>
+                <span>حفظ التعديلات</span>
+                <Save className="w-3.5 h-3.5 mr-1" />
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

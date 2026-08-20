@@ -41,21 +41,21 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6 text-center font-cairo" dir="rtl">
-          <div className="max-w-md w-full bg-card border rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="max-w-md w-full bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 fluent-specular">
             <div className="mx-auto w-12 h-12 bg-destructive/10 text-destructive rounded-full flex items-center justify-center">
               <AlertTriangle className="w-6 h-6" />
             </div>
-            <h1 className="text-lg font-bold text-foreground">عذراً، حدث خطأ غير متوقع</h1>
+            <h1 className="text-base font-bold text-foreground">عذراً، حدث خطأ غير متوقع</h1>
             <p className="text-xs text-muted-foreground leading-relaxed">
               واجه التطبيق خطأً أثناء محاولة عرض الواجهة. يمكنك محاولة إعادة تحميل الصفحة أو مسح المسودة لبدء جلسة جديدة.
             </p>
             {this.state.error && (
-              <div className="text-[10px] font-mono bg-muted p-3 rounded-lg text-left overflow-auto max-h-24 text-destructive border border-destructive/10">
+              <div className="text-[10px] font-mono bg-muted p-3 rounded-md text-left overflow-auto max-h-24 text-destructive border border-destructive/10">
                 {this.state.error.toString()}
               </div>
             )}
             <div className="flex gap-2.5 justify-center pt-2">
-              <Button onClick={this.handleReset} variant="default" size="sm" className="w-full">
+              <Button onClick={this.handleReset} variant="default" size="sm" className="w-full h-8 rounded-md text-xs font-bold shadow-xs">
                 إعادة تحميل التطبيق
               </Button>
             </div>

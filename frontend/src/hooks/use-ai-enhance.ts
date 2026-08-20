@@ -140,7 +140,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
     setIsEnhancing(true);
     useRenderQuality.getState().setEnhancingElementId(element.id);
     setEnhanceProgress(10);
-    setEnhanceProgressText("جاري تجهيز الصورة وتحسين أبعاد الرفع...");
+    setEnhanceProgressText("جاري تجهيز الصورة وتحسين أبعاد الرفع ...");
 
     let progressTimer: any = null;
     // لا يدعم ربط Wails الإلغاء الفعلي — نستبدل AbortController الوهمي بمهلة
@@ -152,14 +152,14 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
       const base64Image = await prepareImageForAiUpload(element.imageSrc, 2048, 0.92);
 
       const loadingMessages = [
-        "جاري إيقاظ خوادم الذكاء الاصطناعي... 💤",
-        "يتم الآن تهيئة معالجات الرسوميات (GPU)... 🚀",
-        "جاري تحميل نماذج الترميم المتقدمة... 🧠",
-        "تتم الآن معالجة تفاصيل الوجه والملامح... ✨",
-        "يتم تحليل البيانات واستعادة البيكسلات المفقودة... 👁️",
-        "جاري إزالة التشويش وتوضيح الخلفية... 🖼️",
-        "نقوم باللمسات الأخيرة وتحسين الجودة... 🎨",
-        "العملية توشك على الانتهاء، شكراً لصبرك... ⏳"
+        "جاري إيقاظ خوادم الذكاء الاصطناعي ... 💤",
+        "جاري تهيئة معالجات الرسوميات (GPU) ... 🚀",
+        "جاري تحميل نماذج الترميم المتقدمة ... 🧠",
+        "جاري معالجة تفاصيل الوجه والملامح ... ✨",
+        "جاري تحليل البيانات واستعادة البيكسلات المفقودة ... 👁️",
+        "جاري إزالة التشويش وتوضيح الخلفية ... 🖼️",
+        "جاري وضع اللمسات الأخيرة وتحسين الجودة ... 🎨",
+        "جاري إنهاء العملية، شكراً لصبرك ... ⏳"
       ];
 
       setEnhanceProgress(15);

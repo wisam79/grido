@@ -179,14 +179,14 @@ export function ToolbarFileOps() {
         {/* إضافة صورة */}
         <TooltipBtn content="إدراج صورة جديدة للمستند (Ctrl + O)">
           <Button
-            variant="default"
+            variant="outline"
             size="sm"
             onClick={handleOpenFile}
             aria-label="إضافة صورة جديدة"
             title="إضافة صورة جديدة"
-            className="h-8 px-3 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer border-0 font-extrabold text-[11.5px] flex items-center justify-center"
+            className="h-8 px-3 gap-1.5 border border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary text-primary font-bold rounded-md shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer text-[11.5px] flex items-center justify-center"
           >
-            <ImagePlus className="w-4 h-4 text-primary-foreground stroke-[2]" />
+            <ImagePlus className="w-4 h-4 text-primary stroke-[2]" />
             <span>إضافة صورة</span>
           </Button>
         </TooltipBtn>
@@ -200,9 +200,9 @@ export function ToolbarFileOps() {
             size="sm"
             onClick={handleClearCanvas}
             aria-label="جديد (مسح مساحة العمل)"
-            className="h-7 px-2 text-destructive/80 hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
+            className="h-8 px-2.5 text-destructive/80 hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
           >
-            <Eraser className="w-3.5 h-3.5" />
+            <Eraser className="w-4 h-4" />
           </Button>
         </TooltipBtn>
 
@@ -215,9 +215,9 @@ export function ToolbarFileOps() {
               onClick={() => setIsProjectsOpen(true)}
               aria-label="مكتبة المشاريع المحلية"
               title="مكتبة المشاريع المحلية"
-              className="h-7 px-2 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
+              className="h-8 px-2.5 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
             >
-              <Library className="w-3.5 h-3.5" />
+              <Library className="w-4 h-4" />
             </Button>
           </TooltipBtn>
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} />
@@ -225,7 +225,7 @@ export function ToolbarFileOps() {
       </div>
 
       <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 fluent-specular shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-right">مسح مساحة العمل</AlertDialogTitle>
             <AlertDialogDescription className="font-cairo text-right">
@@ -233,10 +233,10 @@ export function ToolbarFileOps() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row-reverse gap-2 sm:justify-start">
-            <AlertDialogCancel className="font-cairo">إلغاء</AlertDialogCancel>
+            <AlertDialogCancel className="font-cairo h-8 rounded-md">إلغاء</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmClearCanvas}
-              className="bg-destructive hover:bg-destructive/90 text-white font-cairo"
+              className="bg-destructive hover:bg-destructive/90 text-white font-cairo h-8 rounded-md"
             >
               مسح بالكامل
             </AlertDialogAction>

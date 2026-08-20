@@ -44,13 +44,13 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     slots: state.slots,
   })));
 
-  // تصفير مؤشرات التحميل عند إعادة فتح/غلق النافذة لمنع تعليق الأزرار (AGENTS.md #36)
+  // تصفير مؤشرات التحميل عند فتح/غلق النافذة لمنع تعليق الأزرار (Fluent 2 Wait UX Invariant)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(false);
+    setProgress(0);
     if (!open) {
       isCancelledRef.current = true;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoading(false);
-      setProgress(0);
     } else {
       isCancelledRef.current = false;
     }
@@ -161,44 +161,46 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
         <div className="space-y-4 py-2">
           <div>
-            <Label className="text-xs mb-2 block">صيغة الملف</Label>
+            <Label className="text-xs mb-2 block font-semibold text-foreground/90">صيغة الملف</Label>
             <div className="grid grid-cols-2 gap-2">
               <button
+                type="button"
                 onClick={() => setFormat("png")}
-                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer ${
                   format === "png"
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
+                    ? "border-primary bg-primary/10 shadow-2xs"
+                    : "border-border/80 hover:border-primary/50 bg-card hover:bg-muted/30"
                 }`}
               >
-                <FileImage className="w-5 h-5 text-primary" />
+                <FileImage className="w-5 h-5 text-primary shrink-0" />
                 <div className="text-right">
-                  <div className="text-sm font-semibold">PNG</div>
-                  <div className="text-[10px] text-muted-foreground">جودة عالية + شفافية</div>
+                  <div className="text-sm font-bold">PNG</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">جودة عالية + شفافية</div>
                 </div>
               </button>
               <button
+                type="button"
                 onClick={() => setFormat("jpg")}
-                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer ${
                   format === "jpg"
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
+                    ? "border-primary bg-primary/10 shadow-2xs"
+                    : "border-border/80 hover:border-primary/50 bg-card hover:bg-muted/30"
                 }`}
               >
-                <FileImage className="w-5 h-5 text-primary" />
+                <FileImage className="w-5 h-5 text-primary shrink-0" />
                 <div className="text-right">
-                  <div className="text-sm font-semibold">JPG</div>
-                  <div className="text-[10px] text-muted-foreground">حجم أصغر</div>
+                  <div className="text-sm font-bold">JPG</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">حجم أصغر</div>
                 </div>
               </button>
             </div>
           </div>
 
           {format === "jpg" && (
-            <div>
-              <div className="flex justify-between mb-1.5">
-                <Label className="text-xs">جودة الصورة</Label>
-                <span className="text-[11px] text-muted-foreground font-mono">{quality}%</span>
+            <div className="bg-card p-3 rounded-xl border border-border/60 space-y-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-xs font-semibold">جودة الصورة</Label>
+                <span className="text-[11px] text-primary font-mono font-bold">{quality}%</span>
               </div>
               <Slider
                 value={[quality]}
@@ -210,37 +212,37 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             </div>
           )}
 
-          <div className="rounded-lg border bg-muted/30 p-3 text-xs space-y-1">
+          <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-xs space-y-1.5 fluent-specular">
             <div className="flex justify-between">
               <span className="text-muted-foreground">الأبعاد:</span>
-              <span className="font-mono">{canvasWidth}×{canvasHeight}px</span>
+              <span className="font-mono font-semibold">{canvasWidth}×{canvasHeight}px</span>
             </div>
             {template ? (
               <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الحجم الفعلي:</span>
-                  <span>{template.widthMM}×{template.heightMM} مم</span>
+                  <span className="font-semibold">{template.widthMM}×{template.heightMM} مم</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الدقة:</span>
-                  <span>{template.dpi} DPI</span>
+                  <span className="font-mono">{template.dpi} DPI</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الحجم الفعلي:</span>
-                  <span>{Math.round((canvasWidth / printSettings.dpi) * 25.4)}×{Math.round((canvasHeight / printSettings.dpi) * 25.4)} مم</span>
+                  <span className="font-semibold">{Math.round((canvasWidth / printSettings.dpi) * 25.4)}×{Math.round((canvasHeight / printSettings.dpi) * 25.4)} مم</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الدقة:</span>
-                  <span>{printSettings.dpi} DPI</span>
+                  <span className="font-mono">{printSettings.dpi} DPI</span>
                 </div>
               </>
             )}
-            <div className="flex justify-between pt-1 border-t border-border/50 mt-1">
+            <div className="flex justify-between pt-1.5 border-t border-border/50 mt-1">
               <span className="text-muted-foreground font-semibold">الحجم التقريبي للملف:</span>
-              <span className="font-mono text-primary">
+              <span className="font-mono text-primary font-bold">
                 {/* معاملات تقدير مرفوعة لمطابقة الواقع: PNG مضغوط ≈60% من الخام، JPG ≈35% */}
                 {format === "png" 
                   ? ((canvasWidth * canvasHeight * 4) / 1024 / 1024 * 0.6).toFixed(1)
@@ -250,24 +252,24 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             </div>
           </div>
 
-          <div className="border-t pt-3 space-y-3">
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg text-[10px] text-amber-800 dark:text-amber-200 flex items-start gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <span>تنبيه للمطابع: سيتم تصدير الصورة بصيغة RGB. إذا كانت مطبعتك تشترط CMYK، يرجى تحويل الملف لاحقاً في برامج مثل Photoshop.</span>
+          <div className="border-t border-border/40 pt-3 space-y-2.5">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <span className="leading-tight">تنبيه للمطابع: سيتم تصدير الصورة بصيغة RGB. إذا كانت مطبعتك تشترط CMYK، يرجى تحويل الملف لاحقاً في برامج مثل Photoshop.</span>
             </div>
 
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-muted/30 transition-colors">
+            <div className="flex items-center justify-between p-3 border border-border/60 rounded-xl bg-card hover:bg-muted/30 transition-colors">
               <div className="space-y-0.5 text-right">
-                <Label className="text-sm font-semibold">علامات القص (Crop Marks)</Label>
+                <Label className="text-xs font-semibold cursor-pointer">علامات القص (Crop Marks)</Label>
                 <p className="text-[10px] text-muted-foreground">رسم خطوط إرشادية حول منطقة النزيف</p>
               </div>
               <Switch checked={showCropMarks} onCheckedChange={setShowCropMarks} />
             </div>
 
-            <div className="p-3 border rounded-lg bg-card space-y-3">
+            <div className="p-3 border border-border/60 rounded-xl bg-card space-y-2.5">
               <div className="flex justify-between items-center text-right">
-                <Label className="text-sm font-semibold">منطقة النزيف (Bleed Area)</Label>
-                <span className="text-[11px] font-mono bg-muted px-1.5 py-0.5 rounded">{bleedMM} mm</span>
+                <Label className="text-xs font-semibold">منطقة النزيف (Bleed Area)</Label>
+                <span className="text-[11px] font-mono bg-muted px-2 py-0.5 rounded-md font-bold">{bleedMM} mm</span>
               </div>
               <Slider
                 value={[bleedMM]}
@@ -280,9 +282,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             </div>
 
             {mode === "collage" && (
-              <div className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-muted/30 transition-colors">
+              <div className="flex items-center justify-between p-3 border border-border/60 rounded-xl bg-card hover:bg-muted/30 transition-colors">
                 <div className="space-y-0.5 text-right">
-                  <Label className="text-sm font-semibold">تصدير الدفعات (Batch Export)</Label>
+                  <Label className="text-xs font-semibold cursor-pointer">تصدير الدفعات (Batch Export)</Label>
                   <p className="text-[10px] text-muted-foreground">تصدير كل صورة كملف منفصل</p>
                 </div>
                 <Switch 
@@ -295,26 +297,31 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         </div>
 
         {loading && progress > 0 && (
-          <div className="px-6 pb-2 space-y-1">
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>جاري التصدير...</span>
-              <span>{Math.round(progress)}%</span>
+          <div className="px-1 pb-2 space-y-1">
+            <div className="flex justify-between text-[11px] text-muted-foreground font-medium">
+              <span>جاري التصدير ...</span>
+              <span className="font-mono font-bold text-primary">{Math.round(progress)}%</span>
             </div>
             <Progress value={progress} className="h-1.5" />
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="h-8 px-4 text-xs font-semibold rounded-md cursor-pointer">
             إلغاء
           </Button>
-          <Button onClick={handleExport} disabled={loading} className="gap-2">
+          <Button onClick={handleExport} disabled={loading} className="h-8 px-5 text-xs font-semibold rounded-md gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs">
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>جاري التصدير ...</span>
+              </>
             ) : (
-              <Download className="w-4 h-4" />
+              <>
+                <Download className="w-3.5 h-3.5" />
+                <span>تنزيل الصورة</span>
+              </>
             )}
-            تنزيل الصورة
           </Button>
         </DialogFooter>
       </DialogContent>

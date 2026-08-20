@@ -429,13 +429,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       <button
         type="button"
         onClick={() => setShowFreeformModal(true)}
-        className="w-full h-9 px-3 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/50 text-xs font-bold transition-colors cursor-pointer flex items-center justify-between group"
+        className="w-full h-9 px-3 rounded-md bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/50 text-xs font-bold transition-colors cursor-pointer flex items-center justify-between group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none shadow-2xs"
       >
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
           <span>كولاج حر ومختلط</span>
         </div>
-        <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-extrabold">
+        <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-md font-extrabold">
           جديد
         </span>
       </button>
@@ -460,7 +460,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       {/* Steppers: Rows & Cols side by side */}
       <div className="grid grid-cols-2 gap-2.5">
         {/* Rows */}
-        <div className="flex flex-col items-center gap-1.5 bg-card border border-border/60 hover:border-primary/30 rounded-xl p-3 transition-colors shadow-2xs">
+        <div className="flex flex-col items-center gap-1.5 bg-card border border-border/60 hover:border-primary/30 rounded-xl p-3 transition-colors shadow-2xs fluent-specular">
           <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground select-none">
             <Rows className="w-3.5 h-3.5 text-primary/80" />
             الصفوف
@@ -474,7 +474,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 setRows(r);
                 applyCustomCollage(r, cols);
               }}
-              className="w-9 h-9 rounded-lg bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="w-9 h-9 rounded-md bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               <Minus className="w-4 h-4 stroke-[2.5]" />
             </button>
@@ -487,7 +487,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 setRows(r);
                 applyCustomCollage(r, cols);
               }}
-              className="w-9 h-9 rounded-lg bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="w-9 h-9 rounded-md bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
             </button>
@@ -495,7 +495,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         </div>
 
         {/* Columns */}
-        <div className="flex flex-col items-center gap-1.5 bg-card border border-border/60 hover:border-primary/30 rounded-xl p-3 transition-colors shadow-2xs">
+        <div className="flex flex-col items-center gap-1.5 bg-card border border-border/60 hover:border-primary/30 rounded-xl p-3 transition-colors shadow-2xs fluent-specular">
           <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground select-none">
             <Columns className="w-3.5 h-3.5 text-primary/80" />
             الأعمدة
@@ -509,7 +509,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 setCols(c);
                 applyCustomCollage(rows, c);
               }}
-              className="w-9 h-9 rounded-lg bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="w-9 h-9 rounded-md bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               <Minus className="w-4 h-4 stroke-[2.5]" />
             </button>
@@ -522,7 +522,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 setCols(c);
                 applyCustomCollage(rows, c);
               }}
-              className="w-9 h-9 rounded-lg bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="w-9 h-9 rounded-md bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
             </button>
@@ -536,11 +536,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         <div className="grid grid-cols-2 gap-1.5">
           {([
             { value: "stretch",        label: "تمدد حر",      sub: "ملء الخلية" },
-            { value: "iq-national-id",  label: "بطاقة وطنية",  sub: "35×45 ملم" },
-            { value: "iq-civil-id",     label: "هوية أحوال",   sub: "32×40 ملم" },
-            { value: "iq-general-id",   label: "هوية عامة",    sub: "40×60 ملم" },
-            { value: "iq-transactions", label: "متقاعدون",     sub: "30×40 ملم" },
-            { value: "visa",            label: "فيزا سفر",     sub: "50×50 ملم" },
+            { value: "iq-national-id",  label: "بطاقة وطنية",  sub: "35 × 45 مم" },
+            { value: "iq-civil-id",     label: "هوية أحوال",   sub: "32 × 40 مم" },
+            { value: "iq-general-id",   label: "هوية عامة",    sub: "40 × 60 مم" },
+            { value: "iq-transactions", label: "متقاعدون",     sub: "30 × 40 مم" },
+            { value: "visa",            label: "فيزا سفر",     sub: "50 × 50 مم" },
           ] as const).map((opt) => {
             const isActive = photoType === opt.value;
             return (
@@ -559,7 +559,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 )}
               >
                 {/* Visual Document Miniature Icon */}
-                <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg bg-muted/40 border border-border/40">
+                <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-md bg-muted/40 border border-border/40">
                   <DocumentPresetGraphic type={opt.value} active={isActive} />
                 </div>
 
@@ -575,10 +575,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
       {/* Grid Alignment Quick Selector */}
       {photoType !== "stretch" && (
-        <div className="flex flex-col gap-1.5 mt-0.5">
+        <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-card border border-border/60 shadow-2xs animate-in fade-in duration-200 fluent-specular">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold text-muted-foreground/80">محاذاة شبكة الخلايا</span>
-            <span className="text-[9px] font-bold text-primary/90">
+            <span className="text-[10px] font-extrabold text-foreground/80 flex items-center gap-1.5">
+              <Crosshair className="w-3.5 h-3.5 text-primary" />
+              <span>محاذاة الشبكة على الورقة</span>
+            </span>
+            <span className="text-[9px] text-muted-foreground font-medium">
               {[
                 { value: "center",       label: "توسيط" },
                 { value: "top-left",     label: "أعلى اليسار" },
@@ -594,11 +597,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           </div>
 
           <div
-            className="grid gap-[3px] p-2.5 bg-card border border-border/60 rounded-xl w-full h-[130px]"
+            className="grid gap-[3px] p-2.5 bg-muted/40 rounded-lg border border-border/40 w-fit mx-auto"
             style={{
               direction: "ltr",
-              gridTemplateColumns: "3fr 4fr 3fr",
-              gridTemplateRows: "3fr 4fr 3fr",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateRows: "repeat(3, 1fr)",
             }}
           >
             {[
@@ -624,7 +627,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                   }}
                   title={label}
                   className={cn(
-                    "w-full h-full rounded-md flex items-center justify-center transition-all cursor-pointer active:scale-90",
+                    "w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer active:scale-90",
                     isCenter && "rounded-lg",
                     isActive  && "bg-primary text-primary-foreground shadow-md shadow-primary/25 ring-1 ring-primary/50",
                     !isActive && "bg-card/80 text-muted-foreground border border-border/40 hover:bg-muted/50 hover:text-foreground hover:border-primary/30",
@@ -647,14 +650,14 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           <button
             onClick={() => applyCustomCollage(rows, cols)}
             className={cn(
-              "flex-1 h-9 text-xs font-extrabold rounded-xl transition-all border active:scale-[0.97] cursor-pointer flex items-center justify-center gap-1.5 shadow-xs",
+              "flex-1 h-9 text-xs font-bold rounded-md transition-all border active:scale-[0.97] cursor-pointer flex items-center justify-center gap-1.5 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               isCurrentActive
-                ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-primary/20"
-                : "bg-primary/5 hover:bg-primary text-primary hover:text-primary-foreground border-primary/30 hover:border-primary"
+                ? "bg-primary/10 text-primary border-primary/40 hover:bg-primary/20"
+                : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
             )}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
-            {isCurrentActive ? "تخصيص نشط" : "تطبيق التقسيم"}
+            {isCurrentActive ? "تحديث الشبكة الحالية" : "تطبيق التقسيم"}
           </button>
           <button
             type="button"
@@ -662,27 +665,27 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               setSaveName(`كولاج مخصص ${rows}×${cols}`);
               setShowSaveForm(true);
             }}
-            className="w-9 h-9 text-xs font-bold rounded-xl border border-border/60 bg-background hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-800/50 text-muted-foreground hover:text-rose-500 cursor-pointer flex items-center justify-center active:scale-[0.97] transition-all shadow-xs shrink-0"
+            className="w-9 h-9 text-xs font-bold rounded-md border border-border/60 bg-background hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-800/50 text-muted-foreground hover:text-rose-500 cursor-pointer flex items-center justify-center active:scale-[0.97] transition-all shadow-xs shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="حفظ كقالب جديد"
           >
             <FolderHeart className="w-4 h-4" />
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 bg-muted/20 dark:bg-muted/10 p-3 rounded-2xl border border-border/40 animate-in slide-in-from-top-2 duration-200">
+        <div className="flex flex-col gap-2 bg-card p-3 rounded-xl border border-border/60 shadow-xs fluent-specular animate-in slide-in-from-top-2 duration-200">
           <span className="text-[10px] font-bold text-muted-foreground block">اسم القالب الجديد</span>
           <input
             type="text"
             value={saveName}
             onChange={(e) => setSaveName(e.target.value)}
             placeholder="مثال: شيت البطاقة الوطنية"
-            className="w-full h-9 px-3 text-xs bg-background border border-border/60 rounded-xl text-right font-cairo focus:outline-hidden focus:ring-2 focus:ring-primary/30"
+            className="w-full h-8 px-3 text-xs bg-background border border-border/60 rounded-md text-right font-cairo focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
           />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setShowSaveForm(false)}
-              className="flex-1 h-8 text-[10px] font-bold rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer transition-all flex items-center justify-center gap-1"
+              className="flex-1 h-8 text-[10px] font-bold rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer transition-all flex items-center justify-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               <X className="w-3 h-3" />
               إلغاء
@@ -690,7 +693,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             <button
               type="button"
               onClick={handleSave}
-              className="flex-1 h-8 text-[10px] font-bold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer transition-all flex items-center justify-center gap-1 shadow-sm"
+              className="flex-1 h-8 text-[10px] font-bold rounded-md bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer transition-all flex items-center justify-center gap-1 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <Save className="w-3 h-3" />
               حفظ القالب

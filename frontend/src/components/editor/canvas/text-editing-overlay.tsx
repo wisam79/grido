@@ -88,6 +88,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         style={{
           backgroundColor: bgColor,
           borderRadius: radiusPx > 0 ? `${radiusPx}px` : "4px",
+          border: textEl.textBgBorderWidth ? `${textEl.textBgBorderWidth * scaleRatio}px solid ${textEl.textBgBorderColor || textEl.color || "#000000"}` : undefined,
           padding: `${paddingYPx}px ${paddingXPx}px`,
           minHeight: `${minHeightPx}px`,
           fontSize: `${(textEl.fontSize || 20) * scaleRatio}px`,
@@ -101,7 +102,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
           lineHeight: textEl.lineHeight || 1.2,
           letterSpacing: isArabicText ? "0px" : `${spacingVal}px`,
           wordSpacing: isArabicText ? `${spacingVal}px` : undefined,
-          boxShadow: "0 0 0 2px #2563eb, 0 4px 20px rgba(37,99,235,0.35)",
+          boxShadow: "0 0 0 2px var(--primary, #3b82f6), 0 0 0 4px rgba(59, 130, 246, 0.25), 0 4px 20px rgba(0, 0, 0, 0.25)",
         }}
         defaultValue={textEl.text}
         onInput={(e) => {

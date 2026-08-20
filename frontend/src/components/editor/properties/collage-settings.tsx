@@ -3,6 +3,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";
+import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { useRef, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -79,7 +80,7 @@ function PanelSlider({
       {/* Icon with Tooltip */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-muted/30 text-muted-foreground group-hover:text-foreground group-hover:bg-muted/60 transition-colors shrink-0 cursor-help">
+          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted/30 text-muted-foreground group-hover:text-foreground group-hover:bg-muted/60 transition-colors shrink-0 cursor-help">
             {icon}
           </div>
         </TooltipTrigger>
@@ -101,7 +102,7 @@ function PanelSlider({
       />
       
       {/* Value Input Badge (Figma Style) */}
-      <div className="flex items-center justify-center h-7 w-12 bg-background border border-border/60 hover:border-primary/45 rounded-lg transition-all focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 shadow-2xs shrink-0" dir="ltr">
+      <div className="flex items-center justify-center h-7 w-12 bg-background border border-border/60 hover:border-primary/45 rounded-md transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs shrink-0" dir="ltr">
         <input
           type="number"
           value={value}
@@ -206,10 +207,10 @@ export function CollageSettings() {
 
       {/* Frame Color Row — shown only when stroke is active */}
       {collageStrokeWidth > 0 && (
-        <div className="flex items-center justify-between gap-3 border-t border-border/10 pt-2.5 animate-in slide-in-from-top-2 duration-200">
+        <div className="flex items-center justify-between gap-2 border-t border-border/10 pt-2.5 animate-in slide-in-from-top-2 duration-200">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-muted/30 text-muted-foreground hover:text-foreground cursor-help shrink-0">
+              <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted/30 text-muted-foreground hover:text-foreground cursor-help shrink-0">
                 <PaintBucket className="w-3.5 h-3.5" />
               </div>
             </TooltipTrigger>
@@ -217,7 +218,31 @@ export function CollageSettings() {
               لون الإطار
             </TooltipContent>
           </Tooltip>
-          <div className="flex items-center gap-2 bg-background border border-border/60 hover:border-primary/45 rounded-xl px-2 w-32 h-8 transition-colors focus-within:border-primary">
+
+          {/* Quick Color Swatches */}
+          <div className="flex items-center gap-1">
+            {[
+              { hex: "#e10e0e", label: "أحمر" },
+              { hex: "#000000", label: "أسود" },
+              { hex: "#9ca3af", label: "رمادي" },
+              { hex: "#2563eb", label: "أزرق" },
+              { hex: "#ffffff", label: "أبيض" },
+            ].map(({ hex, label }) => (
+              <button
+                key={hex}
+                type="button"
+                onClick={() => setCollageStrokeColor(hex)}
+                title={label}
+                className={cn(
+                  "w-4 h-4 rounded-full border border-black/15 dark:border-white/20 transition-transform cursor-pointer hover:scale-125 shadow-2xs",
+                  collageStrokeColor.toLowerCase() === hex.toLowerCase() && "ring-2 ring-primary ring-offset-1 scale-110"
+                )}
+                style={{ backgroundColor: hex }}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/45 rounded-md px-2 w-28 h-8 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background">
             <input
               type="text"
               value={collageStrokeColor}
@@ -228,20 +253,20 @@ export function CollageSettings() {
               type="color"
               value={collageStrokeColor}
               onChange={(e) => setCollageStrokeColor(e.target.value)}
-              className="w-5 h-5 rounded-md border border-border/25 cursor-pointer p-0 bg-transparent shrink-0"
+              className="w-4 h-4 rounded-full border border-border/25 cursor-pointer p-0 bg-transparent shrink-0"
             />
           </div>
         </div>
       )}
 
       {/* Cut Lines Toggle Group */}
-      <div className="bg-card border border-border/60 rounded-xl p-3 shadow-2xs space-y-2 font-cairo">
+      <div className="bg-card border border-border/60 rounded-xl p-3 shadow-2xs space-y-2 font-cairo fluent-specular">
         {/* Primary Toggle: Cut Lines */}
         <div className="flex items-center justify-between gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2 text-foreground cursor-help">
-                <div className="w-6 h-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-md bg-primary/15 text-primary flex items-center justify-center shrink-0">
                   <Scissors className="w-3.5 h-3.5 stroke-[2]" />
                 </div>
                 <span className="text-xs font-bold">خطوط القص والمحاذاة</span>
@@ -371,10 +396,10 @@ function BatchAiEnhanceButton() {
       <button
         onClick={handleBatchEnhance}
         disabled={isEnhancing}
-        className="w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-between px-3.5 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
       >
         <div className="flex items-center gap-2.5">
-          <Sparkles className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+          <Sparkles className="w-4 h-4 text-primary group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shrink-0" />
           <span>ترميم وتحسين الكولاج بالكامل</span>
         </div>
         {!isPro ? (
@@ -389,9 +414,9 @@ function BatchAiEnhanceButton() {
       </button>
 
       {isEnhancing && (
-        <div className="p-2.5 rounded-lg bg-violet-500/[0.05] border border-violet-500/20 space-y-1.5">
+        <div className="p-2.5 rounded-xl bg-violet-500/[0.05] border border-violet-500/20 space-y-1.5 fluent-specular">
           <div className="flex justify-between items-center text-[9px] font-bold text-violet-600">
-            <span className="animate-pulse">جاري التحسين الذكي للصور...</span>
+            <span className="animate-pulse">جاري التحسين الذكي للصور ...</span>
             <span className="font-mono">{Math.round(progress)}%</span>
           </div>
           <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">

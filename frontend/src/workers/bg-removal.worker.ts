@@ -104,12 +104,12 @@ async function handleSegment(req: SegmentRequest) {
 
   try {
     // 1. تهيئة النموذج (يُحمّل مرة واحدة داخل عمر الـ Worker)
-    postProgress(requestId, 15, "تحميل النموذج... (15%)");
+    postProgress(requestId, 15, "جاري تحميل النموذج ... (15%)");
     const segmenter = await getOrCreateSegmenter(req.wasmBaseUrl, req.modelUrl);
     if (isCancelled()) return;
 
     // 2. جلب الصورة وفك تشفيرها داخل الـ Worker
-    postProgress(requestId, 35, "فك تشفير الصورة... (35%)");
+    postProgress(requestId, 35, "جاري فك تشفير الصورة ... (35%)");
     const res = await fetch(req.imageSrc);
     const blob = await res.blob();
     let imageBitmap = await createImageBitmap(blob);
@@ -119,7 +119,7 @@ async function handleSegment(req: SegmentRequest) {
     }
 
     // 3. تغيير المقاس قبل الاستدلال لحماية الذاكرة
-    postProgress(requestId, 55, "المعالجة المسبقة... (55%)");
+    postProgress(requestId, 55, "جاري المعالجة المسبقة ... (55%)");
     let targetW = imageBitmap.width;
     let targetH = imageBitmap.height;
     if (targetW > maxDim || targetH > maxDim) {
@@ -139,7 +139,7 @@ async function handleSegment(req: SegmentRequest) {
     if (isCancelled()) return;
 
     // 4. الاستدلال الفعلي مع قياس المدة الحقيقي
-    postProgress(requestId, 75, "عزل الخلفية... (75%)");
+    postProgress(requestId, 75, "جاري عزل الخلفية ... (75%)");
     const start = performance.now();
     const result = segmenter.segment(imageData);
     const inferredMs = Math.round(performance.now() - start);
@@ -151,7 +151,7 @@ async function handleSegment(req: SegmentRequest) {
         throw new Error("لم يتمكن النموذج من تحديد الشخص في الصورة");
       }
 
-      postProgress(requestId, 90, "توليد الصورة النهائية... (90%)");
+      postProgress(requestId, 90, "جاري توليد الصورة النهائية ... (90%)");
       const bgMaskData = confidenceMasks[0].getAsFloat32Array();
       maskBytes = new Uint8Array(bgMaskData.length);
 

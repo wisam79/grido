@@ -112,11 +112,11 @@ async function handleFrame(req: FrameRequest) {
   const isCancelled = () => activeRequestId !== requestId;
 
   try {
-    postProgress(requestId, 10, "تحميل نموذج كشف الوجه... (10%)");
+    postProgress(requestId, 10, "جاري تحميل نموذج كشف الوجه ... (10%)");
     const landmarker = await getOrCreateLandmarker(req.wasmBaseUrl, req.modelUrl);
     if (isCancelled()) return;
 
-    postProgress(requestId, 30, "فك تشفير الصورة... (30%)");
+    postProgress(requestId, 30, "جاري فك تشفير الصورة ... (30%)");
     const res = await fetch(req.imageSrc);
     const blob = await res.blob();
     const original = await createImageBitmap(blob);
@@ -137,7 +137,7 @@ async function handleFrame(req: FrameRequest) {
       detectH = Math.round(origH * ratio);
     }
 
-    postProgress(requestId, 50, "كشف الوجه وتحديد الملامح... (50%)");
+    postProgress(requestId, 50, "جاري كشف الوجه وتحديد الملامح ... (50%)");
     const offscreen = new OffscreenCanvas(detectW, detectH);
     const octx = offscreen.getContext("2d", { willReadFrequently: true });
     if (!octx) throw new Error("تعذر إنشاء سياق الرسم داخل الـ Worker");
@@ -164,7 +164,7 @@ async function handleFrame(req: FrameRequest) {
     const faceBox = faceBoxFromLandmarks(landmarks, imageAspectRatio);
     const crop = computeIdCropRect(faceBox, req.aspectRatio, imageAspectRatio);
 
-    postProgress(requestId, 75, "قصّ الإطار وفق مقاييس الهوية... (75%)");
+    postProgress(requestId, 75, "جاري قصّ الإطار وفق مقاييس الهوية ... (75%)");
     const cropW = Math.max(1, Math.round(crop.width * origW));
     const cropH = Math.max(1, Math.round(crop.height * origH));
     const cropX = crop.x * origW;
@@ -179,7 +179,7 @@ async function handleFrame(req: FrameRequest) {
     original.close();
     if (isCancelled()) return;
 
-    postProgress(requestId, 90, "تجهيز الصورة النهائية... (90%)");
+    postProgress(requestId, 90, "جاري تجهيز الصورة النهائية ... (90%)");
     const pngBlob = await outCanvas.convertToBlob({ type: "image/png" });
     const buffer = new Uint8Array(await pngBlob.arrayBuffer());
 

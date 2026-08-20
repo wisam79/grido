@@ -66,29 +66,29 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
   if (mode !== "single") return null;
 
   return (
-    <div className="space-y-3.5 bg-card/40 dark:bg-card/20 border border-border/50 p-3.5 rounded-2xl shadow-xs font-cairo">
+    <div className="space-y-3.5 bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs font-cairo fluent-specular">
       {/* هيدر ثابت بدون تقليص */}
-      <div className="flex items-center justify-between border-b border-border/25 pb-2.5">
-        <Label className="text-xs font-extrabold text-foreground flex items-center gap-2 select-none">
+      <div className="flex items-center justify-between border-b border-border/30 pb-2">
+        <Label className="text-xs font-bold text-foreground flex items-center gap-1.5 select-none">
           <div className="p-1 rounded-md bg-primary/10 text-primary">
             <Grid3x3 className="w-3.5 h-3.5" />
           </div>
-          <span>الشبكة</span>
+          <span>الشبكة والأعمدة</span>
         </Label>
-        <span className="text-[10px] text-muted-foreground font-mono bg-muted/40 border border-border/20 px-2 py-0.5 rounded-md font-extrabold">
+        <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 border border-border/40 px-2 py-0.5 rounded-md font-bold">
           {showGrid || showColumns ? "نشط" : "مخفي"}
         </span>
       </div>
 
       <div className="space-y-3 animate-in fade-in duration-200">
-        <div className="flex bg-muted/60 dark:bg-muted/30 p-0.5 rounded-xl border border-border/20 w-full">
+        <div className="flex bg-muted/60 dark:bg-muted/30 p-1 rounded-lg border border-border/40 w-full gap-1">
           <button
             type="button"
             onClick={() => setActiveGridTab("grid")}
             className={cn(
-              "flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[11px] font-bold",
+              "flex-1 py-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs font-semibold",
               activeGridTab === "grid"
-                ? "bg-primary text-primary-foreground shadow-xs"
+                ? "bg-card text-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -99,9 +99,9 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
             type="button"
             onClick={() => setActiveGridTab("columns")}
             className={cn(
-              "flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[11px] font-bold",
+              "flex-1 py-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs font-semibold",
               activeGridTab === "columns"
-                ? "bg-primary text-primary-foreground shadow-xs"
+                ? "bg-card text-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -111,7 +111,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
         </div>
 
         {activeGridTab === "grid" && (
-          <div className="space-y-3 pt-3 border-t border-border/10 animate-in fade-in duration-200">
+          <div className="space-y-3 pt-2 border-t border-border/20 animate-in fade-in duration-200">
             <SliderControl
               label="حجم المربع"
               icon={<Square className="w-3.5 h-3.5 text-primary" />}
@@ -135,7 +135,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   value={String(gridSubdivisions)}
                   onValueChange={(val) => setGridSubdivisions(Number(val))}
                 >
-                  <SelectTrigger className="w-full h-9 text-xs bg-background border border-border/60 rounded-xl">
+                  <SelectTrigger className="w-full h-8 text-xs bg-background/60 border border-border/80 rounded-md">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="font-cairo">
@@ -154,14 +154,14 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   </TooltipTrigger>
                   <TooltipContent side="top" className="font-cairo text-xs font-bold">نمط رسم الشبكة (نقاط أو خطوط)</TooltipContent>
                 </Tooltip>
-                <div className="flex bg-muted/60 p-0.5 rounded-lg border border-border/40 h-9 items-center">
+                <div className="flex bg-muted/60 p-0.5 rounded-md border border-border/60 h-8 items-center gap-0.5">
                   <button
                     type="button"
                     onClick={() => setGridType("dots")}
                     className={cn(
-                      "flex-1 h-full rounded-md text-[11px] font-bold transition-all cursor-pointer",
+                      "flex-1 h-full rounded-md text-xs font-semibold transition-all cursor-pointer",
                       gridType === "dots"
-                        ? "bg-background text-foreground shadow-xs"
+                        ? "bg-card text-foreground shadow-2xs"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -171,9 +171,9 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     type="button"
                     onClick={() => setGridType("lines")}
                     className={cn(
-                      "flex-1 h-full rounded-md text-[11px] font-bold transition-all cursor-pointer",
+                      "flex-1 h-full rounded-md text-xs font-semibold transition-all cursor-pointer",
                       gridType === "lines"
-                        ? "bg-background text-foreground shadow-xs"
+                        ? "bg-card text-foreground shadow-2xs"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -241,7 +241,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   type="number"
                   value={columnsMargin}
                   onChange={(e) => setColumnsMargin(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full bg-background border border-border/60 rounded-xl px-2.5 h-9 text-xs font-bold font-mono focus:ring-1 focus:ring-primary text-center text-foreground"
+                  className="w-full bg-background border border-border/60 rounded-md px-2.5 h-8 text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background text-center text-foreground"
                   min={0}
                 />
               </div>
@@ -252,7 +252,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   type="number"
                   value={columnsGutter}
                   onChange={(e) => setColumnsGutter(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full bg-background border border-border/60 rounded-xl px-2.5 h-9 text-xs font-bold font-mono focus:ring-1 focus:ring-primary text-center text-foreground"
+                  className="w-full bg-background border border-border/60 rounded-md px-2.5 h-8 text-xs font-bold font-mono focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background text-center text-foreground"
                   min={0}
                 />
               </div>

@@ -267,7 +267,7 @@ export function SheetPreview({
           />
         ) : (
           <div className="w-full h-full bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-xs text-muted-foreground font-cairo">
-            جاري تحميل المعاينة...
+            جاري تحميل المعاينة ...
           </div>
         )}
         {cutLineElements}
@@ -304,7 +304,7 @@ export function SheetPreview({
           />
         ) : (
           <div className="w-full h-full bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-[10px] text-muted-foreground font-cairo">
-            تحميل...
+            جاري التحميل ...
           </div>
         )}
       </div>

@@ -31,9 +31,9 @@ export function ImageAdjustProperties({
   showReset = true 
 }: ImagePropertiesProps & { showReset?: boolean }) {
   return (
-    <div className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/30 space-y-3">
+    <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3">
       {!showReset && (
-        <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">
+        <Label className="text-xs font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">
           تعديل الألوان
         </Label>
       )}
@@ -52,7 +52,7 @@ export function ImageAdjustProperties({
               key={preset.label}
               variant="outline"
               size="sm"
-              className="h-7 text-[10px] font-bold rounded-lg border-border/50 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer"
+              className="h-7 text-[10px] font-semibold rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               onClick={() => {
                 onUpdate(element.id, {
                   brightness: preset.b,
@@ -108,12 +108,12 @@ export function ImageAdjustProperties({
         onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
       />
       <SliderControl
-        label="ضبابية"
+        label="الضبابية"
         icon={<EyeOff className="w-3.5 h-3.5 text-muted-foreground/75" />}
         value={element.blur ?? 0}
         min={0}
         max={20}
-        step={0.5}
+        step={1}
         unit="px"
         onChange={(v) => onUpdate(element.id, { blur: v })}
         onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
@@ -123,9 +123,9 @@ export function ImageAdjustProperties({
 
       {showReset && (
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="w-full mt-2 text-xs font-semibold gap-1.5 flex items-center justify-center cursor-pointer"
+          className="w-full h-8 text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 rounded-md border border-border/40 hover:bg-muted"
           onClick={() => {
             onUpdate(element.id, {
               filter: "none",
@@ -244,9 +244,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
   return (
     <div className="space-y-3.5 animate-in fade-in duration-200">
-      <div className="bg-card/40 dark:bg-card/20 backdrop-blur-xs p-3.5 rounded-2xl border border-border/50 space-y-3 shadow-xs">
+      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl space-y-3 shadow-xs fluent-specular">
         <div className="flex items-center justify-between border-b border-border/30 pb-2">
-          <Label className="text-[11px] font-extrabold text-foreground/90 flex items-center gap-1.5">
+          <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span>تحرير ومعالجة الصورة</span>
           </Label>
@@ -256,25 +256,25 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         <Button
           variant={isRemovingBg ? "destructive" : "outline"}
           className={cn(
-            "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground",
+            "w-full flex items-center justify-between px-3 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
             isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
           title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية الذكي للذكاء الاصطناعي"}
         >
           {isRemovingBg ? (
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 text-destructive-foreground animate-spin shrink-0" />
-              <span>{bgProgress > 0 ? `جاري العزل ${Math.round(bgProgress)}%` : "جاري العزل..."} (إلغاء)</span>
+              <span>{bgProgress > 0 ? `جاري العزل ... (${Math.round(bgProgress)}%)` : "جاري العزل ..."} (إلغاء)</span>
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 <span>عزل الخلفية الذكي</span>
               </div>
               {!isLicenseActive ? (
-                <span className="text-[8.5px] bg-primary text-primary-foreground font-black px-1.5 py-0.5 rounded-md tracking-wider uppercase">
+                <span className="text-[8.5px] bg-primary text-primary-foreground font-bold px-1.5 py-0.5 rounded-md tracking-wider uppercase">
                   PRO
                 </span>
               ) : (
@@ -291,17 +291,17 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           variant="outline"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground",
+            "w-full flex items-center justify-between px-3 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(element)}
           title={`تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
         >
-          <div className="flex items-center gap-2.5">
-            <Wand2 className="w-4 h-4 text-primary group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+          <div className="flex items-center gap-2">
+            <Wand2 className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
             <span>تحسين الجودة والوضوح</span>
           </div>
-          <span className="text-[9.5px] bg-primary/20 border border-primary/40 text-primary px-2 py-0.5 rounded-md font-extrabold font-mono">
+          <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
             {remainingQuota}/{dailyLimit} اليوم
           </span>
         </Button>
@@ -311,7 +311,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           variant={isFraming ? "destructive" : "outline"}
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-emerald-600/60 hover:border-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 text-foreground",
+            "w-full flex items-center justify-between px-3 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
             isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
@@ -319,17 +319,17 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           title={isFraming ? "إلغاء ضبط الوجه" : "كشف الوجه وضبط مقاسه وموضعه وفق معايير الهوية تلقائياً"}
         >
           {isFraming ? (
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <X className="w-4 h-4 text-destructive-foreground group-hover:scale-110 transition-transform shrink-0" />
               <span>إلغاء ضبط الوجه</span>
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-2.5">
-                <ScanFace className="w-4 h-4 text-emerald-600 group-hover:scale-115 group-hover:rotate-12 transition-all duration-300 shrink-0" />
+              <div className="flex items-center gap-2">
+                <ScanFace className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 <span>ضبط الوجه تلقائياً</span>
               </div>
-              <span className="text-[9px] bg-emerald-600/15 border border-emerald-600/40 text-emerald-600 px-1.5 py-0.5 rounded-md font-bold font-mono">
+              <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
                 محلي
               </span>
             </>
@@ -339,12 +339,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         {/* زر ماسح وتقويم المستندات الذكي (Doc Scanner) */}
         <Button
           variant="outline"
-          className="w-full flex items-center justify-between px-3.5 h-11 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] group font-extrabold text-xs border-[1.5px] border-primary/70 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground"
+          className="w-full flex items-center justify-between px-3 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           onClick={() => setScannerOpen(true)}
           title="مسح وتقويم حواف المستند وإزالة المنظور المائل"
         >
-          <div className="flex items-center gap-2.5">
-            <ScanLine className="w-4 h-4 text-primary group-hover:scale-115 transition-transform duration-300 shrink-0" />
+          <div className="flex items-center gap-2">
+            <ScanLine className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
             <span>ماسح وتقويم المستند</span>
           </div>
           <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
@@ -355,11 +355,11 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         {/* قسم لون خلفية الصورة للشخصية / المعزولة */}
         <div className="space-y-2 pt-1 border-t border-border/25">
           <div className="flex items-center justify-between">
-            <Label className="text-[11px] font-bold text-foreground/85 flex items-center gap-1.5">
+            <Label className="text-xs font-bold text-foreground/85 flex items-center gap-1.5">
               <Palette className="w-3.5 h-3.5 text-primary" />
               <span>خلفية الصورة المعزولة</span>
             </Label>
-            <span className="text-[9.5px] text-muted-foreground font-medium">هويات / جوازات</span>
+            <span className="text-[10px] text-muted-foreground font-medium">هويات / جوازات</span>
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -382,7 +382,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "w-6.5 h-6.5 rounded-lg border border-border/60 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95",
+                    "w-7 h-7 rounded-md border border-border/80 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95",
                     isActive && "ring-2 ring-primary ring-offset-1 border-primary"
                   )}
                   style={{
@@ -393,14 +393,14 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   }}
                 >
                   {isActive && (
-                    <Check className={cn("w-3 h-3 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                    <Check className={cn("w-3.5 h-3.5 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
                   )}
                 </button>
               );
             })}
 
             {/* Custom Color Input */}
-            <div className="flex items-center gap-1 border border-border/60 rounded-lg px-1.5 py-0.5 bg-background/50" title="لون مخصص">
+            <div className="flex items-center gap-1 border border-border/80 rounded-md px-1.5 h-7 bg-background" title="لون مخصص">
               <input
                 type="color"
                 value={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
@@ -417,21 +417,21 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           <Button
             variant="outline"
             size="sm"
-            className="h-9.5 rounded-xl border-border/50 hover:border-border bg-muted/20 hover:bg-muted/50 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 font-bold text-xs group text-foreground/90 shadow-2xs"
+            className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             onClick={() => setCropOpen(true)}
             title="قص وتدوير الصورة"
           >
-            <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+            <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
             <span>قص وتدوير</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-9.5 rounded-xl border-border/50 hover:border-border bg-muted/20 hover:bg-muted/50 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 font-bold text-xs group text-foreground/90 shadow-2xs"
+            className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             onClick={handleOpenFile}
             title="تغيير الصورة"
           >
-            <ImagePlus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+            <ImagePlus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
             <span>تغيير الصورة</span>
           </Button>
         </div>
@@ -439,7 +439,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         {element.originalImageSrc && (
           <Button
             variant="outline"
-            className="w-full mt-0.5 h-9 text-xs font-bold transition-all duration-200 flex items-center justify-start px-3.5 gap-2.5 cursor-pointer rounded-xl border-border/50 hover:border-border bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group"
+            className="w-full mt-0.5 h-8 text-xs font-semibold transition-all duration-200 flex items-center justify-start px-3 gap-2 cursor-pointer rounded-md border-border/60 hover:border-primary/40 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             onClick={() => setRefineOpen(true)}
           >
             <Paintbrush className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
@@ -448,7 +448,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
 
         {isRemovingBg && (
-          <div className="mt-2 p-2.5 rounded-lg bg-indigo-500/[0.03] dark:bg-indigo-500/[0.05] border border-indigo-500/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="mt-2 p-2.5 rounded-xl bg-indigo-500/[0.03] dark:bg-indigo-500/[0.05] border border-indigo-500/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
             <div className="flex justify-between items-center text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
               <span className="animate-pulse">{bgProgressText}</span>
               <span className="font-mono">{bgProgress}%</span>
@@ -463,7 +463,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
 
         {isEnhancing && (
-          <div className="mt-2 p-2.5 rounded-lg bg-violet-500/[0.05] dark:bg-violet-500/[0.08] border border-violet-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="mt-2 p-2.5 rounded-xl bg-violet-500/[0.05] dark:bg-violet-500/[0.08] border border-violet-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
             <div className="flex justify-between items-center text-[9px] font-bold text-violet-600 dark:text-violet-400">
               <span className="animate-pulse">{enhanceProgressText}</span>
               <span className="font-mono font-extrabold">{enhanceProgress}%</span>
@@ -478,7 +478,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
 
         {isFraming && (
-          <div className="mt-2 p-2.5 rounded-lg bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08] border border-emerald-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="mt-2 p-2.5 rounded-xl bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08] border border-emerald-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
             <div className="flex justify-between items-center text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
               <span className="animate-pulse">{frameProgressText}</span>
               <span className="font-mono font-extrabold">{frameProgress}%</span>

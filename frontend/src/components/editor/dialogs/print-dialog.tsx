@@ -561,7 +561,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border/60 bg-background rounded-2xl shadow-2xl p-0 gap-0" dir="rtl">
+      <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border/80 dark:border-white/10 bg-background rounded-2xl shadow-2xl p-0 gap-0 fluent-specular" dir="rtl">
         {/* رأس النافذة المباشر والنظيف */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -603,8 +603,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   type="button"
                   onClick={() => setColorSpace("sRGB")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer",
-                    colorSpace === "sRGB" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                    colorSpace === "sRGB" ? "bg-background text-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   sRGB (شاشات)
@@ -613,8 +613,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   type="button"
                   onClick={() => setColorSpace("CMYK")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer",
-                    colorSpace === "CMYK" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                    colorSpace === "CMYK" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   CMYK (مطابع)
@@ -715,7 +715,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                           type="button"
                           onClick={() => setPrintSettings({ repeatMode: id })}
                           className={cn(
-                            "h-6 w-6 rounded-xs flex items-center justify-center transition-all cursor-pointer",
+                            "h-6 w-6 rounded-xs flex items-center justify-center transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                             (printSettings.repeatMode ?? "all") === id
                               ? "bg-background text-primary shadow-2xs font-bold"
                               : "text-muted-foreground hover:text-foreground"
@@ -842,7 +842,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         </div>
 
         {/* ذيل النافذة البسيط والمباشر */}
-        <DialogFooter className="px-5 py-3 border-t border-border/40 bg-card flex items-center justify-end gap-2.5 shrink-0">
+        <DialogFooter className="px-5 py-3 border-t border-border/40 bg-card flex items-center justify-end gap-2 shrink-0">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -853,13 +853,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           </Button>
           <Button
             onClick={handlePrint}
-            className="h-8 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all duration-200 cursor-pointer rounded-lg"
+            className="h-8 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all duration-150 cursor-pointer rounded-md shadow-xs"
             disabled={isExporting || !previewImageSrc}
           >
             {isExporting ? (
-              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جاري التصدير...</>
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> <span>جاري التصدير ...</span></>
             ) : (
-              <><Printer className="w-3.5 h-3.5" /> تصدير وعرض</>
+              <><Printer className="w-3.5 h-3.5" /> <span>تصدير وعرض</span></>
             )}
           </Button>
         </DialogFooter>

@@ -5,3 +5,5 @@ export { FreeformCollageModal } from "./components/FreeformCollageModal";
 export { FreeformCanvasEditor } from "./components/FreeformCanvasEditor";
 export { FreeformToolbar } from "./components/FreeformToolbar";
 export { MixedPresetsGrid } from "./components/MixedPresetsGrid";
+export { FreeformPaperSelector } from "./components/FreeformPaperSelector";
+export { FreeformSlotCard } from "./components/FreeformSlotCard";

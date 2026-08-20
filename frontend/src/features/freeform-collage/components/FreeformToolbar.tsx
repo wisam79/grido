@@ -66,15 +66,15 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
   ];
 
   return (
-    <div className="flex items-center justify-between gap-1 p-1 bg-card border rounded-xl shadow-xs flex-wrap font-cairo">
-      {/* التراجع والتكرار */}
+    <div className="flex items-center justify-between gap-1 p-1 bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-2xs fluent-specular flex-wrap font-cairo">
+      {/* التراجع والتكرار والإضافة والحذف والمضاعفة */}
       <div className="flex items-center gap-0.5">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
+              className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={onUndo}
               disabled={!canUndo}
             >
@@ -89,7 +89,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
+              className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={onRedo}
               disabled={!canRedo}
             >
@@ -106,7 +106,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
+              className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={onAddSlot}
             >
               <Plus className="w-3.5 h-3.5" />
@@ -120,7 +120,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg text-destructive hover:bg-destructive/10 cursor-pointer"
+              className="h-7 w-7 rounded-md text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
               onClick={onRemoveSlot}
               disabled={!selectedSlotId}
             >
@@ -135,7 +135,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
+              className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={onDuplicateSlot}
               disabled={!selectedSlotId}
             >
@@ -153,7 +153,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
+              className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={onRotateSlot}
               disabled={!selectedSlotId}
             >
@@ -170,7 +170,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
+              className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={onSplitVertical}
               disabled={!selectedSlotId}
             >
@@ -185,7 +185,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
+              className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={onSplitHorizontal}
               disabled={!selectedSlotId}
             >
@@ -202,7 +202,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
+              className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={() => onAlignSlot("center-h")}
               disabled={!selectedSlotId}
             >
@@ -217,7 +217,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg cursor-pointer"
+              className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={() => onAlignSlot("center-v")}
               disabled={!selectedSlotId}
             >
@@ -238,8 +238,8 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
                 variant={currentPresetType === type ? "secondary" : "ghost"}
                 size="icon"
                 className={cn(
-                  "h-7 w-7 rounded-lg cursor-pointer transition-all",
-                  currentPresetType === type ? "border border-primary/50 text-primary font-bold shadow-2xs" : ""
+                  "h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  currentPresetType === type ? "border border-primary/50 text-primary font-bold shadow-2xs bg-primary/10" : ""
                 )}
                 onClick={() => onChangePresetType(type)}
                 disabled={!selectedSlotId}

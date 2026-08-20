@@ -39,14 +39,14 @@ const SlotItem = React.memo(
     return (
       <div
         onClick={() => selectElement(slot.id)}
-        className={`flex items-center justify-between p-2.5 rounded-lg border text-right cursor-pointer transition-colors duration-200 ${
+        className={`flex items-center justify-between p-2 rounded-md border text-right cursor-pointer transition-colors duration-200 ${
           isSelected
             ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
             : "border-transparent bg-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
         }`}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="shrink-0 text-muted-foreground/80 p-1.5 bg-muted/50 rounded-md">
+          <span className="shrink-0 text-muted-foreground/80 p-1 bg-muted/50 rounded-md">
             {hasImage ? <ImageIcon className="w-4 h-4 text-primary/70" /> : <LayoutGrid className="w-4 h-4 opacity-50" />}
           </span>
           <span className="text-xs font-semibold truncate max-w-[120px]">
@@ -60,7 +60,7 @@ const SlotItem = React.memo(
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-7.5 h-7.5 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10"
+                className="w-7 h-7 rounded-md text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                 onClick={(e) => clearSlot(slot.id, e)}
               >
                 <X className="w-3.5 h-3.5" />

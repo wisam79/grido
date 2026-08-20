@@ -29,10 +29,10 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
     <div
       onClick={() => onSelect(tpl)}
       className={cn(
-        "group flex flex-col items-stretch gap-2.5 p-3 rounded-2xl border transition-all duration-300 text-right relative overflow-hidden bg-card shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:border-border-hover hover:shadow-[0_12px_24px_rgba(0,0,0,0.08)] active:scale-[0.97] cursor-pointer select-none",
+        "group flex flex-col items-stretch gap-2.5 p-3 rounded-xl border transition-all duration-300 text-right relative overflow-hidden bg-card shadow-2xs hover:border-primary/50 hover:shadow-md active:scale-[0.98] cursor-pointer select-none fluent-specular",
         isActive
-          ? "border-2 border-primary shadow-[0_8px_20px_rgba(59,130,246,0.15)]"
-          : "border-border"
+          ? "border-2 border-primary bg-primary/5 shadow-xs"
+          : "border-border/80 dark:border-white/10"
       )}
     >
       {/* Active Indicator Dot (Top Right) */}
@@ -47,13 +47,13 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             <button
               type="button"
               onClick={(e) => e.stopPropagation()}
-              className="absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-500 hover:text-red-600 flex items-center justify-center border border-red-100 dark:border-red-900/30 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-sm"
+              className="absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
               title="حذف القالب"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="font-cairo text-right" dir="rtl" onClick={(e) => e.stopPropagation()}>
+          <AlertDialogContent className="font-cairo text-right rounded-2xl border fluent-specular" dir="rtl" onClick={(e) => e.stopPropagation()}>
             <AlertDialogHeader>
               <AlertDialogTitle>حذف القالب</AlertDialogTitle>
               <AlertDialogDescription>
@@ -61,10 +61,10 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="flex-row-reverse sm:justify-start gap-2">
-              <AlertDialogAction onClick={(e) => { e.stopPropagation(); onDelete(e); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction onClick={(e) => { e.stopPropagation(); onDelete(e); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md h-8 text-xs font-semibold">
                 حذف نهائي
               </AlertDialogAction>
-              <AlertDialogCancel onClick={(e) => e.stopPropagation()} className="mt-0 border-border">إلغاء</AlertDialogCancel>
+              <AlertDialogCancel onClick={(e) => e.stopPropagation()} className="mt-0 border-border rounded-md h-8 text-xs font-semibold">إلغاء</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

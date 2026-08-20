@@ -42,24 +42,24 @@ export function KeyboardShortcutsDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md bg-card/98 backdrop-blur-xs border-border/80 shadow-2xl rounded-2xl font-cairo transition-all duration-150" dir="rtl">
+      <DialogContent className="max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl rounded-2xl font-cairo fluent-specular transition-all duration-150" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
-            <Keyboard className="w-5 h-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <Keyboard className="w-4 h-4 text-primary" />
             اختصارات لوحة المفاتيح
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-3 space-y-2">
           {shortcuts.map((shortcut, index) => (
             <React.Fragment key={index}>
-              <div className="flex items-center justify-between py-1 text-sm">
-                <span className="text-muted-foreground font-semibold text-[13px]">{shortcut.label}</span>
+              <div className="flex items-center justify-between py-1 text-xs">
+                <span className="text-muted-foreground font-semibold text-xs">{shortcut.label}</span>
                 <div className="flex items-center gap-1.5" dir="ltr">
                   {shortcut.keys.map((key, i) => (
                     <span
                       key={i}
-                      className="px-2 py-1 bg-muted/60 border border-border/50 rounded-md text-[11px] font-bold font-mono text-foreground shadow-sm flex items-center justify-center min-w-7"
+                      className="px-2 py-0.5 bg-muted/80 border border-border/60 rounded-md text-[11px] font-bold font-mono text-foreground shadow-2xs flex items-center justify-center min-w-7 h-6"
                     >
                       {key === "الأسهم" ? (
                         <div className="flex items-center gap-0.5">
@@ -78,10 +78,10 @@ export function KeyboardShortcutsDialog() {
           ))}
         </div>
         
-        <div className="mt-4 bg-primary/10 border border-primary/20 rounded-lg p-3 text-center">
-          <p className="text-[11px] text-primary/80 font-bold">
+        <div className="mt-4 bg-primary/10 border border-primary/20 rounded-xl p-3 text-center fluent-specular">
+          <p className="text-[11px] text-primary/90 font-bold">
             يمكنك إظهار هذه القائمة في أي وقت بالضغط على 
-            <kbd className="mx-1 px-1.5 py-0.5 bg-background rounded border text-[10px] font-mono">Ctrl + /</kbd>
+            <kbd className="mx-1 px-1.5 py-0.5 bg-background rounded-md border border-border/60 text-[10px] font-mono font-bold shadow-2xs">Ctrl + /</kbd>
           </p>
         </div>
       </DialogContent>

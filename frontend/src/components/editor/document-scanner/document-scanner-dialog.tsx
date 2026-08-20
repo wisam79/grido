@@ -439,7 +439,7 @@ export function DocumentScannerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[1180px] w-[90vw] h-[86vh] max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border/60 bg-card/98 backdrop-blur-md p-4 shadow-2xl transition-all duration-150"
+        className="sm:max-w-[1180px] w-[90vw] h-[86vh] max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border/80 dark:border-white/10 bg-card/98 backdrop-blur-2xl p-4 shadow-2xl transition-all duration-150 fluent-specular"
         dir="rtl"
       >
         {/* Top Header */}
@@ -468,11 +468,11 @@ export function DocumentScannerDialog({
           >
             {/* Top Floating Status Badge */}
             <div className="absolute top-3 inset-x-0 mx-auto w-fit z-20 pointer-events-none">
-              <div className="px-3.5 py-1.5 rounded-full bg-background/80 dark:bg-zinc-900/90 border border-border/60 text-[11px] font-medium text-foreground/90 shadow-md backdrop-blur-md flex items-center gap-2">
+              <div className="px-3.5 py-1.5 rounded-full bg-background/80 dark:bg-zinc-900/90 border border-border/60 text-[11px] font-semibold text-foreground/90 shadow-md backdrop-blur-md flex items-center gap-2">
                 {isDetecting ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 text-primary animate-spin" />
-                    <span>جاري فحص الحواف وتحديد أركان المستند تلقائياً...</span>
+                    <span>جاري فحص الحواف وتحديد أركان المستند تلقائياً ...</span>
                   </>
                 ) : isPreviewMode ? (
                   <>
@@ -525,7 +525,7 @@ export function DocumentScannerDialog({
           </div>
 
           {/* Right Control Sidebar */}
-          <div className="w-full md:w-64 flex flex-col gap-3.5 shrink-0 bg-card/50 dark:bg-card/30 p-3.5 rounded-2xl border border-border/40 overflow-y-auto h-full min-h-0">
+          <div className="w-full md:w-64 flex flex-col gap-3 shrink-0 bg-card/50 dark:bg-card/30 p-3 rounded-xl border border-border/40 overflow-y-auto h-full min-h-0 fluent-specular">
             {/* 1. كشف الحواف والأركان */}
             <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
               <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
@@ -538,7 +538,7 @@ export function DocumentScannerDialog({
                     <Button
                       variant="default"
                       size="sm"
-                      className="h-9 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-primary hover:bg-primary/90"
+                      className="h-8 rounded-md font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-primary hover:bg-primary/90"
                       onClick={handleAutoDetect}
                       disabled={isDetecting}
                     >
@@ -547,7 +547,7 @@ export function DocumentScannerDialog({
                       ) : (
                         <Sparkles className="w-3.5 h-3.5 shrink-0" />
                       )}
-                      <span>{isDetecting ? "جاري الكشف" : "كشف تلقائي"}</span>
+                      <span>{isDetecting ? "جاري الكشف ..." : "كشف تلقائي"}</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">كشف أركان المستند آلياً بالذكاء الاصطناعي</TooltipContent>
@@ -558,7 +558,7 @@ export function DocumentScannerDialog({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-9 rounded-xl border-border/60 hover:bg-accent text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="h-8 rounded-md border-border/60 hover:bg-accent text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                       onClick={handleResetCorners}
                     >
                       <RefreshCw className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -583,7 +583,7 @@ export function DocumentScannerDialog({
                       variant={filter === "original" ? "default" : "outline"}
                       size="sm"
                       className={cn(
-                        "h-9 rounded-xl text-[11px] font-semibold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
+                        "h-8 rounded-md text-[11px] font-semibold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
                         filter === "original" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-accent/60 text-foreground/80"
                       )}
                       onClick={() => handleFilterChange("original")}
@@ -603,7 +603,7 @@ export function DocumentScannerDialog({
                       variant={filter === "magic" ? "default" : "outline"}
                       size="sm"
                       className={cn(
-                        "h-9 rounded-xl text-[11px] font-bold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
+                        "h-8 rounded-md text-[11px] font-bold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
                         filter === "magic" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
                       )}
                       onClick={() => handleFilterChange("magic")}
@@ -623,7 +623,7 @@ export function DocumentScannerDialog({
                       variant={filter === "bw" ? "default" : "outline"}
                       size="sm"
                       className={cn(
-                        "h-9 rounded-xl text-[11px] font-semibold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
+                        "h-8 rounded-md text-[11px] font-semibold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
                         filter === "bw" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-accent/60 text-foreground/80"
                       )}
                       onClick={() => handleFilterChange("bw")}
@@ -650,7 +650,7 @@ export function DocumentScannerDialog({
                   variant={aspect === "free" ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-bold cursor-pointer transition-all border-border/40",
+                    "h-8 rounded-md text-[11px] font-bold cursor-pointer transition-all border-border/40",
                     aspect === "free" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
                   )}
                   onClick={() => handleAspectChange("free")}
@@ -662,7 +662,7 @@ export function DocumentScannerDialog({
                   variant={aspect === "a4_p" ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-semibold cursor-pointer transition-all border-border/40",
+                    "h-8 rounded-md text-[11px] font-semibold cursor-pointer transition-all border-border/40",
                     aspect === "a4_p" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
                   )}
                   onClick={() => handleAspectChange("a4_p")}
@@ -674,7 +674,7 @@ export function DocumentScannerDialog({
                   variant={aspect === "a4_l" ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-semibold cursor-pointer transition-all border-border/40",
+                    "h-8 rounded-md text-[11px] font-semibold cursor-pointer transition-all border-border/40",
                     aspect === "a4_l" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
                   )}
                   onClick={() => handleAspectChange("a4_l")}
@@ -686,7 +686,7 @@ export function DocumentScannerDialog({
                   variant={aspect === "id_card" ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "h-8.5 rounded-xl text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/40",
+                    "h-8 rounded-md text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/40",
                     aspect === "id_card" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
                   )}
                   onClick={() => handleAspectChange("id_card")}
@@ -705,35 +705,35 @@ export function DocumentScannerDialog({
             <Button
               variant="secondary"
               onClick={handleTogglePreview}
-              className="rounded-xl h-10 px-4 text-xs font-semibold cursor-pointer gap-2 border border-border/50 shadow-xs hover:bg-accent flex items-center"
+              className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer gap-2 border border-border/50 shadow-xs hover:bg-accent flex items-center"
             >
               {isPreviewMode ? (
                 <>
-                  <RotateCcw className="w-4 h-4 text-primary" />
+                  <RotateCcw className="w-3.5 h-3.5 text-primary" />
                   <span>رجوع للتعديل</span>
                 </>
               ) : (
                 <>
-                  <Eye className="w-4 h-4 text-primary" />
+                  <Eye className="w-3.5 h-3.5 text-primary" />
                   <span>معاينة الاستعدال</span>
                 </>
               )}
             </Button>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="rounded-xl h-10 px-4 text-xs font-semibold cursor-pointer"
+              className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer"
             >
               إلغاء
             </Button>
 
             <Button
               onClick={handleApply}
-              className="rounded-xl h-10 px-6 text-xs font-bold gap-2 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+              className="rounded-md h-8 px-5 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
             >
-              <Check className="w-4 h-4" />
+              <Check className="w-3.5 h-3.5" />
               <span>تطبيق وعزل المستند</span>
             </Button>
           </div>

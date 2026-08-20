@@ -71,17 +71,17 @@ export const GradientPicker = ({
   ];
 
   return (
-    <div className="space-y-2 border border-border/40 p-2.5 rounded-xl bg-muted/20">
-      <div className="flex bg-muted/40 p-0.5 rounded-lg border border-border/10">
+    <div className="space-y-2 border border-border/60 p-2.5 rounded-xl bg-card shadow-xs fluent-specular">
+      <div className="flex bg-muted/60 p-0.5 rounded-lg border border-border/40 gap-0.5">
         {(["solid", "linear", "radial"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => onChangeType(t)}
             className={cn(
-              "flex-1 py-1 rounded-md transition-all cursor-pointer flex items-center justify-center text-[10.5px] font-bold",
+              "flex-1 h-7 rounded-md transition-all cursor-pointer flex items-center justify-center text-[10.5px] font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
               fillType === t 
-                ? "bg-background text-primary shadow-xs border border-border/10" 
+                ? "bg-card text-foreground shadow-2xs font-extrabold border border-border/20" 
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -93,18 +93,18 @@ export const GradientPicker = ({
       {fillType === "solid" ? (
         <div className="flex items-center justify-between gap-2.5">
           <span className="text-[10px] text-muted-foreground font-semibold">اللون:</span>
-          <PopoverColorPicker color={color} onChange={onChangeSolidColor} className="w-28 h-7" />
+          <PopoverColorPicker color={color} onChange={onChangeSolidColor} className="w-28 h-8 rounded-md" />
         </div>
       ) : (
         <div className="space-y-2.5">
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <span className="text-[9px] text-muted-foreground font-semibold">اللون الأول:</span>
-              <PopoverColorPicker color={stop1} onChange={handleStop1Change} className="w-full h-7" />
+              <PopoverColorPicker color={stop1} onChange={handleStop1Change} className="w-full h-8 rounded-md" />
             </div>
             <div className="space-y-1">
               <span className="text-[9px] text-muted-foreground font-semibold">اللون الثاني:</span>
-              <PopoverColorPicker color={stop2} onChange={handleStop2Change} className="w-full h-7" />
+              <PopoverColorPicker color={stop2} onChange={handleStop2Change} className="w-full h-8 rounded-md" />
             </div>
           </div>
 
@@ -129,10 +129,10 @@ export const GradientPicker = ({
                   key={p.name}
                   type="button"
                   onClick={() => onChangeColorStops(p.stops)}
-                  className="py-1 px-1.5 text-[9.5px] rounded-md border border-border/40 hover:border-primary/30 bg-card transition-all cursor-pointer text-center font-bold flex items-center justify-center gap-1"
+                  className="h-7 px-1.5 text-[9.5px] rounded-md border border-border/40 hover:border-primary/40 bg-background/60 hover:bg-background transition-all cursor-pointer text-center font-bold flex items-center justify-center gap-1 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                 >
                   <div 
-                    className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/10" 
+                    className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/10 shadow-2xs" 
                     style={{ background: `linear-gradient(135deg, ${p.stops[1]}, ${p.stops[3]})` }}
                   />
                   <span className="truncate">{p.name}</span>

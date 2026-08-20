@@ -35,7 +35,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
         type="button"
         onClick={onToggleRulerUnit}
         title="تبديل وحدة القياس (ملم / بكسل)"
-        className="w-6 h-6 shrink-0 bg-card border-b border-l border-border flex items-center justify-center text-[9px] text-muted-foreground/75 font-mono select-none z-30 cursor-pointer hover:text-primary hover:bg-accent/60 transition-colors"
+        className="w-6 h-6 shrink-0 bg-card border-b border-l border-border flex items-center justify-center text-[9px] text-muted-foreground/75 font-mono select-none z-30 cursor-pointer hover:text-primary hover:bg-accent/60 transition-colors outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         {rulerUnit}
       </button>

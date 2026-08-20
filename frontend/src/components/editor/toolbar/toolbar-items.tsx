@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
   Type, Square, Circle, Star, Minus, Undo2, Redo2, Trash2, Copy, AlignLeft, AlignCenter, AlignRight, ChevronDown, Grid3x3, Magnet, Columns, Link, Unlink, Ruler, Paintbrush,
-  Sparkles, Wand2, ScanFace, X, Heading1, Heading2, FileText, Calendar, Shield, Crown, SunMedium, CircleDot, Layers, Camera, Tag
+  Sparkles, Wand2, ScanFace, Heading1, Heading2, FileText, Calendar, Shield, Crown, SunMedium, CircleDot, Layers, Camera, Tag, Loader2
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -46,7 +46,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
   const addShapeElement = useEditorStore((state) => state.addShapeElement);
 
   return (
-    <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+    <div className="fluent-command-group shadow-2xs">
       {/* نص مع قوالب جاهزة */}
       <DropdownMenu>
         <TooltipBtn content={mode === "collage" ? "غير متاح في وضع الكولاج" : "إضافة نص أو قالب خطوط"}>
@@ -65,56 +65,56 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             </DropdownMenuTrigger>
           </div>
         </TooltipBtn>
-        <DropdownMenuContent align="start" className="w-56 font-cairo max-h-96 overflow-y-auto custom-scrollbar">
+        <DropdownMenuContent align="start" className="w-56 font-cairo max-h-96 overflow-y-auto custom-scrollbar rounded-xl backdrop-blur-xl fluent-specular">
           <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">قوالب العناوين والفقرات</div>
-          <DropdownMenuItem onClick={() => addTextPreset("heading")} className="gap-2 text-[11px] font-bold cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("heading")} className="gap-2 text-[11px] font-bold cursor-pointer rounded-md">
             <Heading1 className="w-4 h-4 text-primary" />
             <span>عنوان رئيسي (48px)</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("subheading")} className="gap-2 text-[11px] font-semibold cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("subheading")} className="gap-2 text-[11px] font-semibold cursor-pointer rounded-md">
             <Heading2 className="w-4 h-4 text-primary/80" />
             <span>عنوان فرعي (28px)</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("body")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("body")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <FileText className="w-4 h-4 text-muted-foreground" />
             <span>نص وصفي / ملاحظة (18px)</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
           <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">قوالب استوديو فاخرة</div>
-          <DropdownMenuItem onClick={() => addTextPreset("gold-luxury")} className="gap-2 text-[11px] font-bold text-amber-600 dark:text-amber-400 cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("gold-luxury")} className="gap-2 text-[11px] font-bold text-amber-600 dark:text-amber-400 cursor-pointer rounded-md">
             <Crown className="w-4 h-4 text-amber-500" />
             <span>عنوان ذهبي ملكي فاخر</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("neon-glow")} className="gap-2 text-[11px] font-bold text-sky-600 dark:text-sky-400 cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("neon-glow")} className="gap-2 text-[11px] font-bold text-sky-600 dark:text-sky-400 cursor-pointer rounded-md">
             <SunMedium className="w-4 h-4 text-sky-500" />
             <span>توهج نيون مضيء ★</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("stamp-circle")} className="gap-2 text-[11px] font-bold text-rose-600 dark:text-rose-400 cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("stamp-circle")} className="gap-2 text-[11px] font-bold text-rose-600 dark:text-rose-400 cursor-pointer rounded-md">
             <CircleDot className="w-4 h-4 text-rose-500" />
             <span>ختم دائري رسمي ◯</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("3d-title")} className="gap-2 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("3d-title")} className="gap-2 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer rounded-md">
             <Layers className="w-4 h-4 text-indigo-500" />
             <span>عنوان بارز ثلاثي الأبعاد 3D</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("badge")} className="gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("badge")} className="gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer rounded-md">
             <Sparkles className="w-4 h-4 text-blue-500" />
             <span>شارة كبسولية / عرض</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("photographer-tag")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("photographer-tag")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <Camera className="w-4 h-4 text-purple-500" />
             <span>توقيع وتوثيق المصور</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("caption-card")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("caption-card")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <Tag className="w-4 h-4 text-emerald-500" />
             <span>بطاقة تعريفية مع إطار</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("watermark")} className="gap-2 text-[11px] text-muted-foreground cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("watermark")} className="gap-2 text-[11px] text-muted-foreground cursor-pointer rounded-md">
             <Shield className="w-4 h-4 text-muted-foreground" />
             <span>علامة مائية مائلة (مسودة)</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("studio-date")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => addTextPreset("studio-date")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <Calendar className="w-4 h-4 text-amber-500" />
             <span>توثيق التاريخ واليوم 📅</span>
           </DropdownMenuItem>
@@ -139,21 +139,21 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             </DropdownMenuTrigger>
           </div>
         </TooltipBtn>
-        <DropdownMenuContent align="start" className="w-40 font-cairo">
+        <DropdownMenuContent align="start" className="w-40 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
           <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">الأشكال الهندسية</div>
-          <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <Square className="w-4 h-4 text-muted-foreground" />
             <span>مستطيل / مربع</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <Circle className="w-4 h-4 text-muted-foreground" />
             <span>دائرة / بيضاوي</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <Star className="w-4 h-4 text-muted-foreground" />
             <span>نجمة</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <Minus className="w-4 h-4 text-muted-foreground" />
             <span>خط مستقيم</span>
           </DropdownMenuItem>
@@ -196,7 +196,7 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
           </Button>
         </PopoverTrigger>
       </TooltipBtn>
-      <PopoverContent align="start" className="w-80 p-3 font-cairo bg-card border border-border shadow-lg z-50">
+      <PopoverContent align="start" className="w-80 p-3 font-cairo bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 rounded-xl shadow-xl fluent-specular z-50">
         <div className="text-xs font-bold mb-2 text-foreground/80 text-right" dir="rtl">
           المرشحات الجاهزة
         </div>
@@ -216,7 +216,7 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
                   pushHistory();
                 }}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-1 rounded-lg border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer",
+                  "flex flex-col items-center gap-1 p-1 rounded-md border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer",
                   isActive
                     ? "border-primary bg-primary/10 text-primary shadow-xs shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
                     : "border-border/60 bg-card hover:bg-accent text-muted-foreground"
@@ -271,21 +271,21 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
 
   return (
     <div className="flex items-center gap-1 font-cairo">
-      {/* عزل الخلفية */}
+      {/* عزل الخلفية بالذكاء الاصطناعي - Fluent Wait UX */}
       <TooltipBtn content={isRemovingBg ? bgProgressText || "إلغاء عزل الخلفية" : "عزل الخلفية بالذكاء الاصطناعي"}>
         <Button
           variant={isRemovingBg ? "destructive" : "outline"}
           size="sm"
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/70 dark:border-primary/70 bg-transparent dark:bg-transparent hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(selectedItem)}
         >
           {isRemovingBg ? (
             <>
-              <X className="w-3.5 h-3.5 shrink-0" />
-              <span>إلغاء العزل ({bgProgress}%)</span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+              <span>{bgProgress > 0 ? `جاري العزل ... (${bgProgress}%)` : "جاري العزل ..."}</span>
             </>
           ) : (
             <>
@@ -298,11 +298,11 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
 
       {/* تعديل التحديق يدويًا إذا كانت خلفيته معزولة */}
       {selectedItem.originalImageSrc && (
-        <TooltipBtn content="تعديل تحديق العين يدويًا">
+        <TooltipBtn content="تعديل تفاصيل العزل يدويًا">
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-2 gap-1 text-xs font-semibold border border-primary/70 dark:border-primary/70 bg-transparent dark:bg-transparent hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-xs"
+            className="h-8 px-2 gap-1 text-xs font-semibold border border-primary/60 dark:border-primary/60 bg-transparent hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
             onClick={() => setRefineOpen(true)}
           >
             <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -311,14 +311,14 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
         </TooltipBtn>
       )}
 
-      {/* ضبط الوجه تلقائياً */}
+      {/* ضبط وتأطير الوجه تلقائياً */}
       <TooltipBtn content={isFraming ? frameProgressText || "إلغاء الضبط" : "كشف وتأطير الوجه تلقائياً وفق معايير الهوية"}>
         <Button
           variant={isFraming ? "destructive" : "outline"}
           size="sm"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/70 dark:border-primary/70 bg-transparent dark:bg-transparent hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
             isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
@@ -326,8 +326,8 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
         >
           {isFraming ? (
             <>
-              <X className="w-3.5 h-3.5 shrink-0" />
-              <span>إلغاء الضبط ({frameProgress}%)</span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+              <span>{frameProgress > 0 ? `جاري الضبط ... (${frameProgress}%)` : "جاري الضبط ..."}</span>
             </>
           ) : (
             <>
@@ -339,19 +339,19 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
       </TooltipBtn>
 
       {/* تحسين الجودة والوضوح */}
-      <TooltipBtn content="تحسين ودقة الصورة بالذكاء الاصطناعي">
+      <TooltipBtn content="تحسين وترميم دقة الصورة بالذكاء الاصطناعي">
         <Button
           variant="outline"
           size="sm"
           disabled={isEnhancing || isRemovingBg || isFraming}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/70 dark:border-primary/70 bg-transparent dark:bg-transparent hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(selectedItem)}
         >
-          <Wand2 className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span>{isEnhancing ? `تحسين... (${enhanceProgress}%)` : "تحسين الجودة"}</span>
+          {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" /> : <Wand2 className="w-3.5 h-3.5 text-primary shrink-0" />}
+          <span>{isEnhancing ? (enhanceProgress > 0 ? `جاري التحسين ... (${enhanceProgress}%)` : "جاري التحسين ...") : "تحسين الجودة"}</span>
         </Button>
       </TooltipBtn>
 
@@ -448,7 +448,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
   if (!hasSelection) return null;
 
   return (
-    <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs animate-in fade-in zoom-in-95 duration-200">
+    <div className="fluent-command-group shadow-2xs animate-in fade-in zoom-in-95 duration-150">
       <TooltipBtn content="تكرار العناصر المحددة">
         <Button
           variant="ghost"
@@ -521,31 +521,31 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             <ChevronDown className="w-2.5 h-2.5 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-44 font-cairo">
-          <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-[11px] cursor-pointer">
+        <DropdownMenuContent align="start" className="w-44 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
+          <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <AlignLeft className="w-4 h-4 text-muted-foreground" />
             <span>محاذاة ليسار الكانفس</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <AlignCenter className="w-4 h-4 text-muted-foreground" />
             <span>توسيط أفقي</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <AlignRight className="w-4 h-4 text-muted-foreground" />
             <span>محاذاة ليمين الكانفس</span>
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />
           
-          <DropdownMenuItem onClick={() => alignElement("top")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => alignElement("top")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <AlignLeft className="w-4 h-4 text-muted-foreground rotate-90" />
             <span>محاذاة لأعلى الكانفس</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("middle")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => alignElement("middle")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <AlignCenter className="w-4 h-4 text-muted-foreground rotate-90" />
             <span>توسيط عمودي</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("bottom")} className="gap-2 text-[11px] cursor-pointer">
+          <DropdownMenuItem onClick={() => alignElement("bottom")} className="gap-2 text-[11px] cursor-pointer rounded-md">
             <AlignRight className="w-4 h-4 text-muted-foreground rotate-90" />
             <span>محاذاة لأسفل الكانفس</span>
           </DropdownMenuItem>
@@ -586,7 +586,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
   const redo = useEditorStore((state) => state.redo);
 
   return (
-    <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+    <div className="fluent-command-group shadow-2xs">
       <TooltipBtn content="تراجع (Ctrl+Z)">
         <Button
           variant="ghost"
@@ -640,7 +640,7 @@ const ToolbarViewTools = React.memo(function ToolbarViewTools() {
   return (
     <>
       <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
-      <div className="flex items-center gap-0.5 bg-muted/30 dark:bg-muted/10 p-0.5 rounded-lg border border-border/20 shadow-xs">
+      <div className="fluent-command-group shadow-2xs">
         <TooltipBtn content={showGrid ? "إخفاء الشبكة الإرشادية" : "إظهار الشبكة الإرشادية"}>
           <Button
             variant="ghost"
@@ -725,7 +725,7 @@ const TemplateInfo = React.memo(function TemplateInfo() {
   const Icon = template.icon;
 
   return (
-    <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/10 rounded-lg px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium">
+    <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/20 rounded-md px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium fluent-specular">
       <Icon className="w-4 h-4 text-primary" />
       <span className="font-bold">{template.name}</span>
       <span className="text-muted-foreground/60">·</span>

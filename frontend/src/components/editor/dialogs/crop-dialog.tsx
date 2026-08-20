@@ -131,12 +131,12 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border/60 bg-card/98 backdrop-blur-xs p-3 shadow-2xl transition-all duration-150" dir="rtl">
+      <DialogContent className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border/80 dark:border-white/10 bg-card/98 backdrop-blur-2xl p-3 shadow-2xl transition-all duration-150 fluent-specular" dir="rtl">
         {/* هيدر النافذة */}
         <DialogHeader className="pb-2 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 shadow-2xs">
                 <Scissors className="w-4 h-4" />
               </div>
               <span>قص وتدوير الصورة</span>
@@ -169,7 +169,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
           </div>
 
           {/* لوحة التحكم الجانبية المتناسقة مع الأزرار دون تشوه */}
-          <div className="w-full md:w-52 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/40 overflow-y-auto h-full min-h-0">
+          <div className="w-full md:w-52 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/40 overflow-y-auto h-full min-h-0 fluent-specular">
             {/* 1. أدوات التكبير والتدوير */}
             <div className="space-y-2">
               <Label className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
@@ -183,7 +183,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-full rounded-lg hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
+                      className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={handleRotate}
                     >
                       <RotateCw className="w-3.5 h-3.5 text-primary" />
@@ -197,7 +197,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-full rounded-lg hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
+                      className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={() => handleZoom(0.1)}
                     >
                       <ZoomIn className="w-3.5 h-3.5 text-foreground/80" />
@@ -211,7 +211,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-full rounded-lg hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
+                      className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={() => handleZoom(-0.1)}
                     >
                       <ZoomOut className="w-3.5 h-3.5 text-foreground/80" />
@@ -269,7 +269,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       variant={isSelected ? "default" : "outline"}
                       size="sm"
                       className={cn(
-                        "text-[11px] h-8.5 rounded-xl cursor-pointer font-bold transition-all border-border/50",
+                        "text-xs h-8 rounded-md cursor-pointer font-semibold transition-all border-border/80",
                         isSelected
                           ? "bg-primary text-primary-foreground shadow-2xs"
                           : "hover:bg-accent/60 text-foreground/80"
@@ -286,7 +286,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     variant={aspect === templateAspect ? "default" : "outline"}
                     size="sm"
                     className={cn(
-                      "text-[11px] h-8.5 col-span-2 font-bold rounded-xl border-primary/40 cursor-pointer flex items-center justify-center gap-1.5 transition-all mt-0.5",
+                      "text-xs h-8 col-span-2 font-semibold rounded-md border-primary/40 cursor-pointer flex items-center justify-center gap-1.5 transition-all mt-0.5",
                       aspect === templateAspect
                         ? "bg-primary text-primary-foreground shadow-2xs"
                         : "hover:bg-primary/10 text-primary border-primary/30"
@@ -302,13 +302,13 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
 
             {/* 3. إرجاع وضبط */}
             <div className="space-y-2 pt-2 border-t border-border/30">
-              <Label className="text-[11px] font-bold text-foreground/90 block">الضبط والإرجاع</Label>
+              <Label className="text-xs font-bold text-foreground/90 block">الضبط والإرجاع</Label>
               
               <div className="grid grid-cols-1 gap-1.5">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-[11px] h-8.5 rounded-xl cursor-pointer flex items-center justify-center gap-2 w-full text-foreground/90 border-border/60 hover:bg-accent/60 font-semibold"
+                  className="text-xs h-8 rounded-md cursor-pointer flex items-center justify-center gap-2 w-full text-foreground/90 border-border/80 hover:bg-accent/60 font-medium"
                   onClick={handleResetCrop}
                   title="إعادة تحديد القص والتدوير للحالة الكاملة الأولية"
                 >
@@ -320,7 +320,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-[11px] h-8.5 rounded-xl cursor-pointer flex items-center justify-center gap-2 w-full text-primary border-primary/30 hover:border-primary/50 hover:bg-primary/10 font-bold"
+                    className="text-xs h-8 rounded-md cursor-pointer flex items-center justify-center gap-2 w-full text-primary border-primary/30 hover:border-primary/50 hover:bg-primary/10 font-semibold"
                     onClick={handleRestoreOriginal}
                     title="استرجاع الصورة الأصلية الكاملة"
                   >
@@ -334,15 +334,15 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
         </div>
 
         {/* فوتر النافذة */}
-        <DialogFooter className="gap-2.5 border-t border-border/40 pt-3.5 flex items-center justify-end">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl h-10 px-5 text-xs font-semibold cursor-pointer">
+        <DialogFooter className="gap-2 border-t border-border/40 pt-3 flex items-center justify-end">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer">
             إلغاء
           </Button>
           <Button
             onClick={handleCrop}
-            className="rounded-xl h-10 px-6 text-xs font-bold gap-2 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+            className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-3.5 h-3.5" />
             <span>حفظ القص</span>
           </Button>
         </DialogFooter>

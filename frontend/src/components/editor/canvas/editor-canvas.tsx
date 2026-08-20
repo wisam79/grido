@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import { X, RefreshCw } from "lucide-react";
+import { X, RefreshCw, Loader2 } from "lucide-react";
 import { OpenFile, SaveImageFromBase64, GetImageDimensions } from "../../../../wailsjs/go/main/App";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
 import { KonvaCanvas } from "../konva/konva-canvas";
@@ -610,7 +610,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     <div
       ref={innerRef}
       id="canvas-area"
-      className="relative rounded-sm overflow-hidden border border-white/5 transition-shadow duration-300 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.55)] hover:shadow-[0_30px_70px_-10px_rgba(0,0,0,0.7)]"
+      className="relative rounded-sm overflow-hidden border border-white/5 transition-shadow duration-300 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.55)] hover:shadow-[0_30px_70px_-10px_rgba(0,0,0,0.7)] fluent-specular"
       style={{
         width: displayW,
         height: displayH,
@@ -629,8 +629,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
       onMouseLeave={handleCanvasMouseLeave}
     >
       {isLoading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-sm">
-          <RefreshCw className="w-8 h-8 text-white animate-spin" />
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md rounded-sm gap-2">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <span className="text-xs font-bold text-white font-cairo">جاري المعالجة ...</span>
         </div>
       )}
 
@@ -681,7 +682,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
             }}
           >
             <button
-              className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
+              className="absolute top-1 right-1 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-md w-6 h-6 flex items-center justify-center z-30 pointer-events-auto shadow-md cursor-pointer transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 updateSlot(selectedSlot.id, { imageSrc: undefined });
@@ -691,7 +692,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
               <X className="w-3.5 h-3.5" />
             </button>
              <button
-               className="absolute top-1 left-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80 z-30 pointer-events-auto shadow-md cursor-pointer"
+               className="absolute top-1 left-1 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-md w-6 h-6 flex items-center justify-center z-30 pointer-events-auto shadow-md cursor-pointer transition-colors"
                onClick={async (e) => {
                  e.stopPropagation();
                  if (isLoading) return;

@@ -156,7 +156,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
 
     setIsFraming(true);
     setFrameProgress(0);
-    setFrameProgressText("جاري التهيئة...");
+    setFrameProgressText("جاري التهيئة ...");
 
     const requestId = nextRequestId++;
     busyFrameRequestId = requestId;

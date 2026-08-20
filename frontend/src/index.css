@@ -83,8 +83,13 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f8fafc;
   --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #cbd5e1;
-  --sidebar-ring: #1e40af;
+  /* Fluent 2 Elevation Shadows */
+  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.14), 0 0.3px 0.9px 0 rgba(0,0,0,0.10);
+  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.18), 0 0.6px 1.8px 0 rgba(0,0,0,0.14);
+  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.22), 0 1.2px 3.6px 0 rgba(0,0,0,0.16);
+  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.26), 0 2.4px 7.2px 0 rgba(0,0,0,0.20);
+  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.30), 0 4.2px 12.6px 0 rgba(0,0,0,0.24);
+  --fluent-shadow-64: 0 51.2px 115.2px 0 rgba(0,0,0,0.36), 0 9.6px 28.8px 0 rgba(0,0,0,0.28);
 }
 
 .dark {
@@ -116,6 +121,14 @@
   --sidebar-accent-foreground: #f5f5f5;
   --sidebar-border: #3a3a3a;
   --sidebar-ring: #3b82f6;
+
+  /* Fluent 2 Dark Mode Elevation Shadows with Ambient Depth */
+  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.28), 0 0.3px 0.9px 0 rgba(0,0,0,0.20);
+  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.32), 0 0.6px 1.8px 0 rgba(0,0,0,0.24);
+  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.38), 0 1.2px 3.6px 0 rgba(0,0,0,0.28);
+  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.44), 0 2.4px 7.2px 0 rgba(0,0,0,0.32);
+  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.50), 0 4.2px 12.6px 0 rgba(0,0,0,0.36);
+  --fluent-shadow-64: 0 51.2px 115.2px 0 rgba(0,0,0,0.58), 0 9.6px 28.8px 0 rgba(0,0,0,0.42);
 }
 
 @layer base {
@@ -214,6 +227,83 @@
   .glass-panel {
     background: var(--card);
     border: 1px solid var(--border);
+  }
+
+  /* ─── Microsoft Fluent 2 Surface & Material System ─────────── */
+  .fluent-acrylic {
+    background-color: var(--card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+  }
+  .dark .fluent-acrylic {
+    background-color: rgba(45, 45, 45, 0.82);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .fluent-mica {
+    background-color: var(--background);
+    border: 1px solid var(--border);
+  }
+  .dark .fluent-mica {
+    background-color: #202024;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .fluent-specular {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .dark .fluent-specular {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .fluent-command-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .dark .fluent-command-group {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.07);
+  }
+
+  .fluent-smoke-backdrop {
+    background-color: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  /* ─── Microsoft Fluent 2 Elevation Shadows ─────────────────── */
+  .shadow-fluent-2 {
+    box-shadow: var(--fluent-shadow-2);
+  }
+  .shadow-fluent-4 {
+    box-shadow: var(--fluent-shadow-4);
+  }
+  .shadow-fluent-8 {
+    box-shadow: var(--fluent-shadow-8);
+  }
+  .shadow-fluent-16 {
+    box-shadow: var(--fluent-shadow-16);
+  }
+  .shadow-fluent-28 {
+    box-shadow: var(--fluent-shadow-28);
+  }
+  .shadow-fluent-64 {
+    box-shadow: var(--fluent-shadow-64);
+  }
+
+  /* ─── Microsoft Fluent 2 Dual Focus Ring ──────────────────── */
+  .fluent-focus-ring {
+    outline: none !important;
+  }
+  .fluent-focus-ring:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px !important;
   }
 
   /* ─── Native Visual Depth & High-Contrast System ─────────────── */

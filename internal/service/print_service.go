@@ -1389,7 +1389,7 @@ func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
 		existingChunkLen := int(binary.BigEndian.Uint32(pngData[insertPos : insertPos+4]))
 		nextChunkPos := insertPos + 4 + 4 + existingChunkLen + 4
 
-		result := make([]byte, 0, len(pngData)-existingChunkLen+len(physData))
+		result := make([]byte, 0, len(pngData)-existingChunkLen+len(physChunk))
 		result = append(result, pngData[:insertPos]...)
 		result = append(result, physChunk...)
 		result = append(result, pngData[nextChunkPos:]...)

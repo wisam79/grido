@@ -175,7 +175,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   const activePresetId = activePreset ? activePreset.id : "custom";
 
   return (
-    <div className="space-y-3.5 bg-card/40 dark:bg-card/20 border border-border/50 p-3.5 rounded-2xl shadow-xs font-cairo">
+    <div className="space-y-3.5 bg-card border border-border/80 dark:border-white/10 p-3.5 rounded-xl shadow-xs font-cairo fluent-specular">
       {/* هيدر ثابت بدون تقليص */}
       <div className="flex items-center justify-between border-b border-border/25 pb-2.5">
         <Label className="text-xs font-extrabold text-foreground flex items-center gap-2 select-none">
@@ -191,14 +191,14 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
       <div className="space-y-3 animate-in fade-in duration-200">
         <div className="flex items-center justify-between">
-          <div className="flex rounded-lg bg-muted/60 dark:bg-muted/30 p-0.5 border border-border/30 w-full">
+          <div className="flex rounded-lg bg-muted/60 dark:bg-muted/30 p-0.5 border border-border/40 w-full gap-0.5">
             <button
               type="button"
               onClick={() => setUnit("px")}
               className={cn(
-                "flex-1 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer text-center",
+                "flex-1 h-7 text-[11px] font-bold rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                 unit === "px"
-                  ? "bg-primary text-primary-foreground shadow-xs"
+                  ? "bg-card text-foreground shadow-2xs font-extrabold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -208,9 +208,9 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => setUnit("mm")}
               className={cn(
-                "flex-1 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer text-center",
+                "flex-1 h-7 text-[11px] font-bold rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                 unit === "mm"
-                  ? "bg-primary text-primary-foreground shadow-xs"
+                  ? "bg-card text-foreground shadow-2xs font-extrabold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -227,7 +227,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => handlePresetChange("a4")}
               className={cn(
-                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                 activePresetId === "a4"
                   ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border/60 hover:bg-muted/20 text-foreground"
@@ -243,7 +243,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => handlePresetChange("4x6")}
               className={cn(
-                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                 activePresetId === "4x6"
                   ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border/60 hover:bg-muted/20 text-foreground"
@@ -259,7 +259,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => handlePresetChange("a5")}
               className={cn(
-                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                 activePresetId === "a5"
                   ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border/60 hover:bg-muted/20 text-foreground"
@@ -275,7 +275,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => handlePresetChange("a3")}
               className={cn(
-                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                 activePresetId === "a3"
                   ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border/60 hover:bg-muted/20 text-foreground"
@@ -291,7 +291,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => handlePresetChange("5x7")}
               className={cn(
-                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                 activePresetId === "5x7"
                   ? "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                   : "border-border/60 hover:bg-muted/20 text-foreground"
@@ -308,7 +308,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 <button
                   type="button"
                   className={cn(
-                    "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full",
+                    "relative flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer h-16 bg-card select-none hover:border-primary/45 active:scale-[0.97] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                     ["a4", "4x6", "a5", "a3", "5x7"].includes(activePresetId)
                       ? "border-border/60 text-foreground hover:bg-muted/20"
                       : "border-2 border-primary bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/20"
@@ -343,12 +343,12 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   })()}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 font-cairo" align="end">
+              <DropdownMenuContent className="w-56 font-cairo rounded-xl border fluent-specular bg-popover/95 backdrop-blur-xl" align="end">
                 <DropdownMenuItem
                   onClick={() => {
                     if (template) setTemplate(null);
                   }}
-                  className="text-xs text-right justify-end font-bold cursor-pointer"
+                  className="text-xs text-right justify-end font-bold cursor-pointer rounded-md"
                 >
                   مقاس مخصص (Custom Size)
                 </DropdownMenuItem>
@@ -360,7 +360,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                     <DropdownMenuItem
                       key={p.id}
                       onClick={() => handlePresetChange(p.id)}
-                      className="text-xs text-right justify-end cursor-pointer"
+                      className="text-xs text-right justify-end cursor-pointer rounded-md"
                     >
                       {label}
                     </DropdownMenuItem>
@@ -374,8 +374,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         {/* حقول الأبعاد الموزعة بنمط Figma */}
         <div className="flex items-center gap-2" dir="rtl">
           {/* العرض */}
-          <div className="flex-1 flex items-center bg-background border border-border/60 hover:border-primary/45 rounded-xl px-2.5 h-10 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 shadow-2xs">
-            <span className="text-[10px] font-black text-muted-foreground/50 select-none w-4 text-center">W</span>
+          <div className="flex-1 flex items-center bg-background/60 border border-border/80 hover:border-primary/45 rounded-md px-2.5 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs">
+            <span className="text-[10px] font-bold text-muted-foreground/60 select-none w-4 text-center">W</span>
             <input
               type="number"
               value={widthVal}
@@ -384,10 +384,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               onKeyDown={(e) => {
                 if (e.key === "Enter") (e.target as HTMLInputElement).blur();
               }}
-              className="w-full bg-transparent border-0 p-0 text-sm font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
+              className="w-full bg-transparent border-0 p-0 text-xs font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
               min={1}
             />
-            <span className="text-[9px] text-muted-foreground/50 select-none font-bold pr-1">{unit === "px" ? "px" : "mm"}</span>
+            <span className="text-[9px] text-muted-foreground/60 select-none font-bold pr-1">{unit === "px" ? "px" : "mm"}</span>
           </div>
 
           {/* زر التبديل العائم */}
@@ -395,15 +395,15 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             variant="outline"
             size="icon"
             onClick={handleSwapDimensions}
-            className="h-10 w-10 rounded-xl border border-border/60 bg-background hover:bg-primary/10 hover:border-primary/40 hover:text-primary text-muted-foreground transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs"
+            className="h-8 w-8 rounded-md border border-border/80 bg-background/60 hover:bg-primary/10 hover:border-primary/40 hover:text-primary text-muted-foreground transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="تبديل الاتجاه (أفقي/عمودي)"
           >
             <RefreshCw className="w-3.5 h-3.5 transition-transform duration-300 active:rotate-180" />
           </Button>
 
           {/* الارتفاع */}
-          <div className="flex-1 flex items-center bg-background border border-border/60 hover:border-primary/45 rounded-xl px-2.5 h-10 transition-all focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 shadow-2xs">
-            <span className="text-[10px] font-black text-muted-foreground/50 select-none w-4 text-center">H</span>
+          <div className="flex-1 flex items-center bg-background/60 border border-border/80 hover:border-primary/45 rounded-md px-2.5 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs">
+            <span className="text-[10px] font-bold text-muted-foreground/60 select-none w-4 text-center">H</span>
             <input
               type="number"
               value={heightVal}
@@ -412,10 +412,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               onKeyDown={(e) => {
                 if (e.key === "Enter") (e.target as HTMLInputElement).blur();
               }}
-              className="w-full bg-transparent border-0 p-0 text-sm font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
+              className="w-full bg-transparent border-0 p-0 text-xs font-bold font-mono focus:ring-0 focus:outline-hidden text-center text-foreground"
               min={1}
             />
-            <span className="text-[9px] text-muted-foreground/50 select-none font-bold pr-1">{unit === "px" ? "px" : "mm"}</span>
+            <span className="text-[9px] text-muted-foreground/60 select-none font-bold pr-1">{unit === "px" ? "px" : "mm"}</span>
           </div>
         </div>
 
@@ -427,14 +427,14 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               value={String(dpiVal)}
               onValueChange={(val) => handleDpiChange(Number(val))}
             >
-              <SelectTrigger className="w-full h-10 text-xs bg-background border border-border/60 rounded-xl">
+              <SelectTrigger className="w-full h-8 text-xs bg-background/60 border border-border/80 rounded-md focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="font-cairo">
-                <SelectItem value="150">150 DPI (منخفض)</SelectItem>
-                <SelectItem value="200">200 DPI (متوسط)</SelectItem>
-                <SelectItem value="300">300 DPI (عالي - موصى به)</SelectItem>
-                <SelectItem value="600">600 DPI (فائق الدقة)</SelectItem>
+              <SelectContent className="font-cairo rounded-xl border fluent-specular bg-popover/95 backdrop-blur-xl">
+                <SelectItem value="150" className="rounded-md text-xs cursor-pointer">150 DPI (منخفض)</SelectItem>
+                <SelectItem value="200" className="rounded-md text-xs cursor-pointer">200 DPI (متوسط)</SelectItem>
+                <SelectItem value="300" className="rounded-md text-xs cursor-pointer">300 DPI (عالي - موصى به)</SelectItem>
+                <SelectItem value="600" className="rounded-md text-xs cursor-pointer">600 DPI (فائق الدقة)</SelectItem>
               </SelectContent>
             </Select>
           </div>

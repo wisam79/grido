@@ -320,44 +320,56 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
 
             <TabsContent value="save" className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label htmlFor="proj-name">اسم المشروع الجديد</Label>
+                <Label htmlFor="proj-name" className="text-xs font-semibold">اسم المشروع الجديد</Label>
                 <Input
                   id="proj-name"
                   placeholder="أدخل اسماً مميزاً للمشروع..."
+                  className="h-8 text-xs rounded-md"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSave()}
                 />
               </div>
-              <Button className="w-full gap-2 mt-2" onClick={handleSave} disabled={isLoading}>
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                <span>حفظ في قاعدة البيانات</span>
+              <Button className="w-full h-8 gap-2 mt-2 rounded-md font-semibold text-xs shadow-xs" onClick={handleSave} disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>جاري الحفظ ...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>حفظ في قاعدة البيانات</span>
+                  </>
+                )}
               </Button>
             </TabsContent>
 
             <TabsContent value="list" className="space-y-3 py-1">
               {/* شريط البحث والفرز */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <div className="relative flex-1">
-                  <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute right-2.5 top-2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="بحث في المشاريع..."
-                    className="pr-8 h-9"
+                    className="pr-8 h-8 text-xs rounded-md"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex bg-muted/30 rounded-md border p-1 h-9">
+                <div className="flex bg-muted/30 rounded-md border border-border/40 p-0.5 h-8 items-center">
                   <button 
+                    type="button"
                     onClick={() => setSortBy(sortBy === "date_desc" ? "date_asc" : "date_desc")}
-                    className={`px-2.5 flex items-center justify-center rounded transition-colors ${sortBy.startsWith("date") ? "bg-background shadow-xs text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("date") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="الفرز حسب التاريخ"
                   >
                     <Calendar className="w-3.5 h-3.5" />
                   </button>
                   <button 
+                    type="button"
                     onClick={() => setSortBy("name_asc")}
-                    className={`px-2.5 flex items-center justify-center rounded transition-colors ${sortBy.startsWith("name") ? "bg-background shadow-xs text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("name") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="الفرز الأبجدي"
                   >
                     <ArrowUpDown className="w-3.5 h-3.5" />
@@ -366,16 +378,16 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               </div>
 
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground border rounded-lg bg-muted/10">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
-                  <span className="text-xs">جاري جلب المشاريع...</span>
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground border rounded-xl bg-muted/10">
+                  <Loader2 className="w-7 h-7 animate-spin text-primary mb-2" />
+                  <span className="text-xs font-medium">جاري تحميل المشاريع ...</span>
                 </div>
               ) : projectsList.length === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed rounded-lg text-muted-foreground text-sm">
+                <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground text-xs">
                   لا توجد مشاريع محفوظة حالياً في قاعدة البيانات.
                 </div>
               ) : filteredProjects.length === 0 ? (
-                <div className="text-center py-10 border border-dashed rounded-lg text-muted-foreground text-sm">
+                <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-xs">
                   لم يتم العثور على أي مشاريع تطابق بحثك.
                 </div>
               ) : (
@@ -386,16 +398,16 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     <div
                       key={project.id}
                       onClick={() => handleLoad(project)}
-                      className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden"
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden fluent-specular"
                     >
                       {isPinned && <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />}
                       <div className="space-y-1 pl-2 pr-1">
-                        <h4 className="font-semibold text-sm text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                        <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
                           {isPinned && <Pin className="w-3 h-3 text-primary fill-primary/20" />}
                           {project.name}
                         </h4>
                         <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                          <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                          <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">
                             {project.mode === "single" ? "صورة مفردة" : "كولاج مجمع"}
                           </span>
                           <span className="flex items-center gap-1">
@@ -405,23 +417,23 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                         </div>
                       </div>
 
-                      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={(e) => togglePin(e, project.id)}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title={isPinned ? "إلغاء التثبيت" : "تثبيت في الأعلى"}
                         >
-                          {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
+                          {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={(e) => handleDelete(project.id, e)}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </div>
@@ -432,29 +444,38 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
 
             <TabsContent value="backup" className="space-y-4 py-2">
               <div className="space-y-3">
-                <div className="p-3 border rounded-lg bg-card shadow-xs flex items-center justify-between">
+                <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
                   <div>
-                    <h4 className="text-sm font-semibold text-foreground/90">تصدير نسخة احتياطية</h4>
+                    <h4 className="text-xs font-bold text-foreground/90">تصدير نسخة احتياطية</h4>
                     <p className="text-[11px] text-muted-foreground">حفظ جميع مشاريعك المحلية في ملف خارجي</p>
                   </div>
                   <Button 
                     size="sm" 
                     onClick={handleExportBackup} 
                     disabled={backupActionLoading}
-                    className="gap-1.5 h-8.5"
+                    className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>تصدير JSON</span>
+                    {backupActionLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>جاري التصدير ...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5" />
+                        <span>تصدير JSON</span>
+                      </>
+                    )}
                   </Button>
                 </div>
 
-                <div className="p-3 border rounded-lg bg-card shadow-xs flex items-center justify-between">
+                <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
                   <div>
-                    <h4 className="text-sm font-semibold text-foreground/90">استيراد نسخة احتياطية</h4>
+                    <h4 className="text-xs font-bold text-foreground/90">استيراد نسخة احتياطية</h4>
                     <p className="text-[11px] text-muted-foreground">دمج أو استبدال المشاريع من ملف خارجي</p>
                   </div>
                   <label className="cursor-pointer">
-                    <span className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8.5 px-3 gap-1.5">
+                    <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
                       <Upload className="w-3.5 h-3.5" />
                       <span>رفع ملف</span>
                     </span>
@@ -468,9 +489,9 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                   </label>
                 </div>
 
-                <div className="p-3 border rounded-lg bg-red-500/5 border-red-500/20 flex items-center justify-between">
+                <div className="p-3 border rounded-xl bg-red-500/5 border-red-500/20 flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-semibold text-red-600 dark:text-red-400">تهيئة مكتبة المشاريع</h4>
+                    <h4 className="text-xs font-bold text-red-600 dark:text-red-400">تهيئة مكتبة المشاريع</h4>
                     <p className="text-[11px] text-red-500/70">حذف جميع المشاريع المحفوظة نهائياً من هذا الجهاز</p>
                   </div>
                   <Button 
@@ -478,7 +499,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     size="sm" 
                     onClick={() => setResetConfirmOpen(true)}
                     disabled={backupActionLoading}
-                    className="gap-1.5 h-8.5 bg-red-600 hover:bg-red-700 text-white"
+                    className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-xs"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>حذف الكل</span>
@@ -493,13 +514,13 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
           <AlertDialogContent dir="rtl">
             <AlertDialogHeader>
               <AlertDialogTitle className="font-cairo text-right">حذف المشروع</AlertDialogTitle>
-              <AlertDialogDescription className="font-cairo text-right">
+              <AlertDialogDescription className="font-cairo text-right text-xs">
                 هل أنت متأكد من رغبتك في حذف هذا المشروع نهائياً؟ لا يمكن التراجع عن هذا الإجراء.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="flex flex-row-reverse gap-2 sm:justify-start">
-              <AlertDialogCancel className="font-cairo">إلغاء</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white font-cairo">
+              <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">إلغاء</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs">
                 حذف
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -511,13 +532,13 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
       <Dialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
         <DialogContent className="sm:max-w-[400px]" dir="rtl">
           <DialogHeader>
-            <DialogTitle className="font-cairo flex items-center gap-2">
-              <Upload className="w-5 h-5 text-primary" />
+            <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
+              <Upload className="w-4 h-4 text-primary" />
               <span>استيراد المشاريع</span>
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2 font-cairo">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               تم التحقق من ملف النسخة الاحتياطية بنجاح. يرجى اختيار طريقة الاستيراد:
             </p>
             <RadioGroup 
@@ -525,25 +546,34 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               onValueChange={(val: any) => setImportMode(val)}
               className="space-y-2"
             >
-              <div className="flex items-center space-x-reverse space-x-2 border rounded-lg p-3 hover:bg-accent/40 cursor-pointer">
+              <div className="flex items-center space-x-reverse space-x-2 border border-border/60 rounded-xl p-3 hover:bg-accent/40 cursor-pointer fluent-specular transition-colors">
                 <RadioGroupItem value="merge" id="r-merge" />
                 <Label htmlFor="r-merge" className="cursor-pointer flex-1 space-y-0.5">
-                  <div className="font-medium text-sm">دمج المشاريع (Merge)</div>
-                  <div className="text-[11px] text-muted-foreground">إضافة المشاريع الجديدة وتحديث المشاريع المتشابهة بالمعرف</div>
+                  <div className="font-semibold text-xs text-foreground">دمج المشاريع (Merge)</div>
+                  <div className="text-[10px] text-muted-foreground">إضافة المشاريع الجديدة وتحديث المشاريع المتشابهة بالمعرف</div>
                 </Label>
               </div>
-              <div className="flex items-center space-x-reverse space-x-2 border rounded-lg p-3 hover:bg-accent/40 cursor-pointer border-red-500/20 hover:border-red-500/30">
+              <div className="flex items-center space-x-reverse space-x-2 border rounded-xl p-3 hover:bg-accent/40 cursor-pointer border-red-500/20 hover:border-red-500/30 transition-colors">
                 <RadioGroupItem value="overwrite" id="r-overwrite" />
                 <Label htmlFor="r-overwrite" className="cursor-pointer flex-1 space-y-0.5">
-                  <div className="font-medium text-sm text-red-600 dark:text-red-400">استبدال بالكامل (Overwrite)</div>
-                  <div className="text-[11px] text-muted-foreground">مسح كافة المشاريع الحالية واستبدالها بمحتويات ملف النسخة الاحتياطية</div>
+                  <div className="font-semibold text-xs text-red-600 dark:text-red-400">استبدال بالكامل (Overwrite)</div>
+                  <div className="text-[10px] text-muted-foreground">مسح كافة المشاريع الحالية واستبدالها بمحتويات ملف النسخة الاحتياطية</div>
                 </Label>
               </div>
             </RadioGroup>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={() => setImportConfirmOpen(false)}>إلغاء</Button>
-              <Button onClick={handleConfirmImport} disabled={backupActionLoading}>
-                {backupActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "تأكيد الاستيراد"}
+              <Button variant="ghost" onClick={() => setImportConfirmOpen(false)} className="h-8 px-4 text-xs font-semibold rounded-md">
+                إلغاء
+              </Button>
+              <Button onClick={handleConfirmImport} disabled={backupActionLoading} className="h-8 px-4 text-xs font-semibold rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+                {backupActionLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>جاري الاستيراد ...</span>
+                  </>
+                ) : (
+                  "تأكيد الاستيراد"
+                )}
               </Button>
             </div>
           </div>
@@ -554,19 +584,19 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
       <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-cairo text-right flex items-center gap-2 text-red-600 dark:text-red-400">
-              <ShieldAlert className="w-5 h-5" />
+            <AlertDialogTitle className="font-cairo text-right flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-bold">
+              <ShieldAlert className="w-4 h-4" />
               <span>تحذير: تهيئة مكتبة المشاريع</span>
             </AlertDialogTitle>
-            <AlertDialogDescription className="font-cairo text-right text-sm">
+            <AlertDialogDescription className="font-cairo text-right text-xs">
               أنت على وشك حذف جميع المشاريع المحفوظة محلياً بشكل نهائي من قاعدة البيانات. لا يمكن التراجع عن هذا الإجراء أبداً. ننصح بتصدير نسخة احتياطية أولاً.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row-reverse gap-2 sm:justify-start">
-            <AlertDialogCancel className="font-cairo">إلغاء</AlertDialogCancel>
+            <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">إلغاء</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmReset} 
-              className="bg-red-600 hover:bg-red-700 text-white font-cairo"
+              className="bg-red-600 hover:bg-red-700 text-white font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
             >
               تأكيد حذف كل المشاريع
             </AlertDialogAction>

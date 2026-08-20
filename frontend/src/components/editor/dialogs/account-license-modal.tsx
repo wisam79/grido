@@ -299,7 +299,7 @@ export function AccountLicenseModal() {
   return (
     <Dialog open={accountModalOpen} onOpenChange={setAccountModalOpen}>
       <DialogContent 
-        className="max-w-sm bg-background border border-border shadow-lg rounded-xl p-5 dir-rtl" 
+        className="max-w-sm bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl rounded-2xl p-5 dir-rtl fluent-specular" 
         dir="rtl"
       >
         <DialogHeader className="space-y-1 text-right border-b border-border/60 pb-3">
@@ -310,21 +310,21 @@ export function AccountLicenseModal() {
         </DialogHeader>
 
         {/* 📊 بطاقة حالة الاشتراك والنظام */}
-        <div className="bg-muted/40 border border-border/60 p-3 rounded-lg space-y-2 mt-2">
+        <div className="bg-muted/40 border border-border/60 p-3 rounded-xl space-y-2 mt-2 fluent-specular">
           <div className="flex justify-between items-center text-xs">
             <span className="text-muted-foreground text-[11px]">الباقة الحالية:</span>
             {active ? (
               user?.plan === "trial" ? (
-                <Badge variant="secondary" className="text-[10px] px-2 py-0 font-medium">
+                <Badge variant="secondary" className="text-[10px] px-2 py-0 font-semibold rounded-md">
                   تجريبي ({trialDaysLeft} يوم)
                 </Badge>
               ) : (
-                <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0 font-medium">
+                <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0 font-semibold rounded-md">
                   PRO احترافي
                 </Badge>
               )
             ) : (
-              <Badge variant="outline" className="text-muted-foreground text-[10px] px-2 py-0 font-medium">
+              <Badge variant="outline" className="text-muted-foreground text-[10px] px-2 py-0 font-semibold rounded-md">
                 مجاني
               </Badge>
             )}
@@ -333,7 +333,7 @@ export function AccountLicenseModal() {
           {user && user.email ? (
             <div className="flex justify-between items-center text-xs border-t border-border/40 pt-2">
               <span className="text-[11px] text-muted-foreground">الحساب:</span>
-              <span className="font-mono text-[11px] text-foreground font-medium">{user.email}</span>
+              <span className="font-mono text-[11px] text-foreground font-semibold">{user.email}</span>
             </div>
           ) : (
             <div className="border border-border/60 rounded-md p-2 flex items-center gap-2 bg-background/50 text-[11px] text-muted-foreground">
@@ -345,16 +345,16 @@ export function AccountLicenseModal() {
 
         {/* 🎛️ التبويبات والمحتوى */}
         <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="w-full mt-2">
-          <TabsList className="grid w-full grid-cols-2 bg-muted p-1 rounded-lg h-9 border border-border/40">
+          <TabsList className="grid w-full grid-cols-2 bg-muted p-0.5 rounded-lg h-8 border border-border/40">
             <TabsTrigger 
               value="auth" 
-              className="text-xs rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-medium cursor-pointer"
+              className="text-xs h-7 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-semibold cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               تسجيل الحساب
             </TabsTrigger>
             <TabsTrigger 
               value="license" 
-              className="text-xs rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-medium cursor-pointer"
+              className="text-xs h-7 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-semibold cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               مفتاح الترخيص
             </TabsTrigger>
@@ -371,13 +371,13 @@ export function AccountLicenseModal() {
                   </div>
                 )}
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">البريد الإلكتروني</Label>
+                  <Label className="text-xs font-semibold">البريد الإلكتروني</Label>
                   <div className="relative">
                     <Mail className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                     <Input
                       type="email"
                       placeholder="name@example.com"
-                      className="pr-8 h-9 text-xs"
+                      className="pr-8 h-8 text-xs rounded-md"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -385,14 +385,14 @@ export function AccountLicenseModal() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">كود الاستعادة (OTP)</Label>
+                  <Label className="text-xs font-semibold">كود الاستعادة (OTP)</Label>
                   <div className="relative">
                     <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                     <Input
                       type="text"
                       placeholder="123456"
                       maxLength={6}
-                      className="pr-8 h-9 text-xs tracking-widest text-center font-mono"
+                      className="pr-8 h-8 text-xs tracking-widest text-center font-mono rounded-md"
                       required
                       value={recoveryOtp}
                       onChange={(e) => setRecoveryOtp(e.target.value)}
@@ -404,13 +404,13 @@ export function AccountLicenseModal() {
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">كلمة المرور الجديدة</Label>
+                  <Label className="text-xs font-semibold">كلمة المرور الجديدة</Label>
                   <div className="relative">
                     <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                     <Input
                       type="password"
                       placeholder="••••••••"
-                      className="pr-8 h-9 text-xs"
+                      className="pr-8 h-8 text-xs rounded-md"
                       required
                       minLength={6}
                       value={newPassword}
@@ -420,11 +420,14 @@ export function AccountLicenseModal() {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-9 text-xs font-bold" 
+                  className="w-full h-8 text-xs font-bold rounded-md shadow-xs gap-1.5" 
                   disabled={loading}
                 >
                   {loading ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>جاري الحفظ ...</span>
+                    </>
                   ) : (
                     "حفظ كلمة المرور الجديدة وتسجيل الدخول"
                   )}
@@ -436,7 +439,7 @@ export function AccountLicenseModal() {
                       setShowRecoveryOtp(false);
                       setError(null);
                     }}
-                    className="text-[11px] text-muted-foreground hover:text-foreground font-medium"
+                    className="text-[11px] text-muted-foreground hover:text-foreground font-medium cursor-pointer"
                   >
                     إلغاء والعودة لتسجيل الدخول
                   </button>
@@ -453,14 +456,14 @@ export function AccountLicenseModal() {
                   )}
                   {showOtp ? (
                     <div className="space-y-2">
-                      <Label className="text-xs font-medium">كود التحقق (OTP)</Label>
+                      <Label className="text-xs font-semibold">كود التحقق (OTP)</Label>
                       <div className="relative">
                         <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                         <Input
                           type="text"
                           placeholder="123456"
                           maxLength={6}
-                          className="pr-8 h-9 text-xs tracking-widest text-center font-mono"
+                          className="pr-8 h-8 text-xs tracking-widest text-center font-mono rounded-md"
                           required
                           value={otpCode}
                           onChange={(e) => setOtpCode(e.target.value)}
@@ -473,11 +476,14 @@ export function AccountLicenseModal() {
 
                       <Button 
                         type="submit" 
-                        className="w-full h-9 text-xs font-bold" 
+                        className="w-full h-8 text-xs font-bold rounded-md shadow-xs gap-1.5" 
                         disabled={loading}
                       >
                         {loading ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>جاري تأكيد الكود ...</span>
+                          </>
                         ) : (
                           "تأكيد الكود وتسجيل الدخول"
                         )}
@@ -488,11 +494,11 @@ export function AccountLicenseModal() {
                           type="button"
                           onClick={handleResendOTP}
                           disabled={resending || resendCooldown > 0}
-                          className="text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline"
+                          className="text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline cursor-pointer"
                         >
                           {resending ? (
                             <span className="flex items-center gap-1">
-                              <Loader2 className="w-3 h-3 animate-spin inline" /> جاري الإرسال...
+                              <Loader2 className="w-3 h-3 animate-spin inline" /> جاري الإرسال ...
                             </span>
                           ) : resendCooldown > 0 ? (
                             `إعادة الإرسال بعد (${resendCooldown} ث)`
@@ -507,7 +513,7 @@ export function AccountLicenseModal() {
                             setShowOtp(false);
                             setError(null);
                           }}
-                          className="text-muted-foreground hover:text-foreground"
+                          className="text-muted-foreground hover:text-foreground cursor-pointer"
                         >
                           تغيير البريد
                         </button>
@@ -517,12 +523,12 @@ export function AccountLicenseModal() {
                     <>
                       {authMode === "register" && (
                         <div className="space-y-1">
-                          <Label className="text-xs font-medium">الاسم الكامل</Label>
+                          <Label className="text-xs font-semibold">الاسم الكامل</Label>
                           <div className="relative">
                             <User className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                             <Input
                               placeholder="الاسم"
-                              className="pr-8 h-9 text-xs"
+                              className="pr-8 h-8 text-xs rounded-md"
                               required
                               value={name}
                               onChange={(e) => setName(e.target.value)}
@@ -532,13 +538,13 @@ export function AccountLicenseModal() {
                       )}
 
                       <div className="space-y-1">
-                        <Label className="text-xs font-medium">البريد الإلكتروني</Label>
+                        <Label className="text-xs font-semibold">البريد الإلكتروني</Label>
                         <div className="relative">
                           <Mail className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                           <Input
                             type="email"
                             placeholder="name@example.com"
-                            className="pr-8 h-9 text-xs"
+                            className="pr-8 h-8 text-xs rounded-md"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -548,13 +554,13 @@ export function AccountLicenseModal() {
 
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs font-medium">كلمة المرور</Label>
+                          <Label className="text-xs font-semibold">كلمة المرور</Label>
                           {authMode === "login" && (
                             <button
                               type="button"
                               onClick={handleResetPassword}
                               disabled={loading}
-                              className="text-[10px] text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline"
+                              className="text-[10px] text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline cursor-pointer"
                             >
                               نسيت كلمة المرور؟
                             </button>
@@ -565,7 +571,7 @@ export function AccountLicenseModal() {
                           <Input
                             type="password"
                             placeholder="••••••••"
-                            className="pr-8 h-9 text-xs"
+                            className="pr-8 h-8 text-xs rounded-md"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -575,11 +581,14 @@ export function AccountLicenseModal() {
 
                       <Button 
                         type="submit" 
-                        className="w-full h-9 text-xs font-bold" 
+                        className="w-full h-8 text-xs font-bold rounded-md shadow-xs gap-1.5" 
                         disabled={loading || loadingGoogle}
                       >
                         {loading ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>{authMode === "login" ? "جاري تسجيل الدخول ..." : "جاري إنشاء الحساب ..."}</span>
+                          </>
                         ) : authMode === "login" ? (
                           "تسجيل الدخول"
                         ) : (
@@ -597,11 +606,14 @@ export function AccountLicenseModal() {
                         type="button"
                         onClick={handleGoogleLogin}
                         variant="outline"
-                        className="w-full h-9 text-xs font-medium gap-2 border-border"
+                        className="w-full h-8 text-xs font-semibold gap-2 border-border rounded-md shadow-2xs"
                         disabled={loading || loadingGoogle}
                       >
                         {loadingGoogle ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>جاري الدخول عبر Google ...</span>
+                          </>
                         ) : (
                           <>
                             <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
@@ -622,7 +634,7 @@ export function AccountLicenseModal() {
                   <button
                     type="button"
                     onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
-                    className="text-[11px] text-primary hover:underline font-medium"
+                    className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
                   >
                     {authMode === "login" ? "إنشاء حساب جديد" : "لديك حساب بالفعل؟ تسجيل الدخول"}
                   </button>
@@ -636,7 +648,7 @@ export function AccountLicenseModal() {
           <TabsContent value="license" className="mt-3 space-y-3">
             <div className="space-y-3">
               {user && (user.plan === "pro" || user.plan === "enterprise") ? (
-                <div className="bg-muted/30 border border-border rounded-lg p-3 text-center space-y-2">
+                <div className="bg-muted/30 border border-border rounded-xl p-3 text-center space-y-2 fluent-specular">
                   <div className="inline-flex p-2 bg-emerald-500/10 text-emerald-600 rounded-full">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
@@ -646,7 +658,7 @@ export function AccountLicenseModal() {
                   </div>
 
                   {user.licenseKey && (
-                    <div className="bg-background border border-border/60 rounded p-1.5 text-center text-[10px] flex items-center justify-between px-3">
+                    <div className="bg-background border border-border/60 rounded-md p-1.5 text-center text-[10px] flex items-center justify-between px-3">
                       <div>
                         <span className="text-muted-foreground ml-1">مفتاح التفعيل:</span>
                         <code className="font-mono text-primary font-bold">{user.licenseKey}</code>
@@ -674,7 +686,7 @@ export function AccountLicenseModal() {
                   )}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <Label className="text-xs font-medium">مفتاح الترخيص (License Key)</Label>
+                      <Label className="text-xs font-semibold">مفتاح الترخيص (License Key)</Label>
                       <button
                         type="button"
                         onClick={async () => {
@@ -697,7 +709,7 @@ export function AccountLicenseModal() {
                       <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                       <Input
                         placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
-                        className="pr-8 h-9 text-xs font-mono uppercase"
+                        className="pr-8 h-8 text-xs font-mono uppercase rounded-md"
                         required
                         value={licenseKey}
                         onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
@@ -707,11 +719,14 @@ export function AccountLicenseModal() {
 
                   <Button 
                     type="submit" 
-                    className="w-full h-9 text-xs font-bold" 
+                    className="w-full h-8 text-xs font-bold rounded-md shadow-xs gap-1.5" 
                     disabled={loading}
                   >
                     {loading ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>جاري تفعيل الترخيص ...</span>
+                      </>
                     ) : (
                       "تفعيل مفتاح الترخيص"
                     )}
@@ -727,7 +742,7 @@ export function AccountLicenseModal() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        className="h-6 px-2 text-[10px] font-bold cursor-pointer"
+                        className="h-6 px-2 text-[10px] font-bold cursor-pointer rounded-md"
                         onClick={confirmLogout}
                       >
                         نعم
@@ -735,7 +750,7 @@ export function AccountLicenseModal() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+                        className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer rounded-md"
                         onClick={() => setShowLogoutConfirm(false)}
                       >
                         إلغاء
@@ -745,7 +760,7 @@ export function AccountLicenseModal() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2 cursor-pointer"
+                      className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2 cursor-pointer rounded-md"
                       onClick={() => setShowLogoutConfirm(true)}
                     >
                       <LogOut className="w-3 h-3" />
@@ -760,13 +775,14 @@ export function AccountLicenseModal() {
                   href="https://grido.cloud-ip.cc"
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1 text-[11px] text-primary hover:underline"
+                  className="flex items-center gap-1 text-[11px] text-primary hover:underline font-semibold"
                 >
                   <span>شراء ترخيص</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
 
                 <button
+                  type="button"
                   onClick={async () => {
                     try {
                       const path = await ExportSupportLogs();
@@ -777,7 +793,7 @@ export function AccountLicenseModal() {
                       toast.error(e?.message || "فشل تصدير السجلات");
                     }
                   }}
-                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   <span>تصدير السجلات</span>
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

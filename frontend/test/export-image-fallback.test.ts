@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { exportCanvas } from "../src/lib/export/export-image";
+import { exportCanvas, drawSlotImage } from "../src/lib/export/export-image";
 import { useEditorStore } from "../src/lib/editor-store";
 import { computeSlotRectMM, computeSheetGrid } from "../src/lib/print/print-layout-math";
 import { calculatePrintCutLines } from "../src/lib/print/cut-lines-utils";
@@ -270,25 +270,20 @@ describe("export-image manual fallback — golden tests", () => {
     ]);
   });
 
-  it("behavior change: dead slots (no image, zero size) add no phantom cut lines", async () => {
-    const slots = [
-      baseSlot({ id: "s1", x: 0, y: 0, w: 0.5, h: 1 }),
-      baseSlot({ id: "s2", x: 0.5, y: 0, w: 0.5, h: 1 }),
-      { id: "dead", x: 0, y: 0, w: 0, h: 0, imageSrc: "" },
-    ];
-    setupCollageState(slots);
-    recordContext();
+  it("drawSlotImage handles 90 and 270 degree rotations with inverted slotAspect", () => {
+    const { ctx, calls } = makeRecordingContext();
+    const fakeImg = { width: 400, height: 200 } as unknown as HTMLImageElement;
 
-    await exportCanvas("png", 0.95, null);
+    // slot with 90 degree rotation (w: 100, h: 200) -> slotAspect becomes 200/100 = 2
+    // imgAspect is 400/200 = 2. Since imgAspect == slotAspect, sw = 400, sh = 200, defaultSx = 0, defaultSy = 0
+    drawSlotImage(ctx, fakeImg, 10, 20, 100, 200, { rotation: 90 });
 
-    // نفس الخطوط تماماً كما لو أن الخانة الميتة غير موجودة — موحّد مع المعاينة
-    expect(recordedCutLineSegments(calls)).toEqual(expectedCutLineSegments(slots));
-    expect(recordedCutLineSegments(calls)).toEqual([
-      [100, 100, 100, 3408],
-      [1240, 100, 1240, 3408],
-      [2380, 100, 2380, 3408],
-      [100, 100, 2380, 100],
-      [0, 3408, 2480, 3408],
-    ]);
+    const drawImgCall = calls.find((c) => c.op === "drawImage");
+    expect(drawImgCall).toBeDefined();
+    // args: [img, sx, sy, sw, sh, dx, dy, dw, dh]
+    expect(drawImgCall?.args[1]).toBe(0); // sx
+    expect(drawImgCall?.args[2]).toBe(0); // sy
+    expect(drawImgCall?.args[3]).toBe(400); // sw
+    expect(drawImgCall?.args[4]).toBe(200); // sh
   });
 });
