@@ -7,8 +7,59 @@ on:
     branches: [ main ]
 
 jobs:
+  # ───────────────────────────────────────────────
+  # Job 1: Generate Wails Bindings (Windows-only)
+  # ───────────────────────────────────────────────
+  generate-bindings:
+    name: Generate Wails Bindings
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+          cache: true
+
+      - name: Cache Go Binaries (Wails)
+        id: cache-go-bin
+        uses: actions/cache@v4
+        with:
+          path: ~\go\bin
+          key: ${{ runner.os }}-go-bin-v1
+
+      - name: Add Go Bin to PATH
+        shell: powershell
+        run: |
+          $gopath = $(go env GOPATH)
+          "$gopath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Wails CLI
+        if: steps.cache-go-bin.outputs.cache-hit != 'true'
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Generate Wails Bindings
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path frontend/dist
+          Set-Content frontend/dist/index.html "<html></html>"
+          wails generate module
+
+      - name: Upload Wails Bindings
+        uses: actions/upload-artifact@v4
+        with:
+          name: wailsjs-bindings
+          path: frontend/wailsjs/
+          retention-days: 1
+
+  # ───────────────────────────────────────────────
+  # Job 2: Frontend Quality & Unit Tests (Linux)
+  # ───────────────────────────────────────────────
   validate-frontend:
     name: Frontend Quality & Tests
+    needs: generate-bindings
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,6 +71,12 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
+
+      - name: Download Wails Bindings
+        uses: actions/download-artifact@v4
+        with:
+          name: wailsjs-bindings
+          path: frontend/wailsjs/
 
       - name: Install Frontend Dependencies
         working-directory: ./frontend
@@ -37,6 +94,9 @@ jobs:
         working-directory: ./frontend
         run: npm run test:coverage
 
+  # ───────────────────────────────────────────────
+  # Job 3: Backend Quality & Unit Tests (Linux)
+  # ───────────────────────────────────────────────
   validate-backend:
     name: Backend Quality & Tests
     runs-on: ubuntu-latest
@@ -53,8 +113,12 @@ jobs:
       - name: Run Go Tests
         run: go test -v . ./internal/...
 
+  # ───────────────────────────────────────────────
+  # Job 4: E2E Tests & Smoke Build (Windows)
+  # ───────────────────────────────────────────────
   e2e-and-build:
     name: E2E Tests & Windows Build Verification
+    needs: generate-bindings
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -77,8 +141,7 @@ jobs:
         id: cache-go-bin
         uses: actions/cache@v4
         with:
-          path: |
-            ~\go\bin
+          path: ~\go\bin
           key: ${{ runner.os }}-go-bin-v1
 
       - name: Cache Downloaded Models & Fonts
@@ -106,6 +169,12 @@ jobs:
           $gopath = $(go env GOPATH)
           "$gopath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
+      - name: Download Wails Bindings
+        uses: actions/download-artifact@v4
+        with:
+          name: wailsjs-bindings
+          path: frontend/wailsjs/
+
       - name: Install Frontend Dependencies
         working-directory: ./frontend
         run: npm ci
@@ -121,12 +190,6 @@ jobs:
       - name: Install Wails CLI
         if: steps.cache-go-bin.outputs.cache-hit != 'true'
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-      - name: Generate Wails Bindings
-        run: |
-          mkdir -p frontend/dist
-          echo "<html></html>" > frontend/dist/index.html
-          wails generate module
 
       - name: Install Playwright Browsers
         working-directory: ./frontend
