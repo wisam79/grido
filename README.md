@@ -136,7 +136,7 @@ npm run test          # اختبارات الوحدة (Vitest)
 npm run test:coverage  # مع التغطية
 npm run test:e2e       # اختبارات Playwright (chromium + firefox)
 npm run typecheck      # فحص توافق الأنواع
-npm run lint           # ESLint (--max-warnings 0)
+npm run lint           # ESLint (--max-warnings 250)
 ```
 
 ---
