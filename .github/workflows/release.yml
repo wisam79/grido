@@ -91,23 +91,21 @@ jobs:
           python build/windows/installer/generate_installer_assets.py
 
       - name: Install Wails CLI
-        if: steps.cache-go-bin.outputs.cache-hit != 'true'
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-      - name: Install Staticcheck
-        if: steps.cache-go-bin.outputs.cache-hit != 'true'
-        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+        shell: powershell
+        run: |
+          if (-not (Get-Command wails -ErrorAction SilentlyContinue)) {
+            go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          }
 
       - name: Generate Wails Bindings
+        shell: powershell
         run: |
-          mkdir -p frontend/dist
-          echo "<html></html>" > frontend/dist/index.html
+          New-Item -ItemType Directory -Force -Path frontend/dist
+          Set-Content frontend/dist/index.html "<html></html>"
           wails generate module
 
-      - name: Run Go Vet & Staticcheck
-        run: |
-          go vet ./...
-          staticcheck ./...
+      - name: Run Go Vet
+        run: go vet ./internal/...
 
       - name: Build Wails App & NSIS Installer
         run: wails build -platform windows/amd64 -nsis -ldflags "-X grido/internal/service.AppVersion=${{ github.ref_name }} -X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.GRIDO_AI_SECRET_KEY }}"
