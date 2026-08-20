@@ -5,6 +5,15 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.19] - 2026-08-20
+
+### Added & Refined (CI/CD Performance & Fluent 2 Polish)
+- **High-Speed Parallel CI Pipeline**: Redesigned GitHub Actions CI workflow into parallel Linux & Windows jobs with smart caching, cutting CI build times by over 40% (~7m down from 12+m).
+- **Binding Artifact Sharing**: Implemented automated Windows-generated Wails binding artifact upload/download to enable fast headless Linux typechecks and frontend quality tests.
+- **Fluent 2 Arabic Typography & Labels**: Standardized font weight selectors to clean, concise Arabic labels across properties panels.
+- **Workflow Concurrency & Deprecation Fixes**: Added GitHub Actions concurrency groups to cancel obsolete in-flight runs and upgraded actions to Node 22.
+- **Multi-Card Design System Polish**: Refined modal dialogs and property panels with clean icon-driven design and zero verbose parenthetical text.
+
 ## [v1.3.1] - 2026-08-02
 
 ### Fixed & Refined (Freeform Collage Engine & Comprehensive Fixes)
