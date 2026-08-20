@@ -24,6 +24,7 @@ export interface SingleCompositionItem {
   flipY: boolean;
   cornerRadius: number;
   rotation: number;
+  bgColor?: string;
 }
 
 export interface SingleComposition {
@@ -124,6 +125,7 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
       flipY: el.flipY === true,
       cornerRadius: el.cornerRadius || 0,
       rotation: 0,
+      bgColor: el.bgColor && el.bgColor !== "transparent" ? el.bgColor : undefined,
     }));
 
   return {

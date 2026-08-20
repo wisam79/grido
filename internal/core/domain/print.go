@@ -17,6 +17,7 @@ type PrintItem struct {
 	CornerRadiusMM float64 `json:"cornerRadiusMM"`
 	BorderWidthMM  float64 `json:"borderWidthMM"`
 	BorderColor    string  `json:"borderColor"`
+	BgColor        string  `json:"bgColor,omitempty"`
 	FlipX          bool    `json:"flipX,omitempty"`
 	FlipY          bool    `json:"flipY,omitempty"`
 	Rotation       float64 `json:"rotation,omitempty"`

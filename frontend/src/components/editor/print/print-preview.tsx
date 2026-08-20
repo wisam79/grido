@@ -232,6 +232,7 @@ export function SheetPreview({
                       width: `${width_pct}%`,
                       height: `${height_pct}%`,
                       borderRadius: "2px",
+                      backgroundColor: (slot as any).bgColor && (slot as any).bgColor !== "transparent" ? (slot as any).bgColor : undefined,
                     }}
                   >
                     <img

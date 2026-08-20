@@ -1062,29 +1062,41 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>طباعة الكولاج - Grido Studio</title>
+<title></title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-start; background: #525659; }
+  @page { margin: 0 !important; size: %.2fmm %.2fmm; }
+  * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
+  html, body { 
+    width: 100%% !important; 
+    height: 100%% !important; 
+    margin: 0 !important; 
+    padding: 0 !important; 
+    background: #525659; 
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   img { 
-    width: %.2fmm; 
-    height: %.2fmm; 
-    object-fit: contain; 
+    width: %.2fmm !important; 
+    height: %.2fmm !important; 
+    max-width: 100%% !important;
+    max-height: 100%% !important;
+    object-fit: contain !important; 
     box-shadow: 0 0 10px rgba(0,0,0,0.5); 
-    margin-top: 20px; 
+    display: block !important;
     background: white;
   }
   @media print {
-    body { background: white; margin: 0; padding: 0; }
-    img { box-shadow: none; margin: 0; padding: 0; }
-    @page { margin: 0; size: %.2fmm %.2fmm; }
+    @page { margin: 0 !important; size: %.2fmm %.2fmm; }
+    html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; }
+    img { box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; }
   }
 </style>
 </head>
 <body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
   <img src="%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
 
 	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 
@@ -1093,27 +1105,43 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>طباعة الكولاج - Grido Studio</title>
+<title></title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: %.2fmm; height: %.2fmm; margin: 0; padding: 0; overflow: hidden; background: white; }
+  @page { margin: 0 !important; size: %.2fmm %.2fmm; }
+  * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
+  html, body { 
+    width: 100%% !important; 
+    height: 100%% !important; 
+    margin: 0 !important; 
+    padding: 0 !important; 
+    overflow: hidden !important; 
+    background: white !important; 
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   img { 
-    width: 100%%; 
-    height: 100%%; 
-    object-fit: contain; 
-    display: block;
+    width: 100%% !important; 
+    height: 100%% !important; 
+    max-width: 100%% !important;
+    max-height: 100%% !important;
+    object-fit: contain !important; 
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
   @media print {
-    html, body { width: %.2fmm; height: %.2fmm; }
-    img { width: 100%%; height: 100%%; }
-    @page { margin: 0; size: %.2fmm %.2fmm; }
+    @page { margin: 0 !important; size: %.2fmm %.2fmm; }
+    html, body { width: 100%% !important; height: 100%% !important; margin: 0 !important; padding: 0 !important; }
+    img { width: 100%% !important; height: 100%% !important; }
   }
 </style>
 </head>
 <body>
   <img src="%s" />
 </body>
-</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
+</html>`, req.PaperWidthMM, req.PaperHeightMM, req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
 
 	return imagePath, selfContainedHTML, nil
 }
@@ -1238,6 +1266,20 @@ func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi i
 		dc.DrawRectangle(xPx, yPx, wPx, hPx)
 	}
 	dc.Clip()
+
+	// 🎨 إذا كان للعنصر لون خلفية مخصص (مثل خلفية صورة الهوية المعزولة أزرق/أبيض/رمادي)،
+	// نقوم بملء مستطيل الخانة بلون الخلفية أولاً تحت الصورة المعزولة
+	if item.BgColor != "" && !strings.EqualFold(item.BgColor, "transparent") {
+		dc.SetColor(parseColor(item.BgColor))
+		if item.CornerRadiusMM > 0 {
+			rPx := mmToPx(item.CornerRadiusMM, dpi)
+			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+		} else {
+			dc.DrawRectangle(xPx, yPx, wPx, hPx)
+		}
+		dc.Fill()
+	}
+
 	// 🛡️ إصلاح: الصورة المدوّرة 90/270 بُعدها المبدّل أكبر/أصغر من الخلية؛ تُرسم
 	// متمركزة على الخلية لتطابق المحرر (Konva يدور حول المركز) — كان الرسم
 	// بمحاذاة الزاوية فيزيح المحتوى المدوّر عن موضعه في المعاينة
@@ -1331,6 +1373,18 @@ func (s *PrintService) composeCanvas(
 			dc.DrawRectangle(xPx, yPx, wPx, hPx)
 		}
 		dc.Clip()
+
+		// رسم خلفية العنصر إن وُجدت
+		if item.BgColor != "" && !strings.EqualFold(item.BgColor, "transparent") {
+			dc.SetColor(parseColor(item.BgColor))
+			if rPx > 0 {
+				dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+			} else {
+				dc.DrawRectangle(xPx, yPx, wPx, hPx)
+			}
+			dc.Fill()
+		}
+
 		dc.DrawImage(processedImg, int(drawX), int(drawY))
 		dc.ResetClip()
 		dc.Pop()

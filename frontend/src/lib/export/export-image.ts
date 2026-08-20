@@ -391,6 +391,10 @@ export async function exportCanvas(
           ctx.rect(left, top, width, height);
         }
         ctx.clip();
+        if ((slot as any).bgColor && (slot as any).bgColor !== "transparent") {
+          ctx.fillStyle = (slot as any).bgColor;
+          ctx.fillRect(left, top, width, height);
+        }
         // يطبّق zoom/dragX/dragY/flipX/flipY/rotation كما في عقدة Konva (إصلاح E-7)
         drawSlotImage(ctx, img, left, top, width, height, slot);
         ctx.restore();
@@ -513,6 +517,18 @@ export async function exportCanvas(
         const img = elImageMap[el.id];
         const filterStr = buildCSSFilter(el);
         const radius = el.cornerRadius || 0;
+        if (el.bgColor && el.bgColor !== "transparent") {
+          ctx.save();
+          ctx.fillStyle = el.bgColor;
+          if (radius > 0) {
+            ctx.beginPath();
+            drawRoundRect(ctx, 0, 0, w, h, radius);
+            ctx.fill();
+          } else {
+            ctx.fillRect(0, 0, w, h);
+          }
+          ctx.restore();
+        }
         if (radius > 0) {
           // قص cornerRadius على كانفس وسيط ليأخذ الظل شكل ألفا الصورة المقصوصة (مطابقة KonvaImage)
           const off = document.createElement("canvas");
@@ -755,7 +771,10 @@ export async function exportSlotCanvas(
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    if (format === "jpg") {
+    if ((slot as any).bgColor && (slot as any).bgColor !== "transparent") {
+      ctx.fillStyle = (slot as any).bgColor;
+      ctx.fillRect(0, 0, exportWidth, exportHeight);
+    } else if (format === "jpg") {
       ctx.fillStyle = "#FFFFFF";
       ctx.fillRect(0, 0, exportWidth, exportHeight);
     }

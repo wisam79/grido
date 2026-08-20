@@ -266,6 +266,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             cornerRadiusMM: collageRadius * scaleXPxToMM,
             borderWidthMM: collageStrokeWidth * scaleXPxToMM,
             borderColor: collageStrokeColor,
+            bgColor: (slot as any).bgColor || "",
             flipX: slot.flipX,
             flipY: slot.flipY,
             rotation: slot.rotation,
@@ -409,6 +410,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         doc.open();
         doc.write(result.htmlDoc);
         doc.close();
+        if (doc.title) {
+          doc.title = "";
+        }
 
         let removeTimer: ReturnType<typeof setTimeout> | undefined;
         const removeIframe = () => {
