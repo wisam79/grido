@@ -1,4 +1,4 @@
-import { Sparkles, Columns, Move, Square, Maximize2, Scissors, PaintBucket } from "lucide-react";
+import { Sparkles, Columns, Move, Square, Maximize2, Scissors } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { Switch } from "@/components/ui/switch";

@@ -30,7 +30,6 @@ import {
   AlignVerticalDistributeCenter,
   Layers,
   Group,
-  Ungroup,
   RotateCw,
   FlipHorizontal,
   RotateCcw,

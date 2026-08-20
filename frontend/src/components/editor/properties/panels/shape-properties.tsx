@@ -1,6 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { ShapeElement, useEditorStore } from "@/lib/editor-store";
-import { PaintBucket, Square, Maximize2, Palette } from "lucide-react";
+import { PaintBucket, Square, Maximize2 } from "lucide-react";
 import { SliderControl, PopoverColorPicker } from "../shared-controls";
 import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-picker";
 
