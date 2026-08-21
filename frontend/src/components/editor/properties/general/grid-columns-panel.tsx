@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Label } from "@/components/ui/label";
 import { Grid3x3, Columns, Palette, Square } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
@@ -11,8 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useShallow } from "zustand/react/shallow";
-import { SliderControl } from "../shared-controls";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { FluentSection, FluentSegmentedControl, FluentSliderField } from "@/components/ui/blocks";
 
 export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
   const {
@@ -66,53 +65,29 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
   if (mode !== "single") return null;
 
   return (
-    <div className="space-y-3.5 bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs font-cairo fluent-specular">
-      {/* هيدر ثابت بدون تقليص */}
-      <div className="flex items-center justify-between border-b border-border/30 pb-2">
-        <Label className="text-xs font-bold text-foreground flex items-center gap-1.5 select-none">
-          <div className="p-1 rounded-md bg-primary/10 text-primary">
-            <Grid3x3 className="w-3.5 h-3.5" />
-          </div>
-          <span>الشبكة والأعمدة</span>
-        </Label>
+    <FluentSection
+      icon={<Grid3x3 className="w-3.5 h-3.5" />}
+      title="الشبكة والأعمدة"
+      action={
         <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 border border-border/40 px-2 py-0.5 rounded-md font-bold">
           {showGrid || showColumns ? "نشط" : "مخفي"}
         </span>
-      </div>
-
+      }
+    >
       <div className="space-y-3 animate-in fade-in duration-200">
-        <div className="flex bg-muted/60 dark:bg-muted/30 p-1 rounded-lg border border-border/40 w-full gap-1">
-          <button
-            type="button"
-            onClick={() => setActiveGridTab("grid")}
-            className={cn(
-              "flex-1 py-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs font-semibold",
-              activeGridTab === "grid"
-                ? "bg-background text-primary shadow-xs font-bold border border-border/80 ring-1 ring-primary/25"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Grid3x3 className="w-3.5 h-3.5" />
-            <span>الشبكة</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveGridTab("columns")}
-            className={cn(
-              "flex-1 py-1 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs font-semibold",
-              activeGridTab === "columns"
-                ? "bg-background text-primary shadow-xs font-bold border border-border/80 ring-1 ring-primary/25"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Columns className="w-3.5 h-3.5" />
-            <span>الأعمدة</span>
-          </button>
-        </div>
+        <FluentSegmentedControl<"grid" | "columns">
+          value={activeGridTab}
+          onChange={setActiveGridTab}
+          size="sm"
+          options={[
+            { id: "grid", label: "الشبكة", icon: <Grid3x3 className="w-3.5 h-3.5" /> },
+            { id: "columns", label: "الأعمدة", icon: <Columns className="w-3.5 h-3.5" /> },
+          ]}
+        />
 
         {activeGridTab === "grid" && (
           <div className="space-y-3 pt-2 border-t border-border/20 animate-in fade-in duration-200">
-            <SliderControl
+            <FluentSliderField
               label="حجم المربع"
               icon={<Square className="w-3.5 h-3.5 text-primary" />}
               value={gridSize}
@@ -161,7 +136,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     className={cn(
                       "flex-1 h-full rounded-md text-xs font-semibold transition-all cursor-pointer",
                       gridType === "dots"
-                        ? "bg-card text-foreground shadow-2xs"
+                        ? "bg-card text-foreground shadow-2xs font-bold"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -173,7 +148,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     className={cn(
                       "flex-1 h-full rounded-md text-xs font-semibold transition-all cursor-pointer",
                       gridType === "lines"
-                        ? "bg-card text-foreground shadow-2xs"
+                        ? "bg-card text-foreground shadow-2xs font-bold"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -223,7 +198,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
         {activeGridTab === "columns" && (
           <div className="space-y-3 pt-3 border-t border-border/10 animate-in fade-in duration-200">
-            <SliderControl
+            <FluentSliderField
               label="الأعمدة"
               icon={<Columns className="w-3.5 h-3.5 text-primary" />}
               value={columnsCount}
@@ -285,6 +260,6 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
           </div>
         )}
       </div>
-    </div>
+    </FluentSection>
   );
 });

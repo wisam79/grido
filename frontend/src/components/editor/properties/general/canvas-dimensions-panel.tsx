@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useShallow } from "zustand/react/shallow";
 import { PresetMiniature } from "./preset-miniature";
+import { FluentSection, FluentSegmentedControl } from "@/components/ui/blocks";
 
 export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel() {
   const {
@@ -41,7 +42,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   })));
 
   const [unit, setUnit] = useState<"px" | "mm">("px");
-  const [dimensionsExpanded, setDimensionsExpanded] = useState(true);
   const [widthVal, setWidthVal] = useState(canvasWidth.toString());
   const [heightVal, setHeightVal] = useState(canvasHeight.toString());
   const [dpiVal, setDpiVal] = useState(template?.dpi || printSettings.dpi || 300);
@@ -70,7 +70,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   const MIN_PX = 1;
   const MAX_PX = 20000;
 
-  // أثناء الكتابة نحدّث الحقل المحلي فقط — الالتزام الفعلي عند blur/Enter
   const handleWidthChange = (val: string) => {
     setWidthVal(val);
   };
@@ -78,7 +77,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   const handleWidthCommit = () => {
     const num = parseFloat(widthVal);
     if (isNaN(num) || num <= 0) {
-      // إعادة العرض الصحيح دون تغيير المقاس
       setWidthVal(canvasWidth.toString());
       return;
     }
@@ -124,7 +122,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     setDpiVal(newDpi);
     setPrintSettings({ dpi: newDpi });
     if (unit === "mm") {
-      // احسب من مقادير الـ store الحقيقية لا من الحقول الجزئية حتى لا تُفقد الأبعاد أثناء الكتابة
       const wMM = (canvasWidth / currentDpi) * 25.4;
       const hMM = (canvasHeight / currentDpi) * 25.4;
       if (wMM > 0 && hMM > 0) {
@@ -156,7 +153,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   };
 
   const handleSwapDimensions = () => {
-    // setCanvasSize يزامن أبعاد الورقة والاتجاه من نسبة الكانفاس الجديدة تلقائياً
     setCanvasSize(canvasHeight, canvasWidth);
     if (template) setTemplate(null);
 
@@ -175,49 +171,25 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   const activePresetId = activePreset ? activePreset.id : "custom";
 
   return (
-    <div className="space-y-3.5 bg-card border border-border/80 dark:border-white/10 p-3.5 rounded-xl shadow-xs font-cairo fluent-specular">
-      {/* هيدر ثابت بدون تقليص */}
-      <div className="flex items-center justify-between border-b border-border/25 pb-2.5">
-        <Label className="text-xs font-extrabold text-foreground flex items-center gap-2 select-none">
-          <div className="p-1 rounded-md bg-primary/10 text-primary">
-            <RefreshCw className="w-3.5 h-3.5" />
-          </div>
-          <span>مساحة العمل</span>
-        </Label>
+    <FluentSection
+      icon={<RefreshCw className="w-3.5 h-3.5" />}
+      title="مساحة العمل"
+      action={
         <span className="text-[10px] text-muted-foreground font-mono bg-muted/40 border border-border/20 px-2 py-0.5 rounded-md font-bold tracking-tight" dir="ltr">
           {canvasWidth} × {canvasHeight} px
         </span>
-      </div>
-
+      }
+    >
       <div className="space-y-3 animate-in fade-in duration-200">
-        <div className="flex items-center justify-between">
-          <div className="flex rounded-lg bg-muted/60 dark:bg-muted/30 p-0.5 border border-border/40 w-full gap-0.5">
-            <button
-              type="button"
-              onClick={() => setUnit("px")}
-              className={cn(
-                "flex-1 h-7 text-[11px] font-bold rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-                unit === "px"
-                  ? "bg-card text-foreground shadow-2xs font-extrabold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              بكسل
-            </button>
-            <button
-              type="button"
-              onClick={() => setUnit("mm")}
-              className={cn(
-                "flex-1 h-7 text-[11px] font-bold rounded-md transition-all cursor-pointer text-center flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-                unit === "mm"
-                  ? "bg-card text-foreground shadow-2xs font-extrabold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              ملم
-            </button>
-          </div>
-        </div>
+        <FluentSegmentedControl<"px" | "mm">
+          value={unit}
+          onChange={setUnit}
+          size="sm"
+          options={[
+            { id: "px", label: "بكسل" },
+            { id: "mm", label: "ملم" },
+          ]}
+        />
 
         {/* الحجم القياسي (Visual Grid Cards) */}
         <div className="space-y-1.5">
@@ -440,6 +412,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           </div>
         )}
       </div>
-    </div>
+    </FluentSection>
   );
 });

@@ -30,6 +30,7 @@ import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ColorWheelPicker, PopoverColorPicker } from "../properties/shared-controls";
 import { LayersList } from "../properties/layers-list";
+import { FluentEmptyState, FluentSection } from "@/components/ui/blocks";
 
 export function TemplatePanel() {
   const { 
@@ -277,9 +278,11 @@ export function TemplatePanel() {
                       </div>
 
                       {savedTemplates.length === 0 ? (
-                        <div className="text-xs text-muted-foreground text-center py-10 border border-dashed border-border/60 rounded-xl bg-muted/5">
-                          لا توجد قوالب مخصصة محفوظة
-                        </div>
+                        <FluentEmptyState
+                          icon={<FolderHeart className="w-6 h-6 text-primary" />}
+                          title="لا توجد قوالب مخصصة محفوظة"
+                          description="قم بتخصيص شبكة كولاج من اللوحة وحفظها لتظهر هنا للوصول السريع."
+                        />
                       ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
                           {savedTemplates.map((tpl) => (
@@ -309,21 +312,15 @@ export function TemplatePanel() {
           <ScrollArea className="flex-1">
             <div className="space-y-4 pr-0.5">
               {/* قسم عجلة تلوين خلفية الكانفاس */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 pb-2 border-b border-border/40">
-                  <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                    <Palette className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-bold text-foreground">
-                    لون خلفية مساحة العمل
-                  </span>
-                </div>
-
+              <FluentSection
+                icon={<Palette className="w-3.5 h-3.5" />}
+                title="لون خلفية مساحة العمل"
+              >
                 <ColorWheelPicker
                   color={backgroundColor}
                   onChange={setBackgroundColor}
                 />
-              </div>
+              </FluentSection>
 
               <Separator className="bg-border/30 my-2" />
 
@@ -365,4 +362,3 @@ export function TemplatePanel() {
     </div>
   );
 }
-

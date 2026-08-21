@@ -148,7 +148,19 @@ export const CollageTemplateSchema = z.object({
     type: z.string(),
     rows: z.number(),
     cols: z.number(),
-    align: z.enum(["center", "top-left", "top-right", "bottom-left", "bottom-right"]).optional(),
+    align: z
+      .enum([
+        "center",
+        "top-left",
+        "top-center",
+        "top-right",
+        "center-left",
+        "center-right",
+        "bottom-left",
+        "bottom-center",
+        "bottom-right",
+      ])
+      .optional(),
   }).optional(),
 });
 

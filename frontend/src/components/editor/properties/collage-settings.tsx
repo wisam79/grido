@@ -4,119 +4,9 @@ import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-import { Slider } from "@/components/ui/slider";
-import { useRef, useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-
-// ─── Larger SliderControl built for the left panel ─────────────────────────
-function PanelSlider({
-  label,
-  icon,
-  value,
-  min,
-  max,
-  step,
-  unit,
-  onChange,
-  onCommit,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  unit: string;
-  onChange: (v: number) => void;
-  onCommit?: () => void;
-}) {
-  const rafRef = useRef<number | null>(null);
-  const pendingRef = useRef<number | null>(null);
-  const isDraggingRef = useRef(false);
-
-  const flushPending = useCallback(() => {
-    if (pendingRef.current !== null) {
-      onChange(pendingRef.current);
-      pendingRef.current = null;
-    }
-    rafRef.current = null;
-  }, [onChange]);
-
-  const handleChange = useCallback((v: number[]) => {
-    pendingRef.current = v[0];
-    if (!rafRef.current) {
-      rafRef.current = requestAnimationFrame(flushPending);
-    }
-  }, [flushPending]);
-
-  const handlePointerDown = useCallback(() => {
-    isDraggingRef.current = true;
-  }, []);
-
-  const handlePointerUp = useCallback(() => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    if (pendingRef.current !== null) {
-      onChange(pendingRef.current);
-      pendingRef.current = null;
-    }
-    if (isDraggingRef.current) {
-      isDraggingRef.current = false;
-      onCommit?.();
-    }
-  }, [onChange, onCommit]);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  return (
-    <div className="flex items-center gap-2.5 w-full h-8 group" dir="rtl">
-      {/* Icon with Tooltip */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted/30 text-muted-foreground group-hover:text-foreground group-hover:bg-muted/60 transition-colors shrink-0 cursor-help">
-            {icon}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right" className="font-cairo text-xs font-bold">
-          {label}
-        </TooltipContent>
-      </Tooltip>
-      
-      {/* Slider */}
-      <Slider
-        value={[value]}
-        min={min}
-        max={max}
-        step={step}
-        onValueChange={handleChange}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        className="flex-1 py-1.5"
-      />
-      
-      {/* Value Input Badge (Figma Style) */}
-      <div className="flex items-center justify-center h-7 w-12 bg-background border border-border/60 hover:border-primary/45 rounded-md transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs shrink-0" dir="ltr">
-        <input
-          type="number"
-          value={value}
-          onChange={(e) => {
-            const val = parseInt(e.target.value);
-            if (!isNaN(val)) onChange(Math.max(min, Math.min(max, val)));
-          }}
-          className="w-full bg-transparent border-0 p-0 text-[11px] font-mono font-bold text-center focus:ring-0 focus:outline-hidden text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-        />
-        <span className="text-[9px] text-muted-foreground/50 pr-0.5 select-none">{unit}</span>
-      </div>
-    </div>
-  );
-}
+import { FluentSection, FluentSettingRow, FluentSliderField } from "@/components/ui/blocks";
 
 export function CollageSettings() {
   const {
@@ -154,16 +44,12 @@ export function CollageSettings() {
   return (
     <div className="flex flex-col gap-3 font-cairo" dir="rtl">
       {/* 🎴 بطاقة 1: المسافات والاستدارة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center gap-1.5 justify-start border-b border-border/20 pb-1.5">
-          <Columns className="w-3.5 h-3.5 text-primary" />
-          <span className="text-[11px] font-bold text-foreground/85">
-            المسافات والاستدارة
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <PanelSlider
+      <FluentSection
+        icon={<Columns className="w-3.5 h-3.5" />}
+        title="المسافات والاستدارة"
+      >
+        <div className="flex flex-col gap-2.5">
+          <FluentSliderField
             label="المسافات بين الصور"
             icon={<Columns className="w-3.5 h-3.5" />}
             value={collageGap}
@@ -173,7 +59,7 @@ export function CollageSettings() {
             unit="px"
             onChange={setCollageGap}
           />
-          <PanelSlider
+          <FluentSliderField
             label="الهامش الخارجي"
             icon={<Move className="w-3.5 h-3.5" />}
             value={collageMargin}
@@ -183,7 +69,7 @@ export function CollageSettings() {
             unit="px"
             onChange={setCollageMargin}
           />
-          <PanelSlider
+          <FluentSliderField
             label="استدارة الزوايا"
             icon={<Square className="w-3.5 h-3.5" />}
             value={collageRadius}
@@ -194,115 +80,108 @@ export function CollageSettings() {
             onChange={setCollageRadius}
           />
         </div>
-      </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 2: إطار وحدود الخلايا */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center gap-1.5 justify-start border-b border-border/20 pb-1.5">
-          <Maximize2 className="w-3.5 h-3.5 text-primary" />
-          <span className="text-[11px] font-bold text-foreground/85">
-            إطار وحدود الصور
-          </span>
-        </div>
+      <FluentSection
+        icon={<Maximize2 className="w-3.5 h-3.5" />}
+        title="إطار وحدود الصور"
+      >
+        <div className="space-y-2.5">
+          <FluentSliderField
+            label="سُمك الإطار"
+            icon={<Maximize2 className="w-3.5 h-3.5" />}
+            value={collageStrokeWidth}
+            min={0}
+            max={15}
+            step={1}
+            unit="px"
+            onChange={setCollageStrokeWidth}
+          />
 
-        <PanelSlider
-          label="سُمك الإطار"
-          icon={<Maximize2 className="w-3.5 h-3.5" />}
-          value={collageStrokeWidth}
-          min={0}
-          max={15}
-          step={1}
-          unit="px"
-          onChange={setCollageStrokeWidth}
-        />
+          {/* Frame Color Row — shown only when stroke is active */}
+          {collageStrokeWidth > 0 && (
+            <div className="flex items-center justify-between gap-2 border-t border-border/20 pt-2 animate-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center gap-1">
+                {[
+                  { hex: "#e10e0e", label: "أحمر" },
+                  { hex: "#000000", label: "أسود" },
+                  { hex: "#9ca3af", label: "رمادي" },
+                  { hex: "#2563eb", label: "أزرق" },
+                  { hex: "#ffffff", label: "أبيض" },
+                ].map(({ hex, label }) => (
+                  <button
+                    key={hex}
+                    type="button"
+                    onClick={() => setCollageStrokeColor(hex)}
+                    title={label}
+                    className={cn(
+                      "w-4 h-4 rounded-full border border-black/15 dark:border-white/20 transition-transform cursor-pointer hover:scale-125 shadow-2xs",
+                      collageStrokeColor.toLowerCase() === hex.toLowerCase() && "ring-2 ring-primary ring-offset-1 scale-110"
+                    )}
+                    style={{ backgroundColor: hex }}
+                  />
+                ))}
+              </div>
 
-        {/* Frame Color Row — shown only when stroke is active */}
-        {collageStrokeWidth > 0 && (
-          <div className="flex items-center justify-between gap-2 border-t border-border/20 pt-2 animate-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center gap-1">
-              {[
-                { hex: "#e10e0e", label: "أحمر" },
-                { hex: "#000000", label: "أسود" },
-                { hex: "#9ca3af", label: "رمادي" },
-                { hex: "#2563eb", label: "أزرق" },
-                { hex: "#ffffff", label: "أبيض" },
-              ].map(({ hex, label }) => (
-                <button
-                  key={hex}
-                  type="button"
-                  onClick={() => setCollageStrokeColor(hex)}
-                  title={label}
-                  className={cn(
-                    "w-4 h-4 rounded-full border border-black/15 dark:border-white/20 transition-transform cursor-pointer hover:scale-125 shadow-2xs",
-                    collageStrokeColor.toLowerCase() === hex.toLowerCase() && "ring-2 ring-primary ring-offset-1 scale-110"
-                  )}
-                  style={{ backgroundColor: hex }}
+              <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/45 rounded-md px-2 w-28 h-7.5 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background">
+                <input
+                  type="text"
+                  value={collageStrokeColor}
+                  onChange={(e) => setCollageStrokeColor(e.target.value)}
+                  className="w-full bg-transparent border-0 p-0 text-[11px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-bold"
                 />
-              ))}
+                <input
+                  type="color"
+                  value={collageStrokeColor}
+                  onChange={(e) => setCollageStrokeColor(e.target.value)}
+                  className="w-3.5 h-3.5 rounded-full border border-border/25 cursor-pointer p-0 bg-transparent shrink-0"
+                />
+              </div>
             </div>
-
-            <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/45 rounded-md px-2 w-28 h-7.5 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background">
-              <input
-                type="text"
-                value={collageStrokeColor}
-                onChange={(e) => setCollageStrokeColor(e.target.value)}
-                className="w-full bg-transparent border-0 p-0 text-[11px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-bold"
-              />
-              <input
-                type="color"
-                value={collageStrokeColor}
-                onChange={(e) => setCollageStrokeColor(e.target.value)}
-                className="w-3.5 h-3.5 rounded-full border border-border/25 cursor-pointer p-0 bg-transparent shrink-0"
-              />
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 3: خطوط وعلامات القص */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs space-y-2.5 font-cairo fluent-specular">
-        <div className="flex items-center justify-between gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 text-foreground cursor-help">
-                <div className="w-6 h-6 rounded-md bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                  <Scissors className="w-3.5 h-3.5 stroke-[2]" />
-                </div>
-                <span className="text-xs font-bold">خطوط القص والمحاذاة</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="font-cairo text-xs font-bold">
-              إظهار خطوط القص التلقائية بين صور الكولاج
-            </TooltipContent>
-          </Tooltip>
-          <Switch
-            checked={collageShowCutLines}
-            onCheckedChange={setCollageShowCutLines}
+      <FluentSection
+        icon={<Scissors className="w-3.5 h-3.5" />}
+        title="خطوط القص والمحاذاة"
+      >
+        <div className="space-y-2">
+          <FluentSettingRow
+            label="خطوط القص التلقائية"
+            description="إظهار خطوط القص بين صور الكولاج"
+            control={
+              <Switch
+                checked={collageShowCutLines}
+                onCheckedChange={setCollageShowCutLines}
+              />
+            }
           />
-        </div>
 
-        {/* Nested Sub-option: Blue End Line */}
-        {collageShowCutLines && (
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/20 animate-in fade-in-50 duration-150 pr-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 text-muted-foreground cursor-help">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
-                  <span className="text-[11px] font-bold text-foreground/90">خط نهاية الطباعة (الأزرق)</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="font-cairo text-xs font-bold">
-                إظهار الخط الأزرق الذي يُحدد نهاية الطباعة على الورقة
-              </TooltipContent>
-            </Tooltip>
-            <Switch
-              checked={collageShowEndCutLine}
-              onCheckedChange={setCollageShowEndCutLine}
-              className="scale-90"
-            />
-          </div>
-        )}
-      </div>
+          {collageShowCutLines && (
+            <div className="pt-2 border-t border-border/20 animate-in fade-in-50 duration-150 pr-2">
+              <FluentSettingRow
+                label={
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
+                    <span>خط نهاية الطباعة (الأزرق)</span>
+                  </div>
+                }
+                description="تحديد نهاية الطباعة على الورقة"
+                control={
+                  <Switch
+                    checked={collageShowEndCutLine}
+                    onCheckedChange={setCollageShowEndCutLine}
+                    className="scale-90"
+                  />
+                }
+              />
+            </div>
+          )}
+        </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 4: ترميم الكولاج بالذكاء الاصطناعي */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular">
@@ -336,7 +215,6 @@ function BatchAiEnhanceButton() {
       return;
     }
 
-    // Dynamic import to avoid circular dependencies if any, though regular import is fine
     const { SaveImageFromBase64, EnhanceImageWithAI } = await import("../../../../wailsjs/go/main/App");
     const { getUserDailyLimit, getTodayUsageCount, prepareImageForAiUpload } = await import("@/hooks/use-ai-enhance");
 

@@ -50,6 +50,15 @@ export interface CollageTemplate {
       | "iq-mixed";
     rows: number;
     cols: number;
-    align?: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+    align?:
+      | "center"
+      | "top-left"
+      | "top-center"
+      | "top-right"
+      | "center-left"
+      | "center-right"
+      | "bottom-left"
+      | "bottom-center"
+      | "bottom-right";
   };
 }

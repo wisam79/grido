@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Download, FileImage, Loader2, AlertTriangle } from "lucide-react";
@@ -17,8 +16,8 @@ import { exportCanvas, downloadBlob, exportSlotCanvas, applyBleedAndCropMarks, C
 import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/canvas/stage-context";
 import { toast } from "sonner";
-
 import { useShallow } from "zustand/react/shallow";
+import { FluentSettingRow, FluentSliderField } from "@/components/ui/blocks";
 
 interface ExportDialogProps {
   open: boolean;
@@ -59,7 +58,6 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const handleExport = async () => {
     setLoading(true);
     setProgress(0);
-    // نمنح المتصفح فرصة لرسم مؤشر التحميل أولاً (Paint Cycle) قبل حظر الخيط الرئيسي بالمعالجة
     setTimeout(async () => {
       try {
         if (batchExport && mode === "collage") {
@@ -81,12 +79,11 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
               const res = await downloadBlob(blob, name);
               if (res === "success") successCount++;
-              else if (res === "") break; // ألغى المستخدم الحوار — لا نواصل الدفعة
+              else if (res === "") break;
             }
             if (isCancelledRef.current) break;
             setProgress(((i + 1) / validSlots.length) * 100);
             
-            // Give browser time to process the download UI
             await new Promise(r => setTimeout(r, 250));
           }
           
@@ -150,47 +147,47 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" dir="rtl">
+      <DialogContent className="max-w-md font-cairo rounded-2xl border fluent-specular" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Download className="w-5 h-5" /> تصدير الصورة
+          <DialogTitle className="flex items-center gap-2 text-base font-bold">
+            <Download className="w-5 h-5 text-primary" /> تصدير الصورة
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs text-muted-foreground">
             احفظ الصورة بأبعاد القالب المحدد بدقة عالية للطباعة
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div>
-            <Label className="text-xs mb-2 block font-semibold text-foreground/90">صيغة الملف</Label>
+            <Label className="text-xs mb-2 block font-bold text-foreground/90">صيغة الملف</Label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setFormat("png")}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer ${
+                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${
                   format === "png"
-                    ? "border-primary bg-primary/10 shadow-2xs"
-                    : "border-border/80 hover:border-primary/50 bg-card hover:bg-muted/30"
+                    ? "border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20"
+                    : "border-border/80 hover:border-primary/50 bg-card hover:bg-muted/30 text-foreground"
                 }`}
               >
                 <FileImage className="w-5 h-5 text-primary shrink-0" />
                 <div className="text-right">
-                  <div className="text-sm font-bold">PNG</div>
+                  <div className="text-xs font-bold">PNG</div>
                   <div className="text-[10px] text-muted-foreground font-medium">جودة عالية + شفافية</div>
                 </div>
               </button>
               <button
                 type="button"
                 onClick={() => setFormat("jpg")}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer ${
+                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${
                   format === "jpg"
-                    ? "border-primary bg-primary/10 shadow-2xs"
-                    : "border-border/80 hover:border-primary/50 bg-card hover:bg-muted/30"
+                    ? "border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20"
+                    : "border-border/80 hover:border-primary/50 bg-card hover:bg-muted/30 text-foreground"
                 }`}
               >
                 <FileImage className="w-5 h-5 text-primary shrink-0" />
                 <div className="text-right">
-                  <div className="text-sm font-bold">JPG</div>
+                  <div className="text-xs font-bold">JPG</div>
                   <div className="text-[10px] text-muted-foreground font-medium">حجم أصغر</div>
                 </div>
               </button>
@@ -198,45 +195,43 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
 
           {format === "jpg" && (
-            <div className="bg-card p-3 rounded-xl border border-border/60 space-y-2">
-              <div className="flex justify-between items-center">
-                <Label className="text-xs font-semibold">جودة الصورة</Label>
-                <span className="text-[11px] text-primary font-mono font-bold">{quality}%</span>
-              </div>
-              <Slider
-                value={[quality]}
+            <div className="bg-card p-3 rounded-xl border border-border/80 space-y-2 fluent-specular">
+              <FluentSliderField
+                label="جودة الصورة"
+                value={quality}
                 min={50}
                 max={100}
                 step={5}
-                onValueChange={(v) => setQuality(v[0])}
+                unit="%"
+                onChange={setQuality}
               />
             </div>
           )}
 
-          <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-xs space-y-1.5 fluent-specular">
+          <div className="rounded-xl border border-border/80 bg-muted/30 p-3 text-xs space-y-1.5 fluent-specular">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">الأبعاد:</span>
-              <span className="font-mono font-semibold">{canvasWidth}×{canvasHeight}px</span>
+              <span className="text-muted-foreground font-semibold">الأبعاد:</span>
+              <span className="font-mono font-bold">{canvasWidth}×{canvasHeight}px</span>
             </div>
             {template ? (
               <>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">الحجم الفعلي:</span>
-                  <span className="font-semibold">{template.widthMM}×{template.heightMM} مم</span>
+                  <span className="text-muted-foreground font-semibold">الحجم الفعلي:</span>
+                  <span className="font-bold">{template.widthMM}×{template.heightMM} مم</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">الدقة:</span>
+                  <span className="text-muted-foreground font-semibold">الدقة:</span>
                   <span className="font-mono">{template.dpi} DPI</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">الحجم الفعلي:</span>
-                  <span className="font-semibold">{Math.round((canvasWidth / printSettings.dpi) * 25.4)}×{Math.round((canvasHeight / printSettings.dpi) * 25.4)} مم</span>
+                  <span className="text-muted-foreground font-semibold">الحجم الفعلي:</span>
+                  <span className="font-bold">{Math.round((canvasWidth / printSettings.dpi) * 25.4)}×{Math.round((canvasHeight / printSettings.dpi) * 25.4)} مم</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">الدقة:</span>
+                  <span className="text-muted-foreground font-semibold">الدقة:</span>
                   <span className="font-mono">{printSettings.dpi} DPI</span>
                 </div>
               </>
@@ -244,7 +239,6 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             <div className="flex justify-between pt-1.5 border-t border-border/50 mt-1">
               <span className="text-muted-foreground font-semibold">الحجم التقريبي للملف:</span>
               <span className="font-mono text-primary font-bold">
-                {/* معاملات تقدير مرفوعة لمطابقة الواقع: PNG مضغوط ≈60% من الخام، JPG ≈35% */}
                 {format === "png" 
                   ? ((canvasWidth * canvasHeight * 4) / 1024 / 1024 * 0.6).toFixed(1)
                   : ((canvasWidth * canvasHeight * 3) / 1024 / 1024 * 0.35 * (quality / 100)).toFixed(1)} MB
@@ -265,41 +259,41 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
             <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <span className="leading-tight">تصدير الصورة بنظام الألوان القياسي RGB للطباعة الرقمية.</span>
+              <span className="leading-tight font-medium">تصدير الصورة بنظام الألوان القياسي RGB للطباعة الرقمية.</span>
             </div>
 
-            <div className="flex items-center justify-between p-3 border border-border/60 rounded-xl bg-card hover:bg-muted/30 transition-colors">
-              <div className="space-y-0.5 text-right">
-                <Label className="text-xs font-semibold cursor-pointer">علامات القص الإرشادية</Label>
-                <p className="text-[10px] text-muted-foreground">خطوط إرشادية حول منطقة النزيف</p>
-              </div>
-              <Switch checked={showCropMarks} onCheckedChange={setShowCropMarks} />
+            <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
+              <FluentSettingRow
+                label="علامات القص الإرشادية"
+                description="خطوط إرشادية حول منطقة النزيف"
+                control={<Switch checked={showCropMarks} onCheckedChange={setShowCropMarks} />}
+              />
             </div>
 
-            <div className="p-3 border border-border/60 rounded-xl bg-card space-y-2.5">
-              <div className="flex justify-between items-center text-right">
-                <Label className="text-xs font-semibold">هامش النزيف والقص</Label>
-                <span className="text-[11px] font-mono bg-muted px-2 py-0.5 rounded-md font-bold">{bleedMM} mm</span>
-              </div>
-              <Slider
-                value={[bleedMM]}
+            <div className="p-3 border border-border/80 rounded-xl bg-card space-y-2.5 fluent-specular">
+              <FluentSliderField
+                label="هامش النزيف والقص"
+                value={bleedMM}
                 min={0}
                 max={10}
                 step={1}
-                onValueChange={(v) => setBleedMM(v[0])}
+                unit="mm"
+                onChange={setBleedMM}
               />
               <p className="text-[10px] text-muted-foreground">هامش إضافي لمنع ظهور حواف بيضاء بعد القص.</p>
             </div>
 
             {mode === "collage" && (
-              <div className="flex items-center justify-between p-3 border border-border/60 rounded-xl bg-card hover:bg-muted/30 transition-colors">
-                <div className="space-y-0.5 text-right">
-                  <Label className="text-xs font-semibold cursor-pointer">تصدير الصور كملفات منفصلة</Label>
-                  <p className="text-[10px] text-muted-foreground">حفظ كل صورة في الكولاج كملف مستقل</p>
-                </div>
-                <Switch 
-                  checked={batchExport} 
-                  onCheckedChange={setBatchExport} 
+              <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
+                <FluentSettingRow
+                  label="تصدير الصور كملفات منفصلة"
+                  description="حفظ كل صورة في الكولاج كملف مستقل"
+                  control={
+                    <Switch 
+                      checked={batchExport} 
+                      onCheckedChange={setBatchExport} 
+                    />
+                  }
                 />
               </div>
             )}
