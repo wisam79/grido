@@ -93,10 +93,22 @@ func (s *MediaService) DecodeBase64Image(base64Data string) ([]byte, string, err
 }
 
 func (s *MediaService) GetExtensionFromMime(mimeType string) string {
-	if mimeType == "image/png" {
+	switch strings.ToLower(mimeType) {
+	case "image/png":
 		return ".png"
+	case "image/webp":
+		return ".webp"
+	case "image/gif":
+		return ".gif"
+	case "image/bmp", "image/x-windows-bmp":
+		return ".bmp"
+	case "image/tiff", "image/x-tiff":
+		return ".tiff"
+	case "image/svg+xml":
+		return ".svg"
+	default:
+		return ".jpg"
 	}
-	return ".jpg"
 }
 
 func (s *MediaService) ProcessOpenedFile(filePath string) (string, error) {

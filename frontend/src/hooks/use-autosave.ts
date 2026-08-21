@@ -76,6 +76,15 @@ export function useAutoSave() {
       const runSave = () => {
         if (disposed) return; // منع كتابة مسودة قديمة بعد إلغاء التنشيط
         const projectData = serializeEditorState(state);
+        const isEmptyCanvas =
+          projectData.elements.length === 0 &&
+          (!projectData.slots || projectData.slots.every((s: any) => !s.imageSrc));
+
+        if (isEmptyCanvas) {
+          // مساحة العمل فارغة تماماً (تم مسح الكانفس أو الإعادة للوضع الافتراضي) — لا نحفظ مسودة فارغة
+          return;
+        }
+
         const currentString = JSON.stringify(projectData);
         if (currentString === lastSavedString) {
           return; // تخطي إذا لم تتغير مساحة العمل فعلياً
@@ -128,17 +137,21 @@ export function useAutoSave() {
       disposed = true;
       unsubscribe();
       debouncedSave.cancel();
-      // حفظ فوري للحالة الحالية قبل إلغاء التنشيط لمنع فقدان أي تعديلات —
-      // يُوجَّه عبر السلسلة المتسلسلة إن كان حفظ آخر قيد التنفيذ حتى لا
-      // تتجاوزه مسودة أحدث أو تتجاوزها مسودة أقدم (سباق الكتابة القديمة)
+      // حفظ فوري للحالة الحالية قبل إلغاء التنشيط لمنع فقدان أي تعديلات
       const currentState = useEditorStore.getState();
       const projectData = serializeEditorState(currentState);
-      const currentString = JSON.stringify(projectData);
-      if (currentString !== lastSavedString) {
-        if (isSaving) {
-          pendingSaveState = currentString;
-        } else {
-          saveDraft(currentString);
+      const isEmptyCanvas =
+        projectData.elements.length === 0 &&
+        (!projectData.slots || projectData.slots.every((s: any) => !s.imageSrc));
+
+      if (!isEmptyCanvas) {
+        const currentString = JSON.stringify(projectData);
+        if (currentString !== lastSavedString) {
+          if (isSaving) {
+            pendingSaveState = currentString;
+          } else {
+            saveDraft(currentString);
+          }
         }
       }
     };

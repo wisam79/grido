@@ -95,6 +95,7 @@ export function SlotsList() {
   const clearSlot = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     updateSlot(id, { imageSrc: undefined, originalImageSrc: undefined, filter: "none" });
+    useEditorStore.getState().pushHistory();
   };
 
   return (

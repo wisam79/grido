@@ -18,6 +18,7 @@ import (
 var (
 	dbInstance *gorm.DB
 	dbMu       sync.RWMutex
+	dbStopPing chan struct{}
 )
 
 func InitDB() (*gorm.DB, error) {
@@ -71,16 +72,22 @@ func InitDB() (*gorm.DB, error) {
 	sqlDB.SetMaxIdleConns(2)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
-	// إضافة healthcheck دوري للاتصال بقاعدة البيانات
-	go func() {
+	// إضافة healthcheck دوري للاتصال بقاعدة البيانات مع إمكانية التوقف النظيف
+	dbStopPing = make(chan struct{})
+	go func(stopCh <-chan struct{}) {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
-		for range ticker.C {
-			if sqlDB.Ping() != nil {
-				slog.Error("Database connection lost")
+		for {
+			select {
+			case <-ticker.C:
+				if sqlDB.Ping() != nil {
+					slog.Error("Database connection lost")
+				}
+			case <-stopCh:
+				return
 			}
 		}
-	}()
+	}(dbStopPing)
 
 	// الهجرة التلقائية لجداول قاعدة البيانات
 	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{}, &domain.CustomTemplate{})
@@ -95,6 +102,11 @@ func InitDB() (*gorm.DB, error) {
 func CloseDB() error {
 	dbMu.Lock()
 	defer dbMu.Unlock()
+
+	if dbStopPing != nil {
+		close(dbStopPing)
+		dbStopPing = nil
+	}
 
 	if dbInstance == nil {
 		return nil

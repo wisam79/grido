@@ -686,6 +686,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
               onClick={(e) => {
                 e.stopPropagation();
                 updateSlot(selectedSlot.id, { imageSrc: undefined });
+                useEditorStore.getState().pushHistory();
               }}
               title="إزالة"
             >

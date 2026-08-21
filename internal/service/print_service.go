@@ -454,12 +454,19 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 	}
 
 	for _, item := range req.Items {
+		// 🛡️ فحص قيم NaN و Inf غير المعرفة لمنع الانهيار
+		if math.IsNaN(item.X) || math.IsNaN(item.Y) || math.IsNaN(item.W) || math.IsNaN(item.H) ||
+			math.IsNaN(item.Zoom) || math.IsNaN(item.DragX) || math.IsNaN(item.DragY) ||
+			math.IsInf(item.X, 0) || math.IsInf(item.Y, 0) || math.IsInf(item.W, 0) || math.IsInf(item.H, 0) ||
+			math.IsInf(item.Zoom, 0) || math.IsInf(item.DragX, 0) || math.IsInf(item.DragY, 0) {
+			return 0, 0, fmt.Errorf("invalid NaN or Inf floating point values in print item geometry")
+		}
+
 		// 🛡️ رفض هندسة عناصر غير منطقية (منع تخصيص ذاكرة ضخمة عبر W/H غير مقيد)
 		// تسامح 0.1mm لامتصاص أخطاء التقريب العائمة عند تحويل بكسل→مم للعناصر
 		// كاملة التغطية (Bleed) التي قد تتجاوز الورقة بأجزاء من المئة من المليمتر
 		// (مثل A4@300DPI = 2480×3508 بكسل ← 209.97×297.01mm)
-		if !math.IsNaN(item.W) && !math.IsNaN(item.H) &&
-			(item.W <= 0 || item.H <= 0 || item.W > req.PaperWidthMM+0.1 || item.H > req.PaperHeightMM+0.1) {
+		if item.W <= 0 || item.H <= 0 || item.W > req.PaperWidthMM+0.1 || item.H > req.PaperHeightMM+0.1 {
 			return 0, 0, fmt.Errorf("invalid item geometry: W=%.2f H=%.2f (must fit within paper %.0f×%.0f mm)", item.W, item.H, req.PaperWidthMM, req.PaperHeightMM)
 		}
 		// 🛡️ رفض نسب اقتصاص سلبية أو متناقضة
@@ -1323,7 +1330,8 @@ func (s *PrintService) composeCanvas(
 		return nil, fmt.Errorf("too many composition items: %d (max limit is 100)", len(comp.Items))
 	}
 
-	scale := float64(outW) / float64(comp.CanvasWidthPx)
+	scaleX := float64(outW) / float64(comp.CanvasWidthPx)
+	scaleY := float64(outH) / float64(comp.CanvasHeightPx)
 
 	dc := gg.NewContext(outW, outH)
 	dc.SetColor(parseColor(comp.BackgroundColor))
@@ -1344,8 +1352,8 @@ func (s *PrintService) composeCanvas(
 			return nil, err
 		}
 
-		targetW := int(math.Round(item.W * scale))
-		targetH := int(math.Round(item.H * scale))
+		targetW := int(math.Round(item.W * scaleX))
+		targetH := int(math.Round(item.H * scaleY))
 		if targetW < 1 {
 			targetW = 1
 		}
@@ -1354,10 +1362,10 @@ func (s *PrintService) composeCanvas(
 		}
 		processedImg := applyImageProcessing(img, item, targetW, targetH)
 
-		xPx := float64(int(math.Round(item.X * scale)))
-		yPx := float64(int(math.Round(item.Y * scale)))
-		wPx := float64(int(math.Round(item.W * scale)))
-		hPx := float64(int(math.Round(item.H * scale)))
+		xPx := float64(int(math.Round(item.X * scaleX)))
+		yPx := float64(int(math.Round(item.Y * scaleY)))
+		wPx := float64(int(math.Round(item.W * scaleX)))
+		hPx := float64(int(math.Round(item.H * scaleY)))
 
 		drawX, drawY := xPx, yPx
 		if isQuarterRotation(item.Rotation) {
@@ -1366,7 +1374,7 @@ func (s *PrintService) composeCanvas(
 		}
 
 		dc.Push()
-		rPx := item.CornerRadiusMM * scale
+		rPx := item.CornerRadiusMM * scaleX
 		if rPx > 0 {
 			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
 		} else {
@@ -1390,7 +1398,7 @@ func (s *PrintService) composeCanvas(
 		dc.Pop()
 
 		if item.BorderWidthMM > 0 && item.BorderColor != "" {
-			bPx := item.BorderWidthMM * scale
+			bPx := item.BorderWidthMM * scaleX
 			dc.SetHexColor(item.BorderColor)
 			dc.SetLineWidth(bPx)
 			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
@@ -1490,12 +1498,28 @@ func (s *PrintService) PrintNative(filePath string) error {
 	}
 
 	cleanPath := filepath.Clean(filePath)
-	if _, err := os.Stat(cleanPath); err != nil {
+	resolved, err := filepath.EvalSymlinks(cleanPath)
+	if err == nil {
+		cleanPath = resolved
+	}
+
+	info, err := os.Stat(cleanPath)
+	if err != nil {
 		return fmt.Errorf("ملف الطباعة غير موجود: %w", err)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("المسار المحدد مجلد وليس ملفاً قابلاً للطباعة")
+	}
+
+	ext := strings.ToLower(filepath.Ext(cleanPath))
+	validExts := map[string]bool{
+		".png": true, ".jpg": true, ".jpeg": true, ".tiff": true, ".tif": true, ".pdf": true, ".html": true,
+	}
+	if !validExts[ext] {
+		return fmt.Errorf("نوع الملف غير مدعوم للطباعة: %s", ext)
 	}
 
 	if runtime.GOOS == "windows" {
-		ext := strings.ToLower(filepath.Ext(cleanPath))
 		targetPath := cleanPath
 		if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tiff" || ext == ".tif" {
 			htmlPath := strings.TrimSuffix(cleanPath, filepath.Ext(cleanPath)) + ".html"
@@ -1524,8 +1548,8 @@ func (s *PrintService) PrintNative(filePath string) error {
 			}
 		}
 
-		// Fallback to launching default browser which executes window.print() natively
-		cmd := exec.Command("cmd", "/c", "start", "", targetPath)
+		// Safe fallback: Launch via explorer/rundll without raw cmd /c start interpolation
+		cmd := exec.Command("rundll32.exe", "url.dll,FileProtocolHandler", targetPath)
 		if err := cmd.Start(); err != nil {
 			return fmt.Errorf("تعذر إطلاق نافذة طباعة الويندوز: %w", err)
 		}

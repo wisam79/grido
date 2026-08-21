@@ -73,10 +73,11 @@ export function migrateProject(raw: any): ProjectFileV1 {
   }
 
   // Normalize legacy format (without version) to v1
+  const version = typeof raw.version === "number" ? raw.version : CURRENT_PROJECT_VERSION;
 
   const normalized = {
     ...raw,
-    version: CURRENT_PROJECT_VERSION,
+    version,
     // Provide sensible defaults for missing fields if necessary
     showGrid: raw.showGrid ?? false,
     gridSize: raw.gridSize ?? 50,

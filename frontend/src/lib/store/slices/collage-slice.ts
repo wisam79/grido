@@ -144,11 +144,11 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         elements,
         slots: [],
         selectedId: elements[0]?.id || null,
-        history: [{ elements, slots: [] }],
-        historyIndex: 0,
       });
+      get().pushHistory();
     } else {
       set({ template: null });
+      get().pushHistory();
     }
   },
 

@@ -262,7 +262,6 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 		userID, _, userErr := fetchSupabaseUserInfo(token)
 		if userErr == nil && userID != "" {
 			if rpcErr := callAIUsageRPC(token, userID, inputImageBytes, true); rpcErr != nil {
-				GlobalAIRateLimiter.Rollback(tokenHash)
 				return "", fmt.Errorf("تجاوزت الحد اليومي أو تعذر التحقق من الحصة: %w", rpcErr)
 			}
 			// تسجيل الاستهلاك خادمياً بعد نجاح المعالجة فقط

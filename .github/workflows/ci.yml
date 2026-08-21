@@ -168,4 +168,4 @@ jobs:
         run: npx playwright test --project=chromium
 
       - name: Build Wails App Binary (Smoke Test)
-        run: wails build -platform windows/amd64 -ldflags "-X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.GRIDO_AI_SECRET_KEY }}"
+        run: wails build -platform windows/amd64 -ldflags "-X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }}"

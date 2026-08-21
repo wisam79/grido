@@ -7,8 +7,6 @@ Write-Host "==========================================================" -Foregro
 $envPath = ".env"
 $supabaseUrl = ""
 $supabaseAnonKey = ""
-$modalAiKey = ""
-
 if (Test-Path $envPath) {
     foreach ($line in Get-Content $envPath) {
         if ($line -match '^SUPABASE_URL=(.*)$') {
@@ -17,23 +15,7 @@ if (Test-Path $envPath) {
         if ($line -match '^SUPABASE_ANON_KEY=(.*)$') {
             $supabaseAnonKey = $matches[1].Trim()
         }
-        if ($line -match '^GRIDO_AI_SECRET_KEY=(.*)$' -or $line -match '^MODAL_AI_KEY=(.*)$') {
-            $modalAiKey = $matches[1].Trim()
-        }
     }
-}
-
-if ($modalAiKey -eq "") {
-    $modalAiKey = $env:MODAL_AI_KEY
-}
-if ($modalAiKey -eq "") {
-    $modalAiKey = $env:GRIDO_AI_SECRET_KEY
-}
-
-if ($modalAiKey -eq "") {
-    Write-Host "ERROR: MODAL_AI_KEY / GRIDO_AI_SECRET_KEY not found in .env or environment." -ForegroundColor Red
-    Write-Host "Set it in .env (see .env.example) or as an environment variable before building." -ForegroundColor Yellow
-    exit 1
 }
 
 Write-Host " [1/3] Generating NSIS installer image assets..." -ForegroundColor Green
@@ -52,7 +34,7 @@ if (-not $appVersion) {
 }
 
 Write-Host " [2/3] Building Wails Desktop App & NSIS Installer ($appVersion)..." -ForegroundColor Green
-$ldflags = "-s -w -X grido/internal/service.AppVersion=$appVersion -X grido/internal/service.SupabaseURL=$supabaseUrl -X grido/internal/service.SupabaseAnonKey=$supabaseAnonKey -X grido/internal/service.ModalAIKey=$modalAiKey"
+$ldflags = "-s -w -X grido/internal/service.AppVersion=$appVersion -X grido/internal/service.SupabaseURL=$supabaseUrl -X grido/internal/service.SupabaseAnonKey=$supabaseAnonKey"
 
 wails build -nsis -clean -ldflags $ldflags
 

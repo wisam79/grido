@@ -88,9 +88,9 @@ func TestMediaService_GetExtensionFromMime(t *testing.T) {
 		{"image/png", ".png"},
 		{"image/jpeg", ".jpg"},
 		{"image/jpg", ".jpg"},
-		{"image/webp", ".jpg"},
-		{"image/gif", ".jpg"},
-		{"image/bmp", ".jpg"},
+		{"image/webp", ".webp"},
+		{"image/gif", ".gif"},
+		{"image/bmp", ".bmp"},
 		{"application/octet-stream", ".jpg"},
 	}
 

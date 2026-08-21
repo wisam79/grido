@@ -69,6 +69,7 @@ type CoreSliceCross = CoreSlice & {
   collageShowCutLines: boolean;
   collageStrokeWidth: number;
   collageStrokeColor: string;
+  clipboardElements: CanvasElement[];
   pushHistory: () => void;
 };
 
@@ -232,6 +233,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       backgroundColor: "#FFFFFF",
       lastEditedImage: null,
       lastEditedImageAspect: null,
+      clipboardElements: [],
       elements: [],
       selectedId: null,
       selectedIds: [],
@@ -356,6 +358,9 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       canvasWidth: validWidth,
       canvasHeight: validHeight,
       backgroundColor: project.backgroundColor || "#FFFFFF",
+      lastEditedImage: null,
+      lastEditedImageAspect: null,
+      clipboardElements: [],
       elements: validElements,
       slots: reconciledSlots,
       template: restoredTemplate,

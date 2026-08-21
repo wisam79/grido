@@ -33,13 +33,38 @@ describe('CoreSlice Unit Tests', () => {
     expect(useEditorStore.getState().lastEditedImageAspect).toBe(1.5);
   });
 
-  it('resets state to defaults', () => {
+  it('resets state to defaults including clipboard and lastEditedImage', () => {
     useEditorStore.getState().setCanvasSize(500, 500);
     useEditorStore.getState().setBackgroundColor('#000000');
+    useEditorStore.getState().setLastEditedImage('temp.jpg');
+    useEditorStore.getState().setLastEditedImageAspect(1.2);
+    useEditorStore.setState({ clipboardElements: [{ id: '1', type: 'image', x: 0, y: 0, width: 100, height: 100 }] as any });
+
     useEditorStore.getState().reset();
 
     expect(useEditorStore.getState().canvasWidth).toBe(2480);
     expect(useEditorStore.getState().backgroundColor).toBe('#FFFFFF');
+    expect(useEditorStore.getState().lastEditedImage).toBeNull();
+    expect(useEditorStore.getState().lastEditedImageAspect).toBeNull();
+    expect(useEditorStore.getState().clipboardElements).toEqual([]);
+  });
+
+  it('loadProject clears clipboardElements and lastEditedImage from previous project', () => {
+    useEditorStore.getState().setLastEditedImage('projectA.jpg');
+    useEditorStore.setState({ clipboardElements: [{ id: 'el-a' }] as any });
+
+    useEditorStore.getState().loadProject({
+      version: 1,
+      canvasWidth: 1920,
+      canvasHeight: 1080,
+      backgroundColor: '#FAFAFA',
+      elements: [],
+      slots: [],
+    } as any, 'proj-b');
+
+    expect(useEditorStore.getState().projectId).toBe('proj-b');
+    expect(useEditorStore.getState().lastEditedImage).toBeNull();
+    expect(useEditorStore.getState().clipboardElements).toEqual([]);
   });
 
   it('updates zoom level via number or callback function', () => {

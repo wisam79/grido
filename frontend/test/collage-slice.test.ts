@@ -130,4 +130,24 @@ describe('CollageSlice Unit Tests', () => {
     expect(updated?.dragX).toBe(0);
     expect(updated?.dragY).toBe(0);
   });
+
+  it('setTemplate preserves history and allows undo', () => {
+    const initialHistoryLen = useEditorStore.getState().history.length;
+    
+    useEditorStore.getState().setTemplate({
+      id: 'tmpl-1',
+      name: 'Single 4x6',
+      width: 1200,
+      height: 1800,
+      background: '#FFFFFF',
+      slots: 1,
+    } as any);
+
+    expect(useEditorStore.getState().history.length).toBeGreaterThan(initialHistoryLen);
+    expect(useEditorStore.getState().mode).toBe('single');
+
+    // تراجع (Undo)
+    useEditorStore.getState().undo();
+    expect(useEditorStore.getState().mode).toBe('collage');
+  });
 });

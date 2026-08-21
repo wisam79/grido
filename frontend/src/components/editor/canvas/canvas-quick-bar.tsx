@@ -374,7 +374,10 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => updateSlot(selectedSlot.id, { imageSrc: undefined, originalImageSrc: undefined })}
+                      onClick={() => {
+                        updateSlot(selectedSlot.id, { imageSrc: undefined, originalImageSrc: undefined });
+                        useEditorStore.getState().pushHistory();
+                      }}
                       className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
                     >
                       <Eraser className="w-3.5 h-3.5" />

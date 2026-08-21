@@ -133,12 +133,9 @@ export default function AdminDashboard() {
         client.auth.getUser(savedToken).then(({ data, error }) => {
           if (!error && data.user) {
             client
-              .from('profiles')
-              .select('plan')
-              .eq('id', data.user.id)
-              .single()
-              .then(({ data: profileData }) => {
-                if (profileData && profileData.plan === 'enterprise') {
+              .rpc('is_admin')
+              .then(({ data: isAdmin, error: adminErr }) => {
+                if (!adminErr && isAdmin) {
                   setIsAuthenticated(true);
                 } else {
                   clearSession();
@@ -203,7 +200,7 @@ export default function AdminDashboard() {
 
       // 3. Fetch AI Usage Logs
       const { data: aiLogsData, error: aiErr } = await supabase
-        .from('ai_usage_logs')
+        .from('ai_usage')
         .select('*')
         .order('used_at', { ascending: false })
         .limit(100);
@@ -245,14 +242,10 @@ export default function AdminDashboard() {
         return;
       }
 
-      // Verify user has enterprise admin privileges
-      const { data: profileData, error: profErr } = await client
-        .from('profiles')
-        .select('plan')
-        .eq('id', data.user.id)
-        .single();
+      // Verify user has admin privileges via is_admin RPC
+      const { data: isAdmin, error: adminErr } = await client.rpc('is_admin');
 
-      if (profErr || !profileData || profileData.plan !== 'enterprise') {
+      if (adminErr || !isAdmin) {
         alert('الدخول مرفوض: هذا الحساب لا يملك صلاحيات مسؤول النظام.');
         await client.auth.signOut();
         setLoginLoading(false);
