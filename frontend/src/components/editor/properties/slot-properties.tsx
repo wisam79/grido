@@ -23,6 +23,7 @@ import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
 import { useFaceFrame } from "@/hooks/use-face-frame";
 import { Switch } from "@/components/ui/switch";
+import { checkerColor } from "@/lib/canvas/canvas-colors";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -522,7 +523,7 @@ export function SlotProperties({
                 )}
                 style={{
                   backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
-                  backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
+                  backgroundImage: colorItem.val === "transparent" ? `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)` : undefined,
                   backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
                   backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
                 }}

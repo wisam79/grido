@@ -21,7 +21,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast font-sans !bg-card/90 dark:!bg-[#28282c]/95 !text-foreground !border !border-border/60 dark:!border-white/12 !shadow-md !rounded-full !backdrop-blur-md transition-all duration-150 !w-auto !max-w-fit !mx-auto px-3.5 py-1.5 min-h-[34px] gap-2 flex items-center",
+            "group toast font-sans !bg-card !text-foreground !border !border-border !shadow-md !rounded-full !backdrop-blur-md transition-all duration-150 !w-auto !max-w-fit !mx-auto px-3.5 py-1.5 min-h-[34px] gap-2 flex items-center",
           title: "text-xs font-medium text-foreground tracking-normal font-sans whitespace-nowrap",
           description: "text-[11px] text-muted-foreground font-sans mt-0.5",
           actionButton:

@@ -31,9 +31,9 @@ export function ImageAdjustProperties({
   showReset = true 
 }: ImagePropertiesProps & { showReset?: boolean }) {
   return (
-    <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3">
+    <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3">
       {!showReset && (
-        <Label className="text-xs font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">
+        <Label className="text-xs font-bold text-foreground/80 block border-b border-border/40 pb-1.5 mb-1">
           تعديل الألوان
         </Label>
       )}
@@ -245,8 +245,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
   return (
     <div className="space-y-3 font-cairo animate-in fade-in duration-200">
       {/* 🎴 بطاقة 1: أدوات المعالجة والذكاء الاصطناعي */}
-      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between border-b border-border/20 pb-1.5">
+      <div className="bg-card border border-border p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
+        <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
           <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span>المعالجة والذكاء الاصطناعي</span>
@@ -299,22 +299,24 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           title={`تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
         >
           <div className="flex items-center gap-2">
-            <Wand2 className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
-            <span>تحسين الجودة والوضوح</span>
+            {isEnhancing ? (
+              <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
+            ) : (
+              <Wand2 className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
+            )}
+            <span>{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه ورفع الدقة"}</span>
           </div>
           <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
-            {remainingQuota}/{dailyLimit} اليوم
+            {isEnhancing ? "سحابي" : `${remainingQuota}/${dailyLimit}`}
           </span>
         </Button>
 
-        {/* زر ضبط الوجه تلقائياً (تأطير الهوية) */}
+        {/* زر ضبط الوجه التلقائي */}
         <Button
           variant={isFraming ? "destructive" : "outline"}
-          disabled={isEnhancing || isRemovingBg}
           className={cn(
             "w-full flex items-center justify-between px-3 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-            (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
-            isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+            isFraming && "animate-pulse"
           )}
           onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
           title={isFraming ? "إلغاء ضبط الوجه" : "كشف الوجه وتأطيره وفق معايير الهوية"}
@@ -355,14 +357,14 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
         {/* أشرطة تقدم العمليات */}
         {isRemovingBg && (
-          <div className="p-2.5 rounded-xl bg-indigo-500/[0.03] dark:bg-indigo-500/[0.05] border border-indigo-500/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
+          <div className="p-2.5 rounded-xl bg-primary/[0.05] border border-primary/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+            <div className="flex justify-between items-center text-[9px] font-bold text-primary">
               <span className="animate-pulse">{bgProgressText}</span>
-              <span className="font-mono">{bgProgress}%</span>
+              <span>{Math.round(bgProgress)}%</span>
             </div>
-            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+            <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
               <div 
-                className="bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-500 h-full rounded-full transition-all duration-300 ease-out"
+                className="h-full bg-primary rounded-full transition-all duration-300"
                 style={{ width: `${bgProgress}%` }}
               />
             </div>
@@ -370,14 +372,14 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
 
         {isEnhancing && (
-          <div className="p-2.5 rounded-xl bg-violet-500/[0.05] dark:bg-violet-500/[0.08] border border-violet-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[9px] font-bold text-violet-600 dark:text-violet-400">
+          <div className="p-2.5 rounded-xl bg-primary/[0.05] border border-primary/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+            <div className="flex justify-between items-center text-[9px] font-bold text-primary">
               <span className="animate-pulse">{enhanceProgressText}</span>
-              <span className="font-mono font-extrabold">{enhanceProgress}%</span>
+              <span>{Math.round(enhanceProgress)}%</span>
             </div>
-            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+            <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
               <div 
-                className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-500 h-full rounded-full transition-all duration-300 ease-out"
+                className="h-full bg-primary rounded-full transition-all duration-300"
                 style={{ width: `${enhanceProgress}%` }}
               />
             </div>
@@ -385,14 +387,14 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
 
         {isFraming && (
-          <div className="p-2.5 rounded-xl bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08] border border-emerald-500/20 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+          <div className="p-2.5 rounded-xl bg-primary/[0.05] border border-primary/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+            <div className="flex justify-between items-center text-[9px] font-bold text-primary">
               <span className="animate-pulse">{frameProgressText}</span>
-              <span className="font-mono font-extrabold">{frameProgress}%</span>
+              <span>{Math.round(frameProgress)}%</span>
             </div>
-            <div className="w-full bg-muted dark:bg-muted/30 h-1.5 rounded-full overflow-hidden border border-border/15">
+            <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
               <div 
-                className="bg-gradient-to-r from-emerald-600 via-teal-500 to-green-400 h-full rounded-full transition-all duration-300 ease-out"
+                className="h-full bg-primary rounded-full transition-all duration-300"
                 style={{ width: `${frameProgress}%` }}
               />
             </div>
@@ -401,8 +403,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       </div>
 
       {/* 🎴 بطاقة 2: خلفية صورة الهوية */}
-      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between border-b border-border/20 pb-1.5">
+      <div className="bg-card border border-border p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
+        <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
           <Label className="text-xs font-bold text-foreground/85 flex items-center gap-1.5">
             <Palette className="w-3.5 h-3.5 text-primary" />
             <span>خلفية الصورة المعزولة</span>
@@ -430,7 +432,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   useEditorStore.getState().pushHistory();
                 }}
                 className={cn(
-                  "w-7 h-7 rounded-md border border-border/80 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  "w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                   isActive && "ring-2 ring-primary ring-offset-1 border-primary"
                 )}
                 style={{
@@ -448,7 +450,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           })}
 
           {/* Custom Color Input */}
-          <div className="flex items-center gap-1 border border-border/80 rounded-md px-1.5 h-7 bg-background" title="لون مخصص">
+          <div className="flex items-center gap-1 border border-border rounded-md px-1.5 h-7 bg-input" title="لون مخصص">
             <input
               type="color"
               value={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
@@ -461,8 +463,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       </div>
 
       {/* 🎴 بطاقة 3: القص وتغيير ومقارنة الصورة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between border-b border-border/20 pb-1.5">
+      <div className="bg-card border border-border p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
+        <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
           <Label className="text-xs font-bold text-foreground/85 flex items-center gap-1.5">
             <Scissors className="w-3.5 h-3.5 text-primary" />
             <span>القص وتغيير الصورة</span>

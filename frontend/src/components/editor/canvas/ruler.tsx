@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { rulerCursor } from "@/lib/canvas/canvas-colors";
 
 // وحدة قياس المساطر — mm (فعلية) أو px (بكسلات الكانفس الفعلية)
 export type RulerUnit = "mm" | "px";
@@ -146,14 +147,14 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
             y={0}
             width={displayW}
             height={24}
-            className="fill-primary/[0.08] dark:fill-primary/[0.14]"
+            className="fill-foreground/[0.03] dark:fill-foreground/[0.04]"
           />
           <line
             x1={originX}
             y1={23.5}
             x2={endX}
             y2={23.5}
-            className="stroke-primary/50"
+            className="stroke-border"
             strokeWidth={1}
           />
           {/* خط نهاية حدود الورقة */}
@@ -162,7 +163,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
             y1={0}
             x2={endX}
             y2={24}
-            className="stroke-primary/30"
+            className="stroke-border/70"
             strokeWidth={1}
             strokeDasharray="2,2"
           />
@@ -192,7 +193,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
         y1={0}
         x2={0}
         y2={24}
-        stroke="#0078d4"
+        stroke={rulerCursor()}
         strokeWidth={1.5}
         style={{ display: "none" }}
       />
@@ -295,14 +296,14 @@ export const VerticalRuler = React.memo(function VerticalRuler({
             y={originY}
             width={24}
             height={displayH}
-            className="fill-primary/[0.08] dark:fill-primary/[0.14]"
+            className="fill-foreground/[0.03] dark:fill-foreground/[0.04]"
           />
           <line
             x1={23.5}
             y1={originY}
             x2={23.5}
             y2={endY}
-            className="stroke-primary/50"
+            className="stroke-border"
             strokeWidth={1}
           />
           {/* خط نهاية حدود الورقة */}
@@ -311,7 +312,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
             y1={endY}
             x2={24}
             y2={endY}
-            className="stroke-primary/30"
+            className="stroke-border/70"
             strokeWidth={1}
             strokeDasharray="2,2"
           />
@@ -341,7 +342,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
         y1={0}
         x2={24}
         y2={0}
-        stroke="#0078d4"
+        stroke={rulerCursor()}
         strokeWidth={1.5}
         style={{ display: "none" }}
       />

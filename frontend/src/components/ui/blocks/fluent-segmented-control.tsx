@@ -32,7 +32,7 @@ export function FluentSegmentedControl<T extends string = string>({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 bg-muted/80 dark:bg-[#18181f] p-1 rounded-xl border border-border/80 dark:border-white/10 select-none fluent-specular",
+        "flex items-center gap-1 bg-input p-1 rounded-xl border border-border select-none fluent-specular",
         className
       )}
       dir="rtl"
@@ -59,7 +59,7 @@ export function FluentSegmentedControl<T extends string = string>({
             {isActive && (
               <motion.div
                 layoutId={layoutId}
-                className="absolute inset-0 bg-card dark:bg-[#2c2c36] border border-black/10 dark:border-white/15 rounded-md shadow-xs -z-10"
+                className="absolute inset-0 bg-card border border-border rounded-md shadow-xs -z-10"
                 transition={{ type: "spring", stiffness: 500, damping: 35 }}
               />
             )}

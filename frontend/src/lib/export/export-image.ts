@@ -7,6 +7,14 @@ import { computeSheetGrid, computeSlotRectMM } from "@/lib/print/print-layout-ma
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
 import { VECTOR_SHAPES } from "@/lib/io/svg-paths";
 import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
+import {
+  gradientStart,
+  gradientEnd,
+  collageCut,
+  collageEndCut,
+  TEXT_COLOR_DEFAULT,
+  previewWhite,
+} from "@/lib/canvas/canvas-colors";
 
 // [FIX #9] تحويل Data URL إلى Blob مباشرة في الذاكرة بدلاً من fetch غير الضروري
 export function dataURLToBlob(dataUrl: string): Blob {
@@ -161,7 +169,7 @@ function buildGradientFill(
   h: number
 ): CanvasGradient | null {
   const addStops = (grad: CanvasGradient, stops?: Array<number | string>) => {
-    const s = stops && stops.length >= 4 ? stops : [0, "#3b82f6", 1, "#8b5cf6"];
+    const s = stops && stops.length >= 4 ? stops : [0, gradientStart(), 1, gradientEnd()];
     for (let i = 0; i + 1 < s.length; i += 2) {
       grad.addColorStop(Number(s[i]), String(s[i + 1]));
     }
@@ -297,7 +305,7 @@ export async function exportCanvas(
         flattenCanvas.height = canvasHeight;
         const fctx = flattenCanvas.getContext("2d");
         if (fctx) {
-          fctx.fillStyle = "#FFFFFF";
+          fctx.fillStyle = previewWhite();
           fctx.fillRect(0, 0, canvasWidth, canvasHeight);
           fctx.drawImage(captured, 0, 0);
           dataUrl = flattenCanvas.toDataURL("image/jpeg", quality);
@@ -325,7 +333,7 @@ export async function exportCanvas(
   if (!ctx) return null;
 
   if (format === "jpg" || backgroundColor !== "transparent") {
-    ctx.fillStyle = backgroundColor === "transparent" ? "#FFFFFF" : backgroundColor;
+    ctx.fillStyle = backgroundColor === "transparent" ? previewWhite() : backgroundColor;
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   }
 
@@ -456,11 +464,11 @@ export async function exportCanvas(
       for (const line of cutLines) {
         ctx.beginPath();
         if (line.isBottomEnd) {
-          ctx.strokeStyle = "#3182ce";
+          ctx.strokeStyle = collageEndCut();
           ctx.lineWidth = lineW * 1.5;
           ctx.setLineDash([12, 6]);
         } else {
-          ctx.strokeStyle = "#a0aec0";
+          ctx.strokeStyle = collageCut();
           ctx.lineWidth = lineW;
           ctx.setLineDash([8, 8]);
         }
@@ -554,7 +562,7 @@ export async function exportCanvas(
         const bgPadY = el.textBgPaddingY ?? el.textBgPadding ?? 0;
         const bgRadius = el.textBgRadius ?? 0;
         const bgBorderW = el.textBgBorderWidth ?? 0;
-        const bgBorderCol = el.textBgBorderColor ?? "#000000";
+        const bgBorderCol = el.textBgBorderColor ?? TEXT_COLOR_DEFAULT;
 
         // خلفية وشارة النص الاختيارية
         if (hasBg) {
@@ -596,8 +604,8 @@ export async function exportCanvas(
             fontFamily,
             fontWeight: el.fontWeight || 700,
             fontStyle: el.fontStyle || "normal",
-            color: el.color || "#000000",
-            stroke: el.strokeWidth ? (el.stroke || "#000000") : undefined,
+            color: el.color || TEXT_COLOR_DEFAULT,
+            stroke: el.strokeWidth ? (el.stroke || TEXT_COLOR_DEFAULT) : undefined,
             strokeWidth: el.strokeWidth || 0,
             textAlign: el.textAlign || "center",
             curve: el.curve || 0,
@@ -605,7 +613,7 @@ export async function exportCanvas(
           });
         } else {
           ctx.font = `${fontStyle}${el.fontWeight || 700} ${fontSize}px ${fontFamily}`;
-          ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.color || "#000000";
+          ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.color || TEXT_COLOR_DEFAULT;
           ctx.textAlign = (el.textAlign as CanvasTextAlign) || "center";
           ctx.textBaseline = "middle";
           ctx.direction = "rtl";
@@ -644,7 +652,7 @@ export async function exportCanvas(
           const textX = el.textAlign === "left" ? 0 : el.textAlign === "right" ? w : w / 2;
           const strokeW = el.strokeWidth || 0;
           if (strokeW > 0) {
-            ctx.strokeStyle = el.stroke || "#000000";
+            ctx.strokeStyle = el.stroke || TEXT_COLOR_DEFAULT;
             ctx.lineWidth = strokeW;
             ctx.lineJoin = "round";
           }
@@ -670,7 +678,7 @@ export async function exportCanvas(
               ctx.strokeStyle =
                 typeof ctx.fillStyle === "string"
                   ? ctx.fillStyle
-                  : el.color || "#000000";
+                  : el.color || TEXT_COLOR_DEFAULT;
               ctx.lineWidth = decoThickness;
               ctx.beginPath();
               ctx.moveTo(fromX, decoY);
@@ -681,8 +689,8 @@ export async function exportCanvas(
           });
         }
       } else if (el.type === "shape") {
-        ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.fill || "#6366f1";
-        ctx.strokeStyle = el.stroke || "#000000";
+        ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.fill || gradientStart();
+        ctx.strokeStyle = el.stroke || TEXT_COLOR_DEFAULT;
         ctx.lineWidth = el.strokeWidth || 0;
         if (el.shape === "rect") {
           const r = el.radius || 0;
@@ -699,7 +707,7 @@ export async function exportCanvas(
           ctx.moveTo(0, h / 2);
           ctx.lineTo(w, h / 2);
           ctx.lineWidth = Math.max(1, el.strokeWidth || 4);
-          ctx.strokeStyle = el.fill || "#000000";
+          ctx.strokeStyle = el.fill || gradientStart();
           ctx.stroke();
         } else if (el.shape === "star") {
           drawStar(ctx, w / 2, h / 2, 5, Math.min(w, h) / 2, Math.min(w, h) / 4);
@@ -775,7 +783,7 @@ export async function exportSlotCanvas(
       ctx.fillStyle = (slot as any).bgColor;
       ctx.fillRect(0, 0, exportWidth, exportHeight);
     } else if (format === "jpg") {
-      ctx.fillStyle = "#FFFFFF";
+      ctx.fillStyle = previewWhite();
       ctx.fillRect(0, 0, exportWidth, exportHeight);
     }
 
@@ -842,7 +850,7 @@ export async function applyBleedAndCropMarks(
       }
 
       // خلفية بيضاء لتغطية منطقة النزيف
-      ctx.fillStyle = "#FFFFFF";
+      ctx.fillStyle = previewWhite();
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // رسم الصورة الأصلية في المنتصف
@@ -906,7 +914,7 @@ export async function applyBleedAndCropMarks(
 
       // رسم علامات القص
       if (showCropMarks && bleedPx > 0) {
-        ctx.strokeStyle = "#000000";
+        ctx.strokeStyle = TEXT_COLOR_DEFAULT;
         ctx.lineWidth = Math.max(1, Math.round(dpi / 150));
         const markLen = Math.min(bleedPx * 0.8, dpi * 0.2); // طول العلامة
         const offset = bleedPx;

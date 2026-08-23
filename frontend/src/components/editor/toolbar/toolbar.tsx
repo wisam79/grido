@@ -12,7 +12,6 @@ import {
   ToolbarAddTools,
   ToolbarSelectionTools,
   ToolbarHistoryTools,
-  ToolbarViewTools,
   TemplateInfo,
 } from "./toolbar-items";
 
@@ -50,7 +49,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   }, []);
 
   return (
-    <div className="relative h-12 shrink-0 border-b border-border/70 bg-card/85 backdrop-blur-xl select-none no-print fluent-specular font-cairo">
+    <div className="relative h-12 shrink-0 border-b border-border bg-sidebar/95 backdrop-blur-xl select-none no-print fluent-specular font-cairo">
       <div
         ref={scrollRef}
         className="h-full flex items-center gap-2 px-3 overflow-x-auto scrollbar-none flex-nowrap"
@@ -58,12 +57,12 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
         {/* المجموعة 1: إدارة الملفات والمستندات */}
         <ToolbarFileOps />
 
-        <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/40" />
+        <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
         {/* المجموعة 2: إضافة عناصر (نص وأشكال) */}
         <ToolbarAddTools />
 
-        <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/40" />
+        <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
         {/* المجموعة 3: تعديل وترتيب ومحاذاة العنصر المحدد */}
         <ToolbarSelectionTools />
@@ -71,21 +70,16 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
         {/* المجموعة 4: التراجع والإعادة */}
         <ToolbarHistoryTools />
 
-        <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/40" />
-
-        {/* المجموعة 5: خيارات الرؤية والشبكة */}
-        <ToolbarViewTools />
 
         <div className="flex-1" />
 
         {/* معلومات القالب */}
         <TemplateInfo />
 
-        <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/40" />
+        <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
-        {/* المجموعة 6: الحفظ والتصدير والطباعة — التصدير هو الإجراء الختامي
-            الأبرز (CTA ممتلئ) والبقية ثانوية بأسلوب ghost */}
-        <div className="flex items-center gap-0.5 bg-muted/50 border border-border/60 p-0.5 rounded-lg shadow-2xs">
+        {/* المجموعة 6: الحفظ والتصدير والطباعة */}
+        <div className="flex items-center gap-0.5 bg-input border border-border p-0.5 rounded-lg shadow-2xs">
           <TooltipBtn content="حفظ المشروع (Ctrl + S)">
             <Button
               variant="ghost"
@@ -130,13 +124,13 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
       {fadeLeft && (
         <div
           className="pointer-events-none absolute inset-y-0 left-0 w-8 z-10"
-          style={{ background: "linear-gradient(to right, var(--card), transparent)" }}
+          style={{ background: "linear-gradient(to right, var(--sidebar), transparent)" }}
         />
       )}
       {fadeRight && (
         <div
           className="pointer-events-none absolute inset-y-0 right-0 w-8 z-10"
-          style={{ background: "linear-gradient(to left, var(--card), transparent)" }}
+          style={{ background: "linear-gradient(to left, var(--sidebar), transparent)" }}
         />
       )}
     </div>

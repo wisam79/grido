@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { previewWhite } from "@/lib/canvas/canvas-colors";
 import {
   Dialog,
   DialogContent,
@@ -530,7 +531,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         marginMM: effectiveMarginMM,
         gapMM: gapMM,
         dpi: printSettings.dpi || 300,
-        backgroundColor: backgroundColor || "#FFFFFF",
+        backgroundColor: backgroundColor || previewWhite(),
         showCutLines: mode === "collage" ? collageShowCutLines : printSettings.showCutLines,
         cutLineStyle: printSettings.cutLineStyle || "dashed",
         colorSpace: colorSpace,
@@ -573,7 +574,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         onOpenChange(next);
       }}
     >
-      <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border/80 dark:border-white/10 bg-background rounded-2xl shadow-xl p-0 gap-0 fluent-specular" dir="rtl">
+      <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border bg-card rounded-2xl shadow-xl p-0 gap-0 fluent-specular" dir="rtl">
         {/* رأس النافذة — العنوان فقط؛ الإعدادات نُقلت للجسم لتفادي ازدحام الرأس */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
           <DialogTitle className="text-base font-bold tracking-tight text-foreground">

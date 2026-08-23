@@ -49,11 +49,16 @@ export function KeyboardShortcutsDialog() {
     { label: "لصق صورة من الحافظة", keys: ["Ctrl", "V"] },
     { label: "إظهار / إخفاء لوحة القوالب", keys: ["Ctrl", "B"] },
     { label: "إظهار / إخفاء لوحة الخصائص", keys: ["Ctrl", "Shift", "B"] },
+    { label: "تكبير مساحة العمل", keys: ["Ctrl", "+"] },
+    { label: "تصغير مساحة العمل", keys: ["Ctrl", "-"] },
+    { label: "إعادة ضبط المقياس (100%)", keys: ["Ctrl", "0"] },
+    { label: "إظهار / إخفاء المساطر", keys: ["Ctrl", "R"] },
+    { label: "إظهار / إخفاء شبكة المحاذاة", keys: ["Ctrl", "'"] },
   ];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-xl rounded-2xl font-cairo fluent-specular transition-all duration-150" dir="rtl">
+      <DialogContent className="max-w-md bg-card backdrop-blur-2xl border border-border shadow-xl rounded-2xl font-cairo fluent-specular transition-all duration-150" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
             <Keyboard className="w-4 h-4 text-primary" />
@@ -70,7 +75,7 @@ export function KeyboardShortcutsDialog() {
                   {shortcut.keys.map((key, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 bg-muted/80 border border-border/60 rounded-md text-[11px] font-bold font-mono text-foreground shadow-2xs flex items-center justify-center min-w-7 h-6"
+                      className="px-2 py-0.5 bg-input border border-border rounded-md text-[11px] font-bold font-mono text-foreground shadow-2xs flex items-center justify-center min-w-7 h-6"
                     >
                       {key === "الأسهم" ? (
                         <div className="flex items-center gap-0.5">
@@ -84,7 +89,7 @@ export function KeyboardShortcutsDialog() {
                   ))}
                 </div>
               </div>
-              {index < shortcuts.length - 1 && <Separator className="bg-border/30" />}
+              {index < shortcuts.length - 1 && <Separator className="bg-border/60" />}
             </React.Fragment>
           ))}
         </div>
@@ -92,7 +97,7 @@ export function KeyboardShortcutsDialog() {
         <div className="mt-4 bg-primary/10 border border-primary/20 rounded-xl p-3 text-center fluent-specular">
           <p className="text-[11px] text-primary/90 font-bold">
             إظهار هذه القائمة بالضغط على 
-            <kbd className="mx-1 px-1.5 py-0.5 bg-background rounded-md border border-border/60 text-[10px] font-mono font-bold shadow-2xs">Ctrl + /</kbd>
+            <kbd className="mx-1 px-1.5 py-0.5 bg-input rounded-md border border-border text-[10px] font-mono font-bold shadow-2xs">Ctrl + /</kbd>
           </p>
         </div>
       </DialogContent>

@@ -95,7 +95,7 @@ function PresetMiniDiagram({ templateId, active }: { templateId: string; active:
         "w-8 h-11 rounded-md border shrink-0 relative p-1 transition-all duration-150 shadow-2xs flex items-center justify-center",
         active
           ? "border-primary bg-primary/15 shadow-xs ring-1 ring-primary/40"
-          : "border-border/80 dark:border-white/10 bg-background/90 dark:bg-[#14141a]"
+          : "border-border bg-input"
       )}
       dir="ltr"
       aria-hidden="true"
@@ -804,8 +804,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                     className={cn(
                       "p-2 rounded-xl border text-right transition-all cursor-pointer flex flex-col justify-between select-none relative active:scale-[0.98] shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none min-h-[82px]",
                       isActive
-                        ? "border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/40"
-                        : "bg-card dark:bg-[#1e1e26] border-border/80 dark:border-white/10 hover:bg-muted/50 hover:border-primary/40 text-foreground"
+                        ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/30"
+                        : "bg-input border-border hover:border-primary/40 text-foreground hover:bg-muted/30"
                     )}
                   >
                     {/* المخطط الهندسي المصغر + شارة التحديد / البادج */}

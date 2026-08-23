@@ -2,6 +2,10 @@ import React from "react";
 import { Layer, Group, Rect, Text, Line } from "react-konva";
 import { KonvaCollageImage } from "../elements/collage-image";
 import type { CanvasSlot as Slot } from "@/lib/store/types";
+import {
+  collageCut, collageEndCut,
+  slotPlaceholderBg, slotPlaceholderText,
+} from "@/lib/canvas/canvas-colors";
 
 interface KonvaCollageLayerProps {
   slots: Slot[];
@@ -114,7 +118,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
           <Line
             key={`v-cut-${idx}-${x}`}
             points={[x, minY, x, maxY]}
-            stroke="#a0aec0"
+            stroke={collageCut()}
             strokeWidth={1}
             dash={[6, 6]}
           />
@@ -132,7 +136,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               <Line
                 key={`h-cut-${idx}-${y}`}
                 points={[lineMinX, y, lineMaxX, y]}
-                stroke={isBottomEnd ? "#3182ce" : "#a0aec0"}
+                stroke={isBottomEnd ? collageEndCut() : collageCut()}
                 strokeWidth={isBottomEnd ? 1.5 : 1}
                 dash={isBottomEnd ? [8, 4] : [6, 6]}
               />
@@ -232,14 +236,14 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                     y={0}
                     width={width}
                     height={height}
-                    fill="#f3f4f6"
+                    fill={slotPlaceholderBg()}
                     cornerRadius={radius}
                     onClick={() => handleSlotClick?.(slot.id)}
                   />
                   <Text
                     text="+"
                     fontSize={32}
-                    fill="#9ca3af"
+                    fill={slotPlaceholderText()}
                     x={0}
                     y={height / 2 - 25}
                     width={width}
@@ -249,7 +253,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   <Text
                     text="انقر للإضافة"
                     fontSize={12}
-                    fill="#9ca3af"
+                    fill={slotPlaceholderText()}
                     fontFamily="Cairo, sans-serif"
                     x={0}
                     y={height / 2 + 10}

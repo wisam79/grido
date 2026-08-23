@@ -612,101 +612,6 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
   );
 });
 
-const ToolbarViewTools = React.memo(function ToolbarViewTools() {
-  const {
-    mode,
-    showGrid,
-    snapToGrid,
-    showColumns,
-    showRuler
-  } = useEditorStore(useShallow((state) => ({
-    mode: state.mode,
-    showGrid: state.showGrid,
-    snapToGrid: state.snapToGrid,
-    showColumns: state.showColumns,
-    showRuler: state.showRuler
-  })));
-
-  const setShowGrid = useEditorStore((state) => state.setShowGrid);
-  const setSnapToGrid = useEditorStore((state) => state.setSnapToGrid);
-  const setShowColumns = useEditorStore((state) => state.setShowColumns);
-  const setShowRuler = useEditorStore((state) => state.setShowRuler);
-
-  if (mode !== "single") return null;
-
-  return (
-    <div className="fluent-command-group shadow-2xs">
-      <TooltipBtn content={showGrid ? "إخفاء الشبكة الإرشادية" : "إظهار الشبكة الإرشادية"}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowGrid(!showGrid)}
-            aria-label="إظهار/إخفاء الشبكة"
-            className={cn(
-              "h-8 px-2.5 rounded-md transition-all cursor-pointer",
-              showGrid
-                ? "bg-primary/10 text-primary hover:bg-primary/15"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Grid3x3 className="w-4 h-4" />
-          </Button>
-        </TooltipBtn>
-
-        <TooltipBtn content={showColumns ? "إخفاء أعمدة التخطيط" : "إظهار أعمدة التخطيط"}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowColumns(!showColumns)}
-            aria-label="إظهار/إخفاء الأعمدة"
-            className={cn(
-              "h-8 px-2.5 rounded-md transition-all cursor-pointer",
-              showColumns
-                ? "bg-primary/10 text-primary hover:bg-primary/15"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Columns className="w-4 h-4" />
-          </Button>
-        </TooltipBtn>
-
-        <TooltipBtn content={showRuler ? "إخفاء المسطرة القياسية" : "إظهار المسطرة القياسية"}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowRuler(!showRuler)}
-            aria-label="إظهار/إخفاء المسطرة"
-            className={cn(
-              "h-8 px-2.5 rounded-md transition-all cursor-pointer",
-              showRuler
-                ? "bg-primary/10 text-primary hover:bg-primary/15"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Ruler className="w-4 h-4" />
-          </Button>
-        </TooltipBtn>
-
-        <TooltipBtn content={snapToGrid ? "إيقاف المحاذاة المغناطيسية للشبكة" : "تفعيل المحاذاة المغناطيسية للشبكة"}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSnapToGrid(!snapToGrid)}
-            aria-label="محاذاة مغناطيسية"
-            className={cn(
-              "h-8 px-2.5 rounded-md transition-all cursor-pointer",
-              snapToGrid
-                ? "bg-primary/10 text-primary hover:bg-primary/15"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Magnet className="w-4 h-4" />
-          </Button>
-        </TooltipBtn>
-      </div>
-  );
-});
-
 const TemplateInfo = React.memo(function TemplateInfo() {
   const { template, canvasWidth, canvasHeight } = useEditorStore(useShallow((state) => ({
     template: state.template,
@@ -728,4 +633,4 @@ const TemplateInfo = React.memo(function TemplateInfo() {
   );
 });
 
-export { TooltipBtn, ToolbarAddTools, ImageFiltersPopover, ToolbarSelectionTools, ToolbarHistoryTools, ToolbarViewTools, TemplateInfo };
+export { TooltipBtn, ToolbarAddTools, ImageFiltersPopover, ToolbarSelectionTools, ToolbarHistoryTools, TemplateInfo };

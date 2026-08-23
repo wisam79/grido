@@ -157,7 +157,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-w-md font-cairo rounded-2xl border fluent-specular" dir="rtl">
+      <DialogContent className="max-w-md font-cairo rounded-2xl border border-border bg-card fluent-specular" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold">
             <Download className="w-5 h-5 text-primary" /> تصدير الصورة
@@ -177,13 +177,15 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${
                   format === "png"
                     ? "border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20"
-                    : "border-border/80 hover:border-primary/50 bg-card hover:bg-muted/30 text-foreground"
+                    : "border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground"
                 }`}
               >
-                <FileImage className="w-5 h-5 text-primary shrink-0" />
+                <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center">
+                  {format === "png" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold">PNG</div>
-                  <div className="text-[10px] text-muted-foreground font-medium">جودة عالية + شفافية</div>
+                  <div className="font-bold text-xs">PNG</div>
+                  <div className="text-[10px] text-muted-foreground">جودة فائقة وشفافية</div>
                 </div>
               </button>
               <button
@@ -192,13 +194,15 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${
                   format === "jpg"
                     ? "border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20"
-                    : "border-border/80 hover:border-primary/50 bg-card hover:bg-muted/30 text-foreground"
+                    : "border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground"
                 }`}
               >
-                <FileImage className="w-5 h-5 text-primary shrink-0" />
+                <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center">
+                  {format === "jpg" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold">JPG</div>
-                  <div className="text-[10px] text-muted-foreground font-medium">حجم أصغر</div>
+                  <div className="font-bold text-xs">JPG</div>
+                  <div className="text-[10px] text-muted-foreground">حجم أصغر</div>
                 </div>
               </button>
             </div>

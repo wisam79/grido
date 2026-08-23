@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { CanvasElement } from "@/lib/editor-store";
+import { TEXT_COLOR_DEFAULT } from "@/lib/canvas/canvas-colors";
 
 interface TextEditingOverlayProps {
   printMode: boolean;
@@ -88,7 +89,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         style={{
           backgroundColor: bgColor,
           borderRadius: radiusPx > 0 ? `${radiusPx}px` : "4px",
-          border: textEl.textBgBorderWidth ? `${textEl.textBgBorderWidth * scaleRatio}px solid ${textEl.textBgBorderColor || textEl.color || "#000000"}` : undefined,
+          border: textEl.textBgBorderWidth ? `${textEl.textBgBorderWidth * scaleRatio}px solid ${textEl.textBgBorderColor || textEl.color || TEXT_COLOR_DEFAULT}` : undefined,
           padding: `${paddingYPx}px ${paddingXPx}px`,
           minHeight: `${minHeightPx}px`,
           fontSize: `${(textEl.fontSize || 20) * scaleRatio}px`,
@@ -97,14 +98,14 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
           fontStyle: textEl.fontStyle || "normal",
           textDecoration: textEl.textDecoration || "none",
           textTransform: textEl.textTransform || "none",
-          color: textEl.color || "#000000",
+          color: textEl.color || TEXT_COLOR_DEFAULT,
           textAlign: textEl.textAlign || "center",
           lineHeight: textEl.lineHeight || 1.2,
           // التباعد قيمة منطقية على الكانفس — يجب تحجيمها مثل fontSize لتطابق
           // ما سيُرسم فعلياً (إصلاح Bug#12)
           letterSpacing: isArabicText ? "0px" : `${spacingVal * scaleRatio}px`,
           wordSpacing: isArabicText ? `${spacingVal * scaleRatio}px` : undefined,
-          boxShadow: "0 0 0 2px var(--primary, #3b82f6), 0 0 0 4px rgba(59, 130, 246, 0.25), 0 4px 20px rgba(0, 0, 0, 0.25)",
+          boxShadow: "0 0 0 2px var(--primary) , 0 0 0 4px color-mix(in srgb, var(--primary) 25%, transparent), 0 4px 20px rgba(0, 0, 0, 0.25)",
         }}
         defaultValue={textEl.text}
         onInput={(e) => {

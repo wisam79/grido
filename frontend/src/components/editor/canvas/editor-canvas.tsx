@@ -11,6 +11,7 @@ import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from "./canvas-
 import { RulerUnit } from "./ruler";
 import { TextEditingOverlay } from "./text-editing-overlay";
 import { CanvasContextMenu } from "./canvas-context-menu";
+import { checkerColor, guideCenter, guideEdge } from "@/lib/canvas/canvas-colors";
 
 /**
  * شريط الأدوات السريع للخانة المحددة (إزالة/استبدال الصورة).
@@ -731,7 +732,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
         backgroundColor,
         backgroundImage:
           backgroundColor === "transparent"
-            ? "linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%)"
+            ? `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`
             : undefined,
         backgroundSize: backgroundColor === "transparent" ? "20px 20px" : undefined,
         backgroundPosition: backgroundColor === "transparent" ? "0 0, 0 10px, 10px -10px, -10px 0px" : undefined,
@@ -778,7 +779,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
       {!printMode && activeGuides.map((guide, idx) => {
         const isCenter = Math.abs(guide.coord - 0.5) < 0.005;
-        const color = isCenter ? "#0284c7" : "#f43f5e";
+        const color = isCenter ? guideCenter() : guideEdge();
         return (
           <div
             key={idx}

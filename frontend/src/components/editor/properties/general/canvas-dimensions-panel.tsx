@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { RefreshCw, ArrowLeftRight, ChevronDown, Check } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, Check, Maximize2 } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -10,8 +10,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { useShallow } from "zustand/react/shallow";
-import { PresetMiniature } from "./preset-miniature";
-import { FluentSection, FluentSegmentedControl } from "@/components/ui/blocks";
+import { FluentSection } from "@/components/ui/blocks";
 
 export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel() {
   const {
@@ -170,137 +169,41 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   return (
     <FluentSection
-      icon={<RefreshCw className="w-3.5 h-3.5 text-primary" />}
+      icon={<Maximize2 className="w-3.5 h-3.5 text-primary" />}
       title="مساحة العمل"
       collapsible
       defaultOpen={true}
       action={
-        <span className="text-[9.5px] text-muted-foreground font-mono bg-muted/40 border border-border/40 px-2 py-0.5 rounded-md font-bold" dir="ltr">
-          {canvasWidth} × {canvasHeight} px
+        <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md font-bold" dir="ltr">
+          {canvasWidth} × {canvasHeight}
         </span>
       }
     >
-      <div className="space-y-3 animate-in fade-in duration-200">
-        <FluentSegmentedControl<"px" | "mm">
-          value={unit}
-          onChange={setUnit}
-          size="sm"
-          options={[
-            { id: "px", label: "بكسل" },
-            { id: "mm", label: "ملم" },
-          ]}
-        />
-
-        {/* بطاقات مقاسات الورق الأنيقة والرشيقة */}
-        <div className="grid grid-cols-2 gap-1.5" dir="rtl">
-          {/* A4 Button */}
-          <button
-            type="button"
-            aria-pressed={activePresetId === "a4"}
-            aria-label="ورقة A4 210 × 297 مم"
-            onClick={() => handlePresetChange("a4")}
-            className={cn(
-              "relative flex items-center gap-1.5 p-1.5 rounded-md border text-right transition-all cursor-pointer h-10 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-              activePresetId === "a4"
-                ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                : "border-border/60 hover:bg-muted/30 text-foreground"
-            )}
-          >
-            <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-md bg-muted/40 border border-border/40">
-              <PresetMiniature id="a4" active={activePresetId === "a4"} />
-            </div>
-            <div className="flex flex-col items-start min-w-0 flex-1">
-              <span className="text-[11px] font-bold leading-tight">ورقة A4</span>
-              <span className="text-[9px] text-muted-foreground font-mono leading-none mt-0.5" dir="ltr">210 × 297 mm</span>
-            </div>
-            {activePresetId === "a4" && <Check className="w-3.5 h-3.5 text-primary shrink-0 stroke-[2.5]" />}
-          </button>
-
-          {/* 4x6 Photo Button (10x15 cm) */}
-          <button
-            type="button"
-            aria-pressed={activePresetId === "4x6"}
-            aria-label="ورقة 4×6 100 × 150 مم"
-            onClick={() => handlePresetChange("4x6")}
-            className={cn(
-              "relative flex items-center gap-1.5 p-1.5 rounded-md border text-right transition-all cursor-pointer h-10 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-              activePresetId === "4x6"
-                ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                : "border-border/60 hover:bg-muted/30 text-foreground"
-            )}
-          >
-            <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-md bg-muted/40 border border-border/40">
-              <PresetMiniature id="4x6" active={activePresetId === "4x6"} />
-            </div>
-            <div className="flex flex-col items-start min-w-0 flex-1">
-              <span className="text-[11px] font-bold leading-tight">4×6 (10×15)</span>
-              <span className="text-[9px] text-muted-foreground font-mono leading-none mt-0.5" dir="ltr">100 × 150 mm</span>
-            </div>
-            {activePresetId === "4x6" && <Check className="w-3.5 h-3.5 text-primary shrink-0 stroke-[2.5]" />}
-          </button>
-
-          {/* A5 Button */}
-          <button
-            type="button"
-            aria-pressed={activePresetId === "a5"}
-            aria-label="ورقة A5 148 × 210 مم"
-            onClick={() => handlePresetChange("a5")}
-            className={cn(
-              "relative flex items-center gap-1.5 p-1.5 rounded-md border text-right transition-all cursor-pointer h-10 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-              activePresetId === "a5"
-                ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                : "border-border/60 hover:bg-muted/30 text-foreground"
-            )}
-          >
-            <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-md bg-muted/40 border border-border/40">
-              <PresetMiniature id="a5" active={activePresetId === "a5"} />
-            </div>
-            <div className="flex flex-col items-start min-w-0 flex-1">
-              <span className="text-[11px] font-bold leading-tight">ورقة A5</span>
-              <span className="text-[9px] text-muted-foreground font-mono leading-none mt-0.5" dir="ltr">148 × 210 mm</span>
-            </div>
-            {activePresetId === "a5" && <Check className="w-3.5 h-3.5 text-primary shrink-0 stroke-[2.5]" />}
-          </button>
-
-          {/* Dropdown for other sizes */}
+      <div className="space-y-2.5 animate-in fade-in duration-200">
+        {/* سطر اختيار القالب الجاهز + تبديل الوحدة */}
+        <div className="flex items-center gap-1.5" dir="rtl">
+          {/* القائمة المنسدلة للمقاسات الجاهزة */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label="مقاسات ورق أخرى"
-                className={cn(
-                  "relative flex items-center justify-between gap-1.5 p-1.5 rounded-md border text-right transition-all cursor-pointer h-10 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-                  !["a4", "4x6", "a5"].includes(activePresetId)
-                    ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/20"
-                    : "border-border/60 text-foreground hover:bg-muted/30"
-                )}
+                className="flex-1 flex items-center justify-between gap-2 px-2.5 h-8 rounded-md bg-input border border-border hover:border-primary/50 text-foreground text-xs font-semibold transition-all cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
-                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                  <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-md bg-muted/40 border border-border/40">
-                    <PresetMiniature id={activePresetId} active={!["a4", "4x6", "a5"].includes(activePresetId)} />
-                  </div>
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="text-[11px] font-bold leading-tight truncate">
-                      {activePresetId === "custom"
-                        ? "مقاس مخصص"
-                        : PAPER_SIZES.find((p) => p.id === activePresetId)?.name.split(" (")[0] || "مقاسات أخرى"}
-                    </span>
-                    <span className="text-[9px] text-muted-foreground leading-none mt-0.5">
-                      {activePresetId === "custom" ? "يدوي" : "A3, 5×7, ..."}
-                    </span>
-                  </div>
-                </div>
+                <span className="truncate">
+                  {activePreset ? activePreset.name.split(" (")[0] : "مقاس مخصص"}
+                </span>
                 <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 font-cairo rounded-xl border fluent-specular bg-popover/95 backdrop-blur-xl" align="end">
+            <DropdownMenuContent className="w-56 font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8" align="start">
               <DropdownMenuItem
                 onClick={() => {
                   if (template) setTemplate(null);
                 }}
-                className="text-xs text-right justify-end font-bold cursor-pointer rounded-md"
+                className="text-xs text-right justify-between font-bold cursor-pointer rounded-md"
               >
-                مقاس مخصص يدوي
+                <span>مقاس مخصص يدوي</span>
+                {activePresetId === "custom" && <Check className="w-3.5 h-3.5 text-primary" />}
               </DropdownMenuItem>
               {PAPER_SIZES.map((p) => {
                 const nameParts = p.name.split(" (");
@@ -310,7 +213,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   <DropdownMenuItem
                     key={p.id}
                     onClick={() => handlePresetChange(p.id)}
-                    className="text-xs text-right justify-end cursor-pointer rounded-md flex items-center justify-between"
+                    className="text-xs text-right justify-between cursor-pointer rounded-md flex items-center"
                   >
                     <span>{label}</span>
                     {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" />}
@@ -319,12 +222,36 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               })}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* تبديل الوحدة بكسل / ملم */}
+          <div className="flex bg-input border border-border rounded-md p-0.5 h-8 shrink-0">
+            <button
+              type="button"
+              onClick={() => setUnit("px")}
+              className={cn(
+                "px-2.5 h-full rounded text-[11px] font-bold transition-all cursor-pointer select-none",
+                unit === "px" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              px
+            </button>
+            <button
+              type="button"
+              onClick={() => setUnit("mm")}
+              className={cn(
+                "px-2.5 h-full rounded text-[11px] font-bold transition-all cursor-pointer select-none",
+                unit === "mm" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              mm
+            </button>
+          </div>
         </div>
 
-        {/* حقول الأبعاد الموزعة بنمط Figma الراقي */}
+        {/* سطر الأبعاد W و H وزر التبديل (نمط Figma النظيف) */}
         <div className="flex items-center gap-1.5" dir="rtl">
           {/* العرض W */}
-          <div className="flex-1 flex items-center bg-background/70 border border-border/80 hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs">
+          <div className="flex-1 flex items-center bg-input border border-border hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-inner">
             <span className="text-[10px] font-bold text-muted-foreground/70 select-none w-3 text-center">W</span>
             <input
               type="number"
@@ -343,13 +270,13 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             onClick={handleSwapDimensions}
             title="تبديل الاتجاه (أفقي/عمودي)"
             aria-label="تبديل الاتجاه (أفقي/عمودي)"
-            className="w-8 h-8 rounded-md bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/70 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="w-8 h-8 rounded-md bg-input hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <ArrowLeftRight className="w-3.5 h-3.5" />
           </button>
 
           {/* الارتفاع H */}
-          <div className="flex-1 flex items-center bg-background/70 border border-border/80 hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs">
+          <div className="flex-1 flex items-center bg-input border border-border hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-inner">
             <span className="text-[10px] font-bold text-muted-foreground/70 select-none w-3 text-center">H</span>
             <input
               type="number"

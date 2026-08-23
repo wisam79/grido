@@ -9,7 +9,7 @@ import {
   UpdateNotifier,
   KeyboardShortcutsDialog,
   WindowResizeHandles,
-  ZoomControls
+  CanvasViewportDeck
 } from "@/components/editor";
 import { ErrorBoundary } from "@/components/error-boundary";
 
@@ -349,7 +349,7 @@ export default function App() {
       {/* الرأس الموحد للنافذة بتصميم Fluent 2 Acrylic */}
       <header
         className={cn(
-          "border-b bg-card/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
+          "border-b border-border bg-sidebar/95 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
           !isFocused && "opacity-75"
         )}
         onDoubleClick={handleMaximize}
@@ -363,7 +363,7 @@ export default function App() {
           </div>
 
           {/* وضع العمل - Fluent 2 Segmented Control */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-muted/60 dark:bg-muted/30 backdrop-blur-md p-1 rounded-xl border border-black/5 dark:border-white/10 z-10 title-bar-controls fluent-specular" dir="rtl">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-input p-1 rounded-xl border border-border z-10 title-bar-controls shadow-inner" dir="rtl">
             <Button
               variant="ghost"
               size="sm"
@@ -380,7 +380,7 @@ export default function App() {
               {mode === "collage" && (
                 <motion.div
                   layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-background border border-black/5 dark:border-white/10 rounded-md shadow-xs -z-10"
+                  className="absolute inset-0 bg-card border border-border rounded-md shadow-xs -z-10"
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
@@ -404,7 +404,7 @@ export default function App() {
               {mode === "single" && (
                 <motion.div
                   layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-background border border-black/5 dark:border-white/10 rounded-md shadow-xs -z-10"
+                  className="absolute inset-0 bg-card border border-border rounded-md shadow-xs -z-10"
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
@@ -557,47 +557,39 @@ export default function App() {
         </aside>
 
         {/* الكانفس - الوسط */}
-        <section className="flex-1 flex flex-col min-w-0 bg-background relative z-10">
-
-          <div className="flex-1 relative">
+        <section className="flex-1 flex flex-col min-w-0 bg-background relative z-10 overflow-hidden">
+          <div className="flex-1 relative h-full w-full overflow-hidden">
             <ErrorBoundary>
               <EditorCanvas />
             </ErrorBoundary>
+
+            {/* مؤشر المعالجة العائم (يظهر فقط أثناء العمل على الكانفاس) */}
+            {isBusy && (
+              <div className="absolute top-4 right-4 z-30 font-cairo animate-in fade-in slide-in-from-top-2 duration-300 no-print pointer-events-none">
+                <span className="inline-flex items-center gap-2 text-xs font-bold text-primary bg-card/90 backdrop-blur-xl h-8 px-3.5 rounded-full border border-border shadow-fluent-8">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span>جاري العمل ...</span>
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* شريط الحالة السفلي - Fluent 2 Status Bar */}
-          <div className="border-t border-border/70 bg-card/90 backdrop-blur-md px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-8 shadow-xs">
-            {/* مؤشر الحالة والنوع */}
-            <div className="flex items-center gap-2 font-cairo">
-              <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold text-foreground/90 bg-muted/60 dark:bg-muted/40 px-2.5 py-0.5 rounded-full border border-black/5 dark:border-white/10 shadow-2xs">
-                <span className={cn("w-1.5 h-1.5 rounded-full", isBusy ? "bg-amber-500 animate-pulse" : "bg-emerald-500")} />
-                <span>{isBusy ? "جاري العمل ..." : "جاهز"}</span>
-              </span>
-              <span className="text-[10px] font-mono text-muted-foreground font-semibold px-2 py-0.5 rounded-md bg-muted/40 border border-border/30" dir="ltr">
-                {canvasWidth} × {canvasHeight} px
-              </span>
-              <span className="hidden sm:inline-flex items-center text-[10px] font-mono font-medium text-muted-foreground/80 bg-muted/20 px-2 py-0.5 rounded-md border border-border/20" dir="ltr">
-                {Math.round((canvasWidth / 300) * 25.4)} × {Math.round((canvasHeight / 300) * 25.4)} mm · 300 DPI
-              </span>
-            </div>
-
-            {/* أدوات الزوم — زر الاختصارات مفصول بفاصل لأنه لا علاقة له بمجموعة الزوم */}
-            <div className="flex items-center gap-1.5 font-cairo">
-              <button
-                type="button"
-                className="hidden md:flex items-center gap-1 text-[10.5px] font-semibold text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/80 px-2 py-0.5 rounded-md border border-border/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
-                onClick={() => window.dispatchEvent(new CustomEvent("grido:open-shortcuts"))}
-                title="عرض اختصارات لوحة المفاتيح"
-              >
-                <span>اختصارات</span>
-                <kbd className="font-mono text-[9px] bg-background/80 px-1 rounded border border-border/60">?</kbd>
-              </button>
-
-              <Separator orientation="vertical" className="h-3.5 bg-border/60" />
-
-              <ZoomControls />
-            </div>
-          </div>
+          {/* شريط الأدوات السفلي المثبت (Docked Bottom Command Bar - لا يغطي الكانفاس نهائياً) */}
+          <footer className="h-10 shrink-0 border-t border-border bg-sidebar px-3 flex items-center justify-center relative z-20 no-print select-none">
+            <CanvasViewportDeck
+              isZenMode={!rightSidebarOpen && !leftSidebarOpen}
+              onToggleZenMode={() => {
+                const zen = !rightSidebarOpen && !leftSidebarOpen;
+                if (zen) {
+                  setRightSidebarOpen(true);
+                  setLeftSidebarOpen(true);
+                } else {
+                  setRightSidebarOpen(false);
+                  setLeftSidebarOpen(false);
+                }
+              }}
+            />
+          </footer>
         </section>
 
         {/* لوحة الخصائص — ثاني عنصر في flex مع dir="rtl" فيُعرض على يسار الشاشة */}

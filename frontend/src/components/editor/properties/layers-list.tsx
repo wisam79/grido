@@ -67,15 +67,15 @@ const SortableLayerItem = React.memo(
         }}
         className={`flex items-center justify-between p-2.5 rounded-md border text-right cursor-pointer transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none ${
           isSelected
-            ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
-            : "border-transparent bg-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-        } ${isDragging ? "shadow-md bg-background ring-1 ring-primary/30" : ""}`}
+            ? "border-primary/50 bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/25"
+            : "border-transparent bg-transparent hover:bg-input text-muted-foreground hover:text-foreground"
+        } ${isDragging ? "shadow-md bg-card ring-1 ring-primary/30" : ""}`}
       >
         <div className="flex items-center gap-2 min-w-0">
           <div 
             {...attributes} 
             {...listeners} 
-            className="cursor-grab active:cursor-grabbing hover:bg-muted/50 p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
+            className="cursor-grab active:cursor-grabbing hover:bg-input p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             <GripVertical className="w-4 h-4" />
@@ -95,7 +95,7 @@ const SortableLayerItem = React.memo(
             <Button
               variant="ghost"
               size="icon"
-              className={`w-7 h-7 rounded-md hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${isLocked ? "text-primary dark:text-purple-400" : "text-muted-foreground/50 hover:text-foreground"}`}
+              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${isLocked ? "text-primary" : "text-muted-foreground/50 hover:text-foreground"}`}
               onClick={(e) => toggleLock(el, e)}
             >
               {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
@@ -105,7 +105,7 @@ const SortableLayerItem = React.memo(
             <Button
               variant="ghost"
               size="icon"
-              className={`w-7 h-7 rounded-md hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${!isVisible ? "text-red-500" : "text-muted-foreground/75 hover:text-foreground"}`}
+              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${!isVisible ? "text-muted-foreground/40" : "text-muted-foreground hover:text-foreground"}`}
               onClick={(e) => toggleVisibility(el, e)}
             >
               {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
@@ -115,7 +115,7 @@ const SortableLayerItem = React.memo(
             <Button
               variant="ghost"
               size="icon"
-              className="w-7 h-7 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="w-7 h-7 rounded-md hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-1 focus-visible:outline-none"
               onClick={(e) => deleteLayer(el.id, e)}
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -190,7 +190,7 @@ export function LayersList() {
 
   if (elements.length === 0) {
     return (
-      <div className="bg-muted/10 border border-dashed border-border/40 rounded-xl p-5 text-center select-none flex flex-col items-center justify-center space-y-2 animate-in fade-in duration-300">
+      <div className="bg-input/40 border border-dashed border-border rounded-xl p-5 text-center select-none flex flex-col items-center justify-center space-y-2 animate-in fade-in duration-300">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-xs">
           <Layers className="w-4.5 h-4.5 opacity-80" />
         </div>
@@ -237,7 +237,7 @@ export function LayersList() {
   };
 
   return (
-    <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-2 select-none">
+    <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-2 select-none">
       {/* Clickable Header */}
       <button
         type="button"

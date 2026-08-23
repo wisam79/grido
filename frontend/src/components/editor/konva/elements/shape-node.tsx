@@ -12,6 +12,7 @@ import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import { getFillProps } from "./fill-utils";
 import { VECTOR_SHAPES } from "@/lib/io/svg-paths";
+import { gradientStart, TEXT_COLOR_DEFAULT } from "@/lib/canvas/canvas-colors";
 
 export const KonvaShapeElement = React.memo(function KonvaShapeElement({ 
   element: _element, 
@@ -98,8 +99,8 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     onTap: onTap,
     ...getFillProps(element, w, h),
     stroke: element.shape === "line" 
-      ? (element.stroke || element.fill || "#3b82f6") 
-      : (element.strokeWidth && element.strokeWidth > 0 ? element.stroke || "#000000" : undefined),
+      ? (element.stroke || element.fill || gradientStart()) 
+      : (element.strokeWidth && element.strokeWidth > 0 ? element.stroke || TEXT_COLOR_DEFAULT : undefined),
     strokeWidth: element.shape === "line" 
       ? (element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4) 
       : (element.strokeWidth || 0),

@@ -206,7 +206,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
         <div className="space-y-2.5 animate-in fade-in duration-150">
           
           {/* 🎴 بطاقة 1: نوع الخط والقياسات */}
-          <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
+          <div className="bg-card border border-border rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             {/* النمط السريع */}
             <div className="grid grid-cols-5 gap-1 text-[10px]">
               {[
@@ -222,7 +222,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     key={preset.id}
                     type="button"
                     onClick={() => applyPreset(preset.id)}
-                    className="h-7 px-1 bg-muted/40 hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border/60 rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none truncate"
+                    className="h-7 px-1 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none truncate"
                   >
                     <Icon className="w-3 h-3 shrink-0" />
                     <span className="truncate">{preset.label}</span>
@@ -251,7 +251,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       onUpdate(element.id, { fontWeight: val });
                       useEditorStore.getState().pushHistory();
                     }}
-                    className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-2xs"
+                    className="w-full h-8 bg-input hover:bg-background border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-inner"
                   >
                     {WEIGHT_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -278,7 +278,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       onUpdate(element.id, { fontSize: val });
                       useEditorStore.getState().pushHistory();
                     }}
-                    className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-2xs font-mono"
+                    className="w-full h-8 bg-input hover:bg-background border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-inner font-mono"
                   >
                     {!MODULAR_FONT_SIZES.includes(currentFontSize) && (
                       <option value={currentFontSize}>

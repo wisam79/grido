@@ -131,7 +131,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border/80 dark:border-white/10 bg-card/98 backdrop-blur-2xl p-3 shadow-xl transition-all duration-150 fluent-specular" dir="rtl">
+      <DialogContent className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card backdrop-blur-2xl p-3 shadow-xl transition-all duration-150 fluent-specular" dir="rtl">
         {/* هيدر النافذة */}
         <DialogHeader className="pb-2 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div>

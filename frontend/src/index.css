@@ -56,81 +56,157 @@
   --font-tajawal: 'IBM Plex Sans Arabic', 'Tajawal', 'Inter', system-ui, sans-serif;
   --radius: 0.5rem;
   
-  /* Fluent 2 Light Mode Visual Identity with Crisp Hierarchy */
-  --background: #edf1f7; /* Soft slate canvas workspace */
+  /* Grido Studio Light Theme (Clean Crisp Fluent Blue Palette) */
+  --background: #f8fafc; /* Soft clean canvas workspace */
   --foreground: #0f172a; /* Slate-900 high contrast */
   --card: #ffffff;       /* Pure crisp white card surface */
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #1d4ed8;    /* Royal blue */
+  --primary: #2563eb;    /* Modern vibrant Royal Blue #2563eb */
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
+  --secondary: #eff6ff;  /* Soft blue secondary tint */
+  --secondary-foreground: #1e40af;
   --muted: #f1f5f9;      /* Recessed control track */
-  --muted-foreground: #475569; /* Slate-600 */
-  --accent: #e2e8f0;
-  --accent-foreground: #0f172a;
-  --destructive: #b91c1c;
+  --muted-foreground: #64748b;
+  --accent: #eff6ff;
+  --accent-foreground: #1e40af;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #cbd5e1;     /* Slate-300 crisp border */
+  --border: #e2e8f0;     /* Crisp clean border */
   --input: #ffffff;
-  --ring: #1d4ed8;
+  --ring: #3b82f6;
   
   --sidebar: #f8fafc;    /* Clean off-white sidebar */
   --sidebar-foreground: #0f172a;
-  --sidebar-primary: #1d4ed8;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
+  --sidebar-accent: #eff6ff;
+  --sidebar-accent-foreground: #1e40af;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #1d4ed8;
+  --sidebar-ring: #3b82f6;
+
+  /* Canvas & Konva Semantic Colors (Light) */
+  --canvas-checker-a: #e2e8f0;
+  --canvas-guide-center: #0284c7;
+  --canvas-guide-edge: #f43f5e;
+  --canvas-ruler-cursor: #2563eb;
+  --canvas-transformer-primary: #2563eb;
+  --canvas-transformer-stroke: #1d4ed8;
+  --canvas-transformer-locked: #f59e0b;
+  --canvas-transformer-locked-stroke: #d97706;
+  --canvas-transformer-anchor-fill: #ffffff;
+  --canvas-transformer-badge-bg: #1e293b;
+  --canvas-transformer-badge-text: #ffffff;
+  --canvas-gradient-start: #3b82f6;
+  --canvas-gradient-end: #8b5cf6;
+  --canvas-collage-cut: #94a3b8;
+  --canvas-collage-end-cut: #3b82f6;
+  --canvas-slot-placeholder-bg: #f1f5f9;
+  --canvas-slot-placeholder-text: #94a3b8;
+  --canvas-scanner-beam: #0ea5e9;
+  --canvas-scanner-glow: #38bdf8;
+  --canvas-scanner-particle-a: #e0e7ff;
+  --canvas-scanner-particle-b: #38bdf8;
+  --canvas-scanner-particle-c: #c084fc;
+  --canvas-doc-scanner-primary: #6366f1;
+  --canvas-doc-scanner-hover: #818cf8;
+  --canvas-doc-scanner-dark: #312e81;
+  --canvas-doc-scanner-inner: #4f46e5;
+  --canvas-doc-scanner-loupe: #ef4444;
+  --canvas-preview-white: #ffffff;
+  --canvas-preview-black: #09090b;
+  --canvas-preview-blue: #1d4ed8;
+  --canvas-preview-checker: #80808033;
+
   /* Fluent 2 Elevation Shadows */
-  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.14), 0 0.3px 0.9px 0 rgba(0,0,0,0.10);
-  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.18), 0 0.6px 1.8px 0 rgba(0,0,0,0.14);
-  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.22), 0 1.2px 3.6px 0 rgba(0,0,0,0.16);
-  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.26), 0 2.4px 7.2px 0 rgba(0,0,0,0.20);
-  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.30), 0 4.2px 12.6px 0 rgba(0,0,0,0.24);
-  --fluent-shadow-64: 0 51.2px 115.2px 0 rgba(0,0,0,0.36), 0 9.6px 28.8px 0 rgba(0,0,0,0.28);
+  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.12), 0 0.3px 0.9px 0 rgba(0,0,0,0.08);
+  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.15), 0 0.6px 1.8px 0 rgba(0,0,0,0.10);
+  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.18), 0 1.2px 3.6px 0 rgba(0,0,0,0.12);
+  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.22), 0 2.4px 7.2px 0 rgba(0,0,0,0.16);
+  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.26), 0 4.2px 12.6px 0 rgba(0,0,0,0.20);
+  --fluent-shadow-64: 0 51.2px 115.2px 0 rgba(0,0,0,0.30), 0 9.6px 28.8px 0 rgba(0,0,0,0.24);
 }
 
 .dark {
   color-scheme: dark;
-  /* Premium Fluent 2 Dark Mode Theme with Crisp Surface Hierarchy */
-  --background: #141417;   /* Deep canvas workspace background */
-  --foreground: #f5f5f7;   /* Off-white high contrast text */
-  --card: #282830;         /* Elevated card surface - clearly distinct from sidebar */
-  --card-foreground: #f5f5f7;
-  --popover: #282830;
-  --popover-foreground: #f5f5f7;
-  --primary: #3b82f6;      /* Blue accent */
+  /* Grido Studio Pure Neutral Charcoal Identity:
+     1. مساحة العمل الكلية (Workspace Canvas): #141414
+     2. خلفية الألواح والأشرطة (Sidebars Base): #1A1A1A
+     3. أسطح البطاقات البارزة (Cards & Panels): #242424 (رمادي محايد نقي مبني على #212121)
+     4. الحقول الغائرة والممرات (Inputs & Inset): #171717
+     5. الحدود والفواصل الدقيقة (Borders & Dividers): #333333
+     6. اللون المميز (Primary Accent): #3b82f6 (Vibrant Electric Blue)
+  */
+  --background: #141414;   /* مساحة العمل الكلية الفحمية النقية */
+  --foreground: #F5F5F5;   /* High contrast crisp neutral white text */
+  --card: #242424;         /* أسطح البطاقات والألواح الرمادية المحايدة */
+  --card-foreground: #F5F5F5;
+  --popover: #242424;      /* أسطح القوائم والنوافذ المنبثقة */
+  --popover-foreground: #F5F5F5;
+  --primary: #3b82f6;      /* Vibrant modern Electric Blue */
   --primary-foreground: #ffffff;
-  --secondary: #32323c;    /* Medium contrast interactive background */
-  --secondary-foreground: #f5f5f7;
-  --muted: #202027;        /* Recessed inset controls & tracks */
-  --muted-foreground: #a6a6b5; /* Readable secondary text */
-  --accent: #32323c;
-  --accent-foreground: #f5f5f7;
-  --border: #383844;       /* Crisp border gray (high edge contrast) */
-  --input: #1a1a20;        /* Deep inset text inputs */
+  --secondary: #1F1F1F;    /* الأسطح التفاعلية الثانوية */
+  --secondary-foreground: #F5F5F5;
+  --muted: #171717;        /* الحقول والممرات الغائرة */
+  --muted-foreground: #A3A3A3; /* Clear readable neutral secondary text */
+  --accent: #1F1F1F;       /* Secondary hover and accents */
+  --accent-foreground: #60a5fa; /* Blue accent highlight */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #333333;       /* الحدود والفواصل الرمادية المحايدة الدقيقة */
+  --input: #171717;        /* Inset inputs */
   --ring: #3b82f6;
   
-  --sidebar: #1d1d23;      /* Deep sidebar base for clear card separation */
-  --sidebar-foreground: #f5f5f7;
+  --sidebar: #1A1A1A;      /* خلفية الأشرطة الجانبية والألواح الحاضنة */
+  --sidebar-foreground: #F5F5F5;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #282830;
-  --sidebar-accent-foreground: #f5f5f7;
-  --sidebar-border: #353540;
+  --sidebar-accent: #242424; /* أسطح البطاقات والقوائم النشطة */
+  --sidebar-accent-foreground: #60a5fa;
+  --sidebar-border: #333333; /* الحدود والفواصل */
   --sidebar-ring: #3b82f6;
 
+  /* Canvas & Konva Semantic Colors (Dark) */
+  --canvas-checker-a: #262626;
+  --canvas-guide-center: #38bdf8;
+  --canvas-guide-edge: #fb7185;
+  --canvas-ruler-cursor: #60a5fa;
+  --canvas-transformer-primary: #60a5fa;
+  --canvas-transformer-stroke: #3b82f6;
+  --canvas-transformer-locked: #fbbf24;
+  --canvas-transformer-locked-stroke: #f59e0b;
+  --canvas-transformer-anchor-fill: #F5F5F5;
+  --canvas-transformer-badge-bg: #141414;
+  --canvas-transformer-badge-text: #F5F5F5;
+  --canvas-gradient-start: #60a5fa;
+  --canvas-gradient-end: #a78bfa;
+  --canvas-collage-cut: #525252;
+  --canvas-collage-end-cut: #60a5fa;
+  --canvas-slot-placeholder-bg: #1A1A1A;
+  --canvas-slot-placeholder-text: #737373;
+  --canvas-scanner-beam: #38bdf8;
+  --canvas-scanner-glow: #7dd3fc;
+  --canvas-scanner-particle-a: #c7d2fe;
+  --canvas-scanner-particle-b: #7dd3fc;
+  --canvas-scanner-particle-c: #d8b4fe;
+  --canvas-doc-scanner-primary: #818cf8;
+  --canvas-doc-scanner-hover: #a5b4fc;
+  --canvas-doc-scanner-dark: #4f46e5;
+  --canvas-doc-scanner-inner: #6366f1;
+  --canvas-doc-scanner-loupe: #f87171;
+  --canvas-preview-white: #ffffff;
+  --canvas-preview-black: #000000;
+  --canvas-preview-blue: #1d4ed8;
+  --canvas-preview-checker: #80808033;
+
   /* Fluent 2 Dark Mode Soft Clean Elevation Shadows */
-  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.18), 0 0.3px 0.9px 0 rgba(0,0,0,0.12);
-  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.20), 0 0.6px 1.8px 0 rgba(0,0,0,0.14);
-  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.22), 0 1.2px 3.6px 0 rgba(0,0,0,0.16);
-  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.24), 0 2.4px 7.2px 0 rgba(0,0,0,0.18);
-  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.26), 0 4.2px 12.6px 0 rgba(0,0,0,0.20);
-  --fluent-shadow-64: 0 40px 80px 0 rgba(0,0,0,0.28), 0 8px 24px 0 rgba(0,0,0,0.22);
+  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.30), 0 0.3px 0.9px 0 rgba(0,0,0,0.20);
+  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.35), 0 0.6px 1.8px 0 rgba(0,0,0,0.24);
+  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.40), 0 1.2px 3.6px 0 rgba(0,0,0,0.28);
+  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.45), 0 2.4px 7.2px 0 rgba(0,0,0,0.32);
+  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.50), 0 4.2px 12.6px 0 rgba(0,0,0,0.36);
+  --fluent-shadow-64: 0 40px 80px 0 rgba(0,0,0,0.55), 0 8px 24px 0 rgba(0,0,0,0.40);
 }
 
 @layer base {
@@ -276,8 +352,8 @@
     border: 1px solid var(--border);
   }
   .dark .fluent-acrylic {
-    background-color: rgba(45, 45, 45, 0.82);
-    border-color: rgba(255, 255, 255, 0.08);
+    background-color: var(--card);
+    border-color: var(--border);
   }
 
   .fluent-mica {
@@ -285,33 +361,20 @@
     border: 1px solid var(--border);
   }
   .dark .fluent-mica {
-    background-color: #202024;
-    border-color: rgba(255, 255, 255, 0.08);
+    background-color: var(--background);
+    border-color: var(--border);
   }
 
   .fluent-specular {
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border);
   }
   .dark .fluent-specular {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-  }
-
-  .fluent-command-group {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    padding: 3px;
-    border-radius: 8px;
-    background-color: rgba(0, 0, 0, 0.03);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-  }
-  .dark .fluent-command-group {
-    background-color: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
   }
 
   .fluent-smoke-backdrop {
-    background-color: rgba(0, 0, 0, 0.65);
+    background-color: rgba(0, 0, 0, 0.70);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
   }
@@ -347,18 +410,18 @@
 
   /* ─── Fluent 2 Command Groups ────────────────────────────── */
   .fluent-command-group {
-    @apply flex items-center gap-0.5 bg-muted/50 border border-border/60 p-0.5 rounded-lg shadow-2xs;
+    @apply flex items-center gap-0.5 bg-muted/50 dark:bg-background/90 border border-border/60 dark:border-border p-0.5 rounded-lg shadow-2xs;
   }
 
-  /* ─── Native Visual Depth & High-Contrast System ─────────────── */
+  /* ─── Native Visual Depth & High-Contrast System (4-Tier Hierarchy) ─── */
   .native-depth-sidebar {
     background-color: var(--sidebar);
     border-color: var(--sidebar-border);
   }
 
   .dark .native-depth-sidebar {
-    background-color: #1d1d23; /* Solid native dark sidebar for strong visual weight */
-    border-color: rgba(255, 255, 255, 0.10);
+    background-color: var(--sidebar); /* Tier 2: الخلفية الثانوية للألواح */
+    border-color: var(--border);     /* Tier 4: الحدود الفاصلة */
   }
 
   .native-card-elevated {
@@ -369,9 +432,9 @@
   }
 
   .dark .native-card-elevated {
-    background-color: #282830; /* Distinct card surface fill */
-    border-color: rgba(255, 255, 255, 0.12); /* Crisp contrast border */
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2); /* Very light tight shadow */
+    background-color: var(--card);  /* Tier 3: أسطح البطاقات البارزة */
+    border-color: var(--border);    /* Tier 4: الحدود */
+    box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.35);
   }
 
   .native-inset-box {
@@ -380,9 +443,9 @@
   }
 
   .dark .native-inset-box {
-    background-color: #16161c; /* Deep inset contrast fill */
-    border-color: rgba(255, 255, 255, 0.09);
-    box-shadow: inset 0 1px 1px 0 rgba(0, 0, 0, 0.25);
+    background-color: var(--background); /* Tier 1: الحاويات الغائرة وحقول الإدخال */
+    border-color: var(--border);         /* Tier 4: الحدود */
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.45);
   }
 
   .native-header-elevated {
@@ -546,8 +609,8 @@
 }
 
 .dark .workspace-grid {
-  --workspace-bg: #09090b;
-  --grid-dot: #27272a;
+  --workspace-bg: var(--background);
+  --grid-dot: #262626;
 }
 
 /* تخصيص مظهر منتقي الألوان ليتلاءم مع هوية استوديو الهوية */

@@ -1,5 +1,6 @@
 import React from "react";
 import { Loader2 } from "lucide-react";
+import { checkerColor } from "@/lib/canvas/canvas-colors";
 
 interface CanvasPaperProps {
   innerRef?: React.RefObject<HTMLDivElement | null>;
@@ -38,7 +39,7 @@ export const CanvasPaper = React.memo(
           backgroundColor,
           backgroundImage:
             backgroundColor === "transparent"
-              ? "linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%)"
+              ? `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`
               : undefined,
           backgroundSize:
             backgroundColor === "transparent" ? "20px 20px" : undefined,

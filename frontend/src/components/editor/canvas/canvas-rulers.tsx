@@ -32,13 +32,13 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="flex h-6 w-full bg-card/95 backdrop-blur-md border-b border-border/80 z-20 shrink-0 select-none fluent-specular shadow-2xs" dir="ltr">
+    <div className="flex h-6 w-full bg-background backdrop-blur-md border-b border-border z-20 shrink-0 select-none fluent-specular shadow-2xs" dir="ltr">
       <button
         type="button"
         onClick={onToggleRulerUnit}
         title={`وحدة القياس: ${rulerUnit === "mm" ? "مليمتر (انقر للتبديل لبكسل)" : "بكسل (انقر للتبديل لملم)"}`}
         aria-label="تبديل وحدة قياس المسطرة"
-        className="w-6 h-6 shrink-0 bg-background/60 hover:bg-primary/15 border-r border-border/80 flex items-center justify-center font-mono select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="w-6 h-6 shrink-0 bg-sidebar hover:bg-primary/15 border-r border-border flex items-center justify-center font-mono select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <span className="text-[8.5px] font-bold text-muted-foreground group-hover:text-primary transition-colors">
           {rulerUnit}
@@ -71,7 +71,7 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="w-6 h-full bg-card/95 backdrop-blur-md border-r border-border/80 z-20 shrink-0 overflow-hidden relative select-none fluent-specular shadow-2xs" dir="ltr">
+    <div className="w-6 h-full bg-background backdrop-blur-md border-r border-border z-20 shrink-0 select-none fluent-specular shadow-2xs" dir="ltr">
       <VerticalRuler
         viewportHeight={viewportHeight}
         originY={originY}
@@ -83,4 +83,3 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
     </div>
   );
 });
-

@@ -1,4 +1,5 @@
 import { CanvasElement } from "@/lib/editor-store";
+import { gradientStart, gradientEnd, TEXT_COLOR_DEFAULT } from "@/lib/canvas/canvas-colors";
 
 export function getFillProps(element: CanvasElement, w: number, h: number) {
   if (element.fillType === "linear") {
@@ -7,7 +8,7 @@ export function getFillProps(element: CanvasElement, w: number, h: number) {
     return {
       fillLinearGradientStartPoint: { x: start.x * w, y: start.y * h },
       fillLinearGradientEndPoint: { x: end.x * w, y: end.y * h },
-      fillLinearGradientColorStops: element.fillLinearGradientColorStops || [0, "#3b82f6", 1, "#8b5cf6"],
+      fillLinearGradientColorStops: element.fillLinearGradientColorStops || [0, gradientStart(), 1, gradientEnd()],
     };
   }
   if (element.fillType === "radial") {
@@ -20,11 +21,11 @@ export function getFillProps(element: CanvasElement, w: number, h: number) {
       fillRadialGradientStartRadius: rStart * Math.max(w, h),
       fillRadialGradientEndPoint: { x: end.x * w, y: end.y * h },
       fillRadialGradientEndRadius: rEnd * Math.max(w, h),
-      fillRadialGradientColorStops: element.fillRadialGradientColorStops || [0, "#3b82f6", 1, "#8b5cf6"],
+      fillRadialGradientColorStops: element.fillRadialGradientColorStops || [0, gradientStart(), 1, gradientEnd()],
     };
   }
   if (element.type === "text") {
-    return { fill: element.color || "#000000" };
+    return { fill: element.color || TEXT_COLOR_DEFAULT };
   }
   if (element.type === "shape") {
     return { fill: element.fill || "transparent" };

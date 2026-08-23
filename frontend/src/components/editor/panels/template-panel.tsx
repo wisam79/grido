@@ -138,7 +138,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
       }
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
-      className="bg-card select-none"
+      className="bg-transparent select-none"
     >
       {/* Hidden File Input for Templates Import */}
       <input 
@@ -187,7 +187,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
           {/* Dialog for Full Official & Custom Templates Browser */}
           <Dialog open={templatesDialogOpen} onOpenChange={setTemplatesDialogOpen}>
-              <DialogContent className="max-w-2xl font-cairo rounded-2xl border fluent-specular" dir="rtl">
+              <DialogContent className="max-w-2xl font-cairo rounded-2xl border border-border bg-card fluent-specular" dir="rtl">
                 <DialogHeader>
                   <DialogTitle className="text-right text-base font-bold flex items-center gap-2">
                     <FolderHeart className="w-5 h-5 text-primary" />
@@ -199,7 +199,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                 </DialogHeader>
 
                 <Tabs defaultValue="official" className="w-full mt-2">
-                  <TabsList className="grid w-full grid-cols-2 bg-muted/60 p-1 rounded-xl h-8 border border-border/40">
+                  <TabsList className="grid w-full grid-cols-2 bg-input p-1 rounded-xl h-8 border border-border">
                     <TabsTrigger value="official" className="rounded-lg font-bold text-xs cursor-pointer py-1">
                       نماذج الطباعة الرسمية
                     </TabsTrigger>
@@ -234,7 +234,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                         <button 
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="h-7 px-2.5 text-[11px] font-bold rounded-md border border-border/80 bg-muted/40 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
+                          className="h-7 px-2.5 text-[11px] font-bold rounded-md border border-border bg-input hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
                         >
                           استيراد
                         </button>

@@ -1,6 +1,13 @@
 import React, { useEffect, useRef } from "react";
 import { Group, Rect, Line, Circle } from "react-konva";
 import Konva from "konva";
+import {
+  scannerBeam,
+  scannerGlow,
+  scannerParticleA,
+  scannerParticleB,
+  scannerParticleC,
+} from "@/lib/canvas/canvas-colors";
 
 interface MagicAiScannerProps {
   targetNodeRef?: React.RefObject<any>;
@@ -77,7 +84,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
         width={width}
         height={height}
         cornerRadius={cornerRadius}
-        stroke="#38bdf8"
+        stroke={scannerGlow()}
         strokeWidth={3}
         opacity={0.6}
         perfectDrawEnabled={false}
@@ -86,7 +93,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
       <Line
         ref={lineRef}
         points={[0, 0, width, 0]}
-        stroke="#06b6d4"
+        stroke={scannerBeam()}
         strokeWidth={3}
         perfectDrawEnabled={false}
       />
@@ -94,7 +101,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
       <Line
         ref={lineGlowRef}
         points={[0, 0, width, 0]}
-        stroke="#38bdf8"
+        stroke={scannerGlow()}
         strokeWidth={8}
         opacity={0.3}
         perfectDrawEnabled={false}
@@ -105,7 +112,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
         x={width * 0.25}
         y={25}
         radius={2.5}
-        fill="#e0e7ff"
+        fill={scannerParticleA()}
         perfectDrawEnabled={false}
       />
       <Circle
@@ -113,7 +120,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
         x={width * 0.75}
         y={height - 20}
         radius={2}
-        fill="#38bdf8"
+        fill={scannerParticleB()}
         perfectDrawEnabled={false}
       />
       <Circle
@@ -121,7 +128,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
         x={width * 0.5}
         y={0}
         radius={2}
-        fill="#c084fc"
+        fill={scannerParticleC()}
         perfectDrawEnabled={false}
       />
     </Group>

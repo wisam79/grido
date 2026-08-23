@@ -3,6 +3,7 @@ import { Text as KonvaText, Rect as KonvaRect, Group, Shape as KonvaShape } from
 import Konva from "konva";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
+import { TEXT_COLOR_DEFAULT } from "@/lib/canvas/canvas-colors";
 import { ElementProps, propsAreEqual } from "./types";
 import { getFillProps } from "./fill-utils";
 import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
@@ -198,8 +199,8 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
               fontFamily: element.fontFamily || "Cairo, sans-serif",
               fontWeight: element.fontWeight || 400,
               fontStyle: element.fontStyle || "normal",
-              color: element.color || "#000000",
-              stroke: element.strokeWidth ? (element.stroke || "#000000") : undefined,
+              color: element.color || TEXT_COLOR_DEFAULT,
+              stroke: element.strokeWidth ? (element.stroke || TEXT_COLOR_DEFAULT) : undefined,
               strokeWidth: element.strokeWidth || 0,
               textAlign: element.textAlign || "center",
               curve: element.curve || 0,
@@ -237,7 +238,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
           align={element.textAlign || "center"}
           lineHeight={element.lineHeight ?? 1.2}
           letterSpacing={effectiveLetterSpacing}
-          stroke={element.strokeWidth ? (element.stroke || "#000000") : undefined}
+          stroke={element.strokeWidth ? (element.stroke || TEXT_COLOR_DEFAULT) : undefined}
           strokeWidth={element.strokeWidth || undefined}
           textDecoration={element.textDecoration || ""}
           wrap="word"

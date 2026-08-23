@@ -13,8 +13,8 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
   return (
     <div className="space-y-3 animate-in fade-in duration-200">
       {/* بطاقة 1: اللون والتعبئة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3">
-        <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+      <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3">
+        <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
           <PaintBucket className="w-3.5 h-3.5 text-primary" />
           <span>اللون والتعبئة</span>
         </Label>
@@ -57,8 +57,8 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
       </div>
 
       {/* بطاقة 2: الحدود والاستدارة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3">
-        <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+      <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3">
+        <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
           <Square className="w-3.5 h-3.5 text-primary" />
           <span>الحدود والاستدارة</span>
         </Label>

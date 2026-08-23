@@ -55,7 +55,7 @@ export const FluentSection = React.memo(
       <div
         ref={ref}
         className={cn(
-          "rounded-xl border border-border/80 dark:border-white/12 bg-card dark:bg-card backdrop-blur-md p-3 shadow-2xs fluent-specular transition-all duration-150",
+          "rounded-xl border border-border bg-card p-3 shadow-xs fluent-specular transition-all duration-150",
           className
         )}
         {...props}
@@ -65,7 +65,7 @@ export const FluentSection = React.memo(
           onClick={collapsible ? handleToggle : undefined}
           className={cn(
             "flex items-center justify-between gap-2 select-none",
-            isOpen ? "pb-2.5 mb-2.5 border-b border-border/50 dark:border-white/10" : "",
+            isOpen ? "pb-2.5 mb-2.5 border-b border-border/50" : "",
             collapsible && "cursor-pointer group/sec-header hover:opacity-90 transition-opacity",
             headerClassName
           )}

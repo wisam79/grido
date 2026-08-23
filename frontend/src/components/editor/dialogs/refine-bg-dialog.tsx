@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import {
+  previewWhite, previewBlack, previewBlue, previewChecker,
+} from "@/lib/canvas/canvas-colors";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Eraser, Paintbrush, ZoomIn, ZoomOut, Save, X, Undo, MousePointer2, Sparkles, Feather, Loader2 } from "lucide-react";
@@ -559,10 +562,10 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               <span className="text-[11px] font-bold text-foreground/80 block">خلفية المعاينة</span>
               <div className="grid grid-cols-4 gap-1.5">
                 {[
-                  { id: "checker", label: "شفاف", bg: "repeating-conic-gradient(#80808033 0% 25%, transparent 0% 50%)" },
-                  { id: "white", label: "أبيض", bg: "#ffffff" },
-                  { id: "black", label: "أسود", bg: "#09090b" },
-                  { id: "blue", label: "أزرق", bg: "#1d4ed8" },
+                  { id: "checker", label: "شفاف", bg: `repeating-conic-gradient(${previewChecker()} 0% 25%, transparent 0% 50%)` },
+                  { id: "white", label: "أبيض", bg: previewWhite() },
+                  { id: "black", label: "أسود", bg: previewBlack() },
+                  { id: "blue", label: "أزرق", bg: previewBlue() },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -654,7 +657,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             ref={containerRef}
             className="flex-1 bg-black/5 dark:bg-white/5 relative overflow-hidden select-none flex items-center justify-center touch-none"
             style={{ 
-              backgroundImage: 'radial-gradient(circle, #00000010 1px, transparent 1px)',
+              backgroundImage: `radial-gradient(circle, ${previewChecker()} 1px, transparent 1px)`,
               backgroundSize: '20px 20px',
               cursor: (tool === "pan" || isSpacePressed) ? "grab" : "crosshair"
             }}
@@ -695,15 +698,15 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 transformOrigin: 'center center',
                 backgroundImage:
                   previewBg === "checker"
-                    ? 'repeating-conic-gradient(#80808033 0% 25%, transparent 0% 50%)'
+                    ? `repeating-conic-gradient(${previewChecker()} 0% 25%, transparent 0% 50%)`
                     : undefined,
                 backgroundColor:
                   previewBg === "white"
-                    ? "#ffffff"
+                    ? previewWhite()
                     : previewBg === "black"
-                    ? "#09090b"
+                    ? previewBlack()
                     : previewBg === "blue"
-                    ? "#1d4ed8"
+                    ? previewBlue()
                     : undefined,
                 backgroundSize: '20px 20px',
                 backgroundPosition: '0 0, 10px 10px',

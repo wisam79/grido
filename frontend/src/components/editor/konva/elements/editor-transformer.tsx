@@ -3,6 +3,11 @@ import { Transformer as KonvaTransformer, Group, Rect, Text } from "react-konva"
 import Konva from "konva";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { getSnapPositionsWithTargets, SnapGuide, SnapTarget } from "@/lib/canvas/snap-utils";
+import {
+  transformerPrimary, transformerStroke,
+  transformerLocked, transformerLockedStroke,
+  transformerAnchorFill, transformerBadgeBg, transformerBadgeText,
+} from "@/lib/canvas/canvas-colors";
 
 interface EditorTransformerProps {
   trRef: React.RefObject<Konva.Transformer | null>;
@@ -137,8 +142,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, resetResizeSnap]);
 
   // تخصيص مظهر المحابث (Anchors) بنمط Figma المحترف
-  const primaryColor = isLocked ? "#f59e0b" : "#2563eb";
-  const strokeColor = isLocked ? "#d97706" : "#1d4ed8";
+  const primaryColor = isLocked ? transformerLocked() : transformerPrimary();
+  const strokeColor  = isLocked ? transformerLockedStroke() : transformerStroke();
 
   return (
     <React.Fragment>
@@ -148,7 +153,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         anchorCornerRadius={4.5}
         anchorStroke={primaryColor}
         anchorStrokeWidth={2}
-        anchorFill="#ffffff"
+        anchorFill={transformerAnchorFill()}
         borderStroke={primaryColor}
         borderStrokeWidth={1.5}
         borderDash={isLocked ? [5, 4] : undefined}
@@ -186,7 +191,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             anchor.offsetY(6);
             anchor.cornerRadius(6);
             anchor.fill(primaryColor);
-            anchor.stroke("#ffffff");
+            anchor.stroke(transformerAnchorFill());
             anchor.strokeWidth(2);
           }
         }}
@@ -302,9 +307,9 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           y={0}
           width={120}
           height={22}
-          fill="#1e293b"
+          fill={transformerBadgeBg()}
           cornerRadius={6}
-          shadowColor="#000000"
+          shadowColor="rgba(0,0,0,0.5)"
           shadowBlur={6}
           shadowOpacity={0.3}
           shadowOffsetY={2}
@@ -318,7 +323,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           fontSize={11}
           fontFamily="Cairo, sans-serif"
           fontStyle="bold"
-          fill="#ffffff"
+          fill={transformerBadgeText()}
           align="center"
         />
       </Group>

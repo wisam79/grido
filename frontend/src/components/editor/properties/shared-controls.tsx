@@ -6,6 +6,7 @@ import { BACKGROUND_COLORS } from "@/lib/templates";
 import { PaintBucket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/lib/editor-store";
+import { previewWhite, checkerColor } from "@/lib/canvas/canvas-colors";
 
 export function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -186,22 +187,22 @@ export function PopoverColorPicker({
           disabled={disabled}
           className={cn(
             swatchOnly
-              ? "w-7 h-7 rounded-md border border-border/80 p-0.5 bg-background hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-              : "flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border/80 bg-background hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+              ? "w-7 h-7 rounded-md border border-border p-0.5 bg-input hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              : "flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border bg-input hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
             className
           )}
           title="تغيير اللون"
         >
           {swatchOnly ? (
             <div
-              className="w-full h-full rounded-xs border border-black/10 dark:border-white/10 shadow-2xs relative overflow-hidden"
-              style={{ backgroundColor: color === "transparent" ? "#ffffff" : color }}
+              className="w-full h-full rounded-xs border border-border shadow-2xs relative overflow-hidden"
+              style={{ backgroundColor: color === "transparent" ? previewWhite() : color }}
             >
               {color === "transparent" && (
                 <div 
                   className="w-full h-full"
                   style={{
-                    backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+                    backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
                     backgroundSize: "4px 4px"
                   }}
                 />
@@ -216,14 +217,14 @@ export function PopoverColorPicker({
               </div>
               
               <div
-                className="w-4.5 h-4.5 rounded-xs border border-border/80 shrink-0 relative overflow-hidden"
-                style={{ backgroundColor: color === "transparent" ? "#ffffff" : color }}
+                className="w-4.5 h-4.5 rounded-xs border border-border shrink-0 relative overflow-hidden"
+                style={{ backgroundColor: color === "transparent" ? previewWhite() : color }}
               >
                 {color === "transparent" && (
                   <div 
                     className="w-full h-full"
                     style={{
-                      backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+                      backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
                       backgroundSize: "4px 4px"
                     }}
                   />
@@ -280,7 +281,7 @@ export function ColorWheelPicker({
   const displayColor = isTransparent ? "#FFFFFF" : color;
 
   return (
-    <div className="p-2.5 bg-card/95 backdrop-blur-2xl rounded-xl border border-border/80 dark:border-white/10 mt-1 flex flex-col gap-2 w-full shadow-lg fluent-specular animate-in fade-in duration-200">
+    <div className="p-2.5 bg-card backdrop-blur-2xl rounded-xl border border-border mt-1 flex flex-col gap-2 w-full shadow-lg fluent-specular animate-in fade-in duration-200">
       <div className="custom-color-picker w-full">
         <HexColorPicker
           color={isTransparent ? "#ffffff" : color}

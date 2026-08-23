@@ -153,6 +153,41 @@ export function useKeyboardShortcuts() {
     window.dispatchEvent(new CustomEvent("grido:toggle-left-sidebar"));
   });
 
+  // Toggle Rulers: Ctrl+R or Cmd+R
+  useHotkeys("mod+r", (e) => {
+    e.preventDefault();
+    const { showRuler, setShowRuler } = useEditorStore.getState();
+    setShowRuler(!showRuler);
+  });
+
+  // Toggle Grid: Ctrl+' or Cmd+'
+  useHotkeys("mod+'", (e) => {
+    e.preventDefault();
+    const { showGrid, setShowGrid } = useEditorStore.getState();
+    setShowGrid(!showGrid);
+  });
+
+  // Zoom In: Ctrl+= or Ctrl++ or Cmd+= / Cmd++
+  useHotkeys("mod+=, mod+plus, mod+numpad_add, mod+shift+=", (e) => {
+    e.preventDefault();
+    const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
+    setCanvasZoom(Math.min(5, parseFloat((canvasZoom + 0.1).toFixed(2))));
+  });
+
+  // Zoom Out: Ctrl+- or Ctrl+_ or Cmd+- / Cmd+_
+  useHotkeys("mod+-, mod+underscore, mod+numpad_subtract", (e) => {
+    e.preventDefault();
+    const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
+    setCanvasZoom(Math.max(0.1, parseFloat((canvasZoom - 0.1).toFixed(2))));
+  });
+
+  // Reset Zoom / Fit to 100%: Ctrl+0 or Cmd+0
+  useHotkeys("mod+0, mod+numpad_0", (e) => {
+    e.preventDefault();
+    const { setCanvasZoom } = useEditorStore.getState();
+    setCanvasZoom(1);
+  });
+
   // --- Arrows (Nudging) & Paste via native events ---
   useEffect(() => {
     let nudgeTimeout: ReturnType<typeof setTimeout> | null = null;

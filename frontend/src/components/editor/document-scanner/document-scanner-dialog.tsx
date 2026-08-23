@@ -1,5 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
+  docScannerPrimary, docScannerHover, docScannerDark,
+  docScannerInner, docScannerLoupe,
+} from "@/lib/canvas/canvas-colors";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -185,7 +189,7 @@ export function DocumentScannerDialog({
     ctx.fillStyle = "rgba(99, 102, 241, 0.20)";
     ctx.fill();
 
-    ctx.strokeStyle = "#6366f1";
+    ctx.strokeStyle = docScannerPrimary();
     ctx.lineWidth = 2.5;
     ctx.setLineDash([6, 4]);
     ctx.stroke();
@@ -201,15 +205,15 @@ export function DocumentScannerDialog({
 
       ctx.beginPath();
       ctx.arc(px, py, isActive ? 11 : isHover ? 9 : 7, 0, Math.PI * 2);
-      ctx.fillStyle = isActive ? "#6366f1" : isHover ? "#818cf8" : "#ffffff";
+      ctx.fillStyle = isActive ? docScannerPrimary() : isHover ? docScannerHover() : "#ffffff";
       ctx.fill();
-      ctx.strokeStyle = "#312e81";
+      ctx.strokeStyle = docScannerDark();
       ctx.lineWidth = 2.5;
       ctx.stroke();
 
       ctx.beginPath();
       ctx.arc(px, py, 3, 0, Math.PI * 2);
-      ctx.fillStyle = isActive ? "#ffffff" : "#4f46e5";
+      ctx.fillStyle = isActive ? "#ffffff" : docScannerInner();
       ctx.fill();
     });
   }, [corners, activeCorner, isHoveringCorner, isPreviewMode]);
@@ -255,7 +259,7 @@ export function DocumentScannerDialog({
       lCtx.lineTo(center + 10, center);
       lCtx.moveTo(center, center - 10);
       lCtx.lineTo(center, center + 10);
-      lCtx.strokeStyle = "#ef4444";
+      lCtx.strokeStyle = docScannerLoupe();
       lCtx.lineWidth = 1.8;
       lCtx.stroke();
 
@@ -448,7 +452,7 @@ export function DocumentScannerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[1180px] w-[90vw] h-[86vh] max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border/80 dark:border-white/10 bg-card/98 backdrop-blur-2xl p-4 shadow-xl transition-all duration-150 fluent-specular"
+        className="sm:max-w-[1180px] w-[90vw] h-[86vh] max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card backdrop-blur-2xl p-4 shadow-xl transition-all duration-150 fluent-specular"
         dir="rtl"
       >
         {/* Top Header */}
@@ -473,11 +477,11 @@ export function DocumentScannerDialog({
           {/* Canvas Main Container */}
           <div
             ref={containerRef}
-            className="flex-1 bg-zinc-950/95 dark:bg-black/90 rounded-2xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/40 relative shadow-inner p-2 select-none"
+            className="flex-1 bg-background rounded-2xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border relative shadow-inner p-2 select-none"
           >
             {/* Top Floating Status Badge */}
             <div className="absolute top-3 inset-x-0 mx-auto w-fit z-20 pointer-events-none">
-              <div className="px-3.5 py-1.5 rounded-full bg-background/80 dark:bg-zinc-900/90 border border-border/60 text-[11px] font-semibold text-foreground/90 shadow-md backdrop-blur-md flex items-center gap-2">
+              <div className="px-3.5 py-1.5 rounded-full bg-sidebar/90 border border-border text-[11px] font-semibold text-foreground shadow-md backdrop-blur-md flex items-center gap-2">
                 {isDetecting ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 text-primary animate-spin" />
@@ -485,7 +489,7 @@ export function DocumentScannerDialog({
                   </>
                 ) : isPreviewMode ? (
                   <>
-                    <Eye className="w-3.5 h-3.5 text-emerald-500" />
+                    <Eye className="w-3.5 h-3.5 text-blue-500" />
                     <span>معاينة المستند بعد الاستعدال والمعالجة</span>
                   </>
                 ) : (

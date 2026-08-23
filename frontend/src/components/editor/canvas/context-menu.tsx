@@ -216,7 +216,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       role="menu"
       tabIndex={-1}
       aria-label="قائمة السياق الموحدة"
-      className="fixed z-[9999] w-[200px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-xl p-1 text-xs font-cairo overflow-hidden select-none animate-in fade-in-80 zoom-in-95 duration-150 outline-none space-y-1 shadow-fluent-28 fluent-specular"
+      className="fixed z-[9999] w-[200px] bg-popover backdrop-blur-2xl border border-border rounded-xl p-1 text-xs font-cairo overflow-hidden select-none animate-in fade-in-80 zoom-in-95 duration-150 outline-none space-y-1 shadow-fluent-28 fluent-specular"
       style={{
         left: `${left}px`,
         top: `${top}px`,

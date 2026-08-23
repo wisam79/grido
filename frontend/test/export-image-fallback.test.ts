@@ -3,6 +3,7 @@ import { exportCanvas, drawSlotImage } from "../src/lib/export/export-image";
 import { useEditorStore } from "../src/lib/editor-store";
 import { computeSlotRectMM, computeSheetGrid } from "../src/lib/print/print-layout-math";
 import { calculatePrintCutLines } from "../src/lib/print/cut-lines-utils";
+import { collageCut, collageEndCut } from "../src/lib/canvas/canvas-colors";
 
 const CANVAS_W = 2480;
 const CANVAS_H = 3508;
@@ -262,11 +263,11 @@ describe("export-image manual fallback — golden tests", () => {
     // خط النهاية يُرسم أخيراً باللون الأزرق (السمة المميزة له)
     const strokeStyles = calls.filter((c) => c.op === "setStrokeStyle");
     expect(strokeStyles.map((c) => c.args[0])).toEqual([
-      "#a0aec0",
-      "#a0aec0",
-      "#a0aec0",
-      "#a0aec0",
-      "#3182ce",
+      collageCut(),
+      collageCut(),
+      collageCut(),
+      collageCut(),
+      collageEndCut(),
     ]);
   });
 

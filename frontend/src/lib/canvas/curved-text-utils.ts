@@ -1,6 +1,7 @@
 /**
  * Utility for drawing curved text along an arc on standard HTML5 Canvas 2D / Konva
  */
+import { TEXT_COLOR_DEFAULT } from "./canvas-colors";
 
 export interface CurvedTextOptions {
   text: string;
@@ -32,7 +33,7 @@ export function drawCurvedText(
     fontFamily,
     fontWeight = 400,
     fontStyle = "normal",
-    color = "#000000",
+    color = TEXT_COLOR_DEFAULT,
     stroke,
     strokeWidth = 0,
     textAlign = "center",
