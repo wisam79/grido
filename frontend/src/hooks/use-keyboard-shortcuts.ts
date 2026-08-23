@@ -123,13 +123,50 @@ export function useKeyboardShortcuts() {
     window.dispatchEvent(new CustomEvent("grido:open-projects-dialog"));
   });
 
+  // Export: Ctrl+E or Cmd+E — كانت معلنة في الحوار وشريط الأدوات بلا مستمع (إصلاح Bug#7)
+  useHotkeys("mod+e", (e) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("grido:open-export-dialog"));
+  });
+
+  // Print: Ctrl+P or Cmd+P — تمنع أيضاً طباعة المتصفح الافتراضية (إصلاح Bug#7)
+  useHotkeys("mod+p", (e) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("grido:open-print-dialog"));
+  });
+
+  // Insert Image: Ctrl+O or Cmd+O — تمنع فتح ملف المتصفح الافتراضي (إصلاح Bug#7)
+  useHotkeys("mod+o", (e) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("grido:open-file-dialog"));
+  });
+
+  // Toggle Right Sidebar (Templates / Layers): Ctrl+B or Cmd+B
+  useHotkeys("mod+b", (e) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("grido:toggle-right-sidebar"));
+  });
+
+  // Toggle Left Sidebar (Properties / Workspace): Ctrl+Shift+B or Cmd+Shift+B
+  useHotkeys("mod+shift+b", (e) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("grido:toggle-left-sidebar"));
+  });
+
   // --- Arrows (Nudging) & Paste via native events ---
   useEffect(() => {
     let nudgeTimeout: ReturnType<typeof setTimeout> | null = null;
 
+    // عناصر تحكم تفاعلية: تركيز إبهام السلايدر (span[role="slider"]) أو مفتاح
+    // تبديل لا يجب أن يُحرّك العناصر بالأسهم أو يمسح التحديد بـ Escape (إصلاح Bug#5)
+    const isInteractiveTarget = (t: HTMLElement | null) =>
+      !!t && !!t.closest(
+        'input, textarea, [contenteditable="true"], [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], select'
+      );
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+      if (isInteractiveTarget(target)) return;
 
       const { selectedIds } = useEditorStore.getState();
       
@@ -186,7 +223,7 @@ export function useKeyboardShortcuts() {
 
     const handleKeyUp = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+      if (isInteractiveTarget(target)) return;
 
       const { selectedIds, pushHistory } = useEditorStore.getState();
       if (selectedIds.length > 0 && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {

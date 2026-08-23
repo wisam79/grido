@@ -67,6 +67,7 @@ type CoreSliceCross = CoreSlice & {
   collageMargin: number;
   collageRadius: number;
   collageShowCutLines: boolean;
+  collageShowEndCutLine: boolean;
   collageStrokeWidth: number;
   collageStrokeColor: string;
   clipboardElements: CanvasElement[];
@@ -212,7 +213,9 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     get().pushHistory();
   },
 
-  setBackgroundColor: (c) => { set({ backgroundColor: c }); get().pushHistory(); },
+  // لا pushHistory هنا — يُستدعى باستمرار أثناء اختيار اللون؛
+  // الدفع يتم عند الإغلاق (PopoverColorPicker) أو بتأجيل من ColorWheelPicker المباشر (إصلاح Bug#2)
+  setBackgroundColor: (c) => { set({ backgroundColor: c }); },
 
   setLastEditedImage: (src) => {
     if (src) invalidateImageCache(src);
@@ -340,7 +343,13 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
           y: c.y,
           w: c.w,
           h: c.h,
+          // الحفاظ على بيانات الخلية من الملف القديم عند إعادة البناء
+          presetType: c.presetType ?? existingSlot?.presetType,
+          label: c.label ?? existingSlot?.label,
+          rotation: c.rotation ?? existingSlot?.rotation ?? 0,
           imageSrc: existingSlot?.imageSrc || undefined,
+          originalImageSrc: existingSlot?.originalImageSrc,
+          bgColor: existingSlot?.bgColor,
           filter: existingSlot?.filter || "none",
           brightness: existingSlot?.brightness || 100,
           contrast: existingSlot?.contrast || 100,
@@ -348,6 +357,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
           zoom: existingSlot?.zoom || 1,
           dragX: existingSlot?.dragX || 0,
           dragY: existingSlot?.dragY || 0,
+          flipX: existingSlot?.flipX,
+          flipY: existingSlot?.flipY,
         };
       });
     }
@@ -394,6 +405,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
         collageMargin: project.collageMargin ?? 0,
         collageRadius: project.collageRadius ?? 0,
         collageShowCutLines: project.collageShowCutLines ?? false,
+        collageShowEndCutLine: project.collageShowEndCutLine ?? true,
         collageStrokeWidth: project.collageStrokeWidth ?? 0,
         collageStrokeColor: project.collageStrokeColor ?? "#000000",
       }],
@@ -414,6 +426,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       collageMargin: project.collageMargin ?? 0,
       collageRadius: project.collageRadius ?? 0,
       collageShowCutLines: project.collageShowCutLines ?? false,
+      collageShowEndCutLine: project.collageShowEndCutLine ?? true,
       collageStrokeWidth: project.collageStrokeWidth ?? 0,
       collageStrokeColor: project.collageStrokeColor ?? "#000000",
     });

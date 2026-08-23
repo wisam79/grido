@@ -1,4 +1,5 @@
 import { OpenFile, OpenMultipleFiles } from "../../../wailsjs/go/main/App";
+import { wailsIsDesktop } from "../wails-env";
 
 /**
  * فتح نافذة اختيار الصور بسلاسة ودقة متناهية:
@@ -6,7 +7,7 @@ import { OpenFile, OpenMultipleFiles } from "../../../wailsjs/go/main/App";
  * - في بيئة المتصفح العادي فقط: تستخدم HTML File Input.
  */
 export async function openImageFileDialog(multiple = false): Promise<string[]> {
-  const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+  const isWailsDesktop = wailsIsDesktop();
 
   if (isWailsDesktop) {
     try {

@@ -1,7 +1,6 @@
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -23,6 +22,7 @@ import {
 import { ProjectsDialog } from "../dialogs/projects-dialog";
 import { ClearAutoSave, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
+import { wailsIsDesktop } from "@/lib/wails-env";
 
 interface TooltipBtnProps {
   content: string;
@@ -83,7 +83,7 @@ export function ToolbarFileOps() {
         const freshSlots = freshState.slots;
         const freshSelectedId = freshState.selectedId;
 
-        const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+        const isWailsDesktop = wailsIsDesktop();
 
         if (freshMode === "collage") {
           let localPaths: string[] = [];
@@ -164,6 +164,17 @@ export function ToolbarFileOps() {
     }
   };
 
+  // اختصار Ctrl+O — فتح حوار إدراج الصور عبر حدث عام (إصلاح Bug#7)
+  const openFileRef = useRef(handleOpenFile);
+  useEffect(() => {
+    openFileRef.current = handleOpenFile;
+  });
+  useEffect(() => {
+    const openFile = () => openFileRef.current();
+    window.addEventListener("grido:open-file-dialog", openFile);
+    return () => window.removeEventListener("grido:open-file-dialog", openFile);
+  }, []);
+
   const handleClearCanvas = () => {
     setIsClearAlertOpen(true);
   };
@@ -175,34 +186,19 @@ export function ToolbarFileOps() {
 
   return (
     <>
-      <div className="flex items-center gap-1 bg-muted/40 border border-border/40 p-0.5 rounded-xl shadow-2xs">
+      <div className="flex items-center gap-0.5 bg-muted/50 border border-border/60 p-0.5 rounded-lg shadow-2xs">
         {/* إضافة صورة */}
-        <TooltipBtn content="إدراج صورة جديدة للمستند (Ctrl + O)">
+        <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={handleOpenFile}
             aria-label="إضافة صورة جديدة"
             title="إضافة صورة جديدة"
-            className="h-8 px-3 gap-1.5 border border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary text-primary font-bold rounded-md shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer text-[11.5px] flex items-center justify-center"
+            className="h-8 px-2.5 gap-1.5 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none"
           >
-            <ImagePlus className="w-4 h-4 text-primary stroke-[2]" />
+            <ImagePlus className="w-4 h-4 text-primary" />
             <span>إضافة صورة</span>
-          </Button>
-        </TooltipBtn>
-
-        <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
-
-        {/* مسح الكانفاس */}
-        <TooltipBtn content="جديد (مسح مساحة العمل بالكامل)">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearCanvas}
-            aria-label="جديد (مسح مساحة العمل)"
-            className="h-8 px-2.5 text-destructive/80 hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
-          >
-            <Eraser className="w-4 h-4" />
           </Button>
         </TooltipBtn>
 
@@ -211,11 +207,11 @@ export function ToolbarFileOps() {
           <TooltipBtn content="مكتبة المشاريع المحفوظة">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setIsProjectsOpen(true)}
               aria-label="مكتبة المشاريع المحلية"
               title="مكتبة المشاريع المحلية"
-              className="h-8 px-2.5 text-muted-foreground hover:text-primary hover:bg-background/80 rounded-md transition-all cursor-pointer"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer"
             >
               <Library className="w-4 h-4" />
             </Button>
@@ -223,6 +219,19 @@ export function ToolbarFileOps() {
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} />
         </Suspense>
       </div>
+
+      {/* جديد / مسح مساحة العمل */}
+      <TooltipBtn content="مسح مساحة العمل والبدء من جديد">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleClearCanvas}
+          aria-label="جديد (مسح مساحة العمل)"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer"
+        >
+          <Eraser className="w-4 h-4" />
+        </Button>
+      </TooltipBtn>
 
       <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
         <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 fluent-specular shadow-2xl">
@@ -232,7 +241,7 @@ export function ToolbarFileOps() {
               هل أنت متأكد من مسح جميع العناصر والبدء من جديد؟ لا يمكن التراجع عن هذا الإجراء.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row-reverse gap-2 sm:justify-start">
+          <AlertDialogFooter className="font-cairo">
             <AlertDialogCancel className="font-cairo h-8 rounded-md">إلغاء</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmClearCanvas}

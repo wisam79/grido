@@ -4,19 +4,25 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"grido/internal/core/domain"
 	"grido/internal/utils"
-
-	"gorm.io/gorm"
 )
 
+// AutosaveService يدير مسودة الحفظ التلقائي على القرص وعمليات CRUD للقوالب المخصصة.
+//
+// أمان التزامن: Wails يستدعي كل دالة مُعرّضة في goroutine مستقلة، لذا فإن
+// كتابتين متداخلتين على نفس مسار autosave.json.tmp قد تتداخلان (كتابة جزئية
+// ثم rename ببيانات تالفة). writeMu يسلسل دورة الكتابة كاملة
+// (create → write → fsync → rename) لضمان الذرية.
 type AutosaveService struct {
-	db *gorm.DB
+	templates domain.CustomTemplateRepository
+	writeMu   sync.Mutex
 }
 
-func NewAutosaveService(db *gorm.DB) *AutosaveService {
-	return &AutosaveService{db: db}
+func NewAutosaveService(templates domain.CustomTemplateRepository) *AutosaveService {
+	return &AutosaveService{templates: templates}
 }
 
 func (s *AutosaveService) GetSavePath() string {
@@ -30,19 +36,16 @@ func (s *AutosaveService) SaveCustomTemplate(name string, slots int, cellsJSON s
 		Slots: slots,
 		Cells: domain.JSONText(cellsJSON),
 	}
-	result := s.db.Create(&tmpl)
-	return tmpl, result.Error
+	err := s.templates.Create(&tmpl)
+	return tmpl, err
 }
 
 func (s *AutosaveService) GetCustomTemplates() ([]domain.CustomTemplate, error) {
-	var templates []domain.CustomTemplate
-	result := s.db.Find(&templates)
-	return templates, result.Error
+	return s.templates.FindAll()
 }
 
 func (s *AutosaveService) DeleteCustomTemplate(id uint) error {
-	result := s.db.Delete(&domain.CustomTemplate{}, id)
-	return result.Error
+	return s.templates.Delete(id)
 }
 
 func (s *AutosaveService) LoadAutoSave() (string, error) {
@@ -61,6 +64,10 @@ func (s *AutosaveService) SaveAutoSave(jsonData string) error {
 	if len(jsonData) > 100*1024*1024 { // 100MB limit
 		return fmt.Errorf("autosave payload too large: %d bytes (limit 100MB)", len(jsonData))
 	}
+
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
 	path := s.GetSavePath()
 	tmpPath := path + ".tmp"
 
@@ -84,6 +91,9 @@ func (s *AutosaveService) SaveAutoSave(jsonData string) error {
 }
 
 func (s *AutosaveService) ClearAutoSave() error {
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
 	path := s.GetSavePath()
 	err := os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {

@@ -13,19 +13,21 @@ export function getKonvaFilters(options: FilterOptions) {
   let totalBrightness = brightness ?? 100;
   let totalContrast = contrast ?? 100;
   let totalSaturation = saturation ?? 100;
-  let totalHue = 0;
-  let useSepia = false;
   let useGrayscale = false;
+  // شدة السبيا (0..1) — تُمرر للفلتر المخصص SepiaBlend عبر خاصية العقدة
+  let sepiaRatio = 0;
 
   if (filter === "enhance") {
     totalContrast = (totalContrast / 100) * 108;
     totalSaturation = (totalSaturation / 100) * 112;
     totalBrightness = (totalBrightness / 100) * 102;
   } else if (filter === "skinGlow") {
-    totalHue = 10;
-    totalSaturation = (totalSaturation / 100) * 110;
+    // مطابق حرفياً لتعريف CSS في templates/constants.ts — المرجع الموحد
+    // للمعاينة والطباعة والتصدير (Go يطبق نفس القيم)
+    totalSaturation = (totalSaturation / 100) * 108;
     totalContrast = (totalContrast / 100) * 94;
     totalBrightness = (totalBrightness / 100) * 106;
+    sepiaRatio = 0.10;
   } else if (filter === "clarity") {
     totalContrast = (totalContrast / 100) * 122;
     totalSaturation = (totalSaturation / 100) * 120;
@@ -35,8 +37,7 @@ export function getKonvaFilters(options: FilterOptions) {
     totalContrast = (totalContrast / 100) * 90;
     totalSaturation = (totalSaturation / 100) * 105;
   } else if (filter === "cinematic") {
-    useSepia = true;
-    totalHue = 5;
+    sepiaRatio = 0.05;
     totalSaturation = (totalSaturation / 100) * 115;
     totalContrast = (totalContrast / 100) * 110;
     totalBrightness = (totalBrightness / 100) * 102;
@@ -47,21 +48,21 @@ export function getKonvaFilters(options: FilterOptions) {
   }
 
   const filters: any[] = [];
-  if (filter === "skinGlow" && (Konva.Filters as any).SkinGlow) {
-    filters.push((Konva.Filters as any).SkinGlow);
+  // سبيا بنسبة الشدة المطلوبة بدل فلتر Sepia الكامل — تطابق CSS/الطباعة
+  if (sepiaRatio > 0 && (Konva.Filters as any).SepiaBlend) {
+    filters.push((Konva.Filters as any).SepiaBlend);
   }
   if (useGrayscale) filters.push(Konva.Filters.Grayscale);
-  if (useSepia) filters.push(Konva.Filters.Sepia);
   const brightnessFilter = (Konva.Filters as any).Brightness || Konva.Filters.Brighten;
   if (totalBrightness !== 100) filters.push(brightnessFilter);
   if (totalContrast !== 100) filters.push(Konva.Filters.Contrast);
-  if (totalSaturation !== 100 || totalHue !== 0) filters.push(Konva.Filters.HSL);
+  if (totalSaturation !== 100) filters.push(Konva.Filters.HSL);
 
   return {
     filters,
     brightness: brightnessFilter === (Konva.Filters as any).Brightness ? totalBrightness / 100 : (totalBrightness - 100) / 100,
     contrast: totalContrast !== 100 ? totalContrast - 100 : 0,
-    hue: totalHue,
     saturation: totalSaturation !== 100 ? (totalSaturation - 100) / 100 : 0,
+    sepiaRatio,
   };
 }

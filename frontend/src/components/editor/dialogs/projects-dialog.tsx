@@ -518,7 +518,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                 هل أنت متأكد من رغبتك في حذف هذا المشروع نهائياً؟ لا يمكن التراجع عن هذا الإجراء.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter className="flex flex-row-reverse gap-2 sm:justify-start">
+            <AlertDialogFooter className="font-cairo">
               <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">إلغاء</AlertDialogCancel>
               <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs">
                 حذف
@@ -592,7 +592,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               أنت على وشك حذف جميع المشاريع المحفوظة محلياً بشكل نهائي من قاعدة البيانات. لا يمكن التراجع عن هذا الإجراء أبداً. ننصح بتصدير نسخة احتياطية أولاً.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row-reverse gap-2 sm:justify-start">
+          <AlertDialogFooter className="font-cairo">
             <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">إلغاء</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmReset} 

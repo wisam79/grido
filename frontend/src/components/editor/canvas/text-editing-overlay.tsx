@@ -100,8 +100,10 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
           color: textEl.color || "#000000",
           textAlign: textEl.textAlign || "center",
           lineHeight: textEl.lineHeight || 1.2,
-          letterSpacing: isArabicText ? "0px" : `${spacingVal}px`,
-          wordSpacing: isArabicText ? `${spacingVal}px` : undefined,
+          // التباعد قيمة منطقية على الكانفس — يجب تحجيمها مثل fontSize لتطابق
+          // ما سيُرسم فعلياً (إصلاح Bug#12)
+          letterSpacing: isArabicText ? "0px" : `${spacingVal * scaleRatio}px`,
+          wordSpacing: isArabicText ? `${spacingVal * scaleRatio}px` : undefined,
           boxShadow: "0 0 0 2px var(--primary, #3b82f6), 0 0 0 4px rgba(59, 130, 246, 0.25), 0 4px 20px rgba(0, 0, 0, 0.25)",
         }}
         defaultValue={textEl.text}

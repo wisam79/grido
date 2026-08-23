@@ -134,7 +134,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     type="button"
                     onClick={() => setGridType("dots")}
                     className={cn(
-                      "flex-1 h-full rounded-md text-xs font-semibold transition-all cursor-pointer",
+                      "flex-1 h-full rounded-md text-xs font-semibold transition-all cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                       gridType === "dots"
                         ? "bg-card text-foreground shadow-2xs font-bold"
                         : "text-muted-foreground hover:text-foreground"
@@ -146,7 +146,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     type="button"
                     onClick={() => setGridType("lines")}
                     className={cn(
-                      "flex-1 h-full rounded-md text-xs font-semibold transition-all cursor-pointer",
+                      "flex-1 h-full rounded-md text-xs font-semibold transition-all cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                       gridType === "lines"
                         ? "bg-card text-foreground shadow-2xs font-bold"
                         : "text-muted-foreground hover:text-foreground"
@@ -158,15 +158,16 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
             </div>
 
-            <div className="space-y-1.5 pt-1.5 border-t border-border/10">
-              <div className="flex items-center justify-between gap-3">
+            <div className="space-y-2 pt-2 border-t border-border/10">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground font-semibold">لون الشبكة</span>
                 <div className="flex items-center gap-1.5">
                   {["#000000", "#3b82f6", "#ec4899", "#10b981", "#f59e0b"].map((col) => (
                     <button
                       key={col}
                       onClick={() => setGridColor(col)}
                       className={cn(
-                        "w-5 h-5 rounded-full border border-black/10 transition-all cursor-pointer relative",
+                        "w-4.5 h-4.5 rounded-full border border-black/10 transition-all cursor-pointer relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
                         gridColor === col
                           ? "ring-2 ring-primary ring-offset-1 scale-110"
                           : "hover:scale-105"
@@ -175,23 +176,18 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     />
                   ))}
                 </div>
-
-                <div className="w-28 flex items-center gap-1.5">
-                  <Palette className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <input
-                    type="range"
-                    min={0.05}
-                    max={0.8}
-                    step={0.05}
-                    value={gridOpacity}
-                    onChange={(e) => setGridOpacity(parseFloat(e.target.value))}
-                    className="w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
-                  <span className="text-[9px] font-mono text-muted-foreground font-bold w-6 text-right">
-                    {Math.round(gridOpacity * 100)}%
-                  </span>
-                </div>
               </div>
+
+              <FluentSliderField
+                label="شفافية الشبكة"
+                icon={<Palette className="w-3.5 h-3.5 text-primary" />}
+                value={Math.round(gridOpacity * 100)}
+                min={5}
+                max={80}
+                step={5}
+                unit="%"
+                onChange={(val) => setGridOpacity(val / 100)}
+              />
             </div>
           </div>
         )}
@@ -233,28 +229,31 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
             </div>
 
-            <div className="space-y-1.5 pt-1.5 border-t border-border/10">
-              <div className="flex items-center gap-1.5">
-                {[
-                  { hex: "rgba(239, 68, 68, 0.08)", label: "أحمر خفيف" },
-                  { hex: "rgba(59, 130, 246, 0.08)", label: "أزرق خفيف" },
-                  { hex: "rgba(16, 185, 129, 0.08)", label: "أخضر خفيف" },
-                  { hex: "rgba(139, 92, 246, 0.08)", label: "بنفسجي خفيف" },
-                  { hex: "rgba(0, 0, 0, 0.08)", label: "رمادي خفيف" }
-                ].map((colorObj) => (
-                  <button
-                    key={colorObj.hex}
-                    onClick={() => setColumnsColor(colorObj.hex)}
-                    className={cn(
-                      "w-5 h-5 rounded-md border border-black/10 transition-all cursor-pointer relative",
-                      columnsColor === colorObj.hex
-                        ? "ring-2 ring-primary ring-offset-1 scale-110"
-                        : "hover:scale-105"
-                    )}
-                    style={{ backgroundColor: colorObj.hex.replace("0.08", "0.25") }}
-                    title={colorObj.label}
-                  />
-                ))}
+            <div className="space-y-2 pt-2 border-t border-border/10">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground font-semibold">لون الأعمدة</span>
+                <div className="flex items-center gap-1.5">
+                  {[
+                    { hex: "rgba(239, 68, 68, 0.08)", label: "أحمر خفيف" },
+                    { hex: "rgba(59, 130, 246, 0.08)", label: "أزرق خفيف" },
+                    { hex: "rgba(16, 185, 129, 0.08)", label: "أخضر خفيف" },
+                    { hex: "rgba(139, 92, 246, 0.08)", label: "بنفسجي خفيف" },
+                    { hex: "rgba(0, 0, 0, 0.08)", label: "رمادي خفيف" }
+                  ].map((colorObj) => (
+                    <button
+                      key={colorObj.hex}
+                      onClick={() => setColumnsColor(colorObj.hex)}
+                      className={cn(
+                        "w-4.5 h-4.5 rounded-full border border-black/10 transition-all cursor-pointer relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+                        columnsColor === colorObj.hex
+                          ? "ring-2 ring-primary ring-offset-1 scale-110"
+                          : "hover:scale-105"
+                      )}
+                      style={{ backgroundColor: colorObj.hex.replace("0.08", "0.25") }}
+                      title={colorObj.label}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>

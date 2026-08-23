@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
 import { useEditorStore } from "@/lib/editor-store";
+import { wailsIsDesktop } from "@/lib/wails-env";
 import { useShallow } from "zustand/react/shallow";
 import { 
   Copy, 
@@ -248,7 +249,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                         originalImageSrc: imgEl.originalImageSrc,
                         onSave: async (croppedB64, dims) => {
                           try {
-                            const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+                            const isWailsDesktop = wailsIsDesktop();
                             let finalPath = croppedB64;
                             if (isWailsDesktop && croppedB64.startsWith("data:image/")) {
                               try {
@@ -486,7 +487,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                         originalImageSrc: slot.originalImageSrc,
                         onSave: async (croppedB64) => {
                           try {
-                            const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+                            const isWailsDesktop = wailsIsDesktop();
                             let finalPath = croppedB64;
                             if (isWailsDesktop && croppedB64.startsWith("data:image/")) {
                               try {

@@ -39,6 +39,14 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   const rafRef = useRef<number | null>(null);
   const pendingRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
+  const keyCommitTimerRef = useRef<number | null>(null);
+  const onCommitRef = useRef(onCommit);
+  const latestValRef = useRef(value);
+  // 🛡️ a11y: ربط ملصق الحقل بمنزلق Radix (role=slider) باسم قابل للوصول
+  const labelId = React.useId();
+  useEffect(() => {
+    onCommitRef.current = onCommit;
+  });
 
   useEffect(() => {
     if (!isDraggingRef.current) {
@@ -62,11 +70,25 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       if (!rafRef.current) {
         rafRef.current = requestAnimationFrame(flushPending);
       }
+      // تعديلات لوحة المفاتيح (أسهم/Home/End) لا تُطلق pointerup —
+      // نُجدول onCommit بتأجيل حتى تُسجَّل كخطوة تراجع واحدة (إصلاح Bug#18)
+      if (!isDraggingRef.current) {
+        if (keyCommitTimerRef.current !== null) window.clearTimeout(keyCommitTimerRef.current);
+        keyCommitTimerRef.current = window.setTimeout(() => {
+          keyCommitTimerRef.current = null;
+          onCommitRef.current?.(newVal);
+        }, 500);
+        latestValRef.current = newVal;
+      }
     },
     [flushPending]
   );
 
   const handlePointerDown = useCallback(() => {
+    if (keyCommitTimerRef.current !== null) {
+      window.clearTimeout(keyCommitTimerRef.current);
+      keyCommitTimerRef.current = null;
+    }
     isDraggingRef.current = true;
     onDragStart?.();
   }, [onDragStart]);
@@ -91,6 +113,12 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   useEffect(() => {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      // عند إلغاء التركيب مع تعديل لوحة مفاتيح معلّق: نُثبته كخطوة تراجع
+      if (keyCommitTimerRef.current !== null) {
+        window.clearTimeout(keyCommitTimerRef.current);
+        keyCommitTimerRef.current = null;
+        onCommitRef.current?.(latestValRef.current);
+      }
     };
   }, []);
 
@@ -107,7 +135,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       )}
     >
       <div className="flex justify-between items-center text-xs">
-        <div className="flex items-center gap-1.5 font-semibold text-foreground/90">
+        <div id={labelId} className="flex items-center gap-1.5 font-semibold text-foreground/90">
           {icon && <span className="text-primary shrink-0">{icon}</span>}
           <span>{label}</span>
         </div>
@@ -120,6 +148,8 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       </div>
 
       <Slider
+        dir="ltr"
+        aria-labelledby={labelId}
         value={[localValue]}
         min={min}
         max={max}

@@ -100,7 +100,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         } else {
           setProgress(50);
           const blob = await exportCanvas(format, quality / 100, stageRef.current);
-          if (blob) {
+          // المستخدم أغلق النافذة أثناء التصدير — لا نُظهر حوار الحفظ ولا رسائل (إصلاح Bug#9)
+          if (blob && !isCancelledRef.current) {
             const finalBlob = await applyBleedAndCropMarks(
               blob,
               bleedMM,
@@ -109,6 +110,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               quality / 100,
               printSettings.dpi
             );
+            if (isCancelledRef.current) return;
             const ext = format === "png" ? "png" : "jpg";
             const dateStr = new Date().toISOString().slice(0, 10);
             const name = template
@@ -146,7 +148,15 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // منع الإغلاق (Escape/خلفية) أثناء التصدير — كان يُصفّر الحالة ويسمح
+        // بتصدير متزامن ثانٍ (إصلاح Bug#9)
+        if (!next && loading) return;
+        onOpenChange(next);
+      }}
+    >
       <DialogContent className="max-w-md font-cairo rounded-2xl border fluent-specular" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold">

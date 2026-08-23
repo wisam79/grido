@@ -80,9 +80,10 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       const node = transformer.nodes()[0];
       if (!node) return;
 
-      // قراءة مباشرة من الـ node — هو أصلاً في الفضاء المنطقي للكانفاس
-      const nodeW = node.width() * node.scaleX();
-      const nodeH = node.height() * node.scaleY();
+      // قراءة مباشرة من الـ node — هو أصلاً في الفضاء المنطقي للكانفس
+      // القيم المطلقة: العناصر المعكوسة تحتفظ بمقياس سالب دائم (إصلاح Bug#13)
+      const nodeW = Math.abs(node.width() * node.scaleX());
+      const nodeH = Math.abs(node.height() * node.scaleY());
       const nodeX = node.x();
       const nodeY = node.y();
 

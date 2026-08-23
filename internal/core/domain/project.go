@@ -28,12 +28,13 @@ type Project struct {
 	ColumnsColor        string    `json:"columnsColor"`
 	ColumnsMargin       int       `json:"columnsMargin"`
 	ColumnsGutter       int       `json:"columnsGutter"`
-	CollageGap          int       `json:"collageGap"`
-	CollageMargin       int       `json:"collageMargin"`
-	CollageRadius       int       `json:"collageRadius"`
-	CollageShowCutLines bool      `json:"collageShowCutLines"`
-	CollageStrokeWidth  int       `json:"collageStrokeWidth"`
-	CollageStrokeColor  string    `json:"collageStrokeColor"`
+	CollageGap            int       `json:"collageGap"`
+	CollageMargin         int       `json:"collageMargin"`
+	CollageRadius         int       `json:"collageRadius"`
+	CollageShowCutLines   bool      `json:"collageShowCutLines"`
+	CollageShowEndCutLine bool      `json:"collageShowEndCutLine"`
+	CollageStrokeWidth    int       `json:"collageStrokeWidth"`
+	CollageStrokeColor    string    `json:"collageStrokeColor"`
 	CreatedAt           time.Time `json:"-"` // مخفي من Wails bindings لتفادي خطأ time.Time
 	UpdatedAt           time.Time `json:"-"`
 	CreatedAtStr        string    `gorm:"-" json:"createdAt"` // حقل محسوب للتسلسل

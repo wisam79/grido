@@ -39,13 +39,14 @@ export default defineConfig({
         '**/*.spec.{ts,tsx}',
         '**/svg-paths.ts',
         '**/vision_bundle*',
-        '**/src/components/**',
       ],
+      // 📊 الحدود تشمل الآن src/components بالكامل (كانت مستثناة سابقاً —
+      // نقطة عمياء في القياس). ارفعها تدريجياً مع كل اختبارات جديدة.
       thresholds: {
-        statements: 35,
+        statements: 36,
         branches: 30,
-        functions: 35,
-        lines: 35
+        functions: 32,
+        lines: 36
       }
     },
   },

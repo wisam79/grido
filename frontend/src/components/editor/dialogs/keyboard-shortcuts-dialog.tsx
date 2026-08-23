@@ -23,8 +23,14 @@ export function KeyboardShortcutsDialog() {
       }
     };
 
+    // زر "اختصارات" في شريط الحالة يطلق هذا الحدث — كان بلا مستمع (إصلاح Bug#6)
+    const handleOpenEvent = () => setOpen(true);
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("grido:open-shortcuts", handleOpenEvent);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("grido:open-shortcuts", handleOpenEvent);
+    };
   }, []);
 
   const shortcuts = [
@@ -41,6 +47,8 @@ export function KeyboardShortcutsDialog() {
     { label: "تحريك دقيق للعنصر", keys: ["الأسهم"] },
     { label: "تحريك سريع للعنصر", keys: ["Shift", "الأسهم"] },
     { label: "لصق صورة من الحافظة", keys: ["Ctrl", "V"] },
+    { label: "إظهار / إخفاء لوحة القوالب", keys: ["Ctrl", "B"] },
+    { label: "إظهار / إخفاء لوحة الخصائص", keys: ["Ctrl", "Shift", "B"] },
   ];
 
   return (

@@ -12,7 +12,6 @@ import (
 	"grido/internal/utils"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"gorm.io/gorm"
 )
 
 type App struct {
@@ -23,13 +22,13 @@ type App struct {
 	autosaveSvc *service.AutosaveService
 }
 
-func NewApp(db *gorm.DB) *App {
+func NewApp(templates domain.CustomTemplateRepository) *App {
 	mediaSvc := service.NewMediaService()
 	return &App{
 		mediaSvc:    mediaSvc,
 		aiSvc:       service.NewAIService(),
 		imageProc:   service.NewImageProcessorService(mediaSvc),
-		autosaveSvc: service.NewAutosaveService(db),
+		autosaveSvc: service.NewAutosaveService(templates),
 	}
 }
 

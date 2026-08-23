@@ -22,6 +22,9 @@ interface SheetPreviewProps {
   slots?: any[];
   collageGap?: number;
   collageMargin?: number;
+  collageRadius?: number;
+  collageStrokeWidth?: number;
+  collageStrokeColor?: string;
   canvasWidth?: number;
   canvasHeight?: number;
   hasPhysical?: boolean;
@@ -46,6 +49,9 @@ export function SheetPreview({
   slots,
   collageGap = 0,
   collageMargin = 0,
+  collageRadius = 0,
+  collageStrokeWidth = 0,
+  collageStrokeColor = "#000000",
   canvasWidth = 2480,
   canvasHeight = 3508,
   hasPhysical = false,
@@ -220,19 +226,26 @@ export function SheetPreview({
                 const width_pct = (rect.wMM / Math.max(1, paperWidthMM)) * 100;
                 const height_pct = (rect.hMM / Math.max(1, paperHeightMM)) * 100;
 
+                // الزوايا والإطار بنفس تحويل Go: قيمة كانفس بكسل → مم (نسبة
+                // imageWidthMM/canvasWidth) → بكسل شاشة عبر sf — تطابق WYSIWYG
+                const pxPerCanvasPx = imageWidthMM / Math.max(1, canvasWidth);
+                const radiusPx = collageRadius * pxPerCanvasPx * sf;
+                const borderPx = collageStrokeWidth * pxPerCanvasPx * sf;
+
                 const slotTransform = collageSlotTransform(slot, { wMM: rect.wMM, hMM: rect.hMM });
 
                 return (
-                  <div 
-                    key={`copy-${i}-slot-${index}`} 
+                  <div
+                    key={`copy-${i}-slot-${index}`}
                     className="absolute overflow-hidden shadow-xs"
                     style={{
                       left: `${left_pct}%`,
                       top: `${top_pct}%`,
                       width: `${width_pct}%`,
                       height: `${height_pct}%`,
-                      borderRadius: "2px",
-                      backgroundColor: (slot as any).bgColor && (slot as any).bgColor !== "transparent" ? (slot as any).bgColor : undefined,
+                      borderRadius: radiusPx > 0 ? `${radiusPx}px` : undefined,
+                      border: borderPx > 0 ? `${borderPx}px solid ${collageStrokeColor}` : undefined,
+                      backgroundColor: slot.bgColor && slot.bgColor !== "transparent" ? slot.bgColor : undefined,
                     }}
                   >
                     <img

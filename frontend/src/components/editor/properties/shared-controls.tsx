@@ -45,6 +45,12 @@ export function SliderControl({
   const rafRef = useRef<number | null>(null);
   const pendingRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
+  const keyCommitTimerRef = useRef<number | null>(null);
+  const onCommitRef = useRef(onCommit);
+  const latestValRef = useRef(value);
+  useEffect(() => {
+    onCommitRef.current = onCommit;
+  });
 
   useEffect(() => {
     if (!isDraggingRef.current) {
@@ -67,9 +73,22 @@ export function SliderControl({
     if (!rafRef.current) {
       rafRef.current = requestAnimationFrame(flushPending);
     }
+    // تعديلات لوحة المفاتيح لا تُطلق pointerup — نُجدول onCommit بتأجيل (إصلاح Bug#18)
+    if (!isDraggingRef.current) {
+      if (keyCommitTimerRef.current !== null) window.clearTimeout(keyCommitTimerRef.current);
+      keyCommitTimerRef.current = window.setTimeout(() => {
+        keyCommitTimerRef.current = null;
+        onCommitRef.current?.(newVal);
+      }, 500);
+      latestValRef.current = newVal;
+    }
   }, [flushPending]);
 
   const handlePointerDown = useCallback(() => {
+    if (keyCommitTimerRef.current !== null) {
+      window.clearTimeout(keyCommitTimerRef.current);
+      keyCommitTimerRef.current = null;
+    }
     isDraggingRef.current = true;
     onDragStart?.();
   }, [onDragStart]);
@@ -94,8 +113,20 @@ export function SliderControl({
   useEffect(() => {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      // عند إلغاء التركيب مع تعديل لوحة مفاتيح معلّق: نُثبته كخطوة تراجع
+      if (keyCommitTimerRef.current !== null) {
+        window.clearTimeout(keyCommitTimerRef.current);
+        keyCommitTimerRef.current = null;
+        onCommitRef.current?.(latestValRef.current);
+      }
     };
   }, []);
+
+  const decimals = step >= 1 ? 0 : step >= 0.1 ? 1 : 2;
+  // قيم مخزنة قد تحمل كسوراً عائمة طويلة (من تحجيم الزخارف أو مشاريع قديمة)
+  // — نعرضها مقربة لخانات الخطوة بدل الأرقام الخام
+  const formatValue = (v: number) =>
+    decimals === 0 ? String(Math.round(v)) : String(parseFloat(v.toFixed(decimals)));
 
   return (
     <div className="space-y-1.5">
@@ -105,11 +136,12 @@ export function SliderControl({
           <span className="text-xs font-semibold">{label}</span>
         </div>
         <span className="text-xs text-foreground/80 font-mono font-semibold">
-          {localValue}
+          {formatValue(localValue)}
           {unit}
         </span>
       </div>
       <Slider
+        dir="ltr"
         value={[localValue]}
         min={min}
         max={max}

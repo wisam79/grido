@@ -422,7 +422,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         slots: adjustedSlots,
       };
     });
-    get().pushHistory();
+    // الدفع عبر onCommit من الواجهة — لا pushHistory هنا (إصلاح Bug#2)
   },
 
   setCollageMargin: (margin) => {
@@ -462,13 +462,15 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         slots: adjustedSlots,
       };
     });
-    get().pushHistory();
+    // الدفع عبر onCommit من الواجهة — لا pushHistory هنا (إصلاح Bug#2)
   },
-  setCollageRadius: (radius) => { set({ collageRadius: radius }); get().pushHistory(); },
+  // ملاحظة: هذه المحددات تُستدعى بشكل مستمر أثناء السحب — لا تدفع سجل التراجع هنا.
+  // الدفع يتم عبر onCommit من الواجهة (إصلاح Bug#2: فيضان سجل التراجع)
+  setCollageRadius: (radius) => { set({ collageRadius: radius }); },
   setCollageShowCutLines: (show) => { set({ collageShowCutLines: show }); get().pushHistory(); },
   setCollageShowEndCutLine: (show) => { set({ collageShowEndCutLine: show }); get().pushHistory(); },
-  setCollageStrokeWidth: (width) => { set({ collageStrokeWidth: width }); get().pushHistory(); },
-  setCollageStrokeColor: (color) => { set({ collageStrokeColor: color }); get().pushHistory(); },
+  setCollageStrokeWidth: (width) => { set({ collageStrokeWidth: width }); },
+  setCollageStrokeColor: (color) => { set({ collageStrokeColor: color }); },
 
   swapSlots: (slotIdA: string, slotIdB: string) => {
     if (!slotIdA || !slotIdB || slotIdA === slotIdB) return;

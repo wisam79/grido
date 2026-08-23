@@ -1,6 +1,7 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import App from '../src/App';
+import { TemplatePanel } from '../src/components/editor';
 import React from 'react';
 import { useEditorStore } from '../src/lib/editor-store';
 
@@ -185,12 +186,17 @@ describe('Component Testing: UI Rendering', () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
     useEditorStore.setState({
+      mode: 'collage',
       user: {
         plan: 'pro',
         status: 'active',
         expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
       } as any
     });
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('renders the initial header and toolbar correctly', async () => {
@@ -206,16 +212,10 @@ describe('Component Testing: UI Rendering', () => {
   }, 15000);
 
   it('renders initial collage templates correctly', async () => {
-    render(<App />);
-    
-    // Open the templates dialog
-    const openBtn = await screen.findByText('قوالب الكولاج والطباعة');
-    await act(async () => {
-      fireEvent.click(openBtn);
-    });
+    useEditorStore.setState({ mode: 'collage' });
+    render(<TemplatePanel />);
 
-    expect(screen.getAllByText('طقم هوية ومعاملات عراقية (مختلط)')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('ورقة البطاقة الوطنية وجواز السفر (8 صور)')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('ورقة الأحوال والجنسية العراقية (8 صور)')[0]).toBeInTheDocument();
+    expect(await screen.findByText('نماذج الاستوديو الفورية')).toBeInTheDocument();
+    expect(await screen.findByText('8 صور بطاقة وجواز')).toBeInTheDocument();
   }, 15000);
 });

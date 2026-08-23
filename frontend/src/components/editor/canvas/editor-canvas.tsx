@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useMemo, useCallback } from "react"
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { X, RefreshCw, Loader2 } from "lucide-react";
 import { OpenFile, SaveImageFromBase64, GetImageDimensions } from "../../../../wailsjs/go/main/App";
+import { wailsIsDesktop } from "@/lib/wails-env";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
 import { KonvaCanvas } from "../konva/konva-canvas";
 import { useShallow } from "zustand/react/shallow";
@@ -11,14 +12,122 @@ import { RulerUnit } from "./ruler";
 import { TextEditingOverlay } from "./text-editing-overlay";
 import { CanvasContextMenu } from "./canvas-context-menu";
 
+/**
+ * شريط الأدوات السريع للخانة المحددة (إزالة/استبدال الصورة).
+ * 🛡️ فصل الأداء: كان هذا الكتلة مضمّنة في EditorCanvas تسببت بتحميل مصفوفة
+ * slots كاملة على قشرة الكانفس — أي تعديل طفيف على خانة (مثل زوم العجلة)
+ * كان يعيد رسم المحرر بأكمله. الآن يُشترك بنفسه بمفاتيحه فقط.
+ */
+const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
+  displayW,
+  displayH,
+  printMode,
+  isLoading,
+  setIsLoading,
+}: {
+  displayW: number;
+  displayH: number;
+  printMode: boolean;
+  isLoading: boolean;
+  setIsLoading: (v: boolean) => void;
+}) {
+  const slots = useEditorStore((s) => s.slots);
+  const selectedId = useEditorStore((s) => s.selectedId);
+  const updateSlot = useEditorStore((s) => s.updateSlot);
+  const setSlotImage = useEditorStore((s) => s.setSlotImage);
+  const canvasWidth = useEditorStore((s) => s.canvasWidth);
+  const mode = useEditorStore((s) => s.mode);
+  const collageGap = useEditorStore((s) => s.collageGap);
+  const collageMargin = useEditorStore((s) => s.collageMargin);
+  const collageTemplate = useEditorStore((s) => s.collageTemplate);
+
+  if (mode !== "collage" || printMode) return null;
+
+  const selectedSlot = slots.find((s) => s.id === selectedId);
+  if (!selectedSlot || !selectedSlot.imageSrc) return null;
+
+  const scale = displayW / canvasWidth;
+  const hasPhysical = collageTemplate?.physicalLayout;
+  const margin = hasPhysical ? 0 : collageMargin * scale;
+  const gap = hasPhysical ? 0 : collageGap * scale;
+
+  const availW = displayW - 2 * margin;
+  const availH = displayH - 2 * margin;
+
+  const left = margin + selectedSlot.x * availW + gap / 2;
+  const top = margin + selectedSlot.y * availH + gap / 2;
+  const width = selectedSlot.w * availW - gap;
+  const height = selectedSlot.h * availH - gap;
+
+  return (
+    <div
+      className="absolute pointer-events-none z-30"
+      style={{
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+      }}
+    >
+      <button
+        className="absolute top-1 right-1 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-md w-6 h-6 flex items-center justify-center z-30 pointer-events-auto shadow-md cursor-pointer transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          updateSlot(selectedSlot.id, { imageSrc: undefined });
+          useEditorStore.getState().pushHistory();
+        }}
+        title="إزالة"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+       <button
+         className="absolute top-1 left-1 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-md w-6 h-6 flex items-center justify-center z-30 pointer-events-auto shadow-md cursor-pointer transition-colors"
+         onClick={async (e) => {
+           e.stopPropagation();
+           if (isLoading) return;
+           try {
+             setIsLoading(true);
+             const b64 = await OpenFile();
+             if (b64) {
+               const isWailsDesktop = wailsIsDesktop();
+               let srcToUse = b64;
+               if (isWailsDesktop && b64.startsWith("data:image/")) {
+                 try {
+                   const localPath = await SaveImageFromBase64(b64);
+                   if (localPath) srcToUse = localPath;
+                 } catch (e) {
+                   console.error("Failed to save image locally:", e);
+                 }
+               }
+               setSlotImage(selectedSlot.id, srcToUse);
+             }
+           } catch (err) {
+             console.error("Replace image error:", err);
+           } finally {
+             setIsLoading(false);
+           }
+         }}
+         title="استبدال"
+       >
+        <RefreshCw className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+});
+
 export const EditorCanvas = React.memo(React.forwardRef<
   HTMLDivElement,
   { printMode?: boolean }
 >(function EditorCanvas({ printMode = false }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const hRulerWrapperRef = useRef<HTMLDivElement>(null);
-  const vRulerWrapperRef = useRef<HTMLDivElement>(null);
+
+  const [rulerMetrics, setRulerMetrics] = useState({
+    viewportWidth: 800,
+    viewportHeight: 600,
+    originX: 0,
+    originY: 0,
+  });
 
   const hRulerCursorRef = useRef<SVGLineElement | null>(null);
   const vRulerCursorRef = useRef<SVGLineElement | null>(null);
@@ -46,56 +155,49 @@ export const EditorCanvas = React.memo(React.forwardRef<
     });
   }, []);
 
+  // 🛡️ تقسيم الاشتراك: الدوال (هويات ثابتة أبداً) منفصلة عن الحالة،
+  // وحالة الخانة (slots/selectedId) انتقلت إلى SelectedSlotQuickBar —
+  // تعديل أي خانة لم يعد يعيد رسم قشرة المحرر.
   const {
-    mode,
-    elements,
-    slots,
-    selectedId,
-    selectedIds,
-    editingTextId,
-    canvasWidth,
-    canvasHeight,
-    backgroundColor,
     selectElement,
     setEditingTextId,
     updateElement,
     pushHistory,
     addImageElement,
-    setSlotImage,
-    updateSlot,
-    collageGap,
-    collageMargin,
-    collageTemplate,
-    template,
-    printSettings,
-    showRuler,
-    canvasZoom,
     setCanvasZoom,
   } = useEditorStore(useShallow((state) => ({
-    mode: state.mode,
-    elements: state.elements,
-    slots: state.slots,
-    selectedId: state.selectedId,
-    selectedIds: state.selectedIds,
-    editingTextId: state.editingTextId,
-    canvasWidth: state.canvasWidth,
-    canvasHeight: state.canvasHeight,
-    backgroundColor: state.backgroundColor,
     selectElement: state.selectElement,
     setEditingTextId: state.setEditingTextId,
     updateElement: state.updateElement,
     pushHistory: state.pushHistory,
     addImageElement: state.addImageElement,
-    setSlotImage: state.setSlotImage,
-    updateSlot: state.updateSlot,
-    collageGap: state.collageGap,
-    collageMargin: state.collageMargin,
-    collageTemplate: state.collageTemplate,
+    setCanvasZoom: state.setCanvasZoom,
+  })));
+
+  const {
+    mode,
+    elements,
+    editingTextId,
+    canvasWidth,
+    canvasHeight,
+    backgroundColor,
+    canvasZoom,
+    showRuler,
+    template,
+    printSettings,
+    selectedIds,
+  } = useEditorStore(useShallow((state) => ({
+    mode: state.mode,
+    elements: state.elements,
+    editingTextId: state.editingTextId,
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
+    backgroundColor: state.backgroundColor,
+    canvasZoom: state.canvasZoom,
+    showRuler: state.showRuler,
     template: state.template,
     printSettings: state.printSettings,
-    showRuler: state.showRuler,
-    canvasZoom: state.canvasZoom,
-    setCanvasZoom: state.setCanvasZoom,
+    selectedIds: state.selectedIds,
   })));
 
   useEffect(() => {
@@ -290,15 +392,22 @@ export const EditorCanvas = React.memo(React.forwardRef<
     const containerRect = containerRef.current.getBoundingClientRect();
     const canvasRect = innerRef.current.getBoundingClientRect();
 
-    const relX = canvasRect.left - containerRect.left;
-    const relY = canvasRect.top - containerRect.top;
+    const originX = canvasRect.left - containerRect.left;
+    const originY = canvasRect.top - containerRect.top;
+    const viewportWidth = containerRect.width;
+    const viewportHeight = containerRect.height;
 
-    if (hRulerWrapperRef.current) {
-      hRulerWrapperRef.current.style.transform = `translateX(${relX}px)`;
-    }
-    if (vRulerWrapperRef.current) {
-      vRulerWrapperRef.current.style.transform = `translateY(${relY}px)`;
-    }
+    setRulerMetrics((prev) => {
+      if (
+        Math.abs(prev.originX - originX) < 0.5 &&
+        Math.abs(prev.originY - originY) < 0.5 &&
+        Math.abs(prev.viewportWidth - viewportWidth) < 0.5 &&
+        Math.abs(prev.viewportHeight - viewportHeight) < 0.5
+      ) {
+        return prev;
+      }
+      return { originX, originY, viewportWidth, viewportHeight };
+    });
   }, [showRuler, printMode]);
 
   useEffect(() => {
@@ -315,19 +424,18 @@ export const EditorCanvas = React.memo(React.forwardRef<
     return () => el.removeEventListener("scroll", handleScroll);
   }, [updateRulerPositions]);
 
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (printMode) return;
+  const handleWorkspaceMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!showRuler || printMode) return;
     if (mouseMoveRafId.current !== null) return;
+    if (!containerRef.current) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - containerRect.left;
+    const y = e.clientY - containerRect.top;
 
     mouseMoveRafId.current = requestAnimationFrame(() => {
       mouseMoveRafId.current = null;
 
-      // إعادة استعلام العناصر كل إطار — المراجع المتخزنة تموت عند تبديل المساطر
-      // (تعاد بنية الـ SVG من جديد فتترك العناصر القديمة مفصولة عن الـ DOM)
       hRulerCursorRef.current = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
       vRulerCursorRef.current = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
 
@@ -346,7 +454,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     });
   };
 
-  const handleCanvasMouseLeave = () => {
+  const handleWorkspaceMouseLeave = () => {
     if (mouseMoveRafId.current !== null) {
       cancelAnimationFrame(mouseMoveRafId.current);
       mouseMoveRafId.current = null;
@@ -366,7 +474,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
          setIsLoading(true);
          const b64 = await OpenFile();
          if (b64) {
-           const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+           const isWailsDesktop = wailsIsDesktop();
            let srcToUse = b64;
            if (isWailsDesktop && b64.startsWith("data:image/")) {
              try {
@@ -403,7 +511,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
        setIsLoading(true);
        const b64 = await OpenFile();
        if (b64) {
-         const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+         const isWailsDesktop = wailsIsDesktop();
          let srcToUse = b64;
          if (isWailsDesktop && b64.startsWith("data:image/")) {
            try {
@@ -469,6 +577,12 @@ export const EditorCanvas = React.memo(React.forwardRef<
       const freshMode = freshState.mode;
       const freshSlots = freshState.slots;
       const freshCollageTemplate = freshState.collageTemplate;
+      // قراءة الأبعاد من الحالة الطازجة أيضاً — قد تتغير إعدادات الكولاج أثناء
+      // رفع الملفات فلا تُطابق خانات محسوبة بقيم قديمة (إصلاح Bug#15)
+      const freshCanvasWidth = freshState.canvasWidth;
+      const freshCanvasHeight = freshState.canvasHeight;
+      const freshCollageMargin = freshState.collageMargin;
+      const freshCollageGap = freshState.collageGap;
 
       if (freshMode === "collage" || freshSlots.length > 0) {
         if (freshMode !== "collage") {
@@ -480,14 +594,14 @@ export const EditorCanvas = React.memo(React.forwardRef<
           const rect = innerRef.current.getBoundingClientRect();
           // إحداثيات منطقية بمساحة الكانفس (مثل konva-collage-layer) بدل نسبة عرض الشاشة —
           // القانون يشمل هوامش الكولاج وفجواته: margin + slot.x * availW + gap/2
-          const scale = rect.width / canvasWidth;
+          const scale = rect.width / freshCanvasWidth;
           const logicalX = (e.clientX - rect.left) / scale;
           const logicalY = (e.clientY - rect.top) / scale;
           const hasPhysical = freshCollageTemplate?.physicalLayout;
-          const margin = hasPhysical ? 0 : collageMargin;
-          const gap = hasPhysical ? 0 : collageGap;
-          const availW = canvasWidth - 2 * margin;
-          const availH = canvasHeight - 2 * margin;
+          const margin = hasPhysical ? 0 : freshCollageMargin;
+          const gap = hasPhysical ? 0 : freshCollageGap;
+          const availW = freshCanvasWidth - 2 * margin;
+          const availH = freshCanvasHeight - 2 * margin;
 
           const matched = freshSlots.find((s) => {
             const sx = margin + s.x * availW + gap / 2;
@@ -625,8 +739,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
       onClick={(e) => {
         if (e.target === e.currentTarget) selectElement(null);
       }}
-      onMouseMove={handleCanvasMouseMove}
-      onMouseLeave={handleCanvasMouseLeave}
     >
       {isLoading && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md rounded-sm gap-2">
@@ -654,78 +766,13 @@ export const EditorCanvas = React.memo(React.forwardRef<
         onClose={() => setContextMenu(null)}
       />
 
-      {mode === "collage" && !printMode && (() => {
-        const selectedSlot = slots.find((s) => s.id === selectedId);
-        if (!selectedSlot || !selectedSlot.imageSrc) return null;
-
-        const scale = displayW / canvasWidth;
-        const hasPhysical = collageTemplate?.physicalLayout;
-        const margin = hasPhysical ? 0 : collageMargin * scale;
-        const gap = hasPhysical ? 0 : collageGap * scale;
-
-        const availW = displayW - 2 * margin;
-        const availH = displayH - 2 * margin;
-
-        const left = margin + selectedSlot.x * availW + gap / 2;
-        const top = margin + selectedSlot.y * availH + gap / 2;
-        const width = selectedSlot.w * availW - gap;
-        const height = selectedSlot.h * availH - gap;
-
-        return (
-          <div
-            className="absolute pointer-events-none z-30"
-            style={{
-              left: `${left}px`,
-              top: `${top}px`,
-              width: `${width}px`,
-              height: `${height}px`,
-            }}
-          >
-            <button
-              className="absolute top-1 right-1 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-md w-6 h-6 flex items-center justify-center z-30 pointer-events-auto shadow-md cursor-pointer transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateSlot(selectedSlot.id, { imageSrc: undefined });
-                useEditorStore.getState().pushHistory();
-              }}
-              title="إزالة"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-             <button
-               className="absolute top-1 left-1 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-md w-6 h-6 flex items-center justify-center z-30 pointer-events-auto shadow-md cursor-pointer transition-colors"
-               onClick={async (e) => {
-                 e.stopPropagation();
-                 if (isLoading) return;
-                 try {
-                   setIsLoading(true);
-                   const b64 = await OpenFile();
-                   if (b64) {
-                     const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
-                     let srcToUse = b64;
-                     if (isWailsDesktop && b64.startsWith("data:image/")) {
-                       try {
-                         const localPath = await SaveImageFromBase64(b64);
-                         if (localPath) srcToUse = localPath;
-                       } catch (e) {
-                         console.error("Failed to save image locally:", e);
-                       }
-                     }
-                     setSlotImage(selectedSlot.id, srcToUse);
-                   }
-                 } catch (err) {
-                   console.error("Replace image error:", err);
-                 } finally {
-                   setIsLoading(false);
-                 }
-               }}
-               title="استبدال"
-             >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        );
-      })()}
+      <SelectedSlotQuickBar
+        displayW={displayW}
+        displayH={displayH}
+        printMode={printMode}
+        isLoading={isLoading}
+        setIsLoading={setIsLoading}
+      />
 
 
 
@@ -764,27 +811,29 @@ export const EditorCanvas = React.memo(React.forwardRef<
   );
 
   return (
-    <div className="absolute inset-0 flex flex-col bg-muted/40 overflow-hidden select-none">
+    <div className="absolute inset-0 flex flex-col bg-muted/40 overflow-hidden select-none" dir="ltr">
       <ViewportFixedRulersHeader
         showRuler={showRuler}
         printMode={printMode}
+        viewportWidth={rulerMetrics.viewportWidth}
+        originX={rulerMetrics.originX}
         displayW={displayW}
         widthMM={widthMM}
         canvasPxW={canvasWidth}
         rulerUnit={rulerUnit}
         onToggleRulerUnit={toggleRulerUnit}
-        hRulerWrapperRef={hRulerWrapperRef}
       />
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden relative" dir="ltr">
         <ViewportFixedRulersSidebar
           showRuler={showRuler}
           printMode={printMode}
+          viewportHeight={rulerMetrics.viewportHeight}
+          originY={rulerMetrics.originY}
           displayH={displayH}
           heightMM={heightMM}
           canvasPxH={canvasHeight}
           rulerUnit={rulerUnit}
-          vRulerWrapperRef={vRulerWrapperRef}
         />
 
         <div
@@ -794,6 +843,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
             else if (ref) (ref as any).current = node;
           }}
           className="flex-1 overflow-auto workspace-grid relative"
+          onMouseMove={handleWorkspaceMouseMove}
+          onMouseLeave={handleWorkspaceMouseLeave}
         >
           <div
             className="min-w-full min-h-full flex p-4"

@@ -39,6 +39,14 @@ export interface LicenseSlice {
 
 const DEFAULT_AI_LOGS: AiUsageRecord[] = [];
 
+// جيل الطلبات: يمنع نداء checkLicenseStatus قديماً (in-flight) من استعادة
+// جلسة بعد تسجيل الخروج (إصلاح Bug#4 — race guard)
+let licenseCheckEpoch = 0;
+// 🛡️ Single-flight: نداءان متزامنان عند الإقلاع (StrictMode يستدعي التأثير
+// مرتين) يتشاركان نفس الوعد — بدلاً من أن يعيد النداء الأقدم get().user
+// وهي null قبل اكتمال الأحدث، فيفتح نافذة الحساب زوراً رغم وجود جلسة صالحة.
+let inFlightCheck: Promise<UserProfile | null> | null = null;
+
 export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice> = (set, get) => ({
   user: null,
   licenseLoading: false,
@@ -72,19 +80,32 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
   },
 
   checkLicenseStatus: async () => {
+    // 🛡️ Single-flight: أعد نفس الوعد إن كان فحص جارٍ بالفعل
+    if (inFlightCheck) return inFlightCheck;
+
+    const epoch = ++licenseCheckEpoch;
     set({ licenseLoading: true });
-    try {
-      const profile = await LicenseHandler.GetLicenseStatus();
-      set({ user: profile, licenseLoading: false });
-      return profile;
-    } catch (err) {
-      // فشل شبكة/عطل مؤقت → نبقي الجلسة الحالية (سماح عدم الاتصال) بدل قفل
-      // المستخدم خارجاً فجأة. تصفير الجلسة يحدث فقط بردّ خادم صريح بأن
-      // الترخيص غير صالح (يصل عبر profile بنجاح النداء أعلاه).
-      console.error("Failed to check license status (network error, keeping session):", err);
-      set({ licenseLoading: false });
-      return get().user;
-    }
+
+    inFlightCheck = (async () => {
+      try {
+        const profile = await LicenseHandler.GetLicenseStatus();
+        // تجاهل نتيجة قديمة إذا بدأ نداء أحدث أو سجّل المستخدم الخروج أثناء الانتظار
+        if (epoch !== licenseCheckEpoch) return get().user;
+        set({ user: profile, licenseLoading: false });
+        return profile;
+      } catch (err) {
+        // فشل شبكة/عطل مؤقت → نبقي الجلسة الحالية (سماح عدم الاتصال) بدل قفل
+        // المستخدم خارجاً فجأة. تصفير الجلسة يحدث فقط بردّ خادم صريح بأن
+        // الترخيص غير صالح (يصل عبر profile بنجاح النداء أعلاه).
+        console.error("Failed to check license status (network error, keeping session):", err);
+        if (epoch === licenseCheckEpoch) set({ licenseLoading: false });
+        return get().user;
+      } finally {
+        inFlightCheck = null;
+      }
+    })();
+
+    return inFlightCheck;
   },
 
   registerAccount: async (name, email, password) => {
@@ -192,6 +213,8 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
 
 
   logoutAccount: async () => {
+    // إبطال أي فحص ترخيص in-flight حتى لا يعيد الجلسة بعد الخروج (إصلاح Bug#4)
+    licenseCheckEpoch++;
     try {
       if (typeof LicenseHandler.Logout === "function") {
         await LicenseHandler.Logout();
@@ -199,7 +222,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     } catch (err) {
       console.error("Failed to execute backend Logout:", err);
     } finally {
-      set({ user: null });
+      set({ user: null, licenseLoading: false });
     }
   },
 

@@ -79,7 +79,7 @@ export const GradientPicker = ({
             type="button"
             onClick={() => onChangeType(t)}
             className={cn(
-              "flex-1 h-7 rounded-md transition-all cursor-pointer flex items-center justify-center text-[10.5px] font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+              "flex-1 h-7 rounded-md transition-all cursor-pointer flex items-center justify-center text-[10.5px] font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
               fillType === t 
                 ? "bg-card text-foreground shadow-2xs font-extrabold border border-border/20" 
                 : "text-muted-foreground hover:text-foreground"

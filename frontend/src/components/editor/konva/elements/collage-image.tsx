@@ -58,6 +58,22 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = Boolean(id && enhancingElementId === id);
 
+  // 🛡️ نمط latest-ref: المقارن المخصص أدناه يتجاهل هوية الدوال لتفادي إعادة
+  // الرسم عند كل render للأب، لكن هذا قد يترك closures قديمة إن التقطت الدوال
+  // حالة متغيرة. المراجع أدناه تضمن استدعاء آخر نسخة مُمرّرة دائماً.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- أي توقيع دالة مقبول هنا عمداً (Konva يمرر كائن الحدث)
+  type LatestRef = (...args: any[]) => void;
+  const onUpdateOffsetsRef = useRef<LatestRef | undefined>(onUpdateOffsets);
+  const onDragEndRef = useRef<LatestRef | undefined>(onDragEnd);
+  const onClickRef = useRef<LatestRef | undefined>(onClick);
+  const onDblClickRef = useRef<LatestRef | undefined>(onDblClick);
+  useEffect(() => {
+    onUpdateOffsetsRef.current = onUpdateOffsets;
+    onDragEndRef.current = onDragEnd;
+    onClickRef.current = onClick;
+    onDblClickRef.current = onDblClick;
+  });
+
   useEffect(() => {
     accumulatedDrag.current = { dragX, dragY };
   }, [dragX, dragY]);
@@ -170,8 +186,8 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }}
         onDragEnd={() => {
           if (draggable && accumulatedDrag.current) {
-            onUpdateOffsets?.(accumulatedDrag.current.dragX, accumulatedDrag.current.dragY);
-            onDragEnd?.();
+            onUpdateOffsetsRef.current?.(accumulatedDrag.current.dragX, accumulatedDrag.current.dragY);
+            onDragEndRef.current?.();
           }
         }}
         image={image}
@@ -188,12 +204,12 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
         filters={filterResult.filters}
         brightness={filterResult.brightness}
         contrast={filterResult.contrast}
-        hue={(filterResult as any).hue}
         saturation={(filterResult as any).saturation}
-        onClick={onClick}
-        onTap={onClick}
-        onDblClick={onDblClick}
-        onDblTap={onDblClick}
+        sepiaRatio={filterResult.sepiaRatio}
+        onClick={(e) => onClickRef.current?.(e)}
+        onTap={(e) => onClickRef.current?.(e)}
+        onDblClick={(e) => onDblClickRef.current?.(e)}
+        onDblTap={(e) => onDblClickRef.current?.(e)}
         ref={imageRef}
       />
       {isEnhancing && (
@@ -223,6 +239,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
     </Group>
   );
 }, (prev, next) => {
+  // 🛡️ الدوال متعمدة الغياب هنا — تُدار عبر latest-refs داخل المكوّن أعلاه
   return prev.id === next.id &&
          prev.imageSrc === next.imageSrc &&
          prev.width === next.width &&
@@ -239,6 +256,5 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
          prev.flipY === next.flipY &&
          prev.rotation === next.rotation &&
          prev.draggable === next.draggable &&
-         prev.cornerRadius === next.cornerRadius &&
-         prev.onDblClick === next.onDblClick;
+         prev.cornerRadius === next.cornerRadius;
 });

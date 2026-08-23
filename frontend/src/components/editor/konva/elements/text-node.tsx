@@ -89,7 +89,10 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         onChangeRef.current({ height: actualHeight });
       }
     }
-  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight, element.curve]);
+  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight, element.curve,
+      // هذه الخصائص تغيّر الالتفاف والارتفاع الفعلي أيضاً — إغفالها كان يترك
+      // height في المخزن قديماً حتى يتغير حقل آخر (إصلاح Bug#14)
+      element.lineHeight, element.letterSpacing, element.textTransform, element.arabicNumerals]);
 
   const flipped = element.flipX === true;
   const flippedY = element.flipY === true;

@@ -78,7 +78,7 @@ func main() {
 		}
 	}
 
-	app := NewApp(db)
+	app := NewApp(repository.NewCustomTemplateRepository(db))
 
 	err = wails.Run(&options.App{
 		Title:       "Grido Studio",

@@ -1,71 +1,25 @@
 import Konva from "konva";
 
-// تسجيل فلتر مخصص لتنعيم وتجميل البشرة ذكياً (Skin Glow & Smooth Filter)
+// سبيا بنسبة شدة (0..1) مطابقة تماماً لـ CSS filter: sepia(N%) وهي المرجع
+// المشترك للمعاينة والطباعة والتصدير. فلتر Konva المدمج Sepia يكون بكامل
+// الشدة دائماً ولا يقبل نسبة — كان يجعل المحرر يظهر سبياً أقوى من المطبوع.
+// تُقرأ الشدة من خاصية العقدة sepiaRatio (Konva يستدعي الفلتر بـ this = العقدة).
 if (typeof Konva !== "undefined" && Konva.Filters) {
-  (Konva.Filters as any).SkinGlow = function (this: any, imageData: ImageData) {
-    const data = imageData.data;
-    const width = imageData.width;
-    const height = imageData.height;
-    const len = width * height;
-
-    const isSkin = new Uint8Array(len);
-    let skinCount = 0;
-    for (let i = 0; i < len; i++) {
-      const idx = i * 4;
-      const r = data[idx], g = data[idx + 1], b = data[idx + 2];
-      // نطاق لون البشرة الشامل والمتوافق مع مختلف درجات الإضاءة
-      if (r > 60 && g > 35 && b > 15 && r > g && (r - Math.min(g, b)) > 8) {
-        isSkin[i] = 1;
-        skinCount++;
-      }
-    }
-
-    if (skinCount === 0) return;
-
-    const rgbBuffer = new Uint8Array(len * 3);
-    for (let i = 0; i < len; i++) {
-      const idx = i * 4;
-      const bufIdx = i * 3;
-      rgbBuffer[bufIdx] = data[idx];
-      rgbBuffer[bufIdx + 1] = data[idx + 1];
-      rgbBuffer[bufIdx + 2] = data[idx + 2];
-    }
-
-    // تنعيم وإشراق دقيق بنطاق 2 بكسل لشكل البشرة النضر
-    const R = 2;
-    for (let y = R; y < height - R; y += 1) {
-      const rowOffset = y * width;
-      for (let x = R; x < width - R; x += 1) {
-        const i = rowOffset + x;
-        if (isSkin[i] === 0) continue;
-
-        const idx = i * 4;
-        let sumR = 0, sumG = 0, sumB = 0, count = 0;
-
-        for (let dy = -R; dy <= R; dy++) {
-          const nRow = (y + dy) * width;
-          for (let dx = -R; dx <= R; dx++) {
-            const ni = nRow + (x + dx);
-            if (isSkin[ni] === 1) {
-              const nBufIdx = ni * 3;
-              sumR += rgbBuffer[nBufIdx];
-              sumG += rgbBuffer[nBufIdx + 1];
-              sumB += rgbBuffer[nBufIdx + 2];
-              count++;
-            }
-          }
-        }
-
-        if (count > 0) {
-          const avgR = sumR / count;
-          const avgG = sumG / count;
-          const avgB = sumB / count;
-          // دمج تنعيم إشراقة النضارة + تعزيز تورّد البشرة الطبيعي
-          data[idx] = Math.min(255, Math.round(data[idx] * 0.35 + avgR * 0.65 + 6));
-          data[idx + 1] = Math.min(255, Math.round(data[idx + 1] * 0.35 + avgG * 0.65 + 4));
-          data[idx + 2] = Math.min(255, Math.round(data[idx + 2] * 0.35 + avgB * 0.65 + 2));
-        }
-      }
+  (Konva.Filters as any).SepiaBlend = function (this: any, imageData: ImageData) {
+    const ratio = Math.max(0, Math.min(1, Number(this.sepiaRatio?.() ?? 1)));
+    if (!ratio || ratio <= 0) return;
+    const d = imageData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i];
+      const g = d[i + 1];
+      const b = d[i + 2];
+      // مصفوفة sepia القياسية ذاتها المستخدمة في CSS وفي مسار Go (applySepiaRatio)
+      const tr = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
+      const tg = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
+      const tb = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
+      d[i] = r + (tr - r) * ratio;
+      d[i + 1] = g + (tg - g) * ratio;
+      d[i + 2] = b + (tb - b) * ratio;
     }
   };
 }

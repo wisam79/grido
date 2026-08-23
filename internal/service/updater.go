@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -41,8 +42,12 @@ const checksumsAssetName = "grido-checksums.txt"
 
 // CleanupTempUpdates يقوم بتنظيف كافّة ملفات والمثبتات المؤقتة الخاصة بـ Grido في مجلد Temp
 func CleanupTempUpdates() {
-	// لا تنظّف أثناء تحميل تحديث نشط
-	updateMutex.Lock()
+	// 🛡️ TryLock: لا نحتجز القفل أبداً — إن كان هناك تحميل نشط فتجاوز التنظيف
+	// هذه المرة (سيعاد لاحقاً عند الإقلاع) بدل تعليقه خلف عملية RemoveAll بطيئة.
+	if !updateMutex.TryLock() {
+		slog.Info("Skipping temp updates cleanup: download in progress")
+		return
+	}
 	defer updateMutex.Unlock()
 
 	tempDir := os.TempDir()
@@ -76,29 +81,44 @@ func NewUpdaterService() *UpdaterService {
 func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 
-	var resp *http.Response
-	var err error
-
-	req, errReq := http.NewRequest("GET", "https://grido.cloud-ip.cc/api/version", nil)
-	if errReq == nil {
+	fetchRelease := func(url string) (*http.Response, error) {
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create request for %s: %w", url, err)
+		}
 		req.Header.Set("User-Agent", "GridoStudio-Desktop")
-		resp, err = client.Do(req)
+		return client.Do(req)
 	}
 
-	if errReq != nil || err != nil || resp.StatusCode != http.StatusOK {
-		if resp != nil {
+	resp, primaryErr := fetchRelease("https://grido.cloud-ip.cc/api/version")
+	if primaryErr != nil || resp.StatusCode != http.StatusOK {
+		// لخّص سبب فشل المصدر الأساسي بدقة قبل محاولة المصدر الاحتياطي
+		primarySummary := "unreachable"
+		if primaryErr != nil {
+			primarySummary = primaryErr.Error()
+		} else {
+			primarySummary = fmt.Sprintf("returned status %s", resp.Status)
 			resp.Body.Close()
+			resp = nil
 		}
 		// Fallback to GitHub directly
-		reqDirect, _ := http.NewRequest("GET", "https://api.github.com/repos/wisam79/grido/releases/latest", nil)
-		reqDirect.Header.Set("User-Agent", "GridoStudio-Desktop")
-		resp, err = client.Do(reqDirect)
-		if err != nil || resp.StatusCode != http.StatusOK {
-			if resp != nil {
+		var fallbackErr error
+		resp, fallbackErr = fetchRelease("https://api.github.com/repos/wisam79/grido/releases/latest")
+		if fallbackErr != nil || resp.StatusCode != http.StatusOK {
+			fallbackSummary := "unreachable"
+			if fallbackErr != nil {
+				fallbackSummary = fallbackErr.Error()
+				if resp != nil { // Do قد يعيد استجابة غير nil مع خطأ إعادة توجيه
+					resp.Body.Close()
+					resp = nil
+				}
+			} else {
+				fallbackSummary = fmt.Sprintf("returned status %s", resp.Status)
 				resp.Body.Close()
+				resp = nil
 			}
-			// فشل كلا المصدرين — نُبلغ المستخدم بدل إخفاء وجود تحديثات
-			return nil, fmt.Errorf("failed to check for updates (both primary and fallback sources unavailable): %w", err)
+			// فشل كلا المصدرين — نُبلغ المستخدم بتفاصيل المصدرين بدل إخفاء وجود تحديثات
+			return nil, fmt.Errorf("failed to check for updates (primary: %s; fallback: %s)", primarySummary, fallbackSummary)
 		}
 	}
 	defer resp.Body.Close()
@@ -306,16 +326,22 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	defer updateMutex.Unlock()
 
 	tempDir := filepath.Join(os.TempDir(), "grido-updates")
-	if err := os.MkdirAll(tempDir, 0755); err != nil {
+	if err := os.MkdirAll(tempDir, 0700); err != nil {
 		return fmt.Errorf("failed to create temp dir: %w", err)
 	}
 
-	installerPath := filepath.Join(tempDir, "GridoStudio-Setup-Update.exe")
-	_ = os.Remove(installerPath)
+	// 🛡️ TOCTOU: اسم عشوائي غير قابل للتوقع لكل جلسة تحميل، مع إنشاء حصري (O_EXCL)
+	// وأذونات 0700 — يمنع أي عملية محلية من الاستباق على المسار أو استبدال الملف
+	// بين التحقق من البصمة والتنفيذ.
+	randBytes := make([]byte, 16)
+	if _, err := rand.Read(randBytes); err != nil {
+		return fmt.Errorf("failed to generate random installer name: %w", err)
+	}
+	installerPath := filepath.Join(tempDir, fmt.Sprintf("GridoStudio-Setup-%s.exe", hex.EncodeToString(randBytes)))
 
-	out, err := os.Create(installerPath)
+	out, err := os.OpenFile(installerPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0700)
 	if err != nil {
-		return fmt.Errorf("failed to create installer file: %w", err)
+		return fmt.Errorf("failed to create installer file exclusively: %w", err)
 	}
 
 	// 🛡️ حساب بصمة SHA-256 أثناء التحميل (تيار واحد: ملف + تقدم + هاش)
@@ -360,9 +386,11 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		return fmt.Errorf("فشل تشغيل مثبت التحديث كمسؤول: %w", err)
 	}
 
-	// إغلاق التطبيق فورياً حتى يتم تحرير أقفال الملفات و Single-Instance Mutex قبل أن يستبدل المثبت الملفات
+	// إغلاق نظيف عبر Wails Runtime بدل os.Exit — يضمن تنفيذ OnShutdown
+	// (حفظ حالة النافذة، إيقاف مهام الخلفية، وإغلاق قاعدة البيانات) قبل خروج العملية،
+	// ويحرر أقفال الملفات و Single-Instance Mutex بشكل طبيعي ليستبدلها المثبت.
 	time.Sleep(200 * time.Millisecond)
-	os.Exit(0)
+	wailsruntime.Quit(ctx)
 	return nil
 }
 

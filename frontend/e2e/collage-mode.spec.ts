@@ -13,15 +13,13 @@ test.describe('Collage Mode and Filters E2E', () => {
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
     await page.getByTitle('وضع الكولاج').click();
 
-    // Toggle open official print templates
-    const toggleBtn = page.getByRole('button', { name: 'قوالب الكولاج والطباعة' });
-    await expect(toggleBtn).toBeVisible();
-    await toggleBtn.click();
+    // لوحة القوالب تعرض بطاقات القوالب الجاهزة مباشرة (تصميم Fluent 2)
+    const gridTemplateCard = page.getByRole('button', { name: /2×2 4 صور/ }).first();
+    await expect(gridTemplateCard).toBeVisible();
+    await gridTemplateCard.click();
 
-    // Select the mixed template
-    const mixedTemplateCard = page.getByText('طقم هوية ومعاملات عراقية (مختلط)').first();
-    await expect(mixedTemplateCard).toBeVisible();
-    await mixedTemplateCard.click();
+    // شريط الحالة يظل مستقراً بعد تطبيق القالب
+    await expect(page.getByText(/جاهز/)).toBeVisible();
   });
 
 });

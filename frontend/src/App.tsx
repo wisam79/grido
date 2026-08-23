@@ -16,6 +16,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 const ExportDialog = lazy(() => import("@/components/editor/dialogs/export-dialog").then(module => ({ default: module.ExportDialog })));
 const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog").then(module => ({ default: module.PrintDialog })));
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import {
@@ -35,6 +36,7 @@ import { useWindowControls } from "@/hooks/use-window-controls";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useAutoSave } from "@/hooks/use-autosave";
 import { useEditorStore } from "@/lib/editor-store";
+import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -46,9 +48,24 @@ export default function App() {
   const [printOpen, setPrintOpen] = useState(false);
   const [mobileTemplatesOpen, setMobileTemplatesOpen] = useState(false);
   const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
 
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const handleToggleRight = () => setRightSidebarOpen((v) => !v);
+    const handleToggleLeft = () => setLeftSidebarOpen((v) => !v);
+
+    window.addEventListener("grido:toggle-right-sidebar", handleToggleRight);
+    window.addEventListener("grido:toggle-left-sidebar", handleToggleLeft);
+
+    return () => {
+      window.removeEventListener("grido:toggle-right-sidebar", handleToggleRight);
+      window.removeEventListener("grido:toggle-left-sidebar", handleToggleLeft);
+    };
+  }, []);
 
 
   const {
@@ -86,6 +103,10 @@ export default function App() {
   const activateLicenseKey = useEditorStore((state) => state.activateLicenseKey);
   const logoutAccount = useEditorStore((state) => state.logoutAccount);
 
+  // شريط الحالة: "جاهز" مرتبطة بحالة فعلية الآن — تعمل مؤشرات الذكاء الاصطناعي
+  // على تعيين enhancingElementId أثناء المعالجة
+  const isBusy = useRenderQuality((s) => s.enhancingElementId !== null);
+
   const [lockKey, setLockKey] = useState("");
   const [lockLoading, setLockLoading] = useState(false);
 
@@ -111,6 +132,18 @@ export default function App() {
 
     return () => clearInterval(intervalId);
   }, [checkLicenseStatus, setAccountModalOpen]);
+
+  // اختصارات Ctrl+E / Ctrl+P تفتح حوارات التصدير والطباعة عبر أحداث عامة (إصلاح Bug#7)
+  useEffect(() => {
+    const openExport = () => setExportOpen(true);
+    const openPrint = () => setPrintOpen(true);
+    window.addEventListener("grido:open-export-dialog", openExport);
+    window.addEventListener("grido:open-print-dialog", openPrint);
+    return () => {
+      window.removeEventListener("grido:open-export-dialog", openExport);
+      window.removeEventListener("grido:open-print-dialog", openPrint);
+    };
+  }, []);
 
   const isModalOpen = exportOpen || printOpen || mobileTemplatesOpen || mobilePropsOpen;
 
@@ -406,6 +439,37 @@ export default function App() {
             >
               {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
             </Button>
+
+            {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRightSidebarOpen((v) => !v)}
+              className={cn(
+                "hidden lg:flex gap-1.5 h-7 w-7 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
+                rightSidebarOpen
+                  ? "text-primary bg-primary/10 hover:bg-primary/20"
+                  : "text-muted-foreground hover:bg-muted/80"
+              )}
+              title={rightSidebarOpen ? "إخفاء لوحة القوالب (Ctrl+B)" : "إظهار لوحة القوالب (Ctrl+B)"}
+            >
+              <PanelsTopLeft className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLeftSidebarOpen((v) => !v)}
+              className={cn(
+                "hidden lg:flex gap-1.5 h-7 w-7 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
+                leftSidebarOpen
+                  ? "text-primary bg-primary/10 hover:bg-primary/20"
+                  : "text-muted-foreground hover:bg-muted/80"
+              )}
+              title={leftSidebarOpen ? "إخفاء لوحة الخصائص (Ctrl+Shift+B)" : "إظهار لوحة الخصائص (Ctrl+Shift+B)"}
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+            </Button>
+
             <Button
               variant="ghost"
               size="sm"
@@ -480,13 +544,21 @@ export default function App() {
 
       {/* المحتوى الرئيسي */}
       <main className="flex-1 flex overflow-hidden">
-        {/* اللوحة اليسرى - القوالب (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-l border-border/70 native-depth-sidebar flex-col no-print animate-panel-right z-20">
+        {/* لوحة القوالب — أول عنصر في flex مع dir="rtl" فيُعرض على يمين الشاشة */}
+        <aside
+          className={cn(
+            "hidden lg:flex h-full border-l border-border/70 native-depth-sidebar flex-col no-print z-20 transition-all duration-200 overflow-hidden",
+            rightSidebarOpen
+              ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100"
+              : "w-0 min-w-0 max-w-0 border-l-0 opacity-0 pointer-events-none"
+          )}
+        >
           <TemplatePanel />
         </aside>
 
         {/* الكانفس - الوسط */}
         <section className="flex-1 flex flex-col min-w-0 bg-background relative z-10">
+
           <div className="flex-1 relative">
             <ErrorBoundary>
               <EditorCanvas />
@@ -494,12 +566,12 @@ export default function App() {
           </div>
 
           {/* شريط الحالة السفلي - Fluent 2 Status Bar */}
-          <div className="border-t border-border/70 bg-card/90 backdrop-blur-md px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-7.5 shadow-xs">
+          <div className="border-t border-border/70 bg-card/90 backdrop-blur-md px-3 py-1 no-print flex items-center justify-between text-[11px] text-muted-foreground select-none h-8 shadow-xs">
             {/* مؤشر الحالة والنوع */}
             <div className="flex items-center gap-2 font-cairo">
               <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold text-foreground/90 bg-muted/60 dark:bg-muted/40 px-2.5 py-0.5 rounded-full border border-black/5 dark:border-white/10 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>جاهز</span>
+                <span className={cn("w-1.5 h-1.5 rounded-full", isBusy ? "bg-amber-500 animate-pulse" : "bg-emerald-500")} />
+                <span>{isBusy ? "جاري العمل ..." : "جاهز"}</span>
               </span>
               <span className="text-[10px] font-mono text-muted-foreground font-semibold px-2 py-0.5 rounded-md bg-muted/40 border border-border/30" dir="ltr">
                 {canvasWidth} × {canvasHeight} px
@@ -509,7 +581,7 @@ export default function App() {
               </span>
             </div>
 
-            {/* أدوات الزوم وإعادة الضبط */}
+            {/* أدوات الزوم — زر الاختصارات مفصول بفاصل لأنه لا علاقة له بمجموعة الزوم */}
             <div className="flex items-center gap-1.5 font-cairo">
               <button
                 type="button"
@@ -521,13 +593,22 @@ export default function App() {
                 <kbd className="font-mono text-[9px] bg-background/80 px-1 rounded border border-border/60">?</kbd>
               </button>
 
+              <Separator orientation="vertical" className="h-3.5 bg-border/60" />
+
               <ZoomControls />
             </div>
           </div>
         </section>
 
-        {/* اللوحة اليمنى - الخصائص (للأجهزة الكبيرة) */}
-        <aside className="hidden lg:flex h-full w-[335px] min-w-[335px] max-w-[335px] border-r border-border/70 native-depth-sidebar flex-col no-print animate-panel-left shadow-sm z-20">
+        {/* لوحة الخصائص — ثاني عنصر في flex مع dir="rtl" فيُعرض على يسار الشاشة */}
+        <aside
+          className={cn(
+            "hidden lg:flex h-full border-r border-border/70 native-depth-sidebar flex-col no-print shadow-sm z-20 transition-all duration-200 overflow-hidden",
+            leftSidebarOpen
+              ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100"
+              : "w-0 min-w-0 max-w-0 border-r-0 opacity-0 pointer-events-none"
+          )}
+        >
           <PropertiesPanel />
         </aside>
       </main>

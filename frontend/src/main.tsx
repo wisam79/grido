@@ -61,7 +61,7 @@ if (typeof window !== 'undefined') {
 
 import { StageProvider } from '@/lib/canvas/stage-context'
 
-if (typeof window !== "undefined" && !(window as any).go) {
+if (typeof window !== "undefined" && !window.go) {
   window.addEventListener("contextmenu", (e) => {
     if (import.meta.env.PROD) {
       const target = e.target as HTMLElement;
@@ -72,7 +72,7 @@ if (typeof window !== "undefined" && !(window as any).go) {
     }
   });
   const mockImage = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc4MDAnIGhlaWdodD0nNjAwJz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPScjNjM2NmYxJy8+PHRleHQgeD0nNTAlJyB5PSc1MCUnIGRvbWluYW50LWJhc2VsaW5lPSdtaWRkbGUnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3doaXRlJyBmb250LXNpemU9JzMyJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZic+R3JpZG8gU3R1ZGlvIE1vY2sgSW1hZ2U8L3RleHQ+PC9zdmc+";
-  (window as any).go = {
+  window.go = {
     main: {
       App: {
         OpenFile: async () => mockImage,

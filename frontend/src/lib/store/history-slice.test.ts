@@ -1,16 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createHistorySlice } from './slices/history-slice';
+import { DEFAULT_COLLAGE_STATE } from './slices/collage-slice';
 import { create } from 'zustand';
 
 describe('history-slice', () => {
   let store: any;
 
   beforeEach(() => {
-    // Mock the store for testing the slice
+    // Mock the store for testing the slice — البذرة يجب أن تطابق الحالة الابتدائية
+    // (نفس مرجع خانات الكولاج) وإلا فشل الـ dedupe في الدفعة الأولى
       store = create((set: any, get: any, api: any) => ({
       ...createHistorySlice(set, get, api),
       elements: [],
-      slots: [],
+      slots: DEFAULT_COLLAGE_STATE.slots,
       backgroundColor: '#FFFFFF',
       canvasWidth: 2480,
       canvasHeight: 3508,

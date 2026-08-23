@@ -247,7 +247,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="w-5 h-5 absolute left-2 top-1/2 -translate-y-1/2 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                className="w-6 h-6 absolute left-2 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -256,7 +256,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 type="button"
                 onClick={() => setShowCustomPreviewInput(!showCustomPreviewInput)}
                 className={cn(
-                  "w-5 h-5 absolute left-2 top-1/2 -translate-y-1/2 rounded flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary",
+                  "w-6 h-6 absolute left-2 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
                   showCustomPreviewInput && "text-primary bg-primary/10"
                 )}
                 title="تخصيص نص المعاينة"
@@ -280,7 +280,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 <button
                   type="button"
                   onClick={() => setPreviewText("")}
-                  className="w-4 h-4 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+                  className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                   title="إعادة ضبط"
                 >
                   <X className="w-2.5 h-2.5" />
@@ -335,13 +335,21 @@ export const TextFontSelector = React.memo(function TextFontSelector({
               return (
                 <div
                   key={font.id}
+                  role="button"
+                  tabIndex={0}
                   onMouseEnter={() => {
                     setFocusedIndex(idx);
                     handlePreviewFont(font);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleSelectFont(font);
+                    }
+                  }}
                   onClick={() => handleSelectFont(font)}
                   className={cn(
-                    "w-full text-right px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none",
+                    "w-full text-right px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                     isSelected
                       ? "bg-primary/15 border-primary/50 text-primary shadow-2xs"
                       : isFocused
@@ -363,11 +371,11 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                       <span className="font-bold text-foreground/75 truncate">{font.arabicName}</span>
                       <span className="text-[9px] opacity-70 truncate font-mono">({font.englishName})</span>
                       {font.isOffline ? (
-                        <span className="text-[7.5px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-1 py-0.1 rounded font-bold">
+                        <span className="text-[7.5px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-1 py-px rounded font-bold">
                           أوفلاين
                         </span>
                       ) : (
-                        <span className="text-[7.5px] bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 px-1 py-0.1 rounded font-bold">
+                        <span className="text-[7.5px] bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 px-1 py-px rounded font-bold">
                           Google Font
                         </span>
                       )}
@@ -380,7 +388,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                       type="button"
                       onClick={(e) => toggleFavorite(font.id, e)}
                       className={cn(
-                        "w-5.5 h-5.5 rounded flex items-center justify-center transition-all cursor-pointer hover:bg-muted",
+                        "w-6 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
                         isFav ? "text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"
                       )}
                       title={isFav ? "إزالة من المفضلة" : "إضافة للمفضلة"}

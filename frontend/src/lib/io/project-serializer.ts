@@ -52,6 +52,7 @@ export function serializeEditorState(state: EditorState, embeddedAssets?: Record
     collageMargin: state.collageMargin,
     collageRadius: state.collageRadius,
     collageShowCutLines: state.collageShowCutLines,
+    collageShowEndCutLine: state.collageShowEndCutLine,
     collageStrokeWidth: state.collageStrokeWidth,
     collageStrokeColor: state.collageStrokeColor,
   };
@@ -148,6 +149,7 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     collageMargin: dbProj.collageMargin ?? 0,
     collageRadius: dbProj.collageRadius ?? 0,
     collageShowCutLines: dbProj.collageShowCutLines ?? false,
+    collageShowEndCutLine: dbProj.collageShowEndCutLine,
     collageStrokeWidth: dbProj.collageStrokeWidth ?? 0,
     collageStrokeColor: dbProj.collageStrokeColor ?? "#000000",
   };
@@ -189,9 +191,10 @@ export function projectFileToDomainProject(
     collageMargin: file.collageMargin ?? 0,
     collageRadius: file.collageRadius ?? 0,
     collageShowCutLines: file.collageShowCutLines ?? false,
+    collageShowEndCutLine: file.collageShowEndCutLine ?? true,
     collageStrokeWidth: file.collageStrokeWidth ?? 0,
     collageStrokeColor: file.collageStrokeColor ?? "#000000",
   };
-  
+
   return new domain.Project(source);
 }

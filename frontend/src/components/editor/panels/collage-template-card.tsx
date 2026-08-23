@@ -27,9 +27,17 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
 }) {
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(tpl);
+        }
+      }}
       onClick={() => onSelect(tpl)}
       className={cn(
-        "group flex flex-col items-stretch gap-2.5 p-3 rounded-xl border transition-all duration-300 text-right relative overflow-hidden bg-card shadow-2xs hover:border-primary/50 hover:shadow-md active:scale-[0.98] cursor-pointer select-none fluent-specular",
+        "group flex flex-col items-stretch gap-2.5 p-3 rounded-xl border transition-all duration-300 text-right relative overflow-hidden bg-card shadow-2xs hover:border-primary/50 hover:shadow-md active:scale-[0.98] cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
         isActive
           ? "border-2 border-primary bg-primary/5 shadow-xs"
           : "border-border/80 dark:border-white/10"
@@ -60,7 +68,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
                 هل أنت متأكد من حذف هذا القالب نهائياً؟ لا يمكن التراجع عن هذا الإجراء.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter className="flex-row-reverse sm:justify-start gap-2">
+            <AlertDialogFooter className="font-cairo">
               <AlertDialogAction onClick={(e) => { e.stopPropagation(); onDelete(e); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md h-8 text-xs font-semibold">
                 حذف نهائي
               </AlertDialogAction>

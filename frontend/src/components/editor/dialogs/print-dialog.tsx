@@ -91,10 +91,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const handlePrintRef = useRef<() => void>(() => { });
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsExporting(false);
     if (open) {
-      // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة
+      // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة.
+      // لا نصفر isExporting هنا — الإغلاق أثناء التوليد محجوب أصلاً (إصلاح Bug#10)
       useEditorStore.getState().selectElement(null);
     }
   }, [open]);
@@ -103,6 +102,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (isExporting) return; // منع الهروب أثناء توليد الورقة
         onOpenChange(false);
       } else if (e.key === "Enter" && !isExporting && previewImageSrc) {
         // لا نطلق الطباعة إذا كان التركيز داخل عنصر إدخال — Enter له معناه الخاص هناك
@@ -266,7 +266,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             cornerRadiusMM: collageRadius * scaleXPxToMM,
             borderWidthMM: collageStrokeWidth * scaleXPxToMM,
             borderColor: collageStrokeColor,
-            bgColor: (slot as any).bgColor || "",
+             bgColor: slot.bgColor || "",
             flipX: slot.flipX,
             flipY: slot.flipY,
             rotation: slot.rotation,
@@ -316,7 +316,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
     let localPath: string | null = null;
     if (!composition.eligible) {
-      const dpiRatio = exportDpi / 300;
+      // نسبة الدقة تُحسب من دقة التصميم الفعلية (template.dpi، أو printSettings.dpi
+      // في الوضع الحر) — افتراض 300 ثابت كان يضاعف اللقطة عند دقة تصميم مختلفة
+      const designDpi = template?.dpi ?? exportDpi;
+      const dpiRatio = exportDpi / designDpi;
       const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
 
       let canvasDataUrl: string | null = null;
@@ -521,9 +524,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         return;
       }
 
-      console.log("[PrintDialog] handlePrint → cutLines:", buildResult.cutLines.length, "showCutLines:", printSettings.showCutLines, "collageShowCutLines:", collageShowCutLines, "mode:", mode);
-      console.log("[PrintDialog] handlePrint → cutLines data:", JSON.stringify(buildResult.cutLines));
-
       const result = await ExportPrintSheet(domain.PrintRequest.createFrom({
         paperWidthMM: paperWidth,
         paperHeightMM: paperHeight,
@@ -564,117 +564,126 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const scaleFactor = Math.min(1.4, 420 / Math.max(paperHeight, 1));
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // منع الإغلاق (Escape/خلفية) أثناء توليد ورقة الطباعة — كان يسمح
+        // بإطلاق طلب ثانٍ متزامن وإخراج مطبوعات مكررة (إصلاح Bug#10)
+        if (!next && isExporting) return;
+        onOpenChange(next);
+      }}
+    >
       <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border/80 dark:border-white/10 bg-background rounded-2xl shadow-2xl p-0 gap-0 fluent-specular" dir="rtl">
-        {/* رأس النافذة المباشر والنظيف */}
+        {/* رأس النافذة — العنوان فقط؛ الإعدادات نُقلت للجسم لتفادي ازدحام الرأس */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <DialogTitle className="text-base font-bold tracking-tight text-foreground">
-              إعدادات الطباعة
-            </DialogTitle>
-
-            {/* الإعدادات الأساسية في الرأس */}
-            <div className="flex items-center gap-2.5 flex-wrap">
-              {/* قائمة اختيارات قياس الورقة */}
-              <Select
-                value={printSettings.paperId || "a4"}
-                onValueChange={(val) => {
-                  const selected = PAPER_SIZES.find((p) => p.id === val);
-                  if (selected) {
-                    setPrintSettings({
-                      paperId: selected.id,
-                      paperWidthMM: selected.widthMM,
-                      paperHeightMM: selected.heightMM,
-                    });
-                  }
-                }}
-              >
-                <SelectTrigger className="h-8 text-xs font-semibold w-[150px] bg-background border-border/50 shadow-2xs focus:ring-primary/20">
-                  <SelectValue placeholder="مقاس الورقة" />
-                </SelectTrigger>
-                <SelectContent className="z-[150]" dir="rtl">
-                  {PAPER_SIZES.map((size) => (
-                    <SelectItem key={size.id} value={size.id} className="text-xs font-semibold cursor-pointer">
-                      {size.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* وضع الألوان */}
-              <div className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setColorSpace("sRGB")}
-                  className={cn(
-                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-                    colorSpace === "sRGB" ? "bg-background text-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  sRGB
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setColorSpace("CMYK")}
-                  className={cn(
-                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-                    colorSpace === "CMYK" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  CMYK
-                </button>
-              </div>
-
-              {/* طباعة بدون هوامش */}
-              <div className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40">
-                <Switch
-                  id="borderless-mode"
-                  checked={printSettings.marginMM === 0}
-                  onCheckedChange={(checked) => {
-                    if (checked && printSettings.marginMM > 0) {
-                      setLastNonZeroMargin(printSettings.marginMM);
-                    }
-                    setPrintSettings({ marginMM: checked ? 0 : lastNonZeroMargin });
-                  }}
-                />
-                <Label htmlFor="borderless-mode" className="text-xs font-semibold cursor-pointer select-none">
-                  بدون هوامش
-                </Label>
-              </div>
-
-              {/* خطوط القص */}
-              <div className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40">
-                <Switch
-                  id="print-cut-lines-header"
-                  checked={mode === "collage" ? collageShowCutLines : printSettings.showCutLines}
-                  onCheckedChange={(checked) => {
-                    setPrintSettings({ showCutLines: checked });
-                    useEditorStore.getState().setCollageShowCutLines(checked);
-                  }}
-                />
-                <Label htmlFor="print-cut-lines-header" className="text-xs font-semibold cursor-pointer select-none flex items-center gap-1">
-                  <Scissors className="w-3.5 h-3.5 text-primary/80" />
-                  <span>خطوط القص</span>
-                </Label>
-                {(mode === "collage" ? collageShowCutLines : printSettings.showCutLines) && (
-                  <select
-                    aria-label="نمط خطوط القص"
-                    value={printSettings.cutLineStyle || "dashed"}
-                    onChange={(e) => setPrintSettings({ cutLineStyle: e.target.value as any })}
-                    className="bg-background text-[11px] font-semibold border border-border/50 rounded-md px-1.5 py-0.5 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="dashed">متقطع</option>
-                    <option value="dotted">منقط</option>
-                    <option value="solid">متصل</option>
-                  </select>
-                )}
-              </div>
-            </div>
-          </div>
+          <DialogTitle className="text-base font-bold tracking-tight text-foreground">
+            إعدادات الطباعة
+          </DialogTitle>
+          <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
+            اختر مقاس الورقة ونمط الألوان، ثم اضبط الهوامش وخطوط القص
+          </p>
         </DialogHeader>
 
         {/* جسم النافذة الرئيسي */}
         <div className="flex-1 overflow-hidden p-3.5 flex flex-col gap-3 min-h-0">
+          {/* صف الإعدادات الأساسية — نُقل من الرأس لتفادي ازدحامه (هرم بصري) */}
+          <div className="flex items-center gap-2.5 flex-wrap select-none shrink-0">
+            {/* قائمة اختيارات قياس الورقة */}
+            <Select
+              value={printSettings.paperId || "a4"}
+              onValueChange={(val) => {
+                const selected = PAPER_SIZES.find((p) => p.id === val);
+                if (selected) {
+                  setPrintSettings({
+                    paperId: selected.id,
+                    paperWidthMM: selected.widthMM,
+                    paperHeightMM: selected.heightMM,
+                  });
+                }
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs font-semibold w-[150px] bg-background border-border/50 shadow-2xs focus:ring-primary/20">
+                <SelectValue placeholder="مقاس الورقة" />
+              </SelectTrigger>
+              <SelectContent className="z-[150]" dir="rtl">
+                {PAPER_SIZES.map((size) => (
+                  <SelectItem key={size.id} value={size.id} className="text-xs font-semibold cursor-pointer">
+                    {size.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* وضع الألوان */}
+            <div className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
+              <button
+                type="button"
+                onClick={() => setColorSpace("sRGB")}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  colorSpace === "sRGB" ? "bg-background text-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                sRGB
+              </button>
+              <button
+                type="button"
+                onClick={() => setColorSpace("CMYK")}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  colorSpace === "CMYK" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                CMYK
+              </button>
+            </div>
+
+            {/* طباعة بدون هوامش */}
+            <div className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40">
+              <Switch
+                id="borderless-mode"
+                checked={printSettings.marginMM === 0}
+                onCheckedChange={(checked) => {
+                  if (checked && printSettings.marginMM > 0) {
+                    setLastNonZeroMargin(printSettings.marginMM);
+                  }
+                  setPrintSettings({ marginMM: checked ? 0 : lastNonZeroMargin });
+                }}
+              />
+              <Label htmlFor="borderless-mode" className="text-xs font-semibold cursor-pointer select-none">
+                بدون هوامش
+              </Label>
+            </div>
+
+            {/* خطوط القص */}
+            <div className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40">
+              <Switch
+                id="print-cut-lines"
+                checked={mode === "collage" ? collageShowCutLines : printSettings.showCutLines}
+                onCheckedChange={(checked) => {
+                  setPrintSettings({ showCutLines: checked });
+                  useEditorStore.getState().setCollageShowCutLines(checked);
+                }}
+              />
+              <Label htmlFor="print-cut-lines" className="text-xs font-semibold cursor-pointer select-none flex items-center gap-1">
+                <Scissors className="w-3.5 h-3.5 text-primary/80" />
+                <span>خطوط القص</span>
+              </Label>
+              {(mode === "collage" ? collageShowCutLines : printSettings.showCutLines) && (
+                <select
+                  aria-label="نمط خطوط القص"
+                  value={printSettings.cutLineStyle || "dashed"}
+                  onChange={(e) => setPrintSettings({ cutLineStyle: e.target.value as any })}
+                  className="bg-background text-[11px] font-semibold border border-border/50 rounded-md px-1.5 py-0.5 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="dashed">متقطع</option>
+                  <option value="dotted">منقط</option>
+                  <option value="solid">متصل</option>
+                </select>
+              )}
+            </div>
+          </div>
+
           {/* شريط الأدوات يتم إظهاره فقط في وضع الطباعة الفردية Single Mode (لأن الكولاج يحدد الخلايا تلقائياً) */}
           {mode !== "collage" && (
             <div className="grid grid-cols-3 gap-2 select-none shrink-0">
@@ -834,6 +843,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     slots={slots}
                     collageGap={collageGap}
                     collageMargin={collageMargin}
+                    collageRadius={collageRadius}
+                    collageStrokeWidth={collageStrokeWidth}
+                    collageStrokeColor={collageStrokeColor}
                     canvasWidth={canvasWidth}
                     canvasHeight={canvasHeight}
                     hasPhysical={!!collageTemplate?.physicalLayout}

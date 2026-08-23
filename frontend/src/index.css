@@ -215,6 +215,18 @@
   ::-webkit-scrollbar-thumb:hover {
     background: var(--muted-foreground);
   }
+
+  /* Fluent 2: احترام وضع تقليل الحركة (prefers-reduced-motion) */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer utilities {
@@ -304,6 +316,11 @@
   .fluent-focus-ring:focus-visible {
     outline: 2px solid var(--primary) !important;
     outline-offset: 2px !important;
+  }
+
+  /* ─── Fluent 2 Command Groups ────────────────────────────── */
+  .fluent-command-group {
+    @apply flex items-center gap-0.5 bg-muted/50 border border-border/60 p-0.5 rounded-lg shadow-2xs;
   }
 
   /* ─── Native Visual Depth & High-Contrast System ─────────────── */

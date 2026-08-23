@@ -8,6 +8,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical
 } from "lucide-react";
 import { SliderControl, PopoverColorPicker } from "./shared-controls";
+import { scaleElementDecorations } from "@/lib/canvas/scale-decorations";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageStyleProperties, ImageAdjustProperties } from "./panels/image-properties";
@@ -23,8 +24,12 @@ export function ElementProperties({
   element: CanvasElement;
   onUpdate: (id: string, patch: Partial<CanvasElement>) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<string>("style");
+  const [selectedTab, setSelectedTab] = useState<string>("style");
   const hasAdjustTab = element.type === "image";
+
+  // اشتقاق آمن أثناء العرض: لو انتقل التحديد من صورة إلى نص/شكل وتبويب
+  // "الضبط" نشط، نعيد التوجيه إلى "التنسيق" بدل البقاء في تبويب معطّل
+  const activeTab = !hasAdjustTab && selectedTab === "adjust" ? "style" : selectedTab;
   const alignSelectedElements = useEditorStore((state) => state.alignSelectedElements);
 
   return (
@@ -48,7 +53,7 @@ export function ElementProperties({
               onUpdate(element.id, { locked: false });
               useEditorStore.getState().pushHistory();
             }}
-            className="h-6 px-2 text-[10px] bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/20 rounded-md transition-colors cursor-pointer text-amber-700 dark:text-amber-300 font-bold"
+            className="h-7 px-2 text-[10px] bg-amber-500/15 enabled:hover:bg-amber-500/25 border border-amber-500/20 rounded-md transition-colors cursor-pointer text-amber-700 dark:text-amber-300 font-bold"
           >
             إلغاء القفل
           </Button>
@@ -56,15 +61,14 @@ export function ElementProperties({
       )}
 
       <div className={cn(element.locked && "pointer-events-none opacity-50 select-none")}>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={cn(
-              "grid w-full h-8 p-0.5 bg-muted/60 dark:bg-muted/30 rounded-lg border border-border/40",
-              hasAdjustTab ? "grid-cols-4" : "grid-cols-3"
-            )}>
+        <Tabs value={activeTab} onValueChange={setSelectedTab} className="w-full">
+            {/* أربعة مواضع ثابتة دائماً — إخفاء تبويب "الضبط" للنصوص والأشكال كان
+                يزيح التبويبات الأخرى ويكسر الذاكرة الحركية (تحسين الترتيب) */}
+            <TabsList className="grid w-full h-8 p-0.5 bg-muted/60 dark:bg-muted/30 rounded-lg border border-border/40 grid-cols-4">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <TabsTrigger 
-                    value="style" 
+                  <TabsTrigger
+                    value="style"
                     className={cn(
                       "h-7 rounded-md cursor-pointer transition-all text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center",
                       activeTab === "style"
@@ -78,29 +82,33 @@ export function ElementProperties({
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التنسيق والأدوات</TooltipContent>
               </Tooltip>
 
-              {hasAdjustTab && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TabsTrigger 
-                      value="adjust" 
-                      className={cn(
-                        "h-7 rounded-md cursor-pointer transition-all text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center",
-                        activeTab === "adjust"
-                          ? "bg-background text-primary shadow-xs border border-border/80 ring-1 ring-primary/25"
-                          : "text-muted-foreground hover:text-foreground hover:bg-background/40"
-                      )}
-                    >
-                      <Sliders className="w-3.5 h-3.5" />
-                    </TabsTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs font-bold font-cairo">تعديل الألوان والسطوع</TooltipContent>
-                </Tooltip>
-              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger
+                    value="adjust"
+                    disabled={!hasAdjustTab}
+                    title={!hasAdjustTab ? "متاح لعناصر الصور فقط" : undefined}
+                    className={cn(
+                      "h-7 rounded-md transition-all text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center",
+                      !hasAdjustTab && "opacity-35 cursor-not-allowed",
+                      hasAdjustTab && "cursor-pointer",
+                      activeTab === "adjust"
+                        ? "bg-background text-primary shadow-xs border border-border/80 ring-1 ring-primary/25"
+                        : "text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/40"
+                    )}
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">
+                  {hasAdjustTab ? "تعديل الألوان والسطوع" : "متاح لعناصر الصور فقط"}
+                </TooltipContent>
+              </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <TabsTrigger 
-                    value="effects" 
+                  <TabsTrigger
+                    value="effects"
                     className={cn(
                       "h-7 rounded-md cursor-pointer transition-all text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center",
                       activeTab === "effects"
@@ -116,8 +124,8 @@ export function ElementProperties({
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <TabsTrigger 
-                    value="arrange" 
+                  <TabsTrigger
+                    value="arrange"
                     className={cn(
                       "h-7 rounded-md cursor-pointer transition-all text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center",
                       activeTab === "arrange"
@@ -285,7 +293,18 @@ export function ElementProperties({
                   <input
                     type="number"
                     value={Math.round(element.width * 100)}
-                    onChange={(e) => onUpdate(element.id, { width: Math.max(0.05, Number(e.target.value) / 100) })}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (e.target.value === "" || !Number.isFinite(v)) return;
+                      const newWidth = Math.max(0.05, v / 100);
+                      // الزخارف تتبع التغيّر النسبي للعرض (تمديد جانبي) — النص
+                      // مستثنى لأن ارتفاع صندوقه هنا لا يغيّر fontSize
+                      const deco =
+                        element.type === "text"
+                          ? {}
+                          : scaleElementDecorations(element, newWidth / Math.max(1e-6, element.width), 1);
+                      onUpdate(element.id, { width: newWidth, ...deco });
+                    }}
                     onBlur={() => useEditorStore.getState().pushHistory()}
                     className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                   />
@@ -295,7 +314,16 @@ export function ElementProperties({
                   <input
                     type="number"
                     value={Math.round(element.height * 100)}
-                    onChange={(e) => onUpdate(element.id, { height: Math.max(0.05, Number(e.target.value) / 100) })}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (e.target.value === "" || !Number.isFinite(v)) return;
+                      const newHeight = Math.max(0.05, v / 100);
+                      const deco =
+                        element.type === "text"
+                          ? {}
+                          : scaleElementDecorations(element, 1, newHeight / Math.max(1e-6, element.height));
+                      onUpdate(element.id, { height: newHeight, ...deco });
+                    }}
                     onBlur={() => useEditorStore.getState().pushHistory()}
                     className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
                   />

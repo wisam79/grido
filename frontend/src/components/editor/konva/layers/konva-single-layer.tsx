@@ -2,6 +2,7 @@ import React from "react";
 import { Layer } from "react-konva";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
+import { scaleElementDecorations } from "@/lib/canvas/scale-decorations";
 import { URLImage, KonvaTextElement, KonvaShapeElement } from "../konva-elements";
 import { EditorTransformer } from "../elements/editor-transformer";
 
@@ -54,11 +55,26 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
       {sortedElements.map((el) => {
         if (el.visible === false) return null;
 
+        // حذف خارج الكانفس مع مراعاة الدوران: Konva يدير حول نقطة الأصل (x,y)
+        // — اختبار الصندوق غير المدار كان يخفي عناصر مدارة نصفها ظاهر (إصلاح Bug#11)
+        const rad = ((el.rotation || 0) * Math.PI) / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const w = el.width;
+        const h = el.height;
+        // زوايا الصندوق المدارة حول الأصل
+        const cornersX = [0, w * cos, w * cos - h * sin, -h * sin];
+        const cornersY = [0, w * sin, w * sin + h * cos, h * cos];
+        const minX = el.x + Math.min(...cornersX);
+        const maxX = el.x + Math.max(...cornersX);
+        const minY = el.y + Math.min(...cornersY);
+        const maxY = el.y + Math.max(...cornersY);
+
         if (
-          el.x > 1.1 ||
-          el.y > 1.1 ||
-          el.x + el.width < -0.1 ||
-          el.y + el.height < -0.1
+          minX > 1.1 ||
+          minY > 1.1 ||
+          maxX < -0.1 ||
+          maxY < -0.1
         ) {
           return null;
         }
@@ -166,6 +182,10 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                 } else {
                   patch.height = newH / canvasHeight;
                 }
+
+                // 🛡️ الزخارف (حد/ظل/استدارة) تُقيَّس بنسبة التحجيم نفسها عبر
+                // مساعد مشترك تستخدمه أيضاً حقول W/H الرقمية في لوحة الخصائص
+                Object.assign(patch, scaleElementDecorations(el, absScaleX, absScaleY));
 
                 return { id, patch };
               })

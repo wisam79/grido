@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, defaultValue, value, min = 0, max = 100, ...props }, ref) => {
+>(({ className, defaultValue, value, min = 0, max = 100, dir = "ltr", "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, ...props }, ref) => {
   const _values = React.useMemo(
     () =>
       Array.isArray(value)
@@ -18,16 +18,24 @@ const Slider = React.forwardRef<
     [value, defaultValue, min, max]
   )
 
+  // 🛡️ a11y: Radix يتطلب وضع سمات الاسم على كل Thumb (وليس Root) —
+  // نمرر aria-label / aria-labelledby إلى المقبض ليكون للمنزلق اسم قابل للوصول
+  const thumbAriaProps = {
+    ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
+    ...(ariaLabelledBy ? { "aria-labelledby": ariaLabelledBy } : {}),
+  }
+
   return (
     <SliderPrimitive.Root
       ref={ref}
+      dir={dir}
       data-slot="slider"
       defaultValue={defaultValue}
       value={value}
       min={min}
       max={max}
       className={cn(
-        "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col cursor-pointer py-2",
+        "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col cursor-pointer py-1.5",
         className
       )}
       {...props}
@@ -49,6 +57,7 @@ const Slider = React.forwardRef<
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
+          {...thumbAriaProps}
           className="border-2 border-primary bg-background shadow-xs block size-4 shrink-0 rounded-full transition-all duration-150 hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing"
         />
       ))}

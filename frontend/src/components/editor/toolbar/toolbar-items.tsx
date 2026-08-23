@@ -54,7 +54,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
                 size="sm" 
                 disabled={mode === "collage"}
                 aria-label="إضافة نص"
-                className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5 disabled:pointer-events-none disabled:opacity-40"
+                className="h-8 px-2.5 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5"
               >
                 <Type className="w-4 h-4" />
                 <ChevronDown className="w-2.5 h-2.5 opacity-60" />
@@ -123,11 +123,11 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
         <TooltipBtn content={mode === "collage" ? "غير متاح في وضع الكولاج" : "إضافة شكل"}>
           <div className={mode === "collage" ? "cursor-not-allowed" : ""}>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 disabled={mode === "collage"}
-                className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5 disabled:pointer-events-none disabled:opacity-40" 
+                className="h-8 px-2.5 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5"
                 aria-label="إضافة شكل"
               >
                 <Square className="w-4 h-4" />
@@ -635,10 +635,8 @@ const ToolbarViewTools = React.memo(function ToolbarViewTools() {
   if (mode !== "single") return null;
 
   return (
-    <>
-      <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
-      <div className="fluent-command-group shadow-2xs">
-        <TooltipBtn content={showGrid ? "إخفاء الشبكة الإرشادية" : "إظهار الشبكة الإرشادية"}>
+    <div className="fluent-command-group shadow-2xs">
+      <TooltipBtn content={showGrid ? "إخفاء الشبكة الإرشادية" : "إظهار الشبكة الإرشادية"}>
           <Button
             variant="ghost"
             size="sm"
@@ -706,7 +704,6 @@ const ToolbarViewTools = React.memo(function ToolbarViewTools() {
           </Button>
         </TooltipBtn>
       </div>
-    </>
   );
 });
 

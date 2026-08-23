@@ -191,7 +191,8 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           )}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>التأثيرات</span>
+          {/* تمييز الاسم عن تبويب "التأثيرات والظلال" الخارجي لتفادي الالتباس */}
+          <span>الظلال والتقويس</span>
           {(hasBadge || hasStroke || hasShadow || hasCurve) && (
             <span className="w-1.5 h-1.5 rounded-full bg-primary absolute top-1.5 left-2" />
           )}
@@ -483,7 +484,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       useEditorStore.getState().pushHistory();
                     }}
                     className={cn(
-                      "px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer select-none active:scale-95",
+                      "px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                       textTransform === tr.id
                         ? "bg-background text-primary shadow-2xs font-extrabold"
                         : "hover:text-foreground text-muted-foreground hover:bg-background/40"
@@ -497,7 +498,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               <button
                 type="button"
                 onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
-                className="px-2 py-0.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded text-[9.5px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                className="px-2 py-0.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-[9.5px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                 title="ملاءمة عرض الصندوق للنص تلقائياً"
               >
                 <Shrink className="w-2.5 h-2.5" />
@@ -746,7 +747,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "h-6.5 px-2.5 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                    "h-7 px-2.5 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                     hasBadge
                       ? "bg-primary text-primary-foreground border-primary font-bold"
                       : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
@@ -844,7 +845,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "h-6.5 px-2.5 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                    "h-7 px-2.5 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                     hasStroke
                       ? "bg-primary text-primary-foreground border-primary font-bold"
                       : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
@@ -911,7 +912,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "h-6.5 px-2.5 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                    "h-7 px-2.5 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                     hasShadow
                       ? "bg-primary text-primary-foreground border-primary font-bold"
                       : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
@@ -938,7 +939,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     });
                     useEditorStore.getState().pushHistory();
                   }}
-                  className="px-2 py-0.5 bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border/50 rounded text-muted-foreground text-[9.5px] font-bold transition-all cursor-pointer shrink-0 shadow-2xs"
+                  className="px-2 py-0.5 bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border/50 rounded-md text-muted-foreground text-[9.5px] font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                 >
                   {p.label}
                 </button>
@@ -983,7 +984,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   useEditorStore.getState().pushHistory();
                 }}
                 className={cn(
-                  "h-6.5 px-2.5 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs",
+                  "h-7 px-2.5 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                   hasCurve
                     ? "bg-primary text-primary-foreground border-primary font-bold"
                     : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
@@ -1006,7 +1007,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                         useEditorStore.getState().pushHistory();
                       }}
                       className={cn(
-                        "px-1.5 py-0.5 rounded border text-[9px] font-bold transition-all cursor-pointer shrink-0 shadow-2xs",
+                        "px-1.5 py-0.5 rounded-md border text-[9px] font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                         (element.curve ?? 0) === cp.value
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-background hover:bg-primary/10 text-muted-foreground border-border/50"
@@ -1026,7 +1027,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                         onUpdate(element.id, { curve: 0 });
                         useEditorStore.getState().pushHistory();
                       }}
-                      className="px-1.5 py-0.5 bg-background border border-border/60 hover:border-primary/40 rounded text-[9px] text-foreground font-bold cursor-pointer flex items-center gap-1"
+                      className="px-1.5 py-0.5 bg-background border border-border/60 hover:border-primary/40 rounded-md text-[9px] text-foreground font-bold cursor-pointer flex items-center gap-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                       title="استقامة"
                     >
                       <RotateCcw className="w-2.5 h-2.5" />

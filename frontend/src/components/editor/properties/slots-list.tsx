@@ -38,8 +38,16 @@ const SlotItem = React.memo(
 
     return (
       <div
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            selectElement(slot.id);
+          }
+        }}
         onClick={() => selectElement(slot.id)}
-        className={`flex items-center justify-between p-2 rounded-md border text-right cursor-pointer transition-colors duration-200 ${
+        className={`flex items-center justify-between p-2 rounded-md border text-right cursor-pointer transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${
           isSelected
             ? "border-primary/50 bg-primary/5 text-primary shadow-xs font-bold"
             : "border-transparent bg-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
@@ -100,8 +108,17 @@ export function SlotsList() {
 
   return (
     <div className="space-y-1 font-cairo select-none mt-2">
-      <div 
-        className="flex items-center justify-between px-2 py-2 cursor-pointer hover:bg-muted/30 rounded-md transition-colors"
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded(!expanded);
+          }
+        }}
+        className="flex items-center justify-between px-2 py-2 cursor-pointer hover:bg-muted/30 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2">

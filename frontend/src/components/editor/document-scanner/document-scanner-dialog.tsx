@@ -148,7 +148,7 @@ export function DocumentScannerDialog({
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
-    if (!canvas || !img || corners.length !== 4) return;
+    if (!canvas || !img) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -168,9 +168,11 @@ export function DocumentScannerDialog({
     canvas.width = canvasW;
     canvas.height = canvasH;
 
+    // رسم الصورة الأساسية دائماً — كانت المنطقة سوداء تماماً عند فشل الكشف
+    // التلقائي لعدم وجود 4 أركان (إصلاح Bug#21)
     ctx.drawImage(img, 0, 0, canvasW, canvasH);
 
-    if (isPreviewMode) return;
+    if (isPreviewMode || corners.length !== 4) return;
 
     // المضلع المحيطي التفاعلي الشفاف
     ctx.beginPath();
@@ -402,6 +404,9 @@ export function DocumentScannerDialog({
         // 🔒 تنظيف warped canvas (BUG-12)
         warped.width = 0;
         warped.height = 0;
+      } else {
+        // لا أركان بعد (فشل الكشف التلقائي) — ردّ فعل واضح بدل زر صامت (إصلاح Bug#21)
+        toast.error("حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط");
       }
     } else {
       setIsPreviewMode(false);
@@ -433,8 +438,12 @@ export function DocumentScannerDialog({
       warped.width = 0;
       warped.height = 0;
       onOpenChange(false);
+    } else {
+      toast.error("حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط");
     }
   };
+
+  const cornersReady = corners.length === 4;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -705,7 +714,9 @@ export function DocumentScannerDialog({
             <Button
               variant="secondary"
               onClick={handleTogglePreview}
-              className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer gap-2 border border-border/50 shadow-xs hover:bg-accent flex items-center"
+              disabled={!cornersReady && !isPreviewMode}
+              title={cornersReady ? undefined : "حدّد أركان المستند أولاً"}
+              className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer gap-2 border border-border/50 shadow-xs hover:bg-accent flex items-center disabled:cursor-not-allowed"
             >
               {isPreviewMode ? (
                 <>
@@ -731,7 +742,9 @@ export function DocumentScannerDialog({
 
             <Button
               onClick={handleApply}
-              className="rounded-md h-8 px-5 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
+              disabled={!cornersReady}
+              title={cornersReady ? undefined : "حدّد أركان المستند أولاً"}
+              className="rounded-md h-8 px-5 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98] disabled:cursor-not-allowed"
             >
               <Check className="w-3.5 h-3.5" />
               <span>تطبيق الاستعدال</span>

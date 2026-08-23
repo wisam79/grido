@@ -1,25 +1,7 @@
 import React from "react";
 import { Layer, Group, Rect, Text, Line } from "react-konva";
 import { KonvaCollageImage } from "../elements/collage-image";
-
-interface Slot {
-  id: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  imageSrc?: string;
-  filter?: string;
-  brightness?: number;
-  contrast?: number;
-  saturation?: number;
-  zoom?: number;
-  dragX?: number;
-  dragY?: number;
-  flipX?: boolean;
-  flipY?: boolean;
-  rotation?: number;
-}
+import type { CanvasSlot as Slot } from "@/lib/store/types";
 
 interface KonvaCollageLayerProps {
   slots: Slot[];
@@ -205,13 +187,13 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               onDblClick={() => handleSlotDblClick?.(slot.id)}
               onWheel={(e) => handleSlotWheel(slot, e)}
             >
-              {(slot as any).bgColor && (slot as any).bgColor !== "transparent" && (
+              {slot.bgColor && slot.bgColor !== "transparent" && (
                 <Rect
                   x={0}
                   y={0}
                   width={width}
                   height={height}
-                  fill={(slot as any).bgColor}
+                  fill={slot.bgColor}
                   listening={false}
                 />
               )}

@@ -430,7 +430,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   useEditorStore.getState().pushHistory();
                 }}
                 className={cn(
-                  "w-7 h-7 rounded-md border border-border/80 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95",
+                  "w-7 h-7 rounded-md border border-border/80 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                   isActive && "ring-2 ring-primary ring-offset-1 border-primary"
                 )}
                 style={{

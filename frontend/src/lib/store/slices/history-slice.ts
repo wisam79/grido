@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
 import { CanvasElement, CanvasSlot, HistoryEntry } from "../types";
+import { DEFAULT_COLLAGE_STATE } from "./collage-slice";
 
 export interface HistorySlice {
   history: HistoryEntry[];
@@ -27,7 +28,13 @@ export const DEFAULT_HISTORY_ENTRY_EXTRAS = {
 };
 
 export const DEFAULT_HISTORY_STATE = {
-  history: [{ elements: [] as CanvasElement[], slots: [] as CanvasSlot[], ...DEFAULT_HISTORY_ENTRY_EXTRAS }],
+  history: [{
+    elements: [] as CanvasElement[],
+    // نفس مرجع خانات الحالة الابتدائية — بذرة لا تطابق الحالة الفعلية كانت
+    // تجعل أول Ctrl+Z يستعيد خانات فارغة ويمحو شبكة الكولاج (إصلاح Bug#1)
+    slots: DEFAULT_COLLAGE_STATE.slots,
+    ...DEFAULT_HISTORY_ENTRY_EXTRAS,
+  }],
   historyIndex: 0,
 };
 
@@ -93,6 +100,10 @@ const restoreEntry = (entry: HistoryEntry) => {
   return restored;
 };
 
+// كاش تسلسل JSON لكل إدخال تاريخ — يمنع إعادة تسلسل نفس الإدخال في كل دفعة.
+// الـ WeakMap يسمح بتجميع الإدخالات المهملة تلقائياً (إصلاح Bug#17)
+const entryJsonCache = new WeakMap<HistoryEntry, string>();
+
 export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice> = (set, get) => ({
   ...DEFAULT_HISTORY_STATE,
 
@@ -122,9 +133,18 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
         current.lastEditedImage === snapshot.lastEditedImage &&
         current.lastEditedImageAspect === snapshot.lastEditedImageAspect
       ) {
-        if (JSON.stringify(current) === JSON.stringify(snapshot)) {
+        // نسلسل اللقطة الجديدة مرة واحدة فقط، والإدخال الحالي يُؤخذ من الكاش
+        const snapshotJson = JSON.stringify(snapshot);
+        let currentJson = entryJsonCache.get(current);
+        if (currentJson === undefined) {
+          currentJson = JSON.stringify(current);
+          entryJsonCache.set(current, currentJson);
+        }
+        if (currentJson === snapshotJson) {
           return; // No change
         }
+        // اللقطة ستصبح الإدخال الحالي في الدفعة القادمة — نخزن تسلسلها مسبقاً
+        entryJsonCache.set(snapshot, snapshotJson);
       }
     }
 

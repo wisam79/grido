@@ -28,5 +28,8 @@ export const propsAreEqual = (prev: ElementProps, next: ElementProps) => {
          prev.canvasWidth === next.canvasWidth &&
          prev.canvasHeight === next.canvasHeight &&
          prev.snapToGrid === next.snapToGrid &&
-         prev.gridSize === next.gridSize;
+         prev.gridSize === next.gridSize &&
+         // onDblClick يغلق على حالة المكوّن (مثل isLoading) — تجاهله كان يجمّد
+         // نسخة قديمة من المعالج داخل العقدة فيصمت النقر المزدوج (إصلاح Bug#16)
+         prev.onDblClick === next.onDblClick;
 };

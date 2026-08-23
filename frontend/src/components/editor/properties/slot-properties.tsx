@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { wailsIsDesktop } from "@/lib/wails-env";
 import { Label } from "@/components/ui/label";
 import { ImagePlus, Scissors, Copy, Rows, Columns, LayoutGrid,
   FlipHorizontal2, FlipVertical2, RotateCw, Undo2, Palette, Check,
@@ -106,7 +107,7 @@ export function SlotProperties({
      try {
        const [b64] = await openImageFileDialog(false);
        if (b64) {
-         const isWailsDesktop = typeof (window as any).go?.main?.App !== "undefined";
+         const isWailsDesktop = wailsIsDesktop();
          let srcToUse = b64;
          if (isWailsDesktop && b64.startsWith("data:image/")) {
            try {
@@ -348,7 +349,7 @@ export function SlotProperties({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-6.5 px-2 text-[10px] rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
+                  className="h-7 px-2 text-[10px] rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
                 >
                   <ArrowLeftRight className="w-3 h-3" />
                   <span>تبديل الموضع</span>
@@ -445,7 +446,7 @@ export function SlotProperties({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7.5 flex-1 rounded-md text-xs font-semibold border-border/80 hover:bg-accent gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="h-8 flex-1 rounded-md text-xs font-semibold border-border/80 hover:bg-accent gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
                 onClick={() => {
                   onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
                   useEditorStore.getState().pushHistory();
@@ -463,7 +464,7 @@ export function SlotProperties({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7.5 px-2.5 rounded-md text-xs font-semibold border-border/80 hover:bg-destructive/10 hover:border-destructive/40 text-destructive cursor-pointer"
+                className="h-8 px-2.5 rounded-md text-xs font-semibold border-border/80 hover:bg-destructive/10 hover:border-destructive/40 text-destructive cursor-pointer"
                 onClick={() => {
                   onUpdate(slot.id, { imageSrc: undefined });
                   useEditorStore.getState().pushHistory();
@@ -497,7 +498,7 @@ export function SlotProperties({
             { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
             { id: "gray", label: "رمادي", val: "#e5e7eb" },
           ].map((colorItem) => {
-            const currBg = (slot as any).bgColor || "transparent";
+            const currBg = slot.bgColor || "transparent";
             const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
             return (
               <button
@@ -516,7 +517,7 @@ export function SlotProperties({
                   freshStore.pushHistory();
                 }}
                 className={cn(
-                  "w-7 h-7 rounded-md border border-border/80 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95",
+                  "w-7 h-7 rounded-md border border-border/80 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                   isActive && "ring-2 ring-primary ring-offset-1 border-primary font-bold"
                 )}
                 style={{
@@ -537,7 +538,7 @@ export function SlotProperties({
           <div className="flex items-center gap-1 border border-border/80 rounded-md px-1.5 py-0.5 bg-background" title="لون مخصص">
             <input
               type="color"
-              value={(slot as any).bgColor === "transparent" || !(slot as any).bgColor ? "#ffffff" : (slot as any).bgColor}
+              value={slot.bgColor === "transparent" || !slot.bgColor ? "#ffffff" : slot.bgColor}
               onChange={(e) => {
                 const freshStore = useEditorStore.getState();
                 if (autoFill) {
@@ -598,7 +599,7 @@ export function SlotProperties({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full rounded-md font-semibold text-xs h-7.5 border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors mt-1"
+          className="w-full rounded-md font-semibold text-xs h-8 border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors mt-1"
           onClick={() =>
             onUpdate(slot.id, {
               filter: "none",

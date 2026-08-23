@@ -12,3 +12,11 @@ type CustomTemplate struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+// CustomTemplateRepository يعرّف عقد طبقة الـ Persistence للقوالب المخصصة،
+// مما يحافظ على انعكاس التبعية (Services لا تعرف GORM).
+type CustomTemplateRepository interface {
+	Create(tmpl *CustomTemplate) error
+	FindAll() ([]CustomTemplate, error)
+	Delete(id uint) error
+}

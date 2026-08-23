@@ -20,6 +20,8 @@ export const CanvasElementSchema = z.object({
   contrast: z.number().optional(),
   saturation: z.number().optional(),
   blur: z.number().optional(),
+  // خلفية عنصر الصورة (تُستخدم خلف الصور الشفافة) — كانت تُسقط سابقاً عند الحفظ (إصلاح Bug#3)
+  bgColor: z.string().optional(),
   
   text: z.string().optional(),
   fontSize: z.number().optional(),
@@ -88,6 +90,9 @@ export const CanvasSlotSchema = z.object({
   presetType: z.string().optional(),
   label: z.string().optional(),
   imageSrc: z.string().optional(),
+  // كانت تُسقط سابقاً عند الحفظ/التحميل فيتعطل "استعادة الأصل" ويختفي لون الخلية (إصلاح Bug#3)
+  originalImageSrc: z.string().optional(),
+  bgColor: z.string().optional(),
   filter: z.string().optional(),
   brightness: z.number().optional(),
   contrast: z.number().optional(),
@@ -196,6 +201,7 @@ export const ProjectSchema = z.object({
   collageMargin: z.number().optional().default(0),
   collageRadius: z.number().optional().default(0),
   collageShowCutLines: z.boolean().optional().default(false),
+  collageShowEndCutLine: z.boolean().optional(),
   collageStrokeWidth: z.number().optional().default(0),
   collageStrokeColor: z.string().optional().default("#000000"),
   embeddedAssets: z.record(z.string(), z.string()).optional(),

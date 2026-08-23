@@ -478,6 +478,11 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     try {
       const dataUrl = canvas.toDataURL("image/png");
       const localPath = await SaveImageFromBase64(dataUrl);
+      // التحقق من نتيجة الحفظ — مسار فارغ كان يكتب imageSrc فارغاً على العنصر
+      // مع رسالة نجاح كاذبة (إصلاح Bug#20)
+      if (!localPath || !localPath.startsWith("/local-image/")) {
+        throw new Error("Invalid path returned from SaveImageFromBase64");
+      }
       onSave(localPath);
       onOpenChange(false);
       toast.success("تم حفظ التعديلات بنجاح");

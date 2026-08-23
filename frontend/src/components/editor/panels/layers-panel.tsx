@@ -75,7 +75,9 @@ interface LayerRowProps {
   onDragStart: (e: React.DragEvent, id: string) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, targetId: string) => void;
+  onDragEnd: (e: React.DragEvent) => void;
   isDragOver: boolean;
+  isDragging: boolean;
 }
 
 const LayerRow = React.memo(function LayerRow({
@@ -89,7 +91,9 @@ const LayerRow = React.memo(function LayerRow({
   onDragStart,
   onDragOver,
   onDrop,
+  onDragEnd,
   isDragOver,
+  isDragging,
 }: LayerRowProps) {
   const isHidden = el.visible === false;
   const isLocked = el.locked === true;
@@ -97,18 +101,31 @@ const LayerRow = React.memo(function LayerRow({
   return (
     <div
       draggable
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       onDragStart={(e) => onDragStart(e, el.id)}
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, el.id)}
+      onDragEnd={onDragEnd}
       onClick={onSelect}
       className={cn(
         "group flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-all cursor-pointer select-none",
         "border border-transparent",
+        "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
         isSelected
           ? "bg-primary/12 border-primary/30 shadow-xs"
           : "hover:bg-muted/50",
         isDragOver && "border-primary/50 bg-primary/5",
-        isHidden && "opacity-45"
+        isHidden && "opacity-45",
+        // شفافية الصف المسحوب عبر حالة React — الكتابة المباشرة على DOM كانت
+        // تبقى عالقة لأن dragend كان يُلتقط على الحاوية لا الصف (إصلاح Bug#8)
+        isDragging && "opacity-40"
       )}
     >
       {/* مقبض السحب */}
@@ -237,6 +254,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
   );
 
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const draggedIdRef = useRef<string | null>(null);
 
   // ترتيب العناصر من الأعلى (أكبر zIndex) إلى الأسفل
@@ -245,10 +263,8 @@ export const LayersPanel = React.memo(function LayersPanel() {
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     draggedIdRef.current = id;
     e.dataTransfer.effectAllowed = "move";
-    // شفافية أثناء السحب
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = "0.4";
-    }
+    // شفافية أثناء السحب عبر حالة React بدل تعديل DOM مباشر (إصلاح Bug#8)
+    setDraggingId(id);
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -289,10 +305,8 @@ export const LayersPanel = React.memo(function LayersPanel() {
     []
   );
 
-  const handleDragEnd = useCallback((e: React.DragEvent) => {
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = "1";
-    }
+  const handleDragEnd = useCallback(() => {
+    setDraggingId(null);
     setDragOverId(null);
     draggedIdRef.current = null;
   }, []);
@@ -359,7 +373,9 @@ export const LayersPanel = React.memo(function LayersPanel() {
                 setDragOverId(el.id);
               }}
               onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
               isDragOver={dragOverId === el.id}
+              isDragging={draggingId === el.id}
             />
           ))
         )}

@@ -130,12 +130,34 @@ type licenseRepositoryImpl struct {
 	db *gorm.DB
 }
 
+type customTemplateRepositoryImpl struct {
+	db *gorm.DB
+}
+
 func NewProjectRepository(db *gorm.DB) domain.ProjectRepository {
 	return &projectRepositoryImpl{db: db}
 }
 
 func NewLicenseRepository(db *gorm.DB) domain.LicenseRepository {
 	return &licenseRepositoryImpl{db: db}
+}
+
+func NewCustomTemplateRepository(db *gorm.DB) domain.CustomTemplateRepository {
+	return &customTemplateRepositoryImpl{db: db}
+}
+
+func (r *customTemplateRepositoryImpl) Create(tmpl *domain.CustomTemplate) error {
+	return r.db.Create(tmpl).Error
+}
+
+func (r *customTemplateRepositoryImpl) FindAll() ([]domain.CustomTemplate, error) {
+	var templates []domain.CustomTemplate
+	err := r.db.Find(&templates).Error
+	return templates, err
+}
+
+func (r *customTemplateRepositoryImpl) Delete(id uint) error {
+	return r.db.Delete(&domain.CustomTemplate{}, id).Error
 }
 
 func (r *licenseRepositoryImpl) Save(profile *domain.UserProfile) error {

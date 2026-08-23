@@ -11,103 +11,117 @@ interface StartState {
 }
 
 export function WindowResizeHandles() {
-  const startStateRef = useRef<StartState | null>(null);
+  // تنظيف السحب النشط — يمنع تسجيل معالجات متزامنة تتقاتل على نفس النافذة (إصلاح Bug#22)
+  const activeDragCleanupRef = useRef<(() => void) | null>(null);
 
   const minWidth = 900;
   const minHeight = 600;
 
-  const handleMouseDown = async (
+  const handleMouseDown = (
     e: React.MouseEvent<HTMLDivElement>,
     direction: "n" | "s" | "e" | "w" | "nw" | "ne" | "sw" | "se"
   ) => {
     e.preventDefault();
     e.stopPropagation();
 
-    try {
-      const size = await WindowGetSize();
-      const pos = await WindowGetPosition();
+    // الزر الأيسر فقط — النقر الأيمن/الأوسط كان يبدأ سحباً ويكتب قائمة السياق
+    if (e.button !== 0) return;
+    // سحب واحد في كل مرة — تداخل سحبين كان يفسد حالة البداية المشتركة
+    if (activeDragCleanupRef.current) return;
 
-      startStateRef.current = {
-        startWidth: size.w,
-        startHeight: size.h,
-        startX: pos.x,
-        startY: pos.y,
-        startMouseX: e.screenX,
-        startMouseY: e.screenY,
-      };
+    // المعالجات تُربط بشكل متزامن فوراً — الربط بعد نداء IPC كان يفقد mouseup
+    // إذا أفلت المستخدم بسرعة فيستمر تغيير الحجم مع حركة المؤشر (سحب عالق)
+    let startState: StartState | null = null;
 
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        if (!startStateRef.current) return;
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!startState) return; // IPC لم يُكمل بعد — نتجاهل حتى تجهز الحالة
 
-        const { startWidth, startHeight, startX, startY, startMouseX, startMouseY } =
-          startStateRef.current;
+      const { startWidth, startHeight, startX, startY, startMouseX, startMouseY } = startState;
 
-        const deltaX = moveEvent.screenX - startMouseX;
-        const deltaY = moveEvent.screenY - startMouseY;
+      const deltaX = moveEvent.screenX - startMouseX;
+      const deltaY = moveEvent.screenY - startMouseY;
 
-        let newWidth = startWidth;
-        let newHeight = startHeight;
-        let newX = startX;
-        let newY = startY;
+      let newWidth = startWidth;
+      let newHeight = startHeight;
+      let newX = startX;
+      let newY = startY;
 
-        let sizeChanged = false;
-        let posChanged = false;
+      let sizeChanged = false;
+      let posChanged = false;
 
-        // Vertical resizing
-        if (direction.includes("n")) {
-          const calculatedHeight = startHeight - deltaY;
-          if (calculatedHeight >= minHeight) {
-            newHeight = calculatedHeight;
-            newY = startY + deltaY;
-            sizeChanged = true;
-            posChanged = true;
-          }
-        } else if (direction.includes("s")) {
-          const calculatedHeight = startHeight + deltaY;
-          if (calculatedHeight >= minHeight) {
-            newHeight = calculatedHeight;
-            sizeChanged = true;
-          }
+      // Vertical resizing
+      if (direction.includes("n")) {
+        const calculatedHeight = startHeight - deltaY;
+        if (calculatedHeight >= minHeight) {
+          newHeight = calculatedHeight;
+          newY = startY + deltaY;
+          sizeChanged = true;
+          posChanged = true;
         }
-
-        // Horizontal resizing
-        if (direction.includes("w")) {
-          const calculatedWidth = startWidth - deltaX;
-          if (calculatedWidth >= minWidth) {
-            newWidth = calculatedWidth;
-            newX = startX + deltaX;
-            sizeChanged = true;
-            posChanged = true;
-          }
-        } else if (direction.includes("e")) {
-          const calculatedWidth = startWidth + deltaX;
-          if (calculatedWidth >= minWidth) {
-            newWidth = calculatedWidth;
-            sizeChanged = true;
-          }
+      } else if (direction.includes("s")) {
+        const calculatedHeight = startHeight + deltaY;
+        if (calculatedHeight >= minHeight) {
+          newHeight = calculatedHeight;
+          sizeChanged = true;
         }
+      }
 
-        if (sizeChanged && posChanged) {
-          WindowSetSize(newWidth, newHeight);
-          WindowSetPosition(newX, newY);
-        } else if (sizeChanged) {
-          WindowSetSize(newWidth, newHeight);
-        } else if (posChanged) {
-          WindowSetPosition(newX, newY);
+      // Horizontal resizing
+      if (direction.includes("w")) {
+        const calculatedWidth = startWidth - deltaX;
+        if (calculatedWidth >= minWidth) {
+          newWidth = calculatedWidth;
+          newX = startX + deltaX;
+          sizeChanged = true;
+          posChanged = true;
         }
-      };
+      } else if (direction.includes("e")) {
+        const calculatedWidth = startWidth + deltaX;
+        if (calculatedWidth >= minWidth) {
+          newWidth = calculatedWidth;
+          sizeChanged = true;
+        }
+      }
 
-      const handleMouseUp = () => {
-        startStateRef.current = null;
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
-      };
+      if (sizeChanged && posChanged) {
+        WindowSetSize(newWidth, newHeight);
+        WindowSetPosition(newX, newY);
+      } else if (sizeChanged) {
+        WindowSetSize(newWidth, newHeight);
+      } else if (posChanged) {
+        WindowSetPosition(newX, newY);
+      }
+    };
 
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    } catch (err) {
-      console.error("Failed to get window state for resizing:", err);
-    }
+    const cleanup = () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("blur", cleanup);
+      activeDragCleanupRef.current = null;
+    };
+    const handleMouseUp = () => cleanup();
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    // فقدان تركيز النافذة أثناء السحب ينهيه بأمان بدل سحب يتيم
+    window.addEventListener("blur", cleanup);
+    activeDragCleanupRef.current = cleanup;
+
+    Promise.all([WindowGetSize(), WindowGetPosition()])
+      .then(([size, pos]) => {
+        startState = {
+          startWidth: size.w,
+          startHeight: size.h,
+          startX: pos.x,
+          startY: pos.y,
+          startMouseX: e.screenX,
+          startMouseY: e.screenY,
+        };
+      })
+      .catch((err) => {
+        console.error("Failed to get window state for resizing:", err);
+        cleanup();
+      });
   };
 
   // Border size in pixels

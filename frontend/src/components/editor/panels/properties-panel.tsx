@@ -44,7 +44,15 @@ export function PropertiesPanel() {
       (styleExcluded.has(key) ? positionalPatch : stylePatch)[key] = patch[key];
     }
     if (Object.keys(stylePatch).length > 0) {
-      updateElements(selectedIds.map((sid) => ({ id: sid, patch: stylePatch })));
+      // العناصر المقفلة لا تُلمس في البث الجماعي — شارة القفل يجب أن تحترم
+      // في كل أدوات التعديل (إصلاح Bug#19)
+      const { elements: freshElements } = useEditorStore.getState();
+      const broadcastIds = selectedIds.filter(
+        (sid) => !freshElements.find((e) => e.id === sid)?.locked
+      );
+      if (broadcastIds.length > 0) {
+        updateElements(broadcastIds.map((sid) => ({ id: sid, patch: stylePatch })));
+      }
     }
     if (Object.keys(positionalPatch).length > 0) {
       updateElement(id, positionalPatch);
@@ -54,7 +62,7 @@ export function PropertiesPanel() {
   return (
     <div className="flex flex-col h-full bg-card select-none">
       <ScrollArea className="flex-1">
-        <div className="p-4 pb-8 space-y-4 font-cairo">
+        <div className="p-3.5 pb-8 space-y-3.5 font-cairo">
           {/* خصائص العنصر المحدد */}
           {selectedElement && (
             <ElementProperties 

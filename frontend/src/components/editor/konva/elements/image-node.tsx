@@ -147,8 +147,8 @@ export const URLImage = React.memo(function URLImage({
         brightness={filterProps.brightness}
         contrast={filterProps.contrast}
         blurRadius={element.blur || 0}
-        hue={(filterProps as any).hue}
         saturation={(filterProps as any).saturation}
+        sepiaRatio={filterProps.sepiaRatio}
       />
       {isEnhancing && (
         <MagicAiScanner
