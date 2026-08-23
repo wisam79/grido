@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { COLLAGE_TEMPLATES, CollageTemplate } from "@/lib/templates";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
@@ -24,14 +23,20 @@ import {
 import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "../../../../wailsjs/go/main/App";
 import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
-import { LayoutGrid, FolderHeart, Palette, Paintbrush } from "lucide-react";
+import { PanelShell } from "./panel-shell";
+import { LayoutGrid, FolderHeart, Palette, Paintbrush, Shapes } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PopoverColorPicker } from "../properties/shared-controls";
 import { LayersList } from "../properties/layers-list";
 import { FluentEmptyState, FluentSection } from "@/components/ui/blocks";
 
-export function TemplatePanel() {
+export interface TemplatePanelProps {
+  /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
+  onCollapse?: () => void;
+}
+
+export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
   const { 
     setCollageTemplate, 
     collageTemplate, 
@@ -123,7 +128,18 @@ export function TemplatePanel() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-card select-none">
+    <PanelShell
+      icon={<Shapes className="w-4 h-4" />}
+      title="القوالب"
+      subtitle={
+        mode === "collage"
+          ? "كولاج ونماذج طباعة جاهزة"
+          : "طبقات العمل ولون الخلفية"
+      }
+      onCollapse={onCollapse}
+      collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
+      className="bg-card select-none"
+    >
       {/* Hidden File Input for Templates Import */}
       <input 
         type="file" 
@@ -155,23 +171,22 @@ export function TemplatePanel() {
       />
 
       {mode === "collage" ? (
-        <ScrollArea className="flex-1">
-          <div className="p-3.5 pb-8 space-y-4 font-cairo">
-            <CustomCollageCard 
-              onSelect={handleSelectTemplate} 
-              activeTemplateId={collageTemplate?.id} 
-              onSaveTemplate={handleSaveTemplate}
-              savedTemplates={savedTemplates}
-              onDeleteTemplate={handleDeleteTemplate}
-              onOpenTemplatesDialog={() => {
-                loadTemplates();
-                setTemplatesDialogOpen(true);
-              }}
-              fileInputRef={fileInputRef}
-            />
+        <div className="space-y-4">
+          <CustomCollageCard 
+            onSelect={handleSelectTemplate} 
+            activeTemplateId={collageTemplate?.id} 
+            onSaveTemplate={handleSaveTemplate}
+            savedTemplates={savedTemplates}
+            onDeleteTemplate={handleDeleteTemplate}
+            onOpenTemplatesDialog={() => {
+              loadTemplates();
+              setTemplatesDialogOpen(true);
+            }}
+            fileInputRef={fileInputRef}
+          />
 
-            {/* Dialog for Full Official & Custom Templates Browser */}
-            <Dialog open={templatesDialogOpen} onOpenChange={setTemplatesDialogOpen}>
+          {/* Dialog for Full Official & Custom Templates Browser */}
+          <Dialog open={templatesDialogOpen} onOpenChange={setTemplatesDialogOpen}>
               <DialogContent className="max-w-2xl font-cairo rounded-2xl border fluent-specular" dir="rtl">
                 <DialogHeader>
                   <DialogTitle className="text-right text-base font-bold flex items-center gap-2">
@@ -273,35 +288,30 @@ export function TemplatePanel() {
                   </TabsContent>
                 </Tabs>
               </DialogContent>
-            </Dialog>
-          </div>
-        </ScrollArea>
+          </Dialog>
+        </div>
       ) : (
-        <div className="flex flex-col h-full p-4 font-cairo select-none" dir="rtl">
-          <ScrollArea className="flex-1">
-            <div className="space-y-4 pr-0.5">
-              <FluentSection
-                icon={<Palette className="w-3.5 h-3.5" />}
-                title="لون خلفية مساحة العمل"
-              >
-                <PopoverColorPicker
-                  color={backgroundColor}
-                  onChange={setBackgroundColor}
-                  className="w-full h-8 rounded-md border-border/80 bg-background/50 hover:bg-accent/40 hover:border-primary/40 shadow-2xs"
-                  label={
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                      <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <span>لون خلفية مساحة العمل</span>
-                    </div>
-                  }
-                />
-              </FluentSection>
+        <div className="space-y-4" dir="rtl">
+          <FluentSection
+            icon={<Palette className="w-3.5 h-3.5" />}
+            title="لون خلفية مساحة العمل"
+          >
+            <PopoverColorPicker
+              color={backgroundColor}
+              onChange={setBackgroundColor}
+              className="w-full h-8 rounded-md border-border/80 bg-background/50 hover:bg-accent/40 hover:border-primary/40 shadow-2xs"
+              label={
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                  <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span>لون خلفية مساحة العمل</span>
+                </div>
+              }
+            />
+          </FluentSection>
 
-              <Separator className="bg-border/30 my-2" />
+          <Separator className="bg-border/30 my-2" />
 
-              <LayersList />
-            </div>
-          </ScrollArea>
+          <LayersList />
         </div>
       )}
 
@@ -334,6 +344,6 @@ export function TemplatePanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PanelShell>
   );
 }

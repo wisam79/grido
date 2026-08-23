@@ -99,21 +99,21 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
           <g key={`h-lbl-${idx}`}>
             <line
               x1={x}
-              y1={isZero ? 0 : 8}
+              y1={isZero ? 0 : 13}
               x2={x}
               y2={24}
               stroke="currentColor"
-              className={isZero ? "stroke-primary" : "stroke-muted-foreground/60"}
+              className={isZero ? "stroke-primary" : "stroke-muted-foreground/70"}
               strokeWidth={isZero ? 1.5 : 1}
             />
             <text
-              x={x + 2}
-              y={8}
-              fontSize={7}
+              x={x + 3}
+              y={9.5}
+              fontSize={8}
               className={
                 isZero
                   ? "fill-primary font-bold font-mono select-none"
-                  : "fill-muted-foreground font-mono font-medium select-none"
+                  : "fill-muted-foreground/90 font-mono font-semibold select-none"
               }
             >
               {Math.round(u * 10) / 10}
@@ -121,34 +121,59 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
           </g>
         );
       } else if (isMid) {
-        midD += `M${x} 14V24`;
+        midD += `M${x} 17V24`;
       } else {
-        subD += `M${x} 18V24`;
+        subD += `M${x} 20.5V24`;
       }
     }
 
     return { subPath: subD, midPath: midD, labelElements: labels };
   }, [viewportWidth, originX, displayW, mmWidth, pxWidth, unit]);
 
+  const endX = originX + displayW;
+
   return (
     <svg
       width={viewportWidth}
       height={24}
-      className="bg-card text-card-foreground overflow-hidden border-b border-border select-none block"
+      className="bg-card/90 text-card-foreground overflow-hidden select-none block"
     >
-      {/* تمييز نطاق الورقة الفعلي بلون خفيف */}
-      <rect
-        x={originX}
-        y={0}
-        width={displayW}
-        height={24}
-        className="fill-primary/5 dark:fill-primary/10"
-      />
+      {/* تمييز نطاق الورقة الفعلي بلون أكريليك خفيف مع خط سفلي محدد */}
+      {displayW > 0 && (
+        <>
+          <rect
+            x={originX}
+            y={0}
+            width={displayW}
+            height={24}
+            className="fill-primary/[0.08] dark:fill-primary/[0.14]"
+          />
+          <line
+            x1={originX}
+            y1={23.5}
+            x2={endX}
+            y2={23.5}
+            className="stroke-primary/50"
+            strokeWidth={1}
+          />
+          {/* خط نهاية حدود الورقة */}
+          <line
+            x1={endX}
+            y1={0}
+            x2={endX}
+            y2={24}
+            className="stroke-primary/30"
+            strokeWidth={1}
+            strokeDasharray="2,2"
+          />
+        </>
+      )}
+
       {subPath && (
         <path
           d={subPath}
           stroke="currentColor"
-          className="stroke-muted-foreground/30"
+          className="stroke-muted-foreground/25"
           strokeWidth={1}
         />
       )}
@@ -167,9 +192,8 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
         y1={0}
         x2={0}
         y2={24}
-        stroke="#3b82f6"
+        stroke="#0078d4"
         strokeWidth={1.5}
-        strokeDasharray="2,2"
         style={{ display: "none" }}
       />
     </svg>
@@ -220,59 +244,85 @@ export const VerticalRuler = React.memo(function VerticalRuler({
         labels.push(
           <g key={`v-lbl-${idx}`}>
             <line
-              x1={isZero ? 0 : 8}
+              x1={isZero ? 0 : 13}
               y1={y}
               x2={24}
               y2={y}
               stroke="currentColor"
-              className={isZero ? "stroke-primary" : "stroke-muted-foreground/60"}
+              className={isZero ? "stroke-primary" : "stroke-muted-foreground/70"}
               strokeWidth={isZero ? 1.5 : 1}
             />
             <text
-              x={6}
-              y={y + 3}
-              fontSize={7}
+              x={7}
+              y={y}
+              fontSize={8}
               className={
                 isZero
-                  ? "fill-primary font-bold font-mono select-none text-right"
-                  : "fill-muted-foreground font-mono font-medium select-none text-right"
+                  ? "fill-primary font-bold font-mono select-none"
+                  : "fill-muted-foreground/90 font-mono font-semibold select-none"
               }
-              transform={`rotate(-90, 6, ${y})`}
+              transform={`rotate(-90, 7, ${y})`}
               textAnchor="middle"
+              dominantBaseline="middle"
             >
               {Math.round(u * 10) / 10}
             </text>
           </g>
         );
       } else if (isMid) {
-        midD += `M14 ${y}H24`;
+        midD += `M17 ${y}H24`;
       } else {
-        subD += `M18 ${y}H24`;
+        subD += `M20.5 ${y}H24`;
       }
     }
 
     return { subPath: subD, midPath: midD, labelElements: labels };
   }, [viewportHeight, originY, displayH, mmHeight, pxHeight, unit]);
 
+  const endY = originY + displayH;
+
   return (
     <svg
       width={24}
       height={viewportHeight}
-      className="bg-card text-card-foreground overflow-hidden border-l border-border select-none block"
+      className="bg-card/90 text-card-foreground overflow-hidden select-none block"
     >
-      {/* تمييز نطاق الورقة الفعلي بلون خفيف */}
-      <rect
-        x={0}
-        y={originY}
-        width={24}
-        height={displayH}
-        className="fill-primary/5 dark:fill-primary/10"
-      />
+      {/* تمييز نطاق الورقة الفعلي بلون أكريليك خفيف مع خط جانبي محدد */}
+      {displayH > 0 && (
+        <>
+          <rect
+            x={0}
+            y={originY}
+            width={24}
+            height={displayH}
+            className="fill-primary/[0.08] dark:fill-primary/[0.14]"
+          />
+          <line
+            x1={23.5}
+            y1={originY}
+            x2={23.5}
+            y2={endY}
+            className="stroke-primary/50"
+            strokeWidth={1}
+          />
+          {/* خط نهاية حدود الورقة */}
+          <line
+            x1={0}
+            y1={endY}
+            x2={24}
+            y2={endY}
+            className="stroke-primary/30"
+            strokeWidth={1}
+            strokeDasharray="2,2"
+          />
+        </>
+      )}
+
       {subPath && (
         <path
           d={subPath}
           stroke="currentColor"
-          className="stroke-muted-foreground/30"
+          className="stroke-muted-foreground/25"
           strokeWidth={1}
         />
       )}
@@ -291,11 +341,11 @@ export const VerticalRuler = React.memo(function VerticalRuler({
         y1={0}
         x2={24}
         y2={0}
-        stroke="#3b82f6"
+        stroke="#0078d4"
         strokeWidth={1.5}
-        strokeDasharray="2,2"
         style={{ display: "none" }}
       />
     </svg>
   );
 });
+

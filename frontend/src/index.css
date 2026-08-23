@@ -56,33 +56,35 @@
   --font-tajawal: 'IBM Plex Sans Arabic', 'Tajawal', 'Inter', system-ui, sans-serif;
   --radius: 0.5rem;
   
-  /* Beidar Light Mode Visual Identity */
-  --background: #f1f5f9; /* Slate-100 */
-  --foreground: #0f172a; /* Slate-900 */
-  --card: #ffffff;
+  /* Fluent 2 Light Mode Visual Identity with Crisp Hierarchy */
+  --background: #edf1f7; /* Soft slate canvas workspace */
+  --foreground: #0f172a; /* Slate-900 high contrast */
+  --card: #ffffff;       /* Pure crisp white card surface */
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #1e40af; /* Blue-800 royal blue */
+  --primary: #1d4ed8;    /* Royal blue */
   --primary-foreground: #ffffff;
-  --secondary: #f8fafc;
+  --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
-  --muted: #f8fafc;
+  --muted: #f1f5f9;      /* Recessed control track */
   --muted-foreground: #475569; /* Slate-600 */
-  --accent: #f8fafc;
+  --accent: #e2e8f0;
   --accent-foreground: #0f172a;
   --destructive: #b91c1c;
   --destructive-foreground: #ffffff;
-  --border: #cbd5e1; /* Slate-300 */
-  --input: #cbd5e1;
-  --ring: #1e40af;
+  --border: #cbd5e1;     /* Slate-300 crisp border */
+  --input: #ffffff;
+  --ring: #1d4ed8;
   
-  --sidebar: #ffffff;
+  --sidebar: #f8fafc;    /* Clean off-white sidebar */
   --sidebar-foreground: #0f172a;
-  --sidebar-primary: #1e40af;
+  --sidebar-primary: #1d4ed8;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f8fafc;
+  --sidebar-accent: #f1f5f9;
   --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #1d4ed8;
   /* Fluent 2 Elevation Shadows */
   --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.14), 0 0.3px 0.9px 0 rgba(0,0,0,0.10);
   --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.18), 0 0.6px 1.8px 0 rgba(0,0,0,0.14);
@@ -94,41 +96,41 @@
 
 .dark {
   color-scheme: dark;
-  /* Premium Soft Neutral Gray Dark Mode Theme (User Color) */
-  --background: #1e1e1e; /* Deep neutral gray background */
-  --foreground: #f5f5f5; /* Off-white text */
-  --card: #2d2d2d;       /* The exact gray from the user's image */
-  --card-foreground: #f5f5f5;
-  --popover: #2d2d2d;
-  --popover-foreground: #f5f5f5;
-  --primary: #3b82f6;    /* Blue accent */
+  /* Premium Fluent 2 Dark Mode Theme with Crisp Surface Hierarchy */
+  --background: #141417;   /* Deep canvas workspace background */
+  --foreground: #f5f5f7;   /* Off-white high contrast text */
+  --card: #282830;         /* Elevated card surface - clearly distinct from sidebar */
+  --card-foreground: #f5f5f7;
+  --popover: #282830;
+  --popover-foreground: #f5f5f7;
+  --primary: #3b82f6;      /* Blue accent */
   --primary-foreground: #ffffff;
-  --secondary: #3a3a3a;  /* Medium gray */
-  --secondary-foreground: #f5f5f5;
-  --muted: #3a3a3a;
-  --muted-foreground: #a0a0a0; /* Muted gray text */
-  --accent: #3a3a3a;
-  --accent-foreground: #f5f5f5;
-  --border: #3a3a3a;     /* Border gray */
-  --input: #3a3a3a;
+  --secondary: #32323c;    /* Medium contrast interactive background */
+  --secondary-foreground: #f5f5f7;
+  --muted: #202027;        /* Recessed inset controls & tracks */
+  --muted-foreground: #a6a6b5; /* Readable secondary text */
+  --accent: #32323c;
+  --accent-foreground: #f5f5f7;
+  --border: #383844;       /* Crisp border gray (high edge contrast) */
+  --input: #1a1a20;        /* Deep inset text inputs */
   --ring: #3b82f6;
   
-  --sidebar: #2d2d2d;    /* The exact gray from the user's image */
-  --sidebar-foreground: #f5f5f5;
+  --sidebar: #1d1d23;      /* Deep sidebar base for clear card separation */
+  --sidebar-foreground: #f5f5f7;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #3a3a3a;
-  --sidebar-accent-foreground: #f5f5f5;
-  --sidebar-border: #3a3a3a;
+  --sidebar-accent: #282830;
+  --sidebar-accent-foreground: #f5f5f7;
+  --sidebar-border: #353540;
   --sidebar-ring: #3b82f6;
 
-  /* Fluent 2 Dark Mode Elevation Shadows with Ambient Depth */
-  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.28), 0 0.3px 0.9px 0 rgba(0,0,0,0.20);
-  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.32), 0 0.6px 1.8px 0 rgba(0,0,0,0.24);
-  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.38), 0 1.2px 3.6px 0 rgba(0,0,0,0.28);
-  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.44), 0 2.4px 7.2px 0 rgba(0,0,0,0.32);
-  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.50), 0 4.2px 12.6px 0 rgba(0,0,0,0.36);
-  --fluent-shadow-64: 0 51.2px 115.2px 0 rgba(0,0,0,0.58), 0 9.6px 28.8px 0 rgba(0,0,0,0.42);
+  /* Fluent 2 Dark Mode Soft Clean Elevation Shadows */
+  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.18), 0 0.3px 0.9px 0 rgba(0,0,0,0.12);
+  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.20), 0 0.6px 1.8px 0 rgba(0,0,0,0.14);
+  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.22), 0 1.2px 3.6px 0 rgba(0,0,0,0.16);
+  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.24), 0 2.4px 7.2px 0 rgba(0,0,0,0.18);
+  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.26), 0 4.2px 12.6px 0 rgba(0,0,0,0.20);
+  --fluent-shadow-64: 0 40px 80px 0 rgba(0,0,0,0.28), 0 8px 24px 0 rgba(0,0,0,0.22);
 }
 
 @layer base {
@@ -241,6 +243,31 @@
     border: 1px solid var(--border);
   }
 
+  /* ─── Fluent 2 Panel Motion (Spring Curve) ─────────────────── */
+  /* حركة فتح/طي الألواح الجانبية بمنحنى الزنبرك المعتمد في Fluent 2
+     (cubic-bezier(0.1, 0.9, 0.2, 1)) بدل ease الخطي — إحساس طبيعي
+     أقرب لنوافذ ويندوز 11 الأصلية. وضع reduced-motion يعطلها تلقائياً
+     عبر القاعدة العامة أعلاه. */
+  .fluent-panel-motion {
+    transition:
+      width 250ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      min-width 250ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      max-width 250ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      opacity 150ms cubic-bezier(0, 0, 0.1, 1);
+    will-change: width;
+  }
+
+  /* تلاشي علوي خفيف فوق محتوى اللوح — إشارة بصرية هادئة لقابلية التمرير
+     (Scroll Affordance) دون شريط مزدوج أو تشويش */
+  .panel-scroll-hint {
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  .group\/panel-scroll:hover .panel-scroll-hint,
+  .panel-scroll-host:hover .panel-scroll-hint {
+    opacity: 1;
+  }
+
   /* ─── Microsoft Fluent 2 Surface & Material System ─────────── */
   .fluent-acrylic {
     background-color: var(--card);
@@ -263,10 +290,10 @@
   }
 
   .fluent-specular {
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.08);
   }
   .dark .fluent-specular {
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .fluent-command-group {
@@ -325,13 +352,13 @@
 
   /* ─── Native Visual Depth & High-Contrast System ─────────────── */
   .native-depth-sidebar {
-    background-color: var(--card);
-    border-color: var(--border);
+    background-color: var(--sidebar);
+    border-color: var(--sidebar-border);
   }
 
   .dark .native-depth-sidebar {
-    background-color: #232326; /* Solid native dark sidebar for strong visual weight */
-    border-color: rgba(255, 255, 255, 0.08);
+    background-color: #1d1d23; /* Solid native dark sidebar for strong visual weight */
+    border-color: rgba(255, 255, 255, 0.10);
   }
 
   .native-card-elevated {
@@ -342,8 +369,8 @@
   }
 
   .dark .native-card-elevated {
-    background-color: #2b2b2e; /* Distinct card surface fill */
-    border-color: rgba(255, 255, 255, 0.09); /* Crisp contrast border */
+    background-color: #282830; /* Distinct card surface fill */
+    border-color: rgba(255, 255, 255, 0.12); /* Crisp contrast border */
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2); /* Very light tight shadow */
   }
 
@@ -353,8 +380,8 @@
   }
 
   .dark .native-inset-box {
-    background-color: #1a1a1d; /* Deep inset contrast fill */
-    border-color: rgba(255, 255, 255, 0.07);
+    background-color: #16161c; /* Deep inset contrast fill */
+    border-color: rgba(255, 255, 255, 0.09);
     box-shadow: inset 0 1px 1px 0 rgba(0, 0, 0, 0.25);
   }
 

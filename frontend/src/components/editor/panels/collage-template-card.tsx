@@ -29,6 +29,8 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
     <div
       role="button"
       tabIndex={0}
+      aria-selected={isActive}
+      aria-label={tpl.name || "قالب كولاج"}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -37,10 +39,10 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
       }}
       onClick={() => onSelect(tpl)}
       className={cn(
-        "group flex flex-col items-stretch gap-2.5 p-3 rounded-xl border transition-all duration-300 text-right relative overflow-hidden bg-card shadow-2xs hover:border-primary/50 hover:shadow-md active:scale-[0.98] cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+        "group flex flex-col items-stretch gap-2.5 p-3 rounded-xl border transition-all duration-300 text-right relative overflow-hidden bg-card dark:bg-card shadow-2xs hover:border-primary/50 hover:shadow-md active:scale-[0.98] cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
         isActive
-          ? "border-2 border-primary bg-primary/5 shadow-xs"
-          : "border-border/80 dark:border-white/10"
+          ? "border-2 border-primary bg-primary/10 dark:bg-primary/15 shadow-xs ring-1 ring-primary/30"
+          : "border-border/90 dark:border-white/12 hover:bg-muted/40 dark:hover:bg-[#2e2e38]"
       )}
     >
       {/* Active Indicator Dot (Top Right) */}
@@ -79,16 +81,16 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
       )}
 
       {/* Collage Preview Frame */}
-      <div className="aspect-square w-full bg-muted/40 dark:bg-muted/15 rounded-xl p-1.5 border border-border/40 relative shrink-0">
-        <div className="w-full h-full relative overflow-hidden rounded-lg bg-background dark:bg-background shadow-inner border border-border/20">
+      <div className="aspect-square w-full bg-muted/80 dark:bg-[#16161c] rounded-xl p-1.5 border border-border/70 dark:border-white/8 relative shrink-0">
+        <div className="w-full h-full relative overflow-hidden rounded-lg bg-background dark:bg-[#101014] shadow-inner border border-border/40 dark:border-white/10">
           {tpl.cells.map((c, i) => (
             <div
               key={i}
               className={cn(
                 "absolute border rounded-md flex items-center justify-center overflow-hidden transition-all duration-300",
                 isActive
-                  ? "bg-primary/10 border-primary/45"
-                  : "bg-muted/60 dark:bg-muted/20 border-border group-hover:bg-accent/40 group-hover:border-primary/30"
+                  ? "bg-primary/15 border-primary/60"
+                  : "bg-card dark:bg-[#24242d] border-border dark:border-white/15 group-hover:bg-accent/40 group-hover:border-primary/40"
               )}
               style={{
                 left: `calc(${c.x * 100}% + 1px)`,
@@ -99,7 +101,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             >
               <ImageIcon className={cn(
                 "w-1/3 h-1/3 transition-transform duration-300 group-hover:scale-110",
-                isActive ? "text-primary/70" : "text-muted-foreground/45"
+                isActive ? "text-primary/80" : "text-muted-foreground/50"
               )} />
             </div>
           ))}

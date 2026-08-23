@@ -415,7 +415,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[96vw] sm:max-w-[1060px] h-[93vh] max-h-[850px] overflow-hidden border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl rounded-2xl shadow-2xl font-cairo flex flex-col p-3.5 gap-2.5 fluent-specular"
+        className="w-[96vw] sm:max-w-[1060px] h-[93vh] max-h-[850px] overflow-hidden border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl rounded-2xl shadow-xl font-cairo flex flex-col p-3.5 gap-2.5 fluent-specular"
         dir="rtl"
       >
         {/* Header — رأس النافذة المنظم مع محدد أبعاد الورقة المليمتري */}

@@ -448,7 +448,7 @@ export function DocumentScannerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[1180px] w-[90vw] h-[86vh] max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border/80 dark:border-white/10 bg-card/98 backdrop-blur-2xl p-4 shadow-2xl transition-all duration-150 fluent-specular"
+        className="sm:max-w-[1180px] w-[90vw] h-[86vh] max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border/80 dark:border-white/10 bg-card/98 backdrop-blur-2xl p-4 shadow-xl transition-all duration-150 fluent-specular"
         dir="rtl"
       >
         {/* Top Header */}
@@ -501,7 +501,7 @@ export function DocumentScannerDialog({
               <img
                 src={previewSrc}
                 alt="المستند المستعدل"
-                className="max-h-full max-w-full object-contain rounded-xl shadow-2xl border border-border/30 animate-in fade-in-50 duration-200"
+                className="max-h-full max-w-full object-contain rounded-xl shadow-md shadow-black/20 border border-border/30 animate-in fade-in-50 duration-200"
               />
             ) : (
               <canvas
@@ -519,7 +519,7 @@ export function DocumentScannerDialog({
             {/* Loupe Glass Magnifier */}
             <div
               className={cn(
-                "absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-zinc-950/95 shadow-2xl z-50 overflow-hidden ring-4 ring-primary/20",
+                "absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-zinc-950/95 shadow-lg z-50 overflow-hidden ring-4 ring-primary/20",
                 loupePos && activeCorner !== null ? "opacity-100 scale-100" : "opacity-0 scale-90"
               )}
               style={{

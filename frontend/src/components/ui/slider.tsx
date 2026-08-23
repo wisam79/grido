@@ -43,7 +43,7 @@ const Slider = React.forwardRef<
       <SliderPrimitive.Track
         data-slot="slider-track"
         className={cn(
-          "bg-muted dark:bg-muted/60 relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5 border border-border/40"
+          "bg-muted-foreground/20 dark:bg-[#14141a] relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5 border border-border/60 dark:border-white/10"
         )}
       >
         <SliderPrimitive.Range

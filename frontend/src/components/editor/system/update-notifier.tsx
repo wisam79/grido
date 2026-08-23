@@ -67,7 +67,7 @@ export function UpdateNotifier() {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isDownloading && setIsOpen(open)}>
       <DialogContent
-        className="max-w-sm bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl rounded-2xl p-5 dir-rtl fluent-specular"
+        className="max-w-sm bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-xl rounded-2xl p-5 dir-rtl fluent-specular"
         dir="rtl"
       >
         <DialogHeader className="space-y-1 text-right border-b border-border/60 pb-3">

@@ -573,7 +573,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         onOpenChange(next);
       }}
     >
-      <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border/80 dark:border-white/10 bg-background rounded-2xl shadow-2xl p-0 gap-0 fluent-specular" dir="rtl">
+      <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border/80 dark:border-white/10 bg-background rounded-2xl shadow-xl p-0 gap-0 fluent-specular" dir="rtl">
         {/* رأس النافذة — العنوان فقط؛ الإعدادات نُقلت للجسم لتفادي ازدحام الرأس */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
           <DialogTitle className="text-base font-bold tracking-tight text-foreground">
@@ -808,7 +808,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* لوحة الورقة البيضاء الممركزة داخل مساحة العمل */}
             <div className="flex-1 overflow-auto p-6 flex items-center justify-center select-none workspace-grid relative">
               <div
-                className="bg-white rounded-xs relative border border-slate-300/60 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-200"
+                className="bg-white rounded-xs relative border border-slate-300/60 shadow-md shadow-black/20 transition-all duration-200"
                 style={{
                   width: paperWidth * scaleFactor * zoom,
                   height: paperHeight * scaleFactor * zoom,

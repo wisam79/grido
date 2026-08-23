@@ -68,6 +68,8 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
     <FluentSection
       icon={<Grid3x3 className="w-3.5 h-3.5" />}
       title="الشبكة والأعمدة"
+      collapsible
+      defaultOpen={true}
       action={
         <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 border border-border/40 px-2 py-0.5 rounded-md font-bold">
           {showGrid || showColumns ? "نشط" : "مخفي"}
@@ -162,19 +164,32 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground font-semibold">لون الشبكة</span>
                 <div className="flex items-center gap-1.5">
-                  {["#000000", "#3b82f6", "#ec4899", "#10b981", "#f59e0b"].map((col) => (
-                    <button
-                      key={col}
-                      onClick={() => setGridColor(col)}
-                      className={cn(
-                        "w-4.5 h-4.5 rounded-full border border-black/10 transition-all cursor-pointer relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
-                        gridColor === col
-                          ? "ring-2 ring-primary ring-offset-1 scale-110"
-                          : "hover:scale-105"
-                      )}
-                      style={{ backgroundColor: col }}
-                    />
-                  ))}
+                  {[
+                    { hex: "#000000", label: "أسود" },
+                    { hex: "#3b82f6", label: "أزرق" },
+                    { hex: "#ec4899", label: "وردي" },
+                    { hex: "#10b981", label: "أخضر" },
+                    { hex: "#f59e0b", label: "برتقالي" },
+                  ].map((col) => {
+                    const isSelected = gridColor === col.hex;
+                    return (
+                      <button
+                        key={col.hex}
+                        type="button"
+                        aria-label={col.label}
+                        aria-pressed={isSelected}
+                        title={col.label}
+                        onClick={() => setGridColor(col.hex)}
+                        className={cn(
+                          "w-5.5 h-5.5 rounded-full border border-black/10 transition-all cursor-pointer relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                          isSelected
+                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
+                            : "hover:scale-105"
+                        )}
+                        style={{ backgroundColor: col.hex }}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
@@ -239,20 +254,26 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     { hex: "rgba(16, 185, 129, 0.08)", label: "أخضر خفيف" },
                     { hex: "rgba(139, 92, 246, 0.08)", label: "بنفسجي خفيف" },
                     { hex: "rgba(0, 0, 0, 0.08)", label: "رمادي خفيف" }
-                  ].map((colorObj) => (
-                    <button
-                      key={colorObj.hex}
-                      onClick={() => setColumnsColor(colorObj.hex)}
-                      className={cn(
-                        "w-4.5 h-4.5 rounded-full border border-black/10 transition-all cursor-pointer relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
-                        columnsColor === colorObj.hex
-                          ? "ring-2 ring-primary ring-offset-1 scale-110"
-                          : "hover:scale-105"
-                      )}
-                      style={{ backgroundColor: colorObj.hex.replace("0.08", "0.25") }}
-                      title={colorObj.label}
-                    />
-                  ))}
+                  ].map((colorObj) => {
+                    const isSelected = columnsColor === colorObj.hex;
+                    return (
+                      <button
+                        key={colorObj.hex}
+                        type="button"
+                        aria-label={colorObj.label}
+                        aria-pressed={isSelected}
+                        onClick={() => setColumnsColor(colorObj.hex)}
+                        className={cn(
+                          "w-5.5 h-5.5 rounded-full border border-black/10 transition-all cursor-pointer relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                          isSelected
+                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
+                            : "hover:scale-105"
+                        )}
+                        style={{ backgroundColor: colorObj.hex.replace("0.08", "0.25") }}
+                        title={colorObj.label}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             </div>

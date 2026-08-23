@@ -609,7 +609,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     </span>
                   </button>
                 </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 p-3 font-cairo shadow-2xl rounded-xl border-border/60 fluent-specular z-50">
+                <PopoverContent side="left" className="w-64 p-3 font-cairo shadow-lg rounded-xl border-border/60 fluent-specular z-50">
                   <GradientPicker
                     fillType={element.fillType || "solid"}
                     color={element.color || "#000000"}

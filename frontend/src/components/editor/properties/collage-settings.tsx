@@ -55,6 +55,8 @@ export function CollageSettings() {
       <FluentSection
         icon={<Columns className="w-3.5 h-3.5" />}
         title="المسافات والاستدارة"
+        collapsible
+        defaultOpen={true}
       >
         <div className="flex flex-col gap-2.5">
           <FluentSliderField
@@ -97,6 +99,8 @@ export function CollageSettings() {
       <FluentSection
         icon={<Maximize2 className="w-3.5 h-3.5" />}
         title="إطار وحدود الصور"
+        collapsible
+        defaultOpen={true}
       >
         <div className="space-y-2.5">
           <FluentSliderField
@@ -114,26 +118,31 @@ export function CollageSettings() {
           {/* Frame Color Row — shown only when stroke is active */}
           {collageStrokeWidth > 0 && (
             <div className="flex items-center justify-between gap-2 border-t border-border/20 pt-2 animate-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 {[
                   { hex: "#e10e0e", label: "أحمر" },
                   { hex: "#000000", label: "أسود" },
                   { hex: "#9ca3af", label: "رمادي" },
                   { hex: "#2563eb", label: "أزرق" },
                   { hex: "#ffffff", label: "أبيض" },
-                ].map(({ hex, label }) => (
-                  <button
-                    key={hex}
-                    type="button"
-                    onClick={() => { setCollageStrokeColor(hex); commitColorLater(); }}
-                    title={label}
-                    className={cn(
-                      "w-4 h-4 rounded-full border border-black/15 dark:border-white/20 transition-transform cursor-pointer hover:scale-125 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
-                      collageStrokeColor.toLowerCase() === hex.toLowerCase() && "ring-2 ring-primary ring-offset-1 scale-110"
-                    )}
-                    style={{ backgroundColor: hex }}
-                  />
-                ))}
+                ].map(({ hex, label }) => {
+                  const isSelected = collageStrokeColor.toLowerCase() === hex.toLowerCase();
+                  return (
+                    <button
+                      key={hex}
+                      type="button"
+                      aria-label={label}
+                      aria-pressed={isSelected}
+                      onClick={() => { setCollageStrokeColor(hex); commitColorLater(); }}
+                      title={label}
+                      className={cn(
+                        "w-5.5 h-5.5 rounded-full border border-black/15 dark:border-white/20 transition-all cursor-pointer hover:scale-110 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
+                      )}
+                      style={{ backgroundColor: hex }}
+                    />
+                  );
+                })}
               </div>
 
               <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/45 rounded-md px-2 w-28 h-8 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background">
@@ -159,6 +168,8 @@ export function CollageSettings() {
       <FluentSection
         icon={<Scissors className="w-3.5 h-3.5" />}
         title="خطوط القص والمحاذاة"
+        collapsible
+        defaultOpen={true}
       >
         <div className="space-y-2">
           <FluentSettingRow

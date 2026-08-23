@@ -18,8 +18,8 @@ test.describe('Collage Mode and Filters E2E', () => {
     await expect(gridTemplateCard).toBeVisible();
     await gridTemplateCard.click();
 
-    // شريط الحالة يظل مستقراً بعد تطبيق القالب
-    await expect(page.getByText(/جاهز/)).toBeVisible();
+    // شريط الحالة يظل مستقراً بعد تطبيق القالب (مطابقة تامة لتفادي تعارض عناوين الألواح)
+    await expect(page.getByText('جاهز', { exact: true })).toBeVisible();
   });
 
 });

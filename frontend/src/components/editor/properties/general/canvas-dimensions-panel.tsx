@@ -172,6 +172,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     <FluentSection
       icon={<RefreshCw className="w-3.5 h-3.5 text-primary" />}
       title="مساحة العمل"
+      collapsible
+      defaultOpen={true}
       action={
         <span className="text-[9.5px] text-muted-foreground font-mono bg-muted/40 border border-border/40 px-2 py-0.5 rounded-md font-bold" dir="ltr">
           {canvasWidth} × {canvasHeight} px
@@ -194,20 +196,22 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           {/* A4 Button */}
           <button
             type="button"
+            aria-pressed={activePresetId === "a4"}
+            aria-label="ورقة A4 210 × 297 مم"
             onClick={() => handlePresetChange("a4")}
             className={cn(
-              "relative flex items-center gap-2 p-2 rounded-xl border text-right transition-all cursor-pointer h-12 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+              "relative flex items-center gap-1.5 p-1.5 rounded-md border text-right transition-all cursor-pointer h-10 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
               activePresetId === "a4"
                 ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                 : "border-border/60 hover:bg-muted/30 text-foreground"
             )}
           >
-            <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg bg-muted/40 border border-border/40">
+            <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-md bg-muted/40 border border-border/40">
               <PresetMiniature id="a4" active={activePresetId === "a4"} />
             </div>
             <div className="flex flex-col items-start min-w-0 flex-1">
               <span className="text-[11px] font-bold leading-tight">ورقة A4</span>
-              <span className="text-[8.5px] text-muted-foreground font-mono leading-none mt-0.5" dir="ltr">210 × 297 mm</span>
+              <span className="text-[9px] text-muted-foreground font-mono leading-none mt-0.5" dir="ltr">210 × 297 mm</span>
             </div>
             {activePresetId === "a4" && <Check className="w-3.5 h-3.5 text-primary shrink-0 stroke-[2.5]" />}
           </button>
@@ -215,20 +219,22 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           {/* 4x6 Photo Button (10x15 cm) */}
           <button
             type="button"
+            aria-pressed={activePresetId === "4x6"}
+            aria-label="ورقة 4×6 100 × 150 مم"
             onClick={() => handlePresetChange("4x6")}
             className={cn(
-              "relative flex items-center gap-2 p-2 rounded-xl border text-right transition-all cursor-pointer h-12 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+              "relative flex items-center gap-1.5 p-1.5 rounded-md border text-right transition-all cursor-pointer h-10 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
               activePresetId === "4x6"
                 ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                 : "border-border/60 hover:bg-muted/30 text-foreground"
             )}
           >
-            <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg bg-muted/40 border border-border/40">
+            <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-md bg-muted/40 border border-border/40">
               <PresetMiniature id="4x6" active={activePresetId === "4x6"} />
             </div>
             <div className="flex flex-col items-start min-w-0 flex-1">
               <span className="text-[11px] font-bold leading-tight">4×6 (10×15)</span>
-              <span className="text-[8.5px] text-muted-foreground font-mono leading-none mt-0.5" dir="ltr">100 × 150 mm</span>
+              <span className="text-[9px] text-muted-foreground font-mono leading-none mt-0.5" dir="ltr">100 × 150 mm</span>
             </div>
             {activePresetId === "4x6" && <Check className="w-3.5 h-3.5 text-primary shrink-0 stroke-[2.5]" />}
           </button>
@@ -236,20 +242,22 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           {/* A5 Button */}
           <button
             type="button"
+            aria-pressed={activePresetId === "a5"}
+            aria-label="ورقة A5 148 × 210 مم"
             onClick={() => handlePresetChange("a5")}
             className={cn(
-              "relative flex items-center gap-2 p-2 rounded-xl border text-right transition-all cursor-pointer h-12 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+              "relative flex items-center gap-1.5 p-1.5 rounded-md border text-right transition-all cursor-pointer h-10 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
               activePresetId === "a5"
                 ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                 : "border-border/60 hover:bg-muted/30 text-foreground"
             )}
           >
-            <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg bg-muted/40 border border-border/40">
+            <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-md bg-muted/40 border border-border/40">
               <PresetMiniature id="a5" active={activePresetId === "a5"} />
             </div>
             <div className="flex flex-col items-start min-w-0 flex-1">
               <span className="text-[11px] font-bold leading-tight">ورقة A5</span>
-              <span className="text-[8.5px] text-muted-foreground font-mono leading-none mt-0.5" dir="ltr">148 × 210 mm</span>
+              <span className="text-[9px] text-muted-foreground font-mono leading-none mt-0.5" dir="ltr">148 × 210 mm</span>
             </div>
             {activePresetId === "a5" && <Check className="w-3.5 h-3.5 text-primary shrink-0 stroke-[2.5]" />}
           </button>
@@ -259,15 +267,16 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
+                aria-label="مقاسات ورق أخرى"
                 className={cn(
-                  "relative flex items-center justify-between gap-1.5 p-2 rounded-xl border text-right transition-all cursor-pointer h-12 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  "relative flex items-center justify-between gap-1.5 p-1.5 rounded-md border text-right transition-all cursor-pointer h-10 bg-card select-none hover:border-primary/45 active:scale-[0.98] w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                   !["a4", "4x6", "a5"].includes(activePresetId)
                     ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                     : "border-border/60 text-foreground hover:bg-muted/30"
                 )}
               >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg bg-muted/40 border border-border/40">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-md bg-muted/40 border border-border/40">
                     <PresetMiniature id={activePresetId} active={!["a4", "4x6", "a5"].includes(activePresetId)} />
                   </div>
                   <div className="flex flex-col items-start min-w-0 flex-1">
@@ -276,7 +285,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                         ? "مقاس مخصص"
                         : PAPER_SIZES.find((p) => p.id === activePresetId)?.name.split(" (")[0] || "مقاسات أخرى"}
                     </span>
-                    <span className="text-[8.5px] text-muted-foreground leading-none mt-0.5">
+                    <span className="text-[9px] text-muted-foreground leading-none mt-0.5">
                       {activePresetId === "custom" ? "يدوي" : "A3, 5×7, ..."}
                     </span>
                   </div>
@@ -315,7 +324,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         {/* حقول الأبعاد الموزعة بنمط Figma الراقي */}
         <div className="flex items-center gap-1.5" dir="rtl">
           {/* العرض W */}
-          <div className="flex-1 flex items-center bg-background/70 border border-border/80 hover:border-primary/45 rounded-lg px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-2xs">
+          <div className="flex-1 flex items-center bg-background/70 border border-border/80 hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs">
             <span className="text-[10px] font-bold text-muted-foreground/70 select-none w-3 text-center">W</span>
             <input
               type="number"
@@ -333,13 +342,14 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             type="button"
             onClick={handleSwapDimensions}
             title="تبديل الاتجاه (أفقي/عمودي)"
-            className="w-8 h-8 rounded-lg bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/70 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+            aria-label="تبديل الاتجاه (أفقي/عمودي)"
+            className="w-8 h-8 rounded-md bg-muted/40 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/70 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <ArrowLeftRight className="w-3.5 h-3.5" />
           </button>
 
           {/* الارتفاع H */}
-          <div className="flex-1 flex items-center bg-background/70 border border-border/80 hover:border-primary/45 rounded-lg px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-2xs">
+          <div className="flex-1 flex items-center bg-background/70 border border-border/80 hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs">
             <span className="text-[10px] font-bold text-muted-foreground/70 select-none w-3 text-center">H</span>
             <input
               type="number"

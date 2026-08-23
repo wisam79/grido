@@ -496,7 +496,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
   return (
     <Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
-      <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden fluent-specular" dir="rtl" showCloseButton={false}>
+      <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden fluent-specular" dir="rtl" showCloseButton={false}>
         <DialogHeader className="p-4 border-b border-border/40 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-sm font-bold flex items-center gap-2">
             <Paintbrush className="w-4 h-4 text-primary" />
@@ -689,7 +689,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
             {/* Background container for inspection */}
             <div 
-              className="relative shadow-2xl transition-transform duration-75 ease-out"
+              className="relative shadow-md shadow-black/20 transition-transform duration-75 ease-out"
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
                 transformOrigin: 'center center',

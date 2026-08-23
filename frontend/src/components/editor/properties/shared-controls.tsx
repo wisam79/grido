@@ -280,7 +280,7 @@ export function ColorWheelPicker({
   const displayColor = isTransparent ? "#FFFFFF" : color;
 
   return (
-    <div className="p-2.5 bg-card/95 backdrop-blur-2xl rounded-xl border border-border/80 dark:border-white/10 mt-1 flex flex-col gap-2 w-full shadow-2xl fluent-specular animate-in fade-in duration-200">
+    <div className="p-2.5 bg-card/95 backdrop-blur-2xl rounded-xl border border-border/80 dark:border-white/10 mt-1 flex flex-col gap-2 w-full shadow-lg fluent-specular animate-in fade-in duration-200">
       <div className="custom-color-picker w-full">
         <HexColorPicker
           color={isTransparent ? "#ffffff" : color}
@@ -320,7 +320,7 @@ export function ColorWheelPicker({
             placeholder="#HEX"
           />
           <div
-            className="w-4 h-4 rounded-[3px] border border-border shadow-2xs shrink-0 relative overflow-hidden"
+            className="w-4 h-4 rounded-xs border border-border shadow-2xs shrink-0 relative overflow-hidden"
             style={{
               backgroundColor: displayColor,
             }}
@@ -343,14 +343,16 @@ export function ColorWheelPicker({
         <div className="grid grid-cols-9 gap-1.5">
           <button
             type="button"
+            aria-label="شفاف"
+            aria-pressed={isTransparent}
             onClick={() => {
               setInputValue("transparent");
               onChange("transparent");
             }}
             className={cn(
-              "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer relative overflow-hidden active:scale-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+              "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer relative overflow-hidden active:scale-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               isTransparent 
-                ? "ring-2 ring-primary ring-offset-1 border-primary scale-95" 
+                ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-95" 
                 : "border-border/40 hover:scale-105"
             )}
             title="شفاف"
@@ -370,14 +372,16 @@ export function ColorWheelPicker({
               <button
                 key={bg.value}
                 type="button"
+                aria-label={bg.name}
+                aria-pressed={isActive}
                 onClick={() => {
                   setInputValue(bg.value);
                   onChange(bg.value);
                 }}
                 className={cn(
-                  "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  "aspect-square w-full rounded-md border shadow-xs transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                   isActive 
-                    ? "ring-2 ring-primary ring-offset-1 border-primary scale-95" 
+                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-95" 
                     : "border-border/40 hover:scale-105"
                 )}
                 style={{ backgroundColor: bg.value }}

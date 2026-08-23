@@ -225,7 +225,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         align="start"
         sideOffset={6}
         collisionPadding={12}
-        className="w-[305px] max-w-[calc(100vw-24px)] bg-card/95 backdrop-blur-2xl border border-border/80 rounded-xl shadow-2xl z-[99999] p-2.5 space-y-2 font-cairo fluent-specular"
+        className="w-[305px] max-w-[calc(100vw-24px)] bg-card/95 backdrop-blur-2xl border border-border/80 rounded-xl shadow-xl z-[99999] p-2.5 space-y-2 font-cairo fluent-specular"
         onKeyDown={handleKeyDown}
       >
         {/* Search Box & Custom Preview Toggle */}

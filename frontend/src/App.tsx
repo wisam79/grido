@@ -248,7 +248,7 @@ export default function App() {
 
         {/* شاشة التفعيل المركزية */}
         <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-right p-6">
-          <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-2xl space-y-6 text-center fluent-specular">
+          <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-xl space-y-6 text-center fluent-specular">
             <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
               <Lock className="w-10 h-10" />
             </div>
@@ -547,13 +547,13 @@ export default function App() {
         {/* لوحة القوالب — أول عنصر في flex مع dir="rtl" فيُعرض على يمين الشاشة */}
         <aside
           className={cn(
-            "hidden lg:flex h-full border-l border-border/70 native-depth-sidebar flex-col no-print z-20 transition-all duration-200 overflow-hidden",
+            "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
             rightSidebarOpen
               ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100"
-              : "w-0 min-w-0 max-w-0 border-l-0 opacity-0 pointer-events-none"
+              : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0"
           )}
         >
-          <TemplatePanel />
+          <TemplatePanel onCollapse={() => setRightSidebarOpen(false)} />
         </aside>
 
         {/* الكانفس - الوسط */}
@@ -603,13 +603,13 @@ export default function App() {
         {/* لوحة الخصائص — ثاني عنصر في flex مع dir="rtl" فيُعرض على يسار الشاشة */}
         <aside
           className={cn(
-            "hidden lg:flex h-full border-r border-border/70 native-depth-sidebar flex-col no-print shadow-sm z-20 transition-all duration-200 overflow-hidden",
+            "hidden lg:flex h-full native-depth-sidebar flex-col no-print shadow-sm z-20 overflow-hidden fluent-panel-motion",
             leftSidebarOpen
               ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100"
-              : "w-0 min-w-0 max-w-0 border-r-0 opacity-0 pointer-events-none"
+              : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0"
           )}
         >
-          <PropertiesPanel />
+          <PropertiesPanel onCollapse={() => setLeftSidebarOpen(false)} />
         </aside>
       </main>
 

@@ -217,7 +217,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
     <div className="w-full flex items-center justify-center bg-muted/20 dark:bg-zinc-950/60 rounded-2xl relative flex-1 min-h-0 overflow-hidden p-1.5 border border-border/40 font-cairo">
       <div
         ref={paperRef}
-        className="relative bg-white dark:bg-zinc-900 border-2 border-slate-300 dark:border-zinc-700/80 shadow-2xl rounded-lg transition-colors overflow-hidden touch-none"
+        className="relative bg-white dark:bg-zinc-900 border-2 border-slate-300 dark:border-zinc-700/80 shadow-md shadow-black/15 rounded-lg transition-colors overflow-hidden touch-none"
         style={{
           width: paperAspect >= 1 ? "98%" : "auto",
           height: paperAspect < 1 ? "98%" : "auto",

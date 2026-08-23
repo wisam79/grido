@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 
 export interface FluentSectionProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
@@ -11,6 +12,10 @@ export interface FluentSectionProps
   children: React.ReactNode;
   contentClassName?: string;
   headerClassName?: string;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const FluentSection = React.memo(
@@ -25,29 +30,49 @@ export const FluentSection = React.memo(
       className,
       contentClassName,
       headerClassName,
+      collapsible = false,
+      defaultOpen = true,
+      open: controlledOpen,
+      onOpenChange,
       ...props
     },
     ref
   ) {
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
+    const isControlled = controlledOpen !== undefined;
+    const isOpen = isControlled ? controlledOpen : uncontrolledOpen;
+
+    const handleToggle = () => {
+      if (!collapsible) return;
+      const next = !isOpen;
+      if (!isControlled) {
+        setUncontrolledOpen(next);
+      }
+      onOpenChange?.(next);
+    };
+
     return (
       <div
         ref={ref}
         className={cn(
-          "rounded-xl border border-border/80 dark:border-white/10 bg-card/90 dark:bg-card/70 backdrop-blur-md p-3 shadow-2xs fluent-specular transition-all duration-150",
+          "rounded-xl border border-border/80 dark:border-white/12 bg-card dark:bg-card backdrop-blur-md p-3 shadow-2xs fluent-specular transition-all duration-150",
           className
         )}
         {...props}
       >
         {/* Section Header */}
         <div
+          onClick={collapsible ? handleToggle : undefined}
           className={cn(
-            "flex items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-border/40 select-none",
+            "flex items-center justify-between gap-2 select-none",
+            isOpen ? "pb-2.5 mb-2.5 border-b border-border/50 dark:border-white/10" : "",
+            collapsible && "cursor-pointer group/sec-header hover:opacity-90 transition-opacity",
             headerClassName
           )}
         >
           <div className="flex items-center gap-2 min-w-0">
             {icon && (
-              <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 flex items-center justify-center">
+              <div className="p-1 rounded-md bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20 shrink-0 flex items-center justify-center">
                 {icon}
               </div>
             )}
@@ -66,16 +91,39 @@ export const FluentSection = React.memo(
             </div>
           </div>
 
-          {action && <div className="shrink-0 flex items-center gap-1.5">{action}</div>}
+          <div className="shrink-0 flex items-center gap-1.5">
+            {action && (
+              <div
+                onClick={(e) => {
+                  if (collapsible) e.stopPropagation();
+                }}
+              >
+                {action}
+              </div>
+            )}
+            {collapsible && (
+              <div className="p-0.5 rounded text-muted-foreground/70 group-hover/sec-header:text-foreground transition-colors">
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 transition-transform duration-200 stroke-[2.5]",
+                    !isOpen && "rotate-90 rtl:-rotate-90"
+                  )}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Section Body Content */}
-        <div className={cn("space-y-2.5", contentClassName)}>
-          {children}
-        </div>
+        {isOpen && (
+          <div className={cn("space-y-2.5 animate-in fade-in duration-150", contentClassName)}>
+            {children}
+          </div>
+        )}
       </div>
     );
   })
 );
 
 FluentSection.displayName = "FluentSection";
+

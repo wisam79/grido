@@ -32,7 +32,7 @@ export function FluentSegmentedControl<T extends string = string>({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 bg-muted/60 dark:bg-muted/30 backdrop-blur-md p-1 rounded-xl border border-black/5 dark:border-white/10 select-none fluent-specular",
+        "flex items-center gap-1 bg-muted/80 dark:bg-[#18181f] p-1 rounded-xl border border-border/80 dark:border-white/10 select-none fluent-specular",
         className
       )}
       dir="rtl"
@@ -52,14 +52,14 @@ export function FluentSegmentedControl<T extends string = string>({
               isSm ? "h-7 px-2.5 text-[11px]" : "h-8 px-3 text-xs",
               isActive
                 ? "text-primary font-bold shadow-2xs"
-                : "text-muted-foreground hover:text-foreground",
+                : "text-muted-foreground hover:text-foreground font-medium",
               opt.disabled && "opacity-40 cursor-not-allowed pointer-events-none"
             )}
           >
             {isActive && (
               <motion.div
                 layoutId={layoutId}
-                className="absolute inset-0 bg-background dark:bg-card border border-black/5 dark:border-white/10 rounded-md shadow-xs -z-10"
+                className="absolute inset-0 bg-card dark:bg-[#2c2c36] border border-black/10 dark:border-white/15 rounded-md shadow-xs -z-10"
                 transition={{ type: "spring", stiffness: 500, damping: 35 }}
               />
             )}

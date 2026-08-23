@@ -31,7 +31,7 @@ export const CanvasPaper = React.memo(
       <div
         ref={ref}
         id="canvas-area"
-        className="relative rounded-sm overflow-hidden border border-white/5 transition-shadow duration-300 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.55)] hover:shadow-[0_30px_70px_-10px_rgba(0,0,0,0.7)] fluent-specular select-none"
+        className="relative rounded-sm overflow-hidden border border-black/10 dark:border-white/10 transition-shadow duration-300 shadow-md shadow-black/15 hover:shadow-lg hover:shadow-black/20 fluent-specular select-none"
         style={{
           width: displayW,
           height: displayH,
