@@ -294,15 +294,17 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       throw e;
     }
 
-    const singleComp = buildSingleComposition({
+    const singleCompRes = buildSingleComposition({
       elements,
       canvasWidth,
       canvasHeight,
-      exportDpi,
-      printSettings,
+      canvasWidthMM: imageWidthMM,
+      canvasHeightMM: imageHeightMM,
+      backgroundColor: backgroundColor || previewWhite(),
     });
 
-    const isSimpleRaster = singleComp !== null;
+    const isSimpleRaster = singleCompRes.eligible && !!singleCompRes.composition;
+    const comp = singleCompRes.composition;
     let singleDataUrl = "";
     if (!isSimpleRaster) {
       try {
@@ -345,32 +347,32 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     for (let i = 0; i < actualCopies; i++) {
       const block = computeBlockPosition(i, grid);
 
-      if (isSimpleRaster && singleComp) {
+      if (isSimpleRaster && comp) {
         const itemWidthMM = imageWidthMM;
         const itemHeightMM = imageHeightMM;
-        const scaleX = itemWidthMM / singleComp.renderBox.wMM;
-        const scaleY = itemHeightMM / singleComp.renderBox.hMM;
+        const scaleX = itemWidthMM / comp.canvasWidthPx;
+        const scaleY = itemHeightMM / comp.canvasHeightPx;
 
-        for (const compItem of singleComp.items) {
+        for (const compItem of comp.items) {
           items.push(
             domain.PrintItem.createFrom({
               imageSrc: compItem.imageSrc,
-              x: block.xMM + compItem.xMM * scaleX,
-              y: block.yMM + compItem.yMM * scaleY,
-              w: compItem.wMM * scaleX,
-              h: compItem.hMM * scaleY,
+              x: block.xMM + compItem.x * scaleX,
+              y: block.yMM + compItem.y * scaleY,
+              w: compItem.w * scaleX,
+              h: compItem.h * scaleY,
               filter: compItem.filter,
               brightness: compItem.brightness,
               contrast: compItem.contrast,
               saturation: compItem.saturation,
-              slotAspect: compItem.wMM / compItem.hMM,
-              zoom: compItem.zoom,
-              dragX: compItem.dragX,
-              dragY: compItem.dragY,
-              cornerRadiusMM: compItem.cornerRadiusMM * scaleX,
-              borderWidthMM: compItem.borderWidthMM * scaleX,
-              borderColor: compItem.borderColor,
-              bgColor: compItem.bgColor,
+              slotAspect: compItem.w / Math.max(1, compItem.h),
+              zoom: 1,
+              dragX: 0,
+              dragY: 0,
+              cornerRadiusMM: (compItem.cornerRadius / comp.canvasWidthPx) * itemWidthMM,
+              borderWidthMM: 0,
+              borderColor: "#000000",
+              bgColor: compItem.bgColor || "",
               flipX: compItem.flipX,
               flipY: compItem.flipY,
               rotation: compItem.rotation,
