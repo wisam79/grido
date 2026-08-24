@@ -61,11 +61,11 @@ export function Header() {
       }`}
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-[64px] flex items-center justify-between">
+        <div className="h-14 sm:h-16 flex items-center justify-between">
           
-          {/* Logo with Original App Icon */}
-          <a href="#top" className="flex items-center gap-3 select-none group">
-            <div className="relative w-9 h-9 flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+          {/* Clean Responsive Logo */}
+          <a href="#top" className="flex items-center gap-2.5 sm:gap-3 select-none group">
+            <div className="relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shrink-0">
               <img
                 src="/logo.png"
                 alt="Grido Studio Logo"
@@ -80,15 +80,15 @@ export function Header() {
                 <span className="text-sm font-extrabold tracking-tight text-white group-hover:text-[#60a5fa] transition-colors">
                   Grido Studio
                 </span>
-                <span className="text-[10px] text-[#60a5fa] font-mono font-bold px-1.5 py-0.2 rounded bg-[#3b82f6]/10 border border-[#3b82f6]/25">
+                <span className="text-[9px] sm:text-[10px] text-[#60a5fa] font-mono font-bold px-1.5 py-0.2 rounded bg-[#3b82f6]/10 border border-[#3b82f6]/25">
                   PRO
                 </span>
               </div>
-              <span className="text-[10px] text-[#9E9E9E] -mt-0.5">استوديو الهوية والطباعة</span>
+              <span className="text-[10px] text-[#9E9E9E] -mt-0.5 hidden sm:block">استوديو الهوية والطباعة</span>
             </div>
           </a>
 
-          {/* Centered Neutral Charcoal Nav Links */}
+          {/* Desktop Nav Links (hidden on mobile) */}
           <nav className="hidden lg:flex items-center gap-1 bg-[#1E1E1E] p-1 rounded-full border border-[#2C2C2C]" aria-label="التنقل الرئيسي">
             {NAV_LINKS.map((link) => {
               const isActive = activeSection === link.href;
@@ -109,20 +109,22 @@ export function Header() {
             })}
           </nav>
 
-          {/* Primary Action CTA */}
-          <div className="flex items-center gap-3">
+          {/* Actions Column */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            
+            {/* Desktop-only Header CTA (Keeps mobile clean) */}
             <a
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary text-xs !py-2 !px-4 !h-9"
+              className="hidden sm:inline-flex btn-primary text-xs !py-2 !px-4 !h-9"
               aria-label="تحميل البرنامج"
             >
               <Download className="w-3.5 h-3.5" />
               <span>تحميل البرنامج</span>
             </a>
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setMenuOpen((v) => !v)}
               className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-[#1E1E1E] text-white border border-[#2C2C2C] cursor-pointer hover:bg-[#262626] transition-colors"
@@ -134,7 +136,7 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile Dropdown Menu Drawer */}
         {menuOpen && (
           <div className="lg:hidden pb-5 pt-2 border-t border-[#2C2C2C] bg-[#121212] animate-fadeIn">
             <nav className="flex flex-col gap-1.5">
@@ -155,7 +157,9 @@ export function Header() {
               <div className="pt-2 px-1">
                 <a
                   href={GITHUB_RELEASE_DOWNLOAD_URL}
-                  className="btn-primary w-full text-center justify-center !py-2.5"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary w-full text-center justify-center !py-2.5 text-xs font-bold"
                 >
                   <Download className="w-4 h-4" />
                   <span>تحميل مباشر لويندوز</span>
