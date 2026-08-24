@@ -1,41 +1,63 @@
-import { Check, X, Sparkles, Zap, Clock, ShieldCheck, Flame, Scissors, Lock } from 'lucide-react';
+import { Check, X, Sparkles, Zap, ShieldCheck, Scissors, Lock, Clock, Flame, AlertCircle } from 'lucide-react';
 
-const COMPARISONS = [
+const OLD_WAY = [
   {
-    feature: 'الوقت المستغرق لتجهيز الزبون',
-    legacy: '5 إلى 8 دقائق (قص يدوي في الفوتوشوب)',
-    grido: '3 ثوانٍ فقط (عزل وتوزيع آلي فوري)',
+    title: '5 إلى 8 دقائق للزبون الواحد',
+    desc: 'قص يدوي مجهد بالفرشاة والممحاة داخل برامج التصميم المعقدة.',
     icon: Clock,
   },
   {
-    feature: 'عزل الخلفيات وإزالة الهالات',
-    legacy: 'تحديد يدوي يترك حواف بيضاء خشنة',
-    grido: 'عزل ذكي نقي مع تصفير الهالات',
-    icon: Sparkles,
+    title: 'هالات بيضاء وحواف غير دقيقة',
+    desc: 'تحديد يدوي يترك أطرافاً بيضاء خشنة قد ترفضها السفارات والجهات الرسمية.',
+    icon: AlertCircle,
   },
   {
-    feature: 'مطابقة شروط الجوازات والفيزا',
-    legacy: 'تخمين يدوي قد ترفضه السفارات',
-    grido: 'قوالب قياسية معتمدة 100%',
-    icon: ShieldCheck,
-  },
-  {
-    feature: 'توزيع الصور ومصفوفة الطباعة',
-    legacy: 'نسخ وتكرار يدوي مع هدر في الورق',
-    grido: 'توزيع ذكي مع خطوط قص 0.5mm',
+    title: 'هدر مستمر في ورق الطباعة',
+    desc: 'ترتيب وتكرار يدوي للصور يضيع مساحة الورق بدون خطوط إرشادية للمقص.',
     icon: Scissors,
   },
   {
-    feature: 'خصوصية بيانات العملاء وسرية الصور',
-    legacy: 'مواقع سحابية ترفع الصور لخوادم خارجية',
-    grido: '100% محلي دون أي اتصال بالإنترنت',
+    title: 'مخاطر الخصوصية وتسريب الصور',
+    desc: 'مواقع وأدوات سحابية ترفع صور عملائك إلى خوادم خارجية غير موثوقة.',
     icon: Lock,
   },
   {
-    feature: 'نموذج التكلفة والتراخيص',
-    legacy: 'اشتراكات شهرية متكررة ترهق الاستوديو',
-    grido: 'رخصة أصلية لمدى الحياة بدون رسوم',
+    title: 'اشتراكات شهرية متكررة',
+    desc: 'دفع مستمر وفواتير شهرية باهظة تستنزف أرباح الاستوديو شهراً بعد شهر.',
     icon: Flame,
+  },
+];
+
+const GRIDO_WAY = [
+  {
+    title: '3 ثوانٍ فقط بضغطة زر واحدة',
+    desc: 'عزل فوري، ضبط معالم الوجه، وتجهيز مصفوفة الطباعة في لحظات.',
+    icon: Zap,
+    highlight: 'أسرع 90%',
+  },
+  {
+    title: 'عزل نقي ومطابقة دولية معتمدة',
+    desc: 'تصفير الهالات البيضاء ومطابقة كاملة لمواصفات الجوازات والفيزا (ICAO).',
+    icon: ShieldCheck,
+    highlight: 'معتمد 100%',
+  },
+  {
+    title: 'توفير 35% من الورق مع خطوط قص',
+    desc: 'حساب ذكي لأقصى استغلال للورقة مع رسم خطوط قص دقيقة 0.5mm للمقص المكتبي.',
+    icon: Scissors,
+    highlight: 'توفير 35%',
+  },
+  {
+    title: 'خصوصية محلية 100% دون إنترنت',
+    desc: 'جميع الصور تُعالج محلياً على جهازك دون إرسال أي بايت خارج حاسوبك.',
+    icon: Lock,
+    highlight: 'أمان تام',
+  },
+  {
+    title: 'رخصة أصلية لمدى الحياة',
+    desc: 'استثمار لمرة واحدة فقط؛ ملكية دائمة مع كافة التحديثات مجاناً للأبد.',
+    icon: Sparkles,
+    highlight: 'بدون اشتراك',
   },
 ];
 
@@ -45,114 +67,128 @@ export function ComparisonSection() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
           <div className="ai-badge mb-3">
             <Zap className="w-3.5 h-3.5 text-[#3b82f6]" />
-            <span>مقارنة السرعة والكفاءة</span>
+            <span>مقارنة الأداء والإنتاجية</span>
           </div>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-3 tracking-tight">
             لماذا يختار المحترفون استوديو جريدو؟
           </h2>
           <p className="text-xs sm:text-base text-[#9E9E9E] max-w-2xl mx-auto leading-relaxed">
-            مقارنة مباشرة بين الطرق التقليدية البطيئة وسير العمل الفوري مع Grido Studio.
+            مقارنة مباشرة بين عناء الطرق اليدوية القديمة وسرعة الإنتاج مع Grido Studio.
           </p>
         </div>
 
-        {/* Mobile View: Card-based Comparison (< sm) */}
-        <div className="block sm:hidden space-y-3">
-          {COMPARISONS.map((row) => {
-            const Icon = row.icon;
-            return (
-              <div
-                key={row.feature}
-                className="p-4 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] space-y-3 shadow-sm"
-              >
-                <div className="flex items-center gap-2 text-white font-bold text-xs pb-2 border-b border-[#2C2C2C]">
-                  <div className="w-7 h-7 rounded-lg bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0">
-                    <Icon className="w-3.5 h-3.5" />
-                  </div>
-                  <span>{row.feature}</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  {/* Legacy */}
-                  <div className="p-2.5 rounded-xl bg-[#141414] border border-[#2C2C2C] flex flex-col justify-between">
-                    <div className="flex items-center gap-1 text-[#ef4444] font-bold text-[10px] mb-1">
-                      <X className="w-3 h-3" />
-                      <span>التقليدي</span>
-                    </div>
-                    <span className="text-[#9E9E9E] leading-tight text-[10px]">{row.legacy}</span>
-                  </div>
-
-                  {/* Grido Studio */}
-                  <div className="p-2.5 rounded-xl bg-[#141414] border border-[#3b82f6]/30 flex flex-col justify-between">
-                    <div className="flex items-center gap-1 text-[#3b82f6] font-bold text-[10px] mb-1">
-                      <Sparkles className="w-3 h-3" />
-                      <span>Grido Studio</span>
-                    </div>
-                    <span className="text-white font-semibold leading-tight text-[10px]">{row.grido}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Desktop / Tablet View: High-Contrast Matrix (>= sm) */}
-        <div className="hidden sm:block w-full rounded-2xl border border-[#2C2C2C] bg-[#1E1E1E] overflow-hidden shadow-md">
+        {/* 2-Column Versus Grid (Old Way vs Grido Studio) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           
-          {/* Table Header Row */}
-          <div className="grid grid-cols-12 bg-[#141414] p-4 sm:p-5 border-b border-[#2C2C2C] text-xs sm:text-sm font-bold text-white items-center">
-            <div className="col-span-5 text-start font-bold">المعيار</div>
-            
-            <div className="col-span-3 text-center text-[#ef4444] flex items-center justify-center gap-1 font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
-              <span>التقليدي</span>
+          {/* Column 1: The Old Way (Dimmed & Red Accents) */}
+          <div className="rounded-2xl bg-[#171717] border border-[#2C2C2C] p-6 sm:p-8 flex flex-col justify-between shadow-sm">
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-[#2C2C2C] mb-6">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#ef4444]">
+                    <X className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">الأساليب والبرامج التقليدية</h3>
+                    <span className="text-[11px] text-[#666666]">بطيئة، معقدة، وتستهلك الوقت</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-[#ef4444] bg-[#141414] px-2.5 py-1 rounded border border-[#2C2C2C]">
+                  هدر في الوقت
+                </span>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-4">
+                {OLD_WAY.map((item) => (
+                  <div
+                    key={item.title}
+                    className="p-3.5 rounded-xl bg-[#141414]/70 border border-[#242424] flex items-start gap-3"
+                  >
+                    <div className="w-6 h-6 rounded-md bg-[#1E1E1E] border border-[#2C2C2C] flex items-center justify-center text-[#ef4444] shrink-0 mt-0.5">
+                      <X className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xs sm:text-sm font-bold text-[#D4D4D4] mb-1">
+                        {item.title}
+                      </h4>
+                      <p className="text-xs text-[#737373] leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            
-            <div className="col-span-4 text-center text-[#3b82f6] flex items-center justify-center gap-1 font-extrabold">
-              <Sparkles className="w-3.5 h-3.5 text-[#3b82f6]" />
-              <span>Grido Studio</span>
+
+            <div className="mt-6 pt-4 border-t border-[#242424] text-center text-xs text-[#666666]">
+              استنزاف يومي للوقت والمجهود داخل الاستوديو
             </div>
           </div>
 
-          {/* Table Rows */}
-          <div className="divide-y divide-[#2C2C2C] text-xs sm:text-sm">
-            {COMPARISONS.map((row, idx) => {
-              const Icon = row.icon;
-              return (
-                <div
-                  key={row.feature}
-                  className={`grid grid-cols-12 p-4 items-center gap-1 transition-colors ${
-                    idx % 2 === 0 ? 'bg-[#1E1E1E]' : 'bg-[#171717]'
-                  } hover:bg-[#242424]`}
-                >
-                  {/* Feature Title */}
-                  <div className="col-span-5 font-bold text-white flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0">
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs sm:text-sm leading-tight">{row.feature}</span>
-                  </div>
+          {/* Column 2: Grido Studio (Signature Blue & Green Accents) */}
+          <div className="rounded-2xl bg-[#1E1E1E] border border-[#3b82f6]/40 p-6 sm:p-8 flex flex-col justify-between shadow-xl relative">
+            
+            {/* Top Recommended Pill */}
+            <div className="absolute -top-3 start-6 bg-[#3b82f6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-0.5 rounded-full border border-white/20 shadow-sm flex items-center gap-1">
+              <Sparkles className="w-3 h-3 fill-current" />
+              <span>الخيار الأسرع للاستوديوهات</span>
+            </div>
 
-                  {/* Legacy Method */}
-                  <div className="col-span-3 text-center px-2">
-                    <div className="flex items-center justify-center gap-1.5 text-xs text-[#9E9E9E] leading-tight">
-                      <X className="w-3.5 h-3.5 text-[#ef4444] shrink-0" />
-                      <span>{row.legacy}</span>
-                    </div>
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-[#2C2C2C] mb-6 pt-1">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#3b82f6]/30 flex items-center justify-center text-[#3b82f6]">
+                    <Sparkles className="w-4 h-4" />
                   </div>
-
-                  {/* Grido Studio Pro */}
-                  <div className="col-span-4 text-center px-2">
-                    <div className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-[#141414] border border-[#2C2C2C] text-xs font-semibold text-white leading-tight">
-                      <Check className="w-3.5 h-3.5 text-[#10b981] shrink-0" />
-                      <span>{row.grido}</span>
-                    </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">استوديو جريدو</h3>
+                    <span className="text-[11px] text-[#60a5fa]">سير عمل آلي وفوري بـ 3 ثوانٍ</span>
                   </div>
                 </div>
-              );
-            })}
+                <span className="text-[10px] font-bold text-[#10b981] bg-[#141414] px-2.5 py-1 rounded border border-[#2C2C2C]">
+                  إنتاجية قصوى
+                </span>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-4">
+                {GRIDO_WAY.map((item) => (
+                  <div
+                    key={item.title}
+                    className="p-3.5 rounded-xl bg-[#141414] border border-[#2C2C2C] hover:border-white/20 transition-all flex items-start gap-3"
+                  >
+                    <div className="w-6 h-6 rounded-md bg-[#1E1E1E] border border-[#2C2C2C] flex items-center justify-center text-[#10b981] shrink-0 mt-0.5">
+                      <Check className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <h4 className="text-xs sm:text-sm font-bold text-white">
+                          {item.title}
+                        </h4>
+                        <span className="text-[10px] font-bold text-[#60a5fa] bg-[#1E1E1E] px-2 py-0.5 rounded border border-[#2C2C2C] shrink-0">
+                          {item.highlight}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#9E9E9E] leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-[#2C2C2C] flex items-center justify-between text-xs text-[#9E9E9E]">
+              <span className="text-white font-medium">وفّر حتى ساعتين يومياً</span>
+              <span className="text-[#10b981] font-bold">جاهز للعمل فوراً</span>
+            </div>
+
           </div>
 
         </div>
