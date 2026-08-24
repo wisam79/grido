@@ -16,8 +16,8 @@ const FEATURES = [
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="py-16 md:py-24 relative">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="pricing" className="py-16 md:py-24 relative scroll-mt-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
@@ -52,7 +52,7 @@ export function PricingSection() {
                 <span className="text-xs text-[#9E9E9E] ms-1 font-semibold">4.9/5 تقييم الاستوديوهات</span>
               </div>
 
-              <h3 className="text-2xl font-black text-white mb-1">Grido Studio Pro</h3>
+              <h3 className="text-2xl font-black text-white mb-1">Grido Studio</h3>
               <p className="text-xs text-[#9E9E9E] mb-5">النسخة الكاملة لاستوديوهات ومراكز الطباعة</p>
 
               {/* Price Row in Dinar */}

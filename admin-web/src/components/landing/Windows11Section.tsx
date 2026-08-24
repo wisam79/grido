@@ -25,8 +25,8 @@ const PERKS = [
 
 export function Windows11Section() {
   return (
-    <section id="windows-experience" className="py-16 md:py-24 relative">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="windows-experience" className="py-16 md:py-24 relative scroll-mt-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* Right Column: Title & Feature List */}

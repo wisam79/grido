@@ -12,7 +12,7 @@ export function HeroSection() {
       {/* Unified Ambient Glow */}
       <div className="absolute top-0 inset-x-0 h-[500px] bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(59,130,246,0.12),transparent_70%)] pointer-events-none" />
 
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           
           {/* Content Column (Right in RTL) */}
@@ -26,7 +26,7 @@ export function HeroSection() {
 
             {/* Main Headline */}
             <h1 className="text-3xl sm:text-5xl lg:text-[50px] font-black text-white tracking-tight leading-[1.18] mb-5">
-              استوديو جريدو برو
+              استوديو جريدو
               <span className="block mt-1.5 text-transparent bg-clip-text bg-gradient-to-l from-[#60a5fa] via-[#3b82f6] to-white">
                 عزل، تجهيز، وطباعة بـ 3 ثوانٍ
               </span>
@@ -100,7 +100,7 @@ export function HeroSection() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn">
           <div className="relative w-full max-w-3xl rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-5 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-[#2C2C2C] mb-4">
-              <h3 className="text-sm font-bold text-white">عرض سريع: Grido Studio Pro</h3>
+              <h3 className="text-sm font-bold text-white">عرض سريع: استوديو جريدو</h3>
               <button
                 onClick={() => setShowVideoModal(false)}
                 className="w-7 h-7 rounded-lg bg-[#262626] hover:bg-[#333333] text-white flex items-center justify-center text-xs font-bold cursor-pointer"

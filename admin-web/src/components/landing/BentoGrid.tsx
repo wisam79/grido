@@ -3,7 +3,7 @@ import { Sparkles, Grid, ShieldCheck, Printer, Scissors, Check, Lock, HardDrive,
 export function BentoGrid() {
   return (
     <section id="capabilities" className="py-20 md:py-28 relative scroll-mt-20">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-18">

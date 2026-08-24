@@ -42,7 +42,7 @@ const COMPARISONS = [
 export function ComparisonSection() {
   return (
     <section className="py-16 md:py-24 relative">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
@@ -54,7 +54,7 @@ export function ComparisonSection() {
             لماذا يختار المحترفون استوديو جريدو؟
           </h2>
           <p className="text-xs sm:text-base text-[#9E9E9E] max-w-2xl mx-auto leading-relaxed">
-            مقارنة مباشرة بين الطرق التقليدية البطيئة وسير العمل الفوري مع Grido Studio Pro.
+            مقارنة مباشرة بين الطرق التقليدية البطيئة وسير العمل الفوري مع Grido Studio.
           </p>
         </div>
 
@@ -88,7 +88,7 @@ export function ComparisonSection() {
                   <div className="p-2.5 rounded-xl bg-[#141414] border border-[#3b82f6]/30 flex flex-col justify-between">
                     <div className="flex items-center gap-1 text-[#3b82f6] font-bold text-[10px] mb-1">
                       <Sparkles className="w-3 h-3" />
-                      <span>Grido Pro</span>
+                      <span>Grido Studio</span>
                     </div>
                     <span className="text-white font-semibold leading-tight text-[10px]">{row.grido}</span>
                   </div>
@@ -99,7 +99,7 @@ export function ComparisonSection() {
         </div>
 
         {/* Desktop / Tablet View: High-Contrast Matrix (>= sm) */}
-        <div className="hidden sm:block max-w-4xl mx-auto rounded-2xl border border-[#2C2C2C] bg-[#1E1E1E] overflow-hidden shadow-md">
+        <div className="hidden sm:block w-full rounded-2xl border border-[#2C2C2C] bg-[#1E1E1E] overflow-hidden shadow-md">
           
           {/* Table Header Row */}
           <div className="grid grid-cols-12 bg-[#141414] p-4 sm:p-5 border-b border-[#2C2C2C] text-xs sm:text-sm font-bold text-white items-center">
@@ -112,7 +112,7 @@ export function ComparisonSection() {
             
             <div className="col-span-4 text-center text-[#3b82f6] flex items-center justify-center gap-1 font-extrabold">
               <Sparkles className="w-3.5 h-3.5 text-[#3b82f6]" />
-              <span>Grido Studio Pro</span>
+              <span>Grido Studio</span>
             </div>
           </div>
 

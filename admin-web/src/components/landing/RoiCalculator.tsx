@@ -11,10 +11,10 @@ export function RoiCalculator() {
 
   return (
     <section className="py-16 md:py-24 relative">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Harmonized Charcoal Card */}
-        <div className="max-w-4xl mx-auto rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-5 sm:p-9 shadow-md relative overflow-hidden">
+        <div className="w-full rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-6 sm:p-9 shadow-md relative overflow-hidden">
           
           {/* Header */}
           <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">

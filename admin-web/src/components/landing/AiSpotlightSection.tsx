@@ -60,8 +60,8 @@ export function AiSpotlightSection() {
   };
 
   return (
-    <section id="ai-engine" className="py-16 md:py-24 relative overflow-hidden">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section id="ai-engine" className="py-16 md:py-24 relative overflow-hidden scroll-mt-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
@@ -77,8 +77,8 @@ export function AiSpotlightSection() {
           </p>
         </div>
 
-        {/* Interactive Before / After Live Slider Showcase */}
-        <div className="max-w-3xl mx-auto mb-12 sm:mb-16 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-7 shadow-xl relative overflow-hidden">
+        {/* Interactive Before / After Live Slider Showcase (Unified Width) */}
+        <div className="w-full mb-10 sm:mb-14 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-7 shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between pb-3.5 border-b border-[#2C2C2C] mb-4 sm:mb-5">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6]">

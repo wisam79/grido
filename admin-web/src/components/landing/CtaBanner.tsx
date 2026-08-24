@@ -5,9 +5,9 @@ const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 export function CtaBanner() {
   return (
     <section className="py-16 md:py-24 relative overflow-hidden">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        <div className="max-w-3xl mx-auto rounded-3xl bg-[#1E1E1E] border border-[#2C2C2C] p-6 sm:p-12 text-center shadow-xl relative overflow-hidden">
+        <div className="w-full rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-6 sm:p-12 text-center shadow-xl relative overflow-hidden">
           
           <div className="ai-badge mb-5">
             <Sparkles className="w-3.5 h-3.5 text-[#3b82f6]" />

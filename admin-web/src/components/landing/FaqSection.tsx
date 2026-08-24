@@ -28,8 +28,8 @@ export function FaqSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="py-16 md:py-24 relative">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="faq" className="py-16 md:py-24 relative scroll-mt-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
@@ -41,7 +41,7 @@ export function FaqSection() {
             الأسئلة الشائعة
           </h2>
           <p className="text-sm sm:text-base text-[#9E9E9E]">
-            إجابات واضحة ومختصرة حول ترخيص وتشغيل Grido Studio Pro.
+            إجابات واضحة ومختصرة حول ترخيص وتشغيل Grido Studio.
           </p>
         </div>
 
