@@ -229,7 +229,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   onClick={() => handleSlotClick?.(slot.id)}
                 />
               ) : (
-                // Placeholder background & text
+                // Placeholder background & centered clean plus
                 <Group>
                   <Rect
                     x={0}
@@ -237,26 +237,19 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                     width={width}
                     height={height}
                     fill={slotPlaceholderBg()}
+                    stroke="#e2e8f0"
+                    strokeWidth={1}
                     cornerRadius={radius}
                     onClick={() => handleSlotClick?.(slot.id)}
                   />
                   <Text
                     text="+"
-                    fontSize={32}
-                    fill={slotPlaceholderText()}
-                    x={0}
-                    y={height / 2 - 25}
-                    width={width}
-                    align="center"
-                    listening={false}
-                  />
-                  <Text
-                    text="انقر للإضافة"
-                    fontSize={12}
-                    fill={slotPlaceholderText()}
+                    fontSize={Math.round(Math.min(32, Math.max(16, Math.min(width, height) * 0.25)))}
                     fontFamily="Cairo, sans-serif"
+                    fontStyle="bold"
+                    fill={slotPlaceholderText()}
                     x={0}
-                    y={height / 2 + 10}
+                    y={height / 2 - Math.round(Math.min(32, Math.max(16, Math.min(width, height) * 0.25))) / 2 - 2}
                     width={width}
                     align="center"
                     listening={false}
