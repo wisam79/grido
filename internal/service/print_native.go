@@ -54,7 +54,7 @@ func (s *PrintService) PrintNative(filePath string) error {
 			} else {
 				fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(cleanPath), " ", "%20")
 				escapedURI := html.EscapeString(fileURI)
-				htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;size:auto;}html,body{margin:0;padding:0;width:100%%;height:100%%;}img{width:100%%;height:100%%;object-fit:contain;}</style></head><body onload="setTimeout(function(){window.print();window.close();},500)"><img src="%s"/></body></html>`, escapedURI)
+				htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;size:auto;}html,body{margin:0;padding:0;width:100%%;height:100%%;position:relative;overflow:hidden;}img{position:absolute;top:0;left:0;width:100%%;height:100%%;object-fit:fill;margin:0;padding:0;}</style></head><body onload="setTimeout(function(){window.print();window.close();},500)"><img src="%s"/></body></html>`, escapedURI)
 				_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 				targetPath = htmlPath
 			}

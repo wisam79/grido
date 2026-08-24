@@ -203,15 +203,19 @@ func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
     padding: 0 !important;
     background: #525659;
     overflow: hidden !important;
+    position: relative !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
   img {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
     width: %.2fmm !important;
     height: %.2fmm !important;
     max-width: 100%% !important;
     max-height: 100%% !important;
-    object-fit: contain !important;
+    object-fit: fill !important;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
     display: block !important;
     background: white;
@@ -219,7 +223,7 @@ func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
   @media print {
     @page { margin: 0 !important; size: %.2fmm %.2fmm; }
     html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; }
-    img { box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; }
+    img { position: absolute !important; top: 0 !important; left: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; object-fit: fill !important; }
   }
 </style>
 </head>
@@ -246,15 +250,19 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
     padding: 0 !important;
     overflow: hidden !important;
     background: white !important;
+    position: relative !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
   img {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
     width: 100%% !important;
     height: 100%% !important;
     max-width: 100%% !important;
     max-height: 100%% !important;
-    object-fit: contain !important;
+    object-fit: fill !important;
     display: block !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -264,7 +272,7 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
   @media print {
     @page { margin: 0 !important; size: %.2fmm %.2fmm; }
     html, body { width: 100%% !important; height: 100%% !important; margin: 0 !important; padding: 0 !important; }
-    img { width: 100%% !important; height: 100%% !important; }
+    img { position: absolute !important; top: 0 !important; left: 0 !important; width: 100%% !important; height: 100%% !important; object-fit: fill !important; }
   }
 </style>
 </head>
