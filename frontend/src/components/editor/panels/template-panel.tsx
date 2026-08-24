@@ -24,10 +24,10 @@ import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "..
 import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
-import { LayoutGrid, FolderHeart, Palette, Paintbrush, Shapes } from "lucide-react";
+import { LayoutGrid, FolderHeart, Palette, Shapes } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PopoverColorPicker } from "../properties/shared-controls";
+import { StudioCanvasColorDeck } from "../properties/shared-controls";
 import { LayersList } from "../properties/layers-list";
 import { FluentEmptyState, FluentSection } from "@/components/ui/blocks";
 
@@ -296,16 +296,9 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
             icon={<Palette className="w-3.5 h-3.5" />}
             title="لون خلفية مساحة العمل"
           >
-            <PopoverColorPicker
+            <StudioCanvasColorDeck
               color={backgroundColor}
               onChange={setBackgroundColor}
-              className="w-full h-8 rounded-md border-border/80 bg-background/50 hover:bg-accent/40 hover:border-primary/40 shadow-2xs"
-              label={
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                  <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span>لون خلفية مساحة العمل</span>
-                </div>
-              }
             />
           </FluentSection>
 

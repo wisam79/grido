@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSection, FluentSegmentedControl } from "@/components/ui/blocks";
+import { PopoverColorPicker } from "../shared-controls";
 
 export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
   const {
@@ -176,7 +177,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
             </div>
 
-            {/* صف اختيار لون الشبكة المضغوط */}
+            {/* صف اختيار لون الشبكة المضغوط والاحترافي */}
             <div className="flex items-center justify-between pt-1" dir="rtl">
               <span className="text-[10px] text-muted-foreground font-bold">لون الشبكة</span>
               <div className="flex items-center gap-1.5">
@@ -187,7 +188,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   { hex: "#10b981", label: "أخضر" },
                   { hex: "#f59e0b", label: "برتقالي" },
                 ].map((col) => {
-                  const isSelected = gridColor === col.hex;
+                  const isSelected = gridColor.toUpperCase() === col.hex.toUpperCase();
                   return (
                     <button
                       key={col.hex}
@@ -205,6 +206,12 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     />
                   );
                 })}
+                <PopoverColorPicker
+                  color={gridColor}
+                  onChange={setGridColor}
+                  swatchOnly
+                  className="w-5 h-5 rounded-full"
+                />
               </div>
             </div>
           </div>

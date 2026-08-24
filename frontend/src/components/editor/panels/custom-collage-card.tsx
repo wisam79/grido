@@ -20,14 +20,13 @@ import {
   Zap,
   Check,
   Trash2,
-  Paintbrush,
   Layers,
   Upload,
 } from "lucide-react";
 import { CollageTemplate, COLLAGE_TEMPLATES } from "@/lib/templates";
 import { FreeformCollageModal } from "@/features/freeform-collage";
 import { FluentSection, FluentSegmentedControl } from "@/components/ui/blocks";
-import { PopoverColorPicker } from "../properties/shared-controls";
+import { StudioCanvasColorDeck } from "../properties/shared-controls";
 
 function DocumentPresetGraphic({ type, active }: { type: string; active: boolean }) {
   const activeBorder = active ? "border-primary bg-primary/25 shadow-2xs" : "border-muted-foreground/40 bg-muted/30";
@@ -847,16 +846,9 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
           {/* لون خلفية مساحة العمل مدمج بأناقة */}
           <div className="pt-1">
-            <PopoverColorPicker
+            <StudioCanvasColorDeck
               color={backgroundColor}
               onChange={setBackgroundColor}
-              className="w-full h-8 rounded-md border-border/80 bg-background/50 hover:bg-accent/40 hover:border-primary/40 shadow-2xs"
-              label={
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                  <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span>لون خلفية مساحة العمل</span>
-                </div>
-              }
             />
           </div>
         </div>
