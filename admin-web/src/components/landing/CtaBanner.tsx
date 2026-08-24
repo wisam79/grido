@@ -1,78 +1,50 @@
-import { Download, Check } from 'lucide-react';
-import { useAppVersion } from '../../lib/version';
+import { Download, Sparkles, ShieldCheck } from 'lucide-react';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
-const CHECKS = [
-  'تجربة مجانية كاملة لمدة 7 أيام',
-  'بدون أي تسجيل أو بطاقة ائتمانية',
-  'تحديثات تلقائية مجانية وموقعة',
-  'الأساسيات تعمل محلياً 100% بدون إنترنت',
-];
-
 export function CtaBanner() {
-  const version = useAppVersion();
-
   return (
-    <section id="download" className="section-band border-t border-[rgba(214,235,253,0.19)] bg-[#000000] text-[#f0f0f0]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto rounded-lg p-8 sm:p-14 text-center border border-[rgba(214,235,253,0.19)] bg-[#191b1e]">
-          <div className="space-y-6">
-            {/* Eyebrow Badge */}
-            <div>
-              <span className="resend-badge font-mono">
-                الإصدار {version ?? 'v1.0'} • ويندوز 10 / 11 64-بت
-              </span>
+    <section className="py-16 md:py-24 relative overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        <div className="max-w-3xl mx-auto rounded-3xl bg-[#1E1E1E] border border-[#2C2C2C] p-6 sm:p-12 text-center shadow-xl relative overflow-hidden">
+          
+          <div className="ai-badge mb-5">
+            <Sparkles className="w-3.5 h-3.5 text-[#3b82f6]" />
+            <span>ابدأ الآن</span>
+          </div>
+
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-3 tracking-tight">
+            سرّع عمل استوديو التصوير اليوم
+          </h2>
+
+          <p className="text-sm sm:text-base text-[#9E9E9E] max-w-lg mx-auto mb-7 leading-relaxed">
+            وفّر ساعات من القص اليدوي يومياً، قلل هدر الورق، وقدّم لعملائك صور هوية وفيزا بجودة فورية.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3.5 mb-5">
+            <a
+              href={GITHUB_RELEASE_DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary !h-13 !px-8 text-sm sm:text-base font-bold cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>تحميل مباشر لـ Windows (64-bit)</span>
+            </a>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 text-[11px] text-[#666666]">
+            <div className="flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#10b981]" />
+              <span>آمن ومفحوص 100%</span>
             </div>
-
-            {/* Master Headline */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-normal font-serif text-[#f0f0f0] leading-tight">
-              جاهز لتضاعف سرعة وأرباح استوديوك ومطبعتك؟
-            </h2>
-
-            {/* Description */}
-            <p className="text-[#a1a4a5] text-sm sm:text-lg max-w-xl mx-auto leading-relaxed">
-              حمّل تطبيق Grido Studio الآن وابدأ المعالجة الفورية وتنسيق صور المعاملات في ثوانٍ.
-            </p>
-
-            {/* Download Actions */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <a
-                href={GITHUB_RELEASE_DOWNLOAD_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="button-primary text-sm"
-                aria-label="تحميل ملف التثبيت المباشر (.EXE)"
-              >
-                <Download className="w-4 h-4 shrink-0" />
-                <span>تحميل ملف التثبيت (.EXE)</span>
-              </a>
-
-              <a
-                href="/api/download?type=portable"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="button-secondary text-xs"
-                aria-label="تحميل النسخة المحمولة"
-              >
-                <Download className="w-4 h-4 shrink-0" />
-                <span>تحميل النسخة المحمولة (Portable)</span>
-              </a>
-            </div>
-
-            {/* Feature Checks */}
-            <div className="pt-4 border-t border-[rgba(214,235,253,0.19)] flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[#a1a4a5]">
-              {CHECKS.map((check) => (
-                <span key={check} className="inline-flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-[#00a3ff] shrink-0" />
-                  <span>{check}</span>
-                </span>
-              ))}
-            </div>
+            <span>•</span>
+            <span>حجم البرنامج (~45 MB)</span>
           </div>
         </div>
+
       </div>
     </section>
   );
 }
-

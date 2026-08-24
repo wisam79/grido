@@ -1,128 +1,123 @@
-import { CheckCircle2, X, Zap, ShieldCheck, Cpu, Droplets, WifiOff } from 'lucide-react';
-import { SectionHeading } from './SectionHeading';
+import { Check, X, Sparkles, Zap, Clock, ShieldCheck, Flame, Scissors, Lock } from 'lucide-react';
 
-const COMPARISON_ROWS = [
+const COMPARISONS = [
   {
-    icon: Zap,
-    feature: 'تجهيز ورقة الطباعة والتقطيع',
-    grido: 'تلقائي بنقرة واحدة (أقل من ثانية)',
-    traditional: 'يدوي محبط يستغرق 5 - 10 دقائق',
-    gridoTime: '3 ثوانٍ',
-    traditionalTime: '10 دقائق',
-    badge: 'سرعة 20X',
+    feature: 'الوقت المستغرق لتجهيز الزبون',
+    legacy: '5 إلى 8 دقائق (قص يدوي في الفوتوشوب)',
+    grido: '3 ثوانٍ فقط (عزل وتوزيع آلي فوري)',
+    icon: Clock,
   },
   {
+    feature: 'عزل الخلفيات وإزالة الهالات البيضاء',
+    legacy: 'تحديد يدوي يترك حواف بيضاء خشنة',
+    grido: 'عزل ذكي نقي مع Defringe تلقائي للضوء',
+    icon: Sparkles,
+  },
+  {
+    feature: 'مطابقة شروط الجوازات والفيزا العالمية',
+    legacy: 'تخمين يدوي وقياسات قد ترفضها السفارات',
+    grido: 'قوالب قياسية معتمدة بدقة المليمتر 100%',
     icon: ShieldCheck,
-    feature: 'دقة المقاسات الرسمية (الهوية والفيزا)',
-    grido: '100% مطابقة للمواصفات الحكومية',
-    traditional: 'عرضة للأخطاء البشرية وإعادة الطباعة',
-    gridoTime: 'دقة 100%',
-    traditionalTime: 'أخطاء يدوية',
-    badge: 'صفر أخطاء',
   },
   {
-    icon: Cpu,
-    feature: 'ترميم ملامح الوجه بالذكاء الاصطناعي',
-    grido: 'محلي فوري بـ CodeFormer + Real-ESRGAN',
-    traditional: 'يتطلب خبرة فوتوشوب معقدة أو اشتراكات مكلفة',
-    gridoTime: 'ترميم فوري HD',
-    traditionalTime: 'تعديل يدوي بطيء',
-    badge: 'بشرة طبيعية',
+    feature: 'توزيع الصور ومصفوفة الطباعة',
+    legacy: 'نسخ وتكرار يدوي مع هدر كبير في الورق',
+    grido: 'حشر ذكي لأقصى استغلال مع خطوط قص 0.5mm',
+    icon: Scissors,
   },
   {
-    icon: Droplets,
-    feature: 'هدر ورق الطباعة والحبر',
-    grido: '0% هدر مع شبكات توزيع الخلايا الذكية',
-    traditional: 'هدر متكرر للأوراق والحبر الثمين',
-    gridoTime: 'صفر هدر',
-    traditionalTime: 'هدر مستمر',
-    badge: 'توفير التكاليف',
+    feature: 'خصوصية بيانات العملاء وسرية الصور',
+    legacy: 'مواقع سحابية ترفع صور العملاء لخوادم خارجية',
+    grido: '100% محلي على جهازك دون اتصال بالإنترنت',
+    icon: Lock,
   },
   {
-    icon: WifiOff,
-    feature: 'العمل بدون إنترنت',
-    grido: 'سرعة فائقة وخصوصية كاملة للصور داخل جهازك',
-    traditional: 'بطء في التعامل والاعتماد على سيرفرات خارجية',
-    gridoTime: 'أوفلاين 100%',
-    traditionalTime: 'اعتماد على السحابة',
-    badge: 'خصوصية وأمان',
+    feature: 'نموذج التكلفة والتراخيص',
+    legacy: 'اشتراكات شهرية متكررة ومكلفة ترهق الاستوديو',
+    grido: 'رخصة أصلية لمدى الحياة بدون أي رسوم إضافية',
+    icon: Flame,
   },
 ];
 
 export function ComparisonSection() {
   return (
-    <section id="comparison" className="section-band border-t border-[rgba(214,235,253,0.19)] bg-[#000000] text-[#f0f0f0]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="مقارنة الأداء والإنتاجية"
-          title="لماذا تتحول الاستوديوهات إلى Grido Studio؟"
-          subtitle="وفّر 90% من وقت العمل اليومي بفضل الأتمتة المباشرة وتفادي أخطاء فوتوشوب اليدوية."
-          index="04"
-        />
-
-        {/* Feature VS Cards Stack */}
-        <div className="space-y-4 max-w-5xl mx-auto">
-          {COMPARISON_ROWS.map((row, idx) => {
-            const Icon = row.icon;
-            return (
-              <div 
-                key={idx}
-                className="rounded-lg flex flex-col lg:flex-row items-stretch gap-4 lg:gap-0 p-4 bg-[#191b1e] border border-[rgba(214,235,253,0.19)]"
-              >
-                {/* 1. Feature Title Column */}
-                <div className="lg:w-1/3 flex items-center gap-3.5 p-2 lg:p-4">
-                  <div className="w-10 h-10 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] flex items-center justify-center shrink-0 text-[#00a3ff]">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="resend-badge font-mono text-[10px] inline-block mb-1">
-                      {row.badge}
-                    </span>
-                    <h3 className="text-base font-normal font-serif text-[#f0f0f0] leading-tight">
-                      {row.feature}
-                    </h3>
-                  </div>
-                </div>
-
-                {/* 2. VS Split Comparison Column */}
-                <div className="lg:w-2/3 flex flex-col sm:flex-row rounded-md border border-[rgba(214,235,253,0.19)] bg-[#000000] overflow-hidden">
-                  {/* Traditional (Old Way) */}
-                  <div className="flex-1 p-4 flex items-center justify-start sm:justify-center text-right sm:text-center border-b sm:border-b-0 sm:border-e border-[rgba(214,235,253,0.1)] bg-[#000000]">
-                    <div className="flex flex-col sm:items-center gap-1 w-full">
-                      <span className="text-[10px] text-[#52595b]">الطريقة التقليدية</span>
-                      <div className="text-2xl font-normal font-serif text-[#52595b] line-through">
-                        {row.traditionalTime}
-                      </div>
-                      <div className="flex items-center gap-1.5 opacity-60">
-                        <X className="w-3.5 h-3.5 text-[#52595b] shrink-0" />
-                        <p className="text-[#52595b] text-xs line-through">{row.traditional}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Grido Studio (New Way) */}
-                  <div className="flex-1 p-4 flex items-center justify-start sm:justify-center text-right sm:text-center bg-[#191b1e]">
-                    <div className="flex flex-col sm:items-center gap-1 w-full">
-                      <span className="text-[10px] text-[#00a3ff] flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#00a3ff]" />
-                        مع Grido Studio
-                      </span>
-                      <div className="text-2xl font-normal font-serif text-[#f0f0f0]">
-                        {row.gridoTime}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#00a3ff] shrink-0" />
-                        <p className="text-[#f0f0f0] text-xs font-medium">{row.grido}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+    <section className="py-16 md:py-32 relative">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-20">
+          <div className="ai-badge mb-4">
+            <Zap className="w-3.5 h-3.5 text-[#3b82f6]" />
+            <span>مقارنة السرعة والكفاءة</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-4 sm:mb-5 tracking-tight">
+            لماذا يختار المحترفون استوديو جريدو برو؟
+          </h2>
+          <p className="text-xs sm:text-base text-[#9E9E9E] max-w-2xl mx-auto leading-relaxed">
+            مقارنة مباشرة وواقعية بين الطرق اليدوية القديمة وسير العمل فائق السرعة مع Grido Studio Pro.
+          </p>
         </div>
+
+        {/* High-Contrast Comparison Matrix (Fully Mobile Responsive) */}
+        <div className="max-w-4xl mx-auto rounded-2xl border border-[#2C2C2C] bg-[#1E1E1E] overflow-hidden shadow-xl">
+          
+          {/* Table Header Row */}
+          <div className="grid grid-cols-12 bg-[#141414] p-3.5 sm:p-6 border-b border-[#2C2C2C] text-[11px] sm:text-sm font-bold text-white items-center">
+            <div className="col-span-4 sm:col-span-5 text-start font-bold">المعيار</div>
+            
+            <div className="col-span-4 sm:col-span-3 text-center text-[#ef4444] flex items-center justify-center gap-1 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] hidden sm:inline" />
+              <span>التقليدي</span>
+            </div>
+            
+            <div className="col-span-4 sm:col-span-4 text-center text-[#3b82f6] flex items-center justify-center gap-1 font-extrabold">
+              <Sparkles className="w-3.5 h-3.5 text-[#3b82f6] hidden sm:inline" />
+              <span>Grido Studio</span>
+            </div>
+          </div>
+
+          {/* Table Rows */}
+          <div className="divide-y divide-[#2C2C2C] text-xs sm:text-sm">
+            {COMPARISONS.map((row, idx) => {
+              const Icon = row.icon;
+              return (
+                <div
+                  key={row.feature}
+                  className={`grid grid-cols-12 p-3 sm:p-5 items-center gap-1 transition-colors ${
+                    idx % 2 === 0 ? 'bg-[#1E1E1E]' : 'bg-[#171717]'
+                  } hover:bg-[#242424]`}
+                >
+                  {/* Feature Title */}
+                  <div className="col-span-4 sm:col-span-5 font-bold text-white flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0 hidden md:flex">
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-[11px] sm:text-xs md:text-sm leading-tight">{row.feature}</span>
+                  </div>
+
+                  {/* Legacy Method */}
+                  <div className="col-span-4 sm:col-span-3 text-center px-1">
+                    <div className="flex items-center justify-center gap-1 text-[10px] sm:text-xs text-[#9E9E9E] leading-tight">
+                      <X className="w-3 h-3 text-[#ef4444] shrink-0 hidden sm:inline" />
+                      <span>{row.legacy}</span>
+                    </div>
+                  </div>
+
+                  {/* Grido Studio Pro */}
+                  <div className="col-span-4 sm:col-span-4 text-center px-1">
+                    <div className="flex items-center justify-center gap-1 py-1.5 px-2 sm:py-2 sm:px-3 rounded-lg sm:rounded-xl bg-[#141414] border border-[#2C2C2C] text-[10px] sm:text-xs font-semibold text-white leading-tight shadow-xs">
+                      <Check className="w-3.5 h-3.5 text-[#10b981] shrink-0" />
+                      <span>{row.grido}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+
       </div>
     </section>
   );
 }
-

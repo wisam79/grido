@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Download, Menu, X, Sparkles, Layers, ShieldCheck, HelpCircle, DollarSign } from 'lucide-react';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const NAV_LINKS = [
-  { href: '#top', label: 'مساحة العمل' },
-  { href: '#features', label: 'المقاسات' },
-  { href: '#how-it-works', label: 'مسار الإنتاج' },
-  { href: '#pricing', label: 'الأسعار' },
+  { href: '#capabilities', label: 'القدرات الأساسية', icon: Layers },
+  { href: '#ai-engine', label: 'محرك الذكاء الاصطناعي', icon: Sparkles },
+  { href: '#windows-experience', label: 'تجربة ويندوز 11', icon: ShieldCheck },
+  { href: '#pricing', label: 'الأسعار والتراخيص', icon: DollarSign },
+  { href: '#faq', label: 'الأسئلة الشائعة', icon: HelpCircle },
 ];
 
 export function Header() {
@@ -16,18 +17,13 @@ export function Header() {
   const [activeSection, setActiveSection] = useState<string>('');
 
   useEffect(() => {
-    // Ensure document root is always dark
-    document.documentElement.classList.remove('light');
-  }, []);
-
-  useEffect(() => {
     let ticking = false;
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
         ticking = false;
-        const isScrolled = window.scrollY > 12;
+        const isScrolled = window.scrollY > 16;
         setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
       });
     };
@@ -38,7 +34,7 @@ export function Header() {
 
   // Scrollspy
   useEffect(() => {
-    const ids = ['top', 'features', 'how-it-works', 'pricing'];
+    const ids = ['capabilities', 'ai-engine', 'windows-experience', 'pricing', 'faq'];
     const sections = ids
       .map((id) => document.getElementById(id))
       .filter((el): el is HTMLElement => el !== null);
@@ -58,23 +54,42 @@ export function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-colors duration-200 ${
+      className={`sticky top-0 z-50 transition-all duration-250 ${
         scrolled
-          ? 'bg-[#000000]/95 backdrop-blur-md border-b border-[rgba(214,235,253,0.19)]'
-          : 'bg-[#000000] border-b border-[rgba(214,235,253,0.08)]'
+          ? 'bg-[#121212]/90 backdrop-blur-[24px] border-b border-[#2C2C2C] shadow-lg shadow-black/60'
+          : 'bg-[#121212]/50 backdrop-blur-md border-b border-white/[0.04]'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-[64px] flex items-center justify-between">
-          {/* Logo with wide tracking */}
-          <a href="#top" className="flex items-center gap-2 select-none">
-            <span className="font-mono text-sm tracking-[0.25em] font-semibold text-[#f0f0f0] uppercase">
-              GRIDO STUDIO
-            </span>
+          
+          {/* Logo with Original App Icon */}
+          <a href="#top" className="flex items-center gap-3 select-none group">
+            <div className="relative w-9 h-9 flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+              <img
+                src="/logo.png"
+                alt="Grido Studio Logo"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/appicon.png';
+                }}
+              />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-extrabold tracking-tight text-white group-hover:text-[#60a5fa] transition-colors">
+                  Grido Studio
+                </span>
+                <span className="text-[10px] text-[#60a5fa] font-mono font-bold px-1.5 py-0.2 rounded bg-[#3b82f6]/10 border border-[#3b82f6]/25">
+                  PRO
+                </span>
+              </div>
+              <span className="text-[10px] text-[#9E9E9E] -mt-0.5">استوديو الهوية والطباعة</span>
+            </div>
           </a>
 
-          {/* Centered Technical Nav Links */}
-          <nav className="hidden md:flex items-center gap-8" aria-label="التنقل الرئيسي">
+          {/* Centered Neutral Charcoal Nav Links */}
+          <nav className="hidden lg:flex items-center gap-1 bg-[#1E1E1E] p-1 rounded-full border border-[#2C2C2C]" aria-label="التنقل الرئيسي">
             {NAV_LINKS.map((link) => {
               const isActive = activeSection === link.href;
               return (
@@ -82,10 +97,10 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   aria-current={isActive ? 'true' : undefined}
-                  className={`text-xs font-mono tracking-[0.15em] uppercase transition-colors ${
+                  className={`px-3.5 py-1.5 text-xs rounded-full transition-all duration-200 ${
                     isActive
-                      ? 'text-[#00a3ff]'
-                      : 'text-[#a1a4a5] hover:text-[#f0f0f0]'
+                      ? 'bg-[#262626] text-white font-bold border border-white/10'
+                      : 'text-[#9E9E9E] hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
                   {link.label}
@@ -94,23 +109,23 @@ export function Header() {
             })}
           </nav>
 
-          {/* Right Action: Boxed 4px Blue Button "OPEN STUDIO" */}
+          {/* Primary Action CTA */}
           <div className="flex items-center gap-3">
             <a
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center justify-center border border-[#00a3ff] text-[#00a3ff] hover:bg-[#00a3ff]/10 text-xs font-mono tracking-wider uppercase px-5 py-2 rounded-[4px] transition-all"
-              aria-label="فتح الاستوديو"
+              className="btn-primary text-xs !py-2 !px-4 !h-9"
+              aria-label="تحميل البرنامج"
             >
-              فتح الاستوديو
+              <Download className="w-3.5 h-3.5" />
+              <span>تحميل البرنامج</span>
             </a>
-
 
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden w-8 h-8 flex items-center justify-center rounded-[4px] bg-[#191b1e] text-[#f0f0f0] border border-[rgba(214,235,253,0.19)] cursor-pointer"
+              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-[#1E1E1E] text-white border border-[#2C2C2C] cursor-pointer hover:bg-[#262626] transition-colors"
               aria-label="القائمة"
               aria-expanded={menuOpen}
             >
@@ -121,26 +136,29 @@ export function Header() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden pb-4 pt-2 border-t border-[rgba(214,235,253,0.19)] bg-[#000000]">
-            <nav className="flex flex-col gap-2">
-              {NAV_LINKS.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="px-3 py-2 text-xs font-mono tracking-[0.15em] uppercase text-[#a1a4a5] hover:text-[#f0f0f0] hover:bg-[#191b1e] transition-colors rounded"
-                >
-                  {link.label}
-                </a>
-              ))}
-              <div className="pt-2">
+          <div className="lg:hidden pb-5 pt-2 border-t border-[#2C2C2C] bg-[#121212] animate-fadeIn">
+            <nav className="flex flex-col gap-1.5">
+              {NAV_LINKS.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold text-[#9E9E9E] hover:text-white hover:bg-[#1E1E1E] rounded-xl transition-colors"
+                  >
+                    <Icon className="w-4 h-4 text-[#60a5fa]" />
+                    <span>{link.label}</span>
+                  </a>
+                );
+              })}
+              <div className="pt-2 px-1">
                 <a
                   href={GITHUB_RELEASE_DOWNLOAD_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-center border border-[#00a3ff] text-[#00a3ff] hover:bg-[#00a3ff]/10 text-xs font-mono tracking-[0.15em] uppercase py-2.5 rounded-[4px]"
+                  className="btn-primary w-full text-center justify-center !py-2.5"
                 >
-                  OPEN STUDIO
+                  <Download className="w-4 h-4" />
+                  <span>تحميل مباشر لويندوز</span>
                 </a>
               </div>
             </nav>
@@ -150,5 +168,3 @@ export function Header() {
     </header>
   );
 }
-
-

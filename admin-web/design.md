@@ -1,396 +1,233 @@
-# Grido Studio — دستور التصميم البصري (Design System Reference)
+# 📦 Grido Studio Pro — Design System & UI Specification (v1.0)
 
-> **النطاق:** هذه الوثيقة تحكم صفحة الهبوط التسويقية (Landing Page) لبرنامج **Grido Studio** — تطبيق سطح مكتب مخصص لأصحاب الاستوديوهات ومحلات التصوير لمعالجة وطباعة صور الهوية (صور المعاملات) واستعادة الوجوه بالذكاء الاصطناعي.
->
-> **الغاية من الوثيقة:** أن تكون المرجع القياسي الوحيد الذي يعود إليه أي مطور أو مصمم يعمل على هذه الصفحة مستقبلاً، لضمان عدم انحراف الهوية البصرية عن طابعها السينمائي الداكن الفاخر مهما تعدد المساهمون في الكود.
->
-> **حالة الوثيقة:** نسخة أولى (v1.0) — تُشتق منها جميع قرارات الواجهة اللاحقة، ولا تُكسر قواعدها إلا بقرار تصميمي واعٍ وموثق.
-
----
-
-## جدول المحتويات
-
-1. [الفلسفة البصرية (Design Philosophy)](#1)
-2. [لوحة الألوان ورموز التصميم (Color Tokens)](#2)
-3. [الطباعة (Typography)](#3)
-4. [نظام الحركة والتفاعل (Motion & Micro-interactions)](#4)
-5. [هيكلة التخطيط (Layout Architecture)](#5)
-6. [معمارية المكونات (Component Architecture)](#6)
-7. [اعتبارات RTL وإمكانية الوصول](#7)
-8. [قواعد الالتزام الممنوعات (Do's & Don'ts)](#8)
+> **Design System Architect:** Lead UI/UX Engineer  
+> **Platform:** Desktop Web (Landing Page)  
+> **Aesthetic:** Microsoft Fluent 2, Windows 11 Mica/Acrylic, Pure Neutral Charcoal  
+> **Language Paradigm:** Bi-directional (Primary Arabic RTL, Secondary English LTR)
 
 ---
 
-<a id="1"></a>
-## 1. الفلسفة البصرية (Design Philosophy)
-
-### 1.1 الهوية المرجعية
-الصفحة لا تُصمَّم كـ"موقع تسويقي" تقليدي، بل كواجهة نظام هندسي فاخر. المرجعيات الثلاث الأساسية:
-
-| المرجع | ما نستعيره منه |
-|---|---|
-| **SpaceX** | الكتل النصية الضخمة، الفراغ الأسود المطلق، الشعور بالمهمة الحرجة (mission-critical) |
-| **Vercel** | التباين الحاد أبيض/أسود، البطاقات الزجاجية الدقيقة الحواف |
-| **Linear** | دقة الحركة (micro-motion)، الشعور بالسرعة والاستجابة الفورية للمؤشر |
-
-### 1.2 المبادئ الحاكمة
-- **الأحادية اللونية أولاً (Monochrome-First):** أي قرار لوني جديد يجب أن يُختبر أولاً بالتدرج الرمادي قبل التفكير بإدخال لون. اللون هو استثناء، وليس قاعدة.
-- **التباين هو الزخرفة:** بما أنه لا توجد ألوان زاهية، فإن التباين الحاد بين الأبيض الناصع والأسود المطلق هو أداة الجذب البصري الوحيدة.
-- **الصمت البصري:** الحدود (borders) يجب أن تكون بالكاد مرئية (`#383842`) — وظيفتها تنظيم الفراغ لا لفت الانتباه إليه.
-- **كل حركة لها مبرر وظيفي:** لا تُضاف حركة لمجرد الزخرفة؛ كل تأثير (الظهور، التوهج، الطفو) يخدم إحساساً محدداً: الفخامة، السرعة، أو الاستجابة.
-
-### 1.3 الشعور المستهدف (Emotional Target)
-> الغموض (Mystery) → الفخامة (Premium) → السرعة (Speed) → الصرامة والاعتمادية (Rugged Reliability)
-
-كل قرار تصميمي جديد يُختبر مقابل هذه الكلمات الأربع: هل يخدمها أم يُضعفها؟
+## 📑 Table of Contents
+1. [Product Context & Philosophy](#1-product-context--philosophy)
+2. [Design Tokens (The Foundation)](#2-design-tokens-the-foundation)
+3. [Typography System](#3-typography-system)
+4. [Fluent Materials & Elevation](#4-fluent-materials--elevation)
+5. [Core Component Library](#5-core-component-library)
+6. [Landing Page UI Architecture (Wireframe Spec)](#6-landing-page-ui-architecture-wireframe-spec)
+7. [Motion & Interaction Guidelines](#7-motion--interaction-guidelines)
+8. [Internationalization (RTL/LTR) & Accessibility (A11y)](#8-internationalization-rtlltr--accessibility-a11y)
 
 ---
 
-<a id="2"></a>
-## 2. لوحة الألوان ورموز التصميم (Color Tokens)
+## 1. Product Context & Philosophy
 
-لا توجد لوحة ألوان "مبهرجة". اللوحة أحادية بالكامل (Monochromatic High-Contrast)، وتُبنى كمتغيرات CSS موحّدة:
+**Product Name:** Grido Studio Pro (استوديو جريدو)  
+**Tagline:** "استوديو متكامل لطباعة صور الهوية والفيزا، الكولاج، وتعديل الصور بدقة فائقة مع محرك ذكاء اصطناعي فوري وتجربة ويندوز 11 العصرية."
+
+**Design Philosophy:**  
+The Grido Studio Pro landing page is engineered to feel like a native, high-performance Windows 11 desktop application running in the browser. We achieve this through the meticulous use of **Fluent 2 design principles**: subtle rounded corners (radii), layered depth using Mica and Acrylic materials, strict adherence to an 8px spacing grid, and physics-based motion. 
+
+The visual identity relies on a **Pure Neutral Charcoal** base to let the creative work of our users pop, accented by an **Electric Blue** to signify action and an **AI Beam Cyan/Purple** to highlight artificial intelligence features.
+
+---
+
+## 2. Design Tokens (The Foundation)
+
+All design decisions are driven by semantic tokens. These should be mapped directly to Tailwind CSS or CSS-in-JS variables.
+
+### A. Core Color Palette
+```css
+:root {
+  /* --- Dark Mode Palette (Primary Identity) --- */
+  --grido-workspace-canvas: #141414;   /* Main page background */
+  --grido-surface-sidebar:   #1A1A1A;   /* Sidebars & secondary panels */
+  --grido-surface-card:      #242424;   /* Raised cards & elevated UI */
+  --grido-surface-inset:     #171717;   /* Inset fields & input tracks */
+  --grido-border-subtle:     #333333;   /* Standard borders & dividers */
+  --grido-border-specular:   rgba(255, 255, 255, 0.08); /* Windows 11 illuminated edge */
+
+  /* --- Brand Accent & Gradients --- */
+  --grido-brand-primary:     #3b82f6;   /* Electric Blue */
+  --grido-brand-hover:       #2563eb;   /* Deep Blue */
+  --grido-brand-glow:        rgba(59, 130, 246, 0.25);
+  --grido-accent-purple:     #8b5cf6;   /* AI & Creative tools gradient end */
+
+  /* --- Text & Contrasts --- */
+  --grido-text-primary:      #F5F5F5;   /* High-contrast pure text */
+  --grido-text-secondary:    #A3A3A3;    /* Readable secondary gray */
+  --grido-text-muted:        #737373;    /* Hints & disabled states */
+
+  /* --- Semantic Statuses --- */
+  --grido-status-success:    #10b981;   /* Active licenses & success */
+  --grido-status-warning:    #f59e0b;   /* Print margins & warnings */
+  --grido-status-error:      #ef4444;   /* Export errors */
+  --grido-ai-beam:           #38bdf8;   /* AI laser & face scan */
+}
+```
+
+### B. Tailwind Config Mapping (Reference)
+```javascript
+colors: {
+  canvas: '#141414',
+  surface: { DEFAULT: '#1A1A1A', card: '#242424', inset: '#171717' },
+  border: { DEFAULT: '#333333', specular: 'rgba(255,255,255,0.08)' },
+  brand: { DEFAULT: '#3b82f6', hover: '#2563eb', glow: 'rgba(59,130,246,0.25)' },
+  // ...
+}
+```
+
+---
+
+## 3. Typography System
+
+We pair `IBM Plex Sans Arabic` / `Cairo` for Arabic text with `Inter` / `Segoe UI Variable` for numerals and Latin characters to ensure a native OS feel.
+
+### Typographic Scale
+| Token | Size (px/rem) | Weight | Line Height | Usage |
+| :--- | :--- | :--- | :--- | :--- |
+| `text-hero` | 64px / 4rem | 700 | 1.1 | Hero Section Headline |
+| `text-h1` | 48px / 3rem | 600 | 1.2 | Section Headlines |
+| `text-h2` | 36px / 2.25rem | 600 | 1.2 | Sub-headlines |
+| `text-h3` | 24px / 1.5rem | 600 | 1.3 | Card Titles, Features |
+| `text-body`| 18px / 1.125rem | 400 | 1.5 | Paragraphs, Descriptions |
+| `text-small`| 14px / 0.875rem | 400 | 1.4 | Captions, Badges, Footnotes |
 
 ```css
 :root {
-  /* الخلفيات — Surfaces */
-  --color-bg-primary:    #000000; /* الخلفية الأساسية للصفحة */
-  --color-bg-secondary:  #121214; /* خلفية الأقسام والبطاقات */
-  --color-bg-elevated:   #18181b; /* ارتفاع طفيف اختياري للبطاقات النشطة/المحاورة */
-
-  /* النصوص — Typography */
-  --color-text-primary:    #ffffff; /* العناوين الرئيسية */
-  --color-text-secondary:  #f0f0fa; /* النصوص الفرعية وفقرات الوصف */
-  --color-text-tertiary:   #999999; /* البيانات الوصفية، التسميات، النصوص الثانوية */
-
-  /* الحدود — Borders */
-  --color-border-subtle:   #383842; /* الحد الافتراضي لكل العناصر المهيكلة */
-  --color-border-glow:     rgba(255, 255, 255, 0.5); /* يُستخدم فقط ضمن تأثير التوهج المتتبع للمؤشر */
-
-  /* إحداثيات المؤشر — تُحدَّث عبر JavaScript فقط، لا تُضبط يدوياً */
-  --mouse-x: 50%;
-  --mouse-y: 50%;
+  --font-arabic: 'IBM Plex Sans Arabic', 'Segoe UI Variable', sans-serif;
+  --font-latin: 'Inter', 'Segoe UI Variable', sans-serif;
 }
 ```
 
-### 2.1 قواعد الاستخدام
-
-| الرمز | الاستخدام المسموح | ممنوع في |
-|---|---|---|
-| `--color-bg-primary` | خلفية الصفحة الكاملة فقط | داخل البطاقات (تُستخدم `--color-bg-secondary` بدلاً منها لتمييزها عن الخلفية) |
-| `--color-text-tertiary` (`#999999`) | تسميات، طوابع زمنية، نصوص مساعدة **بحجم ≥ 14px فقط** | عناوين، نصوص أزرار، أي نص أساسي |
-| `--color-border-subtle` | كل حدود البطاقات والفواصل في الحالة الساكنة | أي حالة hover (تُستبدل بتوهج المؤشر، وليس بتغيير لون الحد بالكامل) |
-
-### 2.2 نسب التباين (Contrast Ratios)
-- أبيض `#ffffff` على أسود `#000000` → تباين مطلق (21:1)، يتجاوز WCAG AAA بلا مجهود.
-- رمادي `#999999` على أسود `#000000` → تباين ≈ 5.9:1، يجتاز WCAG AA للنصوص العادية، **لكنه لا يجتاز AAA**. لهذا يُحظر استخدامه في نصوص أصغر من 14px أو في أي محتوى وظيفي حرج (أزرار، تحذيرات).
-
 ---
 
-<a id="3"></a>
-## 3. الطباعة (Typography)
+## 4. Fluent Materials & Elevation
 
-### 3.1 مبدأ الطبقتين
-النظام الطباعي مبني على تناقض متعمّد بين طبقتين:
+To mimic Windows 11 Mica and Acrylic materials on the web, we use layered backgrounds, backdrop-filters, and specific box-shadows.
 
-1. **طبقة الكتلة (Display Layer):** عناوين ضخمة، ثقيلة الوزن (Black/Extrabold)، متقاربة الأحرف، تتصرف كـ"كتلة بصرية" لا كنص للقراءة.
-2. **طبقة النظام (System Layer):** خط أحادي المسافة (Monospace) بأحرف كبيرة ومباعدة واسعة، يُستخدم في كل ما هو "بيانات نظام": الأزرار، التسميات، المؤشرات الرقمية.
+### Geometry & Radii
+*   `--radius-sm: 4px;` (Tags, small chips)
+*   `--radius-md: 8px;` (Buttons, Text Inputs)
+*   `--radius-lg: 12px;` (Cards, Panels)
+*   `--radius-xl: 16px;` (Modals, Hero containers)
 
-### 3.2 مقياس الخطوط
+### Spacing Grid
+Strict adherence to an 8px base grid: `8px, 16px, 24px, 32px, 48px, 64px, 96px`.
 
-| الاستخدام | الوزن | الحجم (Desktop) | tracking | ملاحظات |
-|---|---|---|---|---|
-| H1 (العنوان الرئيسي Hero) | 800–900 | 64–96px | tight | أقصى تباين بصري في الصفحة |
-| H2 (عناوين الأقسام) | 800 | 40–56px | tight | تكرار بصري لإيقاع الـ H1 بحجم أصغر |
-| Body (فقرات الوصف) | 400–500 | 16–18px | عادي | لون `--color-text-secondary` |
-| UI Label / Button (النظام) | 500–600 | 12–13px | 1px–2px + UPPERCASE | خط Monospace حصراً |
-| Meta / Caption | 400 | 12–14px | 0.5px | لون `--color-text-tertiary` |
-
-### 3.3 توصية حزمة الخطوط (Font Stack)
-
+### Elevation (Shadows)
+Fluent shadows are subtle, layered, and avoid harsh edges.
 ```css
-/* طبقة الكتلة — عناوين عربية */
---font-display-ar: "Cairo", "IBM Plex Sans Arabic", sans-serif; /* وزن 800/900 */
+:root {
+  --material-shadow-2: 0 2px 8px rgba(0,0,0,0.3);      /* Resting state */
+  --material-shadow-4: 0 8px 16px rgba(0,0,0,0.4);     /* Hover state */
+  --material-shadow-8: 0 16px 32px rgba(0,0,0,0.5);    /* Active/Floating */
+  --material-shadow-glow: 0 0 20px var(--grido-brand-glow); /* Brand emphasis */
+}
 
-/* طبقة الكتلة — أرقام وعناصر لاتينية داخل العناوين (مثال: "3 ثوانٍ") */
---font-display-lat: "Inter", sans-serif; /* وزن 800، tracking: -0.02em */
-
-/* طبقة النظام — Monospace للأزرار والتسميات */
---font-mono: "JetBrains Mono", "Space Mono", monospace;
-
-/* نص المتن العربي */
---font-body-ar: "IBM Plex Sans Arabic", "Cairo", sans-serif; /* وزن 400/500 */
+/* Acrylic Surfaces */
+.acrylic-panel {
+  background: rgba(36, 36, 36, 0.7);
+  backdrop-filter: blur(30px) saturate(120%);
+  border: 1px solid var(--grido-border-specular);
+  border-top: 1px solid rgba(255,255,255,0.15); /* Specular highlight */
+}
 ```
-
-> ⚠️ **ملاحظة هندسية حرجة (خاصة بالعربية):** تأثير `tracking-tight` (تقارب الأحرف) يُصمَّم أصلاً لحروف لاتينية منفصلة. الخط العربي حروف متصلة، وتطبيق تباعد سالب عليه يكسر الأشكال الحرفية (ligatures) ويُنتج تراكباً بصرياً غير مقروء. لذلك:
-> - العناوين العربية تحقق "الكتلة البصرية" عبر **الوزن الثقيل + الحجم الضخم فقط**، دون لمس الـ letter-spacing.
-> - الـ `tracking-tight` يُطبَّق حصراً على الأرقام والعناصر اللاتينية الظاهرة داخل النص (أرقام، رمز العلامة التجارية إذا كُتب باللاتينية).
-> - الـ `tracking-[1px]` إلى `[2px]` الموسّع في طبقة النظام (الأزرار/التسميات) يُطبَّق على النصوص الإنجليزية الكبيرة (UPPERCASE) فقط، وهو نمط شائع ومقبول في واجهات عربية تقنية كطبقة "إكسنت" لاتينية فوق محتوى عربي.
 
 ---
 
-<a id="4"></a>
-## 4. نظام الحركة والتفاعل (Motion & Micro-interactions)
+## 5. Core Component Library
 
-هذا القسم هو جوهر هوية Grido Studio البصرية. أي تطبيق ناقص لهذه المواصفات يُعتبر خروجاً عن الهوية.
+### A. Fluent Buttons
+**1. Primary Action (Accent Filled)**
+*   **Style:** Background: `--grido-brand-primary`, Text: `#FFFFFF`, Radius: `--radius-md`, Padding: `14px 32px`.
+*   **Hover:** Background: `--grido-brand-hover`, Box-Shadow: `--material-shadow-glow`.
+*   **Active:** Transform: `scale(0.98)`, Transition: `150ms ease-out`.
 
-### 4.1 الظهور السينمائي عند التمرير (Cinematic Reveal)
+**2. Secondary Action (Subtle Outline)**
+*   **Style:** Background: transparent, Border: `1px solid var(--grido-border-subtle)`, Text: `--grido-text-primary`.
+*   **Hover:** Background: `rgba(255,255,255,0.05)`, Border: `1px solid var(--grido-border-specular)`.
 
-**المواصفات:** مدة 1.2 ثانية، يبدأ العنصر بضبابية 8px وحجم 97%، وينتهي حاداً بحجمه الطبيعي 100%.
+### B. Surface Cards (Acrylic Panels)
+*   **Container:** `background: var(--acrylic-blur-light)`, `backdrop-filter: blur(30px)`, `border: 1px solid var(--grido-border-specular)`.
+*   **Inner Top Border:** `1px solid rgba(255,255,255,0.15)` to simulate Windows 11 light reflection.
+*   **Radius:** `--radius-lg`.
 
-```css
-@keyframes cinematicReveal {
-  from {
-    opacity: 0;
-    filter: blur(8px);
-    transform: scale(0.97);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-    transform: scale(1);
-  }
-}
-
-.reveal-on-scroll {
-  animation: cinematicReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation-play-state: paused;
-}
-
-.reveal-on-scroll.is-visible {
-  animation-play-state: running;
-}
-```
-
-يُفعَّل الصنف `is-visible` عبر `IntersectionObserver` عند دخول العنصر نطاق الرؤية (threshold ≈ 0.2)، وليس عبر مستمع `scroll` مباشر (لأسباب الأداء).
-
-### 4.2 الإضاءة المتتبعة للمؤشر (Smart Spotlight Glow)
-
-الميزة الأبرز في الواجهة: البطاقات والأزرار تمتلك "سطحاً مغناطيسياً" يضيء تحت المؤشر تماماً كأنه كشاف ضوئي.
-
-```css
-.spotlight-card {
-  position: relative;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border-subtle);
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.spotlight-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    600px circle at var(--mouse-x) var(--mouse-y),
-    rgba(255, 255, 255, 0.06),
-    transparent 40%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.spotlight-card:hover::before {
-  opacity: 1;
-}
-```
-
-```js
-document.querySelectorAll('.spotlight-card').forEach((card) => {
-  card.addEventListener('mousemove', (e) => {
-    const rect = card.getBoundingClientRect();
-    card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-    card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-  });
-});
-```
-
-> **ملاحظة أداء:** استخدم `requestAnimationFrame` لتحديث المتغيرات عند وجود عدد كبير من البطاقات في نفس الشبكة، لتفادي إعادة الرسم المفرط (layout thrashing).
-
-### 4.3 توهج الحواف الزجاجي (Border Mask-Composite Glow)
-
-يُدمَج تأثير الإضاءة مع حافة البطاقة نفسها، بحيث تتوهج الحافة فقط في المنطقة القريبة من المؤشر:
-
-```css
-.spotlight-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  padding: 1px; /* سماكة التوهج على الحافة */
-  border-radius: inherit;
-  background: radial-gradient(
-    250px circle at var(--mouse-x) var(--mouse-y),
-    var(--color-border-glow),
-    transparent 40%
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.spotlight-card:hover::after {
-  opacity: 1;
-}
-```
-
-### 4.4 الأزرار المغناطيسية (Magnetic Pill CTAs)
-
-أزرار الهيرو تتفاعل مع اقتراب المؤشر بانزياح خفيف (حتى 6–8px) نحو موضعه، بحركة زنبركية ناعمة:
-
-```js
-button.addEventListener('mousemove', (e) => {
-  const rect = button.getBoundingClientRect();
-  const relX = e.clientX - rect.left - rect.width / 2;
-  const relY = e.clientY - rect.top - rect.height / 2;
-  button.style.transform = `translate(${relX * 0.15}px, ${relY * 0.15}px)`;
-});
-
-button.addEventListener('mouseleave', () => {
-  button.style.transform = 'translate(0, 0)';
-});
-```
-
-مدة الانتقال عند `mouseleave`: `0.3s cubic-bezier(0.34, 1.56, 0.64, 1)` (overshoot خفيف يعطي إحساساً زنبركياً).
-
-### 4.5 جدول توقيتات الحركة (Motion Timing Reference)
-
-| التأثير | المدة | المنحنى |
-|---|---|---|
-| الظهور السينمائي (Cinematic Reveal) | 1.2s | `cubic-bezier(0.16, 1, 0.3, 1)` |
-| توهج البطاقة عند hover | 0.3s | `ease` |
-| الزر المغناطيسي (تتبّع) | فوري (transform مباشر) | — |
-| الزر المغناطيسي (عودة) | 0.3s | `cubic-bezier(0.34, 1.56, 0.64, 1)` |
-| طفو الأيقونات ثلاثية الأبعاد (loop) | 4–6s | `ease-in-out infinite alternate` |
-| تبديل التبويبات (Features Tabs) | 0.4s | fade + reveal مصغّر |
-| فتح/غلق الأكورديون (FAQ) | 0.3s | `ease` على `max-height`/`grid-template-rows` |
+### C. Navigation Bar (Sticky Header)
+*   **Container:** Background: `rgba(20, 20, 20, 0.85)`, Backdrop-filter: `blur(60px)`, Border-Bottom: `1px solid var(--grido-border-subtle)`.
+*   **Layout (RTL):** Logo Right, Nav Links Center, CTA + Language Toggle Left.
 
 ---
 
-<a id="5"></a>
-## 5. هيكلة التخطيط (Layout Architecture)
+## 6. Landing Page UI Architecture (Wireframe Spec)
 
-### 5.1 لا إطارات مقيدة (No Artboards)
-المحتوى لا يُحصر داخل بطاقة مركزية بعرض ثابت. الخلفية السوداء تمتد دائماً بعرض الشاشة الكامل (full-bleed)، بينما يُقيَّد المحتوى الداخلي بحاوية قراءة مريحة:
+### Section 1: The Hero (Above the Fold)
+*   **Layout:** Full-viewport (100vh) split 45/55. Content Right (RTL), App Showcase Left.
+*   **Background:** `--grido-workspace-canvas` with a large radial gradient of `--grido-brand-glow` at the top edge.
+*   **Content:**
+    *   *Badge:* "مدعوم بالذكاء الاصطناعي" (Pill shape, `--grido-ai-beam` text, transparent blue bg).
+    *   *Headline:* "استوديو جريدو برو" (`--text-hero`).
+    *   *Sub-headline:* Provided Tagline (`--text-h2`, secondary text).
+    *   *CTA Row:* Primary "تحميل البرنامج" + Secondary "شاهد العرض التوضيحي".
+*   **Showcase:** High-fidelity screenshot of the app in a Windows 11 window chrome, tilted slightly (`perspective(1000px) rotateY(-5deg)`), shadow: `--material-shadow-8`.
 
-```css
-.section {
-  width: 100%;
-  background: var(--color-bg-primary);
-  padding-block: clamp(80px, 10vw, 160px); /* إيقاع رأسي سينمائي فسيح */
-}
+### Section 2: Core Capabilities (Bento Grid)
+*   **Header:** Center-aligned. "كل ما تحتاجه في مكان واحد".
+*   **Grid Layout:** Fluent 2 Bento style (2 rows, specific spans).
+    1.  *Large (col-span-2):* AI ID/Visa Generation. (Visual: Face scanned with `--grido-ai-beam` transforming to passport sheet).
+    2.  *Medium (col-span-1):* Smart Collage Maker. (Visual: Konva-based layout snapping).
+    3.  *Medium (col-span-1):* Offline & Privacy First. (Visual: Padlock + Go/Wails logo, text: "بياناتك تبقى على جهازك").
+    4.  *Wide (col-span-2):* Print Center Tools. (Visual: Print margins in `--grido-status-warning` with cutting guides).
 
-.section__container {
-  max-width: 1440px;
-  margin-inline: auto;
-  padding-inline: clamp(24px, 5vw, 64px);
-}
-```
+### Section 3: The AI Engine Spotlight
+*   **Layout:** Full-width dark panel (`--grido-surface-inset`).
+*   **Visual:** Step-by-step horizontal flow (RTL).
+    *   Step 1: Raw Image Upload → Step 2: AI Background Removal → Step 3: Visa Template Compositing.
+*   **Colors:** Uses gradient from `--grido-accent-purple` to `--grido-brand-primary` for visual flow lines.
 
-### 5.2 الإيقاع الرأسي (Vertical Rhythm)
-الفراغ العمودي الكبير بين الأقسام (80–160px حسب حجم الشاشة) جزء أساسي من "الشعور بالرحابة". لا تُختصر هذه المسافات لتوفير المساحة — الفراغ الأسود نفسه عنصر تصميمي، وليس مساحة ضائعة.
+### Section 4: Windows 11 Native Experience
+*   **Layout:** Split 50/50.
+*   **Left Content:** Heading "تجربة ويندوز 11 العصرية". Checklist with `--grido-status-success` checkmarks (Mica effects, Sego UI integration, Go/Wails high performance).
+*   **Right Visual:** Mockup of app's settings panel or Command Bar flying out, demonstrating Fluent design icons.
 
----
+### Section 5: Target Audience Segmentation
+*   **Layout:** 4 Vertical Acrylic Cards.
+*   **Cards:** Studios, Print Centers, Designers, Individuals.
+*   **Interaction:** On hover, lift (`translateY(-4px)`) and specular border becomes prominent.
 
-<a id="6"></a>
-## 6. معمارية المكونات (Component Architecture)
+### Section 6: Pricing & Licensing (Conversion Anchor)
+*   **Layout:** Centralized card.
+*   **Card Style:** `--acrylic-blur-light`, shadow: `--material-shadow-8` + outer `--material-shadow-glow`.
+*   **Content:** "رخصة مدى الحياة", Price, Feature list, Full-width Primary CTA.
 
-### 6.1 قسم الترحيب (Hero Section)
-- **العنوان:** "تنسيق صور المعاملات في 3 ثوانٍ فقط" — يطبّق مقياس H1 الكامل (طبقة الكتلة).
-- **أزرار CTA:** زوج من الأزرار على شكل أقراص (pill): زر أساسي مصمت أبيض، وزر ثانوي بحدود شفافة (ghost) — كلاهما يطبّق سلوك "المغناطيسية" (4.4).
-- **معاينة البرنامج (App Mockup):** لوحة زجاجية داكنة (Glassmorphism):
-  ```css
-  .app-mockup {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--color-border-subtle);
-    backdrop-filter: blur(20px);
-    border-radius: 16px;
-  }
-  ```
-- **شريط الثقة:** صف شعارات/إحصائيات أسفل القسم، بشفافية منخفضة (opacity ≈ 0.6) وتسميات بخط Monospace كبير الأحرف.
-
-### 6.2 قسم المزايا الحية (Features Tabs)
-- تبديل بين تبويبين على الأقل: "تصميم الكولاج" و"ترميم الوجوه بالذكاء الاصطناعي".
-- التبويب النشط يُميَّز بخط سفلي أو خلفية قرص صغيرة بخط Monospace UPPERCASE.
-- عند التبديل، محتوى المعاينة (محاكاة حية لواجهة البرنامج) يُطبِّق نسخة مصغّرة من الظهور السينمائي (blur أخف، مدة أقصر ≈ 0.4s) بدلاً من قطع مفاجئ.
-
-### 6.3 قسم المقارنة (Comparison Section)
-- عرض مباشر ومتباين: "الطريقة التقليدية المتعبة" مقابل سرعة Grido Studio.
-- الأرقام (الفروقات الزمنية) تُعرض بخط Monospace ضخم لتعزيز الإحساس بـ"بيانات نظام حقيقية" لا شعارات تسويقية.
-
-### 6.4 شبكة المزايا (Benefits Grid)
-- 5 بطاقات رأسية (مثال: دعم CMYK، معالجة ذكاء اصطناعي محلية 0% إنترنت... إلخ).
-- كل بطاقة تطبّق `.spotlight-card` كاملاً (4.2 + 4.3).
-- أيقونة ثلاثية الأبعاد لكل بطاقة تطفو ببطء (loop مستمر) وتكبر بشكل طفيف عند hover:
-  ```css
-  .benefit-icon {
-    animation: float 5s ease-in-out infinite alternate;
-    transition: transform 0.3s ease;
-  }
-  .spotlight-card:hover .benefit-icon {
-    transform: scale(1.08);
-  }
-  @keyframes float {
-    from { transform: translateY(0); }
-    to   { transform: translateY(-8px); }
-  }
-  ```
-
-### 6.5 سيناريوهات الاستخدام (Use-case Scenarios)
-- بطاقات/كتل تروي حالات استخدام واقعية داخل الاستوديو (طباعة بطاقات مدرسية مجمّعة، ترميم صورة قديمة).
-- تركيبة: صورة/معاينة + عنوان قصير + وصف سردي مختصر بلون `--color-text-secondary`.
-
-### 6.6 الأسئلة الشائعة والشريط الختامي (FAQ + CTA Banner)
-- الأكورديون بتصميم مبسّط للغاية: سؤال + أيقونة سهم تدور 180° عند الفتح، وانتقال ارتفاع ناعم (4.5).
-- الشريط الختامي: كتلة كبيرة عالية التباين، عنوان دعوة مباشرة للتحميل، وزر CTA واحد كبير فقط — لا تشتيت بخيارات متعددة في نهاية الرحلة.
+### Section 7: Footer
+*   **Style:** Solid `--grido-surface-sidebar`, top border `1px solid var(--grido-border-subtle)`.
+*   **Content:** 3 columns (Product, Support, Brand), "Made with Pride" badge.
 
 ---
 
-<a id="7"></a>
-## 7. اعتبارات RTL وإمكانية الوصول
+## 7. Motion & Interaction Guidelines
 
-### 7.1 الاتجاه (RTL)
-- الصفحة تُبنى بـ `dir="rtl"` بشكل أصلي، وليس كطبقة عكس لاحقة.
-- إحداثيات `--mouse-x` / `--mouse-y` في تأثير الإضاءة **لا تتأثر بالاتجاه** (مبنية على موضع المؤشر الفعلي داخل العنصر)، فلا حاجة لأي تعديل خاص بها.
-- الأيقونات الاتجاهية فقط (أسهم، chevrons) يجب أن تُعكَس أفقياً في RTL:
-  ```css
-  [dir="rtl"] .icon--directional {
-    transform: scaleX(-1);
-  }
-  ```
-- استخدام خصائص CSS المنطقية (`margin-inline-start/end`, `padding-inline`) بدلاً من `margin-left/right` في كل مكونات الشبكة، لتفادي أخطاء الانعكاس اليدوي.
+To make the web experience feel like a native desktop app, motion must be physics-based.
 
-### 7.2 إمكانية الوصول
-- تباين الألوان مضمون بطبيعة اللوحة الأحادية (انظر 2.2)، لكن يُمنع النزول عن `--color-text-tertiary` كحد أدنى للتباين في أي نص وظيفي.
-- يجب احترام `prefers-reduced-motion`: عند تفعيله، يُستبدل الظهور السينمائي (blur+scale) بتلاشي بسيط (`opacity` فقط)، وتُعطَّل حركة الطفو المستمرة للأيقونات:
-  ```css
-  @media (prefers-reduced-motion: reduce) {
-    .reveal-on-scroll { animation: fadeIn 0.4s ease forwards; }
-    .benefit-icon { animation: none; }
-  }
-  ```
+1.  **Easing Functions:**
+    *   Standard: `cubic-bezier(0.1, 0.9, 0.2, 1)` (Fast in, slow out).
+    *   Emphasized: `cubic-bezier(0.2, 0.0, 0, 1)` (For element entrances).
+2.  **Durations:**
+    *   Micro-interactions (Hover, Focus): `150ms`.
+    *   Element Entrance (Scroll triggered): `300ms`.
+    *   Page load sequence: Staggered `50ms` delays between Hero elements fading in.
+3.  **Scroll Reveal:** Bento grid cards fade in (`opacity: 0 -> 1`) and slide up slightly (`translateY(20px) -> 0`) when entering the viewport.
 
 ---
 
-<a id="8"></a>
-## 8. قواعد الالتزام (Do's & Don'ts)
+## 8. Internationalization (RTL/LTR) & Accessibility (A11y)
 
-| ✅ افعل | ❌ لا تفعل |
-|---|---|
-| التزم بالتدرج الرمادي الأحادي في كل قرار لوني جديد | لا تُدخل لوناً مشبعاً (accent color) إلا لحالة وظيفية حرجة موثقة (مثل خطأ نظام) |
-| طبّق منحنى `cubic-bezier(0.16, 1, 0.3, 1)` كتوقيع حركي موحّد لكل الظهورات | لا تستخدم `ease` أو `linear` العام في تأثيرات الظهور الرئيسية |
-| استخدم توهج الإضاءة (glow) كبديل وحيد للظل | لا تضف `box-shadow` كلاسيكي بلون داكن أو ملوّن |
-| اجعل الحواف بالكاد مرئية (`#383842`) في الحالة الساكنة | لا تُبرز حدود البطاقات بألوان فاتحة إلا ضمن تأثير التوهج المتتبع |
-| طبّق شكل القرص (pill) على الأزرار فقط | لا تُعمِّم شكل القرص على البطاقات أو الحاويات الكبيرة |
-| اعتمد على الوزن والحجم لبناء الكتلة البصرية في العناوين العربية | لا تطبّق `letter-spacing` سالب على نص عربي متصل |
-| احترم `prefers-reduced-motion` دائماً | لا تفرض الحركة الكاملة على مستخدمين طلبوا تقليلها |
+### A. Bidirectional (RTL/LTR) Strategy
+*   **CSS Logical Properties:** The codebase MUST use `margin-inline-start`, `padding-inline-end`, and `inset-inline-start` instead of physical `right/left` properties. This ensures seamless flipping when `<html dir="ltr">` is toggled.
+*   **Directional Icons:** Icons implying direction (Next/Back) must swap based on `dir` attribute.
+*   **Typography Alignment:** `text-align: start;` as default.
 
----
-
-*نهاية الوثيقة — Grido Studio Design System v1.0*
+### B. Accessibility (A11y) Standards
+*   **Contrast Ratios:** Exceeds WCAG AA. (Primary text 18:1, Secondary text 7:1).
+*   **Focus Rings:** Crucial for desktop-grade feel. All interactive elements require `:focus-visible` utilizing a 2px solid `--grido-brand-primary` outline with a 2px offset of `#141414` to pierce through dark backgrounds.
+*   **Keyboard Navigation:** Navigation, Bento cards, and Pricing CTA must be fully operable via `Tab` and `Enter` keys.

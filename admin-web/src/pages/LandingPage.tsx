@@ -2,15 +2,12 @@ import { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import { Header } from '../components/landing/Header';
 import { HeroSection } from '../components/landing/HeroSection';
-import { TrustMarquee } from '../components/landing/TrustMarquee';
-import { FutureStudioSection } from '../components/landing/FutureStudioSection';
-import { HowItWorksSection } from '../components/landing/HowItWorksSection';
-import { FeaturesTabs } from '../components/landing/FeaturesTabs';
-import { StudioEcosystemSection } from '../components/landing/StudioEcosystemSection';
-import { ComparisonSection } from '../components/landing/ComparisonSection';
-import { BenefitsGrid } from '../components/landing/BenefitsGrid';
+import { BentoGrid } from '../components/landing/BentoGrid';
+import { AiSpotlightSection } from '../components/landing/AiSpotlightSection';
+import { Windows11Section } from '../components/landing/Windows11Section';
+import { AudienceSection } from '../components/landing/AudienceSection';
 import { RoiCalculator } from '../components/landing/RoiCalculator';
-import { QuotesSection } from '../components/landing/QuotesSection';
+import { ComparisonSection } from '../components/landing/ComparisonSection';
 import { PricingSection } from '../components/landing/PricingSection';
 import { FaqSection } from '../components/landing/FaqSection';
 import { CtaBanner } from '../components/landing/CtaBanner';
@@ -70,7 +67,7 @@ export default function LandingPage() {
           setScrollProgress((prev) => (prev !== progress ? progress : prev));
         }
 
-        const shouldShow = scrollY > 450;
+        const shouldShow = scrollY > 500;
         setShowFloatingCta((prev) => (prev !== shouldShow ? shouldShow : prev));
       });
     };
@@ -85,12 +82,12 @@ export default function LandingPage() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('is-revealed', 'is-visible');
+            entry.target.classList.add('is-visible');
             observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.1, rootMargin: '100px 0px' }
+      { threshold: 0.05, rootMargin: '40px 0px' }
     );
 
     const elements = document.querySelectorAll('.reveal-on-scroll');
@@ -102,87 +99,88 @@ export default function LandingPage() {
   return (
     <div
       dir="rtl"
-      className="relative min-h-screen overflow-x-hidden bg-[#000000] font-sans text-[#f0f0f0] selection:bg-[#00a3ff]/30 selection:text-white"
+      className="relative min-h-screen overflow-x-hidden bg-[#121212] font-sans text-[#F5F5F5] selection:bg-[#3b82f6]/30 selection:text-white"
     >
       {/* Top Scroll Progress Bar */}
-      <div className="fixed top-0 inset-x-0 h-0.5 bg-[#191b1e] z-[60] pointer-events-none">
+      <div className="fixed top-0 inset-x-0 h-0.5 bg-[#1E1E1E] z-[60] pointer-events-none">
         <div
-          className="absolute top-0 start-0 h-full bg-[#00a3ff] transition-all duration-150 ease-out shadow-[0_0_8px_#00a3ff]"
+          className="absolute top-0 start-0 h-full bg-[#3b82f6] transition-all duration-150 ease-out"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
 
+      {/* Navigation Header */}
       <Header />
 
       <main id="main-content" className="relative z-10">
-        <div className="reveal-on-scroll is-revealed is-visible">
+        {/* Section 1: Hero */}
+        <div className="reveal-on-scroll is-visible">
           <HeroSection />
         </div>
 
-        <TrustMarquee />
-
-        <div className="reveal-on-scroll section-content-visibility">
-          <HowItWorksSection />
+        {/* Section 2: Core Capabilities (Bento Grid) */}
+        <div className="reveal-on-scroll is-visible">
+          <BentoGrid />
         </div>
 
-        <div className="reveal-on-scroll section-content-visibility">
-          <FeaturesTabs />
+        {/* Section 3: AI Engine Spotlight */}
+        <div className="reveal-on-scroll">
+          <AiSpotlightSection />
         </div>
 
-        <div className="reveal-on-scroll section-content-visibility">
-          <FutureStudioSection />
+        {/* Section 4: Windows 11 Native Experience */}
+        <div className="reveal-on-scroll">
+          <Windows11Section />
         </div>
 
-        <div className="reveal-on-scroll section-content-visibility">
-          <ComparisonSection />
+        {/* Section 5: Target Audience Segmentation */}
+        <div className="reveal-on-scroll">
+          <AudienceSection />
         </div>
 
-        <div className="reveal-on-scroll section-content-visibility">
-          <StudioEcosystemSection />
-        </div>
-
-        <div className="reveal-on-scroll section-content-visibility">
+        {/* Interactive ROI Calculator */}
+        <div className="reveal-on-scroll">
           <RoiCalculator />
         </div>
 
-        <div className="reveal-on-scroll section-content-visibility">
-          <BenefitsGrid />
+        {/* Speed & Legacy Comparison */}
+        <div className="reveal-on-scroll">
+          <ComparisonSection />
         </div>
 
-        <div className="reveal-on-scroll section-content-visibility">
-          <QuotesSection />
-        </div>
-
-        <div className="reveal-on-scroll section-content-visibility">
+        {/* Section 6: Lifetime Pricing & Licensing */}
+        <div className="reveal-on-scroll">
           <PricingSection />
         </div>
 
-        <div className="reveal-on-scroll section-content-visibility">
+        {/* FAQ Accordion */}
+        <div className="reveal-on-scroll">
           <FaqSection />
         </div>
 
-        <div className="reveal-on-scroll section-content-visibility">
+        {/* High-Impact Closing CTA Banner */}
+        <div className="reveal-on-scroll">
           <CtaBanner />
         </div>
       </main>
 
+      {/* Footer */}
       <Footer />
       <WhatsAppFloatingButton />
 
-      {/* Floating Bottom Quick Download Pill */}
+      {/* Floating Bottom Quick Download Pill (Zero Glow) */}
       {showFloatingCta && (
         <a
           href={GITHUB_RELEASE_DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-6 end-6 z-50 flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#00a3ff] hover:bg-[#008fe0] text-white font-medium text-xs shadow-[0_4px_20px_rgba(0,163,255,0.4)] transition-all duration-200"
+          className="fixed bottom-4 end-4 sm:bottom-6 sm:end-6 z-50 flex items-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold text-[11px] sm:text-xs shadow-lg transition-all duration-150 hover:scale-105 active:scale-95"
           aria-label="تحميل مباشر الآن"
         >
-          <Download className="w-4 h-4 text-white shrink-0" />
-          <span>تحميل Grido Studio Pro</span>
+          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
+          <span>تحميل Grido Studio</span>
         </a>
       )}
     </div>
   );
 }
-

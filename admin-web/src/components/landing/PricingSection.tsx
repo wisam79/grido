@@ -1,139 +1,116 @@
-import { Check, Download, MessageCircle } from 'lucide-react';
-import { SectionHeading } from './SectionHeading';
+import { Check, Sparkles, Download, ShieldCheck, Zap, Star } from 'lucide-react';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
-interface Plan {
-  id: string;
-  title: string;
-  audience: string;
-  features: string[];
-  cta: { label: string; href: string; external?: boolean };
-  highlighted?: boolean;
-}
-
-const PLANS: Plan[] = [
-  {
-    id: 'trial',
-    title: 'التجريبية (7 أيام)',
-    audience: 'تجربة مجانية كاملة الميزات بدون قيود',
-    features: [
-      'تجربة مجانية كاملة لمدة 7 أيام',
-      'قص وتنسيق صور الهوية والمعاملات في 3 ثوانٍ',
-      'مصمم كولاج شبكي ديناميكي كامل',
-      'طباعة عالية الدقة 300DPI مع علامات القص',
-      'ترميم الوجوه بالذكاء الاصطناعي',
-      'يعمل محلياً بالكامل بدون إنترنت',
-    ],
-    cta: { label: 'ابدأ التجربة المجانية', href: GITHUB_RELEASE_DOWNLOAD_URL, external: true },
-  },
-  {
-    id: 'pro',
-    title: 'الاحترافية (PRO)',
-    audience: 'للاستوديوهات ومحلات التصوير العاملة يومياً',
-    features: [
-      'تفعيل دائم بدون أي حد زمني',
-      'تصدير نظيف بدون أي علامة مائية',
-      'عزل الخلفية بالذكاء الاصطناعي محلياً وبنقرة واحدة',
-      'ترميم ملامح الوجه بالذكاء الاصطناعي يومياً',
-      'ترميم الكولاج دفعة واحدة (AI Batch)',
-      'تحديثات تلقائية مجانية وموقعة رقمياً',
-      'دعم فني مباشر عبر واتساب',
-    ],
-    cta: {
-      label: 'تفعيل النسخة الاحترافية',
-      href: 'https://wa.me/9647811942002?text=' + encodeURIComponent('مرحباً، أود تفعيل النسخة الاحترافية (Pro) لتطبيق Grido Studio'),
-      external: true,
-    },
-    highlighted: true,
-  },
-  {
-    id: 'enterprise',
-    title: 'المؤسسات والمطابع',
-    audience: 'للمطابع التجارية وسلاسل الاستوديوهات',
-    features: [
-      'كل مزايا النسخة الاحترافية بالكامل',
-      'ترميم مكثف بالذكاء الاصطناعي مع حصص موسعة',
-      'تراخيص متعددة لعدة أجهزة بنفس المعمل',
-      'خيار التفعيل الدائم (مدى الحياة)',
-      'أولوية قصوى في الدعم الفني والتخصيص',
-    ],
-    cta: {
-      label: 'تواصل مع الوكيل المعتمد',
-      href: 'https://wa.me/9647811942002?text=' + encodeURIComponent('مرحباً، أود الاستفسار عن باقة المؤسسات والمطابع (Enterprise) لتطبيق Grido Studio'),
-      external: true,
-    },
-  },
+const FEATURES = [
+  'رخصة أصلية كاملة لمدى الحياة (Lifetime)',
+  'تحديثات وتطويرات مستمرة مجاناً للأبد',
+  'محرك عزل وترميم الوجوه بالذكاء الاصطناعي بلا حدود',
+  'تصدير فائق الدقة (300 DPI مع إدارة ألوان CMYK)',
+  'قوالب الجوازات والفيزا لكافة دول العالم',
+  'صانع الكولاج والشبكات الحرة ومحرر الطبقات',
+  'توفير الورق مع خطوط قص آلية 0.5mm',
+  'عمل محلي 100% دون الحاجة للإنترنت',
+  'دعم فني مباشر وتفعيل فوري على Windows 11 و 10',
 ];
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="section-band border-t border-[rgba(214,235,253,0.19)] bg-[#000000] text-[#f0f0f0]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="خطط الترخيص والتفعيل"
-          title="تجربة مجانية لمدة 7 أيام… ثم تفعيل دائم لمطبعتك"
-          subtitle="جرّب كافة الميزات والذكاء الاصطناعي مجاناً لمدة أسبوع كامل، ثم اختر الباقة المناسبة لحجم عملك."
-          index="06"
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
-          {PLANS.map((plan) => (
-            <article
-              key={plan.id}
-              className={`rounded-lg p-6 sm:p-8 flex flex-col text-right relative bg-[#191b1e] border ${
-                plan.highlighted
-                  ? 'border-[#00a3ff]'
-                  : 'border-[rgba(214,235,253,0.19)]'
-              }`}
-            >
-              {plan.highlighted && (
-                <span className="absolute top-4 left-4 px-2.5 py-0.5 rounded bg-[#00a3ff] text-white text-[10px] font-mono">
-                  الأكثر طلباً
-                </span>
-              )}
-
-              <div className="flex flex-col h-full space-y-6">
-                <div className="space-y-1">
-                  <h3 className="text-xl font-normal font-serif text-[#f0f0f0]">{plan.title}</h3>
-                  <p className="text-[#a1a4a5] text-xs">{plan.audience}</p>
-                </div>
-
-                <ul className="space-y-3 pt-4 border-t border-[rgba(214,235,253,0.19)] flex-1">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-xs sm:text-sm text-[#a1a4a5]">
-                      <Check className="w-4 h-4 text-[#00a3ff] shrink-0 mt-0.5" />
-                      <span className="leading-relaxed">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <a
-                  href={plan.cta.href}
-                  {...(plan.cta.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className={`mt-4 flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer ${
-                    plan.highlighted
-                      ? 'button-primary !w-full'
-                      : 'button-secondary !w-full'
-                  }`}
-                >
-                  {plan.highlighted ? (
-                    <MessageCircle className="w-4 h-4 shrink-0" />
-                  ) : (
-                    <Download className="w-4 h-4 shrink-0" />
-                  )}
-                  <span>{plan.cta.label}</span>
-                </a>
-              </div>
-            </article>
-          ))}
+    <section id="pricing" className="py-16 md:py-24 relative">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Section Header */}
+        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+          <div className="ai-badge mb-3">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#3b82f6]" />
+            <span>باقة واحدة شفافة</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-3 tracking-tight">
+            استثمر مرة واحدة، واستفد للأبد
+          </h2>
+          <p className="text-sm sm:text-base text-[#9E9E9E]">
+            لا اشتراكات شهرية، ولا تكاليف خفية. رخصة أصلية تمنحك كافة إمكانيات الاستوديو.
+          </p>
         </div>
 
-        <p className="mt-8 text-center text-xs font-mono text-[#a1a4a5]">
-          تفعيل فوري عبر الوكيل المعتمد • بدون أي اشتراكات إجبارية أو رسوم خفية
-        </p>
+        {/* Centralized Pricing Card */}
+        <div className="max-w-lg mx-auto relative pt-4">
+          
+          {/* Floating Badge */}
+          <div className="absolute top-0 start-1/2 -translate-x-1/2 z-20 bg-[#3b82f6] text-white text-[11px] sm:text-xs font-extrabold px-4 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap border border-white/20">
+            <Sparkles className="w-3 h-3 fill-current" />
+            <span>ترخيص مدى الحياة (Lifetime License)</span>
+          </div>
+
+          <div className="rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-6 sm:p-9 shadow-md relative hover:border-white/20 transition-all duration-300">
+            
+            <div className="text-center pb-5 border-b border-[#2C2C2C] mb-6 pt-1">
+              <div className="flex items-center justify-center gap-1 mb-2 text-[#f59e0b]">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} className="w-3.5 h-3.5 fill-current" />
+                ))}
+                <span className="text-xs text-[#9E9E9E] ms-1 font-semibold">4.9/5 تقييم الاستوديوهات</span>
+              </div>
+
+              <h3 className="text-2xl font-black text-white mb-1">Grido Studio Pro</h3>
+              <p className="text-xs text-[#9E9E9E] mb-5">النسخة الكاملة لاستوديوهات ومراكز الطباعة</p>
+
+              {/* Price Row in Dinar */}
+              <div className="flex items-baseline justify-center gap-2.5 mb-2.5">
+                <span className="text-sm text-[#666666] line-through font-mono">150,000</span>
+                <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tight">75,000</span>
+                <div className="flex flex-col items-start text-start">
+                  <span className="text-sm font-bold text-[#3b82f6]">دينار</span>
+                  <span className="text-[10px] text-[#9E9E9E]">دفع لمرة واحدة فقط</span>
+                </div>
+              </div>
+              
+              <div className="inline-flex items-center gap-1 bg-[#141414] px-3 py-0.5 rounded-full border border-[#2C2C2C] text-[#10b981] text-[11px] font-semibold">
+                <Check className="w-3 h-3" />
+                <span>رخصة دائمة لمدى الحياة • بدون اشتراك شهري</span>
+              </div>
+            </div>
+
+            {/* Feature List */}
+            <div className="space-y-2.5 mb-7">
+              {FEATURES.map((feat) => (
+                <div key={feat} className="flex items-center gap-2.5 text-xs sm:text-sm text-white">
+                  <div className="w-4 h-4 rounded bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#10b981] shrink-0">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="leading-normal">{feat}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Primary CTA Button */}
+            <a
+              href={GITHUB_RELEASE_DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary w-full !h-12 text-sm sm:text-base justify-center mb-4 font-bold cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span>تحميل وتفعيل رخصتك الآن</span>
+            </a>
+
+            {/* Guarantee Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-2.5 text-[11px] text-[#9E9E9E]">
+              <div className="flex items-center gap-1">
+                <Zap className="w-3 h-3 text-[#3b82f6]" />
+                <span>تنزيل فوري</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-[#10b981]" />
+                <span>ضمان استرجاع 14 يوماً</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </section>
   );
 }
-

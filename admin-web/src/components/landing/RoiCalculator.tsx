@@ -1,111 +1,107 @@
 import { useState } from 'react';
-import { Clock, Droplets, TrendingUp, Users, ArrowLeft } from 'lucide-react';
-import { SectionHeading } from './SectionHeading';
+import { Calculator, Clock, TrendingUp } from 'lucide-react';
 
 export function RoiCalculator() {
-  const [dailyCustomers, setDailyCustomers] = useState<number>(35);
+  const [dailyClients, setDailyClients] = useState(25);
+  const [sheetPrice, setSheetPrice] = useState(4000); // 4,000 Dinar per passport sheet
 
-  const minutesSavedDaily = Math.round(dailyCustomers * 7.75);
-  const hoursSavedDaily = (minutesSavedDaily / 60).toFixed(1);
-  const monthlySheetsSaved = Math.round(dailyCustomers * 0.4 * 30);
-  const speedMultiplier = 20;
+  const savedMinutesPerDay = Math.round(dailyClients * 5.5);
+  const savedHoursPerMonth = Math.round((savedMinutesPerDay * 26) / 60);
+  const monthlyExtraRevenue = Math.round(dailyClients * sheetPrice * 26 * 0.25);
 
   return (
-    <section id="roi-calculator" className="section-band border-t border-[rgba(214,235,253,0.19)] bg-[#000000] text-[#f0f0f0]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="حاسبة توفير الوقت والأرباح"
-          title="كم توفر مطبعتك واستوديوك شهرياً مع Grido Studio؟"
-          subtitle="حرّك المؤشر بحسب متوسط زبائنك اليومي واكتشف عدد الساعات وأوراق الطباعة الموفرة فورياً."
-          index="03"
-        />
+    <section className="py-16 md:py-24 relative">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Harmonized Charcoal Card */}
+        <div className="max-w-4xl mx-auto rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-5 sm:p-9 shadow-md relative overflow-hidden">
+          
+          {/* Header */}
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
+            <div className="ai-badge mb-3">
+              <Calculator className="w-3.5 h-3.5 text-[#3b82f6]" />
+              <span>حاسبة التوفير والعائد</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1.5">
+              كم ستوفر شهرياً مع استوديو جريدو؟
+            </h2>
+            <p className="text-xs sm:text-sm text-[#9E9E9E]">
+              حرّك المؤشر لحساب الوقت والورق الموفر داخل الاستوديو.
+            </p>
+          </div>
 
-        <div className="max-w-4xl mx-auto rounded-lg bg-[#191b1e] border border-[rgba(214,235,253,0.19)] p-6 sm:p-8">
-          <div className="space-y-8">
-            {/* Slider Control */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between font-mono">
-                <span className="text-xs sm:text-sm text-[#f0f0f0] flex items-center gap-2">
-                  <Users className="w-4 h-4 text-[#00a3ff]" />
-                  عدد زبائن الصور والمعاملات يومياً:
-                </span>
-                <span className="text-xl sm:text-2xl font-normal font-serif text-[#00a3ff] bg-[#000000] px-3.5 py-1 rounded border border-[rgba(214,235,253,0.19)]">
-                  {dailyCustomers} <span className="text-xs font-mono text-[#a1a4a5]">زبون/يوم</span>
-                </span>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center">
+            {/* Controls */}
+            <div className="md:col-span-6 space-y-5">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label htmlFor="roi-clients" className="text-xs font-semibold text-white">عدد زبائن صور الهوية يومياً</label>
+                  <span className="text-xs font-mono font-bold text-[#60a5fa] bg-[#141414] px-2.5 py-0.5 rounded border border-[#2C2C2C]">
+                    {dailyClients} زبون
+                  </span>
+                </div>
+                <input
+                  id="roi-clients"
+                  type="range"
+                  min="5"
+                  max="150"
+                  step="5"
+                  value={dailyClients}
+                  onChange={(e) => setDailyClients(Number(e.target.value))}
+                  aria-label={`عدد زبائن صور الهوية يومياً: ${dailyClients}`}
+                  className="w-full h-2 bg-[#141414] rounded-lg appearance-none cursor-pointer accent-[#3b82f6]"
+                />
               </div>
 
-              <input
-                type="range"
-                min="5"
-                max="150"
-                step="5"
-                value={dailyCustomers}
-                onChange={(e) => setDailyCustomers(Number(e.target.value))}
-                aria-label="عدد الزبائن اليومي"
-                className="w-full h-1.5 bg-[#000000] rounded appearance-none cursor-pointer accent-[#00a3ff]"
-              />
-
-              <div className="flex justify-between text-[11px] font-mono text-[#a1a4a5]">
-                <span>5 زبائن (استوديو ناشئ)</span>
-                <span>75 زبون (استوديو متوسط)</span>
-                <span>150+ زبون (مطبعة ومعمل نشط)</span>
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label htmlFor="roi-price" className="text-xs font-semibold text-white">سعر طقم الصور للزبون</label>
+                  <span className="text-xs font-mono font-bold text-[#10b981] bg-[#141414] px-2.5 py-0.5 rounded border border-[#2C2C2C]">
+                    {sheetPrice.toLocaleString()} دينار
+                  </span>
+                </div>
+                <input
+                  id="roi-price"
+                  type="range"
+                  min="1000"
+                  max="10000"
+                  step="500"
+                  value={sheetPrice}
+                  onChange={(e) => setSheetPrice(Number(e.target.value))}
+                  aria-label={`سعر طقم الصور للزبون: ${sheetPrice.toLocaleString()} دينار`}
+                  className="w-full h-2 bg-[#141414] rounded-lg appearance-none cursor-pointer accent-[#10b981]"
+                />
               </div>
             </div>
 
-            {/* Results Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-[rgba(214,235,253,0.19)]">
-              {/* Card 1: Time Saved */}
-              <div className="p-4 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] text-center space-y-2">
-                <div className="w-8 h-8 rounded bg-[#191b1e] border border-[rgba(214,235,253,0.19)] mx-auto flex items-center justify-center text-[#00a3ff]">
+            {/* Results Display */}
+            <div className="md:col-span-6 grid grid-cols-2 gap-3.5">
+              <div className="p-4 rounded-xl bg-[#141414] border border-[#2C2C2C] flex flex-col justify-between">
+                <div className="flex items-center gap-1.5 text-[#60a5fa] mb-1.5">
                   <Clock className="w-4 h-4" />
+                  <span className="text-xs font-medium">الوقت الموفر شهرياً</span>
                 </div>
-                <div className="text-3xl font-normal font-serif text-[#f0f0f0] tracking-tight">
-                  {hoursSavedDaily} <span className="text-sm font-sans text-[#00a3ff]">ساعة</span>
+                <div className="text-xl sm:text-2xl font-mono font-bold text-white">
+                  {savedHoursPerMonth} <span className="text-xs text-[#9E9E9E] font-sans">ساعة</span>
                 </div>
-                <p className="text-xs text-[#a1a4a5]">توفير حقيقي في وقت العمل يومياً</p>
+                <span className="text-[10px] text-[#9E9E9E] mt-1">تفرّغ لالتقاط صور أكثر</span>
               </div>
 
-              {/* Card 2: Paper & Ink Waste Eliminated */}
-              <div className="p-4 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] text-center space-y-2">
-                <div className="w-8 h-8 rounded bg-[#191b1e] border border-[rgba(214,235,253,0.19)] mx-auto flex items-center justify-center text-[#00a3ff]">
-                  <Droplets className="w-4 h-4" />
-                </div>
-                <div className="text-3xl font-normal font-serif text-[#00a3ff] tracking-tight">
-                  {monthlySheetsSaved} <span className="text-sm font-sans text-[#00a3ff]">ورقة</span>
-                </div>
-                <p className="text-xs text-[#a1a4a5]">ورق وحبر ثمين موفر شهرياً</p>
-              </div>
-
-              {/* Card 3: Instant Customer Delivery */}
-              <div className="p-4 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] text-center space-y-2">
-                <div className="w-8 h-8 rounded bg-[#191b1e] border border-[rgba(214,235,253,0.19)] mx-auto flex items-center justify-center text-[#00a3ff]">
+              <div className="p-4 rounded-xl bg-[#141414] border border-[#2C2C2C] flex flex-col justify-between">
+                <div className="flex items-center gap-1.5 text-[#10b981] mb-1.5">
                   <TrendingUp className="w-4 h-4" />
+                  <span className="text-xs font-medium">عائد إضافي تقديري</span>
                 </div>
-                <div className="text-3xl font-normal font-serif text-[#f0f0f0] tracking-tight">
-                  3 <span className="text-sm font-sans text-[#a1a4a5]">ثوانٍ</span>
+                <div className="text-xl sm:text-2xl font-mono font-bold text-white">
+                  +{monthlyExtraRevenue.toLocaleString()} <span className="text-[11px] text-[#9E9E9E] font-sans">دينار</span>
                 </div>
-                <p className="text-xs text-[#a1a4a5]">تسليم الزبون والطلب جاهز وهو واقف</p>
+                <span className="text-[10px] text-[#9E9E9E] mt-1">من تقليل هدر الورق</span>
               </div>
-            </div>
-
-            {/* Bottom summary statement */}
-            <div className="p-4 rounded-md bg-[#000000] border border-[rgba(214,235,253,0.19)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono">
-              <span className="text-[#f0f0f0] flex items-center gap-2 text-center sm:text-start">
-                <span className="w-2 h-2 rounded-full bg-[#00a3ff]" />
-                النتيجة: خدمة زبائن أكثر بنسبة {speedMultiplier}X دون طوابير انتظار أو إرهاق!
-              </span>
-              <a
-                href="#pricing"
-                className="button-primary text-xs !py-1.5 !px-3 shrink-0 flex items-center gap-1.5"
-              >
-                <span>جرّب مجاناً الآن</span>
-                <ArrowLeft className="w-3.5 h-3.5" />
-              </a>
             </div>
           </div>
+
         </div>
       </div>
     </section>
   );
 }
-
