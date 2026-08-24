@@ -29,7 +29,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
     <div
       role="button"
       tabIndex={0}
-      aria-selected={isActive}
+      aria-pressed={isActive}
       aria-label={tpl.name || "قالب كولاج"}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
