@@ -197,8 +197,8 @@ func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
   @page { margin: 0 !important; size: %.2fmm %.2fmm; }
   * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
   html, body {
-    width: 100%% !important;
-    height: 100%% !important;
+    width: %.2fmm !important;
+    height: %.2fmm !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #525659;
@@ -213,24 +213,24 @@ func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
     left: 0 !important;
     width: %.2fmm !important;
     height: %.2fmm !important;
-    max-width: 100%% !important;
-    max-height: 100%% !important;
-    object-fit: fill !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: contain !important;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
     display: block !important;
     background: white;
   }
   @media print {
     @page { margin: 0 !important; size: %.2fmm %.2fmm; }
-    html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; }
-    img { position: absolute !important; top: 0 !important; left: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; object-fit: fill !important; }
+    html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: %.2fmm !important; height: %.2fmm !important; }
+    img { position: absolute !important; top: 0 !important; left: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: %.2fmm !important; height: %.2fmm !important; object-fit: contain !important; }
   }
 </style>
 </head>
 <body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
   <img src="%s" />
 </body>
-</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, imageSrc)
+</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, imageSrc)
 }
 
 // buildSelfContainedHTML يبني صفحة معاينة/طباعة ذاتية الاحتواء لـ WebView2 (iframe)
@@ -244,8 +244,8 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
   @page { margin: 0 !important; size: %.2fmm %.2fmm; }
   * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
   html, body {
-    width: 100%% !important;
-    height: 100%% !important;
+    width: %.2fmm !important;
+    height: %.2fmm !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
@@ -258,11 +258,11 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
-    width: 100%% !important;
-    height: 100%% !important;
-    max-width: 100%% !important;
-    max-height: 100%% !important;
-    object-fit: fill !important;
+    width: %.2fmm !important;
+    height: %.2fmm !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: contain !important;
     display: block !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -271,15 +271,15 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
   }
   @media print {
     @page { margin: 0 !important; size: %.2fmm %.2fmm; }
-    html, body { width: 100%% !important; height: 100%% !important; margin: 0 !important; padding: 0 !important; }
-    img { position: absolute !important; top: 0 !important; left: 0 !important; width: 100%% !important; height: 100%% !important; object-fit: fill !important; }
+    html, body { width: %.2fmm !important; height: %.2fmm !important; margin: 0 !important; padding: 0 !important; }
+    img { position: absolute !important; top: 0 !important; left: 0 !important; width: %.2fmm !important; height: %.2fmm !important; object-fit: contain !important; }
   }
 </style>
 </head>
 <body>
   <img src="%s" />
 </body>
-</html>`, paperWMM, paperHMM, paperWMM, paperHMM, imageSrc)
+</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, imageSrc)
 }
 
 // setPngDPI modifies a PNG byte slice to include a pHYs chunk with the specified DPI.
