@@ -11,23 +11,33 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { LayoutGrid, Check, RefreshCw, Save } from "lucide-react";
 import { useEditorStore } from "@/lib/editor-store";
-import type { FreeformLayout, FreeformSlot, PhotoPresetType, MixedPreset } from "../types";
+import type {
+  FreeformLayout,
+  FreeformSlot,
+  PhotoPresetType,
+  MixedPreset,
+  SlotAlignment,
+  DistributionAxis,
+  AutoPackStrategy,
+} from "../types";
 import { MIXED_COLLAGE_PRESETS, PHOTO_PRESET_LABELS } from "../lib/mixed-presets";
 import {
   splitSlot,
   removeSlot,
   addDefaultSlot,
+  addPresetSlot,
+  autoPackSlots,
+  distributeSlots,
   convertToGridoTemplate,
   rotateSlot,
   duplicateSlot,
   alignSlot,
-  PHOTO_PRESET_DIMENSIONS_MM,
-  type SlotAlignment,
 } from "../lib/freeform-math";
 import { FreeformToolbar } from "./FreeformToolbar";
 import { FreeformCanvasEditor } from "./FreeformCanvasEditor";
 import { MixedPresetsGrid } from "./MixedPresetsGrid";
 import { FreeformPaperSelector } from "./FreeformPaperSelector";
+import { FreeformSlotInspector } from "./FreeformSlotInspector";
 import { SaveCustomTemplate } from "../../../../wailsjs/go/main/App";
 
 interface FreeformCollageModalProps {
@@ -45,8 +55,10 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
   const [activePresetId, setActivePresetId] = useState<string | null>(MIXED_COLLAGE_PRESETS[0].id);
   const [isApplying, setIsApplying] = useState<boolean>(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState<boolean>(false);
+  const [showCutLines, setShowCutLines] = useState<boolean>(false);
+  const [enableSnapping, setEnableSnapping] = useState<boolean>(true);
 
-  // سجل التراجع والإعادة الآمن من الـ Stale Closures
+  // سجل التراجع والإعادة
   const [historyState, setHistoryState] = useState<{
     past: FreeformSlot[][];
     present: FreeformSlot[];
@@ -57,12 +69,9 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     future: [],
   });
 
-  // لقطة الخلايا قبل بدء السحب — تُسجَّل كخطوة تراجع واحدة عند انتهائه
   const dragStartSlotsRef = useRef<FreeformSlot[] | null>(null);
-
   const slots = historyState.present;
 
-  // مرايا Ref ثابتة تسمح للمعالجات والاختصارات بالبقاء مستقرة دون إعادة اشتراك في كل إطار سحب
   const slotsRef = useRef(slots);
   const selectedSlotIdRef = useRef(selectedSlotId);
   useEffect(() => {
@@ -104,7 +113,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     });
   }, []);
 
-  // تصفير وإعادة ضبط حالات التحميل والمتغيرات عند فتح/إغلاق النافذة
+  // تصفير وإعادة ضبط الحالات عند فتح النافذة
   useEffect(() => {
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -170,6 +179,22 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     setActivePresetId(null);
   }, [updateSlotsWithHistory]);
 
+  const handleAddPresetSlot = useCallback((presetType: PhotoPresetType) => {
+    const updated = addPresetSlot(slotsRef.current, presetType, paperWidthMM, paperHeightMM);
+    updateSlotsWithHistory(updated);
+    setSelectedSlotId(updated[updated.length - 1].id);
+    setActivePresetId(null);
+    toast.success(`تمت إضافة ${PHOTO_PRESET_LABELS[presetType]} إلى الورقة`);
+  }, [updateSlotsWithHistory, paperWidthMM, paperHeightMM]);
+
+  const handleAutoPack = useCallback((strategy: AutoPackStrategy) => {
+    const updated = autoPackSlots(strategy, paperWidthMM, paperHeightMM, 0, 0);
+    updateSlotsWithHistory(updated);
+    setSelectedSlotId(updated[0]?.id || null);
+    setActivePresetId(null);
+    toast.success(`تمت تعبئة الورقة تلقائياً بـ ${updated.length} صورة!`);
+  }, [updateSlotsWithHistory, paperWidthMM, paperHeightMM]);
+
   const handleRemoveSlot = useCallback(() => {
     const selectedId = selectedSlotIdRef.current;
     if (!selectedId) return;
@@ -204,25 +229,20 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     setActivePresetId(null);
   }, [updateSlotsWithHistory]);
 
-  const handleChangePresetType = useCallback((type: PhotoPresetType) => {
+  const handleDistributeSlots = useCallback((axis: DistributionAxis) => {
+    if (slotsRef.current.length <= 2) return;
+    updateSlotsWithHistory(distributeSlots(slotsRef.current, axis));
+    setActivePresetId(null);
+    toast.success(axis === "horizontal" ? "تم توزيع المسافات أفقياً" : "تم توزيع المسافات عمودياً");
+  }, [updateSlotsWithHistory]);
+
+  const handleUpdateSlot = useCallback((updated: Partial<FreeformSlot>) => {
     const selectedId = selectedSlotIdRef.current;
     if (!selectedId) return;
-    const dims = PHOTO_PRESET_DIMENSIONS_MM[type];
-    const updated = slotsRef.current.map((s) => {
-      if (s.id !== selectedId) return s;
-      const newW = Math.min(1 - s.x, Math.max(0.04, dims.w / paperWidthMM));
-      const newH = Math.min(1 - s.y, Math.max(0.04, dims.h / paperHeightMM));
-      return {
-        ...s,
-        presetType: type,
-        label: PHOTO_PRESET_LABELS[type],
-        w: newW,
-        h: newH,
-      };
-    });
-    updateSlotsWithHistory(updated);
+    const nextSlots = slotsRef.current.map((s) => (s.id === selectedId ? { ...s, ...updated } : s));
+    updateSlotsWithHistory(nextSlots);
     setActivePresetId(null);
-  }, [updateSlotsWithHistory, paperWidthMM, paperHeightMM]);
+  }, [updateSlotsWithHistory]);
 
   // إعادة مزامنة التحديد بعد التراجع/الإعادة/الحذف
   useEffect(() => {
@@ -233,6 +253,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
 
   const nudgeDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // اختصارات لوحة المفاتيح
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -298,15 +319,12 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         if (nudgeDebounceTimer.current) clearTimeout(nudgeDebounceTimer.current);
         nudgeDebounceTimer.current = setTimeout(() => {
           updateSlotsWithHistory(nextSlots);
-        }, 400);
+        }, 150);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown, { capture: true });
-      if (nudgeDebounceTimer.current) clearTimeout(nudgeDebounceTimer.current);
-    };
+    return () => window.removeEventListener("keydown", handleKeyDown, { capture: true });
   }, [open, handleUndo, handleRedo, handleDuplicateSlot, handleRemoveSlot, updateSlotsWithHistory]);
 
   const handleSaveAsCustomTemplate = async () => {
@@ -314,8 +332,8 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       setIsSavingTemplate(true);
       const currentSlots = slotsRef.current;
       const gridoTemplate = convertToGridoTemplate({
-        id: Date.now().toString(36),
-        name: layoutName,
+        id: "freeform-" + Date.now(),
+        name: layoutName || "كولاج مخصص",
         paperWidthMM,
         paperHeightMM,
         slots: currentSlots,
@@ -415,14 +433,14 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[96vw] sm:max-w-[1060px] h-[93vh] max-h-[850px] overflow-hidden border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl rounded-2xl shadow-xl font-cairo flex flex-col p-3.5 gap-2.5 fluent-specular"
+        className="w-[96vw] sm:max-w-[1100px] h-[93vh] max-h-[860px] overflow-hidden border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl rounded-2xl shadow-xl font-cairo flex flex-col p-3.5 gap-2.5 fluent-specular"
         dir="rtl"
       >
-        {/* Header — رأس النافذة المنظم مع محدد أبعاد الورقة المليمتري */}
+        {/* Header — رأس النافذة مع محدد أبعاد الورقة المليمتري */}
         <DialogHeader className="border-b border-border/40 pb-2.5 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
             <LayoutGrid className="w-4 h-4 text-primary" />
-            محرر الكولاج الحر
+            <span>محرر الكولاج الحر المتقدم</span>
           </DialogTitle>
 
           {/* قياسات وأبعاد الورقة عبر المكون المستقل */}
@@ -443,31 +461,57 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
               selectedSlotId={selectedSlotId}
               canUndo={historyState.past.length > 0}
               canRedo={historyState.future.length > 0}
+              showCutLines={showCutLines}
+              enableSnapping={enableSnapping}
               onUndo={handleUndo}
               onRedo={handleRedo}
               onSplitHorizontal={handleSplitHorizontal}
               onSplitVertical={handleSplitVertical}
               onAddSlot={handleAddSlot}
+              onAddPresetSlot={handleAddPresetSlot}
+              onAutoPack={handleAutoPack}
               onRemoveSlot={handleRemoveSlot}
               onRotateSlot={handleRotateSlot}
               onDuplicateSlot={handleDuplicateSlot}
               onAlignSlot={handleAlignSlot}
-              onChangePresetType={handleChangePresetType}
-              currentPresetType={selectedSlot?.presetType}
+              onDistributeSlots={handleDistributeSlots}
+              onToggleCutLines={() => setShowCutLines((prev) => !prev)}
+              onToggleSnapping={() => setEnableSnapping((prev) => !prev)}
             />
           </div>
 
-          {/* الكانفس التفاعلي الرئيسي */}
-          <FreeformCanvasEditor
-            paperWidthMM={paperWidthMM}
-            paperHeightMM={paperHeightMM}
-            slots={slots}
-            selectedSlotId={selectedSlotId}
-            onSelectSlot={setSelectedSlotId}
-            onDragStart={handleDragStart}
-            onSlotsChange={handleSlotsChange}
-            onDragEnd={handleDragEnd}
-          />
+          {/* مساحة العمل المركزية: الكانفس + لوحة فحص الخلية الجانبية */}
+          <div className="flex flex-1 min-h-0 gap-2.5 items-stretch">
+            {/* الكانفس التفاعلي الرئيسي */}
+            <div className="flex-1 flex min-h-0">
+              <FreeformCanvasEditor
+                paperWidthMM={paperWidthMM}
+                paperHeightMM={paperHeightMM}
+                slots={slots}
+                selectedSlotId={selectedSlotId}
+                showCutLines={showCutLines}
+                enableSnapping={enableSnapping}
+                onSelectSlot={setSelectedSlotId}
+                onDragStart={handleDragStart}
+                onSlotsChange={handleSlotsChange}
+                onDragEnd={handleDragEnd}
+              />
+            </div>
+
+            {/* لوحة تحكم الخلية المحددة بالمليمتر */}
+            <div className="w-[240px] shrink-0 flex flex-col justify-start">
+              <FreeformSlotInspector
+                slot={selectedSlot}
+                paperWidthMM={paperWidthMM}
+                paperHeightMM={paperHeightMM}
+                onUpdateSlot={handleUpdateSlot}
+                onRotateSlot={handleRotateSlot}
+                onDuplicateSlot={handleDuplicateSlot}
+                onRemoveSlot={handleRemoveSlot}
+                onAlignSlot={handleAlignSlot}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Footer — شريط سفلي متوافق مع Fluent 2 Standard Ramp */}
@@ -477,7 +521,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
             <Input
               value={layoutName}
               onChange={(e) => setLayoutName(e.target.value)}
-              className="h-8 text-xs rounded-md w-[150px] bg-background border-border/60 font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="h-8 text-xs rounded-md w-[160px] bg-background border-border/60 font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               placeholder="اسم القالب..."
             />
             <Button

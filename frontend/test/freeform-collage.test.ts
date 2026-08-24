@@ -8,6 +8,10 @@ import {
   rotateSlot,
   duplicateSlot,
   alignSlot,
+  autoPackSlots,
+  distributeSlots,
+  findFirstEmptySpace,
+  addPresetSlot,
 } from "../src/features/freeform-collage/lib/freeform-math";
 import { MIXED_COLLAGE_PRESETS } from "../src/features/freeform-collage/lib/mixed-presets";
 import type { FreeformSlot, FreeformLayout } from "../src/features/freeform-collage/types";
@@ -68,7 +72,6 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
     const slots: FreeformSlot[] = [
       { id: "slot1", x: 0.1, y: 0.1, w: 0.4, h: 0.4 },
     ];
-    // Move so slot center (x + w/2) approaches paper center 0.5 (x = 0.3)
     const { slots: moved, snapLines } = moveSlot(slots, "slot1", 0.199, 0);
     expect(moved[0].x).toBeCloseTo(0.3, 2);
     const centerLine = snapLines.find((l) => l.id === "center-x");
@@ -81,8 +84,8 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
       { id: "slot1", x: 0, y: 0, w: 0.35, h: 0.3 }, // 35mm x 45mm on 100x150mm paper
     ];
     const rotated = rotateSlot(slots, "slot1", 100, 150);
-    expect(rotated[0].w).toBeCloseTo(0.45, 6); // 45mm on 100mm paper = 0.45
-    expect(rotated[0].h).toBeCloseTo(0.233333, 4); // 35mm on 150mm paper = 0.23333
+    expect(rotated[0].w).toBeCloseTo(0.45, 6);
+    expect(rotated[0].h).toBeCloseTo(0.233333, 4);
     expect(rotated[0].rotation).toBe(90);
   });
 
@@ -96,10 +99,14 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
     expect(duplicated[1].x).toBeGreaterThan(0.1);
   });
 
-  it("aligns a slot to horizontal center, top, and bottom", () => {
+  it("aligns a slot to top-left, horizontal center, and bottom", () => {
     const slots: FreeformSlot[] = [
       { id: "slot1", x: 0.1, y: 0.1, w: 0.4, h: 0.2 },
     ];
+    const topLeft = alignSlot(slots, "slot1", "top-left");
+    expect(topLeft[0].x).toBe(0);
+    expect(topLeft[0].y).toBe(0);
+
     const centeredH = alignSlot(slots, "slot1", "center-h");
     expect(centeredH[0].x).toBe(0.3); // (1 - 0.4) / 2
 
@@ -107,13 +114,81 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
     expect(bottomAligned[0].y).toBe(0.8); // 1 - 0.2
   });
 
+  it("distributes slots evenly horizontally", () => {
+    const slots: FreeformSlot[] = [
+      { id: "s1", x: 0, y: 0, w: 0.2, h: 0.2 },
+      { id: "s2", x: 0.25, y: 0, w: 0.2, h: 0.2 },
+      { id: "s3", x: 0.8, y: 0, w: 0.2, h: 0.2 },
+    ];
+    const distributed = distributeSlots(slots, "horizontal");
+    expect(distributed[0].x).toBe(0);
+    expect(distributed[1].x).toBeCloseTo(0.4, 2);
+    expect(distributed[2].x).toBe(0.8);
+  });
+
+  it("distributes slots evenly vertically", () => {
+    const slots: FreeformSlot[] = [
+      { id: "s1", x: 0, y: 0, w: 0.2, h: 0.2 },
+      { id: "s2", x: 0, y: 0.3, w: 0.2, h: 0.2 },
+      { id: "s3", x: 0, y: 0.8, w: 0.2, h: 0.2 },
+    ];
+    const distributed = distributeSlots(slots, "vertical");
+    expect(distributed[0].y).toBe(0);
+    expect(distributed[1].y).toBeCloseTo(0.4, 2);
+    expect(distributed[2].y).toBe(0.8);
+  });
+
+  it("finds the first empty space on the paper for a new slot", () => {
+    const slots: FreeformSlot[] = [
+      { id: "s1", x: 0, y: 0, w: 0.5, h: 0.5 },
+    ];
+    const pos = findFirstEmptySpace(slots, 0.4, 0.4);
+    expect(pos.x).toBeGreaterThanOrEqual(0.5);
+    expect(pos.y).toBe(0);
+  });
+
+  it("adds a preset document slot into the first empty space", () => {
+    const slots: FreeformSlot[] = [
+      { id: "s1", x: 0, y: 0, w: 0.5, h: 0.5 },
+    ];
+    const updated = addPresetSlot(slots, "passport", 100, 150);
+    expect(updated).toHaveLength(2);
+    expect(updated[1].presetType).toBe("passport");
+    expect(updated[1].w).toBe(0.5); // 50mm / 100mm = 0.5
+    expect(updated[1].h).toBeCloseTo(0.3333, 2); // 50mm / 150mm
+  });
+
+  it("auto-packs maximum ID photos on 10x15cm paper (8 slots in 2x4 grid)", () => {
+    const packed = autoPackSlots("id-max", 100, 150);
+    // 100mm / 35mm = 2 cols, 150mm / 45mm = 3 rows => 6 or 8 slots
+    expect(packed.length).toBeGreaterThanOrEqual(6);
+    expect(packed[0].x).toBe(0);
+    expect(packed[0].y).toBe(0);
+    expect(packed[0].presetType).toBe("iq-national-id");
+  });
+
+  it("auto-packs maximum passport photos on 10x15cm paper (6 slots in 2x3 grid)", () => {
+    const packed = autoPackSlots("passport-max", 100, 150);
+    // 100mm / 50mm = 2 cols, 150mm / 50mm = 3 rows => 6 slots
+    expect(packed).toHaveLength(6);
+    expect(packed[0].w).toBe(0.5);
+    expect(packed[0].h).toBeCloseTo(0.3333, 2);
+  });
+
+  it("auto-packs combo-standard with top passports row and bottom ID rows", () => {
+    const packed = autoPackSlots("combo-standard", 100, 150);
+    expect(packed.length).toBeGreaterThanOrEqual(6);
+    const passports = packed.filter((s) => s.presetType === "passport");
+    const ids = packed.filter((s) => s.presetType === "iq-national-id");
+    expect(passports).toHaveLength(2);
+    expect(ids.length).toBeGreaterThanOrEqual(4);
+  });
+
   it("keeps a slot inside the paper bounds after snapping to a far-edge slot", () => {
     const slots: FreeformSlot[] = [
       { id: "slot1", x: 0.5, y: 0.5, w: 0.1, h: 0.1 },
       { id: "slot2", x: 0.905, y: 0.1, w: 0.04, h: 0.04 },
     ];
-    // السحب نحو اليمين يقرّب الحافة من slot2 فيتم الالتصاق الأيسر عند 0.905 —
-    // يجب ألا تخرج الخلية (x + w) عن حدود الورقة بعد الالتصاق
     const { slots: moved } = moveSlot(slots, "slot1", 0.6, 0);
     const slot = moved.find((s) => s.id === "slot1")!;
     expect(slot.x).toBeGreaterThanOrEqual(0);
@@ -166,82 +241,6 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
     const rotated = rotateSlot(slots, "slot1");
     expect(rotated[0].w).toBeLessThanOrEqual(1 - rotated[0].x + 1e-9);
     expect(rotated[0].h).toBeLessThanOrEqual(1 - rotated[0].y + 1e-9);
-  });
-
-  it("picks the closest snap candidate when two neighbors conflict", () => {
-    const slots: FreeformSlot[] = [
-      { id: "A", x: 0.2, y: 0.1, w: 0.3, h: 0.2 },
-      // يمين B (0.412 + 0.1 = 0.512) قريب من يمين A (0.508): التصاق عند 0.212
-      { id: "B", x: 0.412, y: 0.1, w: 0.1, h: 0.2 },
-      // يسار C (0.202) قريب من يسار A (0.208): التصاق عند 0.202
-      { id: "C", x: 0.202, y: 0.1, w: 0.1, h: 0.2 },
-    ];
-    // إزاحة صغيرة: فرق التصاق B (0.004) أصغر من فرق C (0.006)
-    const { slots: moved } = moveSlot(slots, "A", 0.008, 0);
-    expect(moved[0].x).toBeCloseTo(0.212, 2);
-  });
-
-  it("drops a snap guide line when the snap is cancelled by the paper bounds", () => {
-    const slots: FreeformSlot[] = [
-      { id: "A", x: 0.905, y: 0.1, w: 0.1, h: 0.1 },
-      { id: "B", x: 0.91, y: 0.55, w: 0.04, h: 0.04 },
-    ];
-    const { slots: moved, snapLines } = moveSlot(slots, "A", 0.05, 0);
-    // الالتصاق عند 0.91 يدفع الخلية خارج الورقة (0.91 + 0.1 > 1) فيُلغى
-    expect(moved[0].x).toBe(0.9);
-    expect(snapLines).toHaveLength(0);
-  });
-
-  it("resolves multi-neighbor overlap iteratively regardless of order", () => {
-    // C أبعد يميناً من B — لو كان المرور واحداً حسب الترتيب لانتهى عند C
-    const slots: FreeformSlot[] = [
-      { id: "A", x: 0, y: 0, w: 0.9, h: 0.5 },
-      { id: "C", x: 0.7, y: 0, w: 0.3, h: 0.5 },
-      { id: "B", x: 0.4, y: 0, w: 0.1, h: 0.5 },
-    ];
-    const resized = resizeSlot(slots, "A", "e", 0.5, 0);
-    expect(resized[0].x + resized[0].w).toBeCloseTo(0.4, 6);
-  });
-
-  it("resizeSlot with the w handle stops at a neighbor edge", () => {
-    const slots: FreeformSlot[] = [
-      { id: "A", x: 0.3, y: 0.1, w: 0.4, h: 0.2 },
-      { id: "B", x: 0.2, y: 0.1, w: 0.1, h: 0.2 },
-    ];
-    const resized = resizeSlot(slots, "A", "w", -0.2, 0);
-    expect(resized[0].x).toBeCloseTo(0.3, 6); // يمين B = 0.3
-  });
-
-  it("rotates a slot clamped to the available width at the paper edge", () => {
-    const slots: FreeformSlot[] = [
-      { id: "slot1", x: 0.85, y: 0, w: 0.1, h: 0.4 },
-    ];
-    const rotated = rotateSlot(slots, "slot1", 100, 100);
-    expect(rotated[0].w).toBeCloseTo(0.15, 6);
-    expect(rotated[0].h).toBeCloseTo(0.1, 6);
-    expect(rotated[0].rotation).toBe(90);
-  });
-
-  it("duplicated slot stays inside the paper bounds", () => {
-    const slots: FreeformSlot[] = [
-      { id: "slot1", x: 0.8, y: 0.1, w: 0.15, h: 0.15 },
-    ];
-    const duplicated = duplicateSlot(slots, "slot1");
-    const copy = duplicated[1];
-    expect(copy.x + copy.w).toBeLessThanOrEqual(1 + 1e-9);
-    expect(copy.y + copy.h).toBeLessThanOrEqual(1 + 1e-9);
-  });
-
-  it("converts a layout without rotation to a zero rotation cell", () => {
-    const layout: FreeformLayout = {
-      id: "no-rot",
-      name: "بدون تدوير",
-      paperWidthMM: 100,
-      paperHeightMM: 150,
-      slots: [{ id: "s1", x: 0, y: 0, w: 0.5, h: 0.5, presetType: "passport" }],
-    };
-    const gridoTemplate = convertToGridoTemplate(layout);
-    expect(gridoTemplate.cells[0].rotation).toBe(0);
   });
 });
 

@@ -55,8 +55,8 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
   onPointerCancel,
   onKeyDown,
 }) {
-  const slotWidthMM = Math.round(slot.w * paperWidthMM);
-  const slotHeightMM = Math.round(slot.h * paperHeightMM);
+  const slotWidthMM = Math.round(slot.w * paperWidthMM * 10) / 10;
+  const slotHeightMM = Math.round(slot.h * paperHeightMM * 10) / 10;
 
   return (
     <div
@@ -73,8 +73,8 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       className={cn(
         "absolute rounded-md border transition-[background-color,border-color,box-shadow] cursor-move flex flex-col items-center justify-center group select-none overflow-hidden touch-none p-1",
         isSelected
-          ? "border-2 border-primary bg-primary/20 ring-2 ring-primary/40 z-20 shadow-md text-primary"
-          : "border-border/80 dark:border-white/10 bg-card/90 dark:bg-zinc-800/90 hover:bg-card dark:hover:bg-zinc-800 text-foreground/90 z-10 shadow-2xs fluent-specular"
+          ? "border-2 border-primary bg-primary/15 ring-2 ring-primary/30 z-20 shadow-md text-primary"
+          : "border-slate-300/80 dark:border-slate-700/80 bg-slate-50/95 dark:bg-zinc-800/90 hover:bg-white dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-100 z-10 shadow-2xs fluent-specular"
       )}
       style={{
         left: `${slot.x * 100}%`,
@@ -101,7 +101,7 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
         {slot.label || `خلية ${index + 1}`}
       </span>
 
-      <span className="text-[8px] font-mono font-extrabold opacity-80 leading-tight pointer-events-none mt-0.5" dir="ltr">
+      <span className="text-[8.5px] font-mono font-bold opacity-80 leading-tight pointer-events-none mt-0.5" dir="ltr">
         {slotWidthMM}×{slotHeightMM} mm
       </span>
 

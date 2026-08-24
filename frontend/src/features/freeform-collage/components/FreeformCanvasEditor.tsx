@@ -9,6 +9,8 @@ interface FreeformCanvasEditorProps {
   paperHeightMM: number;
   slots: FreeformSlot[];
   selectedSlotId: string | null;
+  showCutLines?: boolean;
+  enableSnapping?: boolean;
   onSelectSlot: (slotId: string | null) => void;
   onSlotsChange: (slots: FreeformSlot[]) => void;
   onDragStart?: () => void;
@@ -29,7 +31,6 @@ interface DragState {
   lastSlots: FreeformSlot[];
   hasMoved: boolean;
   pendingFrame: boolean;
-  /** عنصر الالتقاط — يجب أن يكون نفسه عند الإفلات تجنباً لخطأ InvalidPointerId */
   captureEl: HTMLElement | null;
 }
 
@@ -38,6 +39,8 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
   paperHeightMM,
   slots,
   selectedSlotId,
+  showCutLines = false,
+  enableSnapping = true,
   onSelectSlot,
   onSlotsChange,
   onDragStart,
@@ -61,11 +64,26 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
       let snapLines: SnapLine[] = [];
 
       if (st.mode === "resize" && st.handle) {
-        next = resizeSlot(st.origSlots, st.slotId, st.handle, dx, dy);
+        const targetSlot = st.origSlots.find((s) => s.id === st.slotId);
+        const aspect = targetSlot?.lockAspect && targetSlot.w > 0
+          ? (targetSlot.w * paperWidthMM) / (targetSlot.h * paperHeightMM)
+          : undefined;
+
+        next = resizeSlot(st.origSlots, st.slotId, st.handle, dx, dy, aspect);
       } else if (st.mode === "move") {
-        const res = moveSlot(st.origSlots, st.slotId, dx, dy);
-        next = res.slots;
-        snapLines = res.snapLines;
+        if (enableSnapping) {
+          const res = moveSlot(st.origSlots, st.slotId, dx, dy);
+          next = res.slots;
+          snapLines = res.snapLines;
+        } else {
+          const idx = st.origSlots.findIndex((s) => s.id === st.slotId);
+          if (idx !== -1) {
+            const s = st.origSlots[idx];
+            const nx = Math.min(1 - s.w, Math.max(0, s.x + dx));
+            const ny = Math.min(1 - s.h, Math.max(0, s.y + dy));
+            next = st.origSlots.map((item, i) => (i === idx ? { ...item, x: nx, y: ny } : item));
+          }
+        }
       }
 
       st.lastSlots = next;
@@ -74,10 +92,9 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
       onSlotsChange(next);
       if (mountedRef.current) setActiveSnapLines(snapLines);
     },
-    [onSlotsChange]
+    [onSlotsChange, enableSnapping, paperWidthMM, paperHeightMM]
   );
 
-  // تنظيف مؤقت الإطارات عند إلغاء التركيب
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -177,7 +194,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
         try {
           captureEl.releasePointerCapture?.(e.pointerId);
         } catch {
-          // ignore error if pointer was not captured
+          // ignore
         }
       }
 
@@ -213,8 +230,17 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
     [onSelectSlot]
   );
 
+  // استخراج خطوط القص الفريدة بين الخلايا
+  const cutLinesHorizontal = Array.from(
+    new Set(slots.flatMap((s) => [s.y, s.y + s.h]))
+  ).filter((pos) => pos > 0.005 && pos < 0.995);
+
+  const cutLinesVertical = Array.from(
+    new Set(slots.flatMap((s) => [s.x, s.x + s.w]))
+  ).filter((pos) => pos > 0.005 && pos < 0.995);
+
   return (
-    <div className="w-full flex items-center justify-center bg-muted/20 dark:bg-zinc-950/60 rounded-2xl relative flex-1 min-h-0 overflow-hidden p-1.5 border border-border/40 font-cairo">
+    <div className="w-full flex items-center justify-center bg-muted/20 dark:bg-zinc-950/60 rounded-2xl relative flex-1 min-h-0 overflow-hidden p-2 border border-border/40 font-cairo select-none">
       <div
         ref={paperRef}
         className="relative bg-white dark:bg-zinc-900 border-2 border-slate-300 dark:border-zinc-700/80 shadow-md shadow-black/15 rounded-lg transition-colors overflow-hidden touch-none"
@@ -233,6 +259,26 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
         {/* خطوط الشبكة المساعدة الخفيفة */}
         <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_0.6px,transparent_0.6px)] dark:bg-[radial-gradient(#444_0.6px,transparent_0.6px)] [background-size:14px_14px] opacity-40 pointer-events-none" />
 
+        {/* خطوط القص الإرشادية عند التفعيل */}
+        {showCutLines && (
+          <div className="absolute inset-0 pointer-events-none z-25 opacity-70">
+            {cutLinesHorizontal.map((pos, i) => (
+              <div
+                key={`cut-h-${i}`}
+                className="absolute left-0 right-0 border-t border-dashed border-red-500/80"
+                style={{ top: `${pos * 100}%` }}
+              />
+            ))}
+            {cutLinesVertical.map((pos, i) => (
+              <div
+                key={`cut-v-${i}`}
+                className="absolute top-0 bottom-0 border-l border-dashed border-red-500/80"
+                style={{ left: `${pos * 100}%` }}
+              />
+            ))}
+          </div>
+        )}
+
         {/* خطوط المحاذاة الذكية الإرشادية */}
         {activeSnapLines.map((line) => (
           <div
@@ -247,9 +293,11 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
           />
         ))}
 
-        {/* شارة أبعاد الورقة المليمتري */}
-        <div className="absolute bottom-1.5 left-1.5 bg-slate-900/90 dark:bg-zinc-800/90 text-white text-[9px] px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs border border-white/10" dir="ltr">
-          {paperWidthMM} × {paperHeightMM} مم
+        {/* شارة أبعاد الورقة المليمترية مع عدد الخلايا */}
+        <div className="absolute bottom-1.5 left-1.5 bg-slate-900/90 dark:bg-zinc-800/90 text-white text-[9px] px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs border border-white/10 flex items-center gap-1.5" dir="ltr">
+          <span>{paperWidthMM} × {paperHeightMM} mm</span>
+          <span className="opacity-40">|</span>
+          <span>{slots.length} صور</span>
         </div>
 
         {/* بطاقات خلايا الكولاج التفاعلية */}
