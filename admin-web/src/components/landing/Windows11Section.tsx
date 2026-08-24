@@ -2,23 +2,23 @@ import { Monitor, Sliders, Cpu, Zap, HardDrive, Printer } from 'lucide-react';
 
 const PERKS = [
   {
-    title: 'واجهة داكنة مريحة لساعات العمل الطويلة',
-    desc: 'تصميم أنيق وعصري يتكيف بسلاسة مع ويندوز 11 و 10 لراحة العين أثناء العمل اليومي.',
+    title: 'واجهة داكنة مريحة',
+    desc: 'تصميم أنيق لساعات العمل الطويلة داخل الاستوديو.',
     icon: Monitor,
   },
   {
-    title: 'إقلاع لحظي وخفة فائقة في الأداء',
-    desc: 'يفتح بلمح البصر ويستهلك أقل من 120MB من الذاكرة ليبقى جهاز الكمبيوتر سريعاً وخفيفاً.',
+    title: 'إقلاع لحظي وسرعة خارقة',
+    desc: 'يفتح فوراً باستهلاك خفيف أقل من 120MB ذاكرة.',
     icon: Zap,
   },
   {
-    title: 'حفظ تلقائي مستمر دون فقدان البيانات',
-    desc: 'لا تقلق عند انقطاع الكهرباء المفاجئ؛ جميع أعمالك ومشاريعك تُحفظ تلقائياً ولن تضيع.',
+    title: 'حفظ تلقائي مستمر',
+    desc: 'عملك محفوظ دائماً ولن تضيع أي صورة حتى عند انقطاع الكهرباء.',
     icon: HardDrive,
   },
   {
-    title: 'متوافق مع كافة طابعات ومقصات الاستوديو',
-    desc: 'طباعة فورية مباشرة لكافة طابعات الصور الحرارية والليزرية (DNP، Epson، Canon، Citizen).',
+    title: 'متوافق مع طابعات الاستوديو',
+    desc: 'طباعة فورية لطابعات DNP و Epson و Canon و Citizen.',
     icon: Printer,
   },
 ];
@@ -36,12 +36,12 @@ export function Windows11Section() {
               <span>سرعة وخفة فائقة</span>
             </div>
             
-            <h2 className="text-2xl sm:text-4xl lg:text-[40px] font-black text-white mb-4 tracking-tight leading-[1.2]">
-              برنامج خفيف وسريع، لا يثقل جهازك أبداً
+            <h2 className="text-2xl sm:text-4xl lg:text-[40px] font-black text-white mb-3 tracking-tight leading-[1.2]">
+              برنامج خفيف وسريع، لا يثقل جهازك
             </h2>
             
-            <p className="text-sm sm:text-base text-[#9E9E9E] mb-6 leading-relaxed font-normal">
-              صُمم ليعمل بسلاسة وسرعة استجابة فورية حتى على أجهزة الكمبيوتر القديمة أو المتوسطة داخل الاستوديو دون أي تهنيج أو تعليق.
+            <p className="text-sm sm:text-base text-[#9E9E9E] mb-6 leading-relaxed">
+              يعمل بسلاسة تامة حتى على أجهزة الكمبيوتر القديمة أو المتوسطة دون أي بطء.
             </p>
 
             {/* 4 Feature Cards */}
@@ -51,14 +51,14 @@ export function Windows11Section() {
                 return (
                   <div
                     key={perk.title}
-                    className="flex items-start gap-3.5 p-4 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-white/20 transition-all duration-200 shadow-sm"
+                    className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-white/20 transition-all duration-200 shadow-sm"
                   >
                     <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0 mt-0.5 shadow-xs">
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-xs sm:text-sm font-bold text-white mb-1">{perk.title}</h4>
-                      <p className="text-xs text-[#9E9E9E] leading-relaxed font-normal">{perk.desc}</p>
+                      <h4 className="text-xs sm:text-sm font-bold text-white mb-0.5">{perk.title}</h4>
+                      <p className="text-xs text-[#9E9E9E] leading-relaxed">{perk.desc}</p>
                     </div>
                   </div>
                 );
@@ -78,11 +78,11 @@ export function Windows11Section() {
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-white">كفاءة تشغيل الاستوديو</h4>
-                    <span className="text-xs text-[#9E9E9E]">استجابة فورية بدون أي بطء</span>
+                    <span className="text-xs text-[#9E9E9E]">استجابة فورية</span>
                   </div>
                 </div>
                 <span className="text-xs font-bold text-[#10b981] bg-[#141414] px-3 py-1 rounded-full border border-[#2C2C2C]">
-                  جاهز للعمل فوراً
+                  جاهز للعمل
                 </span>
               </div>
 
@@ -94,9 +94,9 @@ export function Windows11Section() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-white font-medium">
                       <Zap className="w-4 h-4 text-[#3b82f6]" />
-                      <span>خفة استهلاك الذاكرة</span>
+                      <span>استهلاك الذاكرة</span>
                     </div>
-                    <span className="font-mono text-[#10b981] font-bold text-xs">118 MB فقط (فائق الخفة)</span>
+                    <span className="font-mono text-[#10b981] font-bold text-xs">118 MB فقط</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-[#1E1E1E] overflow-hidden">
                     <div className="h-full w-[12%] bg-[#10b981] rounded-full" />
@@ -107,10 +107,10 @@ export function Windows11Section() {
                 <div className="p-3.5 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-between">
                   <div className="flex items-center gap-2 text-white font-medium">
                     <Cpu className="w-4 h-4 text-[#60a5fa]" />
-                    <span>دقة وضوح ألوان الطباعة</span>
+                    <span>ألوان الطباعة</span>
                   </div>
                   <span className="font-bold text-white text-xs bg-[#1E1E1E] px-2.5 py-1 rounded-lg border border-[#2C2C2C]">
-                    ألوان مطابقة للشاشة 100%
+                    مطابقة للشاشة 100%
                   </span>
                 </div>
 
@@ -118,9 +118,9 @@ export function Windows11Section() {
                 <div className="p-3.5 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-between">
                   <div className="flex items-center gap-2 text-white font-medium">
                     <HardDrive className="w-4 h-4 text-[#f59e0b]" />
-                    <span>الحفظ التلقائي للصور</span>
+                    <span>الحفظ التلقائي</span>
                   </div>
-                  <span className="text-[#9E9E9E] font-medium text-xs">
+                  <span className="text-[#10b981] font-bold text-xs">
                     مفعل دائماً
                   </span>
                 </div>
@@ -129,10 +129,10 @@ export function Windows11Section() {
               {/* Status Footer */}
               <div className="mt-5 pt-4 border-t border-[#2C2C2C] flex items-center justify-between text-xs text-[#9E9E9E]">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
-                  <span className="text-white">يعمل على ويندوز 11 و 10 و 7</span>
+                  <span className="w-2 h-2 rounded-full bg-[#10b981]" />
+                  <span className="text-white">ويندوز 11 و 10 و 7</span>
                 </div>
-                <span className="text-[#60a5fa] font-bold text-xs">بدون إنترنت</span>
+                <span className="text-[#60a5fa] font-bold text-xs">100% أوفلاين</span>
               </div>
             </div>
           </div>

@@ -9,17 +9,17 @@ export function CtaBanner() {
         
         <div className="w-full rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-6 sm:p-12 text-center shadow-xl relative overflow-hidden">
           
-          <div className="ai-badge mb-5">
+          <div className="ai-badge mb-4">
             <Sparkles className="w-3.5 h-3.5 text-[#3b82f6]" />
             <span>ابدأ الآن</span>
           </div>
 
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-3 tracking-tight">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-2.5 tracking-tight">
             سرّع عمل استوديو التصوير اليوم
           </h2>
 
-          <p className="text-sm sm:text-base text-[#9E9E9E] max-w-lg mx-auto mb-7 leading-relaxed">
-            وفّر ساعات من القص اليدوي يومياً، قلل هدر الورق، وقدّم لعملائك صور هوية وفيزا بجودة فورية.
+          <p className="text-sm sm:text-base text-[#9E9E9E] max-w-lg mx-auto mb-6 leading-relaxed">
+            وفّر ساعات من العمل، قلل هدر الورق، وقدّم صور هوية فورية بجودة معتمدة.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3.5 mb-5">
@@ -27,10 +27,10 @@ export function CtaBanner() {
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary !h-13 !px-8 text-sm sm:text-base font-bold cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              className="btn-primary !h-12 !px-8 text-sm sm:text-base font-bold cursor-pointer hover:scale-105 active:scale-95 transition-all"
             >
               <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>تحميل مباشر لـ Windows (64-bit)</span>
+              <span>تحميل مباشر لـ Windows</span>
             </a>
           </div>
 

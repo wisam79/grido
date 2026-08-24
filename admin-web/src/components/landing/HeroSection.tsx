@@ -8,7 +8,7 @@ export function HeroSection() {
   const [showVideoModal, setShowVideoModal] = useState(false);
 
   return (
-    <section id="top" className="relative pt-8 pb-16 md:pt-14 md:pb-24 overflow-hidden">
+    <section id="top" className="relative pt-8 pb-14 md:pt-12 md:pb-20 overflow-hidden">
       {/* Unified Ambient Glow */}
       <div className="absolute top-0 inset-x-0 h-[500px] bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(59,130,246,0.12),transparent_70%)] pointer-events-none" />
 
@@ -19,31 +19,31 @@ export function HeroSection() {
           <div className="lg:col-span-6 flex flex-col items-start text-start">
             
             {/* Version Badge */}
-            <div className="ai-badge mb-5">
+            <div className="ai-badge mb-4">
               <span className="w-2 h-2 rounded-full bg-[#3b82f6] animate-pulse" />
-              <span>إصدار 2026 • محرك الوجوه الذكي</span>
+              <span>إصدار 2026 • معالجة فورية للوجوه</span>
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-[50px] font-black text-white tracking-tight leading-[1.18] mb-5">
+            <h1 className="text-3xl sm:text-5xl lg:text-[48px] font-black text-white tracking-tight leading-[1.18] mb-4">
               استوديو جريدو
               <span className="block mt-1.5 text-transparent bg-clip-text bg-gradient-to-l from-[#60a5fa] via-[#3b82f6] to-white">
                 عزل، تجهيز، وطباعة بـ 3 ثوانٍ
               </span>
             </h1>
 
-            {/* Sub-headline */}
-            <p className="text-sm sm:text-base text-[#9E9E9E] leading-relaxed max-w-lg mb-7 font-normal">
-              البرنامج المكتبي الأسرع لتجهيز صور الجوازات والفيزا العالمية، عزل الخلفيات، وتوفير الورق لاستوديوهات ومراكز الطباعة.
+            {/* Sub-headline (Crisp & Punchy) */}
+            <p className="text-sm sm:text-base text-[#9E9E9E] leading-relaxed max-w-lg mb-6 font-normal">
+              تجهيز صور الجوازات والفيزا، عزل الخلفيات، وتوفير الورق لاستوديوهات ومراكز الطباعة بأقل مجهود.
             </p>
 
             {/* CTA Buttons Row */}
-            <div className="flex flex-wrap items-center gap-3.5 mb-8 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-3.5 mb-7 w-full sm:w-auto">
               <a
                 href={GITHUB_RELEASE_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary !h-12 !px-7 text-sm sm:text-base w-full sm:w-auto justify-center font-bold tracking-wide"
+                className="btn-primary !h-12 !px-7 text-sm sm:text-base w-full sm:w-auto justify-center font-bold"
               >
                 <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>تحميل مجاني لويندوز</span>
@@ -58,13 +58,13 @@ export function HeroSection() {
               </button>
             </div>
 
-            {/* Trust Capsules (Punchy & Clean) */}
+            {/* Trust Capsules (Ultra-Concise) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full pt-4 border-t border-[#2C2C2C]">
               <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#1E1E1E] border border-[#2C2C2C]">
                 <Shield className="w-4 h-4 text-[#10b981] shrink-0" />
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-white">100% دون إنترنت</span>
-                  <span className="text-[10px] text-[#9E9E9E]">خصوصية محلية تامة</span>
+                  <span className="text-xs font-bold text-white">100% محلي</span>
+                  <span className="text-[10px] text-[#9E9E9E]">دون إنترنت</span>
                 </div>
               </div>
 
@@ -72,15 +72,15 @@ export function HeroSection() {
                 <Zap className="w-4 h-4 text-[#60a5fa] shrink-0" />
                 <div className="flex flex-col">
                   <span className="text-xs font-bold text-white">3 ثوانٍ فقط</span>
-                  <span className="text-[10px] text-[#9E9E9E]">بدل قص الفوتوشوب</span>
+                  <span className="text-[10px] text-[#9E9E9E]">تجهيز فوري</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#1E1E1E] border border-[#2C2C2C]">
                 <Laptop className="w-4 h-4 text-[#60a5fa] shrink-0" />
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-white">خفيف وسريع</span>
-                  <span className="text-[10px] text-[#9E9E9E]">&lt; 150MB ذاكرة RAM</span>
+                  <span className="text-xs font-bold text-white">خفيف جداً</span>
+                  <span className="text-[10px] text-[#9E9E9E]">&lt; 120MB ذاكرة</span>
                 </div>
               </div>
             </div>
@@ -114,7 +114,7 @@ export function HeroSection() {
               </div>
               <p className="text-sm font-bold text-white mb-1">سرعة العمل في الاستوديو</p>
               <p className="text-xs max-w-sm text-[#9E9E9E]">
-                عزل الخلفية، ضبط مقاسات الجوازات الدولية، وتوزيع الصور على ورق A4 مع خطوط القص في 3 ثوانٍ.
+                عزل الخلفية، ضبط معايير الجوازات، وتوزيع الصور للطباعة بـ 3 ثوانٍ.
               </p>
             </div>
           </div>

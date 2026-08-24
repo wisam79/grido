@@ -3,31 +3,31 @@ import { Check, Sparkles, Download, ShieldCheck, Zap, Star, RefreshCw, Headphone
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 const FEATURES = [
-  'رخصة أصلية كاملة لمدى الحياة (Lifetime)',
-  'تحديثات وتطويرات مستمرة مجاناً للأبد',
-  'محرك عزل وترميم الوجوه بالذكاء الاصطناعي بلا حدود',
-  'تصدير فائق الدقة (300 DPI مع إدارة ألوان CMYK)',
-  'قوالب الجوازات والفيزا لكافة دول العالم',
-  'صانع الكولاج والشبكات الحرة ومحرر الطبقات',
-  'توفير الورق مع خطوط قص آلية 0.5mm',
-  'عمل محلي 100% دون الحاجة للإنترنت',
-  'دعم فني مباشر وتفعيل فوري على Windows 11 و 10',
+  'رخصة أصلية لمدى الحياة (Lifetime)',
+  'تحديثات وتطويرات مجانية للأبد',
+  'محرك عزل وترميم الوجوه بلا حدود',
+  'تصدير فائق الدقة (300 DPI - CMYK)',
+  'قوالب الجوازات والفيزا لكافة الدول',
+  'صانع الكولاج والشبكات الحرة',
+  'توفير الورق مع خطوط قص 0.5mm',
+  'عمل محلي 100% دون إنترنت',
+  'دعم فني مباشر وتفعيل فوري',
 ];
 
 const GUARANTEES = [
   {
-    title: 'استثمار لمرة واحدة بدون اشتراك',
-    desc: 'تدفع 75,000 دينار مرة واحدة فقط وتمتلك البرنامج للأبد مع كافة التحديثات مجاناً دون أي رسوم شهرية.',
+    title: 'استثمار لمرة واحدة',
+    desc: 'تدفع 75,000 دينار مرة واحدة فقط وتمتلك البرنامج للأبد مع كافة التحديثات مجاناً.',
     icon: Award,
   },
   {
-    title: 'ضمان استرجاع كامل 14 يوماً',
-    desc: 'جرب البرنامج في الاستوديو بحرية؛ إن لم يناسب سير عملك، نضمن لك استرجاع المبلغ بالكامل.',
+    title: 'ضمان استرجاع 14 يوماً',
+    desc: 'جرب البرنامج بحرية؛ إن لم يناسبك، نضمن لك استرجاع المبلغ بالكامل.',
     icon: RefreshCw,
   },
   {
-    title: 'تفعيل فوري ودعم فني مباشر',
-    desc: 'مفتاح ترخيص رقمي يعمل فوراً مع مساعدة فنية خطوة بخطوة في الإعداد والتثبيت على أجهزتك.',
+    title: 'تفعيل فوري ودعم فني',
+    desc: 'مفتاح ترخيص فوري مع مساعدة في التثبيت والإعداد على كافة أجهزتك.',
     icon: Headphones,
   },
 ];
@@ -38,29 +38,28 @@ export function PricingSection() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
           <div className="ai-badge mb-3">
             <ShieldCheck className="w-3.5 h-3.5 text-[#3b82f6]" />
             <span>باقة واحدة شفافة</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-3 tracking-tight">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-2.5 tracking-tight">
             استثمر مرة واحدة، واستفد للأبد
           </h2>
           <p className="text-sm sm:text-base text-[#9E9E9E]">
-            لا اشتراكات شهرية، ولا تكاليف خفية. رخصة أصلية تمنحك كافة إمكانيات الاستوديو.
+            لا اشتراكات شهرية ولا تكاليف خفية.
           </p>
         </div>
 
-        {/* 2-Column Balanced Pricing Layout (Card + Value Pillars) */}
+        {/* 2-Column Balanced Pricing Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
           
           {/* Main Pricing Card (col-span-12 lg:col-span-7) */}
           <div className="lg:col-span-7 relative pt-3 flex flex-col">
             
-            {/* Perfectly Centered Floating Badge */}
             <div className="absolute -top-1 inset-x-0 mx-auto w-max z-20 bg-[#3b82f6] text-white text-[11px] sm:text-xs font-extrabold px-4 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap border border-white/20 shadow-md">
               <Sparkles className="w-3.5 h-3.5 fill-current" />
-              <span>ترخيص مدى الحياة (Lifetime License)</span>
+              <span>ترخيص مدى الحياة (Lifetime)</span>
             </div>
 
             <div className="rounded-2xl bg-[#1E1E1E] border border-[#3b82f6]/40 p-6 sm:p-8 shadow-xl relative hover:border-white/20 transition-all duration-300 flex-1 flex flex-col justify-between">
@@ -88,12 +87,12 @@ export function PricingSection() {
                 
                 <div className="inline-flex items-center gap-1 bg-[#141414] px-3 py-0.5 rounded-full border border-[#2C2C2C] text-[#10b981] text-[11px] font-semibold">
                   <Check className="w-3 h-3" />
-                  <span>رخصة دائمة لمدى الحياة • بدون اشتراك شهري</span>
+                  <span>رخصة دائمة • بدون اشتراك شهري</span>
                 </div>
               </div>
 
               {/* Feature List */}
-              <div className="space-y-2.5 mb-7 flex-1">
+              <div className="space-y-2.5 mb-6 flex-1">
                 {FEATURES.map((feat) => (
                   <div key={feat} className="flex items-center gap-2.5 text-xs sm:text-sm text-white">
                     <div className="w-4 h-4 rounded bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#10b981] shrink-0">
@@ -133,7 +132,7 @@ export function PricingSection() {
             </div>
           </div>
 
-          {/* Value & Guarantees Side Panel (col-span-12 lg:col-span-5) */}
+          {/* Value & Guarantees Side Panel */}
           <div className="lg:col-span-5 flex flex-col justify-between gap-4 pt-3">
             {GUARANTEES.map((g) => {
               const Icon = g.icon;
@@ -142,7 +141,7 @@ export function PricingSection() {
                   key={g.title}
                   className="p-5 sm:p-6 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] flex flex-col justify-between flex-1 hover:border-white/20 transition-all shadow-sm"
                 >
-                  <div className="flex items-center gap-3 mb-2.5">
+                  <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0">
                       <Icon className="w-5 h-5" />
                     </div>
