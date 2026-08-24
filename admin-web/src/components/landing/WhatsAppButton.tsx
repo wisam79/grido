@@ -7,13 +7,13 @@ export function WhatsAppFloatingButton() {
       href={WHATSAPP_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 start-6 z-50 group flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs transition-all duration-200 hover:scale-105 active:scale-95 shadow-md"
+      className="fixed bottom-4 start-4 sm:bottom-6 sm:start-6 z-50 group flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-[11px] sm:text-xs transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
       aria-label="تواصل عبر واتساب"
     >
       <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
         <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984 0 1.763.459 3.486 1.332 5.006L2 22l5.127-1.336a9.96 9.96 0 0 0 4.88 1.28h.005c5.507 0 9.99-4.478 9.99-9.985 0-2.667-1.039-5.176-2.926-7.062A9.924 9.924 0 0 0 12.012 2zm0 18.312h-.004a8.3 8.3 0 0 1-4.228-1.157l-.303-.18-3.044.793.812-2.966-.197-.314a8.272 8.272 0 0 1-1.267-4.498c0-4.57 3.717-8.287 8.289-8.287 2.214 0 4.295.862 5.86 2.428a8.23 8.23 0 0 1 2.427 5.86c-.001 4.57-3.718 8.287-8.289 8.287zm4.545-6.208c-.249-.125-1.474-.727-1.703-.81-.229-.083-.396-.125-.562.125-.166.249-.645.81-.79 1.004-.145.194-.291.218-.54.094-.249-.125-1.052-.387-2.003-1.235-.741-.661-1.241-1.477-1.386-1.726-.145-.249-.015-.384.109-.508.112-.112.249-.291.374-.436.125-.145.166-.249.249-.415.083-.166.042-.312-.021-.436-.062-.125-.562-1.353-.77-1.849-.203-.483-.41-.418-.562-.426l-.479-.008c-.166 0-.436.062-.664.312-.228.249-.873.853-.873 2.08 0 1.227.893 2.41 1.018 2.576.125.166 1.758 2.685 4.26 3.766.595.257 1.06.41 1.423.526.598.19 1.142.163 1.572.099.48-.071 1.474-.602 1.682-1.184.208-.582.208-1.081.145-1.184-.063-.104-.229-.166-.478-.291z" />
       </svg>
-      <span>تواصل معنا</span>
+      <span className="hidden xs:inline sm:inline">تواصل معنا</span>
     </a>
   );
 }
