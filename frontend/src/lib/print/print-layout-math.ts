@@ -4,6 +4,17 @@
 // و buildSingleItems)، و print-preview.tsx — وأي اختلاف بينها كان يعني انحرافاً
 // بين المعاينة وورقة الطباعة الفعلية. الآن مستهلك واحد للصيغ.
 
+export type GridAlignment =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "center"
+  | "center-left"
+  | "center-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
+
 export interface SheetGridInput {
   cols: number;
   actualCopies: number;
@@ -13,6 +24,7 @@ export interface SheetGridInput {
   effectiveMarginMM: number;
   availableWidthMM: number;
   availableHeightMM: number;
+  align?: GridAlignment;
 }
 
 export interface SheetGrid {
@@ -26,14 +38,42 @@ export interface SheetGrid {
   cellHeight: number;
 }
 
-// أبعاد شبكة النسخ على الورقة مع توسيطها ضمن المنطقة المتاحة (بالمليمتر)
+// أبعاد شبكة النسخ على الورقة مع محاذاتها وفق نقطة الارتكاز (بالمليمتر)
+// المحاذاة الافتراضية هي أعلى اليسار (top-left) للقص السريع المباشر في الاستوديو
 export function computeSheetGrid(input: SheetGridInput): SheetGrid {
   const safeCols = Math.max(1, Math.floor(input.cols));
   const actualRows = Math.max(1, Math.ceil(input.actualCopies / safeCols));
   const gridWidth = safeCols * input.imageWidthMM + Math.max(0, safeCols - 1) * input.gapMM;
   const gridHeight = actualRows * input.imageHeightMM + Math.max(0, actualRows - 1) * input.gapMM;
-  const offsetX = input.effectiveMarginMM + Math.max(0, input.availableWidthMM - gridWidth) / 2;
-  const offsetY = input.effectiveMarginMM + Math.max(0, input.availableHeightMM - gridHeight) / 2;
+
+  const align = input.align || "top-left";
+  const remainingW = Math.max(0, input.availableWidthMM - gridWidth);
+  const remainingH = Math.max(0, input.availableHeightMM - gridHeight);
+
+  let extraX = 0;
+  let extraY = 0;
+
+  if (align === "top-left" || align === "center-left" || align === "bottom-left") {
+    extraX = 0;
+  } else if (align === "top-right" || align === "center-right" || align === "bottom-right") {
+    extraX = remainingW;
+  } else {
+    // center / top-center / bottom-center
+    extraX = remainingW / 2;
+  }
+
+  if (align === "top-left" || align === "top-center" || align === "top-right") {
+    extraY = 0;
+  } else if (align === "bottom-left" || align === "bottom-center" || align === "bottom-right") {
+    extraY = remainingH;
+  } else {
+    // center / center-left / center-right
+    extraY = remainingH / 2;
+  }
+
+  const offsetX = input.effectiveMarginMM + extraX;
+  const offsetY = input.effectiveMarginMM + extraY;
+
   return {
     safeCols,
     actualRows,

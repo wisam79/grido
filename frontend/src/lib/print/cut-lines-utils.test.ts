@@ -35,10 +35,6 @@ describe("calculatePrintCutLines", () => {
     const rows = Math.ceil(actualCopies / cols); // 2
 
     const gridWidth = cols * imageWidthMM + (cols - 1) * gapMM; // 183
-    const gridHeight = rows * imageHeightMM + (rows - 1) * gapMM; // 92
-    const offsetX = effectiveMarginMM + Math.max(0, availableWidthMM - gridWidth) / 2; // 13.5
-    const offsetY = effectiveMarginMM + Math.max(0, availableHeightMM - gridHeight) / 2; // 102.5
-
     const grid = computeSheetGrid({
       cols,
       actualCopies,
@@ -49,6 +45,9 @@ describe("calculatePrintCutLines", () => {
       availableWidthMM,
       availableHeightMM,
     });
+
+    const offsetX = grid.offsetX;
+    const offsetY = grid.offsetY;
 
     const lines = calculatePrintCutLines({
       mode: "single",
@@ -72,14 +71,14 @@ describe("calculatePrintCutLines", () => {
       expect.closeTo(offsetX + 2 * (imageWidthMM + gapMM) - gapMM / 2, 1e-6),
       expect.closeTo(offsetX + 3 * (imageWidthMM + gapMM) - gapMM / 2, 1e-6),
       expect.closeTo(offsetX + 4 * (imageWidthMM + gapMM) - gapMM / 2, 1e-6),
-      expect.closeTo(offsetX + gridWidth, 1e-6),
+      expect.closeTo(offsetX + grid.gridWidth, 1e-6),
     ]);
     expect(vertical).toHaveLength(6);
 
     expect(horizontal.map((l) => l.y1)).toEqual([
       expect.closeTo(offsetY, 1e-6),
       expect.closeTo(offsetY + 1 * (imageHeightMM + gapMM) - gapMM / 2, 1e-6),
-      expect.closeTo(offsetY + gridHeight, 1e-6),
+      expect.closeTo(offsetY + grid.gridHeight, 1e-6),
     ]);
     expect(horizontal).toHaveLength(3);
 
@@ -90,7 +89,7 @@ describe("calculatePrintCutLines", () => {
 
     for (const v of vertical) {
       expect(v.y1).toBeCloseTo(offsetY, 1e-6);
-      expect(v.y2).toBeCloseTo(offsetY + gridHeight, 1e-6);
+      expect(v.y2).toBeCloseTo(offsetY + grid.gridHeight, 1e-6);
     }
 
     const noEnd = calculatePrintCutLines({

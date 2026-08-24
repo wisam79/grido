@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import { PhotoTemplate } from "@/lib/templates";
+import { PhotoTemplate, CollageTemplate } from "@/lib/templates";
 import { PrintSettings, EditorMode } from "@/lib/editor-store";
 import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
-import { computeSheetGrid } from "@/lib/print/print-layout-math";
+import { computeSheetGrid, GridAlignment } from "@/lib/print/print-layout-math";
 
 interface UsePrintLayoutProps {
   template: PhotoTemplate | null;
@@ -10,6 +10,7 @@ interface UsePrintLayoutProps {
   canvasWidth: number;
   canvasHeight: number;
   mode: EditorMode;
+  collageTemplate?: CollageTemplate | null;
 }
 
 export function usePrintLayout({
@@ -18,6 +19,7 @@ export function usePrintLayout({
   canvasWidth,
   canvasHeight,
   mode,
+  collageTemplate,
 }: UsePrintLayoutProps) {
   return useMemo(() => {
     const dpi = template ? template.dpi : printSettings.dpi;
@@ -97,6 +99,9 @@ export function usePrintLayout({
       actualCopies = Math.min(printSettings.copiesPerSheet ?? 1, autoCount);
     }
 
+    const collageAlign = collageTemplate?.physicalLayout?.align;
+    const align = (collageAlign || printSettings.gridAlign || "top-left") as GridAlignment;
+
     // المصدر الوحيد للشبكة: كل المستهلكين (print-dialog / print-preview / cut-lines-utils)
     // يعتمدون على هذا الكائن ولا يعيدون حساب صيغ الشبكة بأنفسهم.
     const grid = computeSheetGrid({
@@ -108,6 +113,7 @@ export function usePrintLayout({
       effectiveMarginMM,
       availableWidthMM,
       availableHeightMM,
+      align,
     });
     const rows = grid.actualRows;
 
@@ -129,5 +135,5 @@ export function usePrintLayout({
       paperWidth,
       paperHeight,
     };
-  }, [template, printSettings, canvasWidth, canvasHeight, mode]);
+  }, [template, printSettings, canvasWidth, canvasHeight, mode, collageTemplate]);
 }

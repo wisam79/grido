@@ -7,7 +7,7 @@ import {
 } from "../src/lib/print/print-layout-math";
 
 describe("computeSheetGrid", () => {
-  it("centers a small grid within the available area (A4, margin 10)", () => {
+  it("aligns to top-left corner by default (A4, margin 10)", () => {
     const grid = computeSheetGrid({
       cols: 2,
       actualCopies: 2,
@@ -23,10 +23,47 @@ describe("computeSheetGrid", () => {
     expect(grid.actualRows).toBe(1);
     expect(grid.gridWidth).toBe(165);
     expect(grid.gridHeight).toBe(60);
-    expect(grid.offsetX).toBe(22.5);
-    expect(grid.offsetY).toBe(118.5);
+    expect(grid.offsetX).toBe(10);
+    expect(grid.offsetY).toBe(10);
     expect(grid.cellWidth).toBe(85);
     expect(grid.cellHeight).toBe(65);
+  });
+
+  it("aligns to exact corner with 0 margin by default", () => {
+    const grid = computeSheetGrid({
+      cols: 2,
+      actualCopies: 2,
+      imageWidthMM: 80,
+      imageHeightMM: 60,
+      gapMM: 5,
+      effectiveMarginMM: 0,
+      availableWidthMM: 210,
+      availableHeightMM: 297,
+    });
+
+    expect(grid.offsetX).toBe(0);
+    expect(grid.offsetY).toBe(0);
+  });
+
+  it("centers within the available area when align: 'center' is specified", () => {
+    const grid = computeSheetGrid({
+      cols: 2,
+      actualCopies: 2,
+      imageWidthMM: 80,
+      imageHeightMM: 60,
+      gapMM: 5,
+      effectiveMarginMM: 10,
+      availableWidthMM: 190,
+      availableHeightMM: 277,
+      align: "center",
+    });
+
+    expect(grid.safeCols).toBe(2);
+    expect(grid.actualRows).toBe(1);
+    expect(grid.gridWidth).toBe(165);
+    expect(grid.gridHeight).toBe(60);
+    expect(grid.offsetX).toBe(22.5);
+    expect(grid.offsetY).toBe(118.5);
   });
 
   it("clamps cols to 1 and rows to 1 (no NaN on degenerate input)", () => {
@@ -61,7 +98,7 @@ describe("computeSheetGrid", () => {
 
     expect(grid.gridWidth).toBe(250);
     expect(grid.offsetX).toBe(10);
-    expect(grid.offsetY).toBe(86);
+    expect(grid.offsetY).toBe(10);
   });
 });
 

@@ -170,6 +170,7 @@ export interface PrintSettings {
   orientation: "portrait" | "landscape";
   fitToPage?: boolean;
   repeatMode?: "all" | "row" | "column";
+  gridAlign?: "top-left" | "top-center" | "top-right" | "center" | "center-left" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right";
 }
 
 export type { PhotoTemplate, CollageTemplate, ProjectFileV1 };

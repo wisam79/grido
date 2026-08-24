@@ -15,7 +15,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   paperId: "a4",
   paperWidthMM: 210,
   paperHeightMM: 297,
-  marginMM: 5,
+  marginMM: 0,
   gapMM: 2,
   dpi: 300,
   copiesPerSheet: 1,
@@ -25,6 +25,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   orientation: "portrait",
   fitToPage: true,
   repeatMode: "all",
+  gridAlign: "top-left",
 };
 
 export const createPrintSlice: StateCreator<EditorState, [], [], PrintSlice> = (set) => ({

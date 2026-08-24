@@ -13,12 +13,11 @@ import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
 import { useStageRef } from "@/lib/canvas/stage-context";
 import { usePrintLayout } from "@/hooks/use-print-layout";
 import { cn } from "@/lib/utils";
-import { Printer, ZoomIn, ZoomOut, Loader2, Plus, Minus, LayoutGrid, Rows, Columns, Scissors } from "lucide-react";
+import { Printer, ZoomIn, ZoomOut, Loader2, Plus, Minus, LayoutGrid, Rows, Columns, Scissors, ArrowUpLeft, Crosshair } from "lucide-react";
 import { SheetPreview } from "../print/print-preview";
 import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ExportPrintSheet, PrintNative } from "../../../../wailsjs/go/handlers/PrintHandler";
-import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { domain } from "../../../../wailsjs/go/models";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -87,14 +86,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [isExporting, setIsExporting] = useState(false);
   // آخر هامش غير صفري — لاستعادته عند إطفاء «بدون هوامش» بدل الـ 5mm الثابتة
   const [lastNonZeroMargin, setLastNonZeroMargin] = useState<number>(() =>
-    printSettings.marginMM > 0 ? printSettings.marginMM : DEFAULT_PRINT_SETTINGS.marginMM
+    printSettings.marginMM > 0 ? printSettings.marginMM : (DEFAULT_PRINT_SETTINGS.marginMM || 5)
   );
   const handlePrintRef = useRef<() => void>(() => { });
 
   useEffect(() => {
     if (open) {
       // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة.
-      // لا نصفر isExporting هنا — الإغلاق أثناء التوليد محجوب أصلاً (إصلاح Bug#10)
       useEditorStore.getState().selectElement(null);
     }
   }, [open]);
@@ -162,7 +160,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       }, 50);
       return () => { cancelled = true; clearTimeout(timer); };
     } else if (!open) {
-      // صفّر المعاينة فور القفل — queueMicrotask كان يسمح للالتقاط المتأخر بالكتابة بعده
+      // صفّر المعاينة فور القفل
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewImageSrc("");
     }
@@ -186,6 +184,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     canvasWidth,
     canvasHeight,
     mode,
+    collageTemplate,
   });
 
   const buildItems = async () => {
@@ -193,8 +192,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     const hasPhysical = Boolean(collageTemplate?.physicalLayout);
     const marginPx = hasPhysical ? 0 : collageMargin;
     const gapPx = hasPhysical ? 0 : collageGap;
-    // 🛡️ إصلاح: مقياسان منفصلان لكل محور — كان يستخدم مقياس العرض لكلا المحورين
-    // مما يسبب انحرافاً عمودياً في مواضع الخلايا بين المعاينة والطباعة
     const scaleXPxToMM = imageWidthMM / canvasWidth;
     const scaleYPxToMM = imageHeightMM / canvasHeight;
     const marginXMM = marginPx * scaleXPxToMM;
@@ -202,8 +199,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     const gapXMM = gapPx * scaleXPxToMM;
     const gapYMM = gapPx * scaleYPxToMM;
 
-    // 🛡️ إصلاح: استخدام collageShowCutLines في وضع الكولاج بدل printSettings.showCutLines
-    // كان يسبب عدم تطابق خطوط القص بين المعاينة والطباعة
     const shouldShowCut = collageShowCutLines;
     const rawCutLines = shouldShowCut
       ? calculatePrintCutLines({
@@ -214,7 +209,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         gapMM,
         paperWidth,
         paperHeight,
-        // 🛡️ إصلاح: استخدام collageShowEndCutLine في وضع الكولاج
         showEndCutLine: collageShowEndCutLine !== false,
         slots,
         collageMargin,
@@ -263,11 +257,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             zoom: slot.zoom || 1,
             dragX: slot.dragX || 0,
             dragY: slot.dragY || 0,
-            // القطر والإطار قيم سقيّة (scalar) — مقياس العرض كافٍ لها
             cornerRadiusMM: collageRadius * scaleXPxToMM,
             borderWidthMM: collageStrokeWidth * scaleXPxToMM,
             borderColor: collageStrokeColor,
-             bgColor: slot.bgColor || "",
+            bgColor: slot.bgColor || "",
             flipX: slot.flipX,
             flipY: slot.flipY,
             rotation: slot.rotation,
@@ -286,8 +279,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       return null;
     }
 
-    // حارس الذاكرة: اللوحة المطبوعة بكسل = مقاس الطباعة × DPI — تجاوز 50MP
-    // كان يُعلّق الطباعة بصمت في مسار الالتقاط أو يرهق Go في مسار التركيب
     const exportDpi = printSettings.dpi || 300;
     const printPixelW = Math.round((imageWidthMM / 25.4) * exportDpi);
     const printPixelH = Math.round((imageHeightMM / 25.4) * exportDpi);
@@ -303,71 +294,33 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       throw e;
     }
 
-    // مسار العناصر المباشر (بدون لقطة كانفس): يرسل الصور الأصلية + هندستها،
-    // فيرسم Go الكانفاس مرة واحدة بدقة الطباعة بدل الترميز المزدوج.
-    // أي عنصر خارج دلالات الرسم المدعومة (نص/شكل/دوران/ظلال/شفافية...) يقع في مسار الالتقاط.
-    const composition = buildSingleComposition({
+    const singleComp = buildSingleComposition({
       elements,
       canvasWidth,
       canvasHeight,
-      canvasWidthMM: imageWidthMM,
-      canvasHeightMM: imageHeightMM,
-      backgroundColor,
+      exportDpi,
+      printSettings,
     });
 
-    let localPath: string | null = null;
-    if (!composition.eligible) {
-      // نسبة الدقة تُحسب من دقة التصميم الفعلية (template.dpi، أو printSettings.dpi
-      // في الوضع الحر) — افتراض 300 ثابت كان يضاعف اللقطة عند دقة تصميم مختلفة
-      const designDpi = template?.dpi ?? exportDpi;
-      const dpiRatio = exportDpi / designDpi;
-      const targetPixelRatio = (canvasWidth / stage.width()) * dpiRatio;
-
-      let canvasDataUrl: string | null = null;
+    const isSimpleRaster = singleComp !== null;
+    let singleDataUrl = "";
+    if (!isSimpleRaster) {
       try {
-        const TIMEOUT_MS = 30000;
-        canvasDataUrl = await Promise.race([
-          // جودة 0.9 بدلاً من 0.95: أسرع في الترميز وحجم أصغر يمر عبر IPC —
-          // الفرق البصري غير ملحوظ عند دقة الطباعة 300 DPI
-          captureStageDataUrl(stage, targetPixelRatio, "image/jpeg", 0.9),
-          new Promise<null>((_, reject) => setTimeout(() => reject(new Error("Canvas capture timed out")), TIMEOUT_MS)),
-        ]);
-      } catch {
-        canvasDataUrl = null;
-      }
-
-      if (!canvasDataUrl) {
-        toast.error("تعذر التقاط الكانفاس");
-        return null;
-      }
-
-      localPath = await SaveImageFromBase64(canvasDataUrl);
-      if (!localPath || !localPath.startsWith("/local-image/")) {
-        toast.error("تعذر حفظ الصورة مؤقتاً");
+        singleDataUrl = captureStageDataUrl(stage, {
+          widthMM: imageWidthMM,
+          heightMM: imageHeightMM,
+          dpi: exportDpi,
+          mimeType: "image/png",
+          backgroundColor: backgroundColor || previewWhite(),
+        });
+      } catch (err) {
+        console.error("Single composition capture failed:", err);
+        toast.error("فشل تجهيز الصورة للطباعة: " + String(err));
         return null;
       }
     }
 
-    for (let i = 0; i < actualCopies; i++) {
-      const block = computeBlockPosition(i, grid);
-      items.push(
-        domain.PrintItem.createFrom({
-          // في مسار التركيب تُرسل الخلايا بلا صورة — Go يرسم الكانفاس المركّب فيها
-          imageSrc: localPath || "",
-          x: block.xMM,
-          y: block.yMM,
-          w: imageWidthMM,
-          h: imageHeightMM,
-          filter: "none",
-          brightness: 100,
-          contrast: 100,
-          saturation: 100,
-        })
-      );
-    }
-
-    const shouldShowCut = mode === "collage" ? collageShowCutLines : printSettings.showCutLines;
-    const rawCutLines = shouldShowCut
+    const rawCutLines = printSettings.showCutLines
       ? calculatePrintCutLines({
         mode,
         actualCopies,
@@ -377,6 +330,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         paperWidth,
         paperHeight,
         showEndCutLine: printSettings.showEndCutLine !== false,
+        cutLineStyle: printSettings.cutLineStyle || "dashed",
         grid,
       })
       : [];
@@ -388,10 +342,72 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       y2: l.y2,
     }));
 
-    return { items, cutLines, composition: composition.eligible ? composition.composition : undefined };
+    for (let i = 0; i < actualCopies; i++) {
+      const block = computeBlockPosition(i, grid);
+
+      if (isSimpleRaster && singleComp) {
+        const itemWidthMM = imageWidthMM;
+        const itemHeightMM = imageHeightMM;
+        const scaleX = itemWidthMM / singleComp.renderBox.wMM;
+        const scaleY = itemHeightMM / singleComp.renderBox.hMM;
+
+        for (const compItem of singleComp.items) {
+          items.push(
+            domain.PrintItem.createFrom({
+              imageSrc: compItem.imageSrc,
+              x: block.xMM + compItem.xMM * scaleX,
+              y: block.yMM + compItem.yMM * scaleY,
+              w: compItem.wMM * scaleX,
+              h: compItem.hMM * scaleY,
+              filter: compItem.filter,
+              brightness: compItem.brightness,
+              contrast: compItem.contrast,
+              saturation: compItem.saturation,
+              slotAspect: compItem.wMM / compItem.hMM,
+              zoom: compItem.zoom,
+              dragX: compItem.dragX,
+              dragY: compItem.dragY,
+              cornerRadiusMM: compItem.cornerRadiusMM * scaleX,
+              borderWidthMM: compItem.borderWidthMM * scaleX,
+              borderColor: compItem.borderColor,
+              bgColor: compItem.bgColor,
+              flipX: compItem.flipX,
+              flipY: compItem.flipY,
+              rotation: compItem.rotation,
+            })
+          );
+        }
+      } else {
+        items.push(
+          domain.PrintItem.createFrom({
+            imageSrc: singleDataUrl,
+            x: block.xMM,
+            y: block.yMM,
+            w: imageWidthMM,
+            h: imageHeightMM,
+            filter: "none",
+            brightness: 100,
+            contrast: 100,
+            saturation: 100,
+            slotAspect: imageWidthMM / imageHeightMM,
+            zoom: 1,
+            dragX: 0,
+            dragY: 0,
+            cornerRadiusMM: 0,
+            borderWidthMM: 0,
+            borderColor: "#000000",
+            bgColor: "",
+            flipX: false,
+            flipY: false,
+            rotation: 0,
+          })
+        );
+      }
+    }
+    return { items, cutLines, composition: undefined };
   };
 
-  const handlePrintResult = (result: any) => {
+  const handlePrintResult = (result: domain.PrintResult) => {
     setIsExporting(false);
     if (!result.success) {
       toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
@@ -442,11 +458,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             if (result.filePath && typeof PrintNative === "function") {
               PrintNative(result.filePath).catch(console.error);
             }
-} finally {
-            // WebView2 لا يحجب JS أثناء print() كما يفعل كروم — إزالة الإطار بعد
-            // 2000ms كانت تدمر معاينة نافذة الطباعة قبل اكتمال تحميل الصورة فتبقى
-            // على «تحميل» للأبد. التنظيف يتم عبر afterprint عند إغلاق الحوار +
-            // شبكة أمان 60 ثانية.
+          } finally {
             removeTimer = setTimeout(removeIframe, 60000);
           }
         };
@@ -476,15 +488,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               }
               triggerPrint();
             };
-            // ورقة الطباعة تُضمَّن كـ Base64 قد يتجاوز 10MB عند 300DPI — مهلة 300ms
-            // كانت تستدعي print() قبل فك ترميز الصورة فيظل حوار الطباعة «تحميلاً».
             fallbackTimer = setTimeout(runPrint, 10000);
           }
         } else {
           triggerPrint();
         }
       } else {
-        // 🛡️ إصلاح: فشل إنشاء iframe — التراجع للطباعة الأصلية بدل إظهار نجاح كاذب
         if (document.body.contains(iframe)) {
           document.body.removeChild(iframe);
         }
@@ -510,8 +519,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         return;
       }
 
-      // حارس هندسي قبل الإرسال لـ Go: العنصر المتجاوز لحدود الورقة لن يرفضه
-      // الخادم برسالة تقنية فحسب بل كان سيفشل التصدير بأكمله — نمنعه مبكراً برسالة واضحة
       const overflowItem = buildResult.items.find(
         (it) => it.w <= 0 || it.h <= 0 || it.w > paperWidth + 0.1 || it.h > paperHeight + 0.1
       );
@@ -535,8 +542,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         showCutLines: mode === "collage" ? collageShowCutLines : printSettings.showCutLines,
         cutLineStyle: printSettings.cutLineStyle || "dashed",
         colorSpace: colorSpace,
-        // JPEG للطباعة الملونة (sRGB): ترميز أسرع 3-5× من PNG في الخدمة وملف أصغر
-        // يخفف حمولة نافذة الطباعة — الجودة 95 عند 300 DPI كافية تماماً للصور
         exportFormat: colorSpace === "CMYK" ? "tiff" : "jpeg",
         orientation: printSettings.orientation || "portrait",
         cutLines: buildResult.cutLines,
@@ -568,14 +573,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        // منع الإغلاق (Escape/خلفية) أثناء توليد ورقة الطباعة — كان يسمح
-        // بإطلاق طلب ثانٍ متزامن وإخراج مطبوعات مكررة (إصلاح Bug#10)
         if (!next && isExporting) return;
         onOpenChange(next);
       }}
     >
       <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border bg-card rounded-2xl shadow-xl p-0 gap-0 fluent-specular" dir="rtl">
-        {/* رأس النافذة — العنوان فقط؛ الإعدادات نُقلت للجسم لتفادي ازدحام الرأس */}
+        {/* رأس النافذة */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
           <DialogTitle className="text-base font-bold tracking-tight text-foreground">
             إعدادات الطباعة
@@ -587,7 +590,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
         {/* جسم النافذة الرئيسي */}
         <div className="flex-1 overflow-hidden p-3.5 flex flex-col gap-3 min-h-0">
-          {/* صف الإعدادات الأساسية — نُقل من الرأس لتفادي ازدحامه (هرم بصري) */}
+          {/* صف الإعدادات الأساسية */}
           <div className="flex items-center gap-2.5 flex-wrap select-none shrink-0">
             {/* قائمة اختيارات قياس الورقة */}
             <Select
@@ -639,6 +642,38 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               </button>
             </div>
 
+            {/* محاذاة الشبكة (أعلى اليسار للقص / توسيط) */}
+            <div className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
+              <button
+                type="button"
+                onClick={() => setPrintSettings({ gridAlign: "top-left" })}
+                title="محاذاة زاوية الورقة (أعلى اليسار / للقص السريع)"
+                className={cn(
+                  "px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  (printSettings.gridAlign || "top-left") === "top-left"
+                    ? "bg-background text-foreground shadow-2xs font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <ArrowUpLeft className="w-3.5 h-3.5 text-primary" />
+                <span>أعلى اليسار</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrintSettings({ gridAlign: "center" })}
+                title="توسيط الشبكة في منتصف الورقة"
+                className={cn(
+                  "px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  printSettings.gridAlign === "center"
+                    ? "bg-primary text-primary-foreground shadow-2xs font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Crosshair className="w-3.5 h-3.5" />
+                <span>توسيط</span>
+              </button>
+            </div>
+
             {/* طباعة بدون هوامش */}
             <div className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40">
               <Switch
@@ -685,7 +720,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             </div>
           </div>
 
-          {/* شريط الأدوات يتم إظهاره فقط في وضع الطباعة الفردية Single Mode (لأن الكولاج يحدد الخلايا تلقائياً) */}
+          {/* شريط الأدوات يتم إظهاره فقط في وضع الطباعة الفردية Single Mode */}
           {mode !== "collage" && (
             <div className="grid grid-cols-3 gap-2 select-none shrink-0">
               {/* عدد النسخ في الورقة */}
@@ -701,20 +736,20 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     <Minus className="w-3 h-3" />
                   </Button>
                   <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
-                    {(printSettings.repeatMode ?? "all") === "all" ? (printSettings.copiesPerSheet ?? 1) : "—"}
+                    {actualCopies}
                   </span>
                   <Button
                     variant="ghost" size="sm"
                     className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
-                    disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= 48}
-                    onClick={() => setPrintSettings({ copiesPerSheet: Math.min(48, (printSettings.copiesPerSheet ?? 1) + 1) })}
+                    disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= (grid.safeCols * 10)}
+                    onClick={() => setPrintSettings({ copiesPerSheet: (printSettings.copiesPerSheet ?? 1) + 1 })}
                   >
                     <Plus className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
 
-              {/* نمط التكرار والتعبئة */}
+              {/* نمط التكرار */}
               <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
                 <span className="text-xs font-semibold text-muted-foreground">التكرار</span>
                 <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30">
