@@ -209,7 +209,7 @@ describe('Component Testing: UI Rendering', () => {
   it('renders the TemplatePanel correctly', async () => {
     useEditorStore.setState({ mode: 'single' });
     render(<App />);
-    expect(await screen.findByText('لون خلفية مساحة العمل')).toBeInTheDocument();
+    expect(await screen.findByText('خلفية مساحة العمل')).toBeInTheDocument();
   }, 15000);
 
   it('renders initial collage templates correctly', async () => {

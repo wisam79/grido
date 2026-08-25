@@ -289,7 +289,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
         <div className="space-y-4" dir="rtl">
           <FluentSection
             icon={<Palette className="w-3.5 h-3.5" />}
-            title="لون خلفية مساحة العمل"
+            title="خلفية مساحة العمل"
           >
             <StudioCanvasColorDeck
               color={backgroundColor}

@@ -293,9 +293,9 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
         </Button>
       </TooltipBtn>
 
-      {/* تعديل التحديق يدويًا إذا كانت خلفيته معزولة */}
+      {/* تعديل تفاصيل العزل يدويًا إذا كانت خلفيته معزولة */}
       {selectedItem.originalImageSrc && (
-        <TooltipBtn content="تعديل تفاصيل العزل يدويًا">
+        <TooltipBtn content="تعديل تفاصيل العزل يدوياً">
           <Button
             variant="outline"
             size="sm"
@@ -303,13 +303,13 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
             onClick={() => setRefineOpen(true)}
           >
             <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
-            <span>تحديق يدوي</span>
+            <span>تعديل العزل</span>
           </Button>
         </TooltipBtn>
       )}
 
       {/* ضبط وتأطير الوجه تلقائياً */}
-      <TooltipBtn content={isFraming ? frameProgressText || "إلغاء الضبط" : "كشف وتأطير الوجه تلقائياً وفق معايير الهوية"}>
+      <TooltipBtn content={isFraming ? frameProgressText || "إلغاء التأطير" : "كشف وتأطير الوجه تلقائياً وفق معايير الهوية"}>
         <Button
           variant={isFraming ? "destructive" : "outline"}
           size="sm"
@@ -324,19 +324,19 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           {isFraming ? (
             <>
               <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
-              <span>{frameProgress > 0 ? `جاري الضبط ... (${frameProgress}%)` : "جاري الضبط ..."}</span>
+              <span>{frameProgress > 0 ? `جاري التأطير ... (${frameProgress}%)` : "جاري التأطير ..."}</span>
             </>
           ) : (
             <>
               <ScanFace className="w-3.5 h-3.5 text-primary shrink-0" />
-              <span>ضبط الوجه</span>
+              <span>تأطير الوجه</span>
             </>
           )}
         </Button>
       </TooltipBtn>
 
-      {/* تحسين الجودة والوضوح */}
-      <TooltipBtn content="تحسين وترميم دقة الصورة بالذكاء الاصطناعي">
+      {/* تحسين الجودة وترميم الوجه */}
+      <TooltipBtn content="ترميم الوجه ورفع دقة الصورة بالذكاء الاصطناعي">
         <Button
           variant="outline"
           size="sm"
@@ -348,7 +348,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           onClick={() => handleEnhance(selectedItem)}
         >
           {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-primary shrink-0" /> : <Wand2 className="w-3.5 h-3.5 text-primary shrink-0" />}
-          <span>{isEnhancing ? (enhanceProgress > 0 ? `جاري التحسين ... (${enhanceProgress}%)` : "جاري التحسين ...") : "تحسين الجودة"}</span>
+          <span>{isEnhancing ? (enhanceProgress > 0 ? `جاري الترميم ... (${enhanceProgress}%)` : "جاري الترميم ...") : "ترميم الوجه"}</span>
         </Button>
       </TooltipBtn>
 
