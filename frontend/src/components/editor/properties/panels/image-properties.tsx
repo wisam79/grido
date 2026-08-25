@@ -15,6 +15,7 @@ import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
 import { useFaceFrame } from "@/hooks/use-face-frame";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 // أدوات الصور الثقيلة لا تُحمّل إلا عند فتحها، بدلاً من تأخير المحرر عند البدء.
 const CropDialog = lazy(() => import("../../dialogs/crop-dialog").then((module) => ({ default: module.CropDialog })));

@@ -14,30 +14,6 @@ export interface PropertiesPanelProps {
   onCollapse?: () => void;
 }
 
-/** وصف نصي مختصر لنوع التحديد الحالي — يُغذي عنوان اللوحة (Progressive Disclosure) */
-function describeSelection(
-  element?: { type?: string },
-  slot?: { imageSrc?: string },
-  generalTab?: "collage" | "canvas"
-): string {
-  if (element) {
-    switch (element.type) {
-      case "text":
-        return "تحرير النص المحدد";
-      case "image":
-        return "تعديل الصورة والفلاتر";
-      case "shape":
-        return "تنسيق الشكل المحدد";
-      default:
-        return "خصائص العنصر المحدد";
-    }
-  }
-  if (slot) {
-    return slot.imageSrc ? "تعديل صورة الخانة" : "خانة كولاج فارغة";
-  }
-  return generalTab === "canvas" ? "أبعاد الورقة والكانفس" : "المسافات والحدود والقص";
-}
-
 export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
   const {
     mode,
