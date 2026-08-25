@@ -308,13 +308,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     let singleDataUrl = "";
     if (!isSimpleRaster) {
       try {
-        singleDataUrl = captureStageDataUrl(stage, {
-          widthMM: imageWidthMM,
-          heightMM: imageHeightMM,
-          dpi: exportDpi,
-          mimeType: "image/png",
-          backgroundColor: backgroundColor || previewWhite(),
-        });
+        const targetPixelRatio = stage.width() > 0 ? printPixelW / stage.width() : 1;
+        const captured = await captureStageDataUrl(
+          stage,
+          targetPixelRatio,
+          "image/png"
+        );
+        singleDataUrl = captured || "";
       } catch (err) {
         console.error("Single composition capture failed:", err);
         toast.error("فشل تجهيز الصورة للطباعة: " + String(err));

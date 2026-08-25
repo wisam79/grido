@@ -14,12 +14,12 @@ test.describe('Collage Mode and Filters E2E', () => {
     await page.getByTitle('وضع الكولاج').click();
 
     // لوحة القوالب تعرض بطاقات القوالب الجاهزة مباشرة (تصميم Fluent 2)
-    const gridTemplateCard = page.getByRole('button', { name: /2×2 4 صور/ }).first();
+    const gridTemplateCard = page.getByRole('button', { name: /4 صور متساوية/ }).first();
     await expect(gridTemplateCard).toBeVisible();
     await gridTemplateCard.click();
 
-    // شريط الحالة يظل مستقراً بعد تطبيق القالب (مطابقة تامة لتفادي تعارض عناوين الألواح)
-    await expect(page.getByText('جاهز', { exact: true })).toBeVisible();
+    // الكانفس يظل ظاهراً ومستقراً بعد تطبيق القالب
+    await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
 });

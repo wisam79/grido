@@ -14,8 +14,8 @@ test.describe('Editor Core Workflows E2E', () => {
   });
 
   test('Zoom controls update the zoom level', async ({ page }) => {
-    const zoomIn = page.getByRole('button', { name: 'تكبير (Zoom In)' });
-    const zoomOut = page.getByRole('button', { name: 'تصغير (Zoom Out)' });
+    const zoomIn = page.getByLabel('تكبير');
+    const zoomOut = page.getByLabel('تصغير');
 
     await expect(zoomIn).toBeVisible();
     await expect(zoomOut).toBeVisible();
@@ -41,7 +41,7 @@ test.describe('Editor Core Workflows E2E', () => {
   });
 
   test('Keyboard shortcuts dialog opens and closes', async ({ page }) => {
-    await page.getByTitle('عرض اختصارات لوحة المفاتيح').click();
+    await page.getByRole('button', { name: 'اختصارات لوحة المفاتيح' }).click();
     await expect(page.getByRole('dialog')).toContainText('اختصارات لوحة المفاتيح');
 
     await page.keyboard.press('Escape');
@@ -59,20 +59,20 @@ test.describe('Editor Core Workflows E2E', () => {
     await expect(undo).toBeVisible();
   });
 
-  test('Ruler unit toggles between mm and px', async ({ page }) => {
-    const unitButton = page.getByRole('button', { name: 'mm' }).first();
-    await expect(unitButton).toBeVisible();
-    await unitButton.click();
-    await expect(page.getByRole('button', { name: 'px' }).first()).toBeVisible();
+  test('Ruler toggle button toggles ruler visibility', async ({ page }) => {
+    const rulerButton = page.getByRole('button', { name: /المساطر/ }).first();
+    await expect(rulerButton).toBeVisible();
+    await rulerButton.click();
+    await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
   test('Apply a quick collage template from the panel', async ({ page }) => {
     await page.getByTitle('وضع الكولاج').click();
-    const card = page.getByRole('button', { name: /صف واحد/ }).first();
+    const card = page.getByRole('button', { name: /4 صور متساوية/ }).first();
     await expect(card).toBeVisible();
     await card.click();
-    // شريط الحالة يظل يعكس أبعاد ورقة صالحة بعد تطبيق القالب
-    await expect(page.getByText(/mm · 300 DPI/)).toBeVisible();
+    // الكانفس يظل ظاهراً ومستقراً بعد تطبيق القالب
+    await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
 });

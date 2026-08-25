@@ -9,6 +9,7 @@ import type {
 } from "../types";
 import type { CollageTemplate } from "@/lib/templates/types";
 import { LayoutGrid } from "lucide-react";
+export { PHOTO_PRESET_LABELS } from "./mixed-presets";
 import { PHOTO_PRESET_LABELS } from "./mixed-presets";
 
 export type ResizeHandle =
