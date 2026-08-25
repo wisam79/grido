@@ -7,6 +7,21 @@ import { ImagePlus, Scissors, Copy, Rows, Columns, LayoutGrid,
   ArrowLeftRight, Crosshair, Trash2, Sparkles
 } from "lucide-react";
 import {
+  ImageAdd20Filled,
+  Crop20Filled,
+  FlipHorizontal20Filled,
+  FlipVertical20Filled,
+  ArrowRotateClockwise20Filled,
+  ArrowReset20Regular,
+  Sparkle20Filled,
+  Grid20Filled,
+  Target20Filled,
+  Delete20Regular,
+  Color20Filled,
+  Checkmark20Filled,
+  ArrowSwap20Filled,
+} from "@fluentui/react-icons";
+import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
@@ -245,7 +260,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={handleOpenFile}
           >
-            <ImagePlus className="w-3.5 h-3.5 text-primary" />
+            <ImageAdd20Filled className="w-4 h-4 text-primary" />
             <span>تغيير الصورة</span>
           </Button>
           <Button
@@ -254,7 +269,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={() => setCropOpen(true)}
           >
-            <Scissors className="w-3.5 h-3.5 text-primary" />
+            <Crop20Filled className="w-4 h-4 text-primary" />
             <span>قص وتدوير</span>
           </Button>
         </div>
@@ -276,7 +291,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipHorizontal2 className="w-3.5 h-3.5" />
+                <FlipHorizontal20Filled className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب أفقي</TooltipContent>
@@ -295,7 +310,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipVertical2 className="w-3.5 h-3.5" />
+                <FlipVertical20Filled className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب عمودي</TooltipContent>
@@ -314,7 +329,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <RotateCw className="w-3.5 h-3.5" />
+                <ArrowRotateClockwise20Filled className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">تدوير 90° ({slot.rotation ?? 0}°)</TooltipContent>
@@ -331,7 +346,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Undo2 className="w-3.5 h-3.5" />
+                <ArrowReset20Regular className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إعادة تعيين الاتجاه</TooltipContent>
@@ -351,7 +366,7 @@ export function SlotProperties({
                   size="sm"
                   className="h-7 px-2 text-[10px] rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
                 >
-                  <ArrowLeftRight className="w-3 h-3" />
+                  <ArrowSwap20Filled className="w-3.5 h-3.5" />
                   <span>تبديل الموضع</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -418,7 +433,7 @@ export function SlotProperties({
                   }
                 }}
               >
-                <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                <Sparkle20Filled className="w-4 h-4 text-primary shrink-0" />
                 <span>الفارغة</span>
               </Button>
             </TooltipTrigger>
@@ -432,7 +447,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillAll}
               >
-                <LayoutGrid className="w-3.5 h-3.5 text-primary shrink-0" />
+                <Grid20Filled className="w-4 h-4 text-primary shrink-0" />
                 <span>الكل</span>
               </Button>
             </TooltipTrigger>
@@ -452,7 +467,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Crosshair className="w-3 h-3 text-primary" />
+                <Target20Filled className="w-3.5 h-3.5 text-primary" />
                 <span>توسيط الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -470,7 +485,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Trash2 className="w-3 h-3" />
+                <Delete20Regular className="w-3.5 h-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إفراغ الخلية</TooltipContent>
@@ -483,7 +498,7 @@ export function SlotProperties({
       {/* 3.5 كرت لون خلفية صورة الهوية المعزولة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/90">
-          <Palette className="w-3.5 h-3.5 text-primary" />
+          <Color20Filled className="w-4 h-4 text-primary" />
           <span>خلفية الصورة</span>
         </div>
 
@@ -525,7 +540,7 @@ export function SlotProperties({
                 }}
               >
                 {isActive && (
-                  <Check className={cn("w-3.5 h-3.5 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                  <Checkmark20Filled className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
                 )}
               </button>
             );

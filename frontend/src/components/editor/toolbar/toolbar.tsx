@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
-  Download,
-  Printer,
-  Save,
-} from "lucide-react";
+  Save20Filled,
+  Print20Filled,
+  Share20Filled,
+} from "@fluentui/react-icons";
 import { ToolbarFileOps } from "./toolbar-file-ops";
 import {
   TooltipBtn,
@@ -88,7 +88,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               aria-label="حفظ المشروع"
               className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98]"
             >
-              <Save className="w-4 h-4" />
+              <Save20Filled className="w-4 h-4" />
               <span>حفظ</span>
             </Button>
           </TooltipBtn>
@@ -101,7 +101,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               aria-label="طباعة المستند"
               className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98]"
             >
-              <Printer className="w-4 h-4" />
+              <Print20Filled className="w-4 h-4" />
               <span>طباعة</span>
             </Button>
           </TooltipBtn>
@@ -113,7 +113,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               aria-label="تصدير صورة"
               className="h-8 px-3 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98]"
             >
-              <Download className="w-4 h-4" />
+              <Share20Filled className="w-4 h-4" />
               <span>تصدير</span>
             </Button>
           </TooltipBtn>

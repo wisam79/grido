@@ -7,6 +7,18 @@ import {
   Sparkles, RefreshCw, Sun, Contrast, Droplet, 
   Eye, EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine, ScanFace, Palette, Check, Loader2, RotateCcw
 } from "lucide-react";
+import {
+  Sparkle20Filled,
+  Wand20Filled,
+  PersonSquare20Filled,
+  Crop20Filled,
+  ImageAdd20Filled,
+  ArrowReset20Regular,
+  Eye20Filled,
+  PaintBrush20Filled,
+  Color20Filled,
+  Checkmark20Filled,
+} from "@fluentui/react-icons";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -263,7 +275,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 {isRemovingBg ? (
                   <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                 ) : (
-                  <Sparkles className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <Sparkle20Filled className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 )}
                 <span className="text-[11px] font-bold">{isRemovingBg ? "إلغاء" : "عزل الخلفية"}</span>
               </Button>
@@ -289,7 +301,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 {isEnhancing ? (
                   <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
                 ) : (
-                  <Wand2 className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <Wand20Filled className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 )}
                 <span className="text-[11px] font-bold">{isEnhancing ? "معالجة..." : "ترميم الوجه"}</span>
               </Button>
@@ -314,7 +326,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 {isFraming ? (
                   <X className="w-4 h-4 text-destructive-foreground shrink-0" />
                 ) : (
-                  <ScanFace className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <PersonSquare20Filled className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 )}
                 <span className="text-[11px] font-bold">{isFraming ? "إلغاء" : "تأطير الوجه"}</span>
               </Button>
@@ -393,7 +405,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       {/* 🎴 بطاقة 2: خلفية الصورة */}
       <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/85">
-          <Palette className="w-3.5 h-3.5 text-primary" />
+          <Color20Filled className="w-4 h-4 text-primary" />
           <span>خلفية الصورة</span>
         </div>
 
@@ -428,7 +440,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     }}
                   >
                     {isActive && (
-                      <Check className={cn("w-3.5 h-3.5 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                      <Checkmark20Filled className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
                     )}
                   </button>
                 </TooltipTrigger>
@@ -461,7 +473,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={() => setCropOpen(true)}
               >
-                <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <Crop20Filled className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                 <span>قص وتدوير</span>
               </Button>
             </TooltipTrigger>
@@ -476,7 +488,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={handleOpenFile}
               >
-                <ImagePlus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <ImageAdd20Filled className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                 <span>تبديل الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -502,7 +514,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 }}
                 title="استعادة الصورة الأصلية وإلغاء العزل أو الترميم"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <ArrowReset20Regular className="w-4 h-4" />
                 <span>استعادة الأصل</span>
               </Button>
 
@@ -530,7 +542,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 }}
                 title="اضغط مطولاً للمقارنة مع الصورة الأصلية"
               >
-                <Eye className="w-3.5 h-3.5" />
+                <Eye20Filled className="w-4 h-4" />
                 <span>مقارنة الأصل</span>
               </Button>
             </div>

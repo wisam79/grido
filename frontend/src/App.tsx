@@ -29,7 +29,21 @@ import {
   X,
   LayoutGrid,
   Images,
+  User, 
+  ShieldCheck, 
+  Lock, 
+  Key, 
+  Loader2
 } from "lucide-react";
+import {
+  Grid20Filled,
+  ImageMultiple20Filled,
+  ShieldCheckmark20Filled,
+  WeatherMoon20Filled,
+  WeatherSunny20Filled,
+  PanelLeft20Filled,
+  Settings20Filled,
+} from "@fluentui/react-icons";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -39,7 +53,6 @@ import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { User, ShieldCheck, Lock, Key, Loader2 } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function App() {
@@ -383,7 +396,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <LayoutGrid className="w-3.5 h-3.5" />
+              <Grid20Filled className="w-3.5 h-3.5" />
               <span className="leading-none">كولاج</span>
             </Button>
 
@@ -407,7 +420,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <Images className="w-3.5 h-3.5" />
+              <ImageMultiple20Filled className="w-3.5 h-3.5" />
               <span className="leading-none">تعديل حر</span>
             </Button>
           </div>
@@ -421,7 +434,7 @@ export default function App() {
               title="الحساب والتراخيص"
             >
               {isLicenseActive ? (
-                <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" />
+                <ShieldCheckmark20Filled className="w-4.5 h-4.5 text-emerald-500" />
               ) : (
                 <User className="w-4.5 h-4.5 text-muted-foreground" />
               )}
@@ -436,7 +449,7 @@ export default function App() {
               className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
             >
-              {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+              {theme === "light" ? <WeatherMoon20Filled className="w-3.5 h-3.5" /> : <WeatherSunny20Filled className="w-3.5 h-3.5" />}
             </Button>
 
             {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
@@ -452,7 +465,7 @@ export default function App() {
               )}
               title={rightSidebarOpen ? "إخفاء لوحة القوالب (Ctrl+B)" : "إظهار لوحة القوالب (Ctrl+B)"}
             >
-              <PanelsTopLeft className="w-3.5 h-3.5" />
+              <PanelLeft20Filled className="w-3.5 h-3.5" />
             </Button>
             <Button
               variant="ghost"
@@ -466,7 +479,7 @@ export default function App() {
               )}
               title={leftSidebarOpen ? "إخفاء لوحة الخصائص (Ctrl+Shift+B)" : "إظهار لوحة الخصائص (Ctrl+Shift+B)"}
             >
-              <Settings2 className="w-3.5 h-3.5" />
+              <Settings20Filled className="w-3.5 h-3.5" />
             </Button>
 
             <Button

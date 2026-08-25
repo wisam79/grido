@@ -5,10 +5,10 @@ import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
-  ImagePlus,
-  Eraser,
-  Library,
-} from "lucide-react";
+  ImageAdd20Filled,
+  FolderOpen20Filled,
+  Broom20Filled,
+} from "@fluentui/react-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,60 +105,41 @@ export function ToolbarFileOps() {
             localPaths = b64s;
           }
 
-          const isPhysical = freshState.collageTemplate?.physicalLayout;
-          if ((isPhysical || freshSlots.length > 1) && localPaths.length === 1 && localPaths[0]) {
-            freshState.fillAllSlots(localPaths[0]);
+          if (localPaths.length === 1) {
+            const targetSlotId = freshSelectedId || freshSlots[0]?.id;
+            if (targetSlotId) {
+              setSlotImage(targetSlotId, localPaths[0]);
+              toast.success("تم إدراج الصورة في الخلية المحددة");
+            }
           } else {
-            let srcIdx = 0;
-            if (freshSelectedId && freshSlots.some((s) => s.id === freshSelectedId) && localPaths[0]) {
-              freshState.setSlotImage(freshSelectedId, localPaths[0]);
-              srcIdx = 1;
-            }
-            for (const s of freshSlots) {
-              if (s.id !== freshSelectedId && !s.imageSrc && srcIdx < localPaths.length) {
-                freshState.setSlotImage(s.id, localPaths[srcIdx++]);
+            let filled = 0;
+            freshSlots.forEach((slot, index) => {
+              if (index < localPaths.length) {
+                setSlotImage(slot.id, localPaths[index]);
+                filled++;
               }
-            }
-            if (srcIdx === 0 && freshSlots[0] && localPaths[0]) {
-              freshState.setSlotImage(freshSlots[0].id, localPaths[0]);
-            }
+            });
+            toast.success(`تم إدراج ${filled} صورة في خلايا الكولاج`);
           }
         } else {
           for (const b64 of b64s) {
-            let srcToUse = b64;
+            let finalSrc = b64;
             if (isWailsDesktop && b64.startsWith("data:image/")) {
               try {
                 const localPath = await SaveImageFromBase64(b64);
-                if (localPath) srcToUse = localPath;
+                if (localPath) finalSrc = localPath;
               } catch (e) {
-                console.error("Failed to save image locally:", e);
+                console.error("Failed to save image locally in single mode:", e);
               }
             }
-            await new Promise<void>((resolve) => {
-              const img = new Image();
-              img.onload = () => {
-                const aspect = img.width / img.height;
-                img.onload = null;
-                img.onerror = null;
-                img.src = "";
-                addImageElement(srcToUse, aspect);
-                resolve();
-              };
-              img.onerror = () => {
-                img.onload = null;
-                img.onerror = null;
-                img.src = "";
-                addImageElement(srcToUse, 1);
-                resolve();
-              };
-              img.src = b64;
-            });
+            addImageElement(finalSrc);
           }
+          toast.success(`تمت إضافة ${b64s.length} صورة إلى مساحة العمل`);
         }
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("فشل تحميل الصور");
+    } catch (e) {
+      console.error(e);
+      toast.error("فشل فتح ملف الصورة");
     } finally {
       setIsFileDialogOpen(false);
     }
@@ -197,7 +178,7 @@ export function ToolbarFileOps() {
             title="إضافة صورة جديدة"
             className="h-8 px-2.5 gap-1.5 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none"
           >
-            <ImagePlus className="w-4 h-4 text-primary" />
+            <ImageAdd20Filled className="w-4 h-4 text-primary" />
             <span>إضافة صورة</span>
           </Button>
         </TooltipBtn>
@@ -213,7 +194,7 @@ export function ToolbarFileOps() {
               title="مكتبة المشاريع المحلية"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer"
             >
-              <Library className="w-4 h-4" />
+              <FolderOpen20Filled className="w-4 h-4" />
             </Button>
           </TooltipBtn>
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} />
@@ -229,7 +210,7 @@ export function ToolbarFileOps() {
           aria-label="جديد (مسح مساحة العمل)"
           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer"
         >
-          <Eraser className="w-4 h-4" />
+          <Broom20Filled className="w-4 h-4" />
         </Button>
       </TooltipBtn>
 
