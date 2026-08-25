@@ -3,7 +3,7 @@ import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
-  ImageIcon, Type, Palette, Sparkles, Eye, RotateCw, FlipHorizontal, FlipVertical, Square,
+  Sparkles, Eye, RotateCw, FlipHorizontal, FlipVertical, Square,
   Paintbrush, Sliders, Move, Lock, Droplet,
   AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical
 } from "lucide-react";
