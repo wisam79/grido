@@ -484,13 +484,13 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           </Tooltip>
         </div>
 
-        {element.originalImageSrc && (
-          <div className="space-y-1.5 pt-1.5 border-t border-border/30 animate-in fade-in duration-150">
+        {Boolean(element.originalImageSrc && element.originalImageSrc !== element.imageSrc) && (
+          <div className="space-y-1.5 pt-2 border-t border-border/40 animate-in fade-in duration-150">
             <div className="grid grid-cols-2 gap-1.5">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-md border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                className="h-8 rounded-md border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                 onClick={() => {
                   onUpdate(element.id, {
                     imageSrc: element.originalImageSrc,
@@ -498,18 +498,18 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     bgColor: "transparent"
                   });
                   useEditorStore.getState().pushHistory();
-                  toast.success("تمت استعادة الصورة الأصلية");
+                  toast.success("تمت استعادة الصورة الأصلية بنجاح");
                 }}
-                title="استعادة الصورة الأصلية"
+                title="استعادة الصورة الأصلية وإلغاء العزل أو الترميم"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>الأصل</span>
+                <span>استعادة الأصل</span>
               </Button>
 
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary active:text-primary-foreground"
+                className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary active:text-primary-foreground shadow-2xs"
                 onMouseDown={() => {
                   const curr = element.imageSrc;
                   onUpdate(element.id, { imageSrc: element.originalImageSrc });
@@ -519,19 +519,29 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   };
                   window.addEventListener("mouseup", restore);
                 }}
-                title="اضغط مطولاً للمقارنة مع الأصل"
+                onTouchStart={() => {
+                  const curr = element.imageSrc;
+                  onUpdate(element.id, { imageSrc: element.originalImageSrc });
+                  const restore = () => {
+                    onUpdate(element.id, { imageSrc: curr });
+                    window.removeEventListener("touchend", restore);
+                  };
+                  window.addEventListener("touchend", restore);
+                }}
+                title="اضغط مطولاً للمقارنة مع الصورة الأصلية"
               >
                 <Eye className="w-3.5 h-3.5" />
-                <span>مقارنة</span>
+                <span>مقارنة الأصل</span>
               </Button>
             </div>
 
             <Button
               variant="outline"
-              className="w-full h-8 text-xs font-semibold transition-all duration-200 flex items-center justify-center px-3 gap-1.5 cursor-pointer rounded-md border-border/60 hover:border-primary/40 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group"
+              className="w-full h-8 text-xs font-semibold transition-all duration-200 flex items-center justify-center px-3 gap-1.5 cursor-pointer rounded-md border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group shadow-2xs"
               onClick={() => setRefineOpen(true)}
+              title="تعديل تفاصيل العزل وحواف الصورة يدوياً"
             >
-              <Paintbrush className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+              <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
               <span>تعديل العزل يدوياً</span>
             </Button>
           </div>
