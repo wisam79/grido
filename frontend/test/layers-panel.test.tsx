@@ -18,8 +18,8 @@ describe('LayersPanel Component Tests', () => {
     useEditorStore.setState({ elements: [] });
     renderWithProviders(<LayersPanel />);
 
-    expect(screen.getByText('لا توجد طبقات بعد')).toBeInTheDocument();
-    expect(screen.getByText('أضف صوراً أو نصوصاً لتظهر هنا')).toBeInTheDocument();
+    expect(screen.getByText('لا توجد عناصر بعد')).toBeInTheDocument();
+    expect(screen.getByText('أضف صوراً أو نصوصاً أو أشكالاً من شريط الأدوات')).toBeInTheDocument();
   });
 
   it('renders element list with correct labels and icons', () => {
@@ -129,13 +129,12 @@ describe('LayersPanel Component Tests', () => {
 
     const { container } = renderWithProviders(<LayersPanel />);
     const buttons = container.querySelectorAll('button');
-    const visibilityBtn = Array.from(buttons).find((b) => b.querySelector('svg.lucide-eye'));
-    expect(visibilityBtn).toBeDefined();
+    // Button order in row: 0=Copy, 1=Visibility, 2=Lock, 3=Delete
+    expect(buttons.length).toBeGreaterThanOrEqual(4);
+    const visibilityBtn = buttons[1];
 
-    if (visibilityBtn) {
-      fireEvent.click(visibilityBtn);
-      expect(useEditorStore.getState().elements[0].visible).toBe(false);
-    }
+    fireEvent.click(visibilityBtn);
+    expect(useEditorStore.getState().elements[0].visible).toBe(false);
   });
 
   it('toggles layer lock', () => {
@@ -160,13 +159,12 @@ describe('LayersPanel Component Tests', () => {
 
     const { container } = renderWithProviders(<LayersPanel />);
     const buttons = container.querySelectorAll('button');
-    const lockBtn = Array.from(buttons).find((b) => b.querySelector('svg.lucide-unlock'));
-    expect(lockBtn).toBeDefined();
+    // Button order in row: 0=Copy, 1=Visibility, 2=Lock, 3=Delete
+    expect(buttons.length).toBeGreaterThanOrEqual(4);
+    const lockBtn = buttons[2];
 
-    if (lockBtn) {
-      fireEvent.click(lockBtn);
-      expect(useEditorStore.getState().elements[0].locked).toBe(true);
-    }
+    fireEvent.click(lockBtn);
+    expect(useEditorStore.getState().elements[0].locked).toBe(true);
   });
 
   it('duplicates an element', () => {
@@ -191,13 +189,12 @@ describe('LayersPanel Component Tests', () => {
 
     const { container } = renderWithProviders(<LayersPanel />);
     const buttons = container.querySelectorAll('button');
-    const copyBtn = Array.from(buttons).find((b) => b.querySelector('svg.lucide-copy'));
-    expect(copyBtn).toBeDefined();
+    // Button order in row: 0=Copy, 1=Visibility, 2=Lock, 3=Delete
+    expect(buttons.length).toBeGreaterThanOrEqual(4);
+    const copyBtn = buttons[0];
 
-    if (copyBtn) {
-      fireEvent.click(copyBtn);
-      expect(useEditorStore.getState().elements.length).toBe(2);
-    }
+    fireEvent.click(copyBtn);
+    expect(useEditorStore.getState().elements.length).toBe(2);
   });
 
   it('deletes an element', () => {
@@ -222,12 +219,11 @@ describe('LayersPanel Component Tests', () => {
 
     const { container } = renderWithProviders(<LayersPanel />);
     const buttons = container.querySelectorAll('button');
-    const deleteBtn = Array.from(buttons).find((b) => b.querySelector('svg.lucide-trash-2'));
-    expect(deleteBtn).toBeDefined();
+    // Button order in row: 0=Copy, 1=Visibility, 2=Lock, 3=Delete
+    expect(buttons.length).toBeGreaterThanOrEqual(4);
+    const deleteBtn = buttons[3];
 
-    if (deleteBtn) {
-      fireEvent.click(deleteBtn);
-      expect(useEditorStore.getState().elements.length).toBe(0);
-    }
+    fireEvent.click(deleteBtn);
+    expect(useEditorStore.getState().elements.length).toBe(0);
   });
 });
