@@ -92,12 +92,12 @@ jobs:
         run: go test -v ./internal/...
 
   # ───────────────────────────────────────────────
-  # Job 3: E2E Tests & Windows Build Verification (Windows)
-  #   → Runs in parallel with fixed Playwright cache & fast smoke build
+  # Job 3: Playwright E2E Tests (Linux - Super Fast)
+  #   → Runs headless browser tests in parallel on Ubuntu
   # ───────────────────────────────────────────────
-  e2e-and-build:
-    name: E2E Tests & Windows Build Verification
-    runs-on: windows-latest
+  e2e-tests:
+    name: Playwright E2E Tests (Linux)
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -119,28 +119,67 @@ jobs:
         id: cache-go-bin
         uses: actions/cache@v4
         with:
-          path: ~\go\bin
+          path: ~/go/bin
           key: ${{ runner.os }}-go-bin-v1
 
-      - name: Cache Downloaded Models & Fonts
-        id: cache-models-fonts
-        uses: actions/cache@v4
-        with:
-          path: |
-            frontend/public/models
-            frontend/public/fonts
-            frontend/public/wasm
-            frontend/public/onnxruntime-web
-          key: ${{ runner.os }}-models-fonts-v2
+      - name: Add Go Bin to PATH
+        run: echo "$HOME/go/bin" >> $GITHUB_PATH
 
-      - name: Cache Playwright Browsers (Windows)
+      - name: Install Wails CLI
+        if: steps.cache-go-bin.outputs.cache-hit != 'true'
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Generate Wails Bindings
+        run: |
+          mkdir -p frontend/dist
+          echo "<html></html>" > frontend/dist/index.html
+          wails generate module
+
+      - name: Cache Playwright Browsers
         id: cache-playwright
         uses: actions/cache@v4
         with:
-          path: ~\AppData\Local\ms-playwright
+          path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-playwright-
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        working-directory: ./frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Tests (Chromium)
+        working-directory: ./frontend
+        run: npx playwright test --project=chromium
+
+  # ───────────────────────────────────────────────
+  # Job 4: Windows Build Verification (Windows)
+  #   → Fast compilation smoke test without node/playwright overhead
+  # ───────────────────────────────────────────────
+  windows-build:
+    name: Windows Build Verification
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+          cache: true
+
+      - name: Cache Go Binaries (Wails)
+        id: cache-go-bin
+        uses: actions/cache@v4
+        with:
+          path: ~\go\bin
+          key: ${{ runner.os }}-go-bin-v1
 
       - name: Add Go Bin to PATH
         shell: powershell
@@ -148,38 +187,13 @@ jobs:
           $gopath = $(go env GOPATH)
           "$gopath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Install Frontend Dependencies
-        working-directory: ./frontend
-        run: npm ci --prefer-offline --no-audit
-
-      - name: Download Offline Assets (Fonts & Models)
-        if: steps.cache-models-fonts.outputs.cache-hit != 'true'
-        working-directory: ./frontend
-        shell: powershell
-        run: |
-          node scripts/download-fonts.js
-          .\scripts\download-models.ps1
-
       - name: Install Wails CLI
         if: steps.cache-go-bin.outputs.cache-hit != 'true'
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      - name: Generate Wails Bindings
+      - name: Build Wails App Binary (Smoke Test)
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path frontend/dist
           Set-Content frontend/dist/index.html "<html></html>"
-          wails generate module
-
-      - name: Install Playwright Browsers
-        if: steps.cache-playwright.outputs.cache-hit != 'true'
-        working-directory: ./frontend
-        run: npx playwright install chromium
-
-      - name: Run E2E Tests (Chromium)
-        working-directory: ./frontend
-        run: npx playwright test --project=chromium
-
-      - name: Build Wails App Binary (Smoke Test)
-        run: |
           wails build -s -debug -platform windows/amd64 -ldflags "-X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }}"
