@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -112,3 +113,56 @@ func TestEnhanceImageWithAI_HTTPError_Rollback(t *testing.T) {
 		t.Errorf("Expected error to contain 'Endpoint not found', got: %v", err)
 	}
 }
+
+func TestAIRateLimiter_ConcurrentReserves(t *testing.T) {
+	limiter := &AIRateLimiter{
+		usage: make(map[string]*AIRateEntry),
+	}
+
+	key := "test-device-user"
+	limit := 10
+	var wg sync.WaitGroup
+	successCount := 0
+	var mu sync.Mutex
+
+	// Launch 25 concurrent requests for a limit of 10
+	for i := 0; i < 25; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := limiter.Reserve(key, limit)
+			if err == nil {
+				mu.Lock()
+				successCount++
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+
+	if successCount != limit {
+		t.Errorf("Expected exactly %d successes, got %d", limit, successCount)
+	}
+
+	// Rollback one and reserve again
+	limiter.Rollback(key)
+	if err := limiter.Reserve(key, limit); err != nil {
+		t.Errorf("Expected successful reserve after rollback, got error: %v", err)
+	}
+}
+
+func TestPlanDailyLimit(t *testing.T) {
+	if planDailyLimit("free") != 5 {
+		t.Errorf("Expected free limit to be 5, got %d", planDailyLimit("free"))
+	}
+	if planDailyLimit("pro") != 15 {
+		t.Errorf("Expected pro limit to be 15, got %d", planDailyLimit("pro"))
+	}
+	if planDailyLimit("enterprise") != 50 {
+		t.Errorf("Expected enterprise limit to be 50, got %d", planDailyLimit("enterprise"))
+	}
+	if planDailyLimit("unknown") != 5 {
+		t.Errorf("Expected unknown fallback limit to be 5, got %d", planDailyLimit("unknown"))
+	}
+}
+

@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -221,5 +223,84 @@ func TestVerifyTime_ClockRollback(t *testing.T) {
 	extremeRollback := now.Add(-365 * 24 * time.Hour)
 	if VerifyTime(extremeRollback) {
 		t.Error("Expected verification to fail for a 1-year rollback")
+	}
+
+	// Test allowable drift (within 4 minutes)
+	acceptableDrift := now.Add(-4 * time.Minute)
+	if !VerifyTime(acceptableDrift) {
+		t.Error("Expected verification to succeed for allowable 4-minute drift")
+	}
+}
+
+func TestVerifyTime_CorruptedTimeFile(t *testing.T) {
+	_ = ClearLicenseSignature()
+	defer ClearLicenseSignature()
+
+	path := filepath.Join(GetAppDir(), ".license_time")
+
+	// 1. Write corrupted non-pipe data
+	_ = os.WriteFile(path, []byte("invalid_format_without_pipe"), 0600)
+	if VerifyTime(time.Now()) {
+		t.Error("Expected VerifyTime to fail closed on corrupted format")
+	}
+
+	// 2. Write invalid unix timestamp
+	_ = os.WriteFile(path, []byte("not_a_number|some_sig"), 0600)
+	if VerifyTime(time.Now()) {
+		t.Error("Expected VerifyTime to fail closed on non-numeric timestamp")
+	}
+
+	// 3. Write tampered signature
+	now := time.Now()
+	_ = UpdateLastTime(now)
+	stored, _ := os.ReadFile(path)
+	parts := strings.Split(string(stored), "|")
+	if len(parts) == 2 {
+		tampered := fmt.Sprintf("%s|%s", parts[0], "0000000000000000000000000000000000000000000000000000000000000000")
+		_ = os.WriteFile(path, []byte(tampered), 0600)
+		if VerifyTime(now) {
+			t.Error("Expected VerifyTime to fail on tampered signature")
+		}
+	}
+}
+
+func TestSaveAndLoadEncryptedToken_CorruptedCiphertext(t *testing.T) {
+	_ = ClearEncryptedToken()
+	defer ClearEncryptedToken()
+
+	tokenPath := filepath.Join(GetAppDir(), ".license_token")
+
+	// 1. Too short ciphertext (less than nonce size)
+	_ = os.WriteFile(tokenPath, []byte("short"), 0600)
+	_, _, err := LoadEncryptedToken()
+	if err == nil {
+		t.Error("Expected error on truncated ciphertext (< NonceSize)")
+	}
+
+	// 2. Corrupted ciphertext body
+	_ = SaveEncryptedToken("access", "refresh")
+	data, _ := os.ReadFile(tokenPath)
+	if len(data) > 20 {
+		data[len(data)-1] ^= 0xFF // flip bits in authentication tag
+		_ = os.WriteFile(tokenPath, data, 0600)
+		_, _, err = LoadEncryptedToken()
+		if err == nil {
+			t.Error("Expected decryption error on corrupted authentication tag")
+		}
+	}
+}
+
+func TestDeriveKey_DeterministicAndCached(t *testing.T) {
+	k1 := deriveKey("device-1", "salt-alpha")
+	k2 := deriveKey("device-1", "salt-alpha")
+
+	if len(k1) != 32 || len(k2) != 32 {
+		t.Fatalf("Expected 32-byte keys, got %d and %d", len(k1), len(k2))
+	}
+
+	for i := range k1 {
+		if k1[i] != k2[i] {
+			t.Fatalf("Keys differ at index %d", i)
+		}
 	}
 }
