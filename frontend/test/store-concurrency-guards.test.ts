@@ -8,23 +8,9 @@ describe('Store Concurrency & Edge-Cases Fortification Tests', () => {
   });
 
   it('handles deep undo/redo history limits safely without memory leaks', () => {
-    const store = useEditorStore.getState();
-
-    // Push 40 distinct mutations to exceed standard history buffer limit
+    // Add 40 text elements to push past history limit
     for (let i = 0; i < 40; i++) {
-      const el: CanvasElement = {
-        id: `el-${i}`,
-        type: 'text',
-        x: i * 2,
-        y: i * 2,
-        width: 100,
-        height: 30,
-        text: `Item ${i}`,
-        visible: true,
-        locked: false,
-        zIndex: i,
-      };
-      useEditorStore.getState().addElement(el);
+      useEditorStore.getState().addTextElement(`Item ${i}`);
     }
 
     expect(useEditorStore.getState().elements.length).toBe(40);
@@ -52,21 +38,21 @@ describe('Store Concurrency & Edge-Cases Fortification Tests', () => {
   it('safely handles deleting non-existent element IDs without corruption', () => {
     const initialElements = useEditorStore.getState().elements;
     expect(() => {
-      useEditorStore.getState().deleteElement('non-existent-id');
+      useEditorStore.getState().removeElement('non-existent-id');
     }).not.toThrow();
     expect(useEditorStore.getState().elements).toEqual(initialElements);
   });
 
   it('clamps canvas dimensions within safe positive limits', () => {
-    useEditorStore.getState().setCanvasDimensions(1200, 800);
+    useEditorStore.getState().setCanvasSize(1200, 800);
     expect(useEditorStore.getState().canvasWidth).toBe(1200);
     expect(useEditorStore.getState().canvasHeight).toBe(800);
 
     // Extreme zoom factors
-    useEditorStore.getState().setZoom(0.01);
-    expect(useEditorStore.getState().zoom).toBeGreaterThanOrEqual(0.01);
+    useEditorStore.getState().setCanvasZoom(0.01);
+    expect(useEditorStore.getState().canvasZoom).toBeGreaterThanOrEqual(0.01);
 
-    useEditorStore.getState().setZoom(50);
-    expect(useEditorStore.getState().zoom).toBeLessThanOrEqual(50);
+    useEditorStore.getState().setCanvasZoom(50);
+    expect(useEditorStore.getState().canvasZoom).toBeLessThanOrEqual(50);
   });
 });

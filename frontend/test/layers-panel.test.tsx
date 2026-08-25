@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { LayersPanel } from '../src/components/editor/panels/layers-panel';
 import { useEditorStore } from '../src/lib/editor-store';
@@ -32,7 +32,9 @@ describe('LayersPanel Component Tests', () => {
           y: 0,
           width: 100,
           height: 100,
-          src: 'test.jpg',
+          rotation: 0,
+          opacity: 1,
+          imageSrc: 'test.jpg',
           visible: true,
           locked: false,
           zIndex: 1,
@@ -44,6 +46,9 @@ describe('LayersPanel Component Tests', () => {
           y: 10,
           width: 50,
           height: 20,
+          rotation: 0,
+          opacity: 1,
+          fontSize: 16,
           text: 'عنوان التصميم',
           visible: true,
           locked: false,
@@ -57,6 +62,8 @@ describe('LayersPanel Component Tests', () => {
           y: 20,
           width: 80,
           height: 80,
+          rotation: 0,
+          opacity: 1,
           visible: true,
           locked: false,
           zIndex: 3,
@@ -81,13 +88,15 @@ describe('LayersPanel Component Tests', () => {
           y: 0,
           width: 100,
           height: 100,
-          src: 'test.jpg',
+          rotation: 0,
+          opacity: 1,
+          imageSrc: 'test.jpg',
           visible: true,
           locked: false,
           zIndex: 1,
         },
       ],
-      selectedElementId: null,
+      selectedId: null,
     });
 
     renderWithProviders(<LayersPanel />);
@@ -95,7 +104,7 @@ describe('LayersPanel Component Tests', () => {
     const item = screen.getByText('صورة');
     fireEvent.click(item);
 
-    expect(useEditorStore.getState().selectedElementId).toBe('el-img');
+    expect(useEditorStore.getState().selectedId).toBe('el-img');
   });
 
   it('toggles layer visibility', () => {
@@ -108,7 +117,9 @@ describe('LayersPanel Component Tests', () => {
           y: 0,
           width: 100,
           height: 100,
-          src: 'test.jpg',
+          rotation: 0,
+          opacity: 1,
+          imageSrc: 'test.jpg',
           visible: true,
           locked: false,
           zIndex: 1,
@@ -118,7 +129,6 @@ describe('LayersPanel Component Tests', () => {
 
     const { container } = renderWithProviders(<LayersPanel />);
     const buttons = container.querySelectorAll('button');
-    // Find the visibility button (Eye icon)
     const visibilityBtn = Array.from(buttons).find((b) => b.querySelector('svg.lucide-eye'));
     expect(visibilityBtn).toBeDefined();
 
@@ -138,7 +148,9 @@ describe('LayersPanel Component Tests', () => {
           y: 0,
           width: 100,
           height: 100,
-          src: 'test.jpg',
+          rotation: 0,
+          opacity: 1,
+          imageSrc: 'test.jpg',
           visible: true,
           locked: false,
           zIndex: 1,
@@ -167,7 +179,9 @@ describe('LayersPanel Component Tests', () => {
           y: 10,
           width: 100,
           height: 100,
-          src: 'test.jpg',
+          rotation: 0,
+          opacity: 1,
+          imageSrc: 'test.jpg',
           visible: true,
           locked: false,
           zIndex: 1,
@@ -196,7 +210,9 @@ describe('LayersPanel Component Tests', () => {
           y: 10,
           width: 100,
           height: 100,
-          src: 'test.jpg',
+          rotation: 0,
+          opacity: 1,
+          imageSrc: 'test.jpg',
           visible: true,
           locked: false,
           zIndex: 1,
