@@ -17,6 +17,7 @@ import {
   Color20Filled,
   Checkmark20Filled,
   ArrowSwap20Filled,
+  Copy20Filled,
 } from "@fluentui/react-icons";
 import {
   Tooltip,
@@ -179,7 +180,7 @@ export function SlotProperties({
   const renderAutoFillToggle = () => (
     <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
       <div className="flex items-center gap-1.5 text-right">
-        <Copy className="w-3.5 h-3.5 text-primary shrink-0" />
+        <Copy20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
         <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية عند الرفع</span>
       </div>
       <Switch 
@@ -194,9 +195,8 @@ export function SlotProperties({
 
   if (!slot.imageSrc) {
     return (
-      <div className="space-y-3 p-1 font-cairo">
-        {/* أبعاد الخلية الفعالة */}
-        <div className="flex items-center justify-between bg-card border border-border/80 dark:border-white/10 rounded-xl px-3 py-2 shadow-xs fluent-specular">
+      <div className="space-y-3 font-cairo select-none h-full flex flex-col justify-start">
+        <div className="flex items-center justify-between bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular">
           <span className="text-xs font-semibold text-muted-foreground">أبعاد الخلية</span>
           <div className="flex items-baseline gap-1 font-mono" dir="ltr">
             <span className="text-sm font-bold text-primary">{widthMM} × {heightMM}</span>
@@ -214,7 +214,7 @@ export function SlotProperties({
           className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all text-xs"
           onClick={handleOpenFile}
         >
-          <ImagePlus className="w-4 h-4 text-primary" />
+          <ImageAdd20Filled className="w-4 h-4 text-primary" />
           <span>رفع صورة للخلية</span>
         </Button>
         {lastEditedImage && (
@@ -224,7 +224,7 @@ export function SlotProperties({
             className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer text-xs"
             onClick={handleUseLastImage}
           >
-            <Copy className="w-4 h-4 text-primary" />
+            <Copy20Filled className="w-4 h-4 text-primary" />
             <span>تعبئة بآخر صورة معدلة</span>
           </Button>
         )}

@@ -196,7 +196,7 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
             aria-label="المرشحات الجاهزة"
             className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
           >
-            <Paintbrush className="w-4 h-4" />
+            <PaintBrush20Filled className="w-4 h-4" />
           </Button>
         </PopoverTrigger>
       </TooltipBtn>
