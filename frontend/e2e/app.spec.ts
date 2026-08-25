@@ -15,7 +15,7 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
     await page.getByRole('button', { name: 'وضع التعديل الحر' }).or(page.getByTitle('وضع التعديل الحر')).click();
     await page.getByRole('button', { name: /إضافة صورة|رفع صورة/ }).or(page.getByTitle(/صورة جديدة/)).first().click();
 
-    await expect(page.getByText('عزل الخلفية', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'عزل الخلفية' }).first()).toBeVisible();
 
     await page.getByTitle('مكتبة المشاريع المحلية').click();
     await expect(page.getByRole('dialog', { name: 'مكتبة المشاريع المحلية' })).toBeVisible();

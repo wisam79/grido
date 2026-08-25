@@ -216,7 +216,7 @@ describe('Component Testing: UI Rendering', () => {
     useEditorStore.setState({ mode: 'collage' });
     render(<TemplatePanel />);
 
-    expect(await screen.findByText('نماذج الاستوديو الفورية')).toBeInTheDocument();
+    expect(await screen.findByText('النماذج الجاهزة')).toBeInTheDocument();
     expect(await screen.findByText('8 صور بطاقة وجواز')).toBeInTheDocument();
   }, 15000);
 });

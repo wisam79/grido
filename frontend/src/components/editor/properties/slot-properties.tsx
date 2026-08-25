@@ -261,8 +261,7 @@ export function SlotProperties({
       </div>
 
       {/* 2. كرت التحويل والقلب */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular space-y-2">
-        <Label className="text-xs font-bold text-foreground/90 block">التحويل والاتجاه</Label>
+      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular">
         <div className="flex items-center gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -341,9 +340,9 @@ export function SlotProperties({
       </div>
 
       {/* 3. كرت تكرار الخلية والتبديل والتعبئة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular space-y-2.5">
+      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs font-bold text-foreground/90 block">تكرار وتبديل الخلية</Label>
+          <Label className="text-xs font-bold text-foreground/90 block">تعبئة الخلايا</Label>
           {slots.length > 1 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -482,13 +481,10 @@ export function SlotProperties({
       </div>
 
       {/* 3.5 كرت لون خلفية صورة الهوية المعزولة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular space-y-2.5">
-        <div className="flex items-center justify-between border-b border-border/20 pb-1.5">
-          <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-primary" />
-            <span>خلفية صورة الهوية</span>
-          </Label>
-          <span className="text-[10px] text-muted-foreground font-mono">الخلفيات الرسمية</span>
+      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/90">
+          <Palette className="w-3.5 h-3.5 text-primary" />
+          <span>خلفية الصورة</span>
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">

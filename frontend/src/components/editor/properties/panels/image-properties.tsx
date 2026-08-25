@@ -253,6 +253,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             <TooltipTrigger asChild>
               <Button
                 variant={isRemovingBg ? "destructive" : "outline"}
+                title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية"}
                 className={cn(
                   "h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs",
                   isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
@@ -277,6 +278,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
+                title={`ترميم الوجه ورفع الدقة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit})`}
                 disabled={isEnhancing || isRemovingBg}
                 className={cn(
                   "h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs",
@@ -302,6 +304,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             <TooltipTrigger asChild>
               <Button
                 variant={isFraming ? "destructive" : "outline"}
+                title={isFraming ? "إلغاء ضبط الوجه" : "تأطير الوجه تلقائياً"}
                 className={cn(
                   "h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs",
                   isFraming && "animate-pulse"
@@ -326,6 +329,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
+                title="مسح وتقويم المستند"
                 className="h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs"
                 onClick={() => setScannerOpen(true)}
               >

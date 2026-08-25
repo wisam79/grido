@@ -768,12 +768,12 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               options={[
                 {
                   id: "row",
-                  label: "صف واحد (قص سريع)",
+                  label: "صف واحد",
                   icon: <Columns className="w-3.5 h-3.5" />,
                 },
                 {
                   id: "full",
-                  label: "شيت كامل (الورقة كلها)",
+                  label: "شيت كامل",
                   icon: <LayoutGrid className="w-3.5 h-3.5" />,
                 },
               ]}
@@ -785,7 +785,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
           <FluentSection
             icon={<Zap className="w-3.5 h-3.5 text-amber-500" />}
-            title="نماذج الاستوديو الفورية"
+            title="النماذج الجاهزة"
           >
             <div className="grid grid-cols-2 gap-2">
               {activePresetsList.map((preset) => {
