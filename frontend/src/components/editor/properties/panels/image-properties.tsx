@@ -243,121 +243,104 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
    };
 
   return (
-    <div className="space-y-3 font-cairo animate-in fade-in duration-200">
-      {/* 🎴 بطاقة 1: أدوات المعالجة والذكاء الاصطناعي */}
-      <div className="bg-card border border-border p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
-          <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span>المعالجة والذكاء الاصطناعي</span>
-          </Label>
+    <div className="space-y-2.5 font-cairo animate-in fade-in duration-200">
+      {/* 🎴 بطاقة 1: شبكة أدوات الذكاء الاصطناعي الفاخرة (2x2 Grid) */}
+      <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
+        <div className="grid grid-cols-2 gap-1.5">
+          {/* 1. عزل الخلفية */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isRemovingBg ? "destructive" : "outline"}
+                className={cn(
+                  "h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs",
+                  isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+                )}
+                onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
+              >
+                {isRemovingBg ? (
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                ) : (
+                  <Sparkles className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                )}
+                <span className="text-[11px] font-bold">{isRemovingBg ? "إلغاء" : "عزل الخلفية"}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {isRemovingBg ? bgProgressText || "إلغاء عزل الخلفية" : "عزل الخلفية الذكي (AI)"}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* 2. ترميم الوجه */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={isEnhancing || isRemovingBg}
+                className={cn(
+                  "h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs",
+                  (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
+                )}
+                onClick={() => handleEnhance(element)}
+              >
+                {isEnhancing ? (
+                  <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
+                ) : (
+                  <Wand2 className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                )}
+                <span className="text-[11px] font-bold">{isEnhancing ? "معالجة..." : "ترميم الوجه"}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {`ترميم الوجه ورفع الدقة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* 3. تأطير الوجه */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isFraming ? "destructive" : "outline"}
+                className={cn(
+                  "h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs",
+                  isFraming && "animate-pulse"
+                )}
+                onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
+              >
+                {isFraming ? (
+                  <X className="w-4 h-4 text-destructive-foreground shrink-0" />
+                ) : (
+                  <ScanFace className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                )}
+                <span className="text-[11px] font-bold">{isFraming ? "إلغاء" : "تأطير الوجه"}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {isFraming ? frameProgressText || "إلغاء ضبط الوجه" : "كشف وتأطير الوجه وفق معايير الهوية (محلي)"}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* 4. مسح المستند */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs"
+                onClick={() => setScannerOpen(true)}
+              >
+                <ScanLine className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                <span className="text-[11px] font-bold">مسح المستند</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              مسح وتقويم حواف المستند وإزالة المنظور المائل
+            </TooltipContent>
+          </Tooltip>
         </div>
-        
-        {/* زر عزل الخلفية الذكي (Hero Action) */}
-        <Button
-          variant={isRemovingBg ? "destructive" : "outline"}
-          className={cn(
-            "w-full flex items-center justify-between px-3 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-            isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
-          )}
-          onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
-          title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية الذكي"}
-        >
-          {isRemovingBg ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 text-destructive-foreground animate-spin shrink-0" />
-              <span>{bgProgress > 0 ? `جاري العزل ... (${Math.round(bgProgress)}%)` : "جاري العزل ..."} (إلغاء)</span>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
-                <span>عزل الخلفية الذكي</span>
-              </div>
-              {!isLicenseActive ? (
-                <span className="text-[8.5px] bg-primary text-primary-foreground font-bold px-1.5 py-0.5 rounded-md tracking-wider uppercase">
-                  PRO
-                </span>
-              ) : (
-                <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
-                  AI
-                </span>
-              )}
-            </>
-          )}
-        </Button>
-
-        {/* زر تحسين الجودة والوضوح (AI Enhance) */}
-        <Button
-          variant="outline"
-          disabled={isEnhancing || isRemovingBg}
-          className={cn(
-            "w-full flex items-center justify-between px-3 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-            (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
-          )}
-          onClick={() => handleEnhance(element)}
-          title={`تحسين وتكبير دقة الصورة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
-        >
-          <div className="flex items-center gap-2">
-            {isEnhancing ? (
-              <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
-            ) : (
-              <Wand2 className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
-            )}
-            <span>{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه ورفع الدقة"}</span>
-          </div>
-          <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
-            {isEnhancing ? "سحابي" : `${remainingQuota}/${dailyLimit}`}
-          </span>
-        </Button>
-
-        {/* زر ضبط الوجه التلقائي */}
-        <Button
-          variant={isFraming ? "destructive" : "outline"}
-          className={cn(
-            "w-full flex items-center justify-between px-3 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-            isFraming && "animate-pulse"
-          )}
-          onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
-          title={isFraming ? "إلغاء ضبط الوجه" : "كشف الوجه وتأطيره وفق معايير الهوية"}
-        >
-          {isFraming ? (
-            <div className="flex items-center gap-2">
-              <X className="w-4 h-4 text-destructive-foreground group-hover:scale-110 transition-transform shrink-0" />
-              <span>إلغاء ضبط الوجه</span>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <ScanFace className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
-                <span>ضبط الوجه تلقائياً</span>
-              </div>
-              <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
-                محلي
-              </span>
-            </>
-          )}
-        </Button>
-
-        {/* زر ماسح وتقويم المستندات الذكي (Doc Scanner) */}
-        <Button
-          variant="outline"
-          className="w-full flex items-center justify-between px-3 h-9 rounded-md transition-all duration-200 cursor-pointer active:scale-[0.99] group font-semibold text-xs border border-primary/40 hover:border-primary bg-primary/10 hover:bg-primary/20 text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-          onClick={() => setScannerOpen(true)}
-          title="مسح وتقويم حواف المستند وإزالة المنظور المائل"
-        >
-          <div className="flex items-center gap-2">
-            <ScanLine className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform shrink-0" />
-            <span>ماسح وتقويم المستند</span>
-          </div>
-          <span className="text-[9px] bg-primary/20 border border-primary/40 text-primary px-1.5 py-0.5 rounded-md font-bold font-mono">
-            تلقائي
-          </span>
-        </Button>
 
         {/* أشرطة تقدم العمليات */}
         {isRemovingBg && (
-          <div className="p-2.5 rounded-xl bg-primary/[0.05] border border-primary/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+          <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
             <div className="flex justify-between items-center text-[9px] font-bold text-primary">
               <span className="animate-pulse">{bgProgressText}</span>
               <span>{Math.round(bgProgress)}%</span>
@@ -372,7 +355,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
 
         {isEnhancing && (
-          <div className="p-2.5 rounded-xl bg-primary/[0.05] border border-primary/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+          <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
             <div className="flex justify-between items-center text-[9px] font-bold text-primary">
               <span className="animate-pulse">{enhanceProgressText}</span>
               <span>{Math.round(enhanceProgress)}%</span>
@@ -387,7 +370,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
 
         {isFraming && (
-          <div className="p-2.5 rounded-xl bg-primary/[0.05] border border-primary/10 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+          <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
             <div className="flex justify-between items-center text-[9px] font-bold text-primary">
               <span className="animate-pulse">{frameProgressText}</span>
               <span>{Math.round(frameProgress)}%</span>
@@ -402,20 +385,17 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
       </div>
 
-      {/* 🎴 بطاقة 2: خلفية صورة الهوية */}
-      <div className="bg-card border border-border p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
-          <Label className="text-xs font-bold text-foreground/85 flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-primary" />
-            <span>خلفية الصورة المعزولة</span>
-          </Label>
-          <span className="text-[10px] text-muted-foreground font-mono">الخلفيات الرسمية</span>
+      {/* 🎴 بطاقة 2: خلفية الصورة */}
+      <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/85">
+          <Palette className="w-3.5 h-3.5 text-primary" />
+          <span>خلفية الصورة</span>
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
             { id: "trans", label: "شفاف", val: "transparent" },
-            { id: "white", label: "أبيض للجوازات", val: "#ffffff" },
+            { id: "white", label: "أبيض", val: "#ffffff" },
             { id: "blue", label: "أزرق رسمي", val: "#1d4ed8" },
             { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
             { id: "gray", label: "رمادي", val: "#e5e7eb" },
@@ -423,29 +403,32 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             const currBg = element.bgColor || "transparent";
             const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
             return (
-              <button
-                key={colorItem.id}
-                type="button"
-                title={colorItem.label}
-                onClick={() => {
-                  onUpdate(element.id, { bgColor: colorItem.val });
-                  useEditorStore.getState().pushHistory();
-                }}
-                className={cn(
-                  "w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-                  isActive && "ring-2 ring-primary ring-offset-1 border-primary"
-                )}
-                style={{
-                  backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
-                  backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
-                  backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
-                  backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
-                }}
-              >
-                {isActive && (
-                  <Check className={cn("w-3.5 h-3.5 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
-                )}
-              </button>
+              <Tooltip key={colorItem.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onUpdate(element.id, { bgColor: colorItem.val });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className={cn(
+                      "w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                      isActive && "ring-2 ring-primary ring-offset-1 border-primary"
+                    )}
+                    style={{
+                      backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
+                      backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
+                      backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
+                      backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
+                    }}
+                  >
+                    {isActive && (
+                      <Check className={cn("w-3.5 h-3.5 stroke-[3]", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{colorItem.label}</TooltipContent>
+              </Tooltip>
             );
           })}
 
@@ -462,46 +445,47 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         </div>
       </div>
 
-      {/* 🎴 بطاقة 3: القص وتغيير ومقارنة الصورة */}
-      <div className="bg-card border border-border p-3 rounded-xl space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
-          <Label className="text-xs font-bold text-foreground/85 flex items-center gap-1.5">
-            <Scissors className="w-3.5 h-3.5 text-primary" />
-            <span>القص وتغيير الصورة</span>
-          </Label>
-        </div>
+      {/* 🎴 بطاقة 3: أدوات الصورة والقص */}
+      <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
+        <div className="grid grid-cols-2 gap-1.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
+                onClick={() => setCropOpen(true)}
+              >
+                <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <span>قص وتدوير</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">قص وتدوير الصورة</TooltipContent>
+          </Tooltip>
 
-        {/* أزرار القص وتغيير الصورة */}
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-            onClick={() => setCropOpen(true)}
-            title="قص وتدوير الصورة"
-          >
-            <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-            <span>قص وتدوير</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-            onClick={handleOpenFile}
-            title="تغيير الصورة"
-          >
-            <ImagePlus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-            <span>تغيير الصورة</span>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
+                onClick={handleOpenFile}
+              >
+                <ImagePlus className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <span>تبديل الصورة</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">استبدال ملف الصورة</TooltipContent>
+          </Tooltip>
         </div>
 
         {element.originalImageSrc && (
-          <div className="space-y-1.5 pt-1.5 border-t border-border/20 animate-in fade-in duration-150">
+          <div className="space-y-1.5 pt-1.5 border-t border-border/30 animate-in fade-in duration-150">
             <div className="grid grid-cols-2 gap-1.5">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-md border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="h-8 rounded-md border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                 onClick={() => {
                   onUpdate(element.id, {
                     imageSrc: element.originalImageSrc,
@@ -509,18 +493,18 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     bgColor: "transparent"
                   });
                   useEditorStore.getState().pushHistory();
-                  toast.success("تمت استعادة الصورة الأصلية بنجاح");
+                  toast.success("تمت استعادة الصورة الأصلية");
                 }}
-                title="استعادة الصورة الأصلية وإلغاء العزل أو الترميم"
+                title="استعادة الصورة الأصلية"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>استعادة الأصل</span>
+                <span>الأصل</span>
               </Button>
 
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary active:text-primary-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary active:text-primary-foreground"
                 onMouseDown={() => {
                   const curr = element.imageSrc;
                   onUpdate(element.id, { imageSrc: element.originalImageSrc });
@@ -530,20 +514,20 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   };
                   window.addEventListener("mouseup", restore);
                 }}
-                title="اضغط مطولاً للمقارنة مع الصورة الأصلية"
+                title="اضغط مطولاً للمقارنة مع الأصل"
               >
                 <Eye className="w-3.5 h-3.5" />
-                <span>مقارنة الأصل</span>
+                <span>مقارنة</span>
               </Button>
             </div>
 
             <Button
               variant="outline"
-              className="w-full h-8 text-xs font-semibold transition-all duration-200 flex items-center justify-start px-3 gap-2 cursor-pointer rounded-md border-border/60 hover:border-primary/40 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="w-full h-8 text-xs font-semibold transition-all duration-200 flex items-center justify-center px-3 gap-1.5 cursor-pointer rounded-md border-border/60 hover:border-primary/40 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group"
               onClick={() => setRefineOpen(true)}
             >
               <Paintbrush className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-              <span>تعديل يدوي وحواف</span>
+              <span>تعديل العزل يدوياً</span>
             </Button>
           </div>
         )}

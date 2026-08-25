@@ -33,12 +33,7 @@ export function ElementProperties({
   const alignSelectedElements = useEditorStore((state) => state.alignSelectedElements);
 
   return (
-    <div className="space-y-3 font-cairo">
-      <div className="text-xs font-bold text-foreground/90 flex items-center gap-1.5 border-b border-border/25 pb-2">
-        {element.type === "image" && (<><ImageIcon className="w-3.5 h-3.5 text-primary/80" /> <span>خصائص الصورة</span></>)}
-        {element.type === "text" && (<><Type className="w-3.5 h-3.5 text-primary/80" /> <span>خصائص النص</span></>)}
-        {element.type === "shape" && (<><Palette className="w-3.5 h-3.5 text-primary/80" /> <span>خصائص الشكل</span></>)}
-      </div>
+    <div className="space-y-2.5 font-cairo">
 
       {element.locked && (
         <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">

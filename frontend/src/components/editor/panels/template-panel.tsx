@@ -130,12 +130,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
   return (
     <PanelShell
       icon={<Shapes className="w-4 h-4" />}
-      title="القوالب"
-      subtitle={
-        mode === "collage"
-          ? "كولاج ونماذج طباعة جاهزة"
-          : "طبقات العمل ولون الخلفية"
-      }
+      title={mode === "collage" ? "القوالب" : "المظهر والطبقات"}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
       className="bg-transparent select-none"

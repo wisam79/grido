@@ -96,7 +96,6 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
     <PanelShell
       icon={<SlidersHorizontal className="w-4 h-4" />}
       title="الخصائص"
-      subtitle={describeSelection(selectedElement, selectedSlot, generalTab)}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
       className="bg-card select-none"
