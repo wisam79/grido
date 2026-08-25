@@ -4,25 +4,25 @@ import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import {
-  LayoutGrid,
-  Plus,
-  Minus,
-  FolderHeart,
-  X,
-  Save,
-  ArrowUpRight,
-  ArrowUpLeft,
-  Crosshair,
-  Columns,
-  Rows,
-  Maximize2,
-  Sparkles,
-  Zap,
-  Check,
-  Trash2,
-  Layers,
-  Upload,
-} from "lucide-react";
+  Flash20Filled,
+  Grid20Filled,
+  Folder20Filled,
+  Add20Filled,
+  Subtract20Filled,
+  Crop20Filled,
+  Checkmark20Filled,
+  Target20Filled,
+  Dismiss20Regular,
+  Save20Filled,
+  Sparkle20Filled,
+  ArrowUpload20Filled,
+  Delete20Regular,
+  Layer20Filled,
+  Open20Filled,
+  SplitHorizontal20Filled,
+  SplitVertical20Filled,
+  ExpandUpLeft20Filled,
+} from "@fluentui/react-icons";
 import { CollageTemplate, COLLAGE_TEMPLATES } from "@/lib/templates";
 import { FreeformCollageModal } from "@/features/freeform-collage";
 import { FluentSection, FluentSegmentedControl } from "@/components/ui/blocks";
@@ -35,7 +35,7 @@ function DocumentPresetGraphic({ type, active }: { type: string; active: boolean
   if (type === "stretch") {
     return (
       <div className={cn("w-4 h-4 rounded-[2px] border border-dashed flex items-center justify-center transition-all", activeBorder)}>
-        <Maximize2 className={cn("w-2.5 h-2.5", activeIcon)} />
+        <Crop20Filled className={cn("w-2.5 h-2.5", activeIcon)} />
       </div>
     );
   }
@@ -444,7 +444,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           name: `كولاج مخصص (${targetRows}×${targetCols})`,
           slots: targetRows * targetCols,
           cells,
-          icon: LayoutGrid,
+          icon: Grid20Filled,
         });
         return;
       }
@@ -559,7 +559,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         name: `كولاج ${label} (${targetRows}×${targetCols})`,
         slots: targetRows * targetCols,
         cells,
-        icon: LayoutGrid,
+        icon: Grid20Filled,
         physicalLayout: {
           type: activePhotoType,
           rows: targetRows,
@@ -734,18 +734,18 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             {
               id: "presets",
               label: "نماذج سريعة",
-              icon: <Zap className="w-3.5 h-3.5" />,
+              icon: <Flash20Filled className="w-3.5 h-3.5" />,
             },
             {
               id: "custom",
               label: "تخصيص الشبكة",
-              icon: <LayoutGrid className="w-3.5 h-3.5" />,
+              icon: <Grid20Filled className="w-3.5 h-3.5" />,
               badge: isCustomActive ? <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> : undefined,
             },
             {
               id: "library",
               label: "مكتبتي",
-              icon: <FolderHeart className="w-3.5 h-3.5" />,
+              icon: <Folder20Filled className="w-3.5 h-3.5" />,
               badge: savedTemplates.length > 0 ? (
                 <span className="text-[9px] bg-primary/20 text-primary font-bold px-1 rounded-full">
                   {savedTemplates.length}
@@ -769,12 +769,12 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 {
                   id: "row",
                   label: "صف واحد",
-                  icon: <Columns className="w-3.5 h-3.5" />,
+                  icon: <SplitHorizontal20Filled className="w-3.5 h-3.5" />,
                 },
                 {
                   id: "full",
                   label: "شيت كامل",
-                  icon: <LayoutGrid className="w-3.5 h-3.5" />,
+                  icon: <Grid20Filled className="w-3.5 h-3.5" />,
                 },
               ]}
               value={presetCategory}
@@ -784,7 +784,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           </div>
 
           <FluentSection
-            icon={<Zap className="w-3.5 h-3.5 text-amber-500" />}
+            icon={<Flash20Filled className="w-3.5 h-3.5 text-amber-500" />}
             title="النماذج الجاهزة"
           >
             <div className="grid grid-cols-2 gap-2">
@@ -813,7 +813,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                       <div className="flex flex-col items-end gap-1">
                         {isActive ? (
                           <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-2xs">
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <Checkmark20Filled className="w-3.5 h-3.5 stroke-[3]" />
                           </div>
                         ) : preset.badge ? (
                           <span
@@ -858,7 +858,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       {activeTab === "custom" && (
         <div className="space-y-3 animate-in fade-in duration-200">
           <FluentSection
-            icon={<LayoutGrid className="w-3.5 h-3.5 text-primary" />}
+            icon={<Grid20Filled className="w-3.5 h-3.5 text-primary" />}
             title="تقسيم الصفوف والأعمدة"
             action={
               <span className="text-[9.5px] font-mono font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/40" dir="ltr">
@@ -871,7 +871,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               {/* Rows */}
               <div className="flex flex-col items-center gap-1.5 bg-background/70 border border-border/70 hover:border-primary/40 rounded-xl p-2.5 transition-colors shadow-2xs">
                 <span className="flex items-center gap-1 text-[10.5px] font-bold text-muted-foreground select-none">
-                  <Rows className="w-3.5 h-3.5 text-primary/80" />
+                  <SplitVertical20Filled className="w-3.5 h-3.5 text-primary/80" />
                   الصفوف (أفقي)
                 </span>
                 <div className="flex items-center justify-between w-full gap-1" dir="ltr">
@@ -885,7 +885,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                     }}
                     className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   >
-                    <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <Subtract20Filled className="w-3.5 h-3.5 stroke-[2.5]" />
                   </button>
                   <span className="font-mono text-base font-black text-foreground w-6 text-center leading-none select-none">
                     {rows}
@@ -900,7 +900,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                     }}
                     className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   >
-                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <Add20Filled className="w-3.5 h-3.5 stroke-[2.5]" />
                   </button>
                 </div>
               </div>
@@ -908,7 +908,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               {/* Columns */}
               <div className="flex flex-col items-center gap-1.5 bg-background/70 border border-border/70 hover:border-primary/40 rounded-xl p-2.5 transition-colors shadow-2xs">
                 <span className="flex items-center gap-1 text-[10.5px] font-bold text-muted-foreground select-none">
-                  <Columns className="w-3.5 h-3.5 text-primary/80" />
+                  <SplitHorizontal20Filled className="w-3.5 h-3.5 text-primary/80" />
                   الأعمدة (عمودي)
                 </span>
                 <div className="flex items-center justify-between w-full gap-1" dir="ltr">
@@ -922,7 +922,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                     }}
                     className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   >
-                    <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <Subtract20Filled className="w-3.5 h-3.5 stroke-[2.5]" />
                   </button>
                   <span className="font-mono text-base font-black text-foreground w-6 text-center leading-none select-none">
                     {cols}
@@ -937,7 +937,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                     }}
                     className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   >
-                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <Add20Filled className="w-3.5 h-3.5 stroke-[2.5]" />
                   </button>
                 </div>
               </div>
@@ -1001,7 +1001,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 {/* الرأس: العنوان + اسم المحاذاة الحالية */}
                 <div className="flex items-center justify-between">
                   <span className="text-[10.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                    <Crosshair className="w-3.5 h-3.5 text-primary" />
+                    <Target20Filled className="w-3.5 h-3.5 text-primary" />
                     <span>محاذاة الشبكة على الورقة</span>
                   </span>
                   <span className="text-[9px] text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
@@ -1024,7 +1024,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                         : "bg-muted/40 hover:bg-muted text-muted-foreground border-border/60 hover:border-primary/30"
                     )}
                   >
-                    <ArrowUpLeft className="w-3 h-3 stroke-[2.5]" />
+                    <ExpandUpLeft20Filled className="w-3 h-3" />
                     <span>أعلى اليسار (للقص)</span>
                   </button>
                   <button
@@ -1040,7 +1040,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                         : "bg-muted/40 hover:bg-muted text-muted-foreground border-border/60 hover:border-primary/30"
                     )}
                   >
-                    <Crosshair className="w-3 h-3 stroke-[2.5]" />
+                    <Target20Filled className="w-3 h-3 stroke-[2.5]" />
                     <span>توسيط في المنتصف</span>
                   </button>
                 </div>
@@ -1100,7 +1100,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                       : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
                   )}
                 >
-                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <Grid20Filled className="w-3.5 h-3.5" />
                   {isCustomActive ? "تحديث الشبكة الحالية" : "تطبيق التقسيم"}
                 </button>
                 <button
@@ -1112,7 +1112,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                   className="w-8 h-8 text-xs font-bold rounded-md border border-border/80 bg-background hover:bg-accent hover:border-primary/40 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center active:scale-[0.98] transition-all shadow-2xs shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   title="حفظ كقالب جديد في مكتبتي"
                 >
-                  <FolderHeart className="w-3.5 h-3.5" />
+                  <Folder20Filled className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
@@ -1131,7 +1131,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                     onClick={() => setShowSaveForm(false)}
                     className="flex-1 h-8 text-[10px] font-bold rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer transition-all flex items-center justify-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   >
-                    <X className="w-3 h-3" />
+                    <Dismiss20Regular className="w-3 h-3" />
                     إلغاء
                   </button>
                   <button
@@ -1139,7 +1139,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                     onClick={handleSave}
                     className="flex-1 h-8 text-[10px] font-bold rounded-md bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer transition-all flex items-center justify-center gap-1 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                   >
-                    <Save className="w-3 h-3" />
+                    <Save20Filled className="w-3 h-3" />
                     حفظ القالب
                   </button>
                 </div>
@@ -1159,7 +1159,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             className="w-full h-10 px-3.5 rounded-md bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/50 text-xs font-bold transition-all cursor-pointer flex items-center justify-between group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none shadow-2xs fluent-specular"
           >
             <div className="flex items-center gap-2.5">
-              <Sparkles className="w-4 h-4 text-primary shrink-0 group-hover:rotate-12 transition-transform" />
+              <Sparkle20Filled className="w-4 h-4 text-primary shrink-0 group-hover:rotate-12 transition-transform" />
               <div className="flex flex-col items-start text-right">
                 <span className="font-bold">كولاج حر ومختلط</span>
                 <span className="text-[9.5px] text-muted-foreground font-normal">دمج أحجام وقياسات متعددة في ورقة واحدة</span>
@@ -1172,7 +1172,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
           {/* القوالب المحفوظة الخاصة بالمستخدم */}
           <FluentSection
-            icon={<FolderHeart className="w-3.5 h-3.5 text-primary" />}
+            icon={<Folder20Filled className="w-3.5 h-3.5 text-primary" />}
             title="قوالبي المحفوظة"
             action={
               <button
@@ -1181,7 +1181,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 className="text-[10px] text-primary hover:underline font-bold flex items-center gap-1 cursor-pointer"
                 title="استيراد قوالب من ملف JSON"
               >
-                <Upload className="w-3 h-3" />
+                <ArrowUpload20Filled className="w-3 h-3" />
                 <span>استيراد</span>
               </button>
             }
@@ -1206,7 +1206,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                       )}
                     >
                       <div className="flex items-center gap-2">
-                        <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+                        <Grid20Filled className="w-3.5 h-3.5 text-primary" />
                         <span className="text-xs font-bold truncate">{t.name}</span>
                         <span className="text-[9px] bg-muted/60 text-muted-foreground px-1.5 py-0.5 rounded font-mono">
                           {t.slots} خانات
@@ -1219,7 +1219,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                           title="حذف القالب"
                           className="w-6 h-6 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Delete20Regular className="w-3 h-3" />
                         </button>
                       )}
                     </div>
@@ -1237,10 +1237,10 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/80 bg-muted/30 hover:bg-muted/60 hover:border-primary/40 text-foreground transition-all cursor-pointer active:scale-[0.98] shadow-2xs font-bold text-xs"
             >
               <div className="flex items-center gap-2">
-                <Layers className="w-3.5 h-3.5 text-primary" />
+                <Layer20Filled className="w-3.5 h-3.5 text-primary" />
                 <span>تصفح كافة القوالب الرسمية</span>
               </div>
-              <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
+              <Open20Filled className="w-3.5 h-3.5 opacity-60" />
             </button>
           )}
         </div>

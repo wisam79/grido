@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { LayoutGrid, Check, RefreshCw, Save } from "lucide-react";
+import { Grid20Filled, Checkmark20Filled, ArrowClockwise20Filled, Save20Filled } from "@fluentui/react-icons";
 import { useEditorStore } from "@/lib/editor-store";
 import type {
   FreeformLayout,
@@ -439,7 +439,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         {/* Header — رأس النافذة مع محدد أبعاد الورقة المليمتري */}
         <DialogHeader className="border-b border-border/40 pb-2.5 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-            <LayoutGrid className="w-4 h-4 text-primary" />
+            <Grid20Filled className="w-4 h-4 text-primary" />
             <span>محرر الكولاج الحر المتقدم</span>
           </DialogTitle>
 
@@ -533,12 +533,12 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
             >
               {isSavingTemplate ? (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-500" />
+                  <ArrowClockwise20Filled className="w-3.5 h-3.5 animate-spin text-emerald-500" />
                   <span>جاري الحفظ ...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-3.5 h-3.5 text-emerald-500" />
+                  <Save20Filled className="w-3.5 h-3.5 text-emerald-500" />
                   <span>حفظ كقالب</span>
                 </>
               )}
@@ -566,12 +566,12 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
             >
               {isApplying ? (
                 <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <ArrowClockwise20Filled className="w-3.5 h-3.5 animate-spin" />
                   <span>جاري التطبيق ...</span>
                 </>
               ) : (
                 <>
-                  <Check className="w-3.5 h-3.5" />
+                  <Checkmark20Filled className="w-3.5 h-3.5" />
                   <span>تطبيق على الكانفس</span>
                 </>
               )}

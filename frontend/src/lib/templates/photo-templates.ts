@@ -1,11 +1,11 @@
+import type React from "react";
 import {
-  IdCard,
-  BookUser,
-  Plane,
-  Image,
-  LayoutGrid
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  ContactCard20Filled,
+  DocumentPerson20Filled,
+  Airplane20Filled,
+  Image20Filled,
+  Grid20Filled,
+} from "@fluentui/react-icons";
 import type { PhotoTemplate, TemplateCategory } from "./types";
 
 export const PHOTO_TEMPLATES: PhotoTemplate[] = [
@@ -23,7 +23,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء صلبة، الرأس يشغل 70-80%",
-    icon: IdCard,
+    icon: ContactCard20Filled,
     notes: "المواصفات الرسمية لمديرية الأحوال المدنية والجوازات والإقامة العراقية",
   },
   {
@@ -39,7 +39,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء صلبة، الرأس يشغل 70-80%",
-    icon: BookUser,
+    icon: DocumentPerson20Filled,
     notes: "المقاس الرسمي لجواز السفر العراقي المقروء آلياً والبيومتري الجديد",
   },
   {
@@ -53,7 +53,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     dpi: 300,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCard,
+    icon: ContactCard20Filled,
     notes: "المقاس التقليدي لهوية الأحوال المدنية وشهادة الجنسية العراقية",
   },
   {
@@ -67,7 +67,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     dpi: 300,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCard,
+    icon: ContactCard20Filled,
     notes: "مقاس صورة المعاملات الرسمية العامة، والجامعات، ونقابات المهن العراقية",
   },
   {
@@ -81,7 +81,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     dpi: 300,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCard,
+    icon: ContactCard20Filled,
     notes: "المقاس المستخدم لهوية المتقاعدين وبطاقات الرعاية الاجتماعية والدوائر العامة في العراق",
   },
 
@@ -99,7 +99,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCard,
+    icon: ContactCard20Filled,
     notes: "المقاس القياسي للبطاقة الوطنية الموحدة",
   },
   {
@@ -115,7 +115,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCard,
+    icon: ContactCard20Filled,
     notes: "المقاس القياسي البديل للهوية",
   },
   {
@@ -131,7 +131,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCard,
+    icon: ContactCard20Filled,
   },
 
   // === جواز السفر ===
@@ -148,7 +148,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: BookUser,
+    icon: DocumentPerson20Filled,
     notes: "المعيار الدولي ICAO 9303",
   },
   {
@@ -164,7 +164,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: BookUser,
+    icon: DocumentPerson20Filled,
   },
   {
     id: "passport-40x60",
@@ -179,7 +179,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: BookUser,
+    icon: DocumentPerson20Filled,
   },
   {
     id: "passport-50x50",
@@ -194,7 +194,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: BookUser,
+    icon: DocumentPerson20Filled,
     notes: "المعيار الأمريكي وبعض الدول الأخرى",
   },
   {
@@ -210,7 +210,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: BookUser,
+    icon: DocumentPerson20Filled,
     notes: "المعيار الكندي للجوازات",
   },
 ];
@@ -233,10 +233,10 @@ export const CATEGORY_LABELS: Record<TemplateCategory, string> = {
   collage: "كولاج",
 };
 
-export const CATEGORY_ICONS: Record<TemplateCategory, LucideIcon> = {
-  id: IdCard,
-  passport: BookUser,
-  visa: Plane,
-  personal: Image,
-  collage: LayoutGrid,
+export const CATEGORY_ICONS: Record<TemplateCategory, React.ComponentType<any>> = {
+  id: ContactCard20Filled,
+  passport: DocumentPerson20Filled,
+  visa: Airplane20Filled,
+  personal: Image20Filled,
+  collage: Grid20Filled,
 };

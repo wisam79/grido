@@ -3,10 +3,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import {
-  Square, Circle, Star, Minus, AlignLeft, AlignCenter, AlignRight, ChevronDown, Link, Unlink,
-  Heading1, Heading2, FileText, Calendar, Shield, Crown, SunMedium, CircleDot, Layers, Camera, Tag, Loader2
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   Sparkle20Filled,
   Wand20Filled,
@@ -18,6 +15,26 @@ import {
   Copy20Regular,
   TextT20Filled,
   Shapes20Filled,
+  ChevronDown20Filled,
+  TextHeader120Filled,
+  TextHeader220Filled,
+  Document20Filled,
+  WeatherSunny20Filled,
+  Record20Filled,
+  Layer20Filled,
+  Shield20Filled,
+  Camera20Filled,
+  Tag20Filled,
+  CalendarLtr20Filled,
+  Square20Filled,
+  Circle20Filled,
+  Star20Filled,
+  LineHorizontal120Filled,
+  Link20Filled,
+  LinkDismiss20Filled,
+  AlignLeft20Filled,
+  AlignCenterHorizontal20Filled,
+  AlignRight20Filled,
 } from "@fluentui/react-icons";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -59,7 +76,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
       {/* نص مع قوالب جاهزة */}
       <DropdownMenu>
         <TooltipBtn content={mode === "collage" ? "غير متاح في وضع الكولاج" : "إضافة نص أو قالب خطوط"}>
-          <div className={mode === "collage" ? "cursor-not-allowed" : ""}>
+          <div className="mode === 'collage' ? 'cursor-not-allowed' : ''">
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
@@ -69,7 +86,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
                 className="h-8 px-2.5 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5"
               >
                 <TextT20Filled className="w-4 h-4" />
-                <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                <ChevronDown20Filled className="w-2.5 h-2.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
           </div>
@@ -77,50 +94,50 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
         <DropdownMenuContent align="start" className="w-56 font-cairo max-h-96 overflow-y-auto custom-scrollbar rounded-xl backdrop-blur-xl fluent-specular">
           <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">قوالب العناوين والفقرات</div>
           <DropdownMenuItem onClick={() => addTextPreset("heading")} className="gap-2 text-[11px] font-bold cursor-pointer rounded-md">
-            <Heading1 className="w-4 h-4 text-primary" />
+            <TextHeader120Filled className="w-4 h-4 text-primary" />
             <span>عنوان رئيسي (48px)</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("subheading")} className="gap-2 text-[11px] font-semibold cursor-pointer rounded-md">
-            <Heading2 className="w-4 h-4 text-primary/80" />
+            <TextHeader220Filled className="w-4 h-4 text-primary/80" />
             <span>عنوان فرعي (28px)</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("body")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <FileText className="w-4 h-4 text-muted-foreground" />
+            <Document20Filled className="w-4 h-4 text-muted-foreground" />
             <span>نص وصفي / ملاحظة (18px)</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
           <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">قوالب استوديو فاخرة</div>
           <DropdownMenuItem onClick={() => addTextPreset("gold-luxury")} className="gap-2 text-[11px] font-bold text-amber-600 dark:text-amber-400 cursor-pointer rounded-md">
-            <Crown className="w-4 h-4 text-amber-500" />
+            <Sparkle20Filled className="w-4 h-4 text-amber-500" />
             <span>عنوان ذهبي ملكي فاخر</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("neon-glow")} className="gap-2 text-[11px] font-bold text-sky-600 dark:text-sky-400 cursor-pointer rounded-md">
-            <SunMedium className="w-4 h-4 text-sky-500" />
+            <WeatherSunny20Filled className="w-4 h-4 text-sky-500" />
             <span>توهج نيون مضيء ★</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("stamp-circle")} className="gap-2 text-[11px] font-bold text-rose-600 dark:text-rose-400 cursor-pointer rounded-md">
-            <CircleDot className="w-4 h-4 text-rose-500" />
+            <Record20Filled className="w-4 h-4 text-rose-500" />
             <span>ختم دائري رسمي ◯</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("3d-title")} className="gap-2 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer rounded-md">
-            <Layers className="w-4 h-4 text-indigo-500" />
+            <Layer20Filled className="w-4 h-4 text-indigo-500" />
             <span>عنوان بارز ثلاثي الأبعاد 3D</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("badge")} className="gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer rounded-md">
-            <Shield className="w-4 h-4 text-blue-500" />
+            <Shield20Filled className="w-4 h-4 text-blue-500" />
             <span>شارة هوية رقمية / شريط</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("photographer-tag")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <Camera className="w-4 h-4 text-purple-500" />
+            <Camera20Filled className="w-4 h-4 text-purple-500" />
             <span>توقيع وتوثيق المصور 📷</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("caption-card")} className="gap-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer rounded-md">
-            <Tag className="w-4 h-4 text-emerald-500" />
+            <Tag20Filled className="w-4 h-4 text-emerald-500" />
             <span>بطاقة تعريفية مع إطار 🏷️</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addTextPreset("studio-date")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <Calendar className="w-4 h-4 text-amber-500" />
+            <CalendarLtr20Filled className="w-4 h-4 text-amber-500" />
             <span>توثيق التاريخ واليوم 📅</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -139,26 +156,26 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
                 aria-label="إضافة شكل"
               >
                 <Shapes20Filled className="w-4 h-4" />
-                <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                <ChevronDown20Filled className="w-2.5 h-2.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
           </div>
         </TooltipBtn>
         <DropdownMenuContent align="start" className="w-36 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
           <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <Square className="w-3.5 h-3.5" />
+            <Square20Filled className="w-3.5 h-3.5" />
             <span>مستطيل</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <Circle className="w-3.5 h-3.5" />
+            <Circle20Filled className="w-3.5 h-3.5" />
             <span>دائرة</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <Star className="w-3.5 h-3.5" />
+            <Star20Filled className="w-3.5 h-3.5" />
             <span>نجمة</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <Minus className="w-3.5 h-3.5" />
+            <LineHorizontal120Filled className="w-3.5 h-3.5" />
             <span>خط</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -491,7 +508,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             aria-label="تجميع"
             className="h-8 px-2.5 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
           >
-            <Link className="w-4 h-4" />
+            <Link20Filled className="w-4 h-4" />
           </Button>
         </TooltipBtn>
       )}
@@ -505,7 +522,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             aria-label="فك التجميع"
             className="h-8 px-2.5 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
           >
-            <Unlink className="w-4 h-4" />
+            <LinkDismiss20Filled className="w-4 h-4" />
           </Button>
         </TooltipBtn>
       )}
@@ -521,21 +538,21 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1" 
             aria-label="محاذاة"
           >
-            <AlignCenter className="w-4 h-4" />
-            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+            <AlignCenterHorizontal20Filled className="w-4 h-4" />
+            <ChevronDown20Filled className="w-2.5 h-2.5 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-36 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
           <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <AlignLeft className="w-3.5 h-3.5" />
+            <AlignLeft20Filled className="w-3.5 h-3.5" />
             <span>محاذاة لليسار</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <AlignCenter className="w-3.5 h-3.5" />
+            <AlignCenterHorizontal20Filled className="w-3.5 h-3.5" />
             <span>توسيط أفقي</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <AlignRight className="w-3.5 h-3.5" />
+            <AlignRight20Filled className="w-3.5 h-3.5" />
             <span>محاذاة لليمين</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -617,7 +634,7 @@ const TemplateInfo = React.memo(function TemplateInfo() {
 
   return (
     <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/20 rounded-md px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium fluent-specular">
-      <Icon className="w-4 h-4 text-primary" />
+      {Icon && <Icon className="w-4 h-4 text-primary" />}
       <span className="font-bold">{template.name}</span>
       <span className="text-muted-foreground/60">·</span>
       <span className="font-mono text-muted-foreground/75">{canvasWidth}×{canvasHeight}px</span>

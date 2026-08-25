@@ -4,7 +4,19 @@ import {
 } from "@/lib/canvas/canvas-colors";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eraser, Paintbrush, ZoomIn, ZoomOut, Save, X, Undo, MousePointer2, Sparkles, Feather, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import {
+  PaintBrush20Filled,
+  Broom20Filled,
+  Sparkle20Filled,
+  CursorHover20Regular,
+  ZoomIn20Regular,
+  ZoomOut20Regular,
+  ArrowUndo20Regular,
+  Save20Filled,
+  Dismiss20Regular,
+  InkingTool20Filled,
+} from "@fluentui/react-icons";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { cn } from "@/lib/utils";
@@ -502,11 +514,11 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden fluent-specular" dir="rtl" showCloseButton={false}>
         <DialogHeader className="p-4 border-b border-border/40 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-sm font-bold flex items-center gap-2">
-            <Paintbrush className="w-4 h-4 text-primary" />
+            <PaintBrush20Filled className="w-4 h-4 text-primary" />
             تعديل القص يدوياً
           </DialogTitle>
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md" onClick={() => onOpenChange(false)}>
-            <X className="w-4 h-4" />
+            <Dismiss20Regular className="w-4 h-4" />
           </Button>
         </DialogHeader>
 
@@ -520,7 +532,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "erase" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("erase")}
               >
-                <Eraser className="w-4 h-4" />
+                <Broom20Filled className="w-4 h-4" />
                 ممحاة
               </Button>
               <Button
@@ -528,7 +540,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "defringe" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("defringe")}
               >
-                <Feather className="w-4 h-4" />
+                <InkingTool20Filled className="w-4 h-4" />
                 تشذيب الحواف
               </Button>
               <Button
@@ -536,7 +548,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "restore" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("restore")}
               >
-                <Paintbrush className="w-4 h-4" />
+                <PaintBrush20Filled className="w-4 h-4" />
                 استرجاع
               </Button>
               <Button
@@ -544,7 +556,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "magic" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("magic")}
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkle20Filled className="w-4 h-4" />
                 تحديد ذكي
               </Button>
               <Button
@@ -552,7 +564,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "pan" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("pan")}
               >
-                <MousePointer2 className="w-4 h-4" />
+                <CursorHover20Regular className="w-4 h-4" />
                 تحريك
               </Button>
             </div>
@@ -628,7 +640,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                   onClick={() => setScale(s => Math.min(s + 0.25, 5))}
                   title="تكبير"
                 >
-                  <ZoomIn className="w-4 h-4 text-muted-foreground" />
+                  <ZoomIn20Regular className="w-4 h-4 text-muted-foreground" />
                 </Button>
                 <Button 
                   variant="outline" 
@@ -637,7 +649,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                   onClick={() => setScale(s => Math.max(s - 0.25, 0.25))}
                   title="تصغير"
                 >
-                  <ZoomOut className="w-4 h-4 text-muted-foreground" />
+                  <ZoomOut20Regular className="w-4 h-4 text-muted-foreground" />
                 </Button>
               </div>
               <Button 
@@ -646,7 +658,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 onClick={handleUndo}
                 disabled={historyLength <= 1}
               >
-                <Undo className="w-3.5 h-3.5" />
+                <ArrowUndo20Regular className="w-3.5 h-3.5" />
                 تراجع
               </Button>
             </div>
@@ -730,7 +742,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
         <DialogFooter className="p-3 border-t border-border/40 bg-card shrink-0 flex items-center justify-between sm:justify-between">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs font-semibold h-8 px-4 rounded-md">
-            <X className="w-3.5 h-3.5 ml-1" /> إلغاء
+            <Dismiss20Regular className="w-3.5 h-3.5 ml-1" /> إلغاء
           </Button>
           <Button onClick={handleSave} disabled={isSaving} className="text-xs font-semibold h-8 px-5 rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5">
             {isSaving ? (
@@ -741,7 +753,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             ) : (
               <>
                 <span>حفظ التعديلات</span>
-                <Save className="w-3.5 h-3.5 mr-1" />
+                <Save20Filled className="w-3.5 h-3.5 mr-1" />
               </>
             )}
           </Button>

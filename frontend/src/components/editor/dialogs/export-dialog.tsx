@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Download, Loader2, AlertTriangle } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { ArrowDownload20Filled, Warning20Filled } from "@fluentui/react-icons";
 import { exportCanvas, downloadBlob, exportSlotCanvas, applyBleedAndCropMarks, CanvasTooLargeError } from "@/lib/export";
 import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/canvas/stage-context";
@@ -160,7 +161,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       <DialogContent className="max-w-md font-cairo rounded-2xl border border-border bg-card fluent-specular" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold">
-            <Download className="w-5 h-5 text-primary" /> تصدير الصورة
+            <ArrowDownload20Filled className="w-5 h-5 text-primary" /> تصدير الصورة
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             احفظ الصورة بأبعاد القالب المحدد بدقة عالية للطباعة
@@ -264,7 +265,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           <div className="border-t border-border/40 pt-3 space-y-2.5">
             {(template?.dpi || printSettings.dpi || 300) < 150 && (
               <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-[11px] text-destructive flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <Warning20Filled className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="leading-tight font-medium">
                   الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُوصى بـ 300 DPI للطباعة الاحترافية.
                 </span>
@@ -272,7 +273,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             )}
 
             <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <Warning20Filled className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <span className="leading-tight font-medium">تصدير الصورة بنظام الألوان القياسي RGB للطباعة الرقمية.</span>
             </div>
 
@@ -336,7 +337,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               </>
             ) : (
               <>
-                <Download className="w-3.5 h-3.5" />
+                <ArrowDownload20Filled className="w-3.5 h-3.5" />
                 <span>تنزيل الصورة</span>
               </>
             )}

@@ -1,6 +1,7 @@
 import { useEditorStore } from "@/lib/editor-store";
 import { CanvasElement } from "@/lib/store/types";
 import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
+import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 
 /**
  * دالة عامة موحدة للصق المحتوى (من حافظة النظام أو حافظة الـ Store الداخلية)
@@ -61,15 +62,8 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
                       }
                       if (targetSlotId) state.setSlotImage(targetSlotId, localPath);
                     } else {
-                      const img = new Image();
-                      img.onload = () => {
-                        const aspect = img.width / img.height;
-                        state.addImageElement(localPath, aspect);
-                      };
-                      img.onerror = () => {
-                        state.addImageElement(localPath, 1);
-                      };
-                      img.src = localPath;
+                      const aspect = await resolveImageAspectRatio(localPath);
+                      state.addImageElement(localPath, aspect);
                     }
                     resolve(true);
                     return;

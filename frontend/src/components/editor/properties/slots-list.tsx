@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Image as ImageIcon, LayoutGrid, X } from "lucide-react";
+import { ChevronDown20Filled, Image20Filled, Grid20Filled, Dismiss20Filled } from "@fluentui/react-icons";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -55,7 +55,7 @@ const SlotItem = React.memo(
       >
         <div className="flex items-center gap-2 min-w-0">
           <span className="shrink-0 text-muted-foreground/80 p-1 bg-muted/50 rounded-md">
-            {hasImage ? <ImageIcon className="w-4 h-4 text-primary/70" /> : <LayoutGrid className="w-4 h-4 opacity-50" />}
+            {hasImage ? <Image20Filled className="w-4 h-4 text-primary/70" /> : <Grid20Filled className="w-4 h-4 opacity-50" />}
           </span>
           <span className="text-xs font-semibold truncate max-w-[120px]">
             خانة {slot.cellIndex + 1} {hasImage ? "(صورة)" : "(فارغة)"}
@@ -71,7 +71,7 @@ const SlotItem = React.memo(
                 className="w-7 h-7 rounded-md text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                 onClick={(e) => clearSlot(slot.id, e)}
               >
-                <X className="w-3.5 h-3.5" />
+                <Dismiss20Filled className="w-3.5 h-3.5" />
               </Button>
             </TooltipBtn>
           )}
@@ -122,13 +122,13 @@ export function SlotsList() {
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2">
-          <LayoutGrid className="w-4 h-4 text-muted-foreground" />
+          <Grid20Filled className="w-4 h-4 text-muted-foreground" />
           <h3 className="text-xs font-bold text-foreground">خانات الكولاج</h3>
           <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">
             {slots.length}
           </span>
         </div>
-        <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", expanded ? "rotate-180" : "")} />
+        <ChevronDown20Filled className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", expanded ? "rotate-180" : "")} />
       </div>
 
       {expanded && (

@@ -5,7 +5,7 @@ import { ElementProperties } from "../properties/element-properties";
 import { SlotProperties } from "../properties/slot-properties";
 import { CollageSettings } from "../properties/collage-settings";
 import { PanelShell } from "./panel-shell";
-import { SlidersHorizontal, FileText } from "lucide-react";
+import { Options20Filled, Document20Filled } from "@fluentui/react-icons";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
 
@@ -70,11 +70,11 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
 
   return (
     <PanelShell
-      icon={<SlidersHorizontal className="w-4 h-4" />}
+      icon={<Options20Filled className="w-4 h-4" />}
       title="الخصائص"
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
-      className="bg-card select-none"
+      className="bg-transparent select-none"
     >
       <div className="space-y-3">
         {/* خصائص العنصر المحدد */}
@@ -100,8 +100,8 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
                   onChange={setGeneralTab}
                   size="sm"
                   options={[
-                    { id: "collage", label: "تنسيق الكولاج", icon: <SlidersHorizontal className="w-3.5 h-3.5" /> },
-                    { id: "canvas", label: "الورقة والكانفس", icon: <FileText className="w-3.5 h-3.5" /> },
+                    { id: "collage", label: "تنسيق الكولاج", icon: <Options20Filled className="w-3.5 h-3.5" /> },
+                    { id: "canvas", label: "الورقة والكانفس", icon: <Document20Filled className="w-3.5 h-3.5" /> },
                   ]}
                 />
                 {generalTab === "collage" ? (

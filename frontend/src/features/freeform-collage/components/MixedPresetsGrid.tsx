@@ -2,7 +2,7 @@ import React from "react";
 import { MIXED_COLLAGE_PRESETS } from "../lib/mixed-presets";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Check, Grid2x2, Columns, Rows, Sparkles } from "lucide-react";
+import { Checkmark20Filled, Grid20Filled, SplitHorizontal20Filled, SplitVertical20Filled, Sparkle20Filled } from "@fluentui/react-icons";
 import type { MixedPreset } from "../types";
 
 interface MixedPresetsGridProps {
@@ -11,16 +11,16 @@ interface MixedPresetsGridProps {
 }
 
 function getPresetIcon(iconName: string) {
-  if (iconName === "Columns") return Columns;
-  if (iconName === "Rows") return Rows;
-  return Grid2x2;
+  if (iconName === "Columns") return SplitHorizontal20Filled;
+  if (iconName === "Rows") return SplitVertical20Filled;
+  return Grid20Filled;
 }
 
 export const MixedPresetsGrid: React.FC<MixedPresetsGridProps> = React.memo(function MixedPresetsGrid({ activePresetId, onSelectPreset }) {
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none font-cairo">
       <div className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground me-1 shrink-0 select-none">
-        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+        <Sparkle20Filled className="w-3.5 h-3.5 text-amber-500" />
         <span>القوالب:</span>
       </div>
 
@@ -42,7 +42,7 @@ export const MixedPresetsGrid: React.FC<MixedPresetsGridProps> = React.memo(func
                 )}
               >
                 {isActive ? (
-                  <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <Checkmark20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
                 ) : (
                   <IconComp className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
                 )}

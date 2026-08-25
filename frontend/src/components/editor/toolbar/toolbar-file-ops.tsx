@@ -23,6 +23,7 @@ import { ProjectsDialog } from "../dialogs/projects-dialog";
 import { ClearAutoSave, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { wailsIsDesktop } from "@/lib/wails-env";
+import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 
 interface TooltipBtnProps {
   content: string;
@@ -132,7 +133,8 @@ export function ToolbarFileOps() {
                 console.error("Failed to save image locally in single mode:", e);
               }
             }
-            addImageElement(finalSrc);
+            const aspect = await resolveImageAspectRatio(finalSrc);
+            addImageElement(finalSrc, aspect);
           }
           toast.success(`تمت إضافة ${b64s.length} صورة إلى مساحة العمل`);
         }

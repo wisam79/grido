@@ -1,12 +1,32 @@
 import React, { useState } from "react";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
-import { 
-  Shrink, Palette, ChevronDown, Square, Sparkles, PaintBucket,
-  AlignRight, AlignCenter, AlignLeft, Bold, Italic, Underline, Strikethrough,
-  Hash, MoveVertical, MoveHorizontal, RotateCw, Heading1, Heading2,
-  FileText, CircleDot, RotateCcw, Check, Type, Eye
-} from "lucide-react";
+import {
+  TextFont20Filled,
+  Color20Filled,
+  Sparkle20Filled,
+  TextHeader120Filled,
+  TextHeader220Filled,
+  Document20Filled,
+  Target20Filled,
+  ArrowRotateClockwise20Filled,
+  ChevronDown20Filled,
+  TextBold20Filled,
+  TextItalic20Filled,
+  TextUnderline20Filled,
+  TextStrikethrough20Filled,
+  TextAlignRight20Filled,
+  TextAlignCenter20Filled,
+  TextAlignLeft20Filled,
+  NumberSymbol20Filled,
+  ArrowMinimize20Filled,
+  ArrowSort20Filled,
+  ArrowMove20Filled,
+  Eye20Filled,
+  Checkmark20Filled,
+  Square20Filled,
+  ArrowReset20Regular,
+} from "@fluentui/react-icons";
 import { PopoverColorPicker } from "../shared-controls";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-picker";
@@ -162,7 +182,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
           )}
         >
-          <Type className="w-3.5 h-3.5" />
+          <TextFont20Filled className="w-3.5 h-3.5" />
           <span>الخط والنمط</span>
         </button>
 
@@ -176,7 +196,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
           )}
         >
-          <Palette className="w-3.5 h-3.5" />
+          <Color20Filled className="w-3.5 h-3.5" />
           <span>الألوان</span>
         </button>
 
@@ -190,7 +210,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
           )}
         >
-          <Sparkles className="w-3.5 h-3.5" />
+          <Sparkle20Filled className="w-3.5 h-3.5" />
           {/* تمييز الاسم عن تبويب "التأثيرات والظلال" الخارجي لتفادي الالتباس */}
           <span>الظلال والتقويس</span>
           {(hasBadge || hasStroke || hasShadow || hasCurve) && (
@@ -210,11 +230,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             {/* النمط السريع */}
             <div className="grid grid-cols-5 gap-1 text-[10px]">
               {[
-                { id: "heading" as const, label: "رئيسي", icon: Heading1 },
-                { id: "subheading" as const, label: "فرعي", icon: Heading2 },
-                { id: "body" as const, label: "عادي", icon: FileText },
-                { id: "badge" as const, label: "شارة", icon: CircleDot },
-                { id: "stamp" as const, label: "ختم", icon: RotateCw },
+                { id: "heading" as const, label: "رئيسي", icon: TextHeader120Filled },
+                { id: "subheading" as const, label: "فرعي", icon: TextHeader220Filled },
+                { id: "body" as const, label: "عادي", icon: Document20Filled },
+                { id: "badge" as const, label: "شارة", icon: Target20Filled },
+                { id: "stamp" as const, label: "ختم", icon: ArrowRotateClockwise20Filled },
               ].map((preset) => {
                 const Icon = preset.icon;
                 return (
@@ -259,7 +279,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown20Filled className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -291,7 +311,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown20Filled className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -336,7 +356,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="عريض (B)"
                 >
-                  <Bold className="w-3.5 h-3.5" />
+                  <TextBold20Filled className="w-3.5 h-3.5" />
                 </button>
 
                 <button
@@ -353,7 +373,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="مائل (I)"
                 >
-                  <Italic className="w-3.5 h-3.5" />
+                  <TextItalic20Filled className="w-3.5 h-3.5" />
                 </button>
 
                 <button
@@ -370,7 +390,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="تسطير (U)"
                 >
-                  <Underline className="w-3.5 h-3.5" />
+                  <TextUnderline20Filled className="w-3.5 h-3.5" />
                 </button>
 
                 <button
@@ -387,7 +407,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="شطب (S)"
                 >
-                  <Strikethrough className="w-3.5 h-3.5" />
+                  <TextStrikethrough20Filled className="w-3.5 h-3.5" />
                 </button>
               </div>
 
@@ -408,7 +428,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="يمين"
                 >
-                  <AlignRight className="w-3.5 h-3.5" />
+                  <TextAlignRight20Filled className="w-3.5 h-3.5" />
                 </button>
 
                 <button
@@ -425,7 +445,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="توسيط"
                 >
-                  <AlignCenter className="w-3.5 h-3.5" />
+                  <TextAlignCenter20Filled className="w-3.5 h-3.5" />
                 </button>
 
                 <button
@@ -442,7 +462,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="يسار"
                 >
-                  <AlignLeft className="w-3.5 h-3.5" />
+                  <TextAlignLeft20Filled className="w-3.5 h-3.5" />
                 </button>
               </div>
 
@@ -462,7 +482,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 )}
                 title="أرقام عربية (١٢٣)"
               >
-                <Hash className="w-3 h-3" />
+                <NumberSymbol20Filled className="w-3 h-3" />
                 <span>١٢٣</span>
               </button>
             </div>
@@ -501,7 +521,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 className="px-2 py-0.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-[9.5px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                 title="ملاءمة عرض الصندوق للنص تلقائياً"
               >
-                <Shrink className="w-2.5 h-2.5" />
+                <ArrowMinimize20Filled className="w-2.5 h-2.5" />
                 <span>ملاءمة العرض</span>
               </button>
             </div>
@@ -512,7 +532,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                  <MoveVertical className="w-2.5 h-2.5 text-primary/70" />
+                  <ArrowSort20Filled className="w-2.5 h-2.5 text-primary/70" />
                   <span>ارتفاع الأسطر</span>
                 </span>
                 <div className="relative">
@@ -536,13 +556,13 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown20Filled className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                  <MoveHorizontal className="w-2.5 h-2.5 text-primary/70" />
+                  <ArrowMove20Filled className="w-2.5 h-2.5 text-primary/70" />
                   <span>{isArabic ? "تباعد الكلمات" : "تباعد الحروف"}</span>
                 </span>
                 <div className="relative">
@@ -566,7 +586,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown20Filled className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -584,7 +604,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5 text-primary" />
+                <Color20Filled className="w-3.5 h-3.5 text-primary" />
                 <span>لون النص والتعبئة</span>
               </span>
 
@@ -609,7 +629,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     </span>
                   </button>
                 </PopoverTrigger>
-                <PopoverContent side="left" className="w-64 p-3 font-cairo shadow-lg rounded-xl border-border/60 fluent-specular z-50">
+                <PopoverContent side="left" className="w-72 sm:w-80 p-3 font-cairo shadow-lg rounded-xl border-border/60 fluent-specular z-50 overflow-hidden">
                   <GradientPicker
                     fillType={element.fillType || "solid"}
                     color={element.color || "#000000"}
@@ -653,7 +673,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             <div className="space-y-1 p-2 bg-muted/20 rounded-lg border border-border/30">
               <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Eye className="w-3 h-3 text-primary/70" />
+                  <Eye20Filled className="w-3 h-3 text-primary/70" />
                   <span>الشفافية</span>
                 </span>
                 <span className="font-mono text-foreground font-bold">{currentOpacity}%</span>
@@ -692,7 +712,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       style={{ backgroundColor: c.color }} 
                     >
                       {isCurrent && (
-                        <Check className={cn("w-2.5 h-2.5", c.color === "#ffffff" ? "text-black" : "text-white")} />
+                        <Checkmark20Filled className={cn("w-2.5 h-2.5", c.color === "#ffffff" ? "text-black" : "text-white")} />
                       )}
                     </div>
                     <span className="text-[10px] font-bold truncate text-foreground/80">{c.label}</span>
@@ -714,7 +734,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <PaintBucket className="w-3.5 h-3.5 text-primary" />
+                <Color20Filled className="w-3.5 h-3.5 text-primary" />
                 <span>الخلفية والشارة</span>
               </span>
 
@@ -818,7 +838,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Square className="w-3.5 h-3.5 text-primary" />
+                <Square20Filled className="w-3.5 h-3.5 text-primary" />
                 <span>الإطار والحدود</span>
               </span>
 
@@ -879,7 +899,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <Sparkle20Filled className="w-3.5 h-3.5 text-primary" />
                 <span>الظل والتوهج</span>
               </span>
 
@@ -969,7 +989,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <RotateCw className="w-3.5 h-3.5 text-primary" />
+                <ArrowRotateClockwise20Filled className="w-3.5 h-3.5 text-primary" />
                 <span>تقويس النص</span>
               </span>
 
@@ -1030,7 +1050,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       className="px-1.5 py-0.5 bg-background border border-border/60 hover:border-primary/40 rounded-md text-[9px] text-foreground font-bold cursor-pointer flex items-center gap-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                       title="استقامة"
                     >
-                      <RotateCcw className="w-2.5 h-2.5" />
+                      <ArrowReset20Regular className="w-2.5 h-2.5" />
                       <span>تصفير</span>
                     </button>
                     <span>+100°</span>

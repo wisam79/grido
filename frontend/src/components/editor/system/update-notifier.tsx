@@ -7,8 +7,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, Download, ArrowUpCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Sparkle20Filled, ArrowDownload20Filled, ArrowCircleUp20Filled } from "@fluentui/react-icons";
 import { CheckForUpdate, DownloadAndInstallUpdate } from "../../../../wailsjs/go/main/App";
 import { service } from "../../../../wailsjs/go/models";
 import { EventsOn, EventsOff, BrowserOpenURL } from "../../../../wailsjs/runtime/runtime";
@@ -72,7 +72,7 @@ export function UpdateNotifier() {
       >
         <DialogHeader className="space-y-1 text-right border-b border-border/60 pb-3">
           <DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
-            <Sparkles className="w-4 h-4 text-primary" />
+            <Sparkle20Filled className="w-4 h-4 text-primary" />
             <span>تحديث جديد متوفر</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -83,16 +83,16 @@ export function UpdateNotifier() {
         <div className="my-2 bg-muted/30 border border-border/60 rounded-xl p-3 space-y-2 fluent-specular">
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground text-[11px]">الإصدار الحالي:</span>
-            <Badge variant="outline" className="font-mono text-[10px] px-2 py-0 rounded-md">
+            <span className="font-mono text-[10px] px-2 py-0.5 rounded-md border border-border/60 text-muted-foreground">
               {updateInfo.current_version || "v1.0.0"}
-            </Badge>
+            </span>
           </div>
           <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2">
             <span className="text-muted-foreground text-[11px]">الإصدار الجديد:</span>
-            <Badge className="bg-primary text-primary-foreground font-mono text-[10px] px-2 py-0 rounded-md">
-              <ArrowUpCircle className="w-3 h-3 ml-1" />
+            <span className="bg-primary text-primary-foreground font-mono text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
+              <ArrowCircleUp20Filled className="w-3 h-3" />
               {updateInfo.latest_version}
-            </Badge>
+            </span>
           </div>
 
           {updateInfo.release_notes && !isDownloading && (
@@ -134,9 +134,9 @@ export function UpdateNotifier() {
               {!error ? (
                 <Button
                   onClick={handleStartUpdate}
-                  className="flex-1 h-8 text-xs font-semibold gap-1.5 rounded-md shadow-xs"
+                  className="flex-1 h-8 text-xs font-semibold gap-1.5 rounded-md shadow-xs cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <ArrowDownload20Filled className="w-3.5 h-3.5" />
                   تثبيت التحديث الآن
                 </Button>
               ) : (
@@ -149,9 +149,9 @@ export function UpdateNotifier() {
                       window.open(url, "_blank");
                     }
                   }}
-                  className="flex-1 h-8 text-xs font-semibold gap-1.5 rounded-md shadow-xs"
+                  className="flex-1 h-8 text-xs font-semibold gap-1.5 rounded-md shadow-xs cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <ArrowDownload20Filled className="w-3.5 h-3.5" />
                   تحميل يدوي (عبر المتصفح)
                 </Button>
               )}

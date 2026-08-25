@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type React from "react";
 
 export type TemplateCategory =
   | "id"
@@ -21,7 +21,7 @@ export interface PhotoTemplate {
   background: string; // اللون الموصى به للخلفية
   backgroundHint: string;
   notes?: string;
-  icon: LucideIcon;
+  icon?: React.ComponentType<any>;
 }
 
 export interface CollageTemplate {
@@ -37,7 +37,7 @@ export interface CollageTemplate {
     label?: string;
     rotation?: number;
   }[];
-  icon: LucideIcon;
+  icon?: React.ComponentType<any>;
   physicalLayout?: {
     type:
       | "iq-national-id"

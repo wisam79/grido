@@ -13,17 +13,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  ScanLine,
-  Sparkles,
-  RefreshCw,
-  Check,
-  Eye,
-  RotateCcw,
-  Maximize2,
-  FileText,
-  CreditCard,
-  LayoutGrid,
-} from "lucide-react";
+  ScanCamera20Filled,
+  Sparkle20Filled,
+  ArrowClockwise20Filled,
+  Checkmark20Filled,
+  Eye20Filled,
+  ArrowReset20Regular,
+  SlideSize20Filled,
+  Document20Filled,
+  Payment20Filled,
+  Grid20Filled,
+} from "@fluentui/react-icons";
 import { cn } from "@/lib/utils";
 import {
   Point,
@@ -460,7 +460,7 @@ export function DocumentScannerDialog({
           <div>
             <DialogTitle className="flex items-center gap-2.5 text-base font-bold text-foreground">
               <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-2xs">
-                <ScanLine className="w-4 h-4" />
+                <ScanCamera20Filled className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
                 <span>ماسح وتقويم المستندات (Document Scanner)</span>
@@ -484,17 +484,17 @@ export function DocumentScannerDialog({
               <div className="px-3.5 py-1.5 rounded-full bg-sidebar/90 border border-border text-[11px] font-semibold text-foreground shadow-md backdrop-blur-md flex items-center gap-2">
                 {isDetecting ? (
                   <>
-                    <RefreshCw className="w-3.5 h-3.5 text-primary animate-spin" />
+                    <ArrowClockwise20Filled className="w-3.5 h-3.5 text-primary animate-spin" />
                     <span>جاري فحص الحواف وتحديد أركان المستند تلقائياً ...</span>
                   </>
                 ) : isPreviewMode ? (
                   <>
-                    <Eye className="w-3.5 h-3.5 text-blue-500" />
+                    <Eye20Filled className="w-3.5 h-3.5 text-blue-500" />
                     <span>معاينة المستند بعد الاستعدال والمعالجة</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <Sparkle20Filled className="w-3.5 h-3.5 text-primary" />
                     <span>اسحب الدبابيس الأربعة لضبط حدود المستند بدقة</span>
                   </>
                 )}
@@ -542,7 +542,7 @@ export function DocumentScannerDialog({
             {/* 1. كشف الحواف والأركان */}
             <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
               <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                <Sparkle20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>كشف الأركان</span>
               </Label>
               <div className="grid grid-cols-2 gap-2">
@@ -556,9 +556,9 @@ export function DocumentScannerDialog({
                       disabled={isDetecting}
                     >
                       {isDetecting ? (
-                        <RefreshCw className="w-3.5 h-3.5 shrink-0 animate-spin" />
+                        <ArrowClockwise20Filled className="w-3.5 h-3.5 shrink-0 animate-spin" />
                       ) : (
-                        <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                        <Sparkle20Filled className="w-3.5 h-3.5 shrink-0" />
                       )}
                       <span>{isDetecting ? "جاري الكشف ..." : "كشف تلقائي"}</span>
                     </Button>
@@ -574,7 +574,7 @@ export function DocumentScannerDialog({
                       className="h-8 rounded-md border-border/60 hover:bg-accent text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                       onClick={handleResetCorners}
                     >
-                      <RefreshCw className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <ArrowReset20Regular className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span>إعادة ضبط</span>
                     </Button>
                   </TooltipTrigger>
@@ -586,7 +586,7 @@ export function DocumentScannerDialog({
             {/* 2. فلاتر وتصفية الورقة */}
             <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
               <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                <Document20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>معالجة وتصفية الورقة</span>
               </Label>
               <div className="flex flex-col gap-1.5">
@@ -601,7 +601,7 @@ export function DocumentScannerDialog({
                       )}
                       onClick={() => handleFilterChange("original")}
                     >
-                      <FileText className="w-3.5 h-3.5 shrink-0" />
+                      <Document20Filled className="w-3.5 h-3.5 shrink-0" />
                       <div className="flex flex-col items-start leading-tight">
                         <span>الألوان الأصلية</span>
                       </div>
@@ -621,13 +621,13 @@ export function DocumentScannerDialog({
                       )}
                       onClick={() => handleFilterChange("magic")}
                     >
-                      <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-300" />
+                      <Sparkle20Filled className="w-3.5 h-3.5 shrink-0 text-amber-300" />
                       <div className="flex flex-col items-start leading-tight">
                         <span>ماسح ذكي</span>
                       </div>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="left">تبييض الورقة وإزالة الظلال وتحسين وضوح النص</TooltipContent>
+                  <TooltipContent side="left">تبييض الورقة وإزالة الظلال وتحسين ووضوح النص</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -641,7 +641,7 @@ export function DocumentScannerDialog({
                       )}
                       onClick={() => handleFilterChange("bw")}
                     >
-                      <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+                      <Grid20Filled className="w-3.5 h-3.5 shrink-0" />
                       <div className="flex flex-col items-start leading-tight">
                         <span>أبيض وأسود</span>
                       </div>
@@ -655,7 +655,7 @@ export function DocumentScannerDialog({
             {/* 3. نسبة الأبعاد والقياس */}
             <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
               <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Maximize2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                <SlideSize20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>قياس ونسبة المستند</span>
               </Label>
               <div className="grid grid-cols-2 gap-1.5">
@@ -704,7 +704,7 @@ export function DocumentScannerDialog({
                   )}
                   onClick={() => handleAspectChange("id_card")}
                 >
-                  <CreditCard className="w-3 h-3" />
+                  <Payment20Filled className="w-3 h-3" />
                   <span>بطاقة هوية</span>
                 </Button>
               </div>
@@ -724,12 +724,12 @@ export function DocumentScannerDialog({
             >
               {isPreviewMode ? (
                 <>
-                  <RotateCcw className="w-3.5 h-3.5 text-primary" />
+                  <ArrowReset20Regular className="w-3.5 h-3.5 text-primary" />
                   <span>رجوع للتعديل</span>
                 </>
               ) : (
                 <>
-                  <Eye className="w-3.5 h-3.5 text-primary" />
+                  <Eye20Filled className="w-3.5 h-3.5 text-primary" />
                   <span>معاينة</span>
                 </>
               )}
@@ -750,7 +750,7 @@ export function DocumentScannerDialog({
               title={cornersReady ? undefined : "حدّد أركان المستند أولاً"}
               className="rounded-md h-8 px-5 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98] disabled:cursor-not-allowed"
             >
-              <Check className="w-3.5 h-3.5" />
+              <Checkmark20Filled className="w-3.5 h-3.5" />
               <span>تطبيق الاستعدال</span>
             </Button>
           </div>

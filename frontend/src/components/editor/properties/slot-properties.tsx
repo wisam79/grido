@@ -2,7 +2,6 @@ import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { Label } from "@/components/ui/label";
-import { Rows, Columns } from "lucide-react";
 import {
   ImageAdd20Filled,
   Crop20Filled,
@@ -18,6 +17,8 @@ import {
   Checkmark20Filled,
   ArrowSwap20Filled,
   Copy20Filled,
+  SplitHorizontal20Filled,
+  SplitVertical20Filled,
 } from "@fluentui/react-icons";
 import {
   Tooltip,
@@ -398,7 +399,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillRow}
               >
-                <Rows className="w-3.5 h-3.5 text-primary shrink-0" />
+                <SplitVertical20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>الصف</span>
               </Button>
             </TooltipTrigger>
@@ -412,7 +413,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillColumn}
               >
-                <Columns className="w-3.5 h-3.5 text-primary shrink-0" />
+                <SplitHorizontal20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>العمود</span>
               </Button>
             </TooltipTrigger>

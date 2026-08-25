@@ -17,22 +17,22 @@ import { ExportBackup, ImportBackup, ResetLibrary } from "../../../../wailsjs/go
 import { SaveFileDialog } from "../../../../wailsjs/go/main/App";
 import { domain } from "../../../../wailsjs/go/models";
 import { toast } from "sonner";
-import { 
-  FolderOpen, 
-  Save, 
-  Trash2, 
-  Calendar, 
-  Layout, 
-  Loader2, 
-  DatabaseBackup, 
-  Download, 
-  Upload, 
-  ShieldAlert,
-  Search,
-  ArrowUpDown,
-  Pin,
-  PinOff
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
+import {
+  FolderOpen20Filled,
+  Save20Filled,
+  Delete20Regular,
+  Calendar20Regular,
+  Grid20Filled,
+  Database20Filled,
+  ArrowDownload20Filled,
+  ArrowUpload20Filled,
+  Warning20Filled,
+  Search20Regular,
+  ArrowSort20Filled,
+  Pin20Filled,
+  PinOff20Regular,
+} from "@fluentui/react-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -297,7 +297,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
         <DialogContent className="sm:max-w-[500px]" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary font-cairo">
-              <Layout className="w-5 h-5" />
+              <Grid20Filled className="w-5 h-5" />
               <span>مكتبة المشاريع المحلية</span>
             </DialogTitle>
           </DialogHeader>
@@ -305,15 +305,15 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4 font-cairo">
             <TabsList className="grid grid-cols-3 mb-4">
               <TabsTrigger value="save" className="flex items-center gap-1.5 justify-center">
-                <Save className="w-3.5 h-3.5" />
+                <Save20Filled className="w-3.5 h-3.5" />
                 <span>حفظ المشروع</span>
               </TabsTrigger>
               <TabsTrigger value="list" className="flex items-center gap-1.5 justify-center" onClick={fetchProjects}>
-                <FolderOpen className="w-3.5 h-3.5" />
+                <FolderOpen20Filled className="w-3.5 h-3.5" />
                 <span>المشاريع</span>
               </TabsTrigger>
               <TabsTrigger value="backup" className="flex items-center gap-1.5 justify-center">
-                <DatabaseBackup className="w-3.5 h-3.5" />
+                <Database20Filled className="w-3.5 h-3.5" />
                 <span>نسخ احتياطي</span>
               </TabsTrigger>
             </TabsList>
@@ -338,7 +338,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                   </>
                 ) : (
                   <>
-                    <Save className="w-3.5 h-3.5" />
+                    <Save20Filled className="w-3.5 h-3.5" />
                     <span>حفظ المشروع</span>
                   </>
                 )}
@@ -349,7 +349,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               {/* شريط البحث والفرز */}
               <div className="flex gap-2 items-center">
                 <div className="relative flex-1">
-                  <Search className="absolute right-2.5 top-2 h-4 w-4 text-muted-foreground" />
+                  <Search20Regular className="absolute right-2.5 top-2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="بحث في المشاريع..."
                     className="pr-8 h-8 text-xs rounded-md"
@@ -364,7 +364,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("date") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="الفرز حسب التاريخ"
                   >
-                    <Calendar className="w-3.5 h-3.5" />
+                    <Calendar20Regular className="w-3.5 h-3.5" />
                   </button>
                   <button 
                     type="button"
@@ -372,7 +372,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("name") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="الفرز الأبجدي"
                   >
-                    <ArrowUpDown className="w-3.5 h-3.5" />
+                    <ArrowSort20Filled className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -403,7 +403,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                       {isPinned && <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />}
                       <div className="space-y-1 pl-2 pr-1">
                         <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                          {isPinned && <Pin className="w-3 h-3 text-primary fill-primary/20" />}
+                          {isPinned && <Pin20Filled className="w-3 h-3 text-primary fill-primary/20" />}
                           {project.name}
                         </h4>
                         <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
@@ -411,7 +411,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                             {project.mode === "single" ? "صورة مفردة" : "كولاج مجمع"}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
+                            <Calendar20Regular className="w-3 h-3" />
                             {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString("ar-EG") : ""}
                           </span>
                         </div>
@@ -425,7 +425,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                           className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title={isPinned ? "إلغاء التثبيت" : "تثبيت في الأعلى"}
                         >
-                          {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                          {isPinned ? <PinOff20Regular className="w-3.5 h-3.5" /> : <Pin20Filled className="w-3.5 h-3.5" />}
                         </Button>
                         <Button
                           variant="ghost"
@@ -433,7 +433,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                           onClick={(e) => handleDelete(project.id, e)}
                           className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Delete20Regular className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </div>
@@ -462,7 +462,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                       </>
                     ) : (
                       <>
-                        <Download className="w-3.5 h-3.5" />
+                        <ArrowDownload20Filled className="w-3.5 h-3.5" />
                         <span>تصدير JSON</span>
                       </>
                     )}
@@ -476,7 +476,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                   </div>
                   <label className="cursor-pointer">
                     <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
-                      <Upload className="w-3.5 h-3.5" />
+                      <ArrowUpload20Filled className="w-3.5 h-3.5" />
                       <span>رفع ملف</span>
                     </span>
                     <input
@@ -501,7 +501,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     disabled={backupActionLoading}
                     className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-xs"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Delete20Regular className="w-3.5 h-3.5" />
                     <span>حذف الكل</span>
                   </Button>
                 </div>
@@ -533,7 +533,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
         <DialogContent className="sm:max-w-[400px]" dir="rtl">
           <DialogHeader>
             <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
-              <Upload className="w-4 h-4 text-primary" />
+              <ArrowUpload20Filled className="w-4 h-4 text-primary" />
               <span>استيراد المشاريع</span>
             </DialogTitle>
           </DialogHeader>
@@ -585,7 +585,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-right flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-bold">
-              <ShieldAlert className="w-4 h-4" />
+              <Warning20Filled className="w-4 h-4" />
               <span>تحذير: تهيئة مكتبة المشاريع</span>
             </AlertDialogTitle>
             <AlertDialogDescription className="font-cairo text-right text-xs">

@@ -5,18 +5,18 @@ import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
-  Image as ImageIcon,
-  Type,
-  Shapes,
-  Eye,
-  EyeOff,
-  Lock,
-  Unlock,
-  GripVertical,
-  Layers,
-  Trash2,
-  Copy,
-} from "lucide-react";
+  Image20Filled,
+  TextT20Filled,
+  Shapes20Filled,
+  Layer20Filled,
+  Eye20Filled,
+  EyeOff20Filled,
+  LockClosed20Filled,
+  LockOpen20Filled,
+  Delete20Regular,
+  Copy20Regular,
+  ReOrderDotsVertical20Regular,
+} from "@fluentui/react-icons";
 
 /* ────────────────────────────────────────────────────────
  * لوحة الطبقات الاحترافية (Layers Panel)
@@ -55,13 +55,13 @@ function getElementLabel(el: CanvasElement): string {
 function getElementIcon(el: CanvasElement) {
   switch (el.type) {
     case "image":
-      return <ImageIcon className="w-3.5 h-3.5" />;
+      return <Image20Filled className="w-3.5 h-3.5" />;
     case "text":
-      return <Type className="w-3.5 h-3.5" />;
+      return <TextT20Filled className="w-3.5 h-3.5" />;
     case "shape":
-      return <Shapes className="w-3.5 h-3.5" />;
+      return <Shapes20Filled className="w-3.5 h-3.5" />;
     default:
-      return <Layers className="w-3.5 h-3.5" />;
+      return <Layer20Filled className="w-3.5 h-3.5" />;
   }
 }
 
@@ -131,7 +131,7 @@ const LayerRow = React.memo(function LayerRow({
     >
       {/* مقبض السحب */}
       <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors shrink-0">
-        <GripVertical className="w-3 h-3" />
+        <ReOrderDotsVertical20Regular className="w-3 h-3" />
       </div>
 
       {/* أيقونة النوع */}
@@ -172,7 +172,7 @@ const LayerRow = React.memo(function LayerRow({
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
               className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
-              <Copy className="w-3 h-3" />
+              <Copy20Regular className="w-3 h-3" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">نسخ</TooltipContent>
@@ -188,7 +188,7 @@ const LayerRow = React.memo(function LayerRow({
                 isHidden ? "text-destructive/60" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              {isHidden ? <EyeOff20Filled className="w-3 h-3" /> : <Eye20Filled className="w-3 h-3" />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">
@@ -206,7 +206,7 @@ const LayerRow = React.memo(function LayerRow({
                 isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+              {isLocked ? <LockClosed20Filled className="w-3 h-3" /> : <LockOpen20Filled className="w-3 h-3" />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">
@@ -221,7 +221,7 @@ const LayerRow = React.memo(function LayerRow({
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
               className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
-              <Trash2 className="w-3 h-3" />
+              <Delete20Regular className="w-3 h-3" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">حذف</TooltipContent>
@@ -334,7 +334,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">
         <div className="flex items-center gap-2 text-xs font-extrabold text-foreground">
           <div className="p-1 rounded-md bg-primary/10 text-primary">
-            <Layers className="w-3.5 h-3.5" />
+            <Layer20Filled className="w-3.5 h-3.5" />
           </div>
           <span>الطبقات</span>
         </div>
@@ -348,7 +348,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
         {sortedElements.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-16 px-4">
             <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center mb-3">
-              <Layers className="w-5 h-5 text-muted-foreground/50" />
+              <Layer20Filled className="w-5 h-5 text-muted-foreground/50" />
             </div>
             <p className="text-[11px] text-muted-foreground font-bold">
               لا توجد عناصر بعد

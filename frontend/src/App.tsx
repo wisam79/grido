@@ -18,20 +18,7 @@ const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog"
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import {
-  Settings2,
-  PanelsTopLeft,
-  Sun,
-  Moon,
-  Minus,
-  Square,
-  Minimize2,
-  X,
-  User, 
-  Lock, 
-  Key, 
-  Loader2
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   Grid20Filled,
   ImageMultiple20Filled,
@@ -40,6 +27,13 @@ import {
   WeatherSunny20Filled,
   PanelLeft20Filled,
   Settings20Filled,
+  Subtract20Filled,
+  Square20Regular,
+  SquareMultiple20Regular,
+  Dismiss20Regular,
+  LockClosed20Filled,
+  Key20Filled,
+  Person20Filled,
 } from "@fluentui/react-icons";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
@@ -219,7 +213,7 @@ export default function App() {
                 className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
                 title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
               >
-                {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+                {theme === "light" ? <WeatherMoon20Filled className="w-3.5 h-3.5" /> : <WeatherSunny20Filled className="w-3.5 h-3.5" />}
               </Button>
 
               <div className="w-px h-5 bg-border mx-1" />
@@ -231,7 +225,7 @@ export default function App() {
                 className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
                 title="تصغير"
               >
-                <Minus className="w-4 h-4" />
+                <Subtract20Filled className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -240,7 +234,7 @@ export default function App() {
                 className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
                 title={isMaximized ? "استعادة" : "تكبير"}
               >
-                {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Square className="w-3 h-3" />}
+                {isMaximized ? <SquareMultiple20Regular className="w-3.5 h-3.5" /> : <Square20Regular className="w-3 h-3" />}
               </Button>
               <Button
                 variant="ghost"
@@ -249,7 +243,7 @@ export default function App() {
                 className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white"
                 title="إغلاق"
               >
-                <X className="w-4 h-4" />
+                <Dismiss20Regular className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -259,7 +253,7 @@ export default function App() {
         <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-right p-6">
           <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-xl space-y-6 text-center fluent-specular">
             <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
-              <Lock className="w-10 h-10" />
+              <LockClosed20Filled className="w-10 h-10" />
             </div>
             
             <div className="space-y-2">
@@ -304,7 +298,7 @@ export default function App() {
                   </button>
                 </div>
                 <div className="relative">
-                  <Key className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                  <Key20Filled className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
                   <input
                     type="text"
                     required
@@ -433,7 +427,7 @@ export default function App() {
               {isLicenseActive ? (
                 <ShieldCheckmark20Filled className="w-4.5 h-4.5 text-emerald-500" />
               ) : (
-                <User className="w-4.5 h-4.5 text-muted-foreground" />
+                <Person20Filled className="w-4.5 h-4.5 text-muted-foreground" />
               )}
               {user?.plan === "trial" && (
                 <span className="absolute top-1 left-1 w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
@@ -485,7 +479,7 @@ export default function App() {
               className="lg:hidden gap-1.5 h-7 px-2 rounded-md"
               onClick={() => setMobileTemplatesOpen(true)}
             >
-              <PanelsTopLeft className="w-3.5 h-3.5" />
+              <PanelLeft20Filled className="w-3.5 h-3.5" />
               <span className="text-xs">القوالب</span>
             </Button>
             <Button
@@ -494,7 +488,7 @@ export default function App() {
               className="lg:hidden gap-1.5 h-7 px-2 rounded-md"
               onClick={() => setMobilePropsOpen(true)}
             >
-              <Settings2 className="w-3.5 h-3.5" />
+              <Settings20Filled className="w-3.5 h-3.5" />
               <span className="text-xs">خصائص</span>
             </Button>
 
@@ -509,7 +503,7 @@ export default function App() {
               className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title="تصغير"
             >
-              <Minus className="w-4 h-4" />
+              <Subtract20Filled className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
@@ -518,7 +512,7 @@ export default function App() {
               className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title={isMaximized ? "استعادة" : "تكبير"}
             >
-              {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Square className="w-3 h-3" />}
+              {isMaximized ? <SquareMultiple20Regular className="w-3.5 h-3.5" /> : <Square20Regular className="w-3 h-3" />}
             </Button>
             <Button
               variant="ghost"
@@ -527,7 +521,7 @@ export default function App() {
               className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors"
               title="إغلاق"
             >
-              <X className="w-4 h-4" />
+              <Dismiss20Regular className="w-4 h-4" />
             </Button>
           </div>
         </div>

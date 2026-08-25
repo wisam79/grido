@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
+import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 
 export function useKeyboardShortcuts() {
   // --- Shortcuts via react-hotkeys-hook ---
@@ -303,21 +304,8 @@ export function useKeyboardShortcuts() {
                       }
                       if (targetSlotId) state.setSlotImage(targetSlotId, localPath);
                     } else {
-                       const img = new Image();
-                       img.onload = () => {
-                         const aspect = img.width / img.height;
-                         img.onload = null;
-                         img.onerror = null;
-                         img.src = "";
-                         state.addImageElement(localPath, aspect);
-                       };
-                       img.onerror = () => {
-                         img.onload = null;
-                         img.onerror = null;
-                         img.src = "";
-                         state.addImageElement(localPath, 1);
-                       };
-                       img.src = localPath;
+                        const aspect = await resolveImageAspectRatio(localPath);
+                        state.addImageElement(localPath, aspect);
                     }
                   } catch (err) {
                     console.error("Failed to save pasted image:", err);

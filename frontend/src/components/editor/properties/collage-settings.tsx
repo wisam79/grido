@@ -1,4 +1,11 @@
-import { Columns, Move, Square, Maximize2, Scissors } from "lucide-react";
+import {
+  ArrowMove20Filled,
+  Square20Filled,
+  BorderOutside20Filled,
+  Cut20Filled,
+  SplitHorizontal20Filled,
+  TableSimple20Filled,
+} from "@fluentui/react-icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";
@@ -53,7 +60,7 @@ export function CollageSettings() {
     <div className="flex flex-col gap-3 font-cairo" dir="rtl">
       {/* 🎴 بطاقة 1: المسافات والاستدارة */}
       <FluentSection
-        icon={<Columns className="w-3.5 h-3.5" />}
+        icon={<TableSimple20Filled className="w-3.5 h-3.5" />}
         title="المسافات والاستدارة"
         collapsible
         defaultOpen={true}
@@ -61,7 +68,7 @@ export function CollageSettings() {
         <div className="flex flex-col gap-2.5">
           <FluentSliderField
             label="المسافات بين الصور"
-            icon={<Columns className="w-3.5 h-3.5" />}
+            icon={<SplitHorizontal20Filled className="w-3.5 h-3.5" />}
             value={collageGap}
             min={0}
             max={60}
@@ -72,7 +79,7 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الهامش الخارجي"
-            icon={<Move className="w-3.5 h-3.5" />}
+            icon={<ArrowMove20Filled className="w-3.5 h-3.5" />}
             value={collageMargin}
             min={0}
             max={100}
@@ -83,7 +90,7 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="استدارة الزوايا"
-            icon={<Square className="w-3.5 h-3.5" />}
+            icon={<Square20Filled className="w-3.5 h-3.5" />}
             value={collageRadius}
             min={0}
             max={50}
@@ -97,7 +104,7 @@ export function CollageSettings() {
 
       {/* 🎴 بطاقة 2: إطار وحدود الخلايا */}
       <FluentSection
-        icon={<Maximize2 className="w-3.5 h-3.5" />}
+        icon={<BorderOutside20Filled className="w-3.5 h-3.5" />}
         title="إطار وحدود الصور"
         collapsible
         defaultOpen={true}
@@ -105,7 +112,7 @@ export function CollageSettings() {
         <div className="space-y-2.5">
           <FluentSliderField
             label="سُمك الإطار"
-            icon={<Maximize2 className="w-3.5 h-3.5" />}
+            icon={<BorderOutside20Filled className="w-3.5 h-3.5" />}
             value={collageStrokeWidth}
             min={0}
             max={15}
@@ -166,7 +173,7 @@ export function CollageSettings() {
 
       {/* 🎴 بطاقة 3: خطوط وعلامات القص */}
       <FluentSection
-        icon={<Scissors className="w-3.5 h-3.5" />}
+        icon={<Cut20Filled className="w-3.5 h-3.5" />}
         title="خطوط القص والمحاذاة"
         collapsible
         defaultOpen={true}

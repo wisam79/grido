@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Grid3x3, Columns } from "lucide-react";
+import { Grid20Filled, TableSimple20Filled } from "@fluentui/react-icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import {
@@ -66,7 +66,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
   return (
     <FluentSection
-      icon={<Grid3x3 className="w-3.5 h-3.5 text-primary" />}
+      icon={<Grid20Filled className="w-3.5 h-3.5 text-primary" />}
       title="الشبكة والأعمدة"
       collapsible
       defaultOpen={true}
@@ -83,8 +83,8 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
           onChange={setActiveGridTab}
           size="sm"
           options={[
-            { id: "grid", label: "الشبكة", icon: <Grid3x3 className="w-3.5 h-3.5" /> },
-            { id: "columns", label: "الأعمدة", icon: <Columns className="w-3.5 h-3.5" /> },
+            { id: "grid", label: "الشبكة", icon: <Grid20Filled className="w-3.5 h-3.5" /> },
+            { id: "columns", label: "الأعمدة", icon: <TableSimple20Filled className="w-3.5 h-3.5" /> },
           ]}
         />
 

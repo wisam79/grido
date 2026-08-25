@@ -1,19 +1,19 @@
 import React, { useCallback } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
+import { Magnet } from "lucide-react";
 import {
-  Ruler,
-  Grid3X3,
-  Magnet,
-  Scissors,
-  RotateCw,
-  Eye,
-  EyeOff,
-  Maximize2,
-  ZoomIn,
-  ZoomOut,
-  FileSpreadsheet,
-} from "lucide-react";
+  Ruler20Filled,
+  Grid20Filled,
+  Cut20Filled,
+  ArrowRotateClockwise20Filled,
+  Eye20Filled,
+  EyeOff20Filled,
+  ZoomIn20Regular,
+  ZoomOut20Regular,
+  ArrowExpand20Regular,
+  Document20Filled,
+} from "@fluentui/react-icons";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -105,7 +105,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
       {/* 1. الجانب الأيمن: شارة معلومات مساحة العمل (Icon + Dimensions) */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-card border border-border text-muted-foreground font-semibold">
-          <FileSpreadsheet className="w-3.5 h-3.5 text-primary shrink-0" />
+          <Document20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
           <span className="text-foreground font-bold text-[11px]">
             {activePaper ? activePaper.name.split(" (")[0] : "مخصص"}
           </span>
@@ -131,7 +131,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              <Ruler className="w-3.5 h-3.5" />
+              <Ruler20Filled className="w-3.5 h-3.5" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -153,7 +153,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              <Grid3X3 className="w-3.5 h-3.5" />
+              <Grid20Filled className="w-3.5 h-3.5" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -198,7 +198,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )}
               >
-                <Scissors className="w-3.5 h-3.5" />
+                <Cut20Filled className="w-3.5 h-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -218,7 +218,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               aria-label="تبديل اتجاه الورقة"
               className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
             >
-              <RotateCw className="w-3.5 h-3.5" />
+              <ArrowRotateClockwise20Filled className="w-3.5 h-3.5" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -241,7 +241,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )}
               >
-                {isZenMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                {isZenMode ? <EyeOff20Filled className="w-3.5 h-3.5" /> : <Eye20Filled className="w-3.5 h-3.5" />}
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -285,7 +285,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={handleZoomOut}
                 aria-label="تصغير"
               >
-                <ZoomOut className="w-3.5 h-3.5" />
+                <ZoomOut20Regular className="w-3.5 h-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -317,7 +317,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={handleZoomIn}
                 aria-label="تكبير"
               >
-                <ZoomIn className="w-3.5 h-3.5" />
+                <ZoomIn20Regular className="w-3.5 h-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -333,7 +333,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={handleResetZoom}
                 aria-label="ملاءمة حجم الورقة"
               >
-                <Maximize2 className="w-3.5 h-3.5" />
+                <ArrowExpand20Regular className="w-3.5 h-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">

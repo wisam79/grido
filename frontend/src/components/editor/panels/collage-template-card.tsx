@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { CollageTemplate } from "@/lib/templates";
-import { Image as ImageIcon, Trash2 } from "lucide-react";
+import { Image20Filled, Delete20Regular } from "@fluentui/react-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,7 +60,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
               className="absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
               title="حذف القالب"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Delete20Regular className="w-3.5 h-3.5" />
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent className="font-cairo text-right rounded-2xl border fluent-specular" dir="rtl" onClick={(e) => e.stopPropagation()}>
@@ -99,7 +99,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
                 height: `calc(${c.h * 100}% - 2px)`,
               }}
             >
-              <ImageIcon className={cn(
+              <Image20Filled className={cn(
                 "w-1/3 h-1/3 transition-transform duration-300 group-hover:scale-110",
                 isActive ? "text-primary/80" : "text-muted-foreground/50"
               )} />

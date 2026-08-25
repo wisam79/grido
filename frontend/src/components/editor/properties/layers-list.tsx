@@ -2,8 +2,18 @@ import React, { useState, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
 import {
-  Layers, Eye, EyeOff, Lock, Unlock, Type, Square, Image as ImageIcon, Trash2, GripVertical, ChevronDown
-} from "lucide-react";
+  Layer20Filled,
+  Eye20Filled,
+  EyeOff20Filled,
+  LockClosed20Filled,
+  LockOpen20Filled,
+  TextT20Filled,
+  Shapes20Filled,
+  Image20Filled,
+  Delete20Regular,
+  ReOrderDotsVertical20Regular,
+  ChevronDown20Filled,
+} from "@fluentui/react-icons";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -78,12 +88,12 @@ const SortableLayerItem = React.memo(
             className="cursor-grab active:cursor-grabbing hover:bg-input p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
-            <GripVertical className="w-4 h-4" />
+            <ReOrderDotsVertical20Regular className="w-4 h-4" />
           </div>
           <span className="shrink-0 text-muted-foreground/80">
-            {el.type === "image" && <ImageIcon className="w-4 h-4" />}
-            {el.type === "text" && <Type className="w-4 h-4" />}
-            {el.type === "shape" && <Square className="w-4 h-4" />}
+            {el.type === "image" && <Image20Filled className="w-4 h-4" />}
+            {el.type === "text" && <TextT20Filled className="w-4 h-4" />}
+            {el.type === "shape" && <Shapes20Filled className="w-4 h-4" />}
           </span>
           <span className="text-xs font-semibold truncate max-w-[120px]">
             {el.type === "image"
@@ -112,7 +122,7 @@ const SortableLayerItem = React.memo(
               className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${isLocked ? "text-primary" : "text-muted-foreground/50 hover:text-foreground"}`}
               onClick={(e) => toggleLock(el, e)}
             >
-              {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+              {isLocked ? <LockClosed20Filled className="w-3.5 h-3.5" /> : <LockOpen20Filled className="w-3.5 h-3.5" />}
             </Button>
           </TooltipBtn>
           <TooltipBtn content={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}>
@@ -122,7 +132,7 @@ const SortableLayerItem = React.memo(
               className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${!isVisible ? "text-muted-foreground/40" : "text-muted-foreground hover:text-foreground"}`}
               onClick={(e) => toggleVisibility(el, e)}
             >
-              {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              {isVisible ? <Eye20Filled className="w-3.5 h-3.5" /> : <EyeOff20Filled className="w-3.5 h-3.5" />}
             </Button>
           </TooltipBtn>
           <TooltipBtn content="حذف الطبقة">
@@ -132,7 +142,7 @@ const SortableLayerItem = React.memo(
               className="w-7 h-7 rounded-md hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-1 focus-visible:outline-none"
               onClick={(e) => deleteLayer(el.id, e)}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Delete20Regular className="w-3.5 h-3.5" />
             </Button>
           </TooltipBtn>
         </div>
@@ -206,7 +216,7 @@ export function LayersList() {
     return (
       <div className="bg-input/40 border border-dashed border-border rounded-xl p-5 text-center select-none flex flex-col items-center justify-center space-y-2 animate-in fade-in duration-300">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-xs">
-          <Layers className="w-4.5 h-4.5 opacity-80" />
+          <Layer20Filled className="w-4.5 h-4.5 opacity-80" />
         </div>
         <div className="space-y-1">
           <p className="text-[11px] font-bold text-foreground/80">لوحة الطبقات فارغة</p>
@@ -259,9 +269,9 @@ export function LayersList() {
         className="flex items-center justify-between w-full text-right cursor-pointer select-none"
       >
         <div className="flex items-center gap-1.5">
-          <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !expanded && "-rotate-90")} />
+          <ChevronDown20Filled className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !expanded && "-rotate-90")} />
           <span className="text-sm font-bold text-foreground/90 cursor-pointer flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-primary shrink-0" />
+            <Layer20Filled className="w-4 h-4 text-primary shrink-0" />
             الطبقات ({elements.length})
           </span>
         </div>

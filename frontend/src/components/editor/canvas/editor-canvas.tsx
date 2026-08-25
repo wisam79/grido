@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import { X, RefreshCw, Loader2 } from "lucide-react";
-import { OpenFile, SaveImageFromBase64, GetImageDimensions } from "../../../../wailsjs/go/main/App";
+import { Loader2 } from "lucide-react";
+import { Dismiss20Filled, ArrowClockwise20Filled } from "@fluentui/react-icons";
+import { OpenFile, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
 import { KonvaCanvas } from "../konva/konva-canvas";
@@ -12,6 +13,7 @@ import { RulerUnit } from "./ruler";
 import { TextEditingOverlay } from "./text-editing-overlay";
 import { CanvasContextMenu } from "./canvas-context-menu";
 import { checkerColor, guideCenter, guideEdge } from "@/lib/canvas/canvas-colors";
+import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 
 /**
  * شريط الأدوات السريع للخانة المحددة (إزالة/استبدال الصورة).
@@ -79,7 +81,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
         }}
         title="إزالة"
       >
-        <X className="w-3.5 h-3.5" />
+        <Dismiss20Filled className="w-3.5 h-3.5" />
       </button>
        <button
          className="absolute top-1 left-1 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-md w-6 h-6 flex items-center justify-center z-30 pointer-events-auto shadow-md cursor-pointer transition-colors"
@@ -110,7 +112,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
          }}
          title="استبدال"
        >
-        <RefreshCw className="w-3.5 h-3.5" />
+        <ArrowClockwise20Filled className="w-3.5 h-3.5" />
       </button>
     </div>
   );
@@ -644,26 +646,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
         freshState.setSlotImagesBatch(assignments, uploadedSrcs[0] || null);
        } else {
          for (const src of uploadedSrcs) {
-           let aspect = 1;
-           try {
-             if (typeof GetImageDimensions === "function") {
-               const dims = await GetImageDimensions(src);
-               if (dims && dims.width > 0 && dims.height > 0) {
-                 aspect = dims.width / dims.height;
-               }
-             }
-           } catch {
-             // Fallback if GetImageDimensions fails or in dev web mode
-             try {
-               const res = await fetch(src);
-               const blob = await res.blob();
-               const bitmap = await createImageBitmap(blob);
-               aspect = bitmap.width / bitmap.height;
-               bitmap.close();
-             } catch {
-               aspect = 1;
-             }
-           }
+           const aspect = await resolveImageAspectRatio(src);
            addImageElement(src, aspect);
          }
        }

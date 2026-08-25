@@ -13,7 +13,20 @@ import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
 import { useStageRef } from "@/lib/canvas/stage-context";
 import { usePrintLayout } from "@/hooks/use-print-layout";
 import { cn } from "@/lib/utils";
-import { Printer, ZoomIn, ZoomOut, Loader2, Plus, Minus, LayoutGrid, Rows, Columns, Scissors, ArrowUpLeft, Crosshair } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import {
+  Print20Filled,
+  ZoomIn20Regular,
+  ZoomOut20Regular,
+  Add20Filled,
+  Subtract20Filled,
+  Grid20Filled,
+  Cut20Filled,
+  Target20Filled,
+  ExpandUpLeft20Filled,
+  SplitVertical20Filled,
+  SplitHorizontal20Filled,
+} from "@fluentui/react-icons";
 import { SheetPreview } from "../print/print-preview";
 import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -657,7 +670,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <ArrowUpLeft className="w-3.5 h-3.5 text-primary" />
+                <ExpandUpLeft20Filled className="w-3.5 h-3.5 text-primary" />
                 <span>أعلى اليسار</span>
               </button>
               <button
@@ -671,7 +684,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Crosshair className="w-3.5 h-3.5" />
+                <Target20Filled className="w-3.5 h-3.5" />
                 <span>توسيط</span>
               </button>
             </div>
@@ -704,7 +717,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 }}
               />
               <Label htmlFor="print-cut-lines" className="text-xs font-semibold cursor-pointer select-none flex items-center gap-1">
-                <Scissors className="w-3.5 h-3.5 text-primary/80" />
+                <Cut20Filled className="w-3.5 h-3.5 text-primary/80" />
                 <span>خطوط القص</span>
               </Label>
               {(mode === "collage" ? collageShowCutLines : printSettings.showCutLines) && (
@@ -735,7 +748,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) <= 1}
                     onClick={() => setPrintSettings({ copiesPerSheet: Math.max(1, (printSettings.copiesPerSheet ?? 1) - 1) })}
                   >
-                    <Minus className="w-3 h-3" />
+                    <Subtract20Filled className="w-3 h-3" />
                   </Button>
                   <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
                     {actualCopies}
@@ -746,7 +759,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= (grid.safeCols * 10)}
                     onClick={() => setPrintSettings({ copiesPerSheet: (printSettings.copiesPerSheet ?? 1) + 1 })}
                   >
-                    <Plus className="w-3 h-3" />
+                    <Add20Filled className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
@@ -756,9 +769,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <span className="text-xs font-semibold text-muted-foreground">التكرار</span>
                 <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30">
                   {([
-                    { id: "all", icon: LayoutGrid, label: "تعبئة تلقائية" },
-                    { id: "row", icon: Rows, label: "صف واحد" },
-                    { id: "column", icon: Columns, label: "عمود واحد" },
+                    { id: "all", icon: Grid20Filled, label: "تعبئة تلقائية" },
+                    { id: "row", icon: SplitVertical20Filled, label: "صف واحد" },
+                    { id: "column", icon: SplitHorizontal20Filled, label: "عمود واحد" },
                   ] as const).map(({ id, icon: Icon, label }) => (
                     <Tooltip key={id}>
                       <TooltipTrigger asChild>
@@ -792,7 +805,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     disabled={(printSettings.gapMM ?? 2) <= 0}
                     onClick={() => setPrintSettings({ gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1) })}
                   >
-                    <Minus className="w-3 h-3" />
+                    <Subtract20Filled className="w-3 h-3" />
                   </Button>
                   <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
                     {printSettings.gapMM ?? 2}
@@ -803,7 +816,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     disabled={(printSettings.gapMM ?? 2) >= 20}
                     onClick={() => setPrintSettings({ gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1) })}
                   >
-                    <Plus className="w-3 h-3" />
+                    <Add20Filled className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
@@ -831,13 +844,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 </Button>
                 <div className="flex items-center gap-1 bg-slate-800/80 p-0.5 rounded-md border border-slate-700/80">
                   <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-5 w-5 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
-                    <ZoomOut className="w-3 h-3" />
+                    <ZoomOut20Regular className="w-3 h-3" />
                   </Button>
                   <span className="text-[10px] w-10 text-center font-mono font-semibold text-slate-300">
                     {Math.round(zoom * 100)}%
                   </span>
                   <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-5 w-5 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
-                    <ZoomIn className="w-3 h-3" />
+                    <ZoomIn20Regular className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
@@ -913,7 +926,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {isExporting ? (
               <><Loader2 className="w-3.5 h-3.5 animate-spin" /> <span>جاري التصدير ...</span></>
             ) : (
-              <><Printer className="w-3.5 h-3.5" /> <span>تصدير وعرض</span></>
+              <><Print20Filled className="w-3.5 h-3.5" /> <span>تصدير وعرض</span></>
             )}
           </Button>
         </DialogFooter>

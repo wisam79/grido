@@ -3,10 +3,7 @@ import { ImageElement, useEditorStore } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { 
-  RefreshCw, Sun, Contrast, Droplet, 
-  EyeOff, Paintbrush, X, ScanLine, Check, Loader2
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   Sparkle20Filled,
   Wand20Filled,
@@ -18,6 +15,13 @@ import {
   PaintBrush20Filled,
   Color20Filled,
   Checkmark20Filled,
+  WeatherSunny20Filled,
+  CircleHalfFill20Filled,
+  Drop20Filled,
+  EyeOff20Filled,
+  ArrowClockwise20Filled,
+  Dismiss20Filled,
+  ScanCamera20Filled,
 } from "@fluentui/react-icons";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
@@ -83,7 +87,7 @@ export function ImageAdjustProperties({
 
       <SliderControl
         label="السطوع"
-        icon={<Sun className="w-3.5 h-3.5 text-muted-foreground/75" />}
+        icon={<WeatherSunny20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
         value={element.brightness ?? 100}
         min={0}
         max={200}
@@ -96,7 +100,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="التباين"
-        icon={<Contrast className="w-3.5 h-3.5 text-muted-foreground/75" />}
+        icon={<CircleHalfFill20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
         value={element.contrast ?? 100}
         min={0}
         max={200}
@@ -109,7 +113,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="التشبع"
-        icon={<Droplet className="w-3.5 h-3.5 text-muted-foreground/75" />}
+        icon={<Drop20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
         value={element.saturation ?? 100}
         min={0}
         max={200}
@@ -122,7 +126,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="الضبابية"
-        icon={<EyeOff className="w-3.5 h-3.5 text-muted-foreground/75" />}
+        icon={<EyeOff20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
         value={element.blur ?? 0}
         min={0}
         max={20}
@@ -150,7 +154,7 @@ export function ImageAdjustProperties({
             useEditorStore.getState().pushHistory();
           }}
         >
-          <RefreshCw className="w-3 h-3" />
+          <ArrowClockwise20Filled className="w-3 h-3" />
           <span>إعادة تعيين الألوان</span>
         </Button>
       )}
@@ -324,7 +328,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
               >
                 {isFraming ? (
-                  <X className="w-4 h-4 text-destructive-foreground shrink-0" />
+                  <Dismiss20Filled className="w-4 h-4 text-destructive-foreground shrink-0" />
                 ) : (
                   <PersonSquare20Filled className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 )}
@@ -345,7 +349,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs"
                 onClick={() => setScannerOpen(true)}
               >
-                <ScanLine className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                <ScanCamera20Filled className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 <span className="text-[11px] font-bold">مسح المستند</span>
               </Button>
             </TooltipTrigger>
@@ -553,7 +557,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               onClick={() => setRefineOpen(true)}
               title="تعديل تفاصيل العزل وحواف الصورة يدوياً"
             >
-              <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
+              <PaintBrush20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
               <span>تعديل العزل يدوياً</span>
             </Button>
           </div>

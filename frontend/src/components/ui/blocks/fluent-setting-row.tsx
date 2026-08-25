@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
+import { QuestionCircle20Filled } from "@fluentui/react-icons";
 
 export interface FluentSettingRowProps extends React.HTMLAttributes<HTMLDivElement> {
   label: React.ReactNode;
@@ -45,7 +45,7 @@ export const FluentSettingRow = React.memo(
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer"
                       aria-label="مزيد من المعلومات"
                     >
-                      <HelpCircle className="w-3 h-3" />
+                      <QuestionCircle20Filled className="w-3.5 h-3.5" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-cairo">
@@ -85,7 +85,7 @@ export const FluentSettingRow = React.memo(
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer inline-flex"
                       aria-label="مزيد من المعلومات"
                     >
-                      <HelpCircle className="w-3 h-3" />
+                      <QuestionCircle20Filled className="w-3.5 h-3.5" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-cairo">

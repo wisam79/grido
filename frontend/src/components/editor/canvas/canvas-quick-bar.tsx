@@ -5,36 +5,36 @@ import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Sparkles, 
-  Wand2, 
-  ImagePlus, 
-  Rows, 
-  Columns, 
-  LayoutGrid, 
-  Trash2, 
-  Copy, 
-  ArrowUp, 
-  ArrowDown, 
-  X,
-  Eraser,
-  ScanFace,
-  Loader2,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignStartVertical,
-  AlignCenterVertical,
-  AlignEndVertical,
-  AlignHorizontalDistributeCenter,
-  AlignVerticalDistributeCenter,
-  Layers,
-  Group,
-  RotateCw,
-  FlipHorizontal,
-  RotateCcw,
-  Eye
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
+import {
+  Sparkle20Filled,
+  Wand20Filled,
+  PersonSquare20Filled,
+  ImageAdd20Filled,
+  Grid20Filled,
+  Delete20Regular,
+  Copy20Regular,
+  ArrowUp20Regular,
+  ArrowDown20Regular,
+  ArrowRotateClockwise20Filled,
+  FlipHorizontal20Filled,
+  ArrowReset20Regular,
+  Eye20Filled,
+  Broom20Filled,
+  Group20Filled,
+  Dismiss20Regular,
+  SplitVertical20Filled,
+  SplitHorizontal20Filled,
+  Layer20Filled,
+  AlignLeft20Filled,
+  AlignCenterHorizontal20Filled,
+  AlignRight20Filled,
+  AlignTop20Filled,
+  AlignCenterVertical20Filled,
+  AlignBottom20Filled,
+  AlignSpaceAroundHorizontal20Filled,
+  AlignSpaceAroundVertical20Filled,
+} from "@fluentui/react-icons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
@@ -175,7 +175,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={handleOpenFileForSlot}
                   className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                 >
-                  <ImagePlus className="w-3.5 h-3.5" />
+                  <ImageAdd20Filled className="w-3.5 h-3.5" />
                   <span>تغيير</span>
                 </Button>
               </TooltipTrigger>
@@ -192,7 +192,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => fillAllSlots(selectedSlot.imageSrc!, selectedSlot.id)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                     >
-                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <Grid20Filled className="w-3.5 h-3.5" />
                       <span>كل الورقة</span>
                     </Button>
                   </TooltipTrigger>
@@ -207,7 +207,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => fillRowSlots(selectedSlot.id, selectedSlot.imageSrc!)}
                       className="h-7 px-2 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                     >
-                      <Rows className="w-3.5 h-3.5" />
+                      <SplitVertical20Filled className="w-3.5 h-3.5" />
                       <span>الصف</span>
                     </Button>
                   </TooltipTrigger>
@@ -222,7 +222,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => fillColumnSlots(selectedSlot.id, selectedSlot.imageSrc!)}
                       className="h-7 px-2 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                     >
-                      <Columns className="w-3.5 h-3.5" />
+                      <SplitHorizontal20Filled className="w-3.5 h-3.5" />
                       <span>العمود</span>
                     </Button>
                   </TooltipTrigger>
@@ -241,7 +241,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => handleRemoveBg(selectedSlot)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkle20Filled className="w-3.5 h-3.5" />}
                       <span>{isRemovingBg ? (bgProgress > 0 ? `جاري العزل ... (${Math.round(bgProgress)}%)` : "جاري العزل ...") : "عزل الخلفية"}</span>
                       {!licenseActive ? (
                         <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded-sm tracking-wider uppercase">
@@ -268,7 +268,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={isFraming ? handleCancelFrame : () => handleFrameFace(selectedSlot)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isFraming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanFace className="w-3.5 h-3.5" />}
+                      {isFraming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PersonSquare20Filled className="w-3.5 h-3.5" />}
                       <span>{isFraming ? "جاري الضبط ..." : "ضبط الوجه"}</span>
                     </Button>
                   </TooltipTrigger>
@@ -285,7 +285,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => handleEnhance(selectedSlot)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                      {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand20Filled className="w-3.5 h-3.5" />}
                       <span>{isEnhancing ? "جاري الترميم ..." : `ترميم الوجه (${remainingQuota}/${dailyLimit})`}</span>
                     </Button>
                   </TooltipTrigger>
@@ -302,7 +302,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => rotateSlot(selectedSlot.id, 90)}
                       className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                     >
-                      <RotateCw className="w-3.5 h-3.5" />
+                      <ArrowRotateClockwise20Filled className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
@@ -316,7 +316,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => flipSlotX(selectedSlot.id)}
                       className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                     >
-                      <FlipHorizontal className="w-3.5 h-3.5" />
+                      <FlipHorizontal20Filled className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">قلب أفقي</TooltipContent>
@@ -340,7 +340,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                           }}
                           className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
+                          <ArrowReset20Regular className="w-3.5 h-3.5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">استعادة الصورة الأصلية</TooltipContent>
@@ -362,7 +362,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                           }}
                           className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
                         >
-                          <Eye className="w-3.5 h-3.5" />
+                          <Eye20Filled className="w-3.5 h-3.5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">اضغط مطولاً لمعاينة الأصل</TooltipContent>
@@ -381,7 +381,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       }}
                       className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
                     >
-                      <Eraser className="w-3.5 h-3.5" />
+                      <Broom20Filled className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">تفريغ هذه الخلية</TooltipContent>
@@ -395,7 +395,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
         {selectedIds.length > 1 && (
           <>
             <div className="flex items-center gap-1 text-[11px] font-bold px-1.5 text-primary">
-              <Layers className="w-3.5 h-3.5" />
+              <Layer20Filled className="w-3.5 h-3.5" />
               <span>{selectedIds.length} عناصر</span>
             </div>
 
@@ -410,7 +410,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("left")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <AlignLeft className="w-3.5 h-3.5" />
+                  <AlignLeft20Filled className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة لليسار</TooltipContent>
@@ -424,7 +424,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("center")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <AlignCenter className="w-3.5 h-3.5" />
+                  <AlignCenterHorizontal20Filled className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة للوسط أفقياً</TooltipContent>
@@ -438,7 +438,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("right")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <AlignRight className="w-3.5 h-3.5" />
+                  <AlignRight20Filled className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة لليمين</TooltipContent>
@@ -452,7 +452,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("top")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <AlignStartVertical className="w-3.5 h-3.5" />
+                  <AlignTop20Filled className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة للأعلى</TooltipContent>
@@ -466,7 +466,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("middle")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <AlignCenterVertical className="w-3.5 h-3.5" />
+                  <AlignCenterVertical20Filled className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة للمنتصف عمودياً</TooltipContent>
@@ -480,7 +480,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("bottom")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <AlignEndVertical className="w-3.5 h-3.5" />
+                  <AlignBottom20Filled className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة للأسفل</TooltipContent>
@@ -499,7 +499,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => distributeSelectedElements("horizontal")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                     >
-                      <AlignHorizontalDistributeCenter className="w-3.5 h-3.5" />
+                      <AlignSpaceAroundHorizontal20Filled className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">توزيع أفقي متساوٍ</TooltipContent>
@@ -513,7 +513,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => distributeSelectedElements("vertical")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                     >
-                      <AlignVerticalDistributeCenter className="w-3.5 h-3.5" />
+                      <AlignSpaceAroundVertical20Filled className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">توزيع عمودي متساوٍ</TooltipContent>
@@ -532,7 +532,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={groupSelectedElements}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <Group className="w-3.5 h-3.5" />
+                  <Group20Filled className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تجميع العناصر (Group)</TooltipContent>
@@ -547,7 +547,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => duplicateElements(selectedIds)}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <Copy className="w-3.5 h-3.5" />
+                  <Copy20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تكرار العناصر</TooltipContent>
@@ -562,7 +562,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => removeElements(selectedIds)}
                   className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Delete20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">حذف العناصر</TooltipContent>
@@ -581,7 +581,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => bringToFront(selectedElement.id)}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <ArrowUp className="w-3.5 h-3.5" />
+                  <ArrowUp20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">إحضار للأمام</TooltipContent>
@@ -595,7 +595,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => sendToBack(selectedElement.id)}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <ArrowDown className="w-3.5 h-3.5" />
+                  <ArrowDown20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">إرسال للخلف</TooltipContent>
@@ -609,7 +609,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => duplicateElement(selectedElement.id)}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <Copy className="w-3.5 h-3.5" />
+                  <Copy20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تكرار العنصر</TooltipContent>
@@ -626,7 +626,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   }}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <RotateCw className="w-3.5 h-3.5" />
+                  <ArrowRotateClockwise20Filled className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
@@ -643,7 +643,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   }}
                   className={cn("h-7 w-7 p-0 rounded-md hover:bg-accent", selectedElement.flipX && "bg-primary/10 text-primary")}
                 >
-                  <FlipHorizontal className="w-3.5 h-3.5" />
+                  <FlipHorizontal20Filled className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">قلب أفقي</TooltipContent>
@@ -662,7 +662,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => handleRemoveBg(selectedElement)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkle20Filled className="w-3.5 h-3.5" />}
                       <span>{isRemovingBg ? (bgProgress > 0 ? `جاري العزل ... (${Math.round(bgProgress)}%)` : "جاري العزل ...") : "عزل الخلفية"}</span>
                       {!licenseActive ? (
                         <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded-sm tracking-wider uppercase">
@@ -688,7 +688,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={isFraming ? handleCancelFrame : () => handleFrameFace(selectedElement)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isFraming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanFace className="w-3.5 h-3.5" />}
+                      {isFraming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PersonSquare20Filled className="w-3.5 h-3.5" />}
                       <span>{isFraming ? "جاري الضبط ..." : "ضبط الوجه"}</span>
                     </Button>
                   </TooltipTrigger>
@@ -704,7 +704,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => handleEnhance(selectedElement)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                      {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand20Filled className="w-3.5 h-3.5" />}
                       <span>{isEnhancing ? "جاري الترميم ..." : `ترميم الوجه (${remainingQuota}/${dailyLimit})`}</span>
                     </Button>
                   </TooltipTrigger>
@@ -729,7 +729,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                           }}
                           className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
+                          <ArrowReset20Regular className="w-3.5 h-3.5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">استعادة الصورة الأصلية</TooltipContent>
@@ -751,7 +751,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                           }}
                           className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
                         >
-                          <Eye className="w-3.5 h-3.5" />
+                          <Eye20Filled className="w-3.5 h-3.5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">اضغط مطولاً لمعاينة الأصل</TooltipContent>
@@ -771,7 +771,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => removeElement(selectedElement.id)}
                   className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Delete20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">حذف العنصر</TooltipContent>
@@ -786,7 +786,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
           className="h-7 w-7 p-0 rounded-md hover:bg-muted text-muted-foreground ms-1"
           title="إغلاق الشريط السريع"
         >
-          <X className="w-3.5 h-3.5" />
+          <Dismiss20Regular className="w-3.5 h-3.5" />
         </Button>
 
       </div>

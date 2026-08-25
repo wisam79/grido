@@ -1,7 +1,7 @@
 import React from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
-import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { ZoomIn20Regular, ZoomOut20Regular, ArrowReset20Regular } from "@fluentui/react-icons";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface ZoomControlsProps {
@@ -51,7 +51,7 @@ export const ZoomControls = React.memo(function ZoomControls({
             onClick={handleZoomOut}
             aria-label="تصغير (Zoom Out)"
           >
-            <ZoomOut className="w-3.5 h-3.5" />
+            <ZoomOut20Regular className="w-3.5 h-3.5" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={10} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -84,7 +84,7 @@ export const ZoomControls = React.memo(function ZoomControls({
               onClick={handleResetZoom}
               aria-label="إعادة تعيين 100%"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <ArrowReset20Regular className="w-3.5 h-3.5" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={10} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -101,7 +101,7 @@ export const ZoomControls = React.memo(function ZoomControls({
             onClick={handleZoomIn}
             aria-label="تكبير (Zoom In)"
           >
-            <ZoomIn className="w-3.5 h-3.5" />
+            <ZoomIn20Regular className="w-3.5 h-3.5" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={10} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">

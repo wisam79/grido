@@ -24,7 +24,7 @@ import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "..
 import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
-import { LayoutGrid, FolderHeart, Palette, Shapes } from "lucide-react";
+import { Grid20Filled, Folder20Filled, Color20Filled, Shapes20Filled } from "@fluentui/react-icons";
 import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudioCanvasColorDeck } from "../properties/shared-controls";
@@ -88,7 +88,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
         name: t.name,
         slots: t.slots,
         cells: typeof t.cells === "string" ? JSON.parse(t.cells) : t.cells,
-        icon: LayoutGrid,
+        icon: Grid20Filled,
       }));
       setSavedTemplates(mapped);
     } catch (e) {
@@ -129,7 +129,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
   return (
     <PanelShell
-      icon={<Shapes className="w-4 h-4" />}
+      icon={<Shapes20Filled className="w-4 h-4" />}
       title={mode === "collage" ? "القوالب" : "المظهر والطبقات"}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
@@ -185,7 +185,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
               <DialogContent className="max-w-2xl font-cairo rounded-2xl border border-border bg-card fluent-specular" dir="rtl">
                 <DialogHeader>
                   <DialogTitle className="text-right text-base font-bold flex items-center gap-2">
-                    <FolderHeart className="w-5 h-5 text-primary" />
+                    <Folder20Filled className="w-5 h-5 text-primary" />
                     مكتبة قوالب الكولاج والطباعة
                   </DialogTitle>
                   <DialogDescription className="text-right text-xs text-muted-foreground">
@@ -262,7 +262,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
                     {savedTemplates.length === 0 ? (
                       <FluentEmptyState
-                        icon={<FolderHeart className="w-6 h-6 text-primary" />}
+                        icon={<Shapes20Filled className="w-6 h-6 text-primary" />}
                         title="لا توجد قوالب مخصصة محفوظة"
                         description="قم بتخصيص شبكة كولاج من اللوحة وحفظها لتظهر هنا للوصول السريع."
                       />
@@ -288,7 +288,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
       ) : (
         <div className="space-y-4" dir="rtl">
           <FluentSection
-            icon={<Palette className="w-3.5 h-3.5" />}
+            icon={<Color20Filled className="w-3.5 h-3.5" />}
             title="خلفية مساحة العمل"
           >
             <StudioCanvasColorDeck

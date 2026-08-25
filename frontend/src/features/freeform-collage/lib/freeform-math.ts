@@ -7,8 +7,8 @@ import type {
   DistributionAxis,
   AutoPackStrategy,
 } from "../types";
-import type { CollageTemplate } from "@/lib/templates/types";
-import { LayoutGrid } from "lucide-react";
+import { Grid20Filled } from "@fluentui/react-icons";
+import type { CollageTemplate } from "@/lib/templates";
 export { PHOTO_PRESET_LABELS } from "./mixed-presets";
 import { PHOTO_PRESET_LABELS } from "./mixed-presets";
 
@@ -737,6 +737,6 @@ export function convertToGridoTemplate(layout: FreeformLayout): CollageTemplate 
       label: s.label,
       rotation: s.rotation ?? 0,
     })),
-    icon: LayoutGrid,
+    icon: Grid20Filled,
   };
 }

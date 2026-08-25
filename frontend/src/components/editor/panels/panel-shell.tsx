@@ -1,5 +1,5 @@
 import React from "react";
-import { PanelLeftClose } from "lucide-react";
+import { PanelLeftContract20Regular } from "@fluentui/react-icons";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -70,7 +70,7 @@ export const PanelShell = React.memo(function PanelShell({
             aria-label={collapseTitle}
             className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
-            <PanelLeftClose className="w-4 h-4" />
+            <PanelLeftContract20Regular className="w-4 h-4" />
           </button>
         )}
       </div>
