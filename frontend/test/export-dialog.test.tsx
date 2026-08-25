@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { ExportDialog } from '../src/components/editor/dialogs/export-dialog';
@@ -30,8 +30,8 @@ describe('ExportDialog Component Tests', () => {
   it('renders dialog elements when open is true', () => {
     renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
 
-    expect(screen.getByText('تصدير التصميم')).toBeInTheDocument();
-    expect(screen.getByText('اختر الصيغة والإعدادات المناسبة لحفظ عملك بدقة عالية')).toBeInTheDocument();
+    expect(screen.getByText('تصدير الصورة')).toBeInTheDocument();
+    expect(screen.getByText('احفظ الصورة بأبعاد القالب المحدد بدقة عالية للطباعة')).toBeInTheDocument();
     expect(screen.getByText('PNG')).toBeInTheDocument();
     expect(screen.getByText('JPG')).toBeInTheDocument();
   });
@@ -46,10 +46,10 @@ describe('ExportDialog Component Tests', () => {
     expect(screen.getByText('جودة الصورة')).toBeInTheDocument();
   });
 
-  it('toggles crop marks switch', () => {
+  it('renders crop marks setting row', () => {
     renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
 
-    expect(screen.getByText('علامات القص والقصاصات')).toBeInTheDocument();
+    expect(screen.getByText('علامات القص الإرشادية')).toBeInTheDocument();
   });
 
   it('calls onOpenChange when cancel is clicked', () => {
