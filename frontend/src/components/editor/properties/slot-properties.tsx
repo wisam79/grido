@@ -2,10 +2,7 @@ import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { Label } from "@/components/ui/label";
-import { ImagePlus, Scissors, Copy, Rows, Columns, LayoutGrid,
-  FlipHorizontal2, FlipVertical2, RotateCw, Undo2, Palette, Check,
-  ArrowLeftRight, Crosshair, Trash2, Sparkles
-} from "lucide-react";
+import { Rows, Columns } from "lucide-react";
 import {
   ImageAdd20Filled,
   Crop20Filled,

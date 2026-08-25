@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
-  Type, Square, Circle, Star, Minus, Undo2, Redo2, Trash2, Copy, AlignLeft, AlignCenter, AlignRight, ChevronDown, Link, Unlink, Paintbrush,
-  Sparkles, Wand2, ScanFace, Heading1, Heading2, FileText, Calendar, Shield, Crown, SunMedium, CircleDot, Layers, Camera, Tag, Loader2
+  Square, Circle, Star, Minus, AlignLeft, AlignCenter, AlignRight, ChevronDown, Link, Unlink,
+  Heading1, Heading2, FileText, Calendar, Shield, Crown, SunMedium, CircleDot, Layers, Camera, Tag, Loader2
 } from "lucide-react";
 import {
   Sparkle20Filled,
@@ -470,7 +470,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           aria-label="تكرار"
           className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <Copy className="w-4 h-4" />
+          <Copy20Regular className="w-4 h-4" />
         </Button>
       </TooltipBtn>
 
@@ -518,40 +518,25 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5" 
-            aria-label="محاذاة العنصر المحدد"
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1" 
+            aria-label="محاذاة"
           >
-            <AlignLeft className="w-4 h-4" />
+            <AlignCenter className="w-4 h-4" />
             <ChevronDown className="w-2.5 h-2.5 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-44 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
-          <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <AlignLeft className="w-4 h-4 text-muted-foreground" />
-            <span>محاذاة ليسار الكانفس</span>
+        <DropdownMenuContent align="start" className="w-36 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
+          <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-xs cursor-pointer rounded-md">
+            <AlignLeft className="w-3.5 h-3.5" />
+            <span>محاذاة لليسار</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <AlignCenter className="w-4 h-4 text-muted-foreground" />
+          <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-xs cursor-pointer rounded-md">
+            <AlignCenter className="w-3.5 h-3.5" />
             <span>توسيط أفقي</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <AlignRight className="w-4 h-4 text-muted-foreground" />
-            <span>محاذاة ليمين الكانفس</span>
-          </DropdownMenuItem>
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuItem onClick={() => alignElement("top")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <AlignLeft className="w-4 h-4 text-muted-foreground rotate-90" />
-            <span>محاذاة لأعلى الكانفس</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("middle")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <AlignCenter className="w-4 h-4 text-muted-foreground rotate-90" />
-            <span>توسيط عمودي</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("bottom")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <AlignRight className="w-4 h-4 text-muted-foreground rotate-90" />
-            <span>محاذاة لأسفل الكانفس</span>
+          <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-xs cursor-pointer rounded-md">
+            <AlignRight className="w-3.5 h-3.5" />
+            <span>محاذاة لليمين</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -559,7 +544,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
       <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
       {/* حذف */}
-      <TooltipBtn content="حذف العناصر المحددة">
+      <TooltipBtn content="حذف (Delete)">
         <Button
           variant="ghost"
           size="sm"
@@ -576,7 +561,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           aria-label="حذف"
           className="h-8 px-2.5 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
         >
-          <Trash2 className="w-4 h-4" />
+          <Delete20Regular className="w-4 h-4" />
         </Button>
       </TooltipBtn>
     </div>
@@ -600,7 +585,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           aria-label="تراجع"
           className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <Undo2 className="w-4 h-4" />
+          <ArrowUndo20Regular className="w-4 h-4" />
         </Button>
       </TooltipBtn>
       <TooltipBtn content="إعادة (Ctrl+Y)">
@@ -612,7 +597,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           aria-label="إعادة"
           className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <Redo2 className="w-4 h-4" />
+          <ArrowRedo20Regular className="w-4 h-4" />
         </Button>
       </TooltipBtn>
     </div>

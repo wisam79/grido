@@ -27,10 +27,7 @@ import {
   Square,
   Minimize2,
   X,
-  LayoutGrid,
-  Images,
   User, 
-  ShieldCheck, 
   Lock, 
   Key, 
   Loader2

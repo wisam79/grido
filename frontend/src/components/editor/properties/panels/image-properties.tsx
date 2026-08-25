@@ -4,8 +4,8 @@ import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { 
-  Sparkles, RefreshCw, Sun, Contrast, Droplet, 
-  Eye, EyeOff, Scissors, Paintbrush, X, ImagePlus, Wand2, ScanLine, ScanFace, Palette, Check, Loader2, RotateCcw
+  RefreshCw, Sun, Contrast, Droplet, 
+  EyeOff, Paintbrush, X, ScanLine, Check, Loader2
 } from "lucide-react";
 import {
   Sparkle20Filled,
