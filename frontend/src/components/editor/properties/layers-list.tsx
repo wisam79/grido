@@ -86,7 +86,21 @@ const SortableLayerItem = React.memo(
             {el.type === "shape" && <Square className="w-4 h-4" />}
           </span>
           <span className="text-xs font-semibold truncate max-w-[120px]">
-            {el.type === "image" ? "صورة" : el.type === "text" ? el.text || "نص" : `شكل (${el.shape})`}
+            {el.type === "image"
+              ? "صورة"
+              : el.type === "text"
+              ? el.text || "نص"
+              : el.shape === "rect"
+              ? "مستطيل"
+              : el.shape === "circle" || el.shape === "ellipse"
+              ? "دائرة"
+              : el.shape === "star"
+              ? "نجمة"
+              : el.shape === "line"
+              ? "خط"
+              : el.shape === "path"
+              ? "مسار"
+              : "شكل"}
           </span>
         </div>
 

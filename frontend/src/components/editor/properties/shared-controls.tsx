@@ -537,7 +537,7 @@ export function StudioCanvasColorDeck({
         label={
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
             <Paintbrush className="w-3.5 h-3.5 text-primary shrink-0" />
-            <span>لون خلفية مساحة العمل</span>
+            <span>لون مخصص</span>
           </div>
         }
       />

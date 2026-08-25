@@ -39,6 +39,7 @@ function getElementLabel(el: CanvasElement): string {
     case "shape": {
       const shapeLabels: Record<string, string> = {
         rect: "مستطيل",
+        circle: "دائرة",
         ellipse: "بيضاوي",
         line: "خط",
         star: "نجمة",

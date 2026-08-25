@@ -251,10 +251,14 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         {/* سطر الأبعاد W و H وزر التبديل (نمط Figma النظيف) */}
         <div className="flex items-center gap-1.5" dir="rtl">
           {/* العرض W */}
-          <div className="flex-1 flex items-center bg-input border border-border hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-inner">
+          <div 
+            className="flex-1 flex items-center bg-input border border-border hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-inner"
+            title="العرض (Width)"
+          >
             <span className="text-[10px] font-bold text-muted-foreground/70 select-none w-3 text-center">W</span>
             <input
               type="number"
+              aria-label="عرض مساحة العمل"
               value={widthVal}
               onChange={(e) => handleWidthChange(e.target.value)}
               onBlur={handleWidthCommit}
@@ -276,10 +280,14 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           </button>
 
           {/* الارتفاع H */}
-          <div className="flex-1 flex items-center bg-input border border-border hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-inner">
+          <div 
+            className="flex-1 flex items-center bg-input border border-border hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-inner"
+            title="الارتفاع (Height)"
+          >
             <span className="text-[10px] font-bold text-muted-foreground/70 select-none w-3 text-center">H</span>
             <input
               type="number"
+              aria-label="ارتفاع مساحة العمل"
               value={heightVal}
               onChange={(e) => handleHeightChange(e.target.value)}
               onBlur={handleHeightCommit}
