@@ -207,6 +207,7 @@ describe('Component Testing: UI Rendering', () => {
   }, 15000);
 
   it('renders the TemplatePanel correctly', async () => {
+    useEditorStore.setState({ mode: 'single' });
     render(<App />);
     expect(await screen.findByText('لون خلفية مساحة العمل')).toBeInTheDocument();
   }, 15000);
