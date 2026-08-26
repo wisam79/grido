@@ -72,48 +72,54 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
         height: `${height}px`,
       }}
     >
-      <button
-        className="absolute top-1 right-1 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-md w-6 h-6 flex items-center justify-center z-30 pointer-events-auto shadow-md cursor-pointer transition-colors"
-        onClick={(e) => {
-          e.stopPropagation();
-          updateSlot(selectedSlot.id, { imageSrc: undefined });
-          useEditorStore.getState().pushHistory();
-        }}
-        title="إزالة"
-      >
-        <Dismiss20Filled className="w-3.5 h-3.5" />
-      </button>
-       <button
-         className="absolute top-1 left-1 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white rounded-md w-6 h-6 flex items-center justify-center z-30 pointer-events-auto shadow-md cursor-pointer transition-colors"
-         onClick={async (e) => {
-           e.stopPropagation();
-           if (isLoading) return;
-           try {
-             setIsLoading(true);
-             const b64 = await OpenFile();
-             if (b64) {
-               const isWailsDesktop = wailsIsDesktop();
-               let srcToUse = b64;
-               if (isWailsDesktop && b64.startsWith("data:image/")) {
-                 try {
-                   const localPath = await SaveImageFromBase64(b64);
-                   if (localPath) srcToUse = localPath;
-                 } catch (e) {
-                   console.error("Failed to save image locally:", e);
-                 }
-               }
-               setSlotImage(selectedSlot.id, srcToUse);
-             }
-           } catch (err) {
-             console.error("Replace image error:", err);
-           } finally {
-             setIsLoading(false);
-           }
-         }}
-         title="استبدال"
-       >
-        <ArrowClockwise20Filled className="w-3.5 h-3.5" />
-      </button>
+      {/* شريط الإجراءات السريعة العائم فوق الخلية المحددة */}
+      <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-card/90 dark:bg-sidebar/90 backdrop-blur-md p-0.5 rounded-lg border border-border/80 shadow-md pointer-events-auto transition-all select-none fluent-specular">
+        <button
+          className="w-6 h-6 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
+          onClick={async (e) => {
+            e.stopPropagation();
+            if (isLoading) return;
+            try {
+              setIsLoading(true);
+              const b64 = await OpenFile();
+              if (b64) {
+                const isWailsDesktop = wailsIsDesktop();
+                let srcToUse = b64;
+                if (isWailsDesktop && b64.startsWith("data:image/")) {
+                  try {
+                    const localPath = await SaveImageFromBase64(b64);
+                    if (localPath) srcToUse = localPath;
+                  } catch (e) {
+                    console.error("Failed to save image locally:", e);
+                  }
+                }
+                setSlotImage(selectedSlot.id, srcToUse);
+              }
+            } catch (err) {
+              console.error("Replace image error:", err);
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          title="استبدال الصورة"
+        >
+          {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowClockwise20Filled className="w-3.5 h-3.5 text-primary" />}
+        </button>
+
+        <div className="w-px h-3 bg-border/60 mx-0.5" />
+
+        <button
+          className="w-6 h-6 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center cursor-pointer transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            updateSlot(selectedSlot.id, { imageSrc: undefined });
+            useEditorStore.getState().pushHistory();
+          }}
+          title="إزالة الصورة"
+        >
+          <Dismiss20Filled className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </div>
   );
 });
@@ -167,6 +173,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     updateElement,
     pushHistory,
     addImageElement,
+    addImageElementsBatch,
     setCanvasZoom,
   } = useEditorStore(useShallow((state) => ({
     selectElement: state.selectElement,
@@ -174,6 +181,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     updateElement: state.updateElement,
     pushHistory: state.pushHistory,
     addImageElement: state.addImageElement,
+    addImageElementsBatch: state.addImageElementsBatch,
     setCanvasZoom: state.setCanvasZoom,
   })));
 
@@ -645,9 +653,16 @@ export const EditorCanvas = React.memo(React.forwardRef<
         // دفعة واحدة بخطوة تراجع واحدة بدل خطوة لكل صورة (الإسقاط المتعدد)
         freshState.setSlotImagesBatch(assignments, uploadedSrcs[0] || null);
        } else {
-         for (const src of uploadedSrcs) {
-           const aspect = await resolveImageAspectRatio(src);
-           addImageElement(src, aspect);
+         if (uploadedSrcs.length === 1) {
+           const aspect = await resolveImageAspectRatio(uploadedSrcs[0]);
+           addImageElement(uploadedSrcs[0], aspect);
+         } else {
+           const items: { src: string; aspectRatio: number }[] = [];
+           for (const src of uploadedSrcs) {
+             const aspect = await resolveImageAspectRatio(src);
+             items.push({ src, aspectRatio: aspect });
+           }
+           freshState.addImageElementsBatch(items);
          }
        }
     } catch (err) {

@@ -11,8 +11,8 @@ interface MixedPresetsGridProps {
 }
 
 function getPresetIcon(iconName: string) {
-  if (iconName === "Columns") return SplitHorizontal20Filled;
-  if (iconName === "Rows") return SplitVertical20Filled;
+  if (iconName === "Columns") return SplitVertical20Filled;
+  if (iconName === "Rows") return SplitHorizontal20Filled;
   return Grid20Filled;
 }
 

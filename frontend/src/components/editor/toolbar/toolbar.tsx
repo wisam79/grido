@@ -79,16 +79,16 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
         <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
         {/* المجموعة 6: الحفظ والتصدير والطباعة */}
-        <div className="flex items-center gap-0.5 bg-input border border-border p-0.5 rounded-lg shadow-2xs">
+        <div className="flex items-center gap-1 bg-input border border-border p-0.5 rounded-lg shadow-2xs">
           <TooltipBtn content="حفظ المشروع (Ctrl + S)">
             <Button
               variant="ghost"
               size="sm"
               onClick={onSave}
               aria-label="حفظ المشروع"
-              className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98]"
+              className="h-8.5 px-3 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98]"
             >
-              <Save20Filled className="w-4 h-4" />
+              <Save20Filled className="w-4.5 h-4.5" />
               <span>حفظ</span>
             </Button>
           </TooltipBtn>
@@ -99,9 +99,9 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               size="sm"
               onClick={onPrint}
               aria-label="طباعة المستند"
-              className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98]"
+              className="h-8.5 px-3 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98]"
             >
-              <Print20Filled className="w-4 h-4" />
+              <Print20Filled className="w-4.5 h-4.5" />
               <span>طباعة</span>
             </Button>
           </TooltipBtn>
@@ -111,9 +111,9 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               size="sm"
               onClick={onExport}
               aria-label="تصدير صورة"
-              className="h-8 px-3 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98]"
+              className="h-8.5 px-3.5 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98]"
             >
-              <Share20Filled className="w-4 h-4" />
+              <Share20Filled className="w-4.5 h-4.5" />
               <span>تصدير</span>
             </Button>
           </TooltipBtn>

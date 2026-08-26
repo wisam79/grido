@@ -76,68 +76,68 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
       {/* نص مع قوالب جاهزة */}
       <DropdownMenu>
         <TooltipBtn content={mode === "collage" ? "غير متاح في وضع الكولاج" : "إضافة نص أو قالب خطوط"}>
-          <div className="mode === 'collage' ? 'cursor-not-allowed' : ''">
+          <div className={mode === "collage" ? "cursor-not-allowed" : ""}>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 disabled={mode === "collage"}
                 aria-label="إضافة نص"
-                className="h-8 px-2.5 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5"
+                className="h-8.5 px-3 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
               >
-                <TextT20Filled className="w-4 h-4" />
-                <ChevronDown20Filled className="w-2.5 h-2.5 opacity-60" />
+                <TextT20Filled className="w-4.5 h-4.5" />
+                <ChevronDown20Filled className="w-3 h-3 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
           </div>
         </TooltipBtn>
-        <DropdownMenuContent align="start" className="w-56 font-cairo max-h-96 overflow-y-auto custom-scrollbar rounded-xl backdrop-blur-xl fluent-specular">
-          <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">قوالب العناوين والفقرات</div>
-          <DropdownMenuItem onClick={() => addTextPreset("heading")} className="gap-2 text-[11px] font-bold cursor-pointer rounded-md">
-            <TextHeader120Filled className="w-4 h-4 text-primary" />
+        <DropdownMenuContent align="start" className="w-60 font-cairo max-h-96 overflow-y-auto custom-scrollbar rounded-xl backdrop-blur-xl fluent-specular">
+          <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground select-none">قوالب العناوين والفقرات</div>
+          <DropdownMenuItem onClick={() => addTextPreset("heading")} className="gap-2.5 text-xs font-bold cursor-pointer rounded-md">
+            <TextHeader120Filled className="w-4.5 h-4.5 text-primary" />
             <span>عنوان رئيسي (48px)</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("subheading")} className="gap-2 text-[11px] font-semibold cursor-pointer rounded-md">
-            <TextHeader220Filled className="w-4 h-4 text-primary/80" />
+          <DropdownMenuItem onClick={() => addTextPreset("subheading")} className="gap-2.5 text-xs font-semibold cursor-pointer rounded-md">
+            <TextHeader220Filled className="w-4.5 h-4.5 text-primary/80" />
             <span>عنوان فرعي (28px)</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("body")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <Document20Filled className="w-4 h-4 text-muted-foreground" />
+          <DropdownMenuItem onClick={() => addTextPreset("body")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <Document20Filled className="w-4.5 h-4.5 text-muted-foreground" />
             <span>نص وصفي / ملاحظة (18px)</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
-          <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground select-none">قوالب استوديو فاخرة</div>
-          <DropdownMenuItem onClick={() => addTextPreset("gold-luxury")} className="gap-2 text-[11px] font-bold text-amber-600 dark:text-amber-400 cursor-pointer rounded-md">
-            <Sparkle20Filled className="w-4 h-4 text-amber-500" />
+          <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground select-none">قوالب استوديو فاخرة</div>
+          <DropdownMenuItem onClick={() => addTextPreset("gold-luxury")} className="gap-2.5 text-xs font-bold text-amber-600 dark:text-amber-400 cursor-pointer rounded-md">
+            <Sparkle20Filled className="w-4.5 h-4.5 text-amber-500" />
             <span>عنوان ذهبي ملكي فاخر</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("neon-glow")} className="gap-2 text-[11px] font-bold text-sky-600 dark:text-sky-400 cursor-pointer rounded-md">
-            <WeatherSunny20Filled className="w-4 h-4 text-sky-500" />
+          <DropdownMenuItem onClick={() => addTextPreset("neon-glow")} className="gap-2.5 text-xs font-bold text-sky-600 dark:text-sky-400 cursor-pointer rounded-md">
+            <WeatherSunny20Filled className="w-4.5 h-4.5 text-sky-500" />
             <span>توهج نيون مضيء ★</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("stamp-circle")} className="gap-2 text-[11px] font-bold text-rose-600 dark:text-rose-400 cursor-pointer rounded-md">
-            <Record20Filled className="w-4 h-4 text-rose-500" />
+          <DropdownMenuItem onClick={() => addTextPreset("stamp-circle")} className="gap-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 cursor-pointer rounded-md">
+            <Record20Filled className="w-4.5 h-4.5 text-rose-500" />
             <span>ختم دائري رسمي ◯</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("3d-title")} className="gap-2 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer rounded-md">
-            <Layer20Filled className="w-4 h-4 text-indigo-500" />
+          <DropdownMenuItem onClick={() => addTextPreset("3d-title")} className="gap-2.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer rounded-md">
+            <Layer20Filled className="w-4.5 h-4.5 text-indigo-500" />
             <span>عنوان بارز ثلاثي الأبعاد 3D</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("badge")} className="gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 cursor-pointer rounded-md">
-            <Shield20Filled className="w-4 h-4 text-blue-500" />
+          <DropdownMenuItem onClick={() => addTextPreset("badge")} className="gap-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 cursor-pointer rounded-md">
+            <Shield20Filled className="w-4.5 h-4.5 text-blue-500" />
             <span>شارة هوية رقمية / شريط</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("photographer-tag")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <Camera20Filled className="w-4 h-4 text-purple-500" />
+          <DropdownMenuItem onClick={() => addTextPreset("photographer-tag")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <Camera20Filled className="w-4.5 h-4.5 text-purple-500" />
             <span>توقيع وتوثيق المصور 📷</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("caption-card")} className="gap-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer rounded-md">
-            <Tag20Filled className="w-4 h-4 text-emerald-500" />
+          <DropdownMenuItem onClick={() => addTextPreset("caption-card")} className="gap-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer rounded-md">
+            <Tag20Filled className="w-4.5 h-4.5 text-emerald-500" />
             <span>بطاقة تعريفية مع إطار 🏷️</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("studio-date")} className="gap-2 text-[11px] cursor-pointer rounded-md">
-            <CalendarLtr20Filled className="w-4 h-4 text-amber-500" />
+          <DropdownMenuItem onClick={() => addTextPreset("studio-date")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <CalendarLtr20Filled className="w-4.5 h-4.5 text-amber-500" />
             <span>توثيق التاريخ واليوم 📅</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -152,30 +152,30 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
                 variant="ghost"
                 size="sm"
                 disabled={mode === "collage"}
-                className="h-8 px-2.5 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-0.5"
+                className="h-8.5 px-3 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
                 aria-label="إضافة شكل"
               >
-                <Shapes20Filled className="w-4 h-4" />
-                <ChevronDown20Filled className="w-2.5 h-2.5 opacity-60" />
+                <Shapes20Filled className="w-4.5 h-4.5" />
+                <ChevronDown20Filled className="w-3 h-3 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
           </div>
         </TooltipBtn>
-        <DropdownMenuContent align="start" className="w-36 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
-          <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <Square20Filled className="w-3.5 h-3.5" />
+        <DropdownMenuContent align="start" className="w-40 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
+          <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <Square20Filled className="w-4 h-4 text-primary" />
             <span>مستطيل</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <Circle20Filled className="w-3.5 h-3.5" />
+          <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <Circle20Filled className="w-4 h-4 text-indigo-500" />
             <span>دائرة</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <Star20Filled className="w-3.5 h-3.5" />
+          <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <Star20Filled className="w-4 h-4 text-amber-500" />
             <span>نجمة</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <LineHorizontal120Filled className="w-3.5 h-3.5" />
+          <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <LineHorizontal120Filled className="w-4 h-4 text-rose-500" />
             <span>خط</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -485,9 +485,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             }
           }}
           aria-label="تكرار"
-          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <Copy20Regular className="w-4 h-4" />
+          <Copy20Regular className="w-4.5 h-4.5" />
         </Button>
       </TooltipBtn>
 
@@ -506,9 +506,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             size="sm"
             onClick={groupSelectedElements}
             aria-label="تجميع"
-            className="h-8 px-2.5 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
+            className="h-8.5 px-3 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
           >
-            <Link20Filled className="w-4 h-4" />
+            <Link20Filled className="w-4.5 h-4.5" />
           </Button>
         </TooltipBtn>
       )}
@@ -520,9 +520,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             size="sm"
             onClick={ungroupSelectedElements}
             aria-label="فك التجميع"
-            className="h-8 px-2.5 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
+            className="h-8.5 px-3 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
           >
-            <LinkDismiss20Filled className="w-4 h-4" />
+            <LinkDismiss20Filled className="w-4.5 h-4.5" />
           </Button>
         </TooltipBtn>
       )}
@@ -535,24 +535,24 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1" 
+            className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1" 
             aria-label="محاذاة"
           >
-            <AlignCenterHorizontal20Filled className="w-4 h-4" />
-            <ChevronDown20Filled className="w-2.5 h-2.5 opacity-60" />
+            <AlignCenterHorizontal20Filled className="w-4.5 h-4.5" />
+            <ChevronDown20Filled className="w-3 h-3 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-36 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
-          <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <AlignLeft20Filled className="w-3.5 h-3.5" />
+        <DropdownMenuContent align="start" className="w-40 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
+          <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <AlignLeft20Filled className="w-4 h-4 text-primary" />
             <span>محاذاة لليسار</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <AlignCenterHorizontal20Filled className="w-3.5 h-3.5" />
+          <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <AlignCenterHorizontal20Filled className="w-4 h-4 text-indigo-500" />
             <span>توسيط أفقي</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2 text-xs cursor-pointer rounded-md">
-            <AlignRight20Filled className="w-3.5 h-3.5" />
+          <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2.5 text-xs cursor-pointer rounded-md">
+            <AlignRight20Filled className="w-4 h-4 text-amber-500" />
             <span>محاذاة لليمين</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -576,9 +576,9 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             }
           }}
           aria-label="حذف"
-          className="h-8 px-2.5 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
+          className="h-8.5 px-3 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
         >
-          <Delete20Regular className="w-4 h-4" />
+          <Delete20Regular className="w-4.5 h-4.5" />
         </Button>
       </TooltipBtn>
     </div>
@@ -600,9 +600,9 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           onClick={undo}
           disabled={!canUndo}
           aria-label="تراجع"
-          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <ArrowUndo20Regular className="w-4 h-4" />
+          <ArrowUndo20Regular className="w-4.5 h-4.5" />
         </Button>
       </TooltipBtn>
       <TooltipBtn content="إعادة (Ctrl+Y)">
@@ -612,9 +612,9 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           onClick={redo}
           disabled={!canRedo}
           aria-label="إعادة"
-          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <ArrowRedo20Regular className="w-4 h-4" />
+          <ArrowRedo20Regular className="w-4.5 h-4.5" />
         </Button>
       </TooltipBtn>
     </div>

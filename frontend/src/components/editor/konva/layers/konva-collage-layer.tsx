@@ -229,8 +229,8 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   onClick={() => handleSlotClick?.(slot.id)}
                 />
               ) : (
-                // Placeholder background & centered clean plus
-                <Group>
+                // Placeholder background & centered clean geometric plus
+                <Group onClick={() => handleSlotClick?.(slot.id)}>
                   <Rect
                     x={0}
                     y={0}
@@ -240,20 +240,28 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                     stroke="#e2e8f0"
                     strokeWidth={1}
                     cornerRadius={radius}
-                    onClick={() => handleSlotClick?.(slot.id)}
                   />
-                  <Text
-                    text="+"
-                    fontSize={Math.round(Math.min(32, Math.max(16, Math.min(width, height) * 0.25)))}
-                    fontFamily="Cairo, sans-serif"
-                    fontStyle="bold"
-                    fill={slotPlaceholderText()}
-                    x={0}
-                    y={height / 2 - Math.round(Math.min(32, Math.max(16, Math.min(width, height) * 0.25))) / 2 - 2}
-                    width={width}
-                    align="center"
-                    listening={false}
-                  />
+                  {(() => {
+                    const plusSize = Math.max(8, Math.min(20, Math.min(width, height) * 0.22));
+                    const cx = width / 2;
+                    const cy = height / 2;
+                    return (
+                      <Group listening={false} opacity={0.7}>
+                        <Line
+                          points={[cx - plusSize / 2, cy, cx + plusSize / 2, cy]}
+                          stroke={slotPlaceholderText()}
+                          strokeWidth={1.5}
+                          lineCap="round"
+                        />
+                        <Line
+                          points={[cx, cy - plusSize / 2, cx, cy + plusSize / 2]}
+                          stroke={slotPlaceholderText()}
+                          strokeWidth={1.5}
+                          lineCap="round"
+                        />
+                      </Group>
+                    );
+                  })()}
                 </Group>
               )}
             </Group>

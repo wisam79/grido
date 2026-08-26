@@ -1,4 +1,4 @@
-import { OpenFile, OpenMultipleFiles } from "../../../wailsjs/go/main/App";
+import { OpenFile, OpenMultipleFiles, OpenDirectoryDialog } from "../../../wailsjs/go/main/App";
 import { wailsIsDesktop } from "../wails-env";
 
 /**
@@ -60,3 +60,59 @@ export async function openImageFileDialog(multiple = false): Promise<string[]> {
     input.click();
   });
 }
+
+/**
+ * فتح نافذة اختيار مجلد كامل واستيراد كافة الصور الموجودة داخله
+ */
+export async function openDirectoryImageDialog(): Promise<string[]> {
+  const isWailsDesktop = wailsIsDesktop();
+
+  if (isWailsDesktop) {
+    try {
+      if (typeof OpenDirectoryDialog === "function") {
+        const res = await OpenDirectoryDialog();
+        return Array.isArray(res) ? res : [];
+      }
+    } catch (err) {
+      console.error("Wails native directory dialog error:", err);
+      return [];
+    }
+    return [];
+  }
+
+  // بيئة المتصفح العادي (Browser Mode Directory Fallback)
+  return new Promise<string[]>((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    (input as any).webkitdirectory = true;
+    (input as any).directory = true;
+    input.multiple = true;
+
+    input.onchange = async () => {
+      const files = Array.from(input.files || []).filter((f) => f.type.startsWith("image/"));
+      if (files.length === 0) {
+        resolve([]);
+        return;
+      }
+      const dataUrls: string[] = [];
+      for (const file of files) {
+        try {
+          const dataUrl = await new Promise<string>((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => res(reader.result as string);
+            reader.onerror = rej;
+            reader.readAsDataURL(file);
+          });
+          dataUrls.push(dataUrl);
+        } catch (e) {
+          console.error("Failed to read directory file:", e);
+        }
+      }
+      resolve(dataUrls);
+    };
+
+    input.oncancel = () => resolve([]);
+    input.click();
+  });
+}
+

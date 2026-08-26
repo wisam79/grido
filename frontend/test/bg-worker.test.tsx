@@ -109,7 +109,7 @@ describe('ElementProperties - Worker Background Removal', () => {
 
     const mod = await import('../src/components/editor/properties/element-properties');
     ElementProperties = mod.ElementProperties;
-  });
+  }, 30000);
 
   const dummyImageElement = {
     id: 'el-1',

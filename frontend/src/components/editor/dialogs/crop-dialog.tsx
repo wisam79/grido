@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { Cropper, ReactCropperElement } from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import {
@@ -241,21 +242,21 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                 </Label>
                 <span className="text-[10px] font-mono font-bold text-primary">{straightenAngle > 0 ? `+${straightenAngle}°` : `${straightenAngle}°`}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min="-45"
-                  max="45"
-                  step="0.5"
-                  value={straightenAngle}
-                  onChange={(e) => handleStraightenChange(parseFloat(e.target.value))}
-                  className="w-full accent-primary cursor-pointer h-1.5 bg-muted rounded-lg"
-                />
+              <div className="flex items-center gap-2.5">
+                <div className="flex-1 py-1">
+                  <Slider
+                    min={-45}
+                    max={45}
+                    step={0.5}
+                    value={[straightenAngle]}
+                    onValueChange={(val) => handleStraightenChange(val[0])}
+                  />
+                </div>
                 {straightenAngle !== 0 && (
                   <button
                     type="button"
                     onClick={() => handleStraightenChange(0)}
-                    className="text-[10px] text-muted-foreground hover:text-primary underline shrink-0 cursor-pointer"
+                    className="text-[10px] text-muted-foreground hover:text-primary underline shrink-0 cursor-pointer font-semibold"
                   >
                     تصفير
                   </button>

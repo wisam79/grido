@@ -294,7 +294,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-        <DialogContent className="sm:max-w-[500px]" dir="rtl">
+        <DialogContent className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-xl rounded-2xl p-5 font-cairo fluent-specular" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary font-cairo">
               <Grid20Filled className="w-5 h-5" />

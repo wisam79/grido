@@ -275,3 +275,39 @@ func (s *MediaService) SaveImageFromBase64(base64Data string) (string, error) {
 
 	return "/local-image/" + newName, nil
 }
+
+func (s *MediaService) ProcessDirectoryImages(dirPath string) ([]string, error) {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, fmt.Errorf("read dir: %w", err)
+	}
+
+	validExts := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".webp": true,
+		".bmp":  true,
+		".gif":  true,
+		".tiff": true,
+		".tif":  true,
+	}
+
+	var imagePaths []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(entry.Name()))
+		if validExts[ext] {
+			imagePaths = append(imagePaths, filepath.Join(dirPath, entry.Name()))
+		}
+	}
+
+	if len(imagePaths) == 0 {
+		return []string{}, nil
+	}
+
+	return s.ProcessMultipleOpenedFiles(imagePaths)
+}
+

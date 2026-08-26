@@ -124,7 +124,7 @@ export function CollageSettings() {
 
           {/* Frame Color Row — shown only when stroke is active */}
           {collageStrokeWidth > 0 && (
-            <div className="flex items-center justify-between gap-2 border-t border-border/20 pt-2 animate-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center justify-between gap-2 border-t border-border/40 pt-2.5 animate-in slide-in-from-top-2 duration-200">
               <div className="flex items-center gap-1.5">
                 {[
                   { hex: "#e10e0e", label: "أحمر" },
@@ -143,8 +143,8 @@ export function CollageSettings() {
                       onClick={() => { setCollageStrokeColor(hex); commitColorLater(); }}
                       title={label}
                       className={cn(
-                        "w-5.5 h-5.5 rounded-full border border-black/15 dark:border-white/20 transition-all cursor-pointer hover:scale-110 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
+                        "w-5.5 h-5.5 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-115 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-xs"
                       )}
                       style={{ backgroundColor: hex }}
                     />
@@ -152,19 +152,25 @@ export function CollageSettings() {
                 })}
               </div>
 
-              <div className="flex items-center gap-1.5 bg-background border border-border/60 hover:border-primary/45 rounded-md px-2 w-28 h-8 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background">
+              <div className="flex items-center gap-1.5 bg-background border border-border/80 hover:border-primary/60 rounded-md px-2 w-28 h-8 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs">
                 <input
                   type="text"
                   value={collageStrokeColor}
                   onChange={(e) => { setCollageStrokeColor(e.target.value); commitColorLater(); }}
                   className="w-full bg-transparent border-0 p-0 text-[11px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-bold"
                 />
-                <input
-                  type="color"
-                  value={collageStrokeColor}
-                  onChange={(e) => { setCollageStrokeColor(e.target.value); commitColorLater(); }}
-                  className="w-3.5 h-3.5 rounded-full border border-border/25 cursor-pointer p-0 bg-transparent shrink-0"
-                />
+                <label className="relative w-4 h-4 rounded-full border border-border cursor-pointer overflow-hidden shrink-0 shadow-2xs transition-transform hover:scale-110">
+                  <input
+                    type="color"
+                    value={collageStrokeColor}
+                    onChange={(e) => { setCollageStrokeColor(e.target.value); commitColorLater(); }}
+                    className="absolute -inset-2 w-8 h-8 opacity-0 cursor-pointer"
+                  />
+                  <div
+                    className="w-full h-full rounded-full"
+                    style={{ backgroundColor: collageStrokeColor }}
+                  />
+                </label>
               </div>
             </div>
           )}

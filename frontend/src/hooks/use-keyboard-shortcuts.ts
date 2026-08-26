@@ -142,6 +142,12 @@ export function useKeyboardShortcuts() {
     window.dispatchEvent(new CustomEvent("grido:open-file-dialog"));
   });
 
+  // Batch / Multi Insert: Ctrl+Shift+O or Cmd+Shift+O
+  useHotkeys("mod+shift+o", (e) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("grido:open-batch-insert-dialog"));
+  });
+
   // Toggle Right Sidebar (Templates / Layers): Ctrl+B or Cmd+B
   useHotkeys("mod+b", (e) => {
     e.preventDefault();

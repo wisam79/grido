@@ -8,6 +8,7 @@ import {
   ImageAdd20Filled,
   FolderOpen20Filled,
   Broom20Filled,
+  ImageMultiple20Filled,
 } from "@fluentui/react-icons";
 import {
   AlertDialog,
@@ -20,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ProjectsDialog } from "../dialogs/projects-dialog";
+import { BatchInsertDialog } from "../dialogs/batch-insert-dialog";
 import { ClearAutoSave, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { wailsIsDesktop } from "@/lib/wails-env";
@@ -48,12 +50,14 @@ export function ToolbarFileOps() {
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
+  const [isBatchInsertOpen, setIsBatchInsertOpen] = useState(false);
 
   const {
     mode,
     slots,
     setSlotImage,
     addImageElement,
+    addImageElementsBatch,
     selectedId,
   } = useEditorStore(
     useShallow((state) => ({
@@ -61,6 +65,7 @@ export function ToolbarFileOps() {
       slots: state.slots,
       setSlotImage: state.setSlotImage,
       addImageElement: state.addImageElement,
+      addImageElementsBatch: state.addImageElementsBatch,
       template: state.template,
       selectedId: state.selectedId,
     }))
@@ -68,8 +73,13 @@ export function ToolbarFileOps() {
 
   useEffect(() => {
     const openProjects = () => setIsProjectsOpen(true);
+    const openBatch = () => setIsBatchInsertOpen(true);
     window.addEventListener("grido:open-projects-dialog", openProjects);
-    return () => window.removeEventListener("grido:open-projects-dialog", openProjects);
+    window.addEventListener("grido:open-batch-insert-dialog", openBatch);
+    return () => {
+      window.removeEventListener("grido:open-projects-dialog", openProjects);
+      window.removeEventListener("grido:open-batch-insert-dialog", openBatch);
+    };
   }, []);
 
   const handleOpenFile = async () => {
@@ -123,11 +133,12 @@ export function ToolbarFileOps() {
             toast.success(`تم إدراج ${filled} صورة في خلايا الكولاج`);
           }
         } else {
-          for (const b64 of b64s) {
-            let finalSrc = b64;
-            if (isWailsDesktop && b64.startsWith("data:image/")) {
+          // الوضع الحر: عند اختيار صورة واحدة تُدرج كالمعتاد، وعند اختيار أكثر من صورة تُدرج بتوزيع شبكي ذكي وخطوة تراجع واحدة
+          if (b64s.length === 1) {
+            let finalSrc = b64s[0];
+            if (isWailsDesktop && finalSrc.startsWith("data:image/")) {
               try {
-                const localPath = await SaveImageFromBase64(b64);
+                const localPath = await SaveImageFromBase64(finalSrc);
                 if (localPath) finalSrc = localPath;
               } catch (e) {
                 console.error("Failed to save image locally in single mode:", e);
@@ -135,8 +146,25 @@ export function ToolbarFileOps() {
             }
             const aspect = await resolveImageAspectRatio(finalSrc);
             addImageElement(finalSrc, aspect);
+            toast.success("تمت إضافة الصورة إلى مساحة العمل");
+          } else {
+            const items: { src: string; aspectRatio: number }[] = [];
+            for (const b64 of b64s) {
+              let finalSrc = b64;
+              if (isWailsDesktop && b64.startsWith("data:image/")) {
+                try {
+                  const localPath = await SaveImageFromBase64(b64);
+                  if (localPath) finalSrc = localPath;
+                } catch (e) {
+                  console.error("Failed to save image locally in batch mode:", e);
+                }
+              }
+              const aspect = await resolveImageAspectRatio(finalSrc);
+              items.push({ src: finalSrc, aspectRatio: aspect });
+            }
+            freshState.addImageElementsBatch(items);
+            toast.success(`تم إدراج وتوزيع ${items.length} صورة بنجاح`);
           }
-          toast.success(`تمت إضافة ${b64s.length} صورة إلى مساحة العمل`);
         }
       }
     } catch (e) {
@@ -169,7 +197,7 @@ export function ToolbarFileOps() {
 
   return (
     <>
-      <div className="flex items-center gap-0.5 bg-muted/50 border border-border/60 p-0.5 rounded-lg shadow-2xs">
+      <div className="flex items-center gap-1 bg-muted/50 border border-border/60 p-0.5 rounded-lg shadow-2xs">
         {/* إضافة صورة */}
         <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
           <Button
@@ -178,10 +206,25 @@ export function ToolbarFileOps() {
             onClick={handleOpenFile}
             aria-label="إضافة صورة جديدة"
             title="إضافة صورة جديدة"
-            className="h-8 px-2.5 gap-1.5 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none"
+            className="h-8.5 px-3 gap-2 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none"
           >
-            <ImageAdd20Filled className="w-4 h-4 text-primary" />
+            <ImageAdd20Filled className="w-4.5 h-4.5 text-primary" />
             <span>إضافة صورة</span>
+          </Button>
+        </TooltipBtn>
+
+        {/* إدراج دفعة صور ومعاملات */}
+        <TooltipBtn content="إدراج دفعة صور ومعاملات (Ctrl + Shift + O)">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsBatchInsertOpen(true)}
+            aria-label="إدراج دفعة صور ومعاملات"
+            title="إدراج دفعة صور ومعاملات"
+            className="h-8.5 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none"
+          >
+            <ImageMultiple20Filled className="w-4.5 h-4.5 text-indigo-500" />
+            <span className="hidden sm:inline font-semibold">دفعة صور</span>
           </Button>
         </TooltipBtn>
 
@@ -194,13 +237,16 @@ export function ToolbarFileOps() {
               onClick={() => setIsProjectsOpen(true)}
               aria-label="مكتبة المشاريع المحلية"
               title="مكتبة المشاريع المحلية"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer"
+              className="h-8.5 w-8.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer"
             >
-              <FolderOpen20Filled className="w-4 h-4" />
+              <FolderOpen20Filled className="w-4.5 h-4.5" />
             </Button>
           </TooltipBtn>
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} />
         </Suspense>
+
+        {/* نافذة الإدراج المتعدد الذكي */}
+        <BatchInsertDialog open={isBatchInsertOpen} onOpenChange={setIsBatchInsertOpen} />
       </div>
 
       {/* جديد / مسح مساحة العمل */}
@@ -210,9 +256,9 @@ export function ToolbarFileOps() {
           size="icon"
           onClick={handleClearCanvas}
           aria-label="جديد (مسح مساحة العمل)"
-          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer"
+          className="h-8.5 w-8.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer"
         >
-          <Broom20Filled className="w-4 h-4" />
+          <Broom20Filled className="w-4.5 h-4.5" />
         </Button>
       </TooltipBtn>
 

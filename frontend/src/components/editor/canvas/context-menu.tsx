@@ -639,7 +639,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => handleActionWithHistory(() => state.fillRowSlots(target.id!, slot.imageSrc!))}
                   >
-                    <SplitVertical20Filled className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <SplitHorizontal20Filled className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
                     <span className="truncate">تعبئة الصف الحالي</span>
                   </button>
 
@@ -649,7 +649,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     className="group w-full text-right px-2 py-1.5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 rounded-md flex items-center gap-2 transition-all duration-150 cursor-pointer outline-none text-xs font-semibold"
                     onClick={() => handleActionWithHistory(() => state.fillColumnSlots(target.id!, slot.imageSrc!))}
                   >
-                    <SplitHorizontal20Filled className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <SplitVertical20Filled className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
                     <span className="truncate">تعبئة العمود الحالي</span>
                   </button>
                 </div>

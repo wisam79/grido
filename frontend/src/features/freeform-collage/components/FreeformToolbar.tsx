@@ -291,6 +291,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
 
         <div className="w-[1px] h-4 bg-border/60 mx-1 shrink-0" />
 
+        {/* تقسيم إلى صفين (أعلى وأسفل) */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -300,12 +301,13 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onSplitVertical}
               disabled={!selectedSlotId}
             >
-              <SplitVertical20Filled className="w-3.5 h-3.5" />
+              <SplitHorizontal20Filled className="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تقسيم إلى صفين (أعلى وأسفل)</TooltipContent>
         </Tooltip>
 
+        {/* تقسيم إلى عمودين (يمين ويسار) */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -315,7 +317,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onSplitHorizontal}
               disabled={!selectedSlotId}
             >
-              <SplitHorizontal20Filled className="w-3.5 h-3.5" />
+              <SplitVertical20Filled className="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تقسيم إلى عمودين (يمين ويسار)</TooltipContent>

@@ -161,28 +161,28 @@ const STUDIO_FULL_SHEET_PRESETS = [
   {
     id: "collage-iq-national",
     title: "8 صور بطاقة وجواز",
-    spec: "35 × 45 مم",
+    spec: "35 × 45 mm",
     badge: "2×4",
     slots: 8,
   },
   {
     id: "collage-iq-civil",
     title: "8 صور أحوال وجنسية",
-    spec: "32 × 40 مم",
+    spec: "32 × 40 mm",
     badge: "2×4",
     slots: 8,
   },
   {
     id: "collage-iq-general",
     title: "4 صور معاملات عامة",
-    spec: "40 × 60 مم",
+    spec: "40 × 60 mm",
     badge: "2×2",
     slots: 4,
   },
   {
     id: "collage-iq-mixed",
     title: "طقم معاملات مختلط",
-    spec: "4 (35×45) + 2 (40×60)",
+    spec: "4 (35×45) + 2 (40×60) mm",
     badge: "طقم",
     slots: 6,
   },
@@ -207,28 +207,28 @@ const STUDIO_SINGLE_ROW_PRESETS = [
   {
     id: "collage-iq-national-row4",
     title: "4 صور جواز وبطاقة",
-    spec: "35 × 45 مم",
+    spec: "35 × 45 mm",
     badge: "1×4",
     slots: 4,
   },
   {
     id: "collage-iq-civil-row4",
     title: "4 صور أحوال وجنسية",
-    spec: "32 × 40 مم",
+    spec: "32 × 40 mm",
     badge: "1×4",
     slots: 4,
   },
   {
     id: "collage-iq-general-row2",
     title: "صورتان معاملات عامة",
-    spec: "40 × 60 مم",
+    spec: "40 × 60 mm",
     badge: "1×2",
     slots: 2,
   },
   {
     id: "collage-iq-pension-row4",
     title: "4 صور متقاعدين",
-    spec: "30 × 40 مم",
+    spec: "30 × 40 mm",
     badge: "1×4",
     slots: 4,
   },
@@ -858,20 +858,21 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       {activeTab === "custom" && (
         <div className="space-y-3 animate-in fade-in duration-200">
           <FluentSection
-            icon={<Grid20Filled className="w-3.5 h-3.5 text-primary" />}
+            icon={<Grid20Filled className="w-4 h-4 text-primary" />}
             title="تقسيم الصفوف والأعمدة"
             action={
-              <span className="text-[9.5px] font-mono font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/40" dir="ltr">
-                {rows * cols} صور ({rows}×{cols})
-              </span>
+              <div className="text-xs font-bold text-muted-foreground bg-muted/60 px-2.5 py-0.5 rounded-md border border-border/40 flex items-center gap-1.5">
+                <span>{rows * cols} صورة</span>
+                <span className="font-mono text-muted-foreground/75" dir="ltr">({rows}×{cols})</span>
+              </div>
             }
           >
             {/* عدادات الصفوف والأعمدة */}
             <div className="grid grid-cols-2 gap-2">
               {/* Rows */}
               <div className="flex flex-col items-center gap-1.5 bg-background/70 border border-border/70 hover:border-primary/40 rounded-xl p-2.5 transition-colors shadow-2xs">
-                <span className="flex items-center gap-1 text-[10.5px] font-bold text-muted-foreground select-none">
-                  <SplitVertical20Filled className="w-3.5 h-3.5 text-primary/80" />
+                <span className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground select-none">
+                  <SplitHorizontal20Filled className="w-3.5 h-3.5 text-primary/80" />
                   الصفوف (أفقي)
                 </span>
                 <div className="flex items-center justify-between w-full gap-1" dir="ltr">
@@ -883,9 +884,10 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                       setRows(r);
                       applyCustomCollage(r, cols);
                     }}
+                    title={rows <= 1 ? "الحد الأدنى" : "تقليل صف"}
                     className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   >
-                    <Subtract20Filled className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <Subtract20Filled className="w-4 h-4 stroke-[2.5]" />
                   </button>
                   <span className="font-mono text-base font-black text-foreground w-6 text-center leading-none select-none">
                     {rows}
@@ -898,17 +900,18 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                       setRows(r);
                       applyCustomCollage(r, cols);
                     }}
+                    title={rows >= maxRows ? `الحد الأقصى للورقة (${maxRows})` : "إضافة صف"}
                     className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   >
-                    <Add20Filled className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <Add20Filled className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>
               </div>
 
               {/* Columns */}
               <div className="flex flex-col items-center gap-1.5 bg-background/70 border border-border/70 hover:border-primary/40 rounded-xl p-2.5 transition-colors shadow-2xs">
-                <span className="flex items-center gap-1 text-[10.5px] font-bold text-muted-foreground select-none">
-                  <SplitHorizontal20Filled className="w-3.5 h-3.5 text-primary/80" />
+                <span className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground select-none">
+                  <SplitVertical20Filled className="w-3.5 h-3.5 text-primary/80" />
                   الأعمدة (عمودي)
                 </span>
                 <div className="flex items-center justify-between w-full gap-1" dir="ltr">
@@ -920,9 +923,10 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                       setCols(c);
                       applyCustomCollage(rows, c);
                     }}
+                    title={cols <= 1 ? "الحد الأدنى" : "تقليل عمود"}
                     className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   >
-                    <Subtract20Filled className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <Subtract20Filled className="w-4 h-4 stroke-[2.5]" />
                   </button>
                   <span className="font-mono text-base font-black text-foreground w-6 text-center leading-none select-none">
                     {cols}
@@ -935,9 +939,10 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                       setCols(c);
                       applyCustomCollage(rows, c);
                     }}
+                    title={cols >= maxCols ? `الحد الأقصى للورقة (${maxCols})` : "إضافة عمود"}
                     className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   >
-                    <Add20Filled className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <Add20Filled className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>
               </div>
@@ -945,15 +950,15 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
             {/* أبعاد ومقاسات صور الوثائق */}
             <div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
-              <span className="text-[10.5px] font-bold text-muted-foreground">أبعاد ونوع صور الوثائق</span>
+              <span className="text-[11px] font-bold text-muted-foreground">أبعاد ونوع صور الوثائق</span>
               <div className="grid grid-cols-2 gap-1.5">
                 {([
                   { value: "stretch", label: "تمدد حر", sub: "ملء الخلية" },
-                  { value: "iq-national-id", label: "بطاقة وطنية", sub: "35 × 45 مم" },
-                  { value: "iq-civil-id", label: "هوية أحوال", sub: "32 × 40 مم" },
-                  { value: "iq-general-id", label: "هوية عامة", sub: "40 × 60 مم" },
-                  { value: "iq-transactions", label: "متقاعدون", sub: "30 × 40 مم" },
-                  { value: "visa", label: "فيزا سفر", sub: "50 × 50 مم" },
+                  { value: "iq-national-id", label: "بطاقة وطنية", sub: "35 × 45 mm" },
+                  { value: "iq-civil-id", label: "هوية أحوال", sub: "32 × 40 mm" },
+                  { value: "iq-general-id", label: "هوية عامة", sub: "40 × 60 mm" },
+                  { value: "iq-transactions", label: "متقاعدون", sub: "30 × 40 mm" },
+                  { value: "visa", label: "فيزا سفر", sub: "50 × 50 mm" },
                 ] as const).map((opt) => {
                   const isActive = photoType === opt.value;
                   return (
@@ -967,21 +972,21 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                         applyCustomCollage(rows, cols, opt.value);
                       }}
                       className={cn(
-                        "relative flex items-center gap-2 p-2 rounded-md border text-right transition-all cursor-pointer active:scale-[0.98] select-none h-10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                        "relative flex items-center gap-2 p-2 rounded-xl border text-right transition-all cursor-pointer active:scale-[0.98] select-none h-11.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                         isActive
                           ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/30"
                           : "bg-background/80 border-border/60 hover:bg-muted/40 hover:border-primary/40 text-foreground"
                       )}
                     >
-                      <div className="shrink-0 flex items-center justify-center w-5 h-5 rounded-md bg-muted/40 border border-border/40">
+                      <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-md bg-muted/40 border border-border/40">
                         <DocumentPresetGraphic type={opt.value} active={isActive} />
                       </div>
 
                       <div className="flex flex-col items-start min-w-0 flex-1">
-                        <span className="text-[11.5px] font-bold leading-tight truncate w-full">{opt.label}</span>
+                        <span className="text-xs font-bold leading-tight truncate w-full">{opt.label}</span>
                         <span
                           className={cn(
-                            "text-[9.5px] font-mono leading-none mt-0.5",
+                            "text-[10px] font-mono leading-none mt-0.5",
                             isActive ? "text-primary font-bold" : "text-muted-foreground"
                           )}
                           dir="ltr"
@@ -995,94 +1000,104 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               </div>
             </div>
 
-            {/* لوحة محاذاة الشبكة على الورقة (Figma / Adobe Interactive Anchor Matrix) */}
+            {/* لوحة محاذاة موضع الصور على الورقة (Sleek Compact Anchor Widget) */}
             {photoType !== "stretch" && (
-              <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-background/50 border border-border/60 shadow-2xs animate-in fade-in duration-200">
-                {/* الرأس: العنوان + اسم المحاذاة الحالية */}
+              <div className="p-3 rounded-xl bg-background/50 border border-border/80 shadow-2xs space-y-2.5 fluent-specular animate-in fade-in duration-200">
+                {/* الرأس: العنوان + شارة المحاذاة */}
                 <div className="flex items-center justify-between">
-                  <span className="text-[10.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                    <Target20Filled className="w-3.5 h-3.5 text-primary" />
-                    <span>محاذاة الشبكة على الورقة</span>
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Target20Filled className="w-4 h-4 text-primary" />
+                    <span>موضع الصور على الورقة</span>
                   </span>
-                  <span className="text-[9px] text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
+                  <span className="text-[10px] text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
                     {ALIGNMENT_LABELS[gridAlign] || "أعلى اليسار"}
                   </span>
                 </div>
 
-                {/* زران سريعان لأكثر الإجراءات طلباً في الاستوديو */}
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGridAlign("top-left");
-                      applyCustomCollage(rows, cols, photoType, "top-left");
-                    }}
-                    className={cn(
-                      "h-7 px-2 rounded-md text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all border cursor-pointer select-none",
-                      gridAlign === "top-left"
-                        ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                        : "bg-muted/40 hover:bg-muted text-muted-foreground border-border/60 hover:border-primary/30"
-                    )}
+                {/* الحاوية المدمجة: مصفوفة الارتكاز المصغرة + أزرار التحديد السريع */}
+                <div className="flex items-center gap-2.5 bg-card/90 p-2 rounded-lg border border-border/60">
+                  {/* شبكة الارتكاز التفاعلية المصغرة (Figma / InDesign Anchor Widget) */}
+                  <div
+                    className="w-14 h-16 rounded-md border border-border bg-background p-1 grid grid-cols-3 grid-rows-3 gap-0.5 shrink-0 shadow-2xs select-none"
+                    dir="ltr"
                   >
-                    <ExpandUpLeft20Filled className="w-3 h-3" />
-                    <span>أعلى اليسار (للقص)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGridAlign("center");
-                      applyCustomCollage(rows, cols, photoType, "center");
-                    }}
-                    className={cn(
-                      "h-7 px-2 rounded-md text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all border cursor-pointer select-none",
-                      gridAlign === "center"
-                        ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                        : "bg-muted/40 hover:bg-muted text-muted-foreground border-border/60 hover:border-primary/30"
-                    )}
-                  >
-                    <Target20Filled className="w-3 h-3 stroke-[2.5]" />
-                    <span>توسيط في المنتصف</span>
-                  </button>
-                </div>
-
-                {/* الورقة المصغرة ونقاط الارتكاز التفاعلية (Interactive Anchor Pad) */}
-                <div
-                  className="w-full max-w-[170px] h-20 mx-auto rounded-lg border border-border/70 bg-card/90 p-1.5 grid grid-cols-3 grid-rows-3 gap-1 shadow-2xs select-none"
-                  dir="ltr"
-                >
-                  {ALIGNMENT_MATRIX.map((row) =>
-                    row.map((alignId) => {
-                      const isActive = gridAlign === alignId;
-                      return (
-                        <button
-                          key={alignId}
-                          type="button"
-                          aria-label={ALIGNMENT_LABELS[alignId]}
-                          aria-pressed={isActive}
-                          onClick={() => {
-                            setGridAlign(alignId);
-                            applyCustomCollage(rows, cols, photoType, alignId);
-                          }}
-                          title={ALIGNMENT_LABELS[alignId]}
-                          className={cn(
-                            "flex items-center justify-center rounded-md transition-all cursor-pointer relative group",
-                            isActive
-                              ? "bg-primary/20 border border-primary/40 ring-1 ring-primary/30"
-                              : "hover:bg-muted/60"
-                          )}
-                        >
-                          <div
+                    {ALIGNMENT_MATRIX.map((row) =>
+                      row.map((alignId) => {
+                        const isActive = gridAlign === alignId;
+                        return (
+                          <button
+                            key={alignId}
+                            type="button"
+                            aria-label={ALIGNMENT_LABELS[alignId]}
+                            aria-pressed={isActive}
+                            onClick={() => {
+                              setGridAlign(alignId);
+                              applyCustomCollage(rows, cols, photoType, alignId);
+                            }}
+                            title={ALIGNMENT_LABELS[alignId]}
                             className={cn(
-                              "rounded-full transition-all duration-150",
+                              "flex items-center justify-center rounded-xs transition-all cursor-pointer group",
                               isActive
-                                ? "w-2.5 h-2.5 bg-primary ring-2 ring-primary/40 shadow-xs"
-                                : "w-1.5 h-1.5 bg-muted-foreground/40 group-hover:bg-primary/70 group-hover:scale-125"
+                                ? "bg-primary/20 ring-1 ring-primary/40"
+                                : "hover:bg-muted/70"
                             )}
-                          />
-                        </button>
-                      );
-                    })
-                  )}
+                          >
+                            <div
+                              className={cn(
+                                "rounded-full transition-all duration-150",
+                                isActive
+                                  ? "w-2.5 h-2.5 bg-primary shadow-xs ring-2 ring-primary/30"
+                                  : "w-1 h-1 bg-muted-foreground/40 group-hover:bg-primary/70 group-hover:scale-125"
+                              )}
+                            />
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* زرا الإجراءات الأكثر استخداماً في الاستوديو */}
+                  <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGridAlign("top-left");
+                        applyCustomCollage(rows, cols, photoType, "top-left");
+                      }}
+                      className={cn(
+                        "h-7 px-2.5 rounded-md text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer select-none",
+                        gridAlign === "top-left"
+                          ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
+                          : "bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground border-border/50"
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5 truncate">
+                        <ExpandUpLeft20Filled className="w-3.5 h-3.5 shrink-0" />
+                        <span>أعلى اليسار</span>
+                      </span>
+                      <span className={cn("text-[9.5px] shrink-0", gridAlign === "top-left" ? "text-primary-foreground/85" : "text-muted-foreground/80")}>قص سريع</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGridAlign("center");
+                        applyCustomCollage(rows, cols, photoType, "center");
+                      }}
+                      className={cn(
+                        "h-7 px-2.5 rounded-md text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer select-none",
+                        gridAlign === "center"
+                          ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
+                          : "bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground border-border/50"
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5 truncate">
+                        <Target20Filled className="w-3.5 h-3.5 shrink-0" />
+                        <span>توسيط</span>
+                      </span>
+                      <span className={cn("text-[9.5px] shrink-0", gridAlign === "center" ? "text-primary-foreground/85" : "text-muted-foreground/80")}>متوازن</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1093,15 +1108,10 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                 <button
                   type="button"
                   onClick={() => applyCustomCollage(rows, cols)}
-                  className={cn(
-                    "flex-1 h-8 text-xs font-bold rounded-md transition-all border active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                    isCustomActive
-                      ? "bg-primary/10 text-primary border-primary/40 hover:bg-primary/20"
-                      : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
-                  )}
+                  className="flex-1 h-9 text-xs font-bold rounded-md transition-all border active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 shadow-xs bg-primary text-primary-foreground border-primary hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
-                  <Grid20Filled className="w-3.5 h-3.5" />
-                  {isCustomActive ? "تحديث الشبكة الحالية" : "تطبيق التقسيم"}
+                  <Grid20Filled className="w-4 h-4" />
+                  <span>{isCustomActive ? "تحديث وتطبيق الشبكة" : "تطبيق التقسيم"}</span>
                 </button>
                 <button
                   type="button"
@@ -1109,10 +1119,10 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
                     setSaveName(`كولاج مخصص ${rows}×${cols}`);
                     setShowSaveForm(true);
                   }}
-                  className="w-8 h-8 text-xs font-bold rounded-md border border-border/80 bg-background hover:bg-accent hover:border-primary/40 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center active:scale-[0.98] transition-all shadow-2xs shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="w-9 h-9 text-xs font-bold rounded-md border border-border/80 bg-background hover:bg-accent hover:border-primary/40 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center active:scale-[0.98] transition-all shadow-2xs shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   title="حفظ كقالب جديد في مكتبتي"
                 >
-                  <Folder20Filled className="w-3.5 h-3.5" />
+                  <Folder20Filled className="w-4 h-4" />
                 </button>
               </div>
             ) : (

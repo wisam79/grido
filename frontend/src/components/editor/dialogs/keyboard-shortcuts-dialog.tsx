@@ -64,6 +64,8 @@ export function KeyboardShortcutsDialog() {
     {
       title: "الملف والتصدير والطباعة",
       items: [
+        { label: "إدراج صورة جديدة", keys: ["Ctrl", "O"] },
+        { label: "إدراج دفعة صور ومعاملات", keys: ["Ctrl", "Shift", "O"] },
         { label: "حفظ المشروع", keys: ["Ctrl", "S"] },
         { label: "تصدير صورة", keys: ["Ctrl", "E"] },
         { label: "طباعة المستند", keys: ["Ctrl", "P"] },

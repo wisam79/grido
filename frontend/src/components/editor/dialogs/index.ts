@@ -5,3 +5,4 @@ export * from "./keyboard-shortcuts-dialog";
 export * from "./print-dialog";
 export * from "./projects-dialog";
 export * from "./refine-bg-dialog";
+export * from "./batch-insert-dialog";

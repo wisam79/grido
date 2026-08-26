@@ -207,7 +207,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => fillRowSlots(selectedSlot.id, selectedSlot.imageSrc!)}
                       className="h-7 px-2 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                     >
-                      <SplitVertical20Filled className="w-3.5 h-3.5" />
+                      <SplitHorizontal20Filled className="w-3.5 h-3.5" />
                       <span>الصف</span>
                     </Button>
                   </TooltipTrigger>
@@ -222,7 +222,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => fillColumnSlots(selectedSlot.id, selectedSlot.imageSrc!)}
                       className="h-7 px-2 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                     >
-                      <SplitHorizontal20Filled className="w-3.5 h-3.5" />
+                      <SplitVertical20Filled className="w-3.5 h-3.5" />
                       <span>العمود</span>
                     </Button>
                   </TooltipTrigger>

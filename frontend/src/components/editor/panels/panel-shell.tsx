@@ -45,16 +45,16 @@ export const PanelShell = React.memo(function PanelShell({
   return (
     <div className={cn("flex flex-col h-full min-h-0", className)}>
       {/* الرأس */}
-      <div className="shrink-0 flex items-center gap-2 px-3 h-12 select-none">
+      <div className="shrink-0 flex items-center gap-2.5 px-3.5 h-12 select-none">
         <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0 flex items-center justify-center shadow-2xs fluent-specular">
           {icon}
         </div>
         <div className="min-w-0 flex-1 leading-tight">
-          <div className="text-[13px] font-bold text-foreground truncate">
+          <div className="text-sm font-bold text-foreground truncate">
             {title}
           </div>
           {subtitle && (
-            <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+            <div className="text-xs text-muted-foreground truncate mt-0.5">
               {subtitle}
             </div>
           )}
@@ -70,7 +70,7 @@ export const PanelShell = React.memo(function PanelShell({
             aria-label={collapseTitle}
             className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
-            <PanelLeftContract20Regular className="w-4 h-4" />
+            <PanelLeftContract20Regular className="w-4.5 h-4.5" />
           </button>
         )}
       </div>

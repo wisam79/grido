@@ -104,19 +104,19 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
     >
       {/* 1. الجانب الأيمن: شارة معلومات مساحة العمل (Icon + Dimensions) */}
       <div className="flex items-center gap-2 shrink-0">
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-card border border-border text-muted-foreground font-semibold">
-          <Document20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span className="text-foreground font-bold text-[11px]">
+        <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-card border border-border text-muted-foreground font-semibold shadow-2xs">
+          <Document20Filled className="w-4 h-4 text-primary shrink-0" />
+          <span className="text-foreground font-bold text-xs">
             {activePaper ? activePaper.name.split(" (")[0] : "مخصص"}
           </span>
-          <span className="text-[10px] text-muted-foreground font-mono" dir="ltr">
+          <span className="text-[11px] text-muted-foreground font-mono font-medium" dir="ltr">
             ({Math.round((canvasWidth / currentDpi) * 25.4)}×{Math.round((canvasHeight / currentDpi) * 25.4)} mm)
           </span>
         </div>
       </div>
 
       {/* 2. الوسط: أدوات الرؤية والمحاذاة الذكية (Icon-Driven UI بالكامل) */}
-      <div className="flex items-center gap-0.5 bg-card p-0.5 rounded-lg border border-border shadow-2xs">
+      <div className="flex items-center gap-1 bg-card p-0.5 rounded-lg border border-border shadow-2xs">
         {/* زر المساطر */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -125,16 +125,16 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               onClick={() => setShowRuler(!showRuler)}
               aria-label="المساطر (Ctrl + R)"
               className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                "w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
                 showRuler
                   ? "bg-primary text-primary-foreground shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              <Ruler20Filled className="w-3.5 h-3.5" />
+              <Ruler20Filled className="w-4.5 h-4.5" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
             {showRuler ? "إخفاء المساطر (Ctrl + R)" : "إظهار المساطر (Ctrl + R)"}
           </TooltipContent>
         </Tooltip>
@@ -147,16 +147,16 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               onClick={() => setShowGrid(!showGrid)}
               aria-label="الشبكة (Ctrl + ')"
               className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                "w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
                 showGrid
                   ? "bg-primary text-primary-foreground shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              <Grid20Filled className="w-3.5 h-3.5" />
+              <Grid20Filled className="w-4.5 h-4.5" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
             {showGrid ? "إخفاء شبكة المحاذاة (Ctrl + ')" : "إظهار شبكة المحاذاة (Ctrl + ')"}
           </TooltipContent>
         </Tooltip>
@@ -169,16 +169,16 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               onClick={() => setSnapToGrid(!snapToGrid)}
               aria-label="المغناطيس والمحاذاة الذكية"
               className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                "w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
                 snapToGrid
                   ? "bg-primary text-primary-foreground shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              <Magnet className="w-3.5 h-3.5" />
+              <Magnet className="w-4.5 h-4.5" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
             {snapToGrid ? "إيقاف الالتصاق بالمغناطيس" : "تفعيل الالتصاق بالشبكة والمحاذاة الذكية"}
           </TooltipContent>
         </Tooltip>
@@ -192,36 +192,36 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={() => setCollageShowCutLines(!collageShowCutLines)}
                 aria-label="خطوط القص"
                 className={cn(
-                  "w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                  "w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
                   collageShowCutLines
                     ? "bg-primary text-primary-foreground shadow-xs font-bold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )}
               >
-                <Cut20Filled className="w-3.5 h-3.5" />
+                <Cut20Filled className="w-4.5 h-4.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
               {collageShowCutLines ? "إخفاء خطوط وعلامات قص الصور" : "إظهار خطوط وعلامات قص الصور للطباعة"}
             </TooltipContent>
           </Tooltip>
         )}
 
-        <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
+        <Separator orientation="vertical" className="h-5 bg-border/60 mx-0.5" />
 
-        {/* زر تدوير وتبديل اتجاه الورقة (أيقونة واحدة نظيفة) */}
+        {/* زر تدوير وتبديل اتجاه الورقة */}
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               type="button"
               onClick={handleToggleOrientation}
               aria-label="تبديل اتجاه الورقة"
-              className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+              className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
             >
-              <ArrowRotateClockwise20Filled className="w-3.5 h-3.5" />
+              <ArrowRotateClockwise20Filled className="w-4.5 h-4.5" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
             تبديل اتجاه الورقة ({isLandscape ? "أفقي → رأسي" : "رأسي → أفقي"})
           </TooltipContent>
         </Tooltip>
@@ -235,16 +235,16 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={onToggleZenMode}
                 aria-label={isZenMode ? "إظهار الألواح الجانبية" : "معاينة نظيفة"}
                 className={cn(
-                  "w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                  "w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
                   isZenMode
                     ? "bg-emerald-500 text-white shadow-xs font-bold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )}
               >
-                {isZenMode ? <EyeOff20Filled className="w-3.5 h-3.5" /> : <Eye20Filled className="w-3.5 h-3.5" />}
+                {isZenMode ? <EyeOff20Filled className="w-4.5 h-4.5" /> : <Eye20Filled className="w-4.5 h-4.5" />}
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
               {isZenMode ? "استعادة الألواح الجانبية" : "معاينة نظيفة للطباعة بدون أشرطة جانبية"}
             </TooltipContent>
           </Tooltip>
@@ -252,25 +252,25 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
       </div>
 
       {/* 3. الجانب الأيسر: أدوات التكبير والتصغير والمساعدة */}
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         {/* زر اختصارات لوحة المفاتيح */}
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="w-7 h-7 flex items-center justify-center text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 font-mono"
+              className="w-8 h-8 flex items-center justify-center text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 font-mono"
               onClick={() => window.dispatchEvent(new CustomEvent("grido:open-shortcuts"))}
               aria-label="اختصارات لوحة المفاتيح"
             >
-              <kbd className="text-[10px] font-bold">?</kbd>
+              <kbd className="text-xs font-bold">?</kbd>
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
             اختصارات لوحة المفاتيح (Ctrl + /)
           </TooltipContent>
         </Tooltip>
 
-        <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
+        <Separator orientation="vertical" className="h-5 bg-border/60 mx-0.5" />
 
         {/* مجموعة أدوات الزوم والملاءمة */}
         <div
@@ -281,14 +281,14 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="w-7 h-7 flex items-center justify-center hover:bg-muted hover:text-foreground rounded-md transition-all cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                className="w-8 h-8 flex items-center justify-center hover:bg-muted hover:text-foreground rounded-md transition-all cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
                 onClick={handleZoomOut}
                 aria-label="تصغير"
               >
-                <ZoomOut20Regular className="w-3.5 h-3.5" />
+                <ZoomOut20Regular className="w-4.5 h-4.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
               تصغير (Ctrl + عجلة الماوس)
             </TooltipContent>
           </Tooltip>
@@ -297,14 +297,14 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="h-7 px-2 text-[11px] font-mono font-bold text-center select-none cursor-pointer hover:bg-muted hover:text-primary rounded-md transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                className="h-8 px-2.5 text-xs font-mono font-bold text-center select-none cursor-pointer hover:bg-muted hover:text-primary rounded-md transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
                 onClick={handleResetZoom}
                 aria-label="إعادة تعيين المقياس إلى 100%"
               >
                 {Math.round(canvasZoom * 100)}%
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
               إعادة تعيين المقياس إلى 100%
             </TooltipContent>
           </Tooltip>
@@ -313,14 +313,14 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="w-7 h-7 flex items-center justify-center hover:bg-muted hover:text-foreground rounded-md transition-all cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                className="w-8 h-8 flex items-center justify-center hover:bg-muted hover:text-foreground rounded-md transition-all cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
                 onClick={handleZoomIn}
                 aria-label="تكبير"
               >
-                <ZoomIn20Regular className="w-3.5 h-3.5" />
+                <ZoomIn20Regular className="w-4.5 h-4.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
               تكبير (Ctrl + عجلة الماوس)
             </TooltipContent>
           </Tooltip>
@@ -329,14 +329,14 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="w-7 h-7 flex items-center justify-center hover:bg-muted hover:text-foreground rounded-md transition-all cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                className="w-8 h-8 flex items-center justify-center hover:bg-muted hover:text-foreground rounded-md transition-all cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
                 onClick={handleResetZoom}
                 aria-label="ملاءمة حجم الورقة"
               >
-                <ArrowExpand20Regular className="w-3.5 h-3.5" />
+                <ArrowExpand20Regular className="w-4.5 h-4.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
               ملاءمة حجم الورقة للمركز (100%)
             </TooltipContent>
           </Tooltip>

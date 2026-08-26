@@ -70,7 +70,7 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
 
   return (
     <PanelShell
-      icon={<Options20Filled className="w-4 h-4" />}
+      icon={<Options20Filled className="w-4.5 h-4.5" />}
       title="الخصائص"
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
@@ -100,8 +100,8 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
                   onChange={setGeneralTab}
                   size="sm"
                   options={[
-                    { id: "collage", label: "تنسيق الكولاج", icon: <Options20Filled className="w-3.5 h-3.5" /> },
-                    { id: "canvas", label: "الورقة والكانفس", icon: <Document20Filled className="w-3.5 h-3.5" /> },
+                    { id: "collage", label: "تنسيق الكولاج", icon: <Options20Filled className="w-4 h-4" /> },
+                    { id: "canvas", label: "الورقة والكانفس", icon: <Document20Filled className="w-4 h-4" /> },
                   ]}
                 />
                 {generalTab === "collage" ? (

@@ -399,7 +399,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillRow}
               >
-                <SplitVertical20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
+                <SplitHorizontal20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>الصف</span>
               </Button>
             </TooltipTrigger>
@@ -413,7 +413,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillColumn}
               >
-                <SplitHorizontal20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
+                <SplitVertical20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>العمود</span>
               </Button>
             </TooltipTrigger>

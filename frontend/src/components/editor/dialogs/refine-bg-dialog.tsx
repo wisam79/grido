@@ -524,7 +524,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
         <div className="flex flex-1 overflow-hidden">
           {/* الأدوات - Sidebar */}
-          <div className="w-56 border-r border-border/40 bg-muted/10 p-4 flex flex-col gap-5 shrink-0 overflow-y-auto">
+          <div className="w-56 border-l rtl:border-l rtl:border-r-0 ltr:border-r border-border/40 bg-muted/10 p-4 flex flex-col gap-5 shrink-0 overflow-y-auto">
             <div className="space-y-2">
               <span className="text-[11px] font-bold text-muted-foreground block mb-2">نوع الأداة</span>
               <Button

@@ -43,7 +43,7 @@ const Slider = React.forwardRef<
       <SliderPrimitive.Track
         data-slot="slider-track"
         className={cn(
-          "bg-input relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5 border border-border"
+          "bg-muted/80 dark:bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5 border border-border/80"
         )}
       >
         <SliderPrimitive.Range
@@ -58,7 +58,7 @@ const Slider = React.forwardRef<
           data-slot="slider-thumb"
           key={index}
           {...thumbAriaProps}
-          className="border-2 border-primary bg-card shadow-xs block size-4 shrink-0 rounded-full transition-all duration-150 hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing"
+          className="block size-4 shrink-0 rounded-full bg-primary border-2 border-white dark:border-white/80 shadow-md shadow-primary/25 transition-transform duration-150 hover:scale-120 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing"
         />
       ))}
     </SliderPrimitive.Root>

@@ -120,6 +120,19 @@ func (a *App) OpenMultipleFiles() ([]string, error) {
 	return a.mediaSvc.ProcessMultipleOpenedFiles(filePaths)
 }
 
+func (a *App) OpenDirectoryDialog() ([]string, error) {
+	dirPath, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select Folder Containing Images",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("open directory dialog: %w", err)
+	}
+	if dirPath == "" {
+		return []string{}, nil
+	}
+	return a.mediaSvc.ProcessDirectoryImages(dirPath)
+}
+
 func (a *App) SaveFile(base64Data string) (string, error) {
 	decoded, mimeType, err := a.mediaSvc.DecodeBase64Image(base64Data)
 	if err != nil {

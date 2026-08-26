@@ -9,7 +9,8 @@ import {
   UpdateNotifier,
   KeyboardShortcutsDialog,
   WindowResizeHandles,
-  CanvasViewportDeck
+  CanvasViewportDeck,
+  DesktopMenuBar,
 } from "@/components/editor";
 import { ErrorBoundary } from "@/components/error-boundary";
 
@@ -222,7 +223,7 @@ export default function App() {
                 variant="ghost"
                 size="sm"
                 onClick={handleMinimize}
-                className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
+                className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
                 title="تصغير"
               >
                 <Subtract20Filled className="w-4 h-4" />
@@ -231,16 +232,16 @@ export default function App() {
                 variant="ghost"
                 size="sm"
                 onClick={handleMaximize}
-                className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
+                className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
                 title={isMaximized ? "استعادة" : "تكبير"}
               >
-                {isMaximized ? <SquareMultiple20Regular className="w-3.5 h-3.5" /> : <Square20Regular className="w-3 h-3" />}
+                {isMaximized ? <SquareMultiple20Regular className="w-3.5 h-3.5" /> : <Square20Regular className="w-3.5 h-3.5" />}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleClose}
-                className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white"
+                className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
                 title="إغلاق"
               >
                 <Dismiss20Regular className="w-4 h-4" />
@@ -358,11 +359,17 @@ export default function App() {
         onDoubleClick={handleMaximize}
       >
         <div className="flex items-center justify-between px-3 py-1.5 relative">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
-            <h1 className="text-xs font-bold text-foreground tracking-wide">
-              Grido Studio | استوديو الهوية
-            </h1>
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
+              <h1 className="text-xs font-bold text-foreground tracking-wide">
+                Grido Studio | استوديو الهوية
+              </h1>
+            </div>
+            <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
+            <div className="hidden sm:flex items-center title-bar-controls">
+              <DesktopMenuBar />
+            </div>
           </div>
 
           {/* وضع العمل - Fluent 2 Segmented Control */}
@@ -374,7 +381,7 @@ export default function App() {
               aria-label="وضع الكولاج"
               title="وضع الكولاج"
               className={cn(
-                "h-7 px-3 rounded-md cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[11px] z-10 relative transition-all duration-150 select-none",
+                "h-8 px-3.5 rounded-md cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-all duration-150 select-none",
                 mode === "collage"
                   ? "text-primary font-black"
                   : "text-muted-foreground hover:text-foreground"
@@ -387,8 +394,8 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <Grid20Filled className="w-3.5 h-3.5" />
-              <span className="leading-none">كولاج</span>
+              <Grid20Filled className="w-4 h-4" />
+              <span className="leading-none font-bold">كولاج</span>
             </Button>
 
             <Button
@@ -398,7 +405,7 @@ export default function App() {
               aria-label="وضع التعديل الحر"
               title="وضع التعديل الحر"
               className={cn(
-                "h-7 px-3 rounded-md cursor-pointer gap-1.5 flex items-center justify-center font-cairo text-[11px] z-10 relative transition-all duration-150 select-none",
+                "h-8 px-3.5 rounded-md cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-all duration-150 select-none",
                 mode === "single"
                   ? "text-primary font-black"
                   : "text-muted-foreground hover:text-foreground"
@@ -411,8 +418,8 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <ImageMultiple20Filled className="w-3.5 h-3.5" />
-              <span className="leading-none">تعديل حر</span>
+              <ImageMultiple20Filled className="w-4 h-4" />
+              <span className="leading-none font-bold">تعديل حر</span>
             </Button>
           </div>
 
@@ -421,26 +428,26 @@ export default function App() {
               variant="ghost"
               size="sm"
               onClick={() => setAccountModalOpen(true)}
-              className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
+              className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
               title="الحساب والتراخيص"
             >
               {isLicenseActive ? (
-                <ShieldCheckmark20Filled className="w-4.5 h-4.5 text-emerald-500" />
+                <ShieldCheckmark20Filled className="w-5 h-5 text-emerald-500" />
               ) : (
-                <Person20Filled className="w-4.5 h-4.5 text-muted-foreground" />
+                <Person20Filled className="w-5 h-5 text-muted-foreground" />
               )}
               {user?.plan === "trial" && (
-                <span className="absolute top-1 left-1 w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
               )}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleTheme}
-              className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
+              className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
             >
-              {theme === "light" ? <WeatherMoon20Filled className="w-3.5 h-3.5" /> : <WeatherSunny20Filled className="w-3.5 h-3.5" />}
+              {theme === "light" ? <WeatherMoon20Filled className="w-4.5 h-4.5" /> : <WeatherSunny20Filled className="w-4.5 h-4.5" />}
             </Button>
 
             {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
@@ -449,58 +456,58 @@ export default function App() {
               size="sm"
               onClick={() => setRightSidebarOpen((v) => !v)}
               className={cn(
-                "hidden lg:flex gap-1.5 h-7 w-7 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
+                "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
                 rightSidebarOpen
-                  ? "text-primary bg-primary/10 hover:bg-primary/20"
+                  ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
                   : "text-muted-foreground hover:bg-muted/80"
               )}
               title={rightSidebarOpen ? "إخفاء لوحة القوالب (Ctrl+B)" : "إظهار لوحة القوالب (Ctrl+B)"}
             >
-              <PanelLeft20Filled className="w-3.5 h-3.5" />
+              <PanelLeft20Filled className="w-4.5 h-4.5" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setLeftSidebarOpen((v) => !v)}
               className={cn(
-                "hidden lg:flex gap-1.5 h-7 w-7 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
+                "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
                 leftSidebarOpen
-                  ? "text-primary bg-primary/10 hover:bg-primary/20"
+                  ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
                   : "text-muted-foreground hover:bg-muted/80"
               )}
               title={leftSidebarOpen ? "إخفاء لوحة الخصائص (Ctrl+Shift+B)" : "إظهار لوحة الخصائص (Ctrl+Shift+B)"}
             >
-              <Settings20Filled className="w-3.5 h-3.5" />
+              <Settings20Filled className="w-4.5 h-4.5" />
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden gap-1.5 h-7 px-2 rounded-md"
+              className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
               onClick={() => setMobileTemplatesOpen(true)}
             >
-              <PanelLeft20Filled className="w-3.5 h-3.5" />
-              <span className="text-xs">القوالب</span>
+              <PanelLeft20Filled className="w-4 h-4" />
+              <span className="text-xs font-semibold">القوالب</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden gap-1.5 h-7 px-2 rounded-md"
+              className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
               onClick={() => setMobilePropsOpen(true)}
             >
-              <Settings20Filled className="w-3.5 h-3.5" />
-              <span className="text-xs">خصائص</span>
+              <Settings20Filled className="w-4 h-4" />
+              <span className="text-xs font-semibold">خصائص</span>
             </Button>
 
             {/* Separator */}
-            <div className="w-px h-4 bg-border/60 mx-0.5" />
+            <div className="w-px h-5 bg-border/60 mx-1" />
 
             {/* Window Buttons */}
             <Button
               variant="ghost"
               size="sm"
               onClick={handleMinimize}
-              className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
+              className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
               title="تصغير"
             >
               <Subtract20Filled className="w-4 h-4" />
@@ -509,16 +516,16 @@ export default function App() {
               variant="ghost"
               size="sm"
               onClick={handleMaximize}
-              className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
+              className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
               title={isMaximized ? "استعادة" : "تكبير"}
             >
-              {isMaximized ? <SquareMultiple20Regular className="w-3.5 h-3.5" /> : <Square20Regular className="w-3 h-3" />}
+              {isMaximized ? <SquareMultiple20Regular className="w-3.5 h-3.5" /> : <Square20Regular className="w-3.5 h-3.5" />}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClose}
-              className="w-7 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors"
+              className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
               title="إغلاق"
             >
               <Dismiss20Regular className="w-4 h-4" />

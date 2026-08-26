@@ -770,8 +770,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30">
                   {([
                     { id: "all", icon: Grid20Filled, label: "تعبئة تلقائية" },
-                    { id: "row", icon: SplitVertical20Filled, label: "صف واحد" },
-                    { id: "column", icon: SplitHorizontal20Filled, label: "عمود واحد" },
+                    { id: "row", icon: SplitHorizontal20Filled, label: "صف واحد" },
+                    { id: "column", icon: SplitVertical20Filled, label: "عمود واحد" },
                   ] as const).map(({ id, icon: Icon, label }) => (
                     <Tooltip key={id}>
                       <TooltipTrigger asChild>

@@ -5,6 +5,7 @@ import * as AppGo from '../wailsjs/go/main/App';
 vi.mock('../wailsjs/go/main/App', () => ({
   OpenFile: vi.fn(),
   OpenMultipleFiles: vi.fn(),
+  OpenDirectoryDialog: vi.fn(),
 }));
 
 describe('FileDialogUtils Unit Tests', () => {
@@ -26,6 +27,15 @@ describe('FileDialogUtils Unit Tests', () => {
 
     const result = await openImageFileDialog(true);
     expect(result).toEqual(['img1.png', 'img2.png']);
+  });
+
+  it('calls Wails OpenDirectoryDialog in desktop environment for directory import', async () => {
+    (window as any).go = { main: { App: {} } };
+    vi.mocked(AppGo.OpenDirectoryDialog).mockResolvedValueOnce(['dir_img1.png', 'dir_img2.png']);
+
+    const { openDirectoryImageDialog } = await import('../src/lib/io/file-dialog-utils');
+    const result = await openDirectoryImageDialog();
+    expect(result).toEqual(['dir_img1.png', 'dir_img2.png']);
   });
 
   it('handles Wails native dialog error gracefully', async () => {
