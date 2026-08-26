@@ -18,7 +18,6 @@ import {
   Delete20Filled,
   Dismiss20Filled,
   ImageMultiple20Filled,
-  ArrowRepeatAll20Filled,
   Checkmark20Filled,
   Subtract20Filled,
   LayerDiagonal20Filled,
@@ -82,6 +81,7 @@ export function BatchInsertDialog({
 
   // Reset states when dialog opens / closes (Wait UX Invariant)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsProcessing(false);
     setLoading(false);
   }, [open]);
@@ -423,7 +423,7 @@ export function BatchInsertDialog({
                     <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted shrink-0 border border-border/40 relative flex items-center justify-center">
                       <img
                         src={img.src}
-                        alt={`Photo ${idx + 1}`}
+                        alt={`عنصر ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />
                       <span className="absolute bottom-0.5 right-0.5 text-[9px] font-bold px-1 rounded bg-black/60 text-white backdrop-blur-xs">

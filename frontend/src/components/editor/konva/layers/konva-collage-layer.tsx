@@ -1,5 +1,5 @@
 import React from "react";
-import { Layer, Group, Rect, Text, Line } from "react-konva";
+import { Layer, Group, Rect, Line } from "react-konva";
 import { KonvaCollageImage } from "../elements/collage-image";
 import type { CanvasSlot as Slot } from "@/lib/store/types";
 import {
