@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/disintegration/imaging"
+	"golang.org/x/sync/singleflight"
 
 	"grido/internal/core/domain"
 	"grido/internal/utils"
@@ -163,17 +164,17 @@ type processedKey struct {
 }
 
 type imageCache struct {
-	mu       sync.RWMutex
-	images   map[string]image.Image
-	access   map[string]time.Time
-	inFlight map[string]*sync.Cond
+	mu     sync.RWMutex
+	images map[string]image.Image
+	access map[string]time.Time
+	group  singleflight.Group
 }
 
 type processedCache struct {
-	mu       sync.RWMutex
-	images   map[processedKey]image.Image
-	access   map[processedKey]time.Time
-	inFlight map[processedKey]*sync.Cond
+	mu     sync.RWMutex
+	images map[processedKey]image.Image
+	access map[processedKey]time.Time
+	group  singleflight.Group
 }
 
 // computeImageCacheKey يحسب مفتاح كاش للصورة (مع تجنب Hash كامل لـ Base64 الضخمة)
@@ -190,88 +191,80 @@ func computeImageCacheKey(filePath string) string {
 	return filePath
 }
 
-// loadRawImage يفتح الصورة من ملف أو Base64 مع كاش LRU ومنع تكرار التحميل الجاري (In-Flight Deduplication)
+// loadRawImage يفتح الصورة من ملف أو Base64 مع كاش LRU ومنع تكرار التحميل الجاري (In-Flight Deduplication) عبر singleflight
 func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image.Image, error) {
-	imgCache.mu.Lock()
+	imgCache.mu.RLock()
 	if cachedRaw, ok := imgCache.images[cacheKey]; ok {
+		imgCache.mu.RUnlock()
+		imgCache.mu.Lock()
 		imgCache.access[cacheKey] = time.Now()
 		imgCache.mu.Unlock()
 		return cachedRaw, nil
 	}
+	imgCache.mu.RUnlock()
 
-	if cond, loading := imgCache.inFlight[cacheKey]; loading {
-		for {
-			cond.Wait()
-			if cachedRaw, ok := imgCache.images[cacheKey]; ok {
-				imgCache.access[cacheKey] = time.Now()
-				imgCache.mu.Unlock()
-				return cachedRaw, nil
+	res, err, _ := imgCache.group.Do(cacheKey, func() (interface{}, error) {
+		imgCache.mu.RLock()
+		if cachedRaw, ok := imgCache.images[cacheKey]; ok {
+			imgCache.mu.RUnlock()
+			return cachedRaw, nil
+		}
+		imgCache.mu.RUnlock()
+
+		var img image.Image
+		var err error
+
+		if strings.HasPrefix(filePath, "data:image/") {
+			commaIdx := strings.Index(filePath, ",")
+			if commaIdx == -1 {
+				return nil, fmt.Errorf("invalid base64 image format")
 			}
-			if _, stillLoading := imgCache.inFlight[cacheKey]; !stillLoading {
-				break
+			b64Data := filePath[commaIdx+1:]
+			if len(b64Data) > 50*1024*1024 {
+				return nil, fmt.Errorf("base64 image data too large: %d bytes (max %d)", len(b64Data), 50*1024*1024)
+			}
+			data, err := base64.StdEncoding.DecodeString(b64Data)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode base64 image: %w", err)
+			}
+			img, err = imaging.Decode(io.LimitReader(bytes.NewReader(data), 100*1024*1024))
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode image from base64 data: %w", err)
+			}
+		} else {
+			img, err = imaging.Open(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to open image %s: %w", filepath.Base(filePath), err)
 			}
 		}
-	}
 
-	cond := sync.NewCond(&imgCache.mu)
-	imgCache.inFlight[cacheKey] = cond
-	imgCache.mu.Unlock()
-
-	defer func() {
 		imgCache.mu.Lock()
-		delete(imgCache.inFlight, cacheKey)
-		cond.Broadcast()
-		imgCache.mu.Unlock()
-	}()
-
-	var img image.Image
-	var err error
-
-	if strings.HasPrefix(filePath, "data:image/") {
-		commaIdx := strings.Index(filePath, ",")
-		if commaIdx == -1 {
-			return nil, fmt.Errorf("invalid base64 image format")
-		}
-		b64Data := filePath[commaIdx+1:]
-		if len(b64Data) > 50*1024*1024 {
-			return nil, fmt.Errorf("base64 image data too large: %d bytes (max %d)", len(b64Data), 50*1024*1024)
-		}
-		data, err := base64.StdEncoding.DecodeString(b64Data)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode base64 image: %w", err)
-		}
-		img, err = imaging.Decode(io.LimitReader(bytes.NewReader(data), 100*1024*1024))
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode image from base64 data: %w", err)
-		}
-	} else {
-		img, err = imaging.Open(filePath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open image %s: %w", filepath.Base(filePath), err)
-		}
-	}
-
-	imgCache.mu.Lock()
-	if len(imgCache.images) >= 8 {
-		var oldestKey string
-		var oldestTime time.Time
-		first := true
-		for k := range imgCache.images {
-			t := imgCache.access[k]
-			if first || t.Before(oldestTime) {
-				oldestTime = t
-				oldestKey = k
-				first = false
+		if len(imgCache.images) >= 8 {
+			var oldestKey string
+			var oldestTime time.Time
+			first := true
+			for k := range imgCache.images {
+				t := imgCache.access[k]
+				if first || t.Before(oldestTime) {
+					oldestTime = t
+					oldestKey = k
+					first = false
+				}
 			}
+			delete(imgCache.images, oldestKey)
+			delete(imgCache.access, oldestKey)
 		}
-		delete(imgCache.images, oldestKey)
-		delete(imgCache.access, oldestKey)
-	}
-	imgCache.images[cacheKey] = img
-	imgCache.access[cacheKey] = time.Now()
-	imgCache.mu.Unlock()
+		imgCache.images[cacheKey] = img
+		imgCache.access[cacheKey] = time.Now()
+		imgCache.mu.Unlock()
 
-	return img, nil
+		return img, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return res.(image.Image), nil
 }
 
 // isQuarterRotation يعيد true عندما يكون التدوير 90° أو 270° (mod 360)
@@ -452,71 +445,66 @@ func (s *PrintService) loadAndProcessImage(
 		dragY:      item.DragY,
 	}
 
-	procCache.mu.Lock()
+	procCache.mu.RLock()
 	if cached, ok := procCache.images[pKey]; ok {
+		procCache.mu.RUnlock()
+		procCache.mu.Lock()
 		procCache.access[pKey] = time.Now()
 		procCache.mu.Unlock()
 		return cached, nil
 	}
+	procCache.mu.RUnlock()
 
-	if cond, loading := procCache.inFlight[pKey]; loading {
-		for {
-			cond.Wait()
-			if cached, ok := procCache.images[pKey]; ok {
-				procCache.access[pKey] = time.Now()
-				procCache.mu.Unlock()
-				return cached, nil
-			}
-			if _, stillLoading := procCache.inFlight[pKey]; !stillLoading {
-				break
-			}
+	flightKey := fmt.Sprintf("%+v", pKey)
+	res, err, _ := procCache.group.Do(flightKey, func() (interface{}, error) {
+		procCache.mu.RLock()
+		if cached, ok := procCache.images[pKey]; ok {
+			procCache.mu.RUnlock()
+			return cached, nil
 		}
-	}
+		procCache.mu.RUnlock()
 
-	cond := sync.NewCond(&procCache.mu)
-	procCache.inFlight[pKey] = cond
-	procCache.mu.Unlock()
+		img, err := loadRawImage(filePath, cacheKey, imgCache)
+		if err != nil {
+			return nil, err
+		}
 
-	defer func() {
+		effW := targetW
+		if effW <= 0 {
+			effW = 1
+		}
+		effH := targetH
+		if effH <= 0 {
+			effH = 1
+		}
+
+		processedImg := applyImageProcessing(img, item, effW, effH)
+
 		procCache.mu.Lock()
-		delete(procCache.inFlight, pKey)
-		cond.Broadcast()
+		if len(procCache.images) >= 16 {
+			var oldestKey processedKey
+			var oldestTime time.Time
+			first := true
+			for k := range procCache.images {
+				t := procCache.access[k]
+				if first || t.Before(oldestTime) {
+					oldestTime = t
+					oldestKey = k
+					first = false
+				}
+			}
+			delete(procCache.images, oldestKey)
+			delete(procCache.access, oldestKey)
+		}
+		procCache.images[pKey] = processedImg
+		procCache.access[pKey] = time.Now()
 		procCache.mu.Unlock()
-	}()
 
-	img, err := loadRawImage(filePath, cacheKey, imgCache)
+		return processedImg, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-
-	if targetW <= 0 {
-		targetW = 1
-	}
-	if targetH <= 0 {
-		targetH = 1
-	}
-
-	processedImg := applyImageProcessing(img, item, targetW, targetH)
-
-	procCache.mu.Lock()
-	if len(procCache.images) >= 16 {
-		var oldestKey processedKey
-		var oldestTime time.Time
-		first := true
-		for k := range procCache.images {
-			t := procCache.access[k]
-			if first || t.Before(oldestTime) {
-				oldestTime = t
-				oldestKey = k
-				first = false
-			}
-		}
-		delete(procCache.images, oldestKey)
-		delete(procCache.access, oldestKey)
-	}
-	procCache.images[pKey] = processedImg
-	procCache.access[pKey] = time.Now()
-	procCache.mu.Unlock()
-
-	return processedImg, nil
+	return res.(image.Image), nil
 }

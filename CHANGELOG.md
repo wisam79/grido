@@ -5,6 +5,16 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.23] - 2026-08-26
+
+### Added & Refined (Architecture, EXIF Auto-Orientation & International Passport Standards)
+- **EXIF Auto-Orientation Engine**: Integrated `exifr` and `exif-utils.ts` for instantaneous (~1ms) camera photo orientation detection and automatic aspect ratio correction for vertical camera/smartphone shots (Canon, Nikon, Sony, iPhone).
+- **International Passport & Visa Templates (ICAO 9303)**: Added 16 official biometric passport and visa templates with exact 300 DPI dimensions, head height percentages, and official embassy guidelines (ICAO 9303, Schengen Visa, US Visa/DS-160 51×51mm, UK Passport, Canada Passport 50×70mm, Turkey İkamet 50×60mm, Saudi Arabia, UAE Emirates ID, Egypt, India OCI, China, Australia, Russia, Japan, and Iraq).
+- **Content-Security-Policy (CSP) in WebView2**: Enforced strict CSP headers in Wails AssetServer supporting WebAssembly runtime (`'wasm-unsafe-eval'`), Web Workers, blobs, and whitelisted Supabase/Modal AI domains.
+- **Win32 Single Instance Foreground Focus**: Integrated `FindWindowW`, `ShowWindow(SW_RESTORE)`, and `SetForegroundWindow` to seamlessly restore and bring the existing Grido Studio instance to front on secondary launch.
+- **Go Concurrency & Deduplication (singleflight)**: Streamlined raw image decoding and collage slot processing with official Go `golang.org/x/sync/singleflight`, eliminating redundant image decoding across concurrent threads.
+- **Text Presets Decoupling**: Modularized 13 typography presets, gradients, and stamps into dedicated `text-presets.ts` module, reducing store slice complexity.
+
 ## [v1.3.19] - 2026-08-20
 
 ### Added & Refined (CI/CD Performance & Fluent 2 Polish)

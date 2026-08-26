@@ -2,21 +2,9 @@ import { StateCreator } from "zustand";
 import { CanvasElement, ShapeElement, ImageElement } from "../types";
 import { uid } from "../../utils";
 import { computeSmartGridLayout } from "../../canvas/grid-layout-math";
+import { TextPresetType, TEXT_PRESETS } from "../../templates";
 
-export type TextPresetType = 
-  | "heading" 
-  | "subheading" 
-  | "body" 
-  | "badge" 
-  | "watermark" 
-  | "studio-date" 
-  | "gold-luxury" 
-  | "neon-glow" 
-  | "stamp-circle" 
-  | "3d-title" 
-  | "outline-modern" 
-  | "photographer-tag" 
-  | "caption-card";
+export type { TextPresetType };
 
 export interface BatchImageItem {
   src: string;
@@ -250,179 +238,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const state = get();
     const canvasW = state.canvasWidth || 2480;
 
-    let text = "نص جديد";
-    let fontSize = 32;
-    let fontWeight = 700;
-    let color = "#0f172a";
-    let fontFamily = "Cairo, sans-serif";
-    let textBgColor = "transparent";
-    let textBgRadius = 0;
-    let textBgPadding = 0;
-    let textBgBorderColor: string | undefined = undefined;
-    let textBgBorderWidth: number | undefined = undefined;
-    let opacity = 1;
-    let rotation = 0;
-    let height = 0.05;
-    let stroke: string | undefined = undefined;
-    let strokeWidth: number | undefined = undefined;
-    let shadowColor: string | undefined = undefined;
-    let shadowBlur: number | undefined = undefined;
-    let shadowOffsetX: number | undefined = undefined;
-    let shadowOffsetY: number | undefined = undefined;
-    let shadowOpacity: number | undefined = undefined;
-    let shadowGlow: boolean | undefined = undefined;
-    let curve: number | undefined = undefined;
-    let fillType: "solid" | "linear" | "radial" | undefined = "solid";
-    let fillLinearGradientStartPoint: { x: number; y: number } | undefined = undefined;
-    let fillLinearGradientEndPoint: { x: number; y: number } | undefined = undefined;
-    let fillLinearGradientColorStops: Array<number | string> | undefined = undefined;
-
-    switch (preset) {
-      case "heading":
-        text = "عنوان رئيسي";
-        fontSize = 48;
-        fontWeight = 800;
-        fontFamily = "Cairo, sans-serif";
-        color = "#0f172a";
-        height = 0.07;
-        break;
-      case "subheading":
-        text = "عنوان فرعي للتصميم";
-        fontSize = 28;
-        fontWeight = 600;
-        fontFamily = "Almarai, sans-serif";
-        color = "#334155";
-        height = 0.05;
-        break;
-      case "body":
-        text = "اكتب هنا وصفاً أو ملاحظات إضافية للتصميم...";
-        fontSize = 18;
-        fontWeight = 400;
-        fontFamily = "\"IBM Plex Sans Arabic\", sans-serif";
-        color = "#475569";
-        height = 0.04;
-        break;
-      case "badge":
-        text = "استوديو احترافي ★";
-        fontSize = 20;
-        fontWeight = 700;
-        fontFamily = "Tajawal, sans-serif";
-        color = "#ffffff";
-        textBgColor = "#2563eb";
-        textBgRadius = 999;
-        textBgPadding = 10;
-        height = 0.045;
-        break;
-      case "watermark":
-        text = "GRIDO STUDIO · مسودة";
-        fontSize = 36;
-        fontWeight = 800;
-        fontFamily = "Alexandria, sans-serif";
-        color = "#94a3b8";
-        opacity = 0.25;
-        rotation = -35;
-        height = 0.06;
-        break;
-      case "studio-date":
-        text = `📅 ${new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" })}`;
-        fontSize = 16;
-        fontWeight = 600;
-        fontFamily = "Cairo, sans-serif";
-        color = "#1e293b";
-        textBgColor = "rgba(241, 245, 249, 0.95)";
-        textBgRadius = 8;
-        textBgPadding = 8;
-        height = 0.04;
-        break;
-      case "gold-luxury":
-        text = "استوديو الفخامة للتصوير";
-        fontSize = 42;
-        fontWeight = 800;
-        fontFamily = "Cairo, sans-serif";
-        color = "#d97706";
-        fillType = "linear";
-        fillLinearGradientStartPoint = { x: 0, y: 0 };
-        fillLinearGradientEndPoint = { x: 1, y: 1 };
-        fillLinearGradientColorStops = [0, "#f59e0b", 0.5, "#fbbf24", 1, "#b45309"];
-        shadowColor = "rgba(180, 83, 9, 0.45)";
-        shadowBlur = 14;
-        shadowOffsetY = 4;
-        shadowOpacity = 0.6;
-        height = 0.065;
-        break;
-      case "neon-glow":
-        text = "GRIDO STUDIO ★";
-        fontSize = 38;
-        fontWeight = 800;
-        fontFamily = "Alexandria, sans-serif";
-        color = "#38bdf8";
-        shadowColor = "#0284c7";
-        shadowBlur = 20;
-        shadowGlow = true;
-        shadowOpacity = 0.9;
-        stroke = "#0284c7";
-        strokeWidth = 1.5;
-        height = 0.06;
-        break;
-      case "stamp-circle":
-        text = "★ استوديو التصوير المعتمد ★ 2026";
-        fontSize = 26;
-        fontWeight = 700;
-        fontFamily = "Reem Kufi, sans-serif";
-        color = "#dc2626";
-        curve = 60;
-        stroke = "#dc2626";
-        strokeWidth = 0.8;
-        height = 0.08;
-        break;
-      case "3d-title":
-        text = "إصدار خاص وحصري";
-        fontSize = 36;
-        fontWeight = 900;
-        fontFamily = "Changa, sans-serif";
-        color = "#6366f1";
-        shadowColor = "#312e81";
-        shadowBlur = 0;
-        shadowOffsetX = 4;
-        shadowOffsetY = 4;
-        shadowOpacity = 1;
-        stroke = "#1e1b4b";
-        strokeWidth = 1.2;
-        height = 0.06;
-        break;
-      case "outline-modern":
-        text = "MODERN DESIGN";
-        fontSize = 44;
-        fontWeight = 900;
-        fontFamily = "Montserrat, sans-serif";
-        color = "transparent";
-        stroke = "#0f172a";
-        strokeWidth = 2.5;
-        height = 0.065;
-        break;
-      case "photographer-tag":
-        text = "📸 تصوير الفنان: استوديو الإبداع";
-        fontSize = 22;
-        fontWeight = 600;
-        fontFamily = "\"IBM Plex Sans Arabic\", sans-serif";
-        color = "#475569";
-        opacity = 0.9;
-        height = 0.045;
-        break;
-      case "caption-card":
-        text = "📍 استوديو التصوير · القاهرة";
-        fontSize = 16;
-        fontWeight = 600;
-        fontFamily = "Tajawal, sans-serif";
-        color = "#1e293b";
-        textBgColor = "#f8fafc";
-        textBgRadius = 8;
-        textBgPadding = 8;
-        textBgBorderColor = "#cbd5e1";
-        textBgBorderWidth = 1.5;
-        height = 0.04;
-        break;
-    }
+    const config = TEXT_PRESETS[preset] || TEXT_PRESETS.heading;
+    const text = config.getText();
+    const fontSize = config.fontSize;
 
     const charWidth = fontSize * 0.9;
     const estimatedPx = Math.max(160, Math.min(canvasW * 0.7, text.length * charWidth + 60));
@@ -434,36 +252,36 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       x: 0.5 - initialW / 2,
       y: 0.45,
       width: initialW,
-      height,
-      rotation,
-      opacity,
+      height: config.height,
+      rotation: config.rotation ?? 0,
+      opacity: config.opacity ?? 1,
       zIndex: nextZIndex(get().elements),
       text,
       fontSize,
-      fontWeight,
-      color,
-      fontFamily,
+      fontWeight: config.fontWeight,
+      color: config.color,
+      fontFamily: config.fontFamily,
       textAlign: "center",
-      textBgColor,
-      textBgRadius,
-      textBgPadding,
-      textBgBorderColor,
-      textBgBorderWidth,
+      textBgColor: config.textBgColor ?? "transparent",
+      textBgRadius: config.textBgRadius ?? 0,
+      textBgPadding: config.textBgPadding ?? 0,
+      textBgBorderColor: config.textBgBorderColor,
+      textBgBorderWidth: config.textBgBorderWidth,
       lineHeight: 1.2,
       letterSpacing: 0,
-      stroke,
-      strokeWidth,
-      shadowColor,
-      shadowBlur,
-      shadowOffsetX,
-      shadowOffsetY,
-      shadowOpacity,
-      shadowGlow,
-      curve,
-      fillType,
-      fillLinearGradientStartPoint,
-      fillLinearGradientEndPoint,
-      fillLinearGradientColorStops,
+      stroke: config.stroke,
+      strokeWidth: config.strokeWidth,
+      shadowColor: config.shadowColor,
+      shadowBlur: config.shadowBlur,
+      shadowOffsetX: config.shadowOffsetX,
+      shadowOffsetY: config.shadowOffsetY,
+      shadowOpacity: config.shadowOpacity,
+      shadowGlow: config.shadowGlow,
+      curve: config.curve,
+      fillType: config.fillType ?? "solid",
+      fillLinearGradientStartPoint: config.fillLinearGradientStartPoint,
+      fillLinearGradientEndPoint: config.fillLinearGradientEndPoint,
+      fillLinearGradientColorStops: config.fillLinearGradientColorStops,
     };
 
     set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));

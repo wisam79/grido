@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -121,14 +120,12 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 	dc.Clear()
 
 	imgCache := &imageCache{
-		images:   make(map[string]image.Image),
-		access:   make(map[string]time.Time),
-		inFlight: make(map[string]*sync.Cond),
+		images: make(map[string]image.Image),
+		access: make(map[string]time.Time),
 	}
 	procCache := &processedCache{
-		images:   make(map[processedKey]image.Image),
-		access:   make(map[processedKey]time.Time),
-		inFlight: make(map[processedKey]*sync.Cond),
+		images: make(map[processedKey]image.Image),
+		access: make(map[processedKey]time.Time),
 	}
 
 	// 0. تركيب كانفاس الوضع الحر (اختياري): يُرسم مرة واحدة بدقة الطباعة

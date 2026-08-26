@@ -139,6 +139,17 @@ func main() {
 			}),
 			Middleware: func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					// 🔒 تطبيق رأس حماية أمني مشدد (Content Security Policy) للـ WebView2
+					// يسمح بـ WebAssembly (OpenCV/MediaPipe) و Web Workers والمصادر الخارجية المصرح بها فقط
+					w.Header().Set("Content-Security-Policy",
+						"default-src 'self'; "+
+							"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; "+
+							"style-src 'self' 'unsafe-inline'; "+
+							"img-src 'self' data: blob: https:; "+
+							"font-src 'self' data:; "+
+							"connect-src 'self' https://*.supabase.co https://*.modal.run https://api.modal.com; "+
+							"worker-src 'self' blob:;")
+
 					// Ensure WebAssembly and model files are served with correct MIME types
 					if strings.HasSuffix(r.URL.Path, ".wasm") {
 						w.Header().Set("Content-Type", "application/wasm")
