@@ -66,17 +66,17 @@ describe("snap-utils - Magnetic Alignment (Snap to Grid/Guides) Tests", () => {
   it("should snap when resizing west (w), north (n), and south (s)", () => {
     // Resize west: handle = "w". Left edge should snap to 0.2
     const westRes = getSnapPositionsWithTargets(0.198, 0.1, 0.3, 0.3, vTargets, hTargets, 0.01, 0.01, "w");
-    expect(westRes.x).toBe(0.2);
+    expect(westRes.x).toBeCloseTo(0.2, 5);
     expect(westRes.guides).toContainEqual({ type: "v", coord: 0.2 });
 
     // Resize south: handle = "s". Bottom edge (y + h = 0.1 + 0.198 = 0.298) should snap to 0.3
     const southRes = getSnapPositionsWithTargets(0.1, 0.1, 0.3, 0.198, vTargets, hTargets, 0.01, 0.01, "s");
-    expect(southRes.h).toBe(0.2);
+    expect(southRes.h).toBeCloseTo(0.2, 5);
     expect(southRes.guides).toContainEqual({ type: "h", coord: 0.3 });
 
     // Resize north: handle = "n". Top edge should snap to 0.3
     const northRes = getSnapPositionsWithTargets(0.1, 0.298, 0.3, 0.3, vTargets, hTargets, 0.01, 0.01, "n");
-    expect(northRes.y).toBe(0.3);
+    expect(northRes.y).toBeCloseTo(0.3, 5);
     expect(northRes.guides).toContainEqual({ type: "h", coord: 0.3 });
   });
 });
