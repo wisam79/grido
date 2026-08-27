@@ -1,5 +1,3 @@
-import type React from "react";
-
 export type TemplateCategory =
   | "id"
   | "passport"

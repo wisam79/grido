@@ -15,7 +15,6 @@ import {
   ImageAdd01Icon,
   Image02Icon,
   FolderOpenIcon,
-  FloppyDiskIcon,
   Download01Icon,
   PrinterIcon,
   BrushCleaningIcon,

@@ -18,7 +18,6 @@ import {
   SparklesIcon,
   Upload01Icon,
   Delete02Icon,
-  Layers01Icon,
   LinkSquare01Icon,
   TableRowsSplitIcon,
   TableColumnsSplitIcon,
