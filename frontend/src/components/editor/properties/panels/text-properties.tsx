@@ -1,32 +1,33 @@
 import React, { useState } from "react";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  TextFont20Filled,
-  Color20Filled,
-  Sparkle20Filled,
-  TextHeader120Filled,
-  TextHeader220Filled,
-  Document20Filled,
-  Target20Filled,
-  ArrowRotateClockwise20Filled,
-  ChevronDown20Filled,
-  TextBold20Filled,
-  TextItalic20Filled,
-  TextUnderline20Filled,
-  TextStrikethrough20Filled,
-  TextAlignRight20Filled,
-  TextAlignCenter20Filled,
-  TextAlignLeft20Filled,
-  NumberSymbol20Filled,
-  ArrowMinimize20Filled,
-  ArrowSort20Filled,
-  ArrowMove20Filled,
-  Eye20Filled,
-  Checkmark20Filled,
-  Square20Filled,
-  ArrowReset20Regular,
-} from "@fluentui/react-icons";
+  TextIcon,
+  ColorPickerIcon,
+  SparklesIcon,
+  Heading01Icon,
+  Heading02Icon,
+  File01Icon,
+  Target01Icon,
+  RotateClockwiseIcon,
+  ArrowDown01Icon,
+  TextBoldIcon,
+  TextItalicIcon,
+  TextUnderlineIcon,
+  TextStrikethroughIcon,
+  TextAlignRightIcon,
+  TextAlignCenterIcon,
+  TextAlignLeftIcon,
+  HashtagIcon,
+  ArrowShrink02Icon,
+  ParagraphSpacingIcon,
+  LetterSpacingIcon,
+  ViewIcon,
+  Tick01Icon,
+  SquareIcon,
+  RefreshIcon,
+} from "@hugeicons/core-free-icons";
 import { PopoverColorPicker } from "../shared-controls";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-picker";
@@ -182,7 +183,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
           )}
         >
-          <TextFont20Filled className="w-3.5 h-3.5" />
+          <HugeIcon icon={TextIcon} size={14} />
           <span>الخط والنمط</span>
         </button>
 
@@ -196,7 +197,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
           )}
         >
-          <Color20Filled className="w-3.5 h-3.5" />
+          <HugeIcon icon={ColorPickerIcon} size={14} />
           <span>الألوان</span>
         </button>
 
@@ -210,7 +211,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
           )}
         >
-          <Sparkle20Filled className="w-3.5 h-3.5" />
+          <HugeIcon icon={SparklesIcon} size={14} />
           {/* تمييز الاسم عن تبويب "التأثيرات والظلال" الخارجي لتفادي الالتباس */}
           <span>الظلال والتقويس</span>
           {(hasBadge || hasStroke || hasShadow || hasCurve) && (
@@ -230,11 +231,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             {/* النمط السريع */}
             <div className="grid grid-cols-5 gap-1 text-[10px]">
               {[
-                { id: "heading" as const, label: "رئيسي", icon: TextHeader120Filled },
-                { id: "subheading" as const, label: "فرعي", icon: TextHeader220Filled },
-                { id: "body" as const, label: "عادي", icon: Document20Filled },
-                { id: "badge" as const, label: "شارة", icon: Target20Filled },
-                { id: "stamp" as const, label: "ختم", icon: ArrowRotateClockwise20Filled },
+                { id: "heading" as const, label: "رئيسي", icon: Heading01Icon },
+                { id: "subheading" as const, label: "فرعي", icon: Heading02Icon },
+                { id: "body" as const, label: "عادي", icon: File01Icon },
+                { id: "badge" as const, label: "شارة", icon: Target01Icon },
+                { id: "stamp" as const, label: "ختم", icon: RotateClockwiseIcon },
               ].map((preset) => {
                 const Icon = preset.icon;
                 return (
@@ -244,7 +245,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     onClick={() => applyPreset(preset.id)}
                     className="h-7 px-1 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none truncate"
                   >
-                    <Icon className="w-3 h-3 shrink-0" />
+                    <HugeIcon icon={Icon} size={12} className="shrink-0" />
                     <span className="truncate">{preset.label}</span>
                   </button>
                 );
@@ -279,7 +280,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown20Filled className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <HugeIcon icon={ArrowDown01Icon} size={12} className="text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -311,7 +312,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown20Filled className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <HugeIcon icon={ArrowDown01Icon} size={12} className="text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -356,7 +357,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="عريض (B)"
                 >
-                  <TextBold20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={TextBoldIcon} size={14} />
                 </button>
 
                 <button
@@ -373,7 +374,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="مائل (I)"
                 >
-                  <TextItalic20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={TextItalicIcon} size={14} />
                 </button>
 
                 <button
@@ -390,7 +391,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="تسطير (U)"
                 >
-                  <TextUnderline20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={TextUnderlineIcon} size={14} />
                 </button>
 
                 <button
@@ -407,7 +408,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="شطب (S)"
                 >
-                  <TextStrikethrough20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={TextStrikethroughIcon} size={14} />
                 </button>
               </div>
 
@@ -428,7 +429,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="يمين"
                 >
-                  <TextAlignRight20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={TextAlignRightIcon} size={14} />
                 </button>
 
                 <button
@@ -445,7 +446,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="توسيط"
                 >
-                  <TextAlignCenter20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={TextAlignCenterIcon} size={14} />
                 </button>
 
                 <button
@@ -462,7 +463,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="يسار"
                 >
-                  <TextAlignLeft20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={TextAlignLeftIcon} size={14} />
                 </button>
               </div>
 
@@ -482,7 +483,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 )}
                 title="أرقام عربية (١٢٣)"
               >
-                <NumberSymbol20Filled className="w-3 h-3" />
+                <HugeIcon icon={HashtagIcon} size={12} />
                 <span>١٢٣</span>
               </button>
             </div>
@@ -505,7 +506,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     }}
                     className={cn(
                       "px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-                      textTransform === tr.id
+                      element.textTransform === tr.id
                         ? "bg-background text-primary shadow-2xs font-extrabold"
                         : "hover:text-foreground text-muted-foreground hover:bg-background/40"
                     )}
@@ -521,7 +522,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 className="px-2 py-0.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-[9.5px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                 title="ملاءمة عرض الصندوق للنص تلقائياً"
               >
-                <ArrowMinimize20Filled className="w-2.5 h-2.5" />
+                <HugeIcon icon={ArrowShrink02Icon} size={10} />
                 <span>ملاءمة العرض</span>
               </button>
             </div>
@@ -532,7 +533,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                  <ArrowSort20Filled className="w-2.5 h-2.5 text-primary/70" />
+                  <HugeIcon icon={ParagraphSpacingIcon} size={10} className="text-primary/70" />
                   <span>ارتفاع الأسطر</span>
                 </span>
                 <div className="relative">
@@ -556,13 +557,13 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown20Filled className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <HugeIcon icon={ArrowDown01Icon} size={12} className="text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                  <ArrowMove20Filled className="w-2.5 h-2.5 text-primary/70" />
+                  <HugeIcon icon={LetterSpacingIcon} size={10} className="text-primary/70" />
                   <span>{isArabic ? "تباعد الكلمات" : "تباعد الحروف"}</span>
                 </span>
                 <div className="relative">
@@ -586,7 +587,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown20Filled className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <HugeIcon icon={ArrowDown01Icon} size={12} className="text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -604,7 +605,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Color20Filled className="w-3.5 h-3.5 text-primary" />
+                <HugeIcon icon={ColorPickerIcon} size={14} className="text-primary" />
                 <span>لون النص والتعبئة</span>
               </span>
 
@@ -673,7 +674,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             <div className="space-y-1 p-2 bg-muted/20 rounded-lg border border-border/30">
               <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Eye20Filled className="w-3 h-3 text-primary/70" />
+                  <HugeIcon icon={ViewIcon} size={12} className="text-primary/70" />
                   <span>الشفافية</span>
                 </span>
                 <span className="font-mono text-foreground font-bold">{currentOpacity}%</span>
@@ -712,7 +713,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       style={{ backgroundColor: c.color }} 
                     >
                       {isCurrent && (
-                        <Checkmark20Filled className={cn("w-2.5 h-2.5", c.color === "#ffffff" ? "text-black" : "text-white")} />
+                        <HugeIcon icon={Tick01Icon} size={10} className={cn(c.color === "#ffffff" ? "text-black" : "text-white")} />
                       )}
                     </div>
                     <span className="text-[10px] font-bold truncate text-foreground/80">{c.label}</span>
@@ -734,7 +735,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Color20Filled className="w-3.5 h-3.5 text-primary" />
+                <HugeIcon icon={ColorPickerIcon} size={14} className="text-primary" />
                 <span>الخلفية والشارة</span>
               </span>
 
@@ -838,7 +839,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Square20Filled className="w-3.5 h-3.5 text-primary" />
+                <HugeIcon icon={SquareIcon} size={14} className="text-primary" />
                 <span>الإطار والحدود</span>
               </span>
 
@@ -899,7 +900,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Sparkle20Filled className="w-3.5 h-3.5 text-primary" />
+                <HugeIcon icon={SparklesIcon} size={14} className="text-primary" />
                 <span>الظل والتوهج</span>
               </span>
 
@@ -989,7 +990,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <ArrowRotateClockwise20Filled className="w-3.5 h-3.5 text-primary" />
+                <HugeIcon icon={RotateClockwiseIcon} size={14} className="text-primary" />
                 <span>تقويس النص</span>
               </span>
 
@@ -1050,7 +1051,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       className="px-1.5 py-0.5 bg-background border border-border/60 hover:border-primary/40 rounded-md text-[9px] text-foreground font-bold cursor-pointer flex items-center gap-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                       title="استقامة"
                     >
-                      <ArrowReset20Regular className="w-2.5 h-2.5" />
+                      <HugeIcon icon={RefreshIcon} size={10} />
                       <span>تصفير</span>
                     </button>
                     <span>+100°</span>

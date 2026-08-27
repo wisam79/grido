@@ -11,18 +11,18 @@ import { Label } from "@/components/ui/label";
 import { ExportSupportLogs } from "../../../../wailsjs/go/main/App";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Spinner, HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Person20Filled,
-  Key20Filled,
-  Mail20Filled,
-  LockClosed20Filled,
-  SignOut20Filled,
-  ShieldCheckmark20Filled,
-  Warning20Filled,
-  Open20Filled,
-  ArrowDownload20Filled,
-} from "@fluentui/react-icons";
+  UserIcon,
+  Key01Icon,
+  Mail01Icon,
+  LockKeyIcon,
+  Logout01Icon,
+  ShieldCheckIcon,
+  Alert02Icon,
+  LinkSquare01Icon,
+  Download01Icon,
+} from "@hugeicons/core-free-icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
@@ -305,7 +305,7 @@ export function AccountLicenseModal() {
       >
         <DialogHeader className="space-y-1 text-right border-b border-border/60 pb-3">
           <DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
-            <Person20Filled className="w-4 h-4 text-primary" />
+            <HugeIcon icon={ShieldCheckIcon} size={24} className="text-primary" />
             <span>الحساب والترخيص</span>
           </DialogTitle>
         </DialogHeader>
@@ -338,7 +338,7 @@ export function AccountLicenseModal() {
             </div>
           ) : (
             <div className="border border-border/60 rounded-md p-2 flex items-center gap-2 bg-background/50 text-[11px] text-muted-foreground">
-              <Warning20Filled className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <HugeIcon icon={Alert02Icon} size={14} className="text-amber-500 shrink-0" />
               <span>سجل دخولك لتشغيل ميزات الحساب السحابية</span>
             </div>
           )}
@@ -367,14 +367,14 @@ export function AccountLicenseModal() {
               <form onSubmit={handleVerifyRecovery} className="space-y-3">
                 {error && (
                   <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                    <Warning20Filled className="w-3.5 h-3.5 shrink-0" />
+                    <HugeIcon icon={Alert02Icon} size={14} className="shrink-0" />
                     <span>{error}</span>
                   </div>
                 )}
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">البريد الإلكتروني</Label>
                   <div className="relative">
-                    <Mail20Filled className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <HugeIcon icon={Mail01Icon} size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type="email"
                       placeholder="name@example.com"
@@ -388,7 +388,7 @@ export function AccountLicenseModal() {
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">كود الاستعادة (OTP)</Label>
                   <div className="relative">
-                    <Key20Filled className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <HugeIcon icon={Key01Icon} size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type="text"
                       placeholder="123456"
@@ -407,7 +407,7 @@ export function AccountLicenseModal() {
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">كلمة المرور الجديدة</Label>
                   <div className="relative">
-                    <LockClosed20Filled className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <HugeIcon icon={LockKeyIcon} size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type="password"
                       placeholder="••••••••"
@@ -426,7 +426,7 @@ export function AccountLicenseModal() {
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <Spinner className="w-3.5 h-3.5" size={14} />
                       <span>جاري الحفظ ...</span>
                     </>
                   ) : (
@@ -451,7 +451,7 @@ export function AccountLicenseModal() {
                 <form onSubmit={handleAuth} className="space-y-3">
                   {error && (
                     <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                      <Warning20Filled className="w-3.5 h-3.5 shrink-0" />
+                      <HugeIcon icon={Alert02Icon} size={14} className="shrink-0" />
                       <span>{error}</span>
                     </div>
                   )}
@@ -459,7 +459,7 @@ export function AccountLicenseModal() {
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold">كود التحقق (OTP)</Label>
                       <div className="relative">
-                        <Key20Filled className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <HugeIcon icon={Key01Icon} size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           type="text"
                           placeholder="123456"
@@ -482,7 +482,7 @@ export function AccountLicenseModal() {
                       >
                         {loading ? (
                           <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <Spinner className="w-3.5 h-3.5" size={14} />
                             <span>جاري تأكيد الكود ...</span>
                           </>
                         ) : (
@@ -499,7 +499,7 @@ export function AccountLicenseModal() {
                         >
                           {resending ? (
                             <span className="flex items-center gap-1">
-                              <Loader2 className="w-3 h-3 animate-spin inline" /> جاري الإرسال ...
+                              <Spinner className="w-3 h-3 inline" size={12} /> جاري الإرسال ...
                             </span>
                           ) : resendCooldown > 0 ? (
                             `إعادة الإرسال بعد (${resendCooldown} ث)`
@@ -526,7 +526,7 @@ export function AccountLicenseModal() {
                         <div className="space-y-1">
                           <Label className="text-xs font-semibold">الاسم الكامل</Label>
                           <div className="relative">
-                            <Person20Filled className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                            <HugeIcon icon={UserIcon} size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                             <Input
                               placeholder="الاسم"
                               className="pr-8 h-8 text-xs rounded-md"
@@ -541,7 +541,7 @@ export function AccountLicenseModal() {
                       <div className="space-y-1">
                         <Label className="text-xs font-semibold">البريد الإلكتروني</Label>
                         <div className="relative">
-                          <Mail20Filled className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                          <HugeIcon icon={Mail01Icon} size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             type="email"
                             placeholder="name@example.com"
@@ -568,7 +568,7 @@ export function AccountLicenseModal() {
                           )}
                         </div>
                         <div className="relative">
-                          <LockClosed20Filled className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                          <HugeIcon icon={LockKeyIcon} size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             type="password"
                             placeholder="••••••••"
@@ -587,7 +587,7 @@ export function AccountLicenseModal() {
                       >
                         {loading ? (
                           <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <Spinner className="w-3.5 h-3.5" size={14} />
                             <span>{authMode === "login" ? "جاري تسجيل الدخول ..." : "جاري إنشاء الحساب ..."}</span>
                           </>
                         ) : authMode === "login" ? (
@@ -612,7 +612,7 @@ export function AccountLicenseModal() {
                       >
                         {loadingGoogle ? (
                           <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <Spinner className="w-3.5 h-3.5" size={14} />
                             <span>جاري الدخول عبر Google ...</span>
                           </>
                         ) : (
@@ -651,7 +651,7 @@ export function AccountLicenseModal() {
               {user && (user.plan === "pro" || user.plan === "enterprise") ? (
                 <div className="bg-muted/30 border border-border rounded-xl p-3 text-center space-y-2 fluent-specular">
                   <div className="inline-flex p-2 bg-emerald-500/10 text-emerald-600 rounded-full">
-                    <ShieldCheckmark20Filled className="w-5 h-5" />
+                    <HugeIcon icon={ShieldCheckIcon} size={20} />
                   </div>
                   <div>
                     <h3 className="text-xs font-bold text-foreground">النسخة مفعلة بنجاح</h3>
@@ -681,7 +681,7 @@ export function AccountLicenseModal() {
                 <form onSubmit={handleActivate} className="space-y-3">
                   {error && (
                     <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                      <Warning20Filled className="w-3.5 h-3.5 shrink-0" />
+                      <HugeIcon icon={Alert02Icon} size={14} className="shrink-0" />
                       <span>{error}</span>
                     </div>
                   )}
@@ -707,7 +707,7 @@ export function AccountLicenseModal() {
                       </button>
                     </div>
                     <div className="relative">
-                      <Key20Filled className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <HugeIcon icon={Key01Icon} size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
                         className="pr-8 h-8 text-xs font-mono uppercase rounded-md"
@@ -725,7 +725,7 @@ export function AccountLicenseModal() {
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Spinner className="w-3.5 h-3.5" size={14} />
                         <span>جاري تفعيل الترخيص ...</span>
                       </>
                     ) : (
@@ -764,7 +764,7 @@ export function AccountLicenseModal() {
                       className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2 cursor-pointer rounded-md"
                       onClick={() => setShowLogoutConfirm(true)}
                     >
-                      <SignOut20Filled className="w-3 h-3" />
+                      <HugeIcon icon={Logout01Icon} size={12} />
                       <span>تسجيل الخروج</span>
                     </Button>
                   )
@@ -779,7 +779,7 @@ export function AccountLicenseModal() {
                   className="flex items-center gap-1 text-[11px] text-primary hover:underline font-semibold"
                 >
                   <span>شراء ترخيص</span>
-                  <Open20Filled className="w-3 h-3" />
+                  <HugeIcon icon={LinkSquare01Icon} size={12} />
                 </a>
 
                 <button
@@ -797,7 +797,7 @@ export function AccountLicenseModal() {
                   className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   <span>تصدير السجلات</span>
-                  <ArrowDownload20Filled className="w-3 h-3" />
+                  <HugeIcon icon={Download01Icon} size={12} />
                 </button>
               </div>
             </div>

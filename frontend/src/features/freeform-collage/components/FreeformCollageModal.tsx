@@ -9,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Grid20Filled, Checkmark20Filled, ArrowClockwise20Filled, Save20Filled } from "@fluentui/react-icons";
+import { HugeIcon, Spinner } from "@/components/ui/huge-icon";
+import { Grid02Icon, Tick01Icon, FloppyDiskIcon } from "@hugeicons/core-free-icons";
 import { useEditorStore } from "@/lib/editor-store";
 import type {
   FreeformLayout,
@@ -439,7 +440,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         {/* Header — رأس النافذة مع محدد أبعاد الورقة المليمتري */}
         <DialogHeader className="border-b border-border/40 pb-2.5 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Grid20Filled className="w-4 h-4 text-primary" />
+            <HugeIcon icon={Grid02Icon} size={16} className="text-primary" />
             <span>محرر الكولاج الحر المتقدم</span>
           </DialogTitle>
 
@@ -533,12 +534,12 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
             >
               {isSavingTemplate ? (
                 <>
-                  <ArrowClockwise20Filled className="w-3.5 h-3.5 animate-spin text-emerald-500" />
+                  <Spinner size={14} className="text-emerald-500" />
                   <span>جاري الحفظ ...</span>
                 </>
               ) : (
                 <>
-                  <Save20Filled className="w-3.5 h-3.5 text-emerald-500" />
+                  <HugeIcon icon={FloppyDiskIcon} size={14} className="text-emerald-500" />
                   <span>حفظ كقالب</span>
                 </>
               )}
@@ -566,12 +567,12 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
             >
               {isApplying ? (
                 <>
-                  <ArrowClockwise20Filled className="w-3.5 h-3.5 animate-spin" />
+                  <Spinner size={14} />
                   <span>جاري التطبيق ...</span>
                 </>
               ) : (
                 <>
-                  <Checkmark20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={Tick01Icon} size={14} />
                   <span>تطبيق على الكانفس</span>
                 </>
               )}

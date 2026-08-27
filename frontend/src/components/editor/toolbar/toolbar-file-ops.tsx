@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  ImageAdd20Filled,
-  FolderOpen20Filled,
-  Broom20Filled,
-  ImageMultiple20Filled,
-} from "@fluentui/react-icons";
+  ImageAdd01Icon,
+  FolderOpenIcon,
+  BrushCleaningIcon,
+  Image02Icon,
+} from "@hugeicons/core-free-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -208,7 +209,7 @@ export function ToolbarFileOps() {
             title="إضافة صورة جديدة"
             className="h-8.5 px-3 gap-2 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none"
           >
-            <ImageAdd20Filled className="w-4.5 h-4.5 text-primary" />
+            <HugeIcon icon={ImageAdd01Icon} size={18} className="text-primary" />
             <span>إضافة صورة</span>
           </Button>
         </TooltipBtn>
@@ -223,7 +224,7 @@ export function ToolbarFileOps() {
             title="إدراج دفعة صور ومعاملات"
             className="h-8.5 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none"
           >
-            <ImageMultiple20Filled className="w-4.5 h-4.5 text-indigo-500" />
+            <HugeIcon icon={Image02Icon} size={18} />
             <span className="hidden sm:inline font-semibold">دفعة صور</span>
           </Button>
         </TooltipBtn>
@@ -239,7 +240,7 @@ export function ToolbarFileOps() {
               title="مكتبة المشاريع المحلية"
               className="h-8.5 w-8.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer"
             >
-              <FolderOpen20Filled className="w-4.5 h-4.5" />
+              <HugeIcon icon={FolderOpenIcon} size={18} />
             </Button>
           </TooltipBtn>
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} />
@@ -258,7 +259,7 @@ export function ToolbarFileOps() {
           aria-label="جديد (مسح مساحة العمل)"
           className="h-8.5 w-8.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer"
         >
-          <Broom20Filled className="w-4.5 h-4.5" />
+          <HugeIcon icon={BrushCleaningIcon} size={18} />
         </Button>
       </TooltipBtn>
 

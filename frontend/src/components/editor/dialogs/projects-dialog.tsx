@@ -17,22 +17,21 @@ import { ExportBackup, ImportBackup, ResetLibrary } from "../../../../wailsjs/go
 import { SaveFileDialog } from "../../../../wailsjs/go/main/App";
 import { domain } from "../../../../wailsjs/go/models";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Spinner, HugeIcon } from "@/components/ui/huge-icon";
 import {
-  FolderOpen20Filled,
-  Save20Filled,
-  Delete20Regular,
-  Calendar20Regular,
-  Grid20Filled,
-  Database20Filled,
-  ArrowDownload20Filled,
-  ArrowUpload20Filled,
-  Warning20Filled,
-  Search20Regular,
-  ArrowSort20Filled,
-  Pin20Filled,
-  PinOff20Regular,
-} from "@fluentui/react-icons";
+  FolderOpenIcon,
+  FloppyDiskIcon,
+  Delete02Icon,
+  Calendar03Icon,
+  Database01Icon,
+  Download01Icon,
+  Upload01Icon,
+  Alert02Icon,
+  Search01Icon,
+  Sorting01Icon,
+  PinIcon,
+  PinOffIcon,
+} from "@hugeicons/core-free-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -296,8 +295,8 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
         <DialogContent className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-xl rounded-2xl p-5 font-cairo fluent-specular" dir="rtl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-primary font-cairo">
-              <Grid20Filled className="w-5 h-5" />
+            <DialogTitle className="flex items-center gap-2 text-foreground font-cairo">
+              <HugeIcon icon={FolderOpenIcon} size={24} className="text-primary" />
               <span>مكتبة المشاريع المحلية</span>
             </DialogTitle>
           </DialogHeader>
@@ -305,15 +304,15 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4 font-cairo">
             <TabsList className="grid grid-cols-3 mb-4">
               <TabsTrigger value="save" className="flex items-center gap-1.5 justify-center">
-                <Save20Filled className="w-3.5 h-3.5" />
+                <HugeIcon icon={FloppyDiskIcon} size={14} />
                 <span>حفظ المشروع</span>
               </TabsTrigger>
               <TabsTrigger value="list" className="flex items-center gap-1.5 justify-center" onClick={fetchProjects}>
-                <FolderOpen20Filled className="w-3.5 h-3.5" />
+                <HugeIcon icon={FolderOpenIcon} size={14} />
                 <span>المشاريع</span>
               </TabsTrigger>
               <TabsTrigger value="backup" className="flex items-center gap-1.5 justify-center">
-                <Database20Filled className="w-3.5 h-3.5" />
+                <HugeIcon icon={Database01Icon} size={14} />
                 <span>نسخ احتياطي</span>
               </TabsTrigger>
             </TabsList>
@@ -333,12 +332,12 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               <Button className="w-full h-8 gap-2 mt-2 rounded-md font-semibold text-xs shadow-xs" onClick={handleSave} disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Spinner className="w-3.5 h-3.5" size={14} />
                     <span>جاري الحفظ ...</span>
                   </>
                 ) : (
                   <>
-                    <Save20Filled className="w-3.5 h-3.5" />
+                    <HugeIcon icon={FloppyDiskIcon} size={14} />
                     <span>حفظ المشروع</span>
                   </>
                 )}
@@ -349,7 +348,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               {/* شريط البحث والفرز */}
               <div className="flex gap-2 items-center">
                 <div className="relative flex-1">
-                  <Search20Regular className="absolute right-2.5 top-2 h-4 w-4 text-muted-foreground" />
+                  <HugeIcon icon={Search01Icon} size={16} className="absolute right-2.5 top-2 text-muted-foreground" />
                   <Input
                     placeholder="بحث في المشاريع..."
                     className="pr-8 h-8 text-xs rounded-md"
@@ -364,7 +363,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("date") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="الفرز حسب التاريخ"
                   >
-                    <Calendar20Regular className="w-3.5 h-3.5" />
+                    <HugeIcon icon={Calendar03Icon} size={14} />
                   </button>
                   <button 
                     type="button"
@@ -372,14 +371,14 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("name") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="الفرز الأبجدي"
                   >
-                    <ArrowSort20Filled className="w-3.5 h-3.5" />
+                    <HugeIcon icon={Sorting01Icon} size={14} />
                   </button>
                 </div>
               </div>
 
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground border rounded-xl bg-muted/10">
-                  <Loader2 className="w-7 h-7 animate-spin text-primary mb-2" />
+                  <Spinner className="w-7 h-7 text-primary mb-2" size={28} />
                   <span className="text-xs font-medium">جاري تحميل المشاريع ...</span>
                 </div>
               ) : projectsList.length === 0 ? (
@@ -403,7 +402,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                       {isPinned && <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />}
                       <div className="space-y-1 pl-2 pr-1">
                         <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                          {isPinned && <Pin20Filled className="w-3 h-3 text-primary fill-primary/20" />}
+                          {isPinned && <HugeIcon icon={PinIcon} size={12} className="text-primary fill-primary/20" />}
                           {project.name}
                         </h4>
                         <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
@@ -411,7 +410,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                             {project.mode === "single" ? "صورة مفردة" : "كولاج مجمع"}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Calendar20Regular className="w-3 h-3" />
+                            <HugeIcon icon={Calendar03Icon} size={12} />
                             {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString("ar-EG") : ""}
                           </span>
                         </div>
@@ -425,7 +424,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                           className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title={isPinned ? "إلغاء التثبيت" : "تثبيت في الأعلى"}
                         >
-                          {isPinned ? <PinOff20Regular className="w-3.5 h-3.5" /> : <Pin20Filled className="w-3.5 h-3.5" />}
+                          {isPinned ? <HugeIcon icon={PinOffIcon} size={14} /> : <HugeIcon icon={PinIcon} size={14} />}
                         </Button>
                         <Button
                           variant="ghost"
@@ -433,7 +432,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                           onClick={(e) => handleDelete(project.id, e)}
                           className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
-                          <Delete20Regular className="w-3.5 h-3.5" />
+                          <HugeIcon icon={Delete02Icon} size={14} />
                         </Button>
                       </div>
                     </div>
@@ -457,12 +456,12 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                   >
                     {backupActionLoading ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Spinner className="w-3.5 h-3.5" size={14} />
                         <span>جاري التصدير ...</span>
                       </>
                     ) : (
                       <>
-                        <ArrowDownload20Filled className="w-3.5 h-3.5" />
+                        <HugeIcon icon={Download01Icon} size={14} />
                         <span>تصدير JSON</span>
                       </>
                     )}
@@ -476,7 +475,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                   </div>
                   <label className="cursor-pointer">
                     <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
-                      <ArrowUpload20Filled className="w-3.5 h-3.5" />
+                      <HugeIcon icon={Upload01Icon} size={14} />
                       <span>رفع ملف</span>
                     </span>
                     <input
@@ -501,7 +500,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     disabled={backupActionLoading}
                     className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-xs"
                   >
-                    <Delete20Regular className="w-3.5 h-3.5" />
+                    <HugeIcon icon={Delete02Icon} size={14} />
                     <span>حذف الكل</span>
                   </Button>
                 </div>
@@ -533,7 +532,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
         <DialogContent className="sm:max-w-[400px]" dir="rtl">
           <DialogHeader>
             <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
-              <ArrowUpload20Filled className="w-4 h-4 text-primary" />
+              <HugeIcon icon={Upload01Icon} size={16} className="text-primary" />
               <span>استيراد المشاريع</span>
             </DialogTitle>
           </DialogHeader>
@@ -568,7 +567,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               <Button onClick={handleConfirmImport} disabled={backupActionLoading} className="h-8 px-4 text-xs font-semibold rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground">
                 {backupActionLoading ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Spinner className="w-3.5 h-3.5" size={14} />
                     <span>جاري الاستيراد ...</span>
                   </>
                 ) : (
@@ -585,7 +584,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-right flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-bold">
-              <Warning20Filled className="w-4 h-4" />
+              <HugeIcon icon={Alert02Icon} size={16} />
               <span>تحذير: تهيئة مكتبة المشاريع</span>
             </AlertDialogTitle>
             <AlertDialogDescription className="font-cairo text-right text-xs">

@@ -1,4 +1,4 @@
-import { DocumentBulletList20Filled, Grid20Filled } from "@fluentui/react-icons";
+import { LayoutListIcon, Grid02Icon } from "@hugeicons/core-free-icons";
 import type { CollageTemplate } from './types';
 
 export const COLLAGE_TEMPLATES: CollageTemplate[] = [
@@ -17,7 +17,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.5068, y: 0.5095, w: 0.2365, h: 0.4286 },
       { x: 0.7568, y: 0.5095, w: 0.2365, h: 0.4286 },
     ],
-    icon: DocumentBulletList20Filled,
+    icon: LayoutListIcon,
     physicalLayout: { type: "iq-national-id", rows: 2, cols: 4, align: "center" }
   },
   {
@@ -34,7 +34,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.5068, y: 0.5095, w: 0.2162, h: 0.3810 },
       { x: 0.7365, y: 0.5095, w: 0.2162, h: 0.3810 },
     ],
-    icon: DocumentBulletList20Filled,
+    icon: LayoutListIcon,
     physicalLayout: { type: "iq-civil-id", rows: 2, cols: 4, align: "center" }
   },
   {
@@ -47,7 +47,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.0878, y: 0.5095, w: 0.4054, h: 0.3810 },
       { x: 0.5068, y: 0.5095, w: 0.4054, h: 0.3810 },
     ],
-    icon: DocumentBulletList20Filled,
+    icon: LayoutListIcon,
     physicalLayout: { type: "iq-general-id", rows: 2, cols: 2, align: "center" }
   },
   {
@@ -64,7 +64,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.5473, y: 0.1095, w: 0.4054, h: 0.3810 },
       { x: 0.5473, y: 0.5350, w: 0.4054, h: 0.3810 },
     ],
-    icon: DocumentBulletList20Filled,
+    icon: LayoutListIcon,
     physicalLayout: { type: "iq-mixed", rows: 2, cols: 3, align: "center" }
   },
   {
@@ -81,7 +81,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.5068, y: 0.5095, w: 0.2027, h: 0.3810 },
       { x: 0.7230, y: 0.5095, w: 0.2027, h: 0.3810 },
     ],
-    icon: DocumentBulletList20Filled,
+    icon: LayoutListIcon,
     physicalLayout: { type: "iq-transactions", rows: 2, cols: 4, align: "center" }
   },
 
@@ -96,7 +96,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.4730, y: 0, w: 0.2365, h: 0.4286 },
       { x: 0.7095, y: 0, w: 0.2365, h: 0.4286 },
     ],
-    icon: Grid20Filled,
+    icon: Grid02Icon,
     physicalLayout: { type: "iq-national-id", rows: 1, cols: 4, align: "top-left" }
   },
   {
@@ -109,7 +109,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.4324, y: 0, w: 0.2162, h: 0.3810 },
       { x: 0.6486, y: 0, w: 0.2162, h: 0.3810 },
     ],
-    icon: Grid20Filled,
+    icon: Grid02Icon,
     physicalLayout: { type: "iq-civil-id", rows: 1, cols: 4, align: "top-left" }
   },
   {
@@ -120,7 +120,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0, y: 0, w: 0.4054, h: 0.3810 },
       { x: 0.4054, y: 0, w: 0.4054, h: 0.3810 },
     ],
-    icon: Grid20Filled,
+    icon: Grid02Icon,
     physicalLayout: { type: "iq-general-id", rows: 1, cols: 2, align: "top-left" }
   },
   {
@@ -133,7 +133,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.4054, y: 0, w: 0.2027, h: 0.3810 },
       { x: 0.6081, y: 0, w: 0.2027, h: 0.3810 },
     ],
-    icon: Grid20Filled,
+    icon: Grid02Icon,
     physicalLayout: { type: "iq-transactions", rows: 1, cols: 4, align: "top-left" }
   },
 
@@ -148,7 +148,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0, y: 0.5, w: 0.5, h: 0.5 },
       { x: 0.5, y: 0.5, w: 0.5, h: 0.5 },
     ],
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
   {
     id: "collage-1x4-row",
@@ -160,7 +160,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.5, y: 0, w: 0.25, h: 1 },
       { x: 0.75, y: 0, w: 0.25, h: 1 },
     ],
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
   {
     id: "collage-6v-row",
@@ -172,7 +172,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       w: 1 / 6,
       h: 1,
     })),
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
   {
     id: "collage-1x3-row",
@@ -183,7 +183,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 1 / 3, y: 0, w: 1 / 3, h: 1 },
       { x: 2 / 3, y: 0, w: 1 / 3, h: 1 },
     ],
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
   {
     id: "collage-2h",
@@ -193,7 +193,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0, y: 0, w: 0.5, h: 1 },
       { x: 0.5, y: 0, w: 0.5, h: 1 },
     ],
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
   {
     id: "collage-2v",
@@ -203,7 +203,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0, y: 0, w: 1, h: 0.5 },
       { x: 0.5, y: 0.5, w: 1, h: 0.5 },
     ],
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
   {
     id: "collage-6",
@@ -215,7 +215,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       w: 1 / 3,
       h: 1 / 2,
     })),
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
   {
     id: "collage-8",
@@ -227,7 +227,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       w: 1 / 4,
       h: 1 / 2,
     })),
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
   {
     id: "collage-9",
@@ -239,7 +239,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       w: 1 / 3,
       h: 1 / 3,
     })),
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
   {
     id: "collage-12",
@@ -251,6 +251,6 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       w: 1 / 4,
       h: 1 / 3,
     })),
-    icon: Grid20Filled,
+    icon: Grid02Icon,
   },
 ];

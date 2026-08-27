@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { XIcon } from "lucide-react"
+import { Cancel01Icon } from "@hugeicons/core-free-icons"
+import { HugeIcon } from "@/components/ui/huge-icon"
 
 import { cn } from "@/lib/utils"
 
@@ -69,7 +70,7 @@ const DialogContent = React.forwardRef<
           data-slot="dialog-close"
           className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 text-muted-foreground/70 opacity-70 transition-all hover:opacity-100 hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer"
         >
-          <XIcon />
+          <HugeIcon icon={Cancel01Icon} size={16} />
           <span className="sr-only">إغلاق</span>
         </DialogPrimitive.Close>
       )}

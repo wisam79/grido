@@ -35,9 +35,22 @@ export function useKonvaDrag({
 
   const onDragStart = () => {
     const currentElements = useEditorStore.getState().elements;
-    const { selectedIds } = useEditorStore.getState();
-    const vTargets = [{ value: 0.5, origin: "canvas" }];
-    const hTargets = [{ value: 0.5, origin: "canvas" }];
+    const { selectedIds, userGuides, showUserGuides, showGrid, gridSize: storeGridSize } = useEditorStore.getState();
+    const effectiveGridSize = gridSize ?? storeGridSize;
+
+    // 🎯 أهداف المحاذاة المغناطيسية: حواف ومركز مساحة العمل
+    const vTargets: SnapTarget[] = [
+      { value: 0, origin: "canvas" },
+      { value: 0.5, origin: "canvas" },
+      { value: 1, origin: "canvas" },
+    ];
+    const hTargets: SnapTarget[] = [
+      { value: 0, origin: "canvas" },
+      { value: 0.5, origin: "canvas" },
+      { value: 1, origin: "canvas" },
+    ];
+
+    // حواف ومراكز كافة العناصر الأخرى غير المحددة
     for (const el of currentElements) {
       if (selectedIds.includes(el.id)) continue;
       vTargets.push({ value: el.x, origin: "element" });
@@ -47,6 +60,27 @@ export function useKonvaDrag({
       hTargets.push({ value: el.y + el.height / 2, origin: "element" });
       hTargets.push({ value: el.y + el.height, origin: "element" });
     }
+
+    // خطوط المساطر الإرشادية للمستخدم
+    if (showUserGuides && userGuides) {
+      for (const g of userGuides) {
+        if (g.type === "v") vTargets.push({ value: g.pos, origin: "user-guide" });
+        if (g.type === "h") hTargets.push({ value: g.pos, origin: "user-guide" });
+      }
+    }
+
+    // خطوط الشبكة عند تفعيل إظهار الشبكة
+    if (showGrid && effectiveGridSize && effectiveGridSize > 0) {
+      const numCols = Math.floor(canvasWidth / effectiveGridSize);
+      for (let i = 1; i < numCols; i++) {
+        vTargets.push({ value: (i * effectiveGridSize) / canvasWidth, origin: "grid" });
+      }
+      const numRows = Math.floor(canvasHeight / effectiveGridSize);
+      for (let j = 1; j < numRows; j++) {
+        hTargets.push({ value: (j * effectiveGridSize) / canvasHeight, origin: "grid" });
+      }
+    }
+
     snapTargetsRef.current = { vTargets, hTargets };
 
     const startPositions: Record<string, { x: number; y: number }> = {};
@@ -64,13 +98,11 @@ export function useKonvaDrag({
   };
 
   const dragBoundFunc = (pos: { x: number; y: number }) => {
-    if (altPressedRef.current) return pos;
-
     // Konva يمرر إحداثيات «مطلقة» (شاشية، بعد scale الـ Stage) ويغذّي القيمة
     // المعادة في setAbsolutePosition. المغناطيس والحدود معرّفة بوحدات الكانفس
     // المنطقية — لذا نحوّل للفضاء المنطقي أولاً ثم نعيد الناتج للمطلق.
-    // (نفس نمط collage-image.tsx: القسمة على stageScale والضرب عند الإرجاع)
-    const stageScale = getKonvaNode(element.id)?.getStage()?.scaleX() || 1;
+    const stage = getKonvaNode(element.id)?.getStage();
+    const stageScale = stage?.scaleX() || 1;
     let xLogical = pos.x / stageScale;
     let yLogical = pos.y / stageScale;
 
@@ -86,17 +118,24 @@ export function useKonvaDrag({
       }
     }
 
-    if (snapToGrid && gridSize && gridSize > 0) {
-      xLogical = Math.round(xLogical / gridSize) * gridSize;
-      yLogical = Math.round(yLogical / gridSize) * gridSize;
-    } else {
+    const snapEnabled = snapToGrid !== false && !altPressedRef.current;
+    if (snapEnabled) {
       const x = xLogical / canvasWidth;
       const y = yLogical / canvasHeight;
-      const thresholdX = 5 / canvasWidth;
-      const thresholdY = 5 / canvasHeight;
+      // عتبة 8 بكسل شاشي مستقلة عن مقياس التكبير (Screen-pixel consistent threshold)
+      const thresholdX = 8 / (canvasWidth * stageScale);
+      const thresholdY = 8 / (canvasHeight * stageScale);
       const targets = snapTargetsRef.current || {
-        vTargets: [{ value: 0.5, origin: "canvas" }],
-        hTargets: [{ value: 0.5, origin: "canvas" }]
+        vTargets: [
+          { value: 0, origin: "canvas" },
+          { value: 0.5, origin: "canvas" },
+          { value: 1, origin: "canvas" },
+        ],
+        hTargets: [
+          { value: 0, origin: "canvas" },
+          { value: 0.5, origin: "canvas" },
+          { value: 1, origin: "canvas" },
+        ],
       };
       const snapResult = getSnapPositionsWithTargets(
         x,
@@ -111,6 +150,7 @@ export function useKonvaDrag({
       xLogical = snapResult.x * canvasWidth;
       yLogical = snapResult.y * canvasHeight;
     }
+
     const elW = element.width * canvasWidth;
     const elH = element.height * canvasHeight;
     const margin = 0.25;
@@ -120,7 +160,8 @@ export function useKonvaDrag({
   };
 
   const onDragMove = (e: KonvaEventObject<DragEvent>) => {
-    if (altPressedRef.current) {
+    const snapEnabled = snapToGrid !== false && !altPressedRef.current;
+    if (!snapEnabled) {
       if (prevGuidesRef.current.length > 0) {
         setActiveGuides([]);
         prevGuidesRef.current = [];
@@ -156,43 +197,46 @@ export function useKonvaDrag({
       e.target.getLayer()?.batchDraw();
     }
 
-    if (snapToGrid) {
-      if (prevGuidesRef.current.length > 0) {
-        setActiveGuides([]);
-        prevGuidesRef.current = [];
+    const stage = e.target.getStage();
+    const stageScale = stage?.scaleX() || 1;
+    const x = e.target.x() / canvasWidth;
+    const y = e.target.y() / canvasHeight;
+    const thresholdX = 8 / (canvasWidth * stageScale);
+    const thresholdY = 8 / (canvasHeight * stageScale);
+    const targets = snapTargetsRef.current || {
+      vTargets: [
+        { value: 0, origin: "canvas" },
+        { value: 0.5, origin: "canvas" },
+        { value: 1, origin: "canvas" },
+      ],
+      hTargets: [
+        { value: 0, origin: "canvas" },
+        { value: 0.5, origin: "canvas" },
+        { value: 1, origin: "canvas" },
+      ],
+    };
+    const snapResult = getSnapPositionsWithTargets(
+      x,
+      y,
+      element.width,
+      element.height,
+      targets.vTargets,
+      targets.hTargets,
+      thresholdX,
+      thresholdY
+    );
+    
+    const isGuidesEqual = (g1: any[], g2: any[]) => {
+      if (g1.length !== g2.length) return false;
+      for (let i = 0; i < g1.length; i++) {
+        if (g1[i].type !== g2[i].type || Math.abs(g1[i].coord - g2[i].coord) > 0.0001) return false;
       }
-    } else {
-      const x = e.target.x() / canvasWidth;
-      const y = e.target.y() / canvasHeight;
-      const thresholdX = 5 / canvasWidth;
-      const thresholdY = 5 / canvasHeight;
-      const targets = snapTargetsRef.current || {
-        vTargets: [{ value: 0.5, origin: "canvas" }],
-        hTargets: [{ value: 0.5, origin: "canvas" }]
-      };
-      const snapResult = getSnapPositionsWithTargets(
-        x,
-        y,
-        element.width,
-        element.height,
-        targets.vTargets,
-        targets.hTargets,
-        thresholdX,
-        thresholdY
-      );
-      
-      const isGuidesEqual = (g1: any[], g2: any[]) => {
-        if (g1.length !== g2.length) return false;
-        for (let i = 0; i < g1.length; i++) {
-          if (g1[i].type !== g2[i].type || Math.abs(g1[i].coord - g2[i].coord) > 0.0001) return false;
-        }
-        return true;
-      };
+      return true;
+    };
 
-      if (!isGuidesEqual(snapResult.guides, prevGuidesRef.current)) {
-        setActiveGuides(snapResult.guides);
-        prevGuidesRef.current = snapResult.guides;
-      }
+    if (!isGuidesEqual(snapResult.guides, prevGuidesRef.current)) {
+      setActiveGuides(snapResult.guides);
+      prevGuidesRef.current = snapResult.guides;
     }
   };
 

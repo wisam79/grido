@@ -1,5 +1,5 @@
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/huge-icon";
 import { checkerColor } from "@/lib/canvas/canvas-colors";
 
 interface CanvasPaperProps {
@@ -54,7 +54,7 @@ export const CanvasPaper = React.memo(
       >
         {isLoading && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md rounded-sm gap-2">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <Spinner className="w-8 h-8 text-primary" size={32} />
             <span className="text-xs font-bold text-white font-cairo">
               جاري المعالجة ...
             </span>

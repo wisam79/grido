@@ -195,8 +195,16 @@ export function getSnapPositions(
   thresholdY: number,
   resizeHandle: string | null = null
 ): SnapResult {
-  const vTargets = [{ value: 0.5, origin: "canvas" }];
-  const hTargets = [{ value: 0.5, origin: "canvas" }];
+  const vTargets: SnapTarget[] = [
+    { value: 0, origin: "canvas" },
+    { value: 0.5, origin: "canvas" },
+    { value: 1, origin: "canvas" },
+  ];
+  const hTargets: SnapTarget[] = [
+    { value: 0, origin: "canvas" },
+    { value: 0.5, origin: "canvas" },
+    { value: 1, origin: "canvas" },
+  ];
 
   for (const el of elements) {
     if (el.id === dragId) continue;

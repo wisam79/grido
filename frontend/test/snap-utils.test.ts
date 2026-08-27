@@ -41,15 +41,42 @@ describe("snap-utils - Magnetic Alignment (Snap to Grid/Guides) Tests", () => {
     expect(result.guides).toContainEqual({ type: "v", coord: 0.2 });
   });
 
-  it("should collect targets from all other elements when using getSnapPositions", () => {
-    const mockElements = [
-      { id: "el1", type: "shape", shape: "rect", x: 0.1, y: 0.2, width: 0.3, height: 0.4, rotation: 0, opacity: 1, zIndex: 1 },
-      { id: "el2", type: "text", text: "Drag me", x: 0.7, y: 0.7, width: 0.1, height: 0.1, rotation: 0, opacity: 1, zIndex: 2 },
-    ] as any[] as CanvasElement[];
+  it("should snap to canvas boundary edges (0, 1) and center (0.5)", () => {
+    // Near left edge (0)
+    const leftRes = getSnapPositions("el1", 0.003, 0.1, 0.1, 0.1, [], 0.01, 0.01);
+    expect(leftRes.x).toBe(0);
+    expect(leftRes.guides).toContainEqual({ type: "v", coord: 0 });
 
-    const result = getSnapPositions("el2", 0.099, 0.5, 0.1, 0.1, mockElements, 0.01, 0.01);
-    // Should snap to el1.x (0.1)
-    expect(result.x).toBe(0.1);
-    expect(result.guides).toContainEqual({ type: "v", coord: 0.1 });
+    // Near right edge (1) with width 0.2: x should snap to 0.8
+    const rightRes = getSnapPositions("el1", 0.798, 0.1, 0.2, 0.1, [], 0.01, 0.01);
+    expect(rightRes.x).toBe(0.8);
+    expect(rightRes.guides).toContainEqual({ type: "v", coord: 1 });
+
+    // Near top edge (0)
+    const topRes = getSnapPositions("el1", 0.1, 0.004, 0.1, 0.1, [], 0.01, 0.01);
+    expect(topRes.y).toBe(0);
+    expect(topRes.guides).toContainEqual({ type: "h", coord: 0 });
+
+    // Near bottom edge (1) with height 0.15: y should snap to 0.85
+    const bottomRes = getSnapPositions("el1", 0.1, 0.848, 0.1, 0.15, [], 0.01, 0.01);
+    expect(bottomRes.y).toBe(0.85);
+    expect(bottomRes.guides).toContainEqual({ type: "h", coord: 1 });
+  });
+
+  it("should snap when resizing west (w), north (n), and south (s)", () => {
+    // Resize west: handle = "w". Left edge should snap to 0.2
+    const westRes = getSnapPositionsWithTargets(0.198, 0.1, 0.3, 0.3, vTargets, hTargets, 0.01, 0.01, "w");
+    expect(westRes.x).toBe(0.2);
+    expect(westRes.guides).toContainEqual({ type: "v", coord: 0.2 });
+
+    // Resize south: handle = "s". Bottom edge (y + h = 0.1 + 0.198 = 0.298) should snap to 0.3
+    const southRes = getSnapPositionsWithTargets(0.1, 0.1, 0.3, 0.198, vTargets, hTargets, 0.01, 0.01, "s");
+    expect(southRes.h).toBe(0.2);
+    expect(southRes.guides).toContainEqual({ type: "h", coord: 0.3 });
+
+    // Resize north: handle = "n". Top edge should snap to 0.3
+    const northRes = getSnapPositionsWithTargets(0.1, 0.298, 0.3, 0.3, vTargets, hTargets, 0.01, 0.01, "n");
+    expect(northRes.y).toBe(0.3);
+    expect(northRes.guides).toContainEqual({ type: "h", coord: 0.3 });
   });
 });

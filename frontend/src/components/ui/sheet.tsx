@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
-import { XIcon } from "lucide-react"
+import { Cancel01Icon } from "@hugeicons/core-free-icons"
+import { HugeIcon } from "@/components/ui/huge-icon"
 
 import { cn } from "@/lib/utils"
 
@@ -73,7 +74,7 @@ function SheetContent({
       >
         {children}
         <SheetPrimitive.Close className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 opacity-70 transition-all hover:opacity-100 hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none cursor-pointer">
-          <XIcon className="size-4" />
+          <HugeIcon icon={Cancel01Icon} size={16} className="size-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Ruler20Filled } from "@fluentui/react-icons";
+import { HugeIcon } from "@/components/ui/huge-icon";
+import { RulerIcon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 
 export interface PaperPresetOption {
@@ -99,7 +100,7 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
         className
       )}
     >
-      <Ruler20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
+      <HugeIcon icon={RulerIcon} size={14} className="text-primary shrink-0" />
       <span className="font-semibold text-muted-foreground shrink-0">ورق جاهز:</span>
 
       <Select

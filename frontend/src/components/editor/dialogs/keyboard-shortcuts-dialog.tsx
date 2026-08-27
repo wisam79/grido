@@ -5,12 +5,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Keyboard20Filled,
-  ArrowUp20Regular,
-  ArrowDown20Regular,
-  Sparkle20Filled,
-} from "@fluentui/react-icons";
+  KeyboardIcon,
+  ArrowUp01Icon,
+  ArrowDown01Icon,
+  SparklesIcon,
+} from "@hugeicons/core-free-icons";
 import { Separator } from "@/components/ui/separator";
 
 interface ShortcutItem {
@@ -101,9 +102,7 @@ export function KeyboardShortcutsDialog() {
         {/* رأس النافذة الثابت */}
         <DialogHeader className="px-5 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-2xs">
-              <Keyboard20Filled className="w-4 h-4" />
-            </div>
+            <HugeIcon icon={KeyboardIcon} size={24} className="text-primary" />
             <span>اختصارات لوحة المفاتيح</span>
           </DialogTitle>
         </DialogHeader>
@@ -113,7 +112,7 @@ export function KeyboardShortcutsDialog() {
           {categories.map((cat, catIdx) => (
             <div key={catIdx} className="space-y-2">
               <div className="text-[11px] font-extrabold text-primary flex items-center gap-1.5 px-0.5">
-                <Sparkle20Filled className="w-3 h-3 opacity-70" />
+                <HugeIcon icon={SparklesIcon} size={12} className="opacity-70" />
                 <span>{cat.title}</span>
               </div>
               <div className="bg-muted/30 rounded-xl border border-border/40 p-2 space-y-1">
@@ -121,7 +120,7 @@ export function KeyboardShortcutsDialog() {
                   <React.Fragment key={itemIdx}>
                     <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-muted/50 transition-colors text-xs">
                       <span className="text-foreground/90 font-medium text-xs">
-                        {shortcut.label}
+                         {shortcut.label}
                       </span>
                       <div className="flex items-center gap-1.5" dir="ltr">
                         {shortcut.keys.map((key, i) => (
@@ -131,8 +130,8 @@ export function KeyboardShortcutsDialog() {
                           >
                             {key === "الأسهم" ? (
                               <div className="flex items-center gap-0.5">
-                                <ArrowUp20Regular className="w-3 h-3" />
-                                <ArrowDown20Regular className="w-3 h-3" />
+                                <HugeIcon icon={ArrowUp01Icon} size={12} />
+                                <HugeIcon icon={ArrowDown01Icon} size={12} />
                               </div>
                             ) : (
                               key

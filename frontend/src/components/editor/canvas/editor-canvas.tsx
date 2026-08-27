@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import { Loader2 } from "lucide-react";
-import { Dismiss20Filled, ArrowClockwise20Filled } from "@fluentui/react-icons";
+import { Spinner, HugeIcon } from "@/components/ui/huge-icon";
+import { RotateClockwiseIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { OpenFile, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
@@ -103,7 +103,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
           }}
           title="استبدال الصورة"
         >
-          {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowClockwise20Filled className="w-3.5 h-3.5 text-primary" />}
+          {isLoading ? <Spinner className="w-3.5 h-3.5" size={14} /> : <HugeIcon icon={RotateClockwiseIcon} size={14} className="text-primary" />}
         </button>
 
         <div className="w-px h-3 bg-border/60 mx-0.5" />
@@ -117,12 +117,39 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
           }}
           title="إزالة الصورة"
         >
-          <Dismiss20Filled className="w-3.5 h-3.5" />
+          <HugeIcon icon={Cancel01Icon} size={14} />
         </button>
       </div>
     </div>
   );
 });
+
+function formatGuideMeasurement(
+  relPos: number,
+  isH: boolean,
+  unit: RulerUnit,
+  widthMM: number,
+  heightMM: number,
+  canvasWidth: number,
+  canvasHeight: number
+): string {
+  const clamped = Math.min(1, Math.max(0, relPos));
+  if (unit === "px") {
+    const px = Math.round(clamped * (isH ? canvasHeight : canvasWidth));
+    return `${px} px`;
+  }
+  if (unit === "cm") {
+    const cm = ((clamped * (isH ? heightMM : widthMM)) / 10).toFixed(2);
+    return `${cm} cm`;
+  }
+  if (unit === "in") {
+    const inch = ((clamped * (isH ? heightMM : widthMM)) / 25.4).toFixed(2);
+    return `${inch} in`;
+  }
+  // mm
+  const mm = (clamped * (isH ? heightMM : widthMM)).toFixed(1);
+  return `${mm} mm`;
+}
 
 export const EditorCanvas = React.memo(React.forwardRef<
   HTMLDivElement,
@@ -152,17 +179,41 @@ export const EditorCanvas = React.memo(React.forwardRef<
     target: ContextMenuTarget;
   } | null>(null);
 
-  // وحدة المساطر — تفضيل واجهة خفيف يُحفظ محلياً (AGENTS.md #68)
-  const [rulerUnit, setRulerUnit] = useState<RulerUnit>(() =>
-    typeof localStorage !== "undefined" && localStorage.getItem("grido_ruler_unit") === "px" ? "px" : "mm"
+  // وحدة المساطر والخطوط الإرشادية من الـ Store
+  const {
+    rulerUnit,
+    setRulerUnit,
+    userGuides,
+    showUserGuides,
+    addUserGuide,
+    updateUserGuide,
+    removeUserGuide,
+    clearUserGuides,
+    setShowUserGuides,
+    selectedId,
+    slots,
+  } = useEditorStore(
+    useShallow((state) => ({
+      rulerUnit: state.rulerUnit,
+      setRulerUnit: state.setRulerUnit,
+      userGuides: state.userGuides,
+      showUserGuides: state.showUserGuides,
+      addUserGuide: state.addUserGuide,
+      updateUserGuide: state.updateUserGuide,
+      removeUserGuide: state.removeUserGuide,
+      clearUserGuides: state.clearUserGuides,
+      setShowUserGuides: state.setShowUserGuides,
+      selectedId: state.selectedId,
+      slots: state.slots,
+    }))
   );
-  const toggleRulerUnit = useCallback(() => {
-    setRulerUnit((prev: RulerUnit) => {
-      const next: RulerUnit = prev === "mm" ? "px" : "mm";
-      try { localStorage.setItem("grido_ruler_unit", next); } catch { /* تجاهل قيود التخزين */ }
-      return next;
-    });
-  }, []);
+
+  // حالة سحب خط إرشادي جديد من المسطرة أو تحريك خط قائم
+  const [dragGuideState, setDragGuideState] = useState<{
+    type: "h" | "v";
+    pos: number; // 0..1 نسبي إلى الكانفس
+    guideId?: string;
+  } | null>(null);
 
   // 🛡️ تقسيم الاشتراك: الدوال (هويات ثابتة أبداً) منفصلة عن الحالة،
   // وحالة الخانة (slots/selectedId) انتقلت إلى SelectedSlotQuickBar —
@@ -476,7 +527,115 @@ export const EditorCanvas = React.memo(React.forwardRef<
     if (vCursor) vCursor.style.display = "none";
   };
 
-   const handleDoubleClick = useCallback(async (el: CanvasElement) => {
+  // حساب تظليل أبعاد العنصر أو الخانة المحددة على المسطرة
+  const { selectionBoundsX, selectionBoundsY } = useMemo(() => {
+    if (printMode || !showRuler || !selectedId) return { selectionBoundsX: null, selectionBoundsY: null };
+
+    let x = 0, y = 0, w = 0, h = 0, hasSelection = false;
+
+    const el = elements.find((e) => e.id === selectedId);
+    if (el) {
+      x = el.x;
+      y = el.y;
+      w = el.width;
+      h = el.height;
+      hasSelection = true;
+    } else if (slots && slots.length > 0) {
+      const slot = slots.find((s) => s.id === selectedId);
+      if (slot) {
+        x = slot.x;
+        y = slot.y;
+        w = slot.w;
+        h = slot.h;
+        hasSelection = true;
+      }
+    }
+
+    if (!hasSelection || w <= 0 || h <= 0 || displayW <= 0 || displayH <= 0) {
+      return { selectionBoundsX: null, selectionBoundsY: null };
+    }
+
+    return {
+      selectionBoundsX: {
+        startPx: rulerMetrics.originX + x * displayW,
+        lengthPx: w * displayW,
+      },
+      selectionBoundsY: {
+        startPx: rulerMetrics.originY + y * displayH,
+        lengthPx: h * displayH,
+      },
+    };
+  }, [printMode, showRuler, selectedId, elements, slots, displayW, displayH, rulerMetrics.originX, rulerMetrics.originY]);
+
+  // بدء سحب خط إرشادي جديد من المسطرة الأفقية
+  const handleStartDragHGuide = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    if (printMode || !innerRef.current || displayH <= 0) return;
+    e.preventDefault();
+    const paperRect = innerRef.current.getBoundingClientRect();
+    const relY = (e.clientY - paperRect.top) / displayH;
+    setDragGuideState({
+      type: "h",
+      pos: relY,
+    });
+  }, [printMode, displayH]);
+
+  // بدء سحب خط إرشادي جديد من المسطرة الرأسية
+  const handleStartDragVGuide = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    if (printMode || !innerRef.current || displayW <= 0) return;
+    e.preventDefault();
+    const paperRect = innerRef.current.getBoundingClientRect();
+    const relX = (e.clientX - paperRect.left) / displayW;
+    setDragGuideState({
+      type: "v",
+      pos: relX,
+    });
+  }, [printMode, displayW]);
+
+  // متابعة سحب الخط الإرشادي عالمياً
+  useEffect(() => {
+    if (!dragGuideState) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!innerRef.current) return;
+      const paperRect = innerRef.current.getBoundingClientRect();
+      if (dragGuideState.type === "h") {
+        const h = paperRect.height || 1;
+        const pos = (e.clientY - paperRect.top) / h;
+        setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
+      } else {
+        const w = paperRect.width || 1;
+        const pos = (e.clientX - paperRect.left) / w;
+        setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
+      }
+    };
+
+    const handlePointerUp = () => {
+      if (dragGuideState) {
+        const { type, pos, guideId } = dragGuideState;
+        if (pos >= -0.05 && pos <= 1.05) {
+          const clamped = Math.min(1, Math.max(0, pos));
+          if (guideId) {
+            updateUserGuide(guideId, clamped);
+          } else {
+            addUserGuide({ type, pos: clamped });
+          }
+        } else if (guideId) {
+          // سحبه خارج الكانفس يؤدي إلى حذفه
+          removeUserGuide(guideId);
+        }
+        setDragGuideState(null);
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [dragGuideState, addUserGuide, updateUserGuide, removeUserGuide]);
+
+  const handleDoubleClick = useCallback(async (el: CanvasElement) => {
      if (printMode || isLoading) return;
      // العنصر المقفل لا يُحرَّر بالنقر المزدوج — السحب والـ Transformer يحترمان القفل أيضاً
      if (el.locked) return;
@@ -741,7 +900,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     >
       {isLoading && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md rounded-sm gap-2">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <Spinner className="w-8 h-8 text-primary" size={32} />
           <span className="text-xs font-bold text-white font-cairo">جاري المعالجة ...</span>
         </div>
       )}
@@ -775,20 +934,91 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
 
 
+      {/* 🧭 خطوط المستخدم الإرشادية التفاعلية (User Guidelines) */}
+      {!printMode && showUserGuides && userGuides.map((guide) => {
+        const isH = guide.type === "h";
+        const isCurrentlyDragging = dragGuideState?.guideId === guide.id;
+        if (isCurrentlyDragging) return null;
+
+        return (
+          <div
+            key={guide.id}
+            title="خط إرشادي: اسحب للتحريك أو انقر مرتين للحذف"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              setDragGuideState({
+                type: guide.type,
+                pos: guide.pos,
+                guideId: guide.id,
+              });
+            }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              removeUserGuide(guide.id);
+            }}
+            className={`absolute z-[45] group transition-colors select-none ${
+              isH
+                ? "left-0 right-0 h-4 -mt-2 cursor-ns-resize flex items-center"
+                : "top-0 bottom-0 w-4 -ml-2 cursor-ew-resize flex justify-center"
+            }`}
+            style={{
+              [isH ? "top" : "left"]: `${guide.pos * 100}%`,
+            }}
+          >
+            <div
+              className={`bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.9)] transition-all ${
+                isH ? "w-full h-[1.5px] group-hover:h-[2.5px]" : "h-full w-[1.5px] group-hover:w-[2.5px]"
+              }`}
+            />
+            {/* شارة القياس عند التحويم */}
+            <div
+              className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded bg-sky-600 text-white font-mono text-[9px] font-bold shadow-md z-50 pointer-events-none ${
+                isH ? "left-3 -top-5" : "top-3 left-2"
+              }`}
+            >
+              {formatGuideMeasurement(guide.pos, isH, rulerUnit, widthMM, heightMM, canvasWidth, canvasHeight)}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* 🧭 خط السحب الإرشادي المباشر (Live Dragging Guide Line) */}
+      {!printMode && dragGuideState && (
+        <div
+          className={`absolute z-[55] pointer-events-none select-none ${
+            dragGuideState.type === "h"
+              ? "left-0 right-0 h-[2px] bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,1)] flex items-center"
+              : "top-0 bottom-0 w-[2px] bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,1)] flex justify-center"
+          }`}
+          style={{
+            [dragGuideState.type === "h" ? "top" : "left"]: `${dragGuideState.pos * 100}%`,
+          }}
+        >
+          <div
+            className={`absolute flex items-center px-1.5 py-0.5 rounded bg-sky-600 text-white font-mono text-[9px] font-bold shadow-lg ${
+              dragGuideState.type === "h" ? "left-3 -top-5" : "top-3 left-2"
+            }`}
+          >
+            {formatGuideMeasurement(dragGuideState.pos, dragGuideState.type === "h", rulerUnit, widthMM, heightMM, canvasWidth, canvasHeight)}
+          </div>
+        </div>
+      )}
+
+      {/* 🧭 خطوط المحاذاة الذكية أثناء التحريك (Smart Snap Alignment Guides) */}
       {!printMode && activeGuides.map((guide, idx) => {
         const isCenter = Math.abs(guide.coord - 0.5) < 0.005;
         const color = isCenter ? guideCenter() : guideEdge();
         return (
           <div
             key={idx}
-            className="absolute pointer-events-none z-50 transition-opacity duration-75"
+            className="absolute pointer-events-none z-[60] transition-opacity duration-75"
             style={{
               left: guide.type === "v" ? `${guide.coord * 100}%` : 0,
               top: guide.type === "h" ? `${guide.coord * 100}%` : 0,
-              width: guide.type === "v" ? "1px" : "100%",
-              height: guide.type === "h" ? "1px" : "100%",
+              width: guide.type === "v" ? "1.5px" : "100%",
+              height: guide.type === "h" ? "1.5px" : "100%",
               backgroundColor: color,
-              boxShadow: `0 0 6px ${color}90`,
+              boxShadow: `0 0 6px ${color}`,
             }}
           />
         );
@@ -820,7 +1050,13 @@ export const EditorCanvas = React.memo(React.forwardRef<
         widthMM={widthMM}
         canvasPxW={canvasWidth}
         rulerUnit={rulerUnit}
-        onToggleRulerUnit={toggleRulerUnit}
+        onChangeRulerUnit={setRulerUnit}
+        selectionBoundsX={selectionBoundsX}
+        onStartDragHGuide={handleStartDragHGuide}
+        onClearGuides={clearUserGuides}
+        hasGuides={userGuides.length > 0}
+        showUserGuides={showUserGuides}
+        onToggleShowGuides={() => setShowUserGuides(!showUserGuides)}
       />
 
       <div className="flex flex-1 overflow-hidden relative" dir="ltr">
@@ -833,6 +1069,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
           heightMM={heightMM}
           canvasPxH={canvasHeight}
           rulerUnit={rulerUnit}
+          selectionBoundsY={selectionBoundsY}
+          onStartDragVGuide={handleStartDragVGuide}
         />
 
         <div

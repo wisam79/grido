@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ArrowSwap20Filled, ChevronDown20Filled, Checkmark20Filled, SlideSize20Filled } from "@fluentui/react-icons";
+import { HugeIcon } from "@/components/ui/huge-icon";
+import { Exchange01Icon, ArrowDown01Icon, Tick01Icon, CropIcon } from "@hugeicons/core-free-icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -169,7 +170,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   return (
     <FluentSection
-      icon={<SlideSize20Filled className="w-3.5 h-3.5 text-primary" />}
+      icon={<HugeIcon icon={CropIcon} size={14} className="text-primary" />}
       title="مساحة العمل"
       collapsible
       defaultOpen={true}
@@ -192,7 +193,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 <span className="truncate">
                   {activePreset ? activePreset.name.split(" (")[0] : "مقاس مخصص"}
                 </span>
-                <ChevronDown20Filled className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <HugeIcon icon={ArrowDown01Icon} size={14} className="text-muted-foreground shrink-0" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8" align="start">
@@ -203,7 +204,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 className="text-xs text-right justify-between font-bold cursor-pointer rounded-md"
               >
                 <span>مقاس مخصص يدوي</span>
-                {activePresetId === "custom" && <Checkmark20Filled className="w-3.5 h-3.5 text-primary" />}
+                {activePresetId === "custom" && <HugeIcon icon={Tick01Icon} size={14} className="text-primary" />}
               </DropdownMenuItem>
               {PAPER_SIZES.map((p) => {
                 const nameParts = p.name.split(" (");
@@ -216,7 +217,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                     className="text-xs text-right justify-between cursor-pointer rounded-md flex items-center"
                   >
                     <span>{label}</span>
-                    {activePresetId === p.id && <Checkmark20Filled className="w-3.5 h-3.5 text-primary" />}
+                    {activePresetId === p.id && <HugeIcon icon={Tick01Icon} size={14} className="text-primary" />}
                   </DropdownMenuItem>
                 );
               })}
@@ -276,7 +277,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             aria-label="تبديل الاتجاه (أفقي/عمودي)"
             className="w-8 h-8 rounded-md bg-input hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none"
           >
-            <ArrowSwap20Filled className="w-3.5 h-3.5" />
+            <HugeIcon icon={Exchange01Icon} size={14} />
           </button>
 
           {/* الارتفاع H */}

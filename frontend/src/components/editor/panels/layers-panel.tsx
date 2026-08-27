@@ -4,19 +4,20 @@ import { CanvasElement } from "@/lib/store/types";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Image20Filled,
-  TextT20Filled,
-  Shapes20Filled,
-  Layer20Filled,
-  Eye20Filled,
-  EyeOff20Filled,
-  LockClosed20Filled,
-  LockOpen20Filled,
-  Delete20Regular,
-  Copy20Regular,
-  ReOrderDotsVertical20Regular,
-} from "@fluentui/react-icons";
+  Image02Icon,
+  TextIcon,
+  Shapes01Icon,
+  Layers01Icon,
+  ViewIcon,
+  ViewOffIcon,
+  LockKeyIcon,
+  LockOpenIcon,
+  Delete02Icon,
+  Copy01Icon,
+  DragDropVerticalIcon,
+} from "@hugeicons/core-free-icons";
 
 /* ────────────────────────────────────────────────────────
  * لوحة الطبقات الاحترافية (Layers Panel)
@@ -55,13 +56,13 @@ function getElementLabel(el: CanvasElement): string {
 function getElementIcon(el: CanvasElement) {
   switch (el.type) {
     case "image":
-      return <Image20Filled className="w-3.5 h-3.5" />;
+      return <HugeIcon icon={Image02Icon} size={14} />;
     case "text":
-      return <TextT20Filled className="w-3.5 h-3.5" />;
+      return <HugeIcon icon={TextIcon} size={14} />;
     case "shape":
-      return <Shapes20Filled className="w-3.5 h-3.5" />;
+      return <HugeIcon icon={Shapes01Icon} size={14} />;
     default:
-      return <Layer20Filled className="w-3.5 h-3.5" />;
+      return <HugeIcon icon={Layers01Icon} size={14} />;
   }
 }
 
@@ -131,7 +132,7 @@ const LayerRow = React.memo(function LayerRow({
     >
       {/* مقبض السحب */}
       <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors shrink-0">
-        <ReOrderDotsVertical20Regular className="w-3 h-3" />
+        <HugeIcon icon={DragDropVerticalIcon} size={12} />
       </div>
 
       {/* أيقونة النوع */}
@@ -172,7 +173,7 @@ const LayerRow = React.memo(function LayerRow({
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
               className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
-              <Copy20Regular className="w-3 h-3" />
+              <HugeIcon icon={Copy01Icon} size={12} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">نسخ</TooltipContent>
@@ -188,7 +189,7 @@ const LayerRow = React.memo(function LayerRow({
                 isHidden ? "text-destructive/60" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isHidden ? <EyeOff20Filled className="w-3 h-3" /> : <Eye20Filled className="w-3 h-3" />}
+              {isHidden ? <HugeIcon icon={ViewOffIcon} size={12} /> : <HugeIcon icon={ViewIcon} size={12} />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">
@@ -206,7 +207,7 @@ const LayerRow = React.memo(function LayerRow({
                 isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isLocked ? <LockClosed20Filled className="w-3 h-3" /> : <LockOpen20Filled className="w-3 h-3" />}
+              {isLocked ? <HugeIcon icon={LockKeyIcon} size={12} /> : <HugeIcon icon={LockOpenIcon} size={12} />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">
@@ -221,7 +222,7 @@ const LayerRow = React.memo(function LayerRow({
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
               className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
-              <Delete20Regular className="w-3 h-3" />
+              <HugeIcon icon={Delete02Icon} size={12} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">حذف</TooltipContent>
@@ -334,7 +335,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">
         <div className="flex items-center gap-2 text-xs font-extrabold text-foreground">
           <div className="p-1 rounded-md bg-primary/10 text-primary">
-            <Layer20Filled className="w-3.5 h-3.5" />
+            <HugeIcon icon={Layers01Icon} size={14} />
           </div>
           <span>الطبقات</span>
         </div>
@@ -348,7 +349,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
         {sortedElements.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-16 px-4">
             <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center mb-3">
-              <Layer20Filled className="w-5 h-5 text-muted-foreground/50" />
+              <HugeIcon icon={Layers01Icon} size={20} className="text-muted-foreground/50" />
             </div>
             <p className="text-[11px] text-muted-foreground font-bold">
               لا توجد عناصر بعد

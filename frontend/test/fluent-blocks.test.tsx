@@ -10,14 +10,15 @@ import {
   FluentIconButton,
 } from '../src/components/ui/blocks';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { Sliders, Sparkles, FolderHeart } from 'lucide-react';
+import { HugeIcon } from '../src/components/ui/huge-icon';
+import { Settings01Icon, SparklesIcon, Folder01Icon } from '@hugeicons/core-free-icons';
 
 describe('Fluent 2 UI Blocks Component Suite', () => {
   describe('FluentSection', () => {
     it('renders section title, subtitle, icon, action, and children', () => {
       render(
         <FluentSection
-          icon={<Sliders data-testid="section-icon" />}
+          icon={<HugeIcon icon={Settings01Icon} data-testid="section-icon" />}
           title="إعدادات الكانفاس"
           subtitle="تعديل الأبعاد والهوامش"
           action={<button>إعادة ضبط</button>}
@@ -115,7 +116,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
       const handleAction = vi.fn();
       render(
         <FluentEmptyState
-          icon={<FolderHeart data-testid="empty-icon" />}
+          icon={<HugeIcon icon={Folder01Icon} data-testid="empty-icon" />}
           title="لا توجد مشاريع"
           description="أنشئ مشروعاً جديداً للبدء"
           actionLabel="مشروع جديد"
@@ -139,7 +140,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
       render(
         <TooltipProvider>
           <FluentIconButton
-            icon={<Sparkles data-testid="btn-icon" />}
+            icon={<HugeIcon icon={SparklesIcon} data-testid="btn-icon" />}
             tooltip="تطبيق التأثير"
             onClick={handleClick}
           >

@@ -8,6 +8,8 @@ import { Label } from '../src/components/ui/label';
 import { Separator } from '../src/components/ui/separator';
 import { Switch } from '../src/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../src/components/ui/tabs';
+import { HugeIcon, Spinner } from '../src/components/ui/huge-icon';
+import { SparklesIcon } from '@hugeicons/core-free-icons';
 
 describe('UI Components Unit Tests', () => {
   it('renders Button component and handles click events', () => {
@@ -84,4 +86,21 @@ describe('UI Components Unit Tests', () => {
     expect(screen.getByText('التبويب الأول')).toBeInTheDocument();
     expect(screen.getByText('محتوى 1')).toBeInTheDocument();
   });
+
+  it('renders HugeIcon and Spinner components properly', () => {
+    const { container, rerender } = render(
+      <HugeIcon icon={SparklesIcon} size={24} className="test-huge-icon text-primary" data-testid="huge-sparkle" />
+    );
+
+    const svgEl = container.querySelector('svg');
+    expect(svgEl).toBeInTheDocument();
+    expect(svgEl).toHaveClass('test-huge-icon');
+
+    rerender(<Spinner size={18} className="custom-spin-class" />);
+    const spinnerSvg = container.querySelector('svg');
+    expect(spinnerSvg).toBeInTheDocument();
+    expect(spinnerSvg).toHaveClass('animate-spin');
+    expect(spinnerSvg).toHaveClass('custom-spin-class');
+  });
 });
+

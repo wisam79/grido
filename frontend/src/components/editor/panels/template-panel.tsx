@@ -24,12 +24,22 @@ import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "..
 import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
-import { Grid20Filled, Folder20Filled, Color20Filled, Shapes20Filled } from "@fluentui/react-icons";
+import { HugeIcon } from "@/components/ui/huge-icon";
+import {
+  Grid02Icon,
+  FolderOpenIcon,
+  File01Icon,
+  Image02Icon,
+  UserIcon,
+  Add01Icon,
+  PaintBrush01Icon,
+} from "@hugeicons/core-free-icons";
 import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudioCanvasColorDeck } from "../properties/shared-controls";
 import { LayersList } from "../properties/layers-list";
 import { FluentEmptyState, FluentSection } from "@/components/ui/blocks";
+import { cn } from "@/lib/utils";
 
 export interface TemplatePanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
@@ -57,6 +67,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
   const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
   const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
+  const [officialFilter, setOfficialFilter] = useState<"all" | "id_passport" | "docs" | "grid">("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // حوار تأكيد عند تبديل القالب إذا كان سيُسقط صوراً موجودة أو عناصر الوضع الحر (P2-14)
@@ -80,6 +91,20 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
   const officialTemplates = COLLAGE_TEMPLATES;
 
+  const filteredOfficialTemplates = officialTemplates.filter((tpl) => {
+    if (officialFilter === "all") return true;
+    if (officialFilter === "id_passport") {
+      return tpl.id.includes("national") || tpl.id.includes("civil") || tpl.id.includes("passport");
+    }
+    if (officialFilter === "docs") {
+      return tpl.id.includes("general") || tpl.id.includes("pension") || tpl.id.includes("mixed");
+    }
+    if (officialFilter === "grid") {
+      return !tpl.physicalLayout || (!tpl.id.includes("iq-") && !tpl.id.includes("passport"));
+    }
+    return true;
+  });
+
   const loadTemplates = useCallback(async () => {
     try {
       const templates = await GetCustomTemplates();
@@ -88,7 +113,6 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
         name: t.name,
         slots: t.slots,
         cells: typeof t.cells === "string" ? JSON.parse(t.cells) : t.cells,
-        icon: Grid20Filled,
       }));
       setSavedTemplates(mapped);
     } catch (e) {
@@ -129,7 +153,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
   return (
     <PanelShell
-      icon={<Shapes20Filled className="w-4 h-4" />}
+      icon={<HugeIcon icon={Grid02Icon} size={18} className="text-primary" />}
       title={mode === "collage" ? "القوالب" : "المظهر والطبقات"}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
@@ -185,7 +209,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
               <DialogContent className="max-w-2xl font-cairo rounded-2xl border border-border bg-card fluent-specular" dir="rtl">
                 <DialogHeader>
                   <DialogTitle className="text-right text-base font-bold flex items-center gap-2">
-                    <Folder20Filled className="w-5 h-5 text-primary" />
+                    <HugeIcon icon={FolderOpenIcon} size={22} className="text-primary" />
                     مكتبة قوالب الكولاج والطباعة
                   </DialogTitle>
                   <DialogDescription className="text-right text-xs text-muted-foreground">
@@ -195,11 +219,13 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
                 <Tabs defaultValue="official" className="w-full mt-2">
                   <TabsList className="grid w-full grid-cols-2 bg-input p-1 rounded-xl h-8 border border-border">
-                    <TabsTrigger value="official" className="rounded-lg font-bold text-xs cursor-pointer py-1">
-                      نماذج الطباعة الرسمية
+                    <TabsTrigger value="official" className="rounded-lg font-bold text-xs cursor-pointer py-1 flex items-center justify-center gap-1.5">
+                      <HugeIcon icon={File01Icon} size={15} />
+                      <span>نماذج الطباعة الرسمية</span>
                     </TabsTrigger>
                     <TabsTrigger value="saved" className="rounded-lg font-bold text-xs cursor-pointer py-1 flex items-center justify-center gap-1.5">
-                      قوالبي المحفوظة
+                      <HugeIcon icon={Image02Icon} size={15} />
+                      <span>قوالبي المحفوظة</span>
                       {savedTemplates.length > 0 && (
                         <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-bold">
                           {savedTemplates.length}
@@ -208,9 +234,41 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="official" className="mt-4 focus-visible:outline-hidden">
+                  <TabsContent value="official" className="mt-3 focus-visible:outline-hidden">
+                    {/* فلاتر الفئات بالأيقونات */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-none">
+                      {[
+                        { id: "all", label: "الكل", icon: Grid02Icon },
+                        { id: "id_passport", label: "هوية وجواز", icon: UserIcon },
+                        { id: "docs", label: "وثائق ومعاملات", icon: File01Icon },
+                        { id: "grid", label: "شبكات كولاج", icon: Image02Icon },
+                      ].map((cat) => {
+                        const isCatActive = officialFilter === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => setOfficialFilter(cat.id as any)}
+                            className={cn(
+                              "h-7 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none shrink-0",
+                              isCatActive
+                                ? "bg-primary text-primary-foreground border-primary shadow-2xs"
+                                : "bg-input hover:bg-muted/70 text-muted-foreground hover:text-foreground border-border/70"
+                            )}
+                          >
+                            <HugeIcon
+                              icon={cat.icon}
+                              size={14}
+                              className={isCatActive ? "text-primary-foreground" : "text-primary"}
+                            />
+                            <span>{cat.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
-                      {officialTemplates.map((tpl) => (
+                      {filteredOfficialTemplates.map((tpl) => (
                         <div key={tpl.id} onClick={() => setTemplatesDialogOpen(false)}>
                           <CollageTemplateCard
                             tpl={tpl}
@@ -262,7 +320,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
                     {savedTemplates.length === 0 ? (
                       <FluentEmptyState
-                        icon={<Shapes20Filled className="w-6 h-6 text-primary" />}
+                        icon={<HugeIcon icon={Add01Icon} size={32} className="text-primary" />}
                         title="لا توجد قوالب مخصصة محفوظة"
                         description="قم بتخصيص شبكة كولاج من اللوحة وحفظها لتظهر هنا للوصول السريع."
                       />
@@ -288,7 +346,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
       ) : (
         <div className="space-y-4" dir="rtl">
           <FluentSection
-            icon={<Color20Filled className="w-3.5 h-3.5" />}
+            icon={<HugeIcon icon={PaintBrush01Icon} size={16} className="text-primary" />}
             title="خلفية مساحة العمل"
           >
             <StudioCanvasColorDeck

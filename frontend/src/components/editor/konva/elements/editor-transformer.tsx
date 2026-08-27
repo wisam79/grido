@@ -201,6 +201,15 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           }
 
           // 🧲 محاذاة مغناطيسية أثناء التحجيم (عنصر واحد، بلا دوران)
+          const { snapToGrid, userGuides, showUserGuides, showGrid, gridSize } = useEditorStore.getState();
+          if (snapToGrid === false) {
+            if (setActiveGuides && prevResizeGuidesRef.current.length > 0) {
+              prevResizeGuidesRef.current = [];
+              setActiveGuides([]);
+            }
+            return newBox;
+          }
+
           const transformer = trRef.current;
           const node = transformer?.nodes()?.[0];
           if (!transformer || !node || selectedIds.length !== 1) return newBox;
@@ -219,8 +228,16 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             const L0 = isFlipped ? node.x() - W0 : node.x();
             const T0 = isFlippedY ? node.y() - H0 : node.y();
 
-            const vTargets: SnapTarget[] = [{ value: 0.5, origin: "canvas" }];
-            const hTargets: SnapTarget[] = [{ value: 0.5, origin: "canvas" }];
+            const vTargets: SnapTarget[] = [
+              { value: 0, origin: "canvas" },
+              { value: 0.5, origin: "canvas" },
+              { value: 1, origin: "canvas" },
+            ];
+            const hTargets: SnapTarget[] = [
+              { value: 0, origin: "canvas" },
+              { value: 0.5, origin: "canvas" },
+              { value: 1, origin: "canvas" },
+            ];
             for (const el of sortedElements) {
               if (selectedIds.includes(el.id)) continue;
               vTargets.push(
@@ -233,6 +250,22 @@ export const EditorTransformer = React.memo(function EditorTransformer({
                 { value: el.y + el.height / 2, origin: "element" },
                 { value: el.y + el.height, origin: "element" }
               );
+            }
+            if (showUserGuides && userGuides) {
+              for (const g of userGuides) {
+                if (g.type === "v") vTargets.push({ value: g.pos, origin: "user-guide" });
+                if (g.type === "h") hTargets.push({ value: g.pos, origin: "user-guide" });
+              }
+            }
+            if (showGrid && gridSize && gridSize > 0) {
+              const numCols = Math.floor(canvasWidth / gridSize);
+              for (let i = 1; i < numCols; i++) {
+                vTargets.push({ value: (i * gridSize) / canvasWidth, origin: "grid" });
+              }
+              const numRows = Math.floor(canvasHeight / gridSize);
+              for (let j = 1; j < numRows; j++) {
+                hTargets.push({ value: (j * gridSize) / canvasHeight, origin: "grid" });
+              }
             }
 
             resizeSnapRef.current = {
@@ -260,10 +293,13 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           const anchor = transformer.getActiveAnchor();
           const handle = anchorToCompass(anchor || "");
 
+          const thresholdX = 8 / (canvasWidth * stageScale);
+          const thresholdY = 8 / (canvasHeight * stageScale);
+
           const result = getSnapPositionsWithTargets(
             relL, relT, relR - relL, relB - relT,
             snap.vTargets, snap.hTargets,
-            5 / canvasWidth, 5 / canvasHeight,
+            thresholdX, thresholdY,
             handle
           );
 

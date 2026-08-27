@@ -31,6 +31,9 @@ describe('GridSlice Unit Tests', () => {
   });
 
   it('toggles snap to grid', () => {
+    expect(useEditorStore.getState().snapToGrid).toBe(true);
+    useEditorStore.getState().setSnapToGrid(false);
+    expect(useEditorStore.getState().snapToGrid).toBe(false);
     useEditorStore.getState().setSnapToGrid(true);
     expect(useEditorStore.getState().snapToGrid).toBe(true);
   });
@@ -50,5 +53,49 @@ describe('GridSlice Unit Tests', () => {
 
     useEditorStore.getState().setColumnsGutter(10);
     expect(useEditorStore.getState().columnsGutter).toBe(10);
+  });
+
+  it('updates rulerUnit across all 4 units (mm, cm, in, px)', () => {
+    expect(useEditorStore.getState().rulerUnit).toBe('mm');
+
+    useEditorStore.getState().setRulerUnit('cm');
+    expect(useEditorStore.getState().rulerUnit).toBe('cm');
+
+    useEditorStore.getState().setRulerUnit('in');
+    expect(useEditorStore.getState().rulerUnit).toBe('in');
+
+    useEditorStore.getState().setRulerUnit('px');
+    expect(useEditorStore.getState().rulerUnit).toBe('px');
+  });
+
+  it('manages user guides (add, update, remove, clear, toggle visibility)', () => {
+    expect(useEditorStore.getState().userGuides).toEqual([]);
+    expect(useEditorStore.getState().showUserGuides).toBe(true);
+
+    // 1. Add horizontal and vertical guides
+    useEditorStore.getState().addUserGuide({ id: 'g-h-1', type: 'h', pos: 0.35 });
+    useEditorStore.getState().addUserGuide({ id: 'g-v-1', type: 'v', pos: 0.6 });
+
+    const guides = useEditorStore.getState().userGuides;
+    expect(guides.length).toBe(2);
+    expect(guides[0]).toEqual({ id: 'g-h-1', type: 'h', pos: 0.35 });
+    expect(guides[1]).toEqual({ id: 'g-v-1', type: 'v', pos: 0.6 });
+
+    // 2. Update position
+    useEditorStore.getState().updateUserGuide('g-h-1', 0.42);
+    expect(useEditorStore.getState().userGuides.find((g) => g.id === 'g-h-1')?.pos).toBe(0.42);
+
+    // 3. Remove guide
+    useEditorStore.getState().removeUserGuide('g-v-1');
+    expect(useEditorStore.getState().userGuides.length).toBe(1);
+    expect(useEditorStore.getState().userGuides[0].id).toBe('g-h-1');
+
+    // 4. Toggle visibility
+    useEditorStore.getState().setShowUserGuides(false);
+    expect(useEditorStore.getState().showUserGuides).toBe(false);
+
+    // 5. Clear all guides
+    useEditorStore.getState().clearUserGuides();
+    expect(useEditorStore.getState().userGuides.length).toBe(0);
   });
 });

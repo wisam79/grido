@@ -11,17 +11,18 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Grid20Filled,
-  FolderOpen20Filled,
-  Add20Filled,
-  Delete20Filled,
-  Dismiss20Filled,
-  ImageMultiple20Filled,
-  Checkmark20Filled,
-  Subtract20Filled,
-  LayerDiagonal20Filled,
-} from "@fluentui/react-icons";
+  Grid02Icon,
+  FolderOpenIcon,
+  Add01Icon,
+  Delete02Icon,
+  Cancel01Icon,
+  Image02Icon,
+  Tick01Icon,
+  MinusSignIcon,
+  Layers01Icon,
+} from "@hugeicons/core-free-icons";
 import { openImageFileDialog, openDirectoryImageDialog } from "@/lib/io/file-dialog-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 import { useEditorStore } from "@/lib/editor-store";
@@ -296,9 +297,7 @@ export function BatchInsertDialog({
         <DialogHeader className="px-6 py-4 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20">
-                <ImageMultiple20Filled className="w-5 h-5" />
-              </div>
+              <HugeIcon icon={Image02Icon} size={24} className="text-primary" />
               <div>
                 <DialogTitle className="text-base font-bold text-foreground">
                   إدراج دفعة صور ومعاملات (Batch Studio)
@@ -330,7 +329,7 @@ export function BatchInsertDialog({
               disabled={loading || isProcessing}
               className="h-8 rounded-md gap-1.5 text-xs font-medium border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
             >
-              <Add20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={Add01Icon} size={14} />
               إضافة صور...
             </Button>
 
@@ -341,7 +340,7 @@ export function BatchInsertDialog({
               disabled={loading || isProcessing}
               className="h-8 rounded-md gap-1.5 text-xs font-medium border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
             >
-              <FolderOpen20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={FolderOpenIcon} size={14} />
               استيراد مجلد كامل...
             </Button>
           </div>
@@ -383,7 +382,7 @@ export function BatchInsertDialog({
                 disabled={isProcessing}
                 className="h-8 rounded-md gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
-                <Delete20Filled className="w-3.5 h-3.5" />
+                <HugeIcon icon={Delete02Icon} size={14} />
                 تفريغ القائمة
               </Button>
             </div>
@@ -397,7 +396,7 @@ export function BatchInsertDialog({
             {images.length === 0 ? (
               <div className="flex flex-col items-center justify-center flex-1 py-12 px-4 text-center border-2 border-dashed border-border/50 rounded-xl bg-muted/10">
                 <div className="p-4 rounded-2xl bg-muted/40 text-muted-foreground/60 mb-3">
-                  <ImageMultiple20Filled className="w-8 h-8" />
+                  <HugeIcon icon={Image02Icon} size={32} />
                 </div>
                 <h4 className="text-sm font-bold text-foreground">قائمة الصور فارغة</h4>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs leading-relaxed">
@@ -405,10 +404,10 @@ export function BatchInsertDialog({
                 </p>
                 <div className="flex items-center gap-2 mt-4">
                   <Button size="sm" onClick={handleAddFiles} className="h-8 gap-1.5 text-xs rounded-md">
-                    <Add20Filled className="w-3.5 h-3.5" /> اختيار صور
+                    <HugeIcon icon={Add01Icon} size={14} /> اختيار صور
                   </Button>
                   <Button size="sm" variant="outline" onClick={handleAddDirectory} className="h-8 gap-1.5 text-xs rounded-md">
-                    <FolderOpen20Filled className="w-3.5 h-3.5" /> اختيار مجلد
+                    <HugeIcon icon={FolderOpenIcon} size={14} /> اختيار مجلد
                   </Button>
                 </div>
               </div>
@@ -443,7 +442,7 @@ export function BatchInsertDialog({
                           onClick={() => handleRemoveImage(img.id)}
                           className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
                         >
-                          <Dismiss20Filled className="w-3.5 h-3.5" />
+                          <HugeIcon icon={Cancel01Icon} size={14} />
                         </Button>
                       </div>
 
@@ -457,7 +456,7 @@ export function BatchInsertDialog({
                             onClick={() => handleUpdateCopies(img.id, -1)}
                             className="h-5 w-5 rounded text-muted-foreground hover:text-foreground"
                           >
-                            <Subtract20Filled className="w-3 h-3" />
+                            <HugeIcon icon={MinusSignIcon} size={12} />
                           </Button>
                           <span className="text-xs font-bold text-foreground w-5 text-center">
                             {img.copies}
@@ -468,7 +467,7 @@ export function BatchInsertDialog({
                             onClick={() => handleUpdateCopies(img.id, 1)}
                             className="h-5 w-5 rounded text-muted-foreground hover:text-foreground"
                           >
-                            <Add20Filled className="w-3 h-3" />
+                            <HugeIcon icon={Add01Icon} size={12} />
                           </Button>
                         </div>
                       </div>
@@ -499,7 +498,7 @@ export function BatchInsertDialog({
                     layoutMode === "grid" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-muted/60 text-foreground"
                   )}
                 >
-                  <Grid20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={Grid02Icon} size={14} />
                   <span>شبكة منتظمة</span>
                 </Button>
 
@@ -513,7 +512,7 @@ export function BatchInsertDialog({
                     layoutMode === "cascade" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-muted/60 text-foreground"
                   )}
                 >
-                  <LayerDiagonal20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={Layers01Icon} size={14} />
                   <span>تتالي درجي</span>
                 </Button>
               </div>
@@ -629,7 +628,7 @@ export function BatchInsertDialog({
               disabled={images.length === 0 || isProcessing}
               className="h-8 rounded-md bg-primary text-primary-foreground gap-1.5 text-xs font-semibold px-4 shadow-sm"
             >
-              <Checkmark20Filled className="w-4 h-4" />
+              <HugeIcon icon={Tick01Icon} size={16} />
               {isProcessing ? "جاري الإدراج ..." : "إدراج في مساحة العمل"}
             </Button>
           </div>

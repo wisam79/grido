@@ -7,8 +7,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Sparkle20Filled, ArrowDownload20Filled, ArrowCircleUp20Filled } from "@fluentui/react-icons";
+import { Spinner, HugeIcon } from "@/components/ui/huge-icon";
+import { SparklesIcon, Download01Icon, CircleArrowUp01Icon } from "@hugeicons/core-free-icons";
 import { CheckForUpdate, DownloadAndInstallUpdate } from "../../../../wailsjs/go/main/App";
 import { service } from "../../../../wailsjs/go/models";
 import { EventsOn, EventsOff, BrowserOpenURL } from "../../../../wailsjs/runtime/runtime";
@@ -72,7 +72,7 @@ export function UpdateNotifier() {
       >
         <DialogHeader className="space-y-1 text-right border-b border-border/60 pb-3">
           <DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
-            <Sparkle20Filled className="w-4 h-4 text-primary" />
+            <HugeIcon icon={SparklesIcon} size={16} className="text-primary" />
             <span>تحديث جديد متوفر</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -90,7 +90,7 @@ export function UpdateNotifier() {
           <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2">
             <span className="text-muted-foreground text-[11px]">الإصدار الجديد:</span>
             <span className="bg-primary text-primary-foreground font-mono text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
-              <ArrowCircleUp20Filled className="w-3 h-3" />
+              <HugeIcon icon={CircleArrowUp01Icon} size={12} />
               {updateInfo.latest_version}
             </span>
           </div>
@@ -136,7 +136,7 @@ export function UpdateNotifier() {
                   onClick={handleStartUpdate}
                   className="flex-1 h-8 text-xs font-semibold gap-1.5 rounded-md shadow-xs cursor-pointer"
                 >
-                  <ArrowDownload20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={Download01Icon} size={14} />
                   تثبيت التحديث الآن
                 </Button>
               ) : (
@@ -151,7 +151,7 @@ export function UpdateNotifier() {
                   }}
                   className="flex-1 h-8 text-xs font-semibold gap-1.5 rounded-md shadow-xs cursor-pointer"
                 >
-                  <ArrowDownload20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={Download01Icon} size={14} />
                   تحميل يدوي (عبر المتصفح)
                 </Button>
               )}
@@ -165,7 +165,7 @@ export function UpdateNotifier() {
             </>
           ) : (
             <div className="flex items-center justify-center w-full py-1 text-xs text-muted-foreground gap-2 font-medium">
-              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <Spinner className="w-4 h-4 text-primary" size={16} />
               <span>سيتم إغلاق التطبيق وتطبيق التحديث تلقائياً ...</span>
             </div>
           )}

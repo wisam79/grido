@@ -1,19 +1,20 @@
 import React, { useState, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Layer20Filled,
-  Eye20Filled,
-  EyeOff20Filled,
-  LockClosed20Filled,
-  LockOpen20Filled,
-  TextT20Filled,
-  Shapes20Filled,
-  Image20Filled,
-  Delete20Regular,
-  ReOrderDotsVertical20Regular,
-  ChevronDown20Filled,
-} from "@fluentui/react-icons";
+  Layers01Icon,
+  ViewIcon,
+  ViewOffIcon,
+  LockKeyIcon,
+  LockOpenIcon,
+  TextIcon,
+  Shapes01Icon,
+  Image02Icon,
+  Delete02Icon,
+  DragDropVerticalIcon,
+  ArrowDown01Icon,
+} from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -88,12 +89,12 @@ const SortableLayerItem = React.memo(
             className="cursor-grab active:cursor-grabbing hover:bg-input p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
-            <ReOrderDotsVertical20Regular className="w-4 h-4" />
+            <HugeIcon icon={DragDropVerticalIcon} size={16} />
           </div>
           <span className="shrink-0 text-muted-foreground/80">
-            {el.type === "image" && <Image20Filled className="w-4 h-4" />}
-            {el.type === "text" && <TextT20Filled className="w-4 h-4" />}
-            {el.type === "shape" && <Shapes20Filled className="w-4 h-4" />}
+            {el.type === "image" && <HugeIcon icon={Image02Icon} size={16} />}
+            {el.type === "text" && <HugeIcon icon={TextIcon} size={16} />}
+            {el.type === "shape" && <HugeIcon icon={Shapes01Icon} size={16} />}
           </span>
           <span className="text-xs font-semibold truncate max-w-[120px]">
             {el.type === "image"
@@ -122,7 +123,7 @@ const SortableLayerItem = React.memo(
               className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${isLocked ? "text-primary" : "text-muted-foreground/50 hover:text-foreground"}`}
               onClick={(e) => toggleLock(el, e)}
             >
-              {isLocked ? <LockClosed20Filled className="w-3.5 h-3.5" /> : <LockOpen20Filled className="w-3.5 h-3.5" />}
+              {isLocked ? <HugeIcon icon={LockKeyIcon} size={14} /> : <HugeIcon icon={LockOpenIcon} size={14} />}
             </Button>
           </TooltipBtn>
           <TooltipBtn content={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}>
@@ -132,7 +133,7 @@ const SortableLayerItem = React.memo(
               className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${!isVisible ? "text-muted-foreground/40" : "text-muted-foreground hover:text-foreground"}`}
               onClick={(e) => toggleVisibility(el, e)}
             >
-              {isVisible ? <Eye20Filled className="w-3.5 h-3.5" /> : <EyeOff20Filled className="w-3.5 h-3.5" />}
+              {isVisible ? <HugeIcon icon={ViewIcon} size={14} /> : <HugeIcon icon={ViewOffIcon} size={14} />}
             </Button>
           </TooltipBtn>
           <TooltipBtn content="حذف الطبقة">
@@ -142,7 +143,7 @@ const SortableLayerItem = React.memo(
               className="w-7 h-7 rounded-md hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-1 focus-visible:outline-none"
               onClick={(e) => deleteLayer(el.id, e)}
             >
-              <Delete20Regular className="w-3.5 h-3.5" />
+              <HugeIcon icon={Delete02Icon} size={14} />
             </Button>
           </TooltipBtn>
         </div>
@@ -216,7 +217,7 @@ export function LayersList() {
     return (
       <div className="bg-input/40 border border-dashed border-border rounded-xl p-5 text-center select-none flex flex-col items-center justify-center space-y-2 animate-in fade-in duration-300">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-xs">
-          <Layer20Filled className="w-4.5 h-4.5 opacity-80" />
+          <HugeIcon icon={Layers01Icon} size={18} className="opacity-80" />
         </div>
         <div className="space-y-1">
           <p className="text-[11px] font-bold text-foreground/80">لوحة الطبقات فارغة</p>
@@ -269,9 +270,9 @@ export function LayersList() {
         className="flex items-center justify-between w-full text-right cursor-pointer select-none"
       >
         <div className="flex items-center gap-1.5">
-          <ChevronDown20Filled className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !expanded && "-rotate-90")} />
+          <HugeIcon icon={ArrowDown01Icon} size={16} className={cn("transition-transform duration-200 text-muted-foreground", !expanded && "-rotate-90")} />
           <span className="text-sm font-bold text-foreground/90 cursor-pointer flex items-center gap-1.5">
-            <Layer20Filled className="w-4 h-4 text-primary shrink-0" />
+            <HugeIcon icon={Layers01Icon} size={16} className="text-primary shrink-0" />
             الطبقات ({elements.length})
           </span>
         </div>

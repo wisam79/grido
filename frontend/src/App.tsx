@@ -19,23 +19,23 @@ const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog"
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import { Loader2 } from "lucide-react";
+import { HugeIcon, Spinner } from "@/components/ui/huge-icon";
 import {
-  Grid20Filled,
-  ImageMultiple20Filled,
-  ShieldCheckmark20Filled,
-  WeatherMoon20Filled,
-  WeatherSunny20Filled,
-  PanelLeft20Filled,
-  Settings20Filled,
-  Subtract20Filled,
-  Square20Regular,
-  SquareMultiple20Regular,
-  Dismiss20Regular,
-  LockClosed20Filled,
-  Key20Filled,
-  Person20Filled,
-} from "@fluentui/react-icons";
+  Grid02Icon,
+  Image02Icon,
+  ShieldCheckIcon,
+  Moon02Icon,
+  Sun01Icon,
+  SidebarLeft01Icon,
+  Settings01Icon,
+  MinusSignIcon,
+  SquareIcon,
+  Copy01Icon,
+  Cancel01Icon,
+  LockKeyIcon,
+  Key01Icon,
+  UserIcon,
+} from "@hugeicons/core-free-icons";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -161,7 +161,7 @@ export default function App() {
             transition={{ duration: 0.35, ease: [0.1, 0.9, 0.2, 1] }}
             className="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-2xl flex items-center justify-center mb-5 border border-primary/20 shadow-lg shadow-primary/10"
           >
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <Spinner className="w-8 h-8 text-primary" size={32} />
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: 8 }}
@@ -214,7 +214,7 @@ export default function App() {
                 className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
                 title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
               >
-                {theme === "light" ? <WeatherMoon20Filled className="w-3.5 h-3.5" /> : <WeatherSunny20Filled className="w-3.5 h-3.5" />}
+                {theme === "light" ? <HugeIcon icon={Moon02Icon} size={14} /> : <HugeIcon icon={Sun01Icon} size={14} />}
               </Button>
 
               <div className="w-px h-5 bg-border mx-1" />
@@ -226,7 +226,7 @@ export default function App() {
                 className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
                 title="تصغير"
               >
-                <Subtract20Filled className="w-4 h-4" />
+                <HugeIcon icon={MinusSignIcon} size={16} />
               </Button>
               <Button
                 variant="ghost"
@@ -235,7 +235,7 @@ export default function App() {
                 className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
                 title={isMaximized ? "استعادة" : "تكبير"}
               >
-                {isMaximized ? <SquareMultiple20Regular className="w-3.5 h-3.5" /> : <Square20Regular className="w-3.5 h-3.5" />}
+                {isMaximized ? <HugeIcon icon={Copy01Icon} size={14} /> : <HugeIcon icon={SquareIcon} size={14} />}
               </Button>
               <Button
                 variant="ghost"
@@ -244,7 +244,7 @@ export default function App() {
                 className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
                 title="إغلاق"
               >
-                <Dismiss20Regular className="w-4 h-4" />
+                <HugeIcon icon={Cancel01Icon} size={16} />
               </Button>
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function App() {
         <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-right p-6">
           <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-xl space-y-6 text-center fluent-specular">
             <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
-              <LockClosed20Filled className="w-10 h-10" />
+              <HugeIcon icon={LockKeyIcon} size={40} />
             </div>
             
             <div className="space-y-2">
@@ -299,7 +299,7 @@ export default function App() {
                   </button>
                 </div>
                 <div className="relative">
-                  <Key20Filled className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                  <HugeIcon icon={Key01Icon} size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
                   <input
                     type="text"
                     required
@@ -314,7 +314,7 @@ export default function App() {
               <Button type="submit" className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer shadow-xs gap-1.5 rounded-md" disabled={lockLoading}>
                 {lockLoading ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Spinner className="w-3.5 h-3.5" size={14} />
                     <span>جاري التفعيل ...</span>
                   </>
                 ) : (
@@ -394,7 +394,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <Grid20Filled className="w-4 h-4" />
+              <HugeIcon icon={Grid02Icon} size={16} />
               <span className="leading-none font-bold">كولاج</span>
             </Button>
 
@@ -418,7 +418,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <ImageMultiple20Filled className="w-4 h-4" />
+              <HugeIcon icon={Image02Icon} size={16} />
               <span className="leading-none font-bold">تعديل حر</span>
             </Button>
           </div>
@@ -432,9 +432,9 @@ export default function App() {
               title="الحساب والتراخيص"
             >
               {isLicenseActive ? (
-                <ShieldCheckmark20Filled className="w-5 h-5 text-emerald-500" />
+                <HugeIcon icon={ShieldCheckIcon} size={18} className="text-emerald-500" />
               ) : (
-                <Person20Filled className="w-5 h-5 text-muted-foreground" />
+                <HugeIcon icon={UserIcon} size={18} className="text-muted-foreground" />
               )}
               {user?.plan === "trial" && (
                 <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
@@ -447,7 +447,7 @@ export default function App() {
               className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
             >
-              {theme === "light" ? <WeatherMoon20Filled className="w-4.5 h-4.5" /> : <WeatherSunny20Filled className="w-4.5 h-4.5" />}
+              {theme === "light" ? <HugeIcon icon={Moon02Icon} size={16} /> : <HugeIcon icon={Sun01Icon} size={16} />}
             </Button>
 
             {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
@@ -463,7 +463,7 @@ export default function App() {
               )}
               title={rightSidebarOpen ? "إخفاء لوحة القوالب (Ctrl+B)" : "إظهار لوحة القوالب (Ctrl+B)"}
             >
-              <PanelLeft20Filled className="w-4.5 h-4.5" />
+              <HugeIcon icon={SidebarLeft01Icon} size={16} />
             </Button>
             <Button
               variant="ghost"
@@ -477,7 +477,7 @@ export default function App() {
               )}
               title={leftSidebarOpen ? "إخفاء لوحة الخصائص (Ctrl+Shift+B)" : "إظهار لوحة الخصائص (Ctrl+Shift+B)"}
             >
-              <Settings20Filled className="w-4.5 h-4.5" />
+              <HugeIcon icon={Settings01Icon} size={16} />
             </Button>
 
             <Button
@@ -486,7 +486,7 @@ export default function App() {
               className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
               onClick={() => setMobileTemplatesOpen(true)}
             >
-              <PanelLeft20Filled className="w-4 h-4" />
+              <HugeIcon icon={SidebarLeft01Icon} size={16} />
               <span className="text-xs font-semibold">القوالب</span>
             </Button>
             <Button
@@ -495,7 +495,7 @@ export default function App() {
               className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
               onClick={() => setMobilePropsOpen(true)}
             >
-              <Settings20Filled className="w-4 h-4" />
+              <HugeIcon icon={Settings01Icon} size={16} />
               <span className="text-xs font-semibold">خصائص</span>
             </Button>
 
@@ -510,7 +510,7 @@ export default function App() {
               className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
               title="تصغير"
             >
-              <Subtract20Filled className="w-4 h-4" />
+              <HugeIcon icon={MinusSignIcon} size={16} />
             </Button>
             <Button
               variant="ghost"
@@ -519,7 +519,7 @@ export default function App() {
               className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
               title={isMaximized ? "استعادة" : "تكبير"}
             >
-              {isMaximized ? <SquareMultiple20Regular className="w-3.5 h-3.5" /> : <Square20Regular className="w-3.5 h-3.5" />}
+              {isMaximized ? <HugeIcon icon={Copy01Icon} size={14} /> : <HugeIcon icon={SquareIcon} size={14} />}
             </Button>
             <Button
               variant="ghost"
@@ -528,7 +528,7 @@ export default function App() {
               className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
               title="إغلاق"
             >
-              <Dismiss20Regular className="w-4 h-4" />
+              <HugeIcon icon={Cancel01Icon} size={16} />
             </Button>
           </div>
         </div>

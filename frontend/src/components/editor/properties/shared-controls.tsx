@@ -2,13 +2,13 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Color20Filled,
-  Eyedropper20Filled,
-  Checkmark20Filled,
-  PaintBrush20Filled,
-  Copy20Filled,
-} from "@fluentui/react-icons";
+  ColorPickerIcon,
+  Tick01Icon,
+  PaintBrush01Icon,
+  Copy01Icon,
+} from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/lib/editor-store";
 import { previewWhite, checkerColor } from "@/lib/canvas/canvas-colors";
@@ -323,7 +323,7 @@ export function ColorWheelPicker({
           )}
           title="خلفية شفافة"
         >
-          <Color20Filled className="w-3.5 h-3.5" />
+          <HugeIcon icon={ColorPickerIcon} size={14} />
         </button>
 
         {hasEyeDropper && (
@@ -333,7 +333,7 @@ export function ColorWheelPicker({
             className="w-8 h-8 rounded-md border border-border/60 bg-input/80 hover:bg-accent text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             title="سحب لون من الشاشة (قطارة)"
           >
-            <Eyedropper20Filled className="w-3.5 h-3.5" />
+            <HugeIcon icon={ColorPickerIcon} size={14} />
           </button>
         )}
 
@@ -352,7 +352,7 @@ export function ColorWheelPicker({
             className="text-muted-foreground/50 hover:text-foreground transition-colors p-0.5"
             title="نسخ كود اللون"
           >
-            {copied ? <Checkmark20Filled className="w-3 h-3 text-emerald-500" /> : <Copy20Filled className="w-3 h-3" />}
+            {copied ? <HugeIcon icon={Tick01Icon} size={12} className="text-emerald-500" /> : <HugeIcon icon={Copy01Icon} size={12} />}
           </button>
           <div
             className="w-4 h-4 rounded-xs border border-border/80 shadow-2xs shrink-0 relative overflow-hidden"
@@ -397,16 +397,17 @@ export function ColorWheelPicker({
                 style={{ backgroundColor: bg.value }}
                 title={bg.name}
               >
-                  {isActive && (
-                    <Checkmark20Filled
-                      className={cn(
-                        "w-3 h-3",
-                        bg.value === "#FFFFFF" || bg.value === "#F4F4F5" || bg.value === "#E4E4E7" || bg.value === "#F5F5F4"
-                          ? "text-slate-900"
-                          : "text-white"
-                      )}
-                    />
-                  )}
+                {isActive && (
+                  <HugeIcon
+                    icon={Tick01Icon}
+                    size={12}
+                    className={cn(
+                      bg.value === "#FFFFFF" || bg.value === "#F4F4F5" || bg.value === "#E4E4E7" || bg.value === "#F5F5F4"
+                        ? "text-slate-900"
+                        : "text-white"
+                    )}
+                  />
+                )}
                 </button>
               );
             })}
@@ -472,7 +473,7 @@ export function StudioCanvasColorDeck({
           className={cn(
             "w-6.5 h-6.5 rounded-md border transition-all cursor-pointer relative overflow-hidden shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
             isTransparent
-              ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105"
+              ? "ring-2 ring-primary ring-offset-2 focus-visible:ring-offset-background border-primary scale-105"
               : "border-border/60 hover:border-border"
           )}
           title="شفاف"
@@ -508,9 +509,10 @@ export function StudioCanvasColorDeck({
                 title={preset.name}
               >
                 {isSelected && (
-                  <Checkmark20Filled
+                  <HugeIcon
+                    icon={Tick01Icon}
+                    size={14}
                     className={cn(
-                      "w-3.5 h-3.5",
                       preset.value === "#FFFFFF" || preset.value === "#F1F5F9" || preset.value === "#E2E8F0"
                         ? "text-slate-900"
                         : "text-white"
@@ -530,7 +532,7 @@ export function StudioCanvasColorDeck({
             className="w-6.5 h-6.5 rounded-md border border-border/70 bg-input/80 hover:bg-accent/70 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="قطارة الألوان (سحب لون من الشاشة)"
           >
-            <Eyedropper20Filled className="w-3.5 h-3.5" />
+            <HugeIcon icon={ColorPickerIcon} size={14} />
           </button>
         )}
       </div>
@@ -542,7 +544,7 @@ export function StudioCanvasColorDeck({
         className="w-full h-8 rounded-md border-border/80 bg-input/50 hover:bg-input/80 hover:border-primary/40 shadow-2xs"
         label={
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-            <PaintBrush20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
+            <HugeIcon icon={PaintBrush01Icon} size={14} className="text-primary shrink-0" />
             <span>لون مخصص</span>
           </div>
         }

@@ -1,19 +1,20 @@
 import React, { useCallback } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
-import { Magnet } from "lucide-react";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Ruler20Filled,
-  Grid20Filled,
-  Cut20Filled,
-  ArrowRotateClockwise20Filled,
-  Eye20Filled,
-  EyeOff20Filled,
-  ZoomIn20Regular,
-  ZoomOut20Regular,
-  ArrowExpand20Regular,
-  Document20Filled,
-} from "@fluentui/react-icons";
+  RulerIcon,
+  Grid02Icon,
+  Magnet01Icon,
+  Scissor01Icon,
+  RotateClockwiseIcon,
+  ViewIcon,
+  ViewOffIcon,
+  ZoomInIcon,
+  ZoomOutIcon,
+  Maximize01Icon,
+  File01Icon,
+} from "@hugeicons/core-free-icons";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,8 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
     setShowGrid,
     snapToGrid,
     setSnapToGrid,
+    showUserGuides,
+    setShowUserGuides,
     collageShowCutLines,
     setCollageShowCutLines,
     canvasWidth,
@@ -55,6 +58,8 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
       setShowGrid: state.setShowGrid,
       snapToGrid: state.snapToGrid,
       setSnapToGrid: state.setSnapToGrid,
+      showUserGuides: state.showUserGuides,
+      setShowUserGuides: state.setShowUserGuides,
       collageShowCutLines: state.collageShowCutLines,
       setCollageShowCutLines: state.setCollageShowCutLines,
       canvasWidth: state.canvasWidth,
@@ -105,7 +110,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
       {/* 1. الجانب الأيمن: شارة معلومات مساحة العمل (Icon + Dimensions) */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-card border border-border text-muted-foreground font-semibold shadow-2xs">
-          <Document20Filled className="w-4 h-4 text-primary shrink-0" />
+          <HugeIcon icon={File01Icon} size={16} className="text-primary shrink-0" />
           <span className="text-foreground font-bold text-xs">
             {activePaper ? activePaper.name.split(" (")[0] : "مخصص"}
           </span>
@@ -131,7 +136,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              <Ruler20Filled className="w-4.5 h-4.5" />
+              <HugeIcon icon={RulerIcon} size={18} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
@@ -153,7 +158,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              <Grid20Filled className="w-4.5 h-4.5" />
+              <HugeIcon icon={Grid02Icon} size={18} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
@@ -175,11 +180,33 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              <Magnet className="w-4.5 h-4.5" />
+              <HugeIcon icon={Magnet01Icon} size={18} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
             {snapToGrid ? "إيقاف الالتصاق بالمغناطيس" : "تفعيل الالتصاق بالشبكة والمحاذاة الذكية"}
+          </TooltipContent>
+        </Tooltip>
+
+        {/* زر الخطوط الإرشادية */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setShowUserGuides(!showUserGuides)}
+              aria-label="الخطوط الإرشادية (Ctrl + ;)"
+              className={cn(
+                "w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                showUserGuides
+                  ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+            >
+              <HugeIcon icon={ViewIcon} size={18} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+            {showUserGuides ? "إخفاء الخطوط الإرشادية (Ctrl + ;)" : "إظهار الخطوط الإرشادية (Ctrl + ;)"}
           </TooltipContent>
         </Tooltip>
 
@@ -198,7 +225,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )}
               >
-                <Cut20Filled className="w-4.5 h-4.5" />
+                <HugeIcon icon={Scissor01Icon} size={18} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
@@ -218,7 +245,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               aria-label="تبديل اتجاه الورقة"
               className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
             >
-              <ArrowRotateClockwise20Filled className="w-4.5 h-4.5" />
+              <HugeIcon icon={RotateClockwiseIcon} size={18} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
@@ -241,7 +268,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )}
               >
-                {isZenMode ? <EyeOff20Filled className="w-4.5 h-4.5" /> : <Eye20Filled className="w-4.5 h-4.5" />}
+                {isZenMode ? <HugeIcon icon={ViewOffIcon} size={18} /> : <HugeIcon icon={ViewIcon} size={18} />}
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
@@ -285,7 +312,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={handleZoomOut}
                 aria-label="تصغير"
               >
-                <ZoomOut20Regular className="w-4.5 h-4.5" />
+                <HugeIcon icon={ZoomOutIcon} size={18} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
@@ -317,7 +344,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={handleZoomIn}
                 aria-label="تكبير"
               >
-                <ZoomIn20Regular className="w-4.5 h-4.5" />
+                <HugeIcon icon={ZoomInIcon} size={18} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
@@ -333,7 +360,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={handleResetZoom}
                 aria-label="ملاءمة حجم الورقة"
               >
-                <ArrowExpand20Regular className="w-4.5 h-4.5" />
+                <HugeIcon icon={Maximize01Icon} size={18} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">

@@ -51,31 +51,27 @@ export const KonvaBackgroundLayer = React.memo(function KonvaBackgroundLayer({
       </Layer>
 
       {/* Grid Layer */}
-      {mode === "single" && (
-        <GridLayer
-          showGrid={showGrid}
-          gridSize={gridSize}
-          gridColor={gridColor}
-          gridOpacity={gridOpacity}
-          gridSubdivisions={gridSubdivisions}
-          gridType={gridType}
-          displayW={canvasWidth}
-          displayH={canvasHeight}
-        />
-      )}
+      <GridLayer
+        showGrid={showGrid}
+        gridSize={gridSize}
+        gridColor={gridColor}
+        gridOpacity={gridOpacity}
+        gridSubdivisions={gridSubdivisions}
+        gridType={gridType}
+        displayW={canvasWidth}
+        displayH={canvasHeight}
+      />
 
       {/* Columns Layout Layer */}
-      {mode === "single" && (
-        <ColumnsLayer
-          showColumns={showColumns}
-          columnsMargin={columnsMargin}
-          columnsGutter={columnsGutter}
-          columnsCount={columnsCount}
-          columnsColor={columnsColor}
-          displayW={canvasWidth}
-          displayH={canvasHeight}
-        />
-      )}
+      <ColumnsLayer
+        showColumns={showColumns}
+        columnsMargin={columnsMargin}
+        columnsGutter={columnsGutter}
+        columnsCount={columnsCount}
+        columnsColor={columnsColor}
+        displayW={canvasWidth}
+        displayH={canvasHeight}
+      />
     </>
   );
 });

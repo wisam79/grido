@@ -2,25 +2,26 @@ import { useState } from "react";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Sparkle20Filled,
-  Eye20Filled,
-  ArrowRotateClockwise20Filled,
-  FlipHorizontal20Filled,
-  FlipVertical20Filled,
-  Square20Filled,
-  PaintBrush20Filled,
-  Options20Filled,
-  ArrowMove20Filled,
-  LockClosed20Filled,
-  Drop20Filled,
-  AlignLeft20Filled,
-  AlignCenterHorizontal20Filled,
-  AlignRight20Filled,
-  AlignTop20Filled,
-  AlignCenterVertical20Filled,
-  AlignBottom20Filled,
-} from "@fluentui/react-icons";
+  SparklesIcon,
+  ViewIcon,
+  RotateClockwiseIcon,
+  FlipHorizontalIcon,
+  FlipVerticalIcon,
+  SquareIcon,
+  PaintBrush01Icon,
+  SlidersHorizontalIcon,
+  CursorMove01Icon,
+  LockKeyIcon,
+  DropletIcon,
+  AlignLeftIcon,
+  AlignHorizontalCenterIcon,
+  AlignRightIcon,
+  AlignTopIcon,
+  AlignVerticalCenterIcon,
+  AlignBottomIcon,
+} from "@hugeicons/core-free-icons";
 import { SliderControl, PopoverColorPicker } from "./shared-controls";
 import { scaleElementDecorations } from "@/lib/canvas/scale-decorations";
 import { cn } from "@/lib/utils";
@@ -52,7 +53,7 @@ export function ElementProperties({
       {element.locked && (
         <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
           <div className="flex items-center gap-2">
-            <LockClosed20Filled className="w-3.5 h-3.5 shrink-0" />
+            <HugeIcon icon={LockKeyIcon} size={14} className="shrink-0" />
             <span>عنصر مقفل</span>
           </div>
           <Button 
@@ -85,7 +86,7 @@ export function ElementProperties({
                         : "text-muted-foreground hover:text-foreground hover:bg-background/40"
                     )}
                   >
-                    <PaintBrush20Filled className="w-3.5 h-3.5" />
+                    <HugeIcon icon={PaintBrush01Icon} size={14} />
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التنسيق والأدوات</TooltipContent>
@@ -106,7 +107,7 @@ export function ElementProperties({
                         : "text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/40"
                     )}
                   >
-                    <Options20Filled className="w-3.5 h-3.5" />
+                    <HugeIcon icon={SlidersHorizontalIcon} size={14} />
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">
@@ -125,7 +126,7 @@ export function ElementProperties({
                         : "text-muted-foreground hover:text-foreground hover:bg-background/40"
                     )}
                   >
-                    <Sparkle20Filled className="w-3.5 h-3.5" />
+                    <HugeIcon icon={SparklesIcon} size={14} />
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التأثيرات والظلال</TooltipContent>
@@ -142,7 +143,7 @@ export function ElementProperties({
                         : "text-muted-foreground hover:text-foreground hover:bg-background/40"
                     )}
                   >
-                    <ArrowMove20Filled className="w-3.5 h-3.5" />
+                    <HugeIcon icon={CursorMove01Icon} size={14} />
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">الموضع والترتيب</TooltipContent>
@@ -176,7 +177,7 @@ export function ElementProperties({
             {/* بطاقة 1: الموضع والمحاذاة السريعة */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
               <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                <ArrowMove20Filled className="w-3.5 h-3.5 text-primary" />
+                <HugeIcon icon={CursorMove01Icon} size={14} className="text-primary" />
                 <span>الموضع والمحاذاة</span>
               </Label>
 
@@ -190,7 +191,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("left")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignLeft20Filled className="w-3.5 h-3.5" />
+                      <HugeIcon icon={AlignLeftIcon} size={14} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليسار</TooltipContent>
@@ -204,7 +205,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("center")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignCenterHorizontal20Filled className="w-3.5 h-3.5" />
+                      <HugeIcon icon={AlignHorizontalCenterIcon} size={14} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للوسط أفقياً</TooltipContent>
@@ -218,7 +219,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("right")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignRight20Filled className="w-3.5 h-3.5" />
+                      <HugeIcon icon={AlignRightIcon} size={14} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليمين</TooltipContent>
@@ -234,7 +235,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("top")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignTop20Filled className="w-3.5 h-3.5" />
+                      <HugeIcon icon={AlignTopIcon} size={14} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأعلى</TooltipContent>
@@ -248,7 +249,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("middle")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignCenterVertical20Filled className="w-3.5 h-3.5" />
+                      <HugeIcon icon={AlignVerticalCenterIcon} size={14} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للمنتصف عمودياً</TooltipContent>
@@ -262,7 +263,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("bottom")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignBottom20Filled className="w-3.5 h-3.5" />
+                      <HugeIcon icon={AlignBottomIcon} size={14} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأسفل</TooltipContent>
@@ -341,13 +342,13 @@ export function ElementProperties({
             {/* بطاقة 2: التدوير والشفافية */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
               <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                <ArrowRotateClockwise20Filled className="w-3.5 h-3.5 text-primary" />
+                <HugeIcon icon={RotateClockwiseIcon} size={14} className="text-primary" />
                 <span>التدوير والشفافية</span>
               </Label>
 
               <SliderControl
                 label="التدوير"
-                icon={<ArrowRotateClockwise20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<HugeIcon icon={RotateClockwiseIcon} size={14} className="text-muted-foreground/75" />}
                 value={element.rotation}
                 min={-180}
                 max={180}
@@ -368,7 +369,7 @@ export function ElementProperties({
                   title="تدوير 90 درجة"
                   className="h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
-                  <ArrowRotateClockwise20Filled className="w-3.5 h-3.5 text-muted-foreground" />
+                  <HugeIcon icon={RotateClockwiseIcon} size={14} className="text-muted-foreground" />
                 </Button>
                 <Button
                   variant="outline"
@@ -383,7 +384,7 @@ export function ElementProperties({
                     element.flipX && "bg-primary/10 border-primary/50 text-primary"
                   )}
                 >
-                  <FlipHorizontal20Filled className="w-3.5 h-3.5 text-muted-foreground" />
+                  <HugeIcon icon={FlipHorizontalIcon} size={14} className="text-muted-foreground" />
                 </Button>
                 <Button
                   variant="outline"
@@ -398,13 +399,13 @@ export function ElementProperties({
                     element.flipY && "bg-primary/10 border-primary/50 text-primary"
                   )}
                 >
-                  <FlipVertical20Filled className="w-3.5 h-3.5 text-muted-foreground" />
+                  <HugeIcon icon={FlipVerticalIcon} size={14} className="text-muted-foreground" />
                 </Button>
               </div>
 
               <SliderControl
                 label="الشفافية"
-                icon={<Eye20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<HugeIcon icon={ViewIcon} size={14} className="text-muted-foreground/75" />}
                 value={Math.round(element.opacity * 100)}
                 min={0}
                 max={100}
@@ -420,7 +421,7 @@ export function ElementProperties({
             {/* بطاقة 1: الظل والإضاءة */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
               <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                <Sparkle20Filled className="w-3.5 h-3.5 text-primary" />
+                <HugeIcon icon={SparklesIcon} size={14} className="text-primary" />
                 <span>الظل والوهج</span>
               </Label>
               
@@ -435,7 +436,7 @@ export function ElementProperties({
 
               <SliderControl
                 label="الشفافية"
-                icon={<Eye20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<HugeIcon icon={ViewIcon} size={14} className="text-muted-foreground/75" />}
                 value={Math.round((element.shadowOpacity ?? 0) * 100)}
                 min={0}
                 max={100}
@@ -447,7 +448,7 @@ export function ElementProperties({
               
               <SliderControl
                 label="التمويه"
-                icon={<Drop20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<HugeIcon icon={DropletIcon} size={14} className="text-muted-foreground/75" />}
                 value={element.shadowBlur || 0}
                 min={0}
                 max={50}
@@ -459,7 +460,7 @@ export function ElementProperties({
 
               <SliderControl
                 label="إزاحة أفقية"
-                icon={<ArrowMove20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<HugeIcon icon={CursorMove01Icon} size={14} className="text-muted-foreground/75" />}
                 value={element.shadowOffsetX || 0}
                 min={-50}
                 max={50}
@@ -471,7 +472,7 @@ export function ElementProperties({
 
               <SliderControl
                 label="إزاحة عمودية"
-                icon={<ArrowMove20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<HugeIcon icon={CursorMove01Icon} size={14} className="text-muted-foreground/75" />}
                 value={element.shadowOffsetY || 0}
                 min={-50}
                 max={50}
@@ -486,12 +487,12 @@ export function ElementProperties({
             {(element.type === "image" || element.type === "shape") && (
               <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
                 <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                  <Square20Filled className="w-3.5 h-3.5 text-primary" />
+                  <HugeIcon icon={SquareIcon} size={14} className="text-primary" />
                   <span>استدارة الحواف</span>
                 </Label>
                 <SliderControl
                   label="قطر الزاوية"
-                  icon={<Square20Filled className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                  icon={<HugeIcon icon={SquareIcon} size={14} className="text-muted-foreground/75" />}
                   value={element.cornerRadius || 0}
                   min={0}
                   max={200}

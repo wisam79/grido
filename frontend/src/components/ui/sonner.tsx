@@ -1,6 +1,13 @@
 import React from "react"
 import { Toaster as Sonner, ToasterProps } from "sonner"
-import { CheckCircle2, AlertCircle, AlertTriangle, Info, Loader2 } from "lucide-react"
+import { HugeIcon } from "@/components/ui/huge-icon"
+import {
+  CheckmarkCircle02Icon,
+  AlertCircleIcon,
+  Alert02Icon,
+  InformationCircleIcon,
+  Loading03Icon,
+} from "@hugeicons/core-free-icons"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const theme = typeof window !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"
@@ -12,11 +19,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       dir="rtl"
       className="toaster group"
       icons={{
-        success: <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />,
-        error: <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />,
-        warning: <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />,
-        info: <Info className="w-4 h-4 text-blue-500 shrink-0" />,
-        loading: <Loader2 className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />,
+        success: <HugeIcon icon={CheckmarkCircle02Icon} size={16} className="w-4 h-4 text-emerald-500 shrink-0" />,
+        error: <HugeIcon icon={AlertCircleIcon} size={16} className="w-4 h-4 text-rose-500 shrink-0" />,
+        warning: <HugeIcon icon={Alert02Icon} size={16} className="w-4 h-4 text-amber-500 shrink-0" />,
+        info: <HugeIcon icon={InformationCircleIcon} size={16} className="w-4 h-4 text-blue-500 shrink-0" />,
+        loading: <HugeIcon icon={Loading03Icon} size={16} className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />,
       }}
       toastOptions={{
         classNames: {

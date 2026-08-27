@@ -2,24 +2,25 @@ import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { Label } from "@/components/ui/label";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  ImageAdd20Filled,
-  Crop20Filled,
-  FlipHorizontal20Filled,
-  FlipVertical20Filled,
-  ArrowRotateClockwise20Filled,
-  ArrowReset20Regular,
-  Sparkle20Filled,
-  Grid20Filled,
-  Target20Filled,
-  Delete20Regular,
-  Color20Filled,
-  Checkmark20Filled,
-  ArrowSwap20Filled,
-  Copy20Filled,
-  SplitHorizontal20Filled,
-  SplitVertical20Filled,
-} from "@fluentui/react-icons";
+  ImageAdd01Icon,
+  CropIcon,
+  FlipHorizontalIcon,
+  FlipVerticalIcon,
+  RotateClockwiseIcon,
+  RefreshIcon,
+  SparklesIcon,
+  Grid02Icon,
+  Target01Icon,
+  Delete02Icon,
+  ColorPickerIcon,
+  Tick01Icon,
+  Exchange01Icon,
+  Copy01Icon,
+  TableRowsSplitIcon,
+  TableColumnsSplitIcon,
+} from "@hugeicons/core-free-icons";
 import {
   Tooltip,
   TooltipTrigger,
@@ -181,7 +182,7 @@ export function SlotProperties({
   const renderAutoFillToggle = () => (
     <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
       <div className="flex items-center gap-1.5 text-right">
-        <Copy20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
+        <HugeIcon icon={Copy01Icon} size={14} className="text-primary shrink-0" />
         <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية عند الرفع</span>
       </div>
       <Switch 
@@ -215,7 +216,7 @@ export function SlotProperties({
           className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all text-xs"
           onClick={handleOpenFile}
         >
-          <ImageAdd20Filled className="w-4 h-4 text-primary" />
+          <HugeIcon icon={ImageAdd01Icon} size={16} className="text-primary" />
           <span>رفع صورة للخلية</span>
         </Button>
         {lastEditedImage && (
@@ -225,7 +226,7 @@ export function SlotProperties({
             className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer text-xs"
             onClick={handleUseLastImage}
           >
-            <Copy20Filled className="w-4 h-4 text-primary" />
+            <HugeIcon icon={Copy01Icon} size={16} className="text-primary" />
             <span>تعبئة بآخر صورة معدلة</span>
           </Button>
         )}
@@ -258,7 +259,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={handleOpenFile}
           >
-            <ImageAdd20Filled className="w-4 h-4 text-primary" />
+            <HugeIcon icon={ImageAdd01Icon} size={16} className="text-primary" />
             <span>تغيير الصورة</span>
           </Button>
           <Button
@@ -267,7 +268,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={() => setCropOpen(true)}
           >
-            <Crop20Filled className="w-4 h-4 text-primary" />
+            <HugeIcon icon={CropIcon} size={16} className="text-primary" />
             <span>قص وتدوير</span>
           </Button>
         </div>
@@ -289,7 +290,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipHorizontal20Filled className="w-4 h-4" />
+                <HugeIcon icon={FlipHorizontalIcon} size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب أفقي</TooltipContent>
@@ -308,7 +309,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipVertical20Filled className="w-4 h-4" />
+                <HugeIcon icon={FlipVerticalIcon} size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب عمودي</TooltipContent>
@@ -327,7 +328,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <ArrowRotateClockwise20Filled className="w-4 h-4" />
+                <HugeIcon icon={RotateClockwiseIcon} size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">تدوير 90° ({slot.rotation ?? 0}°)</TooltipContent>
@@ -344,7 +345,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <ArrowReset20Regular className="w-4 h-4" />
+                <HugeIcon icon={RefreshIcon} size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إعادة تعيين الاتجاه</TooltipContent>
@@ -364,7 +365,7 @@ export function SlotProperties({
                   size="sm"
                   className="h-7 px-2 text-[10px] rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
                 >
-                  <ArrowSwap20Filled className="w-3.5 h-3.5" />
+                  <HugeIcon icon={Exchange01Icon} size={14} />
                   <span>تبديل الموضع</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -399,7 +400,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillRow}
               >
-                <SplitHorizontal20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
+                <HugeIcon icon={TableRowsSplitIcon} size={14} className="text-primary shrink-0" />
                 <span>الصف</span>
               </Button>
             </TooltipTrigger>
@@ -413,7 +414,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillColumn}
               >
-                <SplitVertical20Filled className="w-3.5 h-3.5 text-primary shrink-0" />
+                <HugeIcon icon={TableColumnsSplitIcon} size={14} className="text-primary shrink-0" />
                 <span>العمود</span>
               </Button>
             </TooltipTrigger>
@@ -431,7 +432,7 @@ export function SlotProperties({
                   }
                 }}
               >
-                <Sparkle20Filled className="w-4 h-4 text-primary shrink-0" />
+                <HugeIcon icon={SparklesIcon} size={16} className="text-primary shrink-0" />
                 <span>الفارغة</span>
               </Button>
             </TooltipTrigger>
@@ -445,7 +446,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillAll}
               >
-                <Grid20Filled className="w-4 h-4 text-primary shrink-0" />
+                <HugeIcon icon={Grid02Icon} size={16} className="text-primary shrink-0" />
                 <span>الكل</span>
               </Button>
             </TooltipTrigger>
@@ -465,7 +466,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Target20Filled className="w-3.5 h-3.5 text-primary" />
+                <HugeIcon icon={Target01Icon} size={14} className="text-primary" />
                 <span>توسيط الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -483,7 +484,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Delete20Regular className="w-3.5 h-3.5" />
+                <HugeIcon icon={Delete02Icon} size={14} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إفراغ الخلية</TooltipContent>
@@ -496,7 +497,7 @@ export function SlotProperties({
       {/* 3.5 كرت لون خلفية صورة الهوية المعزولة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/90">
-          <Color20Filled className="w-4 h-4 text-primary" />
+          <HugeIcon icon={ColorPickerIcon} size={16} className="text-primary" />
           <span>خلفية الصورة</span>
         </div>
 
@@ -538,7 +539,7 @@ export function SlotProperties({
                 }}
               >
                 {isActive && (
-                  <Checkmark20Filled className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                  <HugeIcon icon={Tick01Icon} size={14} className={cn(colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
                 )}
               </button>
             );

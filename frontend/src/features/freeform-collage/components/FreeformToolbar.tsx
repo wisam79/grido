@@ -1,25 +1,26 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Magnet } from "lucide-react";
+import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  ArrowUndo20Filled,
-  ArrowRedo20Filled,
-  Add20Filled,
-  DocumentAdd20Filled,
-  Flash20Filled,
-  AlignCenterHorizontal20Filled,
-  AlignCenterVertical20Filled,
-  AlignSpaceAroundHorizontal20Filled,
-  AlignSpaceAroundVertical20Filled,
-  SplitVertical20Filled,
-  SplitHorizontal20Filled,
-  Cut20Filled,
-  ArrowRotateClockwise20Filled,
-  Copy20Filled,
-  Delete20Regular,
-  ChevronDown20Filled,
-} from "@fluentui/react-icons";
+  Magnet01Icon,
+  Undo02Icon,
+  Redo02Icon,
+  Add01Icon,
+  FileAddIcon,
+  FlashIcon,
+  AlignHorizontalCenterIcon,
+  AlignVerticalCenterIcon,
+  AlignHorizontalDistributeCenterIcon,
+  AlignVerticalDistributeCenterIcon,
+  TableColumnsSplitIcon,
+  TableRowsSplitIcon,
+  Scissor01Icon,
+  RotateClockwiseIcon,
+  Copy01Icon,
+  Delete02Icon,
+  ArrowDown01Icon,
+} from "@hugeicons/core-free-icons";
 import type { PhotoPresetType, SlotAlignment, DistributionAxis, AutoPackStrategy } from "../types";
 import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from "../lib/freeform-math";
 import { cn } from "@/lib/utils";
@@ -88,7 +89,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onUndo}
               disabled={!canUndo}
             >
-              <ArrowUndo20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={Undo02Icon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تراجع (Ctrl+Z)</TooltipContent>
@@ -103,7 +104,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onRedo}
               disabled={!canRedo}
             >
-              <ArrowRedo20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={Redo02Icon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">إعادة (Ctrl+Y)</TooltipContent>
@@ -120,7 +121,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={onAddSlot}
             >
-              <Add20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={Add01Icon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">إضافة خلية جديدة</TooltipContent>
@@ -134,9 +135,9 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               size="sm"
               className="h-7 px-2 text-[11px] gap-1 rounded-md border-border/70 hover:border-primary/40 bg-input/40 cursor-pointer font-bold"
             >
-              <DocumentAdd20Filled className="w-3.5 h-3.5 text-primary" />
+              <HugeIcon icon={FileAddIcon} size={14} className="text-primary" />
               <span>إدراج قياس</span>
-              <ChevronDown20Filled className="w-3 h-3 opacity-60" />
+              <HugeIcon icon={ArrowDown01Icon} size={12} className="opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-52 font-cairo text-xs">
@@ -167,9 +168,9 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               size="sm"
               className="h-7 px-2.5 text-[11px] gap-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer font-bold shadow-xs"
             >
-              <Flash20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={FlashIcon} size={14} />
               <span>تعبئة الورقة</span>
-              <ChevronDown20Filled className="w-3 h-3 opacity-80" />
+              <HugeIcon icon={ArrowDown01Icon} size={12} className="opacity-80" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 font-cairo text-xs">
@@ -240,7 +241,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={() => onAlignSlot("center-h")}
               disabled={!selectedSlotId}
             >
-              <AlignCenterHorizontal20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={AlignHorizontalCenterIcon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">توسيط أفقياً في منتصف الورقة</TooltipContent>
@@ -255,7 +256,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={() => onAlignSlot("center-v")}
               disabled={!selectedSlotId}
             >
-              <AlignCenterVertical20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={AlignVerticalCenterIcon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">توسيط عمودياً في منتصف الورقة</TooltipContent>
@@ -269,7 +270,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={() => onDistributeSlots("horizontal")}
             >
-              <AlignSpaceAroundHorizontal20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={AlignHorizontalDistributeCenterIcon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">توزيع المسافات بالتساوي أفقياً</TooltipContent>
@@ -283,7 +284,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={() => onDistributeSlots("vertical")}
             >
-              <AlignSpaceAroundVertical20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={AlignVerticalDistributeCenterIcon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">توزيع المسافات بالتساوي عمودياً</TooltipContent>
@@ -301,7 +302,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onSplitVertical}
               disabled={!selectedSlotId}
             >
-              <SplitHorizontal20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={TableRowsSplitIcon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تقسيم إلى صفين (أعلى وأسفل)</TooltipContent>
@@ -317,7 +318,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onSplitHorizontal}
               disabled={!selectedSlotId}
             >
-              <SplitVertical20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={TableColumnsSplitIcon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تقسيم إلى عمودين (يمين ويسار)</TooltipContent>
@@ -339,7 +340,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               )}
               onClick={onToggleCutLines}
             >
-              <Cut20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={Scissor01Icon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -358,7 +359,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               )}
               onClick={onToggleSnapping}
             >
-              <Magnet className="w-3.5 h-3.5" />
+              <HugeIcon icon={Magnet01Icon} size={14} className="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -377,7 +378,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onRotateSlot}
               disabled={!selectedSlotId}
             >
-              <ArrowRotateClockwise20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={RotateClockwiseIcon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تدوير الخلية 90°</TooltipContent>
@@ -392,7 +393,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onDuplicateSlot}
               disabled={!selectedSlotId}
             >
-              <Copy20Filled className="w-3.5 h-3.5" />
+              <HugeIcon icon={Copy01Icon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">مضاعفة الخلية (Ctrl+D)</TooltipContent>
@@ -407,7 +408,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onRemoveSlot}
               disabled={!selectedSlotId}
             >
-              <Delete20Regular className="w-3.5 h-3.5" />
+              <HugeIcon icon={Delete02Icon} size={14} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">حذف الخلية (Del)</TooltipContent>
