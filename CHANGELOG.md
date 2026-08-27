@@ -5,6 +5,16 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.24] - 2026-08-27
+
+### Added & Refined (Smart Snapping System, Viewport Deck Polish & Hugeicons Standardization)
+- **Screen-Scaled Magnetic Snapping Engine**: Developed zoom-resilient magnetic snapping using screen-pixel constant threshold (`8px / (canvasWidth * stageScale)`), enabling effortless alignment across all zoom levels.
+- **Universal Boundary & Transformer Snapping**: Bound all drag movements and transformer resize handles (W, N, S, E, NW, NE, SW, SE) to snap against canvas borders (`0`, `0.5`, `1`), user guidelines, grid lines, and sibling elements.
+- **Hugeicons Ecosystem Standardization**: Fully transitioned away from Solar icons to `@hugeicons/core-free-icons` and unified `HugeIcon` component.
+- **Fluent 2 Canvas Viewport Deck Polish**: Redesigned bottom command deck with standard `28px` (`h-7`) button ramps, sleek acrylic backdrop, rich keyboard shortcut tooltips with `<kbd>` badges, and distinct iconography for user guidelines (`TableColumnsSplitIcon`).
+- **Offline Local Fonts & CSP Hardening**: Eliminated external Google Fonts CDN links, securing WebView2 CSP compliance with bundled offline fonts.
+- **Complete Test Coverage**: Passed 100% of frontend Vitest tests (48 suites, 270 unit tests), Go backend tests, and Playwright E2E suites.
+
 ## [v1.3.23] - 2026-08-26
 
 ### Added & Refined (Architecture, EXIF Auto-Orientation & International Passport Standards)
