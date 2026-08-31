@@ -3,26 +3,26 @@ import { ImageElement, useEditorStore } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { HugeIcon, Spinner } from "@/components/ui/huge-icon";
+import { Spinner } from "@/components/ui/huge-icon";
 import {
-  SparklesIcon,
-  MagicWand01Icon,
-  UserSquareIcon,
-  CropIcon,
-  ImageAdd01Icon,
-  RefreshIcon,
-  ViewIcon,
-  PaintBrush01Icon,
-  ColorPickerIcon,
-  Tick01Icon,
-  Sun01Icon,
-  ContrastIcon,
-  DropletIcon,
-  ViewOffIcon,
-  RotateClockwiseIcon,
-  Cancel01Icon,
-  ScanImageIcon,
-} from "@hugeicons/core-free-icons";
+  Sparkle16Regular,
+  Wand16Regular,
+  PersonSquare16Regular,
+  Crop16Regular,
+  ImageAdd20Regular,
+  ArrowReset20Regular,
+  Eye16Regular,
+  PaintBrush16Regular,
+  Color16Regular,
+  Checkmark16Regular,
+  WeatherSunny16Regular,
+  BrightnessHigh16Regular,
+  Drop16Regular,
+  EyeOff16Regular,
+  ArrowClockwise12Regular,
+  Dismiss16Regular,
+  ScanDash16Regular,
+} from "@fluentui/react-icons";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -87,7 +87,7 @@ export function ImageAdjustProperties({
 
       <SliderControl
         label="السطوع"
-        icon={<HugeIcon icon={Sun01Icon} size={14} className="text-muted-foreground/75" />}
+        icon={<WeatherSunny16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
         value={element.brightness ?? 100}
         min={0}
         max={200}
@@ -100,7 +100,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="التباين"
-        icon={<HugeIcon icon={ContrastIcon} size={14} className="text-muted-foreground/75" />}
+        icon={<BrightnessHigh16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
         value={element.contrast ?? 100}
         min={0}
         max={200}
@@ -113,7 +113,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="التشبع"
-        icon={<HugeIcon icon={DropletIcon} size={14} className="text-muted-foreground/75" />}
+        icon={<Drop16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
         value={element.saturation ?? 100}
         min={0}
         max={200}
@@ -126,7 +126,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="الضبابية"
-        icon={<HugeIcon icon={ViewOffIcon} size={14} className="text-muted-foreground/75" />}
+        icon={<EyeOff16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
         value={element.blur ?? 0}
         min={0}
         max={20}
@@ -154,7 +154,7 @@ export function ImageAdjustProperties({
             useEditorStore.getState().pushHistory();
           }}
         >
-          <HugeIcon icon={RotateClockwiseIcon} size={12} />
+          <ArrowClockwise12Regular className="w-3 h-3" />
           <span>إعادة تعيين الألوان</span>
         </Button>
       )}
@@ -279,7 +279,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 {isRemovingBg ? (
                   <Spinner className="w-4 h-4 shrink-0" size={16} />
                 ) : (
-                  <HugeIcon icon={SparklesIcon} size={16} className="text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <Sparkle16Regular className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 )}
                 <span className="text-[11px] font-bold">{isRemovingBg ? "إلغاء" : "عزل الخلفية"}</span>
               </Button>
@@ -305,7 +305,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 {isEnhancing ? (
                   <Spinner className="w-4 h-4 text-primary shrink-0" size={16} />
                 ) : (
-                  <HugeIcon icon={MagicWand01Icon} size={16} className="text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <Wand16Regular className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 )}
                 <span className="text-[11px] font-bold">{isEnhancing ? "معالجة..." : "ترميم الوجه"}</span>
               </Button>
@@ -328,9 +328,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
               >
                 {isFraming ? (
-                  <HugeIcon icon={Cancel01Icon} size={16} className="text-destructive-foreground shrink-0" />
+                  <Dismiss16Regular className="w-4 h-4 text-destructive-foreground shrink-0" />
                 ) : (
-                  <HugeIcon icon={UserSquareIcon} size={16} className="text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <PersonSquare16Regular className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 )}
                 <span className="text-[11px] font-bold">{isFraming ? "إلغاء" : "تأطير الوجه"}</span>
               </Button>
@@ -349,7 +349,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs"
                 onClick={() => setScannerOpen(true)}
               >
-                <HugeIcon icon={ScanImageIcon} size={16} className="text-primary group-hover:scale-110 transition-transform shrink-0" />
+                <ScanDash16Regular className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
                 <span className="text-[11px] font-bold">مسح المستند</span>
               </Button>
             </TooltipTrigger>
@@ -409,7 +409,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       {/* 🎴 بطاقة 2: خلفية الصورة */}
       <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/85">
-          <HugeIcon icon={ColorPickerIcon} size={16} className="text-primary" />
+          <Color16Regular className="w-4 h-4 text-primary" />
           <span>خلفية الصورة</span>
         </div>
 
@@ -444,7 +444,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     }}
                   >
                     {isActive && (
-                      <HugeIcon icon={Tick01Icon} size={14} className={cn(colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                      <Checkmark16Regular className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
                     )}
                   </button>
                 </TooltipTrigger>
@@ -477,7 +477,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={() => setCropOpen(true)}
               >
-                <HugeIcon icon={CropIcon} size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <Crop16Regular className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                 <span>قص وتدوير</span>
               </Button>
             </TooltipTrigger>
@@ -492,7 +492,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={handleOpenFile}
               >
-                <HugeIcon icon={ImageAdd01Icon} size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <ImageAdd20Regular className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                 <span>تبديل الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -518,7 +518,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 }}
                 title="استعادة الصورة الأصلية وإلغاء العزل أو الترميم"
               >
-                <HugeIcon icon={RefreshIcon} size={16} />
+                <ArrowReset20Regular className="w-4 h-4" />
                 <span>استعادة الأصل</span>
               </Button>
 
@@ -546,7 +546,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 }}
                 title="اضغط مطولاً للمقارنة مع الصورة الأصلية"
               >
-                <HugeIcon icon={ViewIcon} size={16} />
+                <Eye16Regular className="w-4 h-4" />
                 <span>مقارنة الأصل</span>
               </Button>
             </div>
@@ -557,7 +557,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               onClick={() => setRefineOpen(true)}
               title="تعديل تفاصيل العزل وحواف الصورة يدوياً"
             >
-              <HugeIcon icon={PaintBrush01Icon} size={14} className="text-primary shrink-0" />
+              <PaintBrush16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
               <span>تعديل العزل يدوياً</span>
             </Button>
           </div>

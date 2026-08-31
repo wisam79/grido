@@ -1,3 +1,5 @@
+import type * as React from "react";
+
 export type TemplateCategory =
   | "id"
   | "passport"
@@ -19,7 +21,7 @@ export interface PhotoTemplate {
   background: string; // اللون الموصى به للخلفية
   backgroundHint: string;
   notes?: string;
-  icon?: any;
+  icon?: React.ComponentType<{ className?: string; [key: string]: any }> | any;
 }
 
 export interface CollageTemplate {
@@ -35,7 +37,7 @@ export interface CollageTemplate {
     label?: string;
     rotation?: number;
   }[];
-  icon?: any;
+  icon?: React.ComponentType<{ className?: string; [key: string]: any }> | any;
   physicalLayout?: {
     type:
       | "iq-national-id"

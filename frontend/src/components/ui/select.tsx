@@ -2,8 +2,11 @@
 
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
-import { Tick01Icon, ArrowDown01Icon, ArrowUp01Icon } from "@hugeicons/core-free-icons"
-import { HugeIcon } from "@/components/ui/huge-icon"
+import {
+  Checkmark16Regular,
+  ChevronDown16Regular,
+  ChevronUp16Regular,
+} from "@fluentui/react-icons"
 
 import { cn } from "@/lib/utils"
 
@@ -31,7 +34,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <HugeIcon icon={ArrowDown01Icon} size={14} className="size-3.5 opacity-60" />
+      <ChevronDown16Regular className="size-3.5 opacity-60 shrink-0" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -98,7 +101,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute right-1.5 flex size-3 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <HugeIcon icon={Tick01Icon} size={14} className="size-3.5 text-primary" />
+        <Checkmark16Regular className="size-3.5 text-primary shrink-0" />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
@@ -132,7 +135,7 @@ const SelectScrollUpButton = React.forwardRef<
     )}
     {...props}
   >
-    <HugeIcon icon={ArrowUp01Icon} size={16} className="size-4" />
+    <ChevronUp16Regular className="size-4 shrink-0" />
   </SelectPrimitive.ScrollUpButton>
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
@@ -150,7 +153,7 @@ const SelectScrollDownButton = React.forwardRef<
     )}
     {...props}
   >
-    <HugeIcon icon={ArrowDown01Icon} size={16} className="size-4" />
+    <ChevronDown16Regular className="size-4 shrink-0" />
   </SelectPrimitive.ScrollDownButton>
 ))
 SelectScrollDownButton.displayName =

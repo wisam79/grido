@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { HugeIcon } from "@/components/ui/huge-icon";
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { ChevronDown16Regular } from "@fluentui/react-icons";
 
 export interface FluentSectionProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
@@ -104,11 +103,9 @@ export const FluentSection = React.memo(
             )}
             {collapsible && (
               <div className="p-0.5 rounded text-muted-foreground/70 group-hover/sec-header:text-foreground transition-colors">
-                <HugeIcon
-                  icon={ArrowDown01Icon}
-                  size={14}
+                <ChevronDown16Regular
                   className={cn(
-                    "transition-transform duration-200",
+                    "size-3.5 shrink-0 transition-transform duration-200",
                     !isOpen && "rotate-90 rtl:-rotate-90"
                   )}
                 />

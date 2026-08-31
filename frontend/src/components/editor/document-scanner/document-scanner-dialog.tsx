@@ -12,19 +12,18 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  FileScanIcon,
-  SparklesIcon,
-  RotateClockwiseIcon,
-  Tick01Icon,
-  ViewIcon,
-  RefreshIcon,
-  CropIcon,
-  File01Icon,
-  CreditCardIcon,
-  Grid02Icon,
-} from "@hugeicons/core-free-icons";
+  DocumentSearch24Regular,
+  Sparkle16Regular,
+  ArrowRotateClockwise20Regular,
+  Checkmark16Regular,
+  Eye16Regular,
+  ArrowReset20Regular,
+  Crop16Regular,
+  Document16Regular,
+  ContactCard16Regular,
+  Grid16Regular,
+} from "@fluentui/react-icons";
 import { cn } from "@/lib/utils";
 import {
   Point,
@@ -460,7 +459,7 @@ export function DocumentScannerDialog({
         <DialogHeader className="pb-3 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div>
             <DialogTitle className="flex items-center gap-2.5 text-base font-bold text-foreground">
-              <HugeIcon icon={FileScanIcon} size={24} className="text-primary" />
+              <DocumentSearch24Regular className="text-primary w-6 h-6 shrink-0" />
               <div className="flex flex-col">
                 <span>ماسح وتقويم المستندات (Document Scanner)</span>
                 <span className="text-[11px] font-normal text-muted-foreground mt-0.5">
@@ -483,17 +482,17 @@ export function DocumentScannerDialog({
               <div className="px-3.5 py-1.5 rounded-full bg-sidebar/90 border border-border text-[11px] font-semibold text-foreground shadow-md backdrop-blur-md flex items-center gap-2">
                 {isDetecting ? (
                   <>
-                    <HugeIcon icon={RotateClockwiseIcon} size={14} className="text-primary animate-spin" />
+                    <ArrowRotateClockwise20Regular className="text-primary w-3.5 h-3.5 shrink-0 animate-spin" />
                     <span>جاري فحص الحواف وتحديد أركان المستند تلقائياً ...</span>
                   </>
                 ) : isPreviewMode ? (
                   <>
-                    <HugeIcon icon={ViewIcon} size={14} className="text-blue-500" />
+                    <Eye16Regular className="text-blue-500 w-3.5 h-3.5 shrink-0" />
                     <span>معاينة المستند بعد الاستعدال والمعالجة</span>
                   </>
                 ) : (
                   <>
-                    <HugeIcon icon={SparklesIcon} size={14} className="text-primary" />
+                    <Sparkle16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                     <span>اسحب الدبابيس الأربعة لضبط حدود المستند بدقة</span>
                   </>
                 )}
@@ -541,7 +540,7 @@ export function DocumentScannerDialog({
             {/* 1. كشف الحواف والأركان */}
             <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
               <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <HugeIcon icon={SparklesIcon} size={14} className="text-primary shrink-0" />
+                <Sparkle16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                 <span>كشف الأركان</span>
               </Label>
               <div className="grid grid-cols-2 gap-2">
@@ -555,9 +554,9 @@ export function DocumentScannerDialog({
                       disabled={isDetecting}
                     >
                       {isDetecting ? (
-                        <HugeIcon icon={RotateClockwiseIcon} size={14} className="shrink-0 animate-spin" />
+                        <ArrowRotateClockwise20Regular className="shrink-0 w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <HugeIcon icon={SparklesIcon} size={14} className="shrink-0" />
+                        <Sparkle16Regular className="shrink-0 w-3.5 h-3.5" />
                       )}
                       <span>{isDetecting ? "جاري الكشف ..." : "كشف تلقائي"}</span>
                     </Button>
@@ -573,7 +572,7 @@ export function DocumentScannerDialog({
                       className="h-8 rounded-md border-border/60 hover:bg-accent text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                       onClick={handleResetCorners}
                     >
-                      <HugeIcon icon={RefreshIcon} size={14} className="text-muted-foreground shrink-0" />
+                      <ArrowReset20Regular className="text-muted-foreground w-3.5 h-3.5 shrink-0" />
                       <span>إعادة ضبط</span>
                     </Button>
                   </TooltipTrigger>
@@ -585,7 +584,7 @@ export function DocumentScannerDialog({
             {/* 2. فلاتر وتصفية الورقة */}
             <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
               <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <HugeIcon icon={File01Icon} size={14} className="text-primary shrink-0" />
+                <Document16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                 <span>معالجة وتصفية الورقة</span>
               </Label>
               <div className="flex flex-col gap-1.5">
@@ -600,7 +599,7 @@ export function DocumentScannerDialog({
                       )}
                       onClick={() => handleFilterChange("original")}
                     >
-                      <HugeIcon icon={File01Icon} size={14} className="shrink-0" />
+                      <Document16Regular className="shrink-0 w-3.5 h-3.5" />
                       <div className="flex flex-col items-start leading-tight">
                         <span>الألوان الأصلية</span>
                       </div>
@@ -620,7 +619,7 @@ export function DocumentScannerDialog({
                       )}
                       onClick={() => handleFilterChange("magic")}
                     >
-                      <HugeIcon icon={SparklesIcon} size={14} className="shrink-0 text-amber-300" />
+                      <Sparkle16Regular className="shrink-0 w-3.5 h-3.5 text-amber-300" />
                       <div className="flex flex-col items-start leading-tight">
                         <span>ماسح ذكي</span>
                       </div>
@@ -640,7 +639,7 @@ export function DocumentScannerDialog({
                       )}
                       onClick={() => handleFilterChange("bw")}
                     >
-                      <HugeIcon icon={Grid02Icon} size={14} className="shrink-0" />
+                      <Grid16Regular className="shrink-0 w-3.5 h-3.5" />
                       <div className="flex flex-col items-start leading-tight">
                         <span>أبيض وأسود</span>
                       </div>
@@ -654,7 +653,7 @@ export function DocumentScannerDialog({
             {/* 3. نسبة الأبعاد والقياس */}
             <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
               <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <HugeIcon icon={CropIcon} size={14} className="text-primary shrink-0" />
+                <Crop16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                 <span>قياس ونسبة المستند</span>
               </Label>
               <div className="grid grid-cols-2 gap-1.5">
@@ -703,7 +702,7 @@ export function DocumentScannerDialog({
                   )}
                   onClick={() => handleAspectChange("id_card")}
                 >
-                  <HugeIcon icon={CreditCardIcon} size={12} />
+                  <ContactCard16Regular className="w-3 h-3 shrink-0" />
                   <span>بطاقة هوية</span>
                 </Button>
               </div>
@@ -723,12 +722,12 @@ export function DocumentScannerDialog({
             >
               {isPreviewMode ? (
                 <>
-                  <HugeIcon icon={RefreshIcon} size={14} className="text-primary" />
+                  <ArrowReset20Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                   <span>رجوع للتعديل</span>
                 </>
               ) : (
                 <>
-                  <HugeIcon icon={ViewIcon} size={14} className="text-primary" />
+                  <Eye16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                   <span>معاينة</span>
                 </>
               )}
@@ -749,7 +748,7 @@ export function DocumentScannerDialog({
               title={cornersReady ? undefined : "حدّد أركان المستند أولاً"}
               className="rounded-md h-8 px-5 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98] disabled:cursor-not-allowed"
             >
-              <HugeIcon icon={Tick01Icon} size={14} />
+              <Checkmark16Regular className="w-3.5 h-3.5 shrink-0" />
               <span>تطبيق الاستعدال</span>
             </Button>
           </div>

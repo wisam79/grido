@@ -5,36 +5,37 @@ import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
-import { Spinner, HugeIcon } from "@/components/ui/huge-icon";
+import { Spinner } from "@/components/ui/huge-icon";
 import {
-  SparklesIcon,
-  MagicWand01Icon,
-  UserSquareIcon,
-  ImageAdd01Icon,
-  Grid02Icon,
-  Delete02Icon,
-  Copy01Icon,
-  ArrowUp01Icon,
-  ArrowDown01Icon,
-  RotateClockwiseIcon,
-  FlipHorizontalIcon,
-  RefreshIcon,
-  ViewIcon,
-  BrushCleaningIcon,
-  GroupLayersIcon,
-  Cancel01Icon,
-  TableColumnsSplitIcon,
-  TableRowsSplitIcon,
-  Layers01Icon,
-  AlignLeftIcon,
-  AlignHorizontalCenterIcon,
-  AlignRightIcon,
-  AlignTopIcon,
-  AlignVerticalCenterIcon,
-  AlignBottomIcon,
-  AlignHorizontalSpaceAroundIcon,
-  AlignVerticalSpaceAroundIcon,
-} from "@hugeicons/core-free-icons";
+  Sparkle20Regular,
+  Wand20Regular,
+  PersonSquare20Regular,
+  ImageAdd20Regular,
+  Grid20Regular,
+  Delete20Regular,
+  Copy20Regular,
+  ArrowUp20Regular,
+  ArrowDown20Regular,
+  ArrowRotateClockwise20Regular,
+  FlipHorizontal20Regular,
+  FlipHorizontal20Filled,
+  ArrowReset20Regular,
+  Eye20Regular,
+  Broom20Regular,
+  Group20Regular,
+  Dismiss20Regular,
+  TableSplit20Regular,
+  TableSimple20Regular,
+  Layer20Regular,
+  AlignLeft20Regular,
+  AlignCenterHorizontal20Regular,
+  AlignRight20Regular,
+  AlignTop20Regular,
+  AlignCenterVertical20Regular,
+  AlignBottom20Regular,
+  AlignSpaceAroundHorizontal20Regular,
+  AlignSpaceAroundVertical20Regular,
+} from "@fluentui/react-icons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
@@ -175,7 +176,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={handleOpenFileForSlot}
                   className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                 >
-                  <HugeIcon icon={ImageAdd01Icon} size={14} />
+                  <ImageAdd20Regular className="w-3.5 h-3.5" />
                   <span>تغيير</span>
                 </Button>
               </TooltipTrigger>
@@ -192,7 +193,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => fillAllSlots(selectedSlot.imageSrc!, selectedSlot.id)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                     >
-                      <HugeIcon icon={Grid02Icon} size={14} />
+                      <Grid20Regular className="w-3.5 h-3.5" />
                       <span>كل الورقة</span>
                     </Button>
                   </TooltipTrigger>
@@ -207,7 +208,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => fillRowSlots(selectedSlot.id, selectedSlot.imageSrc!)}
                       className="h-7 px-2 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                     >
-                      <HugeIcon icon={TableRowsSplitIcon} size={14} />
+                      <TableSimple20Regular className="w-3.5 h-3.5" />
                       <span>الصف</span>
                     </Button>
                   </TooltipTrigger>
@@ -222,7 +223,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => fillColumnSlots(selectedSlot.id, selectedSlot.imageSrc!)}
                       className="h-7 px-2 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
                     >
-                      <HugeIcon icon={TableColumnsSplitIcon} size={14} />
+                      <TableSplit20Regular className="w-3.5 h-3.5" />
                       <span>العمود</span>
                     </Button>
                   </TooltipTrigger>
@@ -241,7 +242,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => handleRemoveBg(selectedSlot)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isRemovingBg ? <Spinner className="w-3.5 h-3.5" size={14} /> : <HugeIcon icon={SparklesIcon} size={14} />}
+                      {isRemovingBg ? <Spinner className="w-3.5 h-3.5" size={14} /> : <Sparkle20Regular className="w-3.5 h-3.5" />}
                       <span>{isRemovingBg ? (bgProgress > 0 ? `جاري العزل ... (${Math.round(bgProgress)}%)` : "جاري العزل ...") : "عزل الخلفية"}</span>
                       {!licenseActive ? (
                         <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded-sm tracking-wider uppercase">
@@ -268,7 +269,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={isFraming ? handleCancelFrame : () => handleFrameFace(selectedSlot)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isFraming ? <Spinner className="w-3.5 h-3.5" size={14} /> : <HugeIcon icon={UserSquareIcon} size={14} />}
+                      {isFraming ? <Spinner className="w-3.5 h-3.5" size={14} /> : <PersonSquare20Regular className="w-3.5 h-3.5" />}
                       <span>{isFraming ? "جاري الضبط ..." : "ضبط الوجه"}</span>
                     </Button>
                   </TooltipTrigger>
@@ -285,7 +286,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => handleEnhance(selectedSlot)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isEnhancing ? <Spinner className="w-3.5 h-3.5" size={14} /> : <HugeIcon icon={MagicWand01Icon} size={14} />}
+                      {isEnhancing ? <Spinner className="w-3.5 h-3.5" size={14} /> : <Wand20Regular className="w-3.5 h-3.5" />}
                       <span>{isEnhancing ? "جاري الترميم ..." : `ترميم الوجه (${remainingQuota}/${dailyLimit})`}</span>
                     </Button>
                   </TooltipTrigger>
@@ -302,7 +303,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => rotateSlot(selectedSlot.id, 90)}
                       className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                     >
-                      <HugeIcon icon={RotateClockwiseIcon} size={14} />
+                      <ArrowRotateClockwise20Regular className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
@@ -316,7 +317,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => flipSlotX(selectedSlot.id)}
                       className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                     >
-                      <HugeIcon icon={FlipHorizontalIcon} size={14} />
+                      <FlipHorizontal20Regular className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">قلب أفقي</TooltipContent>
@@ -340,7 +341,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                           }}
                           className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                         >
-                          <HugeIcon icon={RefreshIcon} size={14} />
+                          <ArrowReset20Regular className="w-3.5 h-3.5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">استعادة الصورة الأصلية</TooltipContent>
@@ -362,7 +363,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                           }}
                           className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
                         >
-                          <HugeIcon icon={ViewIcon} size={14} />
+                          <Eye20Regular className="w-3.5 h-3.5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">اضغط مطولاً لمعاينة الأصل</TooltipContent>
@@ -381,7 +382,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       }}
                       className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
                     >
-                      <HugeIcon icon={BrushCleaningIcon} size={14} />
+                      <Broom20Regular className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">تفريغ هذه الخلية</TooltipContent>
@@ -395,7 +396,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
         {selectedIds.length > 1 && (
           <>
             <div className="flex items-center gap-1 text-[11px] font-bold px-1.5 text-primary">
-              <HugeIcon icon={Layers01Icon} size={14} />
+              <Layer20Regular className="w-3.5 h-3.5" />
               <span>{selectedIds.length} عناصر</span>
             </div>
 
@@ -410,7 +411,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("left")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={AlignLeftIcon} size={14} />
+                  <AlignLeft20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة لليسار</TooltipContent>
@@ -424,7 +425,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("center")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={AlignHorizontalCenterIcon} size={14} />
+                  <AlignCenterHorizontal20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة للوسط أفقياً</TooltipContent>
@@ -438,7 +439,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("right")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={AlignRightIcon} size={14} />
+                  <AlignRight20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة لليمين</TooltipContent>
@@ -452,7 +453,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("top")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={AlignTopIcon} size={14} />
+                  <AlignTop20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة للأعلى</TooltipContent>
@@ -466,7 +467,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("middle")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={AlignVerticalCenterIcon} size={14} />
+                  <AlignCenterVertical20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة للمنتصف عمودياً</TooltipContent>
@@ -480,7 +481,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => alignSelectedElements("bottom")}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={AlignBottomIcon} size={14} />
+                  <AlignBottom20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">محاذاة للأسفل</TooltipContent>
@@ -499,7 +500,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => distributeSelectedElements("horizontal")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                     >
-                      <HugeIcon icon={AlignHorizontalSpaceAroundIcon} size={14} />
+                      <AlignSpaceAroundHorizontal20Regular className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">توزيع أفقي متساوٍ</TooltipContent>
@@ -513,7 +514,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => distributeSelectedElements("vertical")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                     >
-                      <HugeIcon icon={AlignVerticalSpaceAroundIcon} size={14} />
+                      <AlignSpaceAroundVertical20Regular className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">توزيع عمودي متساوٍ</TooltipContent>
@@ -532,7 +533,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={groupSelectedElements}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={GroupLayersIcon} size={14} />
+                  <Group20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تجميع العناصر (Group)</TooltipContent>
@@ -547,7 +548,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => duplicateElements(selectedIds)}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={Copy01Icon} size={14} />
+                  <Copy20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تكرار العناصر</TooltipContent>
@@ -562,7 +563,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => removeElements(selectedIds)}
                   className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
                 >
-                  <HugeIcon icon={Delete02Icon} size={14} />
+                  <Delete20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">حذف العناصر</TooltipContent>
@@ -581,7 +582,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => bringToFront(selectedElement.id)}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={ArrowUp01Icon} size={14} />
+                  <ArrowUp20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">إحضار للأمام</TooltipContent>
@@ -595,7 +596,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => sendToBack(selectedElement.id)}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={ArrowDown01Icon} size={14} />
+                  <ArrowDown20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">إرسال للخلف</TooltipContent>
@@ -609,7 +610,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => duplicateElement(selectedElement.id)}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={Copy01Icon} size={14} />
+                  <Copy20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تكرار العنصر</TooltipContent>
@@ -626,7 +627,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   }}
                   className="h-7 w-7 p-0 rounded-md hover:bg-accent"
                 >
-                  <HugeIcon icon={RotateClockwiseIcon} size={14} />
+                  <ArrowRotateClockwise20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
@@ -643,7 +644,10 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   }}
                   className={cn("h-7 w-7 p-0 rounded-md hover:bg-accent", selectedElement.flipX && "bg-primary/10 text-primary")}
                 >
-                  <HugeIcon icon={FlipHorizontalIcon} size={14} />
+                  {selectedElement.flipX
+                    ? <FlipHorizontal20Filled className="w-3.5 h-3.5" />
+                    : <FlipHorizontal20Regular className="w-3.5 h-3.5" />
+                  }
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">قلب أفقي</TooltipContent>
@@ -662,7 +666,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => handleRemoveBg(selectedElement)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isRemovingBg ? <Spinner className="w-3.5 h-3.5" size={14} /> : <HugeIcon icon={SparklesIcon} size={14} />}
+                      {isRemovingBg ? <Spinner className="w-3.5 h-3.5" size={14} /> : <Sparkle20Regular className="w-3.5 h-3.5" />}
                       <span>{isRemovingBg ? (bgProgress > 0 ? `جاري العزل ... (${Math.round(bgProgress)}%)` : "جاري العزل ...") : "عزل الخلفية"}</span>
                       {!licenseActive ? (
                         <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded-sm tracking-wider uppercase">
@@ -688,7 +692,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={isFraming ? handleCancelFrame : () => handleFrameFace(selectedElement)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isFraming ? <Spinner className="w-3.5 h-3.5" size={14} /> : <HugeIcon icon={UserSquareIcon} size={14} />}
+                      {isFraming ? <Spinner className="w-3.5 h-3.5" size={14} /> : <PersonSquare20Regular className="w-3.5 h-3.5" />}
                       <span>{isFraming ? "جاري الضبط ..." : "ضبط الوجه"}</span>
                     </Button>
                   </TooltipTrigger>
@@ -704,7 +708,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                       onClick={() => handleEnhance(selectedElement)}
                       className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
                     >
-                      {isEnhancing ? <Spinner className="w-3.5 h-3.5" size={14} /> : <HugeIcon icon={MagicWand01Icon} size={14} />}
+                      {isEnhancing ? <Spinner className="w-3.5 h-3.5" size={14} /> : <Wand20Regular className="w-3.5 h-3.5" />}
                       <span>{isEnhancing ? "جاري الترميم ..." : `ترميم الوجه (${remainingQuota}/${dailyLimit})`}</span>
                     </Button>
                   </TooltipTrigger>
@@ -729,7 +733,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                           }}
                           className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                         >
-                          <HugeIcon icon={RefreshIcon} size={14} />
+                          <ArrowReset20Regular className="w-3.5 h-3.5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">استعادة الصورة الأصلية</TooltipContent>
@@ -751,7 +755,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                           }}
                           className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
                         >
-                          <HugeIcon icon={ViewIcon} size={14} />
+                          <Eye20Regular className="w-3.5 h-3.5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">اضغط مطولاً لمعاينة الأصل</TooltipContent>
@@ -771,7 +775,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
                   onClick={() => removeElement(selectedElement.id)}
                   className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
                 >
-                  <HugeIcon icon={Delete02Icon} size={14} />
+                  <Delete20Regular className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">حذف العنصر</TooltipContent>
@@ -786,7 +790,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
           className="h-7 w-7 p-0 rounded-md hover:bg-muted text-muted-foreground ms-1"
           title="إغلاق الشريط السريع"
         >
-          <HugeIcon icon={Cancel01Icon} size={14} />
+          <Dismiss20Regular className="w-3.5 h-3.5" />
         </Button>
 
       </div>

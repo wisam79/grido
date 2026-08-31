@@ -11,8 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Spinner, HugeIcon } from "@/components/ui/huge-icon";
-import { Download01Icon, Alert02Icon } from "@hugeicons/core-free-icons";
+import { Spinner } from "@/components/ui/huge-icon";
+import {
+  ArrowDownload24Regular,
+  ArrowDownload16Regular,
+  Warning16Regular,
+} from "@fluentui/react-icons";
 import { exportCanvas, downloadBlob, exportSlotCanvas, applyBleedAndCropMarks, CanvasTooLargeError } from "@/lib/export";
 import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/canvas/stage-context";
@@ -161,7 +165,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       <DialogContent className="max-w-md font-cairo rounded-2xl border border-border bg-card fluent-specular" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold">
-            <HugeIcon icon={Download01Icon} size={24} className="text-primary" />
+            <ArrowDownload24Regular className="text-primary w-6 h-6 shrink-0" />
             <span>تصدير الصورة</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -266,7 +270,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           <div className="border-t border-border/40 pt-3 space-y-2.5">
             {(template?.dpi || printSettings.dpi || 300) < 150 && (
               <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-[11px] text-destructive flex items-start gap-2">
-                <HugeIcon icon={Alert02Icon} size={16} className="shrink-0 mt-0.5" />
+                <Warning16Regular className="shrink-0 mt-0.5 w-4 h-4" />
                 <span className="leading-tight font-medium">
                   الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُوصى بـ 300 DPI للطباعة الاحترافية.
                 </span>
@@ -274,7 +278,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             )}
 
             <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
-              <HugeIcon icon={Alert02Icon} size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <Warning16Regular className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 w-4 h-4" />
               <span className="leading-tight font-medium">تصدير الصورة بنظام الألوان القياسي RGB للطباعة الرقمية.</span>
             </div>
 
@@ -338,7 +342,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               </>
             ) : (
               <>
-                <HugeIcon icon={Download01Icon} size={14} />
+                <ArrowDownload16Regular className="w-3.5 h-3.5 shrink-0" />
                 <span>تنزيل الصورة</span>
               </>
             )}

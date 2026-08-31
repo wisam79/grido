@@ -12,17 +12,17 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Cropper, ReactCropperElement } from "react-cropper";
 import "cropperjs/dist/cropper.css";
-import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  CropIcon,
-  RotateClockwiseIcon,
-  ZoomInIcon,
-  ZoomOutIcon,
-  RefreshIcon,
-  Tick01Icon,
-  SparklesIcon,
-  Compass01Icon,
-} from "@hugeicons/core-free-icons";
+  Crop24Regular,
+  Crop20Regular,
+  ArrowRotateClockwise20Regular,
+  ZoomIn20Regular,
+  ZoomOut20Regular,
+  ArrowReset20Regular,
+  Checkmark16Regular,
+  Sparkle16Regular,
+  CompassNorthwest20Regular,
+} from "@fluentui/react-icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -147,7 +147,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
         <DialogHeader className="pb-2 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <HugeIcon icon={CropIcon} size={24} className="text-primary" />
+              <Crop24Regular className="text-primary w-6 h-6 shrink-0" />
               <span>قص وتدوير الصورة</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -182,7 +182,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             {/* 1. أدوات التكبير والتدوير */}
             <div className="space-y-2">
               <Label className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <HugeIcon icon={RotateClockwiseIcon} size={14} className="text-primary" />
+                <ArrowRotateClockwise20Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                 <span>أدوات التحكم</span>
               </Label>
               
@@ -195,7 +195,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={handleRotate}
                     >
-                      <HugeIcon icon={RotateClockwiseIcon} size={14} className="text-primary" />
+                      <ArrowRotateClockwise20Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">تدوير 90°</TooltipContent>
@@ -209,7 +209,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={() => handleZoom(0.1)}
                     >
-                      <HugeIcon icon={ZoomInIcon} size={14} className="text-foreground/80" />
+                      <ZoomIn20Regular className="text-foreground/80 w-3.5 h-3.5 shrink-0" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">تكبير</TooltipContent>
@@ -223,7 +223,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={() => handleZoom(-0.1)}
                     >
-                      <HugeIcon icon={ZoomOutIcon} size={14} className="text-foreground/80" />
+                      <ZoomOut20Regular className="text-foreground/80 w-3.5 h-3.5 shrink-0" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">تصغير</TooltipContent>
@@ -235,7 +235,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             <div className="space-y-2 bg-muted/20 p-2.5 rounded-xl border border-border/40">
               <div className="flex justify-between items-center">
                 <Label className="text-[11px] font-bold text-foreground/90 flex items-center gap-1">
-                  <HugeIcon icon={Compass01Icon} size={14} className="text-primary" />
+                  <CompassNorthwest20Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                   <span>استقامة الزاوية</span>
                 </Label>
                 <span className="text-[10px] font-mono font-bold text-primary">{straightenAngle > 0 ? `+${straightenAngle}°` : `${straightenAngle}°`}</span>
@@ -265,7 +265,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             {/* 2. نسب أبعاد القص */}
             <div className="space-y-2">
               <Label className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <HugeIcon icon={CropIcon} size={14} className="text-primary" /> 
+                <Crop20Regular className="text-primary w-3.5 h-3.5 shrink-0" /> 
                 <span>نسبة الأبعاد</span>
               </Label>
 
@@ -302,7 +302,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     )}
                     onClick={() => setAspect(templateAspect)}
                   >
-                    <HugeIcon icon={SparklesIcon} size={14} />
+                    <Sparkle16Regular className="w-3.5 h-3.5 shrink-0" />
                     <span>أبعاد القالب ({template?.name.split(" · ")[1] || "القياسية"})</span>
                   </Button>
                 )}
@@ -321,7 +321,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   onClick={handleResetCrop}
                   title="إعادة تحديد القص والتدوير للحالة الكاملة الأولية"
                 >
-                  <HugeIcon icon={RefreshIcon} size={14} className="text-primary shrink-0" />
+                  <ArrowReset20Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                   <span>إعادة ضبط القص</span>
                 </Button>
 
@@ -333,7 +333,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     onClick={handleRestoreOriginal}
                     title="استرجاع الصورة الأصلية الكاملة"
                   >
-                    <HugeIcon icon={RefreshIcon} size={14} className="shrink-0" />
+                    <ArrowReset20Regular className="w-3.5 h-3.5 shrink-0" />
                     <span>استعادة الأصل</span>
                   </Button>
                 )}
@@ -351,7 +351,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             onClick={handleCrop}
             className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
           >
-            <HugeIcon icon={Tick01Icon} size={14} />
+            <Checkmark16Regular className="w-3.5 h-3.5 shrink-0" />
             <span>تطبيق القص</span>
           </Button>
         </DialogFooter>

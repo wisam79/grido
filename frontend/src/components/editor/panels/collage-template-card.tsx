@@ -1,8 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { CollageTemplate } from "@/lib/templates";
-import { HugeIcon } from "@/components/ui/huge-icon";
-import { Delete02Icon, Image02Icon, Grid02Icon } from "@hugeicons/core-free-icons";
+import { Delete16Regular, Delete20Regular, Image20Regular, Grid16Regular } from "@fluentui/react-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,13 +60,13 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
               className="absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
               title="حذف القالب"
             >
-              <HugeIcon icon={Delete02Icon} size={14} />
+              <Delete16Regular className="w-3.5 h-3.5" />
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent className="font-cairo text-right rounded-2xl border fluent-specular" dir="rtl" onClick={(e) => e.stopPropagation()}>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-right">
-                <HugeIcon icon={Delete02Icon} size={20} className="text-destructive" />
+                <Delete20Regular className="w-5 h-5 text-destructive" />
                 <span>حذف القالب</span>
               </AlertDialogTitle>
               <AlertDialogDescription>
@@ -103,11 +102,9 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
                 height: `calc(${c.h * 100}% - 2px)`,
               }}
             >
-              <HugeIcon
-                icon={Image02Icon}
-                size={16}
+              <Image20Regular
                 className={cn(
-                  "transition-transform duration-300 group-hover:scale-110",
+                  "w-4 h-4 transition-transform duration-300 group-hover:scale-110",
                   isActive ? "text-primary" : "text-muted-foreground/45 group-hover:text-primary/75"
                 )}
               />
@@ -134,10 +131,8 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             {tpl.slots} صور
           </span>
           <div className="flex items-center gap-1">
-            <HugeIcon
-              icon={Grid02Icon}
-              size={12}
-              className={isActive ? "text-primary" : "text-muted-foreground/70"}
+            <Grid16Regular
+              className={cn("w-3 h-3", isActive ? "text-primary" : "text-muted-foreground/70")}
             />
             <span className="text-[8px] font-bold text-muted-foreground">تخطيط تلقائي</span>
           </div>

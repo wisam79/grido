@@ -7,7 +7,7 @@ import type {
   DistributionAxis,
   AutoPackStrategy,
 } from "../types";
-import { Grid02Icon } from "@hugeicons/core-free-icons";
+import { Grid16Regular } from "@fluentui/react-icons";
 import type { CollageTemplate } from "@/lib/templates";
 export { PHOTO_PRESET_LABELS } from "./mixed-presets";
 import { PHOTO_PRESET_LABELS } from "./mixed-presets";
@@ -737,6 +737,6 @@ export function convertToGridoTemplate(layout: FreeformLayout): CollageTemplate 
       label: s.label,
       rotation: s.rotation ?? 0,
     })),
-    icon: Grid02Icon,
+    icon: Grid16Regular,
   };
 }

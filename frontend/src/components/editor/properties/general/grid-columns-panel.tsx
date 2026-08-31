@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { HugeIcon } from "@/components/ui/huge-icon";
-import { Grid02Icon, Table01Icon } from "@hugeicons/core-free-icons";
+import { Grid16Regular, Table16Regular } from "@fluentui/react-icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import {
@@ -67,7 +66,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
   return (
     <FluentSection
-      icon={<HugeIcon icon={Grid02Icon} size={14} className="text-primary" />}
+      icon={<Grid16Regular className="w-3.5 h-3.5 text-primary" />}
       title="الشبكة والأعمدة"
       collapsible
       defaultOpen={true}
@@ -84,8 +83,8 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
           onChange={setActiveGridTab}
           size="sm"
           options={[
-            { id: "grid", label: "الشبكة", icon: <HugeIcon icon={Grid02Icon} size={14} /> },
-            { id: "columns", label: "الأعمدة", icon: <HugeIcon icon={Table01Icon} size={14} /> },
+            { id: "grid", label: "الشبكة", icon: <Grid16Regular className="w-3.5 h-3.5" /> },
+            { id: "columns", label: "الأعمدة", icon: <Table16Regular className="w-3.5 h-3.5" /> },
           ]}
         />
 

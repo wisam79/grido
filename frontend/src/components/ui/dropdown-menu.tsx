@@ -2,8 +2,11 @@
 
 import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
-import { Tick01Icon, ArrowRight01Icon, CircleIcon } from "@hugeicons/core-free-icons"
-import { HugeIcon } from "@/components/ui/huge-icon"
+import {
+  Checkmark16Regular,
+  ChevronRight16Regular,
+  Circle16Filled,
+} from "@fluentui/react-icons"
 
 import { cn } from "@/lib/utils"
 
@@ -66,7 +69,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   >
     <span className="pointer-events-none absolute left-1.5 flex size-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <HugeIcon icon={Tick01Icon} size={14} className="size-3.5 text-primary" />
+        <Checkmark16Regular className="size-3.5 text-primary shrink-0" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -89,7 +92,7 @@ const DropdownMenuRadioItem = React.forwardRef<
   >
     <span className="pointer-events-none absolute left-1.5 flex size-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <HugeIcon icon={CircleIcon} size={8} className="size-2 fill-primary text-primary" />
+        <Circle16Filled className="size-2 fill-primary text-primary shrink-0" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -163,7 +166,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <HugeIcon icon={ArrowRight01Icon} size={14} className="ml-auto size-3.5" />
+    <ChevronRight16Regular className="ml-auto size-3.5 shrink-0 rtl:rotate-180" />
   </DropdownMenuPrimitive.SubTrigger>
 ))
 DropdownMenuSubTrigger.displayName =

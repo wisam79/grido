@@ -1,17 +1,19 @@
 import React, { useState, useRef, useMemo, useCallback } from "react";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from "@/lib/io/fonts";
-import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Search01Icon,
-  ArrowDown01Icon,
-  StarIcon,
-  Clock01Icon,
-  Cancel01Icon,
-  SparklesIcon,
-  CloudIcon,
-  CheckmarkCircle01Icon,
-} from "@hugeicons/core-free-icons";
+  Search16Regular,
+  ChevronDown16Regular,
+  Star16Regular,
+  Star16Filled,
+  Clock16Regular,
+  Dismiss16Regular,
+  Dismiss12Regular,
+  Sparkle16Regular,
+  Sparkle12Regular,
+  Cloud16Regular,
+  CheckmarkCircle16Filled,
+} from "@fluentui/react-icons";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -114,10 +116,10 @@ export const TextFontSelector = React.memo(function TextFontSelector({
       { id: "all", name: "الكل" },
     ];
     if (favorites.length > 0) {
-      pills.push({ id: "favorites", name: "المفضلة", icon: <HugeIcon icon={StarIcon} size={10} className="text-amber-400 fill-amber-400" />, count: favorites.length });
+      pills.push({ id: "favorites", name: "المفضلة", icon: <Star16Filled className="w-2.5 h-2.5 text-amber-400" />, count: favorites.length });
     }
     if (recents.length > 0) {
-      pills.push({ id: "recents", name: "الأخيرة", icon: <HugeIcon icon={Clock01Icon} size={10} /> });
+      pills.push({ id: "recents", name: "الأخيرة", icon: <Clock16Regular className="w-2.5 h-2.5" /> });
     }
     FONT_CATEGORIES.filter((c) => c.id !== "all").forEach((cat) => {
       pills.push({ id: cat.id, name: cat.name });
@@ -220,11 +222,11 @@ export const TextFontSelector = React.memo(function TextFontSelector({
               </span>
             ) : (
               <span className="text-[8px] font-bold text-sky-600 dark:text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1 py-0.5 rounded flex items-center gap-0.5" title="سحابي Google Fonts">
-                <HugeIcon icon={CloudIcon} size={10} />
+                <Cloud16Regular className="w-2.5 h-2.5" />
                 <span>سحابي</span>
               </span>
             )}
-            <HugeIcon icon={ArrowDown01Icon} size={14} className={cn("text-muted-foreground transition-transform duration-200", isOpen && "rotate-180 text-primary")} />
+            <ChevronDown16Regular className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180 text-primary")} />
           </div>
         </button>
       </PopoverTrigger>
@@ -241,7 +243,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         {/* Search Box & Custom Preview Toggle */}
         <div className="space-y-1.5">
           <div className="relative flex items-center">
-            <HugeIcon icon={Search01Icon} size={14} className="text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search16Regular className="w-3.5 h-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               ref={searchInputRef}
               type="text"
@@ -259,7 +261,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 onClick={() => setSearchQuery("")}
                 className="w-6 h-6 absolute left-2 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
-                <HugeIcon icon={Cancel01Icon} size={12} />
+                <Dismiss12Regular className="w-3 h-3" />
               </button>
             ) : (
               <button
@@ -271,7 +273,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 )}
                 title="تخصيص نص المعاينة"
               >
-                <HugeIcon icon={SparklesIcon} size={12} />
+                <Sparkle12Regular className="w-3 h-3" />
               </button>
             )}
           </div>
@@ -293,7 +295,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                   className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                   title="إعادة ضبط"
                 >
-                  <HugeIcon icon={Cancel01Icon} size={10} />
+                  <Dismiss12Regular className="w-2.5 h-2.5" />
                 </button>
               )}
             </div>
@@ -403,15 +405,15 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                       )}
                       title={isFav ? "إزالة من المفضلة" : "إضافة للمفضلة"}
                     >
-                      <HugeIcon
-                        icon={StarIcon}
-                        size={14}
-                        className={cn(isFav ? "text-amber-400 fill-amber-400" : "text-muted-foreground/40")}
-                      />
+                      {isFav ? (
+                        <Star16Filled className="w-3.5 h-3.5 text-amber-400" />
+                      ) : (
+                        <Star16Regular className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      )}
                     </button>
 
                     {isSelected && (
-                      <HugeIcon icon={CheckmarkCircle01Icon} size={16} className="text-primary shrink-0" />
+                      <CheckmarkCircle16Filled className="w-4 h-4 text-primary shrink-0" />
                     )}
                   </div>
                 </div>

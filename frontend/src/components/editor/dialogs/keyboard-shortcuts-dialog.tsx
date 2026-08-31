@@ -5,13 +5,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  KeyboardIcon,
-  ArrowUp01Icon,
-  ArrowDown01Icon,
-  SparklesIcon,
-} from "@hugeicons/core-free-icons";
+  Keyboard24Regular,
+  ArrowUp16Regular,
+  ArrowDown16Regular,
+  Sparkle16Regular,
+} from "@fluentui/react-icons";
 import { Separator } from "@/components/ui/separator";
 
 interface ShortcutItem {
@@ -102,7 +101,7 @@ export function KeyboardShortcutsDialog() {
         {/* رأس النافذة الثابت */}
         <DialogHeader className="px-5 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            <HugeIcon icon={KeyboardIcon} size={24} className="text-primary" />
+            <Keyboard24Regular className="text-primary w-6 h-6 shrink-0" />
             <span>اختصارات لوحة المفاتيح</span>
           </DialogTitle>
         </DialogHeader>
@@ -112,7 +111,7 @@ export function KeyboardShortcutsDialog() {
           {categories.map((cat, catIdx) => (
             <div key={catIdx} className="space-y-2">
               <div className="text-[11px] font-extrabold text-primary flex items-center gap-1.5 px-0.5">
-                <HugeIcon icon={SparklesIcon} size={12} className="opacity-70" />
+                <Sparkle16Regular className="opacity-70 w-3.5 h-3.5 shrink-0" />
                 <span>{cat.title}</span>
               </div>
               <div className="bg-muted/30 rounded-xl border border-border/40 p-2 space-y-1">
@@ -130,8 +129,8 @@ export function KeyboardShortcutsDialog() {
                           >
                             {key === "الأسهم" ? (
                               <div className="flex items-center gap-0.5">
-                                <HugeIcon icon={ArrowUp01Icon} size={12} />
-                                <HugeIcon icon={ArrowDown01Icon} size={12} />
+                                <ArrowUp16Regular className="w-3.5 h-3.5 shrink-0" />
+                                <ArrowDown16Regular className="w-3.5 h-3.5 shrink-0" />
                               </div>
                             ) : (
                               key

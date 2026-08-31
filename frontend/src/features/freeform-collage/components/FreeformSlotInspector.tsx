@@ -4,20 +4,19 @@ import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from "../lib/freeform
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  RotateClockwiseIcon,
-  LockKeyIcon,
-  LockOpenIcon,
-  Copy01Icon,
-  Delete02Icon,
-  AlignHorizontalCenterIcon,
-  AlignVerticalCenterIcon,
-  CursorMove01Icon,
-  RulerDimensionLineIcon,
-  SlidersHorizontalIcon,
-  ArrowDown01Icon,
-} from "@hugeicons/core-free-icons";
+  ArrowClockwise16Regular,
+  LockClosed12Regular,
+  LockOpen12Regular,
+  Copy16Regular,
+  Delete16Regular,
+  AlignCenterHorizontal16Regular,
+  AlignCenterVertical16Regular,
+  CursorHover16Regular,
+  Ruler16Regular,
+  Options20Regular,
+  ChevronDown12Regular,
+} from "@fluentui/react-icons";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -50,7 +49,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
   if (!slot) {
     return (
       <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl bg-card/60 border border-border/70 fluent-specular shadow-2xs h-full min-h-[160px] text-muted-foreground select-none">
-        <HugeIcon icon={SlidersHorizontalIcon} size={24} className="mb-1.5 opacity-40 text-primary" />
+        <Options20Regular className="w-6 h-6 mb-1.5 opacity-40 text-primary" />
         <span className="text-xs font-bold text-foreground/80">لم يتم تحديد أي خلية</span>
         <span className="text-[10.5px] text-muted-foreground mt-0.5">
           انقر فوق أي خلية على مساحة العمل لتعديل أبعادها وموقعها بالمليمتر
@@ -146,7 +145,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
               className="h-6.5 px-2 text-[10.5px] gap-1 rounded-md border-border/70 hover:border-primary/40 cursor-pointer"
             >
               <span>{PHOTO_PRESET_LABELS[slot.presetType || "custom"] || "تغيير المقاس"}</span>
-              <HugeIcon icon={ArrowDown01Icon} size={12} className="opacity-60" />
+              <ChevronDown12Regular className="w-3 h-3 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44 font-cairo text-xs">
@@ -171,7 +170,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[10.5px] text-muted-foreground font-semibold">
             <span className="flex items-center gap-1">
-              <HugeIcon icon={RulerDimensionLineIcon} size={12} className="text-primary/80" />
+              <Ruler16Regular className="w-3 h-3 text-primary/80" />
               العرض (مم)
             </span>
           </div>
@@ -190,7 +189,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[10.5px] text-muted-foreground font-semibold">
             <span className="flex items-center gap-1">
-              <HugeIcon icon={RulerDimensionLineIcon} size={12} className="text-primary/80 rotate-90" />
+              <Ruler16Regular className="w-3 h-3 text-primary/80 rotate-90" />
               الارتفاع (مم)
             </span>
             <button
@@ -202,7 +201,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
               )}
               title={slot.lockAspect ? "فك قفل نسبة الأبعاد" : "قفل نسبة العرض إلى الارتفاع"}
             >
-              {slot.lockAspect ? <HugeIcon icon={LockKeyIcon} size={12} className="text-primary" /> : <HugeIcon icon={LockOpenIcon} size={12} />}
+              {slot.lockAspect ? <LockClosed12Regular className="w-3 h-3 text-primary" /> : <LockOpen12Regular className="w-3 h-3" />}
             </button>
           </div>
           <Input
@@ -222,7 +221,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
       <div className="grid grid-cols-2 gap-2 items-center">
         <div className="space-y-1">
           <span className="text-[10.5px] text-muted-foreground font-semibold flex items-center gap-1">
-            <HugeIcon icon={CursorMove01Icon} size={12} className="text-muted-foreground/70" />
+            <CursorHover16Regular className="w-3 h-3 text-muted-foreground/70" />
             الموقع X (مم)
           </span>
           <Input
@@ -239,7 +238,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
 
         <div className="space-y-1">
           <span className="text-[10.5px] text-muted-foreground font-semibold flex items-center gap-1">
-            <HugeIcon icon={CursorMove01Icon} size={12} className="text-muted-foreground/70 rotate-90" />
+            <CursorHover16Regular className="w-3 h-3 text-muted-foreground/70 rotate-90" />
             الموقع Y (مم)
           </span>
           <Input
@@ -266,7 +265,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={onRotateSlot}
               >
-                <HugeIcon icon={RotateClockwiseIcon} size={14} />
+                <ArrowClockwise16Regular className="w-3.5 h-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">تدوير الخلية 90°</TooltipContent>
@@ -294,7 +293,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={() => onAlignSlot("center-h")}
               >
-                <HugeIcon icon={AlignHorizontalCenterIcon} size={14} />
+                <AlignCenterHorizontal16Regular className="w-3.5 h-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">توسيط أفقياً</TooltipContent>
@@ -308,7 +307,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={() => onAlignSlot("center-v")}
               >
-                <HugeIcon icon={AlignVerticalCenterIcon} size={14} />
+                <AlignCenterVertical16Regular className="w-3.5 h-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">توسيط عمودياً</TooltipContent>
@@ -324,7 +323,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={onDuplicateSlot}
               >
-                <HugeIcon icon={Copy01Icon} size={14} />
+                <Copy16Regular className="w-3.5 h-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">مضاعفة الخلية (Ctrl+D)</TooltipContent>
@@ -338,7 +337,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                 onClick={onRemoveSlot}
               >
-                <HugeIcon icon={Delete02Icon} size={14} />
+                <Delete16Regular className="w-3.5 h-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">حذف الخلية (Del)</TooltipContent>

@@ -4,20 +4,25 @@ import { CanvasElement } from "@/lib/store/types";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Image02Icon,
-  TextIcon,
-  Shapes01Icon,
-  Layers01Icon,
-  ViewIcon,
-  ViewOffIcon,
-  LockKeyIcon,
-  LockOpenIcon,
-  Delete02Icon,
-  Copy01Icon,
-  DragDropVerticalIcon,
-} from "@hugeicons/core-free-icons";
+  Image20Regular,
+  Image20Filled,
+  TextCaseUppercase20Regular,
+  TextCaseUppercase20Filled,
+  Shapes20Regular,
+  Shapes20Filled,
+  Layer20Regular,
+  Layer20Filled,
+  Eye20Regular,
+  EyeOff20Regular,
+  EyeOff20Filled,
+  LockClosed20Regular,
+  LockClosed20Filled,
+  LockOpen20Regular,
+  Delete16Regular,
+  Copy16Regular,
+  ReOrderDotsVertical16Regular,
+} from "@fluentui/react-icons";
 
 /* ────────────────────────────────────────────────────────
  * لوحة الطبقات الاحترافية (Layers Panel)
@@ -53,16 +58,24 @@ function getElementLabel(el: CanvasElement): string {
   }
 }
 
-function getElementIcon(el: CanvasElement) {
+function getElementIcon(el: CanvasElement, isSelected = false) {
   switch (el.type) {
     case "image":
-      return <HugeIcon icon={Image02Icon} size={14} />;
+      return isSelected
+        ? <Image20Filled className="w-3.5 h-3.5" />
+        : <Image20Regular className="w-3.5 h-3.5" />;
     case "text":
-      return <HugeIcon icon={TextIcon} size={14} />;
+      return isSelected
+        ? <TextCaseUppercase20Filled className="w-3.5 h-3.5" />
+        : <TextCaseUppercase20Regular className="w-3.5 h-3.5" />;
     case "shape":
-      return <HugeIcon icon={Shapes01Icon} size={14} />;
+      return isSelected
+        ? <Shapes20Filled className="w-3.5 h-3.5" />
+        : <Shapes20Regular className="w-3.5 h-3.5" />;
     default:
-      return <HugeIcon icon={Layers01Icon} size={14} />;
+      return isSelected
+        ? <Layer20Filled className="w-3.5 h-3.5" />
+        : <Layer20Regular className="w-3.5 h-3.5" />;
   }
 }
 
@@ -132,7 +145,7 @@ const LayerRow = React.memo(function LayerRow({
     >
       {/* مقبض السحب */}
       <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors shrink-0">
-        <HugeIcon icon={DragDropVerticalIcon} size={12} />
+        <ReOrderDotsVertical16Regular className="w-3 h-3" />
       </div>
 
       {/* أيقونة النوع */}
@@ -144,7 +157,7 @@ const LayerRow = React.memo(function LayerRow({
             : "bg-muted/60 text-muted-foreground"
         )}
       >
-        {getElementIcon(el)}
+        {getElementIcon(el, isSelected)}
       </div>
 
       {/* اسم العنصر */}
@@ -173,7 +186,7 @@ const LayerRow = React.memo(function LayerRow({
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
               className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
-              <HugeIcon icon={Copy01Icon} size={12} />
+              <Copy16Regular className="w-3 h-3" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">نسخ</TooltipContent>
@@ -189,7 +202,7 @@ const LayerRow = React.memo(function LayerRow({
                 isHidden ? "text-destructive/60" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isHidden ? <HugeIcon icon={ViewOffIcon} size={12} /> : <HugeIcon icon={ViewIcon} size={12} />}
+              {isHidden ? <EyeOff20Filled className="w-3.5 h-3.5" /> : <Eye20Regular className="w-3.5 h-3.5" />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">
@@ -207,7 +220,7 @@ const LayerRow = React.memo(function LayerRow({
                 isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isLocked ? <HugeIcon icon={LockKeyIcon} size={12} /> : <HugeIcon icon={LockOpenIcon} size={12} />}
+              {isLocked ? <LockClosed20Filled className="w-3.5 h-3.5" /> : <LockOpen20Regular className="w-3.5 h-3.5" />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">
@@ -222,7 +235,7 @@ const LayerRow = React.memo(function LayerRow({
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
               className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
-              <HugeIcon icon={Delete02Icon} size={12} />
+              <Delete16Regular className="w-3 h-3" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">حذف</TooltipContent>
@@ -335,7 +348,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">
         <div className="flex items-center gap-2 text-xs font-extrabold text-foreground">
           <div className="p-1 rounded-md bg-primary/10 text-primary">
-            <HugeIcon icon={Layers01Icon} size={14} />
+            <Layer20Regular className="w-3.5 h-3.5" />
           </div>
           <span>الطبقات</span>
         </div>
@@ -349,7 +362,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
         {sortedElements.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-16 px-4">
             <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center mb-3">
-              <HugeIcon icon={Layers01Icon} size={20} className="text-muted-foreground/50" />
+              <Layer20Regular className="w-5 h-5 text-muted-foreground/50" />
             </div>
             <p className="text-[11px] text-muted-foreground font-bold">
               لا توجد عناصر بعد

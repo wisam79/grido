@@ -1,8 +1,7 @@
 import React from "react";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Loading03Icon } from "@hugeicons/core-free-icons";
-import { HugeIcon } from "@/components/ui/huge-icon";
+import { Spinner } from "@/components/ui/huge-icon";
 import { cn } from "@/lib/utils";
 
 export interface FluentIconButtonProps extends Omit<ButtonProps, "size"> {
@@ -50,7 +49,7 @@ export const FluentIconButton = React.memo(
         {...props}
       >
         {loading ? (
-          <HugeIcon icon={Loading03Icon} size={14} className="w-3.5 h-3.5 animate-spin shrink-0" />
+          <Spinner size={14} className="w-3.5 h-3.5" />
         ) : (
           icon && <span className="shrink-0">{icon}</span>
         )}

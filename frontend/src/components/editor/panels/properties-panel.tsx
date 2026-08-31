@@ -5,8 +5,7 @@ import { ElementProperties } from "../properties/element-properties";
 import { SlotProperties } from "../properties/slot-properties";
 import { CollageSettings } from "../properties/collage-settings";
 import { PanelShell } from "./panel-shell";
-import { HugeIcon } from "@/components/ui/huge-icon";
-import { SlidersHorizontalIcon, File01Icon } from "@hugeicons/core-free-icons";
+import { Options20Regular, Document20Regular } from "@fluentui/react-icons";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
 
@@ -71,7 +70,7 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
 
   return (
     <PanelShell
-      icon={<HugeIcon icon={SlidersHorizontalIcon} size={18} />}
+      icon={<Options20Regular className="w-4.5 h-4.5" />}
       title="الخصائص"
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
@@ -101,8 +100,8 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
                   onChange={setGeneralTab}
                   size="sm"
                   options={[
-                    { id: "collage", label: "تنسيق الكولاج", icon: <HugeIcon icon={SlidersHorizontalIcon} size={16} /> },
-                    { id: "canvas", label: "الورقة والكانفس", icon: <HugeIcon icon={File01Icon} size={16} /> },
+                    { id: "collage", label: "تنسيق الكولاج", icon: <Options20Regular className="w-4 h-4" /> },
+                    { id: "canvas", label: "الورقة والكانفس", icon: <Document20Regular className="w-4 h-4" /> },
                   ]}
                 />
                 {generalTab === "collage" ? (

@@ -2,25 +2,26 @@ import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { Label } from "@/components/ui/label";
-import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  ImageAdd01Icon,
-  CropIcon,
-  FlipHorizontalIcon,
-  FlipVerticalIcon,
-  RotateClockwiseIcon,
-  RefreshIcon,
-  SparklesIcon,
-  Grid02Icon,
-  Target01Icon,
-  Delete02Icon,
-  ColorPickerIcon,
-  Tick01Icon,
-  Exchange01Icon,
-  Copy01Icon,
-  TableRowsSplitIcon,
-  TableColumnsSplitIcon,
-} from "@hugeicons/core-free-icons";
+  ImageAdd20Regular,
+  Crop16Regular,
+  FlipHorizontal16Regular,
+  FlipHorizontal16Filled,
+  FlipVertical16Regular,
+  FlipVertical16Filled,
+  ArrowClockwise16Regular,
+  ArrowReset20Regular,
+  Sparkle16Regular,
+  Grid16Regular,
+  Target16Regular,
+  Delete16Regular,
+  Color16Regular,
+  Checkmark16Regular,
+  ArrowSwap16Regular,
+  Copy16Regular,
+  LayoutRowTwo16Regular,
+  LayoutColumnTwo16Regular,
+} from "@fluentui/react-icons";
 import {
   Tooltip,
   TooltipTrigger,
@@ -182,7 +183,7 @@ export function SlotProperties({
   const renderAutoFillToggle = () => (
     <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
       <div className="flex items-center gap-1.5 text-right">
-        <HugeIcon icon={Copy01Icon} size={14} className="text-primary shrink-0" />
+        <Copy16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
         <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية عند الرفع</span>
       </div>
       <Switch 
@@ -216,7 +217,7 @@ export function SlotProperties({
           className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all text-xs"
           onClick={handleOpenFile}
         >
-          <HugeIcon icon={ImageAdd01Icon} size={16} className="text-primary" />
+          <ImageAdd20Regular className="w-4 h-4 text-primary" />
           <span>رفع صورة للخلية</span>
         </Button>
         {lastEditedImage && (
@@ -226,7 +227,7 @@ export function SlotProperties({
             className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer text-xs"
             onClick={handleUseLastImage}
           >
-            <HugeIcon icon={Copy01Icon} size={16} className="text-primary" />
+            <Copy16Regular className="w-4 h-4 text-primary" />
             <span>تعبئة بآخر صورة معدلة</span>
           </Button>
         )}
@@ -240,7 +241,6 @@ export function SlotProperties({
 
   return (
     <div className="space-y-3 font-cairo select-none h-full flex flex-col overflow-y-auto pr-0.5 pb-4">
-      {/* 1. كرت الأبعاد والإجراءات الرئيسية */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular space-y-2.5">
         <div className="flex items-center justify-between border-b border-border/20 pb-2">
           <span className="text-xs font-semibold text-muted-foreground">أبعاد الطباعة</span>
@@ -259,7 +259,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={handleOpenFile}
           >
-            <HugeIcon icon={ImageAdd01Icon} size={16} className="text-primary" />
+            <ImageAdd20Regular className="w-4 h-4 text-primary" />
             <span>تغيير الصورة</span>
           </Button>
           <Button
@@ -268,29 +268,33 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={() => setCropOpen(true)}
           >
-            <HugeIcon icon={CropIcon} size={16} className="text-primary" />
+            <Crop16Regular className="w-4 h-4 text-primary" />
             <span>قص وتدوير</span>
           </Button>
         </div>
       </div>
 
-      {/* 2. كرت التحويل والقلب */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular">
+      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
+        <Label className="text-xs font-bold text-foreground/90 block">تحويل وتدوير الصورة</Label>
         <div className="flex items-center gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
+                variant={slot.flipX ? "secondary" : "outline"}
+                size="sm"
                 className={cn(
-                  "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent",
-                  slot.flipX && "bg-primary/10 border-primary/50 text-primary font-bold"
+                  "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
+                  slot.flipX && "bg-primary/15 text-primary border-primary/40 font-bold"
                 )}
                 onClick={() => {
                   onUpdate(slot.id, { flipX: !slot.flipX });
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <HugeIcon icon={FlipHorizontalIcon} size={16} />
+                {slot.flipX
+                  ? <FlipHorizontal16Filled className="w-4 h-4" />
+                  : <FlipHorizontal16Regular className="w-4 h-4" />
+                }
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب أفقي</TooltipContent>
@@ -299,17 +303,21 @@ export function SlotProperties({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
+                variant={slot.flipY ? "secondary" : "outline"}
+                size="sm"
                 className={cn(
-                  "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent",
-                  slot.flipY && "bg-primary/10 border-primary/50 text-primary font-bold"
+                  "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
+                  slot.flipY && "bg-primary/15 text-primary border-primary/40 font-bold"
                 )}
                 onClick={() => {
                   onUpdate(slot.id, { flipY: !slot.flipY });
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <HugeIcon icon={FlipVerticalIcon} size={16} />
+                {slot.flipY
+                  ? <FlipVertical16Filled className="w-4 h-4" />
+                  : <FlipVertical16Regular className="w-4 h-4" />
+                }
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب عمودي</TooltipContent>
@@ -319,25 +327,26 @@ export function SlotProperties({
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
-                className={cn(
-                  "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent",
-                  (slot.rotation ?? 0) !== 0 && "bg-primary/10 border-primary/50 text-primary font-bold"
-                )}
+                size="sm"
+                className="h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent"
                 onClick={() => {
-                  onUpdate(slot.id, { rotation: (((slot.rotation ?? 0) + 90) % 360) });
+                  const currentRotation = slot.rotation ?? 0;
+                  const newRotation = (currentRotation + 90) % 360;
+                  onUpdate(slot.id, { rotation: newRotation });
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <HugeIcon icon={RotateClockwiseIcon} size={16} />
+                <ArrowClockwise16Regular className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">تدوير 90° ({slot.rotation ?? 0}°)</TooltipContent>
+            <TooltipContent side="top" className="text-[11px]">تدوير 90°</TooltipContent>
           </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
+                size="sm"
                 disabled={!slot.flipX && !slot.flipY && !(slot.rotation ?? 0)}
                 className="h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent disabled:opacity-40"
                 onClick={() => {
@@ -345,7 +354,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <HugeIcon icon={RefreshIcon} size={16} />
+                <ArrowReset20Regular className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إعادة تعيين الاتجاه</TooltipContent>
@@ -353,7 +362,6 @@ export function SlotProperties({
         </div>
       </div>
 
-      {/* 3. كرت تكرار الخلية والتبديل والتعبئة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-bold text-foreground/90 block">تعبئة الخلايا</Label>
@@ -365,7 +373,7 @@ export function SlotProperties({
                   size="sm"
                   className="h-7 px-2 text-[10px] rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
                 >
-                  <HugeIcon icon={Exchange01Icon} size={14} />
+                  <ArrowSwap16Regular className="w-3.5 h-3.5" />
                   <span>تبديل الموضع</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -400,7 +408,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillRow}
               >
-                <HugeIcon icon={TableRowsSplitIcon} size={14} className="text-primary shrink-0" />
+                <LayoutRowTwo16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>الصف</span>
               </Button>
             </TooltipTrigger>
@@ -414,7 +422,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillColumn}
               >
-                <HugeIcon icon={TableColumnsSplitIcon} size={14} className="text-primary shrink-0" />
+                <LayoutColumnTwo16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>العمود</span>
               </Button>
             </TooltipTrigger>
@@ -432,7 +440,7 @@ export function SlotProperties({
                   }
                 }}
               >
-                <HugeIcon icon={SparklesIcon} size={16} className="text-primary shrink-0" />
+                <Sparkle16Regular className="w-4 h-4 text-primary shrink-0" />
                 <span>الفارغة</span>
               </Button>
             </TooltipTrigger>
@@ -446,7 +454,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillAll}
               >
-                <HugeIcon icon={Grid02Icon} size={16} className="text-primary shrink-0" />
+                <Grid16Regular className="w-4 h-4 text-primary shrink-0" />
                 <span>الكل</span>
               </Button>
             </TooltipTrigger>
@@ -466,7 +474,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <HugeIcon icon={Target01Icon} size={14} className="text-primary" />
+                <Target16Regular className="w-3.5 h-3.5 text-primary" />
                 <span>توسيط الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -484,7 +492,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <HugeIcon icon={Delete02Icon} size={14} />
+                <Delete16Regular className="w-3.5 h-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إفراغ الخلية</TooltipContent>
@@ -497,7 +505,7 @@ export function SlotProperties({
       {/* 3.5 كرت لون خلفية صورة الهوية المعزولة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/90">
-          <HugeIcon icon={ColorPickerIcon} size={16} className="text-primary" />
+          <Color16Regular className="w-4 h-4 text-primary" />
           <span>خلفية الصورة</span>
         </div>
 
@@ -539,7 +547,7 @@ export function SlotProperties({
                 }}
               >
                 {isActive && (
-                  <HugeIcon icon={Tick01Icon} size={14} className={cn(colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                  <Checkmark16Regular className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
                 )}
               </button>
             );

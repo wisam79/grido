@@ -1,8 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { HugeIcon } from "@/components/ui/huge-icon";
-import { HelpCircleIcon } from "@hugeicons/core-free-icons";
+import { QuestionCircle16Regular } from "@fluentui/react-icons";
 
 export interface FluentSettingRowProps extends React.HTMLAttributes<HTMLDivElement> {
   label: React.ReactNode;
@@ -46,7 +45,7 @@ export const FluentSettingRow = React.memo(
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer"
                       aria-label="مزيد من المعلومات"
                     >
-                      <HugeIcon icon={HelpCircleIcon} size={14} />
+                      <QuestionCircle16Regular className="size-3.5 shrink-0" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-cairo">
@@ -86,7 +85,7 @@ export const FluentSettingRow = React.memo(
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer inline-flex"
                       aria-label="مزيد من المعلومات"
                     >
-                      <HugeIcon icon={HelpCircleIcon} size={14} />
+                      <QuestionCircle16Regular className="size-3.5 shrink-0" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-cairo">

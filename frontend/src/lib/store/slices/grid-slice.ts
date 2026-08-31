@@ -26,6 +26,7 @@ export interface GridSlice {
   rulerUnit: RulerUnit;
   userGuides: UserGuide[];
   showUserGuides: boolean;
+  lockUserGuides: boolean;
 
   setShowGrid: (show: boolean) => void;
   setGridSize: (size: number) => void;
@@ -46,6 +47,7 @@ export interface GridSlice {
   removeUserGuide: (id: string) => void;
   clearUserGuides: () => void;
   setShowUserGuides: (show: boolean) => void;
+  setLockUserGuides: (lock: boolean) => void;
 }
 
 export const DEFAULT_GRID_STATE = {
@@ -65,6 +67,7 @@ export const DEFAULT_GRID_STATE = {
   rulerUnit: "mm" as RulerUnit,
   userGuides: [] as UserGuide[],
   showUserGuides: true,
+  lockUserGuides: false,
 };
 
 let guideCounter = 0;
@@ -107,4 +110,5 @@ export const createGridSlice: StateCreator<EditorState, [], [], GridSlice> = (se
     })),
   clearUserGuides: () => set({ userGuides: [] }),
   setShowUserGuides: (showUserGuides) => set({ showUserGuides }),
+  setLockUserGuides: (lockUserGuides) => set({ lockUserGuides }),
 });

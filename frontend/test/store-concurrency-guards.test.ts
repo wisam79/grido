@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore } from '../src/lib/editor-store';
-import { CanvasElement } from '../src/lib/store/types';
 
 describe('Store Concurrency & Edge-Cases Fortification Tests', () => {
   beforeEach(() => {

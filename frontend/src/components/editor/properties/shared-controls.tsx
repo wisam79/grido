@@ -2,13 +2,13 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
-import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  ColorPickerIcon,
-  Tick01Icon,
-  PaintBrush01Icon,
-  Copy01Icon,
-} from "@hugeicons/core-free-icons";
+  Color16Regular,
+  Checkmark16Regular,
+  Checkmark12Regular,
+  PaintBrush16Regular,
+  Copy16Regular,
+} from "@fluentui/react-icons";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/lib/editor-store";
 import { previewWhite, checkerColor } from "@/lib/canvas/canvas-colors";
@@ -323,7 +323,7 @@ export function ColorWheelPicker({
           )}
           title="خلفية شفافة"
         >
-          <HugeIcon icon={ColorPickerIcon} size={14} />
+          <Color16Regular className="w-3.5 h-3.5" />
         </button>
 
         {hasEyeDropper && (
@@ -333,7 +333,7 @@ export function ColorWheelPicker({
             className="w-8 h-8 rounded-md border border-border/60 bg-input/80 hover:bg-accent text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             title="سحب لون من الشاشة (قطارة)"
           >
-            <HugeIcon icon={ColorPickerIcon} size={14} />
+            <Color16Regular className="w-3.5 h-3.5" />
           </button>
         )}
 
@@ -352,7 +352,7 @@ export function ColorWheelPicker({
             className="text-muted-foreground/50 hover:text-foreground transition-colors p-0.5"
             title="نسخ كود اللون"
           >
-            {copied ? <HugeIcon icon={Tick01Icon} size={12} className="text-emerald-500" /> : <HugeIcon icon={Copy01Icon} size={12} />}
+            {copied ? <Checkmark12Regular className="w-3 h-3 text-emerald-500" /> : <Copy16Regular className="w-3 h-3" />}
           </button>
           <div
             className="w-4 h-4 rounded-xs border border-border/80 shadow-2xs shrink-0 relative overflow-hidden"
@@ -398,10 +398,9 @@ export function ColorWheelPicker({
                 title={bg.name}
               >
                 {isActive && (
-                  <HugeIcon
-                    icon={Tick01Icon}
-                    size={12}
+                  <Checkmark12Regular
                     className={cn(
+                      "w-3 h-3",
                       bg.value === "#FFFFFF" || bg.value === "#F4F4F5" || bg.value === "#E4E4E7" || bg.value === "#F5F5F4"
                         ? "text-slate-900"
                         : "text-white"
@@ -509,10 +508,9 @@ export function StudioCanvasColorDeck({
                 title={preset.name}
               >
                 {isSelected && (
-                  <HugeIcon
-                    icon={Tick01Icon}
-                    size={14}
+                  <Checkmark16Regular
                     className={cn(
+                      "w-3.5 h-3.5",
                       preset.value === "#FFFFFF" || preset.value === "#F1F5F9" || preset.value === "#E2E8F0"
                         ? "text-slate-900"
                         : "text-white"
@@ -532,7 +530,7 @@ export function StudioCanvasColorDeck({
             className="w-6.5 h-6.5 rounded-md border border-border/70 bg-input/80 hover:bg-accent/70 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="قطارة الألوان (سحب لون من الشاشة)"
           >
-            <HugeIcon icon={ColorPickerIcon} size={14} />
+            <Color16Regular className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
@@ -544,7 +542,7 @@ export function StudioCanvasColorDeck({
         className="w-full h-8 rounded-md border-border/80 bg-input/50 hover:bg-input/80 hover:border-primary/40 shadow-2xs"
         label={
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-            <HugeIcon icon={PaintBrush01Icon} size={14} className="text-primary shrink-0" />
+            <PaintBrush16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
             <span>لون مخصص</span>
           </div>
         }

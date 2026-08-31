@@ -2,14 +2,13 @@ import React from "react";
 import { MIXED_COLLAGE_PRESETS } from "../lib/mixed-presets";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { HugeIcon } from "@/components/ui/huge-icon";
 import {
-  Tick01Icon,
-  Grid02Icon,
-  TableRowsSplitIcon,
-  TableColumnsSplitIcon,
-  SparklesIcon,
-} from "@hugeicons/core-free-icons";
+  Checkmark16Regular,
+  Grid16Regular,
+  LayoutRowTwo16Regular,
+  LayoutColumnTwo16Regular,
+  Sparkle16Regular,
+} from "@fluentui/react-icons";
 import type { MixedPreset } from "../types";
 
 interface MixedPresetsGridProps {
@@ -17,23 +16,22 @@ interface MixedPresetsGridProps {
   onSelectPreset: (preset: MixedPreset) => void;
 }
 
-function getPresetIcon(iconName: string) {
-  if (iconName === "Columns") return TableColumnsSplitIcon;
-  if (iconName === "Rows") return TableRowsSplitIcon;
-  return Grid02Icon;
+function PresetIcon({ iconName, className }: { iconName: string; className?: string }) {
+  if (iconName === "Columns") return <LayoutColumnTwo16Regular className={className} />;
+  if (iconName === "Rows") return <LayoutRowTwo16Regular className={className} />;
+  return <Grid16Regular className={className} />;
 }
 
 export const MixedPresetsGrid: React.FC<MixedPresetsGridProps> = React.memo(function MixedPresetsGrid({ activePresetId, onSelectPreset }) {
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none font-cairo">
       <div className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground me-1 shrink-0 select-none">
-        <HugeIcon icon={SparklesIcon} size={14} className="text-amber-500" />
+        <Sparkle16Regular className="w-3.5 h-3.5 text-amber-500" />
         <span>القوالب:</span>
       </div>
 
       {MIXED_COLLAGE_PRESETS.map((preset) => {
         const isActive = preset.id === activePresetId;
-        const icon = getPresetIcon(preset.iconName);
 
         return (
           <Tooltip key={preset.id}>
@@ -49,9 +47,9 @@ export const MixedPresetsGrid: React.FC<MixedPresetsGridProps> = React.memo(func
                 )}
               >
                 {isActive ? (
-                  <HugeIcon icon={Tick01Icon} size={14} className="text-primary shrink-0" />
+                  <Checkmark16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
                 ) : (
-                  <HugeIcon icon={icon} size={14} className="text-muted-foreground/70 shrink-0" />
+                  <PresetIcon iconName={preset.iconName} className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
                 )}
                 <span>{preset.nameAr}</span>
                 <span className={cn("text-[9.5px] font-mono px-1 rounded-sm bg-background/60 border border-border/30", isActive ? "text-primary/90 font-bold" : "text-muted-foreground/70")} dir="ltr">

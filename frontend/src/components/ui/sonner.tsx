@@ -1,13 +1,12 @@
 import React from "react"
 import { Toaster as Sonner, ToasterProps } from "sonner"
-import { HugeIcon } from "@/components/ui/huge-icon"
 import {
-  CheckmarkCircle02Icon,
-  AlertCircleIcon,
-  Alert02Icon,
-  InformationCircleIcon,
-  Loading03Icon,
-} from "@hugeicons/core-free-icons"
+  CheckmarkCircle20Regular,
+  DismissCircle20Regular,
+  Warning20Regular,
+  Info20Regular,
+} from "@fluentui/react-icons"
+import { Spinner } from "@/components/ui/huge-icon"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const theme = typeof window !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"
@@ -19,11 +18,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       dir="rtl"
       className="toaster group"
       icons={{
-        success: <HugeIcon icon={CheckmarkCircle02Icon} size={16} className="w-4 h-4 text-emerald-500 shrink-0" />,
-        error: <HugeIcon icon={AlertCircleIcon} size={16} className="w-4 h-4 text-rose-500 shrink-0" />,
-        warning: <HugeIcon icon={Alert02Icon} size={16} className="w-4 h-4 text-amber-500 shrink-0" />,
-        info: <HugeIcon icon={InformationCircleIcon} size={16} className="w-4 h-4 text-blue-500 shrink-0" />,
-        loading: <HugeIcon icon={Loading03Icon} size={16} className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />,
+        success: <CheckmarkCircle20Regular className="w-4 h-4 text-emerald-500 shrink-0" />,
+        error: <DismissCircle20Regular className="w-4 h-4 text-rose-500 shrink-0" />,
+        warning: <Warning20Regular className="w-4 h-4 text-amber-500 shrink-0" />,
+        info: <Info20Regular className="w-4 h-4 text-blue-500 shrink-0" />,
+        loading: <Spinner size={16} className="w-4 h-4 text-indigo-500" />,
       }}
       toastOptions={{
         classNames: {

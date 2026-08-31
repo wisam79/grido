@@ -1,7 +1,14 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import React from 'react';
-import { HorizontalRuler, VerticalRuler } from '../src/components/editor/canvas/ruler';
+import {
+  HorizontalRuler,
+  VerticalRuler,
+  getRulerSteps,
+  formatRulerNumber,
+  formatRulerCoordinate,
+  getUnitSpan,
+} from '../src/components/editor/canvas/ruler';
 import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from '../src/components/editor/canvas/canvas-rulers';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 
@@ -58,7 +65,7 @@ describe('Ruler & User Guides Integration Tests', () => {
     expect(containerPX.querySelector('svg')).toBeInTheDocument();
   });
 
-  it('renders VerticalRuler with selection projection highlight', () => {
+  it('renders VerticalRuler with clean cursor indicator', () => {
     const { container } = render(
       <VerticalRuler
         viewportHeight={600}
@@ -66,22 +73,53 @@ describe('Ruler & User Guides Integration Tests', () => {
         displayH={500}
         mmHeight={100}
         unit="mm"
-        selectionBounds={{
-          startPx: 150,
-          lengthPx: 120,
-        }}
       />
     );
 
     const svg = container.querySelector('svg');
     expect(svg).toBeInTheDocument();
     expect(container.querySelector('#v-ruler-cursor')).toBeInTheDocument();
+  });
 
-    // Check that selection projection rect is rendered
-    const selectionRect = container.querySelector('rect[width="22"]');
-    expect(selectionRect).toBeInTheDocument();
-    expect(selectionRect?.getAttribute('y')).toBe('150');
-    expect(selectionRect?.getAttribute('height')).toBe('120');
+  it('calculates adaptive ruler steps accurately for all units', () => {
+    // mm
+    const stepsMM = getRulerSteps(5, 'mm');
+    expect(stepsMM.labelStep).toBeGreaterThan(0);
+    expect(stepsMM.subStep).toBeGreaterThan(0);
+    expect(stepsMM.midStep).toBe(stepsMM.labelStep / 2);
+
+    // cm
+    const stepsCM = getRulerSteps(50, 'cm');
+    expect(stepsCM.labelStep).toBeGreaterThan(0);
+
+    // in
+    const stepsIN = getRulerSteps(100, 'in');
+    expect(stepsIN.labelStep).toBeGreaterThan(0);
+
+    // px
+    const stepsPX = getRulerSteps(1, 'px');
+    expect(stepsPX.labelStep).toBeGreaterThanOrEqual(10);
+  });
+
+  it('formats ruler numbers and coordinates properly', () => {
+    expect(formatRulerNumber(0, 'mm')).toBe('0');
+    expect(formatRulerNumber(35, 'mm')).toBe('35');
+    expect(formatRulerNumber(0.5, 'in')).toBe('½');
+    expect(formatRulerNumber(0.25, 'in')).toBe('¼');
+    expect(formatRulerNumber(100, 'px')).toBe('100');
+
+    expect(formatRulerCoordinate(0, 'mm')).toBe('0 mm');
+    expect(formatRulerCoordinate(35.0, 'mm')).toBe('35 mm');
+    expect(formatRulerCoordinate(2.5, 'in')).toBe('2.5 in');
+    expect(formatRulerCoordinate(150, 'px')).toBe('150 px');
+    expect(formatRulerCoordinate(12.34, 'cm')).toBe('12.34 cm');
+  });
+
+  it('calculates unit spans correctly', () => {
+    expect(getUnitSpan(100, 1200, 'mm')).toBe(100);
+    expect(getUnitSpan(100, 1200, 'cm')).toBe(10);
+    expect(getUnitSpan(254, 1200, 'in')).toBe(10);
+    expect(getUnitSpan(100, 1200, 'px')).toBe(1200);
   });
 
   it('renders ViewportFixedRulersHeader and toggles unit selector dropdown', () => {
@@ -102,6 +140,9 @@ describe('Ruler & User Guides Integration Tests', () => {
           canvasPxW={1800}
           rulerUnit="mm"
           onChangeRulerUnit={handleChangeUnit}
+          hasGuides={true}
+          lockUserGuides={false}
+          onToggleLockGuides={() => {}}
         />
       </TooltipProvider>
     );

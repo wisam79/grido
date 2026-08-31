@@ -8,8 +8,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { HugeIcon } from "@/components/ui/huge-icon";
-import { Tick01Icon, Delete02Icon, ViewIcon, ViewOffIcon } from "@hugeicons/core-free-icons";
+import {
+  Checkmark20Regular,
+  Delete20Regular,
+  Eye20Regular,
+  EyeOff20Regular,
+  EyeOff20Filled,
+  LockClosed20Regular,
+  LockClosed20Filled,
+  LockOpen20Regular,
+  Ruler20Regular,
+} from "@fluentui/react-icons";
 
 export interface ViewportFixedRulersProps {
   showRuler: boolean;
@@ -25,6 +34,8 @@ export interface ViewportFixedRulersProps {
   canvasPxW: number;
   canvasPxH: number;
   rulerUnit: RulerUnit;
+  marginPxX?: number;
+  marginPxY?: number;
   onChangeRulerUnit: (unit: RulerUnit) => void;
   selectionBoundsX?: SelectionBoundsProjection | null;
   selectionBoundsY?: SelectionBoundsProjection | null;
@@ -34,13 +45,15 @@ export interface ViewportFixedRulersProps {
   hasGuides?: boolean;
   showUserGuides?: boolean;
   onToggleShowGuides?: () => void;
+  lockUserGuides?: boolean;
+  onToggleLockGuides?: () => void;
 }
 
 const RULER_UNITS: { id: RulerUnit; label: string; sub: string }[] = [
-  { id: "mm", label: "مليمتر (mm)", sub: "قياسي للهويات" },
+  { id: "mm", label: "مليمتر (mm)", sub: "قياسي لصور الهوية والجوازات" },
   { id: "cm", label: "سنتيمتر (cm)", sub: "للطباعة والبوسترات" },
-  { id: "in", label: "بوصة (in)", sub: "إنش - للطباعة الدولية" },
-  { id: "px", label: "بكسل (px)", sub: "بكسلات الشاشة الفعلية" },
+  { id: "in", label: "بوصة (in)", sub: "إنش - معايير الطباعة الدولية" },
+  { id: "px", label: "بكسل (px)", sub: "بكسلات الشاشة الرقمية" },
 ];
 
 export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulersHeader({
@@ -52,6 +65,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
   widthMM,
   canvasPxW,
   rulerUnit,
+  marginPxX = 0,
   onChangeRulerUnit,
   selectionBoundsX,
   onStartDragHGuide,
@@ -59,29 +73,38 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
   hasGuides,
   showUserGuides,
   onToggleShowGuides,
-}: Omit<ViewportFixedRulersProps, "viewportHeight" | "originY" | "displayH" | "heightMM" | "canvasPxH" | "selectionBoundsY" | "onStartDragVGuide">) {
+  lockUserGuides,
+  onToggleLockGuides,
+}: Omit<ViewportFixedRulersProps, "viewportHeight" | "originY" | "displayH" | "heightMM" | "canvasPxH" | "selectionBoundsY" | "onStartDragVGuide" | "marginPxY">) {
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="flex h-6 w-full bg-card/95 backdrop-blur-md border-b border-border/80 z-20 shrink-0 select-none fluent-specular shadow-2xs" dir="ltr">
-      {/* مربع الزاوية: زر اختيار وحدة القياس والتحكم في الخطوط الإرشادية */}
+    <div className="flex h-[22px] w-full bg-neutral-200 dark:bg-neutral-900 border-b border-neutral-300 dark:border-neutral-700 z-20 shrink-0 select-none shadow-2xs" dir="ltr">
+      {/* 🧭 مربع الزاوية الكلاسيكي بنمط Microsoft Word (Tab Stop & Unit Box) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            title="انقر لتغيير وحدة القياس أو إدارة الخطوط الإرشادية"
+            title="انقر لتغيير وحدة القياس أو إدارة الخطوط الإرشادية (Ctrl+R)"
             aria-label="خيارات وحدة قياس المسطرة"
-            className="w-6 h-6 shrink-0 bg-muted/50 hover:bg-primary/15 border-r border-border/80 flex flex-col items-center justify-center font-mono select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 relative"
+            className="w-[22px] h-[22px] shrink-0 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 border-r border-neutral-300 dark:border-neutral-700 flex flex-col items-center justify-center select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 relative"
           >
-            <span className="text-[9px] font-black text-primary uppercase tracking-tighter group-hover:scale-105 transition-transform">
+            <span className="text-[9px] font-black text-neutral-800 dark:text-neutral-200 leading-none group-hover:text-primary transition-colors">
+              ∟
+            </span>
+            <span className="text-[6.5px] font-bold text-primary font-mono leading-none tracking-tighter">
               {rulerUnit}
             </span>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-52 font-cairo text-xs z-[100] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16">
+        <DropdownMenuContent align="start" className="w-56 font-cairo text-xs z-[100] rounded-xl backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16">
           <div dir="rtl">
-            <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold">
-              وحدة قياس المسطرة
+            <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Ruler20Regular className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>وحدة قياس المسطرة</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground/70 font-mono">Ctrl+R</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {RULER_UNITS.map((u) => {
@@ -90,39 +113,64 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                 <DropdownMenuItem
                   key={u.id}
                   onClick={() => onChangeRulerUnit(u.id)}
-                  className="flex items-center justify-between cursor-pointer py-1.5 font-semibold"
+                  className="flex items-center justify-between cursor-pointer py-1.5 font-semibold group"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-primary font-bold">{u.id}</span>
-                    <span className="text-xs">{u.label}</span>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-xs text-primary font-bold">{u.id}</span>
+                      <span className="text-xs">{u.label}</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-normal">{u.sub}</span>
                   </div>
-                  {isSelected && <HugeIcon icon={Tick01Icon} size={14} className="text-primary" />}
+                  {isSelected && <Checkmark20Regular className="w-3.5 h-3.5 text-primary shrink-0" />}
                 </DropdownMenuItem>
               );
             })}
 
-            {(hasGuides || onToggleShowGuides) && (
-              <>
-                <DropdownMenuSeparator />
-                {onToggleShowGuides && (
-                  <DropdownMenuItem
-                    onClick={onToggleShowGuides}
-                    className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-xs"
-                  >
-                    <HugeIcon icon={showUserGuides ? ViewOffIcon : ViewIcon} size={14} className="text-muted-foreground" />
-                    <span>{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
-                  </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold">
+              الخطوط الإرشادية (Guides)
+            </DropdownMenuLabel>
+
+            {onToggleShowGuides && (
+              <DropdownMenuItem
+                onClick={onToggleShowGuides}
+                className="flex items-center justify-between cursor-pointer py-1.5 font-semibold text-xs"
+              >
+                <div className="flex items-center gap-2">
+                  {showUserGuides ? (
+                    <EyeOff20Filled className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  ) : (
+                    <Eye20Regular className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  )}
+                  <span>{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground/70 font-mono">Ctrl+;</span>
+              </DropdownMenuItem>
+            )}
+
+            {hasGuides && onToggleLockGuides && (
+              <DropdownMenuItem
+                onClick={onToggleLockGuides}
+                className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-xs"
+              >
+                {lockUserGuides ? (
+                  <LockOpen20Regular className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                ) : (
+                  <LockClosed20Filled className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 )}
-                {hasGuides && onClearGuides && (
-                  <DropdownMenuItem
-                    onClick={onClearGuides}
-                    className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-destructive hover:bg-destructive/10 text-xs"
-                  >
-                    <HugeIcon icon={Delete02Icon} size={14} />
-                    <span>مسح كافة الخطوط الإرشادية</span>
-                  </DropdownMenuItem>
-                )}
-              </>
+                <span>{lockUserGuides ? "إلغاء قفل الخطوط الإرشادية" : "قفل الخطوط الإرشادية"}</span>
+              </DropdownMenuItem>
+            )}
+
+            {hasGuides && onClearGuides && (
+              <DropdownMenuItem
+                onClick={onClearGuides}
+                className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-destructive hover:bg-destructive/10 text-xs"
+              >
+                <Delete20Regular className="w-3.5 h-3.5 shrink-0" />
+                <span>مسح كافة الخطوط الإرشادية</span>
+              </DropdownMenuItem>
             )}
           </div>
         </DropdownMenuContent>
@@ -136,6 +184,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
           mmWidth={widthMM}
           pxWidth={canvasPxW}
           unit={rulerUnit}
+          marginPx={marginPxX}
           selectionBounds={selectionBoundsX}
           onPointerDown={onStartDragHGuide}
         />
@@ -153,13 +202,14 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
   heightMM,
   canvasPxH,
   rulerUnit,
+  marginPxY = 0,
   selectionBoundsY,
   onStartDragVGuide,
-}: Omit<ViewportFixedRulersProps, "viewportWidth" | "originX" | "displayW" | "widthMM" | "canvasPxW" | "onChangeRulerUnit" | "onClearGuides" | "hasGuides" | "showUserGuides" | "onToggleShowGuides">) {
+}: Omit<ViewportFixedRulersProps, "viewportWidth" | "originX" | "displayW" | "widthMM" | "canvasPxW" | "onChangeRulerUnit" | "onClearGuides" | "hasGuides" | "showUserGuides" | "onToggleShowGuides" | "lockUserGuides" | "onToggleLockGuides" | "marginPxX">) {
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="w-6 h-full bg-card/95 backdrop-blur-md border-r border-border/80 z-20 shrink-0 select-none fluent-specular shadow-2xs" dir="ltr">
+    <div className="w-[22px] h-full bg-neutral-200 dark:bg-neutral-900 border-r border-neutral-300 dark:border-neutral-700 z-20 shrink-0 select-none shadow-2xs" dir="ltr">
       <VerticalRuler
         viewportHeight={viewportHeight}
         originY={originY}
@@ -167,10 +217,10 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
         mmHeight={heightMM}
         pxHeight={canvasPxH}
         unit={rulerUnit}
+        marginPx={marginPxY}
         selectionBounds={selectionBoundsY}
         onPointerDown={onStartDragVGuide}
       />
     </div>
   );
 });
-

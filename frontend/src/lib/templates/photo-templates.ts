@@ -1,10 +1,10 @@
 import {
-  IdCardIcon,
-  PassportIcon,
-  Airplane01Icon,
-  Image02Icon,
-  Grid02Icon,
-} from "@hugeicons/core-free-icons";
+  ContactCard20Regular,
+  DocumentPerson20Regular,
+  Airplane20Regular,
+  Image20Regular,
+  Grid20Regular,
+} from "@fluentui/react-icons";
 import type { PhotoTemplate, TemplateCategory } from "./types";
 
 export const PHOTO_TEMPLATES: PhotoTemplate[] = [
@@ -24,7 +24,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء صلبة، الرأس يشغل 70-80%",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
     notes: "المواصفات الرسمية لمديرية الأحوال المدنية والجوازات والإقامة العراقية",
   },
   {
@@ -40,7 +40,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء صلبة، الرأس يشغل 70-80%",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المقاس الرسمي لجواز السفر العراقي المقروء آلياً والبيومتري الجديد",
   },
   {
@@ -54,7 +54,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     dpi: 300,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
     notes: "المقاس التقليدي لهوية الأحوال المدنية وشهادة الجنسية العراقية",
   },
   {
@@ -68,7 +68,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     dpi: 300,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
     notes: "مقاس صورة المعاملات الرسمية العامة، والجامعات، ونقابات المهن العراقية",
   },
   {
@@ -82,7 +82,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     dpi: 300,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
     notes: "المقاس المستخدم لهوية المتقاعدين وبطاقات الرعاية الاجتماعية والدوائر العامة في العراق",
   },
 
@@ -102,7 +102,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء أو رمادية موحدة، الرأس 32-36 ملم (70-80%)",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المعيار العالمي الرسمي المعتمد من منظمة الطيران المدني الدولي (ICAO Doc 9303)",
   },
   {
@@ -118,7 +118,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء أو رمادية فاتحة، الرأس 32-36 ملم",
-    icon: Airplane01Icon,
+    icon: Airplane20Regular,
     notes: "المواصفات الرسمية الموحدة لسفارات الاتحاد الأوروبي (ألمانيا، فرنسا، إيطاليا، إسبانيا، هولندا...)",
   },
   {
@@ -134,7 +134,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 69,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء ناصعة (2×2 إنش)، الرأس بين 25-35 ملم (50-69%)",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المعيار الأمريكي الرسمي للجوازات والفيزا (DS-160) والجرين كارد واللوتري (USCIS)",
   },
   {
@@ -150,7 +150,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 75,
     background: "#F1F5F9",
     backgroundHint: "خلفية رمادية فاتحة أو كريمية، الرأس بين 29-34 ملم",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المواصفات المعتمدة لهيئة الجوازات البريطانية (HM Passport Office)",
   },
   {
@@ -166,7 +166,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 51,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء ناصعة بدون ظلال، الرأس بين 31-36 ملم",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المعيار الكندي الصارم لجوازات السفر والإقامة الدائمة (IRCC Canada)",
   },
   {
@@ -182,7 +182,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء بيومترية (5×6 سم)، الرأس 32-36 ملم",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
     notes: "المقاس البيومتري الرسمي المعتمد لإدارة الهجرة والجوازات التركية (Göç İdaresi)",
   },
   {
@@ -198,7 +198,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء، الوجه واضح بدون نظارات",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المواصفات المعتمدة للجواز السعودي وبطاقة الهوية الوطنية وتأشيرات العمرة والحج والإقامة",
   },
   {
@@ -214,7 +214,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: Airplane01Icon,
+    icon: Airplane20Regular,
     notes: "مقاس التأشيرة السياحية السعودية الإلكترونية ومنصة التأشيرات الموحدة (KSA Visa)",
   },
   {
@@ -230,7 +230,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء، الرأس يشغل 70-80%",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
     notes: "المواصفات الرسمية للهيئة الاتحادية للهوية والجنسية والجمارك الإماراتية (ICP)",
   },
   {
@@ -246,7 +246,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء ناصعة بدون ظلال",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المقاس القياسي المعتمد لمصلحة الجوازات والهجرة والجنسية وقطاع الأحوال المدنية بمصر",
   },
   {
@@ -262,7 +262,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء صلبة (2×2 إنش)",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المعيار المعتمد لسفارات الهند وتأشيرات OCI وجواز السفر الهندي",
   },
   {
@@ -278,7 +278,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء، الرأس 28-33 ملم وعرض الوجه 15-22 ملم",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المعيار الدقيق المعتمد لسفارات وقنصليات جمهورية الصين الشعبية",
   },
   {
@@ -294,7 +294,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء أو رمادية فاتحة، الرأس 32-36 ملم",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المواصفات المعتمدة لمكتب الجوازات الأسترالي (Australian Passport Office)",
   },
   {
@@ -310,7 +310,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء خالية من الظلال",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المواصفات الرسمية المعتمدة للجواز الروسي الداخلي والخارجي",
   },
   {
@@ -326,7 +326,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 80,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء سادة، الرأس 32-36 ملم",
-    icon: PassportIcon,
+    icon: DocumentPerson20Regular,
     notes: "المعايير المعتمدة لوزارة الخارجية اليابانية لتأشيرات وجوازات السفر",
   },
 
@@ -346,7 +346,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
     notes: "المقاس القياسي للبطاقات والهويات المدنية المصغرة",
   },
   {
@@ -362,7 +362,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
     notes: "المقاس القياسي البديل للهويات والبطاقات الشخصية",
   },
   {
@@ -378,7 +378,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
   },
   {
     id: "id-40x60",
@@ -393,7 +393,7 @@ export const PHOTO_TEMPLATES: PhotoTemplate[] = [
     headHeightMax: 70,
     background: "#FFFFFF",
     backgroundHint: "خلفية بيضاء",
-    icon: IdCardIcon,
+    icon: ContactCard20Regular,
   },
 ];
 
@@ -416,9 +416,9 @@ export const CATEGORY_LABELS: Record<TemplateCategory, string> = {
 };
 
 export const CATEGORY_ICONS: Record<TemplateCategory, any> = {
-  passport: PassportIcon,
-  visa: Airplane01Icon,
-  id: IdCardIcon,
-  personal: Image02Icon,
-  collage: Grid02Icon,
+  passport: DocumentPerson20Regular,
+  visa: Airplane20Regular,
+  id: ContactCard20Regular,
+  personal: Image20Regular,
+  collage: Grid20Regular,
 };

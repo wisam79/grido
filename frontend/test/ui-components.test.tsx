@@ -9,7 +9,7 @@ import { Separator } from '../src/components/ui/separator';
 import { Switch } from '../src/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../src/components/ui/tabs';
 import { HugeIcon, Spinner } from '../src/components/ui/huge-icon';
-import { SparklesIcon } from '@hugeicons/core-free-icons';
+import { Sparkle20Regular } from '@fluentui/react-icons';
 
 describe('UI Components Unit Tests', () => {
   it('renders Button component and handles click events', () => {
@@ -89,7 +89,7 @@ describe('UI Components Unit Tests', () => {
 
   it('renders HugeIcon and Spinner components properly', () => {
     const { container, rerender } = render(
-      <HugeIcon icon={SparklesIcon} size={24} className="test-huge-icon text-primary" data-testid="huge-sparkle" />
+      <HugeIcon icon={Sparkle20Regular} size={24} className="test-huge-icon text-primary" data-testid="huge-sparkle" />
     );
 
     const svgEl = container.querySelector('svg');

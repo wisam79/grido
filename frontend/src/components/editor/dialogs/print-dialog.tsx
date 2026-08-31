@@ -13,20 +13,21 @@ import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
 import { useStageRef } from "@/lib/canvas/stage-context";
 import { usePrintLayout } from "@/hooks/use-print-layout";
 import { cn } from "@/lib/utils";
-import { Spinner, HugeIcon } from "@/components/ui/huge-icon";
+import { Spinner } from "@/components/ui/huge-icon";
 import {
-  PrinterIcon,
-  ZoomInIcon,
-  ZoomOutIcon,
-  Add01Icon,
-  MinusSignIcon,
-  Grid02Icon,
-  Scissor01Icon,
-  Target01Icon,
-  Maximize01Icon,
-  TableColumnsSplitIcon,
-  TableRowsSplitIcon,
-} from "@hugeicons/core-free-icons";
+  Print24Regular,
+  Print20Regular,
+  ZoomIn16Regular,
+  ZoomOut16Regular,
+  Add16Regular,
+  Subtract16Regular,
+  Grid20Regular,
+  Cut20Regular,
+  Target20Regular,
+  ArrowMaximize20Regular,
+  TableColumnTopBottom20Regular,
+  TableBottomRow20Regular,
+} from "@fluentui/react-icons";
 import { SheetPreview } from "../print/print-preview";
 import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -596,7 +597,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         {/* رأس النافذة */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
-            <HugeIcon icon={PrinterIcon} size={24} className="text-primary" />
+            <Print24Regular className="text-primary w-6 h-6 shrink-0" />
             <span>إعدادات الطباعة</span>
           </DialogTitle>
           <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
@@ -671,7 +672,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <HugeIcon icon={Maximize01Icon} size={14} className="text-primary" />
+                <ArrowMaximize20Regular className="text-primary w-3.5 h-3.5 shrink-0" />
                 <span>أعلى اليسار</span>
               </button>
               <button
@@ -685,7 +686,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <HugeIcon icon={Target01Icon} size={14} />
+                <Target20Regular className="w-3.5 h-3.5 shrink-0" />
                 <span>توسيط</span>
               </button>
             </div>
@@ -718,7 +719,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 }}
               />
               <Label htmlFor="print-cut-lines" className="text-xs font-semibold cursor-pointer select-none flex items-center gap-1">
-                <HugeIcon icon={Scissor01Icon} size={14} className="text-primary/80" />
+                <Cut20Regular className="text-primary/80 w-3.5 h-3.5 shrink-0" />
                 <span>خطوط القص</span>
               </Label>
               {(mode === "collage" ? collageShowCutLines : printSettings.showCutLines) && (
@@ -749,7 +750,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) <= 1}
                     onClick={() => setPrintSettings({ copiesPerSheet: Math.max(1, (printSettings.copiesPerSheet ?? 1) - 1) })}
                   >
-                    <HugeIcon icon={MinusSignIcon} size={12} />
+                    <Subtract16Regular className="w-3 h-3 shrink-0" />
                   </Button>
                   <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
                     {actualCopies}
@@ -760,7 +761,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= (grid.safeCols * 10)}
                     onClick={() => setPrintSettings({ copiesPerSheet: (printSettings.copiesPerSheet ?? 1) + 1 })}
                   >
-                    <HugeIcon icon={Add01Icon} size={12} />
+                    <Add16Regular className="w-3 h-3 shrink-0" />
                   </Button>
                 </div>
               </div>
@@ -770,9 +771,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <span className="text-xs font-semibold text-muted-foreground">التكرار</span>
                 <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30">
                   {([
-                    { id: "all", icon: Grid02Icon, label: "تعبئة تلقائية" },
-                    { id: "row", icon: TableRowsSplitIcon, label: "صف واحد" },
-                    { id: "column", icon: TableColumnsSplitIcon, label: "عمود واحد" },
+                    { id: "all", icon: Grid20Regular, label: "تعبئة تلقائية" },
+                    { id: "row", icon: TableBottomRow20Regular, label: "صف واحد" },
+                    { id: "column", icon: TableColumnTopBottom20Regular, label: "عمود واحد" },
                   ] as const).map(({ id, icon: Icon, label }) => (
                     <Tooltip key={id}>
                       <TooltipTrigger asChild>
@@ -787,7 +788,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                           )}
                           aria-label={label}
                         >
-                          <HugeIcon icon={Icon} size={14} />
+                          <Icon className="w-3.5 h-3.5 shrink-0" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="text-[11px] font-semibold">{label}</TooltipContent>
@@ -806,7 +807,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     disabled={(printSettings.gapMM ?? 2) <= 0}
                     onClick={() => setPrintSettings({ gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1) })}
                   >
-                    <HugeIcon icon={MinusSignIcon} size={12} />
+                    <Subtract16Regular className="w-3 h-3 shrink-0" />
                   </Button>
                   <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
                     {printSettings.gapMM ?? 2}
@@ -817,7 +818,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     disabled={(printSettings.gapMM ?? 2) >= 20}
                     onClick={() => setPrintSettings({ gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1) })}
                   >
-                    <HugeIcon icon={Add01Icon} size={12} />
+                    <Add16Regular className="w-3 h-3 shrink-0" />
                   </Button>
                 </div>
               </div>
@@ -845,13 +846,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 </Button>
                 <div className="flex items-center gap-1 bg-slate-800/80 p-0.5 rounded-md border border-slate-700/80">
                   <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-5 w-5 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
-                    <HugeIcon icon={ZoomOutIcon} size={12} />
+                    <ZoomOut16Regular className="w-3 h-3 shrink-0" />
                   </Button>
                   <span className="text-[10px] w-10 text-center font-mono font-semibold text-slate-300">
                     {Math.round(zoom * 100)}%
                   </span>
                   <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-5 w-5 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
-                    <HugeIcon icon={ZoomInIcon} size={12} />
+                    <ZoomIn16Regular className="w-3 h-3 shrink-0" />
                   </Button>
                 </div>
               </div>
@@ -927,7 +928,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {isExporting ? (
               <><Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التصدير ...</span></>
             ) : (
-              <><HugeIcon icon={PrinterIcon} size={14} /> <span>تصدير وعرض</span></>
+              <><Print20Regular className="w-3.5 h-3.5 shrink-0" /> <span>تصدير وعرض</span></>
             )}
           </Button>
         </DialogFooter>

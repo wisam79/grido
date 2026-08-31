@@ -4,19 +4,20 @@ import {
 } from "@/lib/canvas/canvas-colors";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Spinner, HugeIcon } from "@/components/ui/huge-icon";
+import { Spinner } from "@/components/ui/huge-icon";
 import {
-  PaintBrush01Icon,
-  Eraser01Icon,
-  SparklesIcon,
-  CursorMove01Icon,
-  ZoomInIcon,
-  ZoomOutIcon,
-  UndoIcon,
-  FloppyDiskIcon,
-  Cancel01Icon,
-  ColorPickerIcon,
-} from "@hugeicons/core-free-icons";
+  PaintBrush20Regular,
+  Eraser20Regular,
+  Sparkle24Regular,
+  Sparkle16Regular,
+  ArrowMove20Regular,
+  ZoomIn16Regular,
+  ZoomOut16Regular,
+  ArrowUndo16Regular,
+  Save16Regular,
+  Dismiss16Regular,
+  ColorFill20Regular,
+} from "@fluentui/react-icons";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { cn } from "@/lib/utils";
@@ -514,11 +515,11 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden fluent-specular" dir="rtl" showCloseButton={false}>
         <DialogHeader className="p-4 border-b border-border/40 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-sm font-bold flex items-center gap-2">
-            <HugeIcon icon={SparklesIcon} size={24} className="text-primary" />
+            <Sparkle24Regular className="text-primary w-6 h-6 shrink-0" />
             <span>تعديل القص يدوياً</span>
           </DialogTitle>
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md" onClick={() => onOpenChange(false)}>
-            <HugeIcon icon={Cancel01Icon} size={16} />
+            <Dismiss16Regular className="w-4 h-4 shrink-0" />
           </Button>
         </DialogHeader>
 
@@ -532,7 +533,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "erase" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("erase")}
               >
-                <HugeIcon icon={Eraser01Icon} size={16} />
+                <Eraser20Regular className="w-4 h-4 shrink-0" />
                 ممحاة
               </Button>
               <Button
@@ -540,7 +541,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "defringe" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("defringe")}
               >
-                <HugeIcon icon={ColorPickerIcon} size={16} />
+                <ColorFill20Regular className="w-4 h-4 shrink-0" />
                 تشذيب الحواف
               </Button>
               <Button
@@ -548,7 +549,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "restore" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("restore")}
               >
-                <HugeIcon icon={PaintBrush01Icon} size={16} />
+                <PaintBrush20Regular className="w-4 h-4 shrink-0" />
                 استرجاع
               </Button>
               <Button
@@ -556,7 +557,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "magic" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("magic")}
               >
-                <HugeIcon icon={SparklesIcon} size={16} />
+                <Sparkle16Regular className="w-4 h-4 shrink-0" />
                 تحديد ذكي
               </Button>
               <Button
@@ -564,7 +565,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "pan" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("pan")}
               >
-                <HugeIcon icon={CursorMove01Icon} size={16} />
+                <ArrowMove20Regular className="w-4 h-4 shrink-0" />
                 تحريك
               </Button>
             </div>
@@ -640,7 +641,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                   onClick={() => setScale(s => Math.min(s + 0.25, 5))}
                   title="تكبير"
                 >
-                  <HugeIcon icon={ZoomInIcon} size={16} className="text-muted-foreground" />
+                  <ZoomIn16Regular className="text-muted-foreground w-4 h-4 shrink-0" />
                 </Button>
                 <Button 
                   variant="outline" 
@@ -649,7 +650,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                   onClick={() => setScale(s => Math.max(s - 0.25, 0.25))}
                   title="تصغير"
                 >
-                  <HugeIcon icon={ZoomOutIcon} size={16} className="text-muted-foreground" />
+                  <ZoomOut16Regular className="text-muted-foreground w-4 h-4 shrink-0" />
                 </Button>
               </div>
               <Button 
@@ -658,7 +659,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 onClick={handleUndo}
                 disabled={historyLength <= 1}
               >
-                <HugeIcon icon={UndoIcon} size={14} />
+                <ArrowUndo16Regular className="w-3.5 h-3.5 shrink-0" />
                 تراجع
               </Button>
             </div>
@@ -742,7 +743,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
         <DialogFooter className="p-3 border-t border-border/40 bg-card shrink-0 flex items-center justify-between sm:justify-between">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs font-semibold h-8 px-4 rounded-md">
-            <HugeIcon icon={Cancel01Icon} size={14} className="ml-1" /> إلغاء
+            <Dismiss16Regular className="w-3.5 h-3.5 ml-1 shrink-0" /> إلغاء
           </Button>
           <Button onClick={handleSave} disabled={isSaving} className="text-xs font-semibold h-8 px-5 rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5">
             {isSaving ? (
@@ -753,7 +754,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             ) : (
               <>
                 <span>حفظ التعديلات</span>
-                <HugeIcon icon={FloppyDiskIcon} size={14} className="mr-1" />
+                <Save16Regular className="w-3.5 h-3.5 mr-1 shrink-0" />
               </>
             )}
           </Button>

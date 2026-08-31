@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import { Spinner, HugeIcon } from "@/components/ui/huge-icon";
-import { RotateClockwiseIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Spinner } from "@/components/ui/huge-icon";
+import { ArrowRotateClockwise20Regular, Dismiss20Regular } from "@fluentui/react-icons";
 import { OpenFile, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
@@ -103,7 +103,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
           }}
           title="استبدال الصورة"
         >
-          {isLoading ? <Spinner className="w-3.5 h-3.5" size={14} /> : <HugeIcon icon={RotateClockwiseIcon} size={14} className="text-primary" />}
+          {isLoading ? <Spinner className="w-3.5 h-3.5" size={14} /> : <ArrowRotateClockwise20Regular className="w-3.5 h-3.5 text-primary" />}
         </button>
 
         <div className="w-px h-3 bg-border/60 mx-0.5" />
@@ -117,7 +117,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
           }}
           title="إزالة الصورة"
         >
-          <HugeIcon icon={Cancel01Icon} size={14} />
+          <Dismiss20Regular className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
@@ -185,11 +185,13 @@ export const EditorCanvas = React.memo(React.forwardRef<
     setRulerUnit,
     userGuides,
     showUserGuides,
+    lockUserGuides,
     addUserGuide,
     updateUserGuide,
     removeUserGuide,
     clearUserGuides,
     setShowUserGuides,
+    setLockUserGuides,
     selectedId,
     slots,
   } = useEditorStore(
@@ -198,11 +200,13 @@ export const EditorCanvas = React.memo(React.forwardRef<
       setRulerUnit: state.setRulerUnit,
       userGuides: state.userGuides,
       showUserGuides: state.showUserGuides,
+      lockUserGuides: state.lockUserGuides,
       addUserGuide: state.addUserGuide,
       updateUserGuide: state.updateUserGuide,
       removeUserGuide: state.removeUserGuide,
       clearUserGuides: state.clearUserGuides,
       setShowUserGuides: state.setShowUserGuides,
+      setLockUserGuides: state.setLockUserGuides,
       selectedId: state.selectedId,
       slots: state.slots,
     }))
@@ -248,6 +252,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     template,
     printSettings,
     selectedIds,
+    collageMargin,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
     elements: state.elements,
@@ -260,26 +265,68 @@ export const EditorCanvas = React.memo(React.forwardRef<
     template: state.template,
     printSettings: state.printSettings,
     selectedIds: state.selectedIds,
+    collageMargin: state.collageMargin,
   })));
 
+  const updateRulerPositions = useCallback(() => {
+    if (!showRuler || printMode) return;
+    if (!containerRef.current || !innerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const canvasRect = innerRef.current.getBoundingClientRect();
+
+    const originX = canvasRect.left - containerRect.left;
+    const originY = canvasRect.top - containerRect.top;
+    const viewportWidth = containerRect.width;
+    const viewportHeight = containerRect.height;
+
+    setRulerMetrics((prev) => {
+      if (
+        Math.abs(prev.originX - originX) < 0.5 &&
+        Math.abs(prev.originY - originY) < 0.5 &&
+        Math.abs(prev.viewportWidth - viewportWidth) < 0.5 &&
+        Math.abs(prev.viewportHeight - viewportHeight) < 0.5
+      ) {
+        return prev;
+      }
+      return { originX, originY, viewportWidth, viewportHeight };
+    });
+  }, [showRuler, printMode]);
+
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
+
     let rafId: number | null = null;
-    const ro = new ResizeObserver(() => {
-      if (rafId) return;
+    const handleLayout = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         rafId = null;
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
         setContainerSize({ w: rect.width, h: rect.height });
+        updateRulerPositions();
       });
-    });
-    ro.observe(containerRef.current);
+    };
+
+    const ro = new ResizeObserver(handleLayout);
+    ro.observe(container);
+    if (innerRef.current) {
+      ro.observe(innerRef.current);
+    }
+
+    window.addEventListener("resize", handleLayout);
+    container.addEventListener("scroll", handleLayout, { passive: true });
+
+    handleLayout();
+
     return () => {
       ro.disconnect();
-      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", handleLayout);
+      container.removeEventListener("scroll", handleLayout);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [updateRulerPositions]);
 
   const aspect = canvasWidth / canvasHeight;
   const maxW = (containerSize.w - 32) * canvasZoom;
@@ -447,33 +494,40 @@ export const EditorCanvas = React.memo(React.forwardRef<
     return (canvasHeight / (printSettings?.dpi || 300)) * 25.4;
   }, [template, canvasHeight, printSettings]);
 
-  const updateRulerPositions = useCallback(() => {
-    if (!showRuler || printMode) return;
-    if (!containerRef.current || !innerRef.current) return;
+  const marginPxX = useMemo(() => {
+    if (mode === "collage" && typeof collageMargin === "number" && collageMargin > 0 && canvasWidth > 0) {
+      return (collageMargin / canvasWidth) * displayW;
+    }
+    if (printSettings?.marginMM && widthMM > 0) {
+      return (printSettings.marginMM / widthMM) * displayW;
+    }
+    return 0;
+  }, [mode, collageMargin, canvasWidth, displayW, printSettings?.marginMM, widthMM]);
 
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const canvasRect = innerRef.current.getBoundingClientRect();
-
-    const originX = canvasRect.left - containerRect.left;
-    const originY = canvasRect.top - containerRect.top;
-    const viewportWidth = containerRect.width;
-    const viewportHeight = containerRect.height;
-
-    setRulerMetrics((prev) => {
-      if (
-        Math.abs(prev.originX - originX) < 0.5 &&
-        Math.abs(prev.originY - originY) < 0.5 &&
-        Math.abs(prev.viewportWidth - viewportWidth) < 0.5 &&
-        Math.abs(prev.viewportHeight - viewportHeight) < 0.5
-      ) {
-        return prev;
-      }
-      return { originX, originY, viewportWidth, viewportHeight };
-    });
-  }, [showRuler, printMode]);
+  const marginPxY = useMemo(() => {
+    if (mode === "collage" && typeof collageMargin === "number" && collageMargin > 0 && canvasHeight > 0) {
+      return (collageMargin / canvasHeight) * displayH;
+    }
+    if (printSettings?.marginMM && heightMM > 0) {
+      return (printSettings.marginMM / heightMM) * displayH;
+    }
+    return 0;
+  }, [mode, collageMargin, canvasHeight, displayH, printSettings?.marginMM, heightMM]);
 
   useEffect(() => {
-    updateRulerPositions();
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+    const id1 = requestAnimationFrame(() => {
+      updateRulerPositions();
+      const id2 = requestAnimationFrame(() => {
+        updateRulerPositions();
+      });
+      timerId = setTimeout(updateRulerPositions, 40);
+      return () => cancelAnimationFrame(id2);
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      if (timerId) clearTimeout(timerId);
+    };
   }, [updateRulerPositions, displayW, displayH, canvasZoom, mode, containerSize]);
 
   useEffect(() => {
@@ -498,16 +552,14 @@ export const EditorCanvas = React.memo(React.forwardRef<
     mouseMoveRafId.current = requestAnimationFrame(() => {
       mouseMoveRafId.current = null;
 
-      hRulerCursorRef.current = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
-      vRulerCursorRef.current = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
+      const hCursor = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
+      const vCursor = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
 
-      const hCursor = hRulerCursorRef.current;
       if (hCursor) {
         hCursor.setAttribute("x1", x.toString());
         hCursor.setAttribute("x2", x.toString());
         hCursor.style.display = "block";
       }
-      const vCursor = vRulerCursorRef.current;
       if (vCursor) {
         vCursor.setAttribute("y1", y.toString());
         vCursor.setAttribute("y2", y.toString());
@@ -521,75 +573,61 @@ export const EditorCanvas = React.memo(React.forwardRef<
       cancelAnimationFrame(mouseMoveRafId.current);
       mouseMoveRafId.current = null;
     }
-    const hCursor = hRulerCursorRef.current;
+    const hCursor = document.getElementById("h-ruler-cursor");
+    const vCursor = document.getElementById("v-ruler-cursor");
     if (hCursor) hCursor.style.display = "none";
-    const vCursor = vRulerCursorRef.current;
     if (vCursor) vCursor.style.display = "none";
   };
 
-  // حساب تظليل أبعاد العنصر أو الخانة المحددة على المسطرة
-  const { selectionBoundsX, selectionBoundsY } = useMemo(() => {
-    if (printMode || !showRuler || !selectedId) return { selectionBoundsX: null, selectionBoundsY: null };
+  // محاذاة مغناطيسية ذكية للخطوط الإرشادية أثناء السحب نحو الحواف والمراكز والعناصر
+  const snapGuidePos = useCallback((rawPos: number, type: "h" | "v", displayDim: number): number => {
+    if (displayDim <= 0) return rawPos;
+    const SNAP_THRESHOLD_PX = 6;
+    const thresholdNorm = SNAP_THRESHOLD_PX / displayDim;
 
-    let x = 0, y = 0, w = 0, h = 0, hasSelection = false;
+    // أهداف المغناطيسية: 0 (البداية)، 0.5 (المنتصف)، 1 (النهاية)
+    const targets = [0, 0.5, 1];
 
-    const el = elements.find((e) => e.id === selectedId);
-    if (el) {
-      x = el.x;
-      y = el.y;
-      w = el.width;
-      h = el.height;
-      hasSelection = true;
-    } else if (slots && slots.length > 0) {
-      const slot = slots.find((s) => s.id === selectedId);
-      if (slot) {
-        x = slot.x;
-        y = slot.y;
-        w = slot.w;
-        h = slot.h;
-        hasSelection = true;
+    // أهداف حواف ومراكز العناصر المضافة على الكانفاس
+    for (const el of elements) {
+      if (type === "h") {
+        targets.push(el.y, el.y + el.height / 2, el.y + el.height);
+      } else {
+        targets.push(el.x, el.x + el.width / 2, el.x + el.width);
       }
     }
 
-    if (!hasSelection || w <= 0 || h <= 0 || displayW <= 0 || displayH <= 0) {
-      return { selectionBoundsX: null, selectionBoundsY: null };
+    for (const target of targets) {
+      if (Math.abs(rawPos - target) < thresholdNorm) {
+        return target;
+      }
     }
-
-    return {
-      selectionBoundsX: {
-        startPx: rulerMetrics.originX + x * displayW,
-        lengthPx: w * displayW,
-      },
-      selectionBoundsY: {
-        startPx: rulerMetrics.originY + y * displayH,
-        lengthPx: h * displayH,
-      },
-    };
-  }, [printMode, showRuler, selectedId, elements, slots, displayW, displayH, rulerMetrics.originX, rulerMetrics.originY]);
+    return rawPos;
+  }, [elements]);
 
   // بدء سحب خط إرشادي جديد من المسطرة الأفقية
   const handleStartDragHGuide = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
-    if (printMode || !innerRef.current || displayH <= 0) return;
+    if (printMode || !innerRef.current || displayH <= 0 || lockUserGuides) return;
     e.preventDefault();
     const paperRect = innerRef.current.getBoundingClientRect();
     const relY = (e.clientY - paperRect.top) / displayH;
     setDragGuideState({
       type: "h",
-      pos: relY,
+      pos: snapGuidePos(relY, "h", displayH),
     });
-  }, [printMode, displayH]);
+  }, [printMode, displayH, lockUserGuides, snapGuidePos]);
 
   // بدء سحب خط إرشادي جديد من المسطرة الرأسية
   const handleStartDragVGuide = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
-    if (printMode || !innerRef.current || displayW <= 0) return;
+    if (printMode || !innerRef.current || displayW <= 0 || lockUserGuides) return;
     e.preventDefault();
     const paperRect = innerRef.current.getBoundingClientRect();
     const relX = (e.clientX - paperRect.left) / displayW;
     setDragGuideState({
       type: "v",
-      pos: relX,
+      pos: snapGuidePos(relX, "v", displayW),
     });
-  }, [printMode, displayW]);
+  }, [printMode, displayW, lockUserGuides, snapGuidePos]);
 
   // متابعة سحب الخط الإرشادي عالمياً
   useEffect(() => {
@@ -600,11 +638,13 @@ export const EditorCanvas = React.memo(React.forwardRef<
       const paperRect = innerRef.current.getBoundingClientRect();
       if (dragGuideState.type === "h") {
         const h = paperRect.height || 1;
-        const pos = (e.clientY - paperRect.top) / h;
+        const rawPos = (e.clientY - paperRect.top) / h;
+        const pos = snapGuidePos(rawPos, "h", h);
         setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
       } else {
         const w = paperRect.width || 1;
-        const pos = (e.clientX - paperRect.left) / w;
+        const rawPos = (e.clientX - paperRect.left) / w;
+        const pos = snapGuidePos(rawPos, "v", w);
         setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
       }
     };
@@ -612,7 +652,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     const handlePointerUp = () => {
       if (dragGuideState) {
         const { type, pos, guideId } = dragGuideState;
-        if (pos >= -0.05 && pos <= 1.05) {
+        if (pos >= -0.04 && pos <= 1.04) {
           const clamped = Math.min(1, Math.max(0, pos));
           if (guideId) {
             updateUserGuide(guideId, clamped);
@@ -633,7 +673,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [dragGuideState, addUserGuide, updateUserGuide, removeUserGuide]);
+  }, [dragGuideState, addUserGuide, updateUserGuide, removeUserGuide, snapGuidePos]);
 
   const handleDoubleClick = useCallback(async (el: CanvasElement) => {
      if (printMode || isLoading) return;
@@ -943,8 +983,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
         return (
           <div
             key={guide.id}
-            title="خط إرشادي: اسحب للتحريك أو انقر مرتين للحذف"
+            title={lockUserGuides ? "خط إرشادي مقفل (انقر لفتح القفل من قائمة المسطرة)" : "خط إرشادي: اسحب للتحريك أو انقر مرتين للحذف"}
             onPointerDown={(e) => {
+              if (lockUserGuides) return;
               e.stopPropagation();
               setDragGuideState({
                 type: guide.type,
@@ -953,30 +994,41 @@ export const EditorCanvas = React.memo(React.forwardRef<
               });
             }}
             onDoubleClick={(e) => {
+              if (lockUserGuides) return;
               e.stopPropagation();
               removeUserGuide(guide.id);
             }}
             className={`absolute z-[45] group transition-colors select-none ${
-              isH
+              lockUserGuides
+                ? "cursor-default"
+                : isH
                 ? "left-0 right-0 h-4 -mt-2 cursor-ns-resize flex items-center"
                 : "top-0 bottom-0 w-4 -ml-2 cursor-ew-resize flex justify-center"
             }`}
             style={{
               [isH ? "top" : "left"]: `${guide.pos * 100}%`,
+              ...(lockUserGuides && (isH ? { left: 0, right: 0, height: "16px", marginTop: "-8px", display: "flex", alignItems: "center" } : { top: 0, bottom: 0, width: "16px", marginLeft: "-8px", display: "flex", justifyContent: "center" })),
             }}
           >
             <div
-              className={`bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.9)] transition-all ${
-                isH ? "w-full h-[1.5px] group-hover:h-[2.5px]" : "h-full w-[1.5px] group-hover:w-[2.5px]"
+              className={`transition-all ${
+                lockUserGuides
+                  ? "bg-amber-500/70 shadow-[0_0_2px_rgba(245,158,11,0.3)]"
+                  : "bg-sky-500 shadow-[0_0_3px_rgba(14,165,233,0.4)]"
+              } ${
+                isH ? "w-full h-[1px] group-hover:h-[2px]" : "h-full w-[1px] group-hover:w-[2px]"
               }`}
             />
             {/* شارة القياس عند التحويم */}
             <div
-              className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded bg-sky-600 text-white font-mono text-[9px] font-bold shadow-md z-50 pointer-events-none ${
+              className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded ${
+                lockUserGuides ? "bg-amber-600" : "bg-sky-600"
+              } text-white font-mono text-[9px] font-bold shadow-md z-50 pointer-events-none ${
                 isH ? "left-3 -top-5" : "top-3 left-2"
               }`}
             >
               {formatGuideMeasurement(guide.pos, isH, rulerUnit, widthMM, heightMM, canvasWidth, canvasHeight)}
+              {lockUserGuides && " (🔒)"}
             </div>
           </div>
         );
@@ -987,8 +1039,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
         <div
           className={`absolute z-[55] pointer-events-none select-none ${
             dragGuideState.type === "h"
-              ? "left-0 right-0 h-[2px] bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,1)] flex items-center"
-              : "top-0 bottom-0 w-[2px] bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,1)] flex justify-center"
+              ? "left-0 right-0 h-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex items-center"
+              : "top-0 bottom-0 w-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex justify-center"
           }`}
           style={{
             [dragGuideState.type === "h" ? "top" : "left"]: `${dragGuideState.pos * 100}%`,
@@ -1015,10 +1067,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
             style={{
               left: guide.type === "v" ? `${guide.coord * 100}%` : 0,
               top: guide.type === "h" ? `${guide.coord * 100}%` : 0,
-              width: guide.type === "v" ? "1.5px" : "100%",
-              height: guide.type === "h" ? "1.5px" : "100%",
+              width: guide.type === "v" ? "1px" : "100%",
+              height: guide.type === "h" ? "1px" : "100%",
               backgroundColor: color,
-              boxShadow: `0 0 6px ${color}`,
             }}
           />
         );
@@ -1050,13 +1101,15 @@ export const EditorCanvas = React.memo(React.forwardRef<
         widthMM={widthMM}
         canvasPxW={canvasWidth}
         rulerUnit={rulerUnit}
+        marginPxX={marginPxX}
         onChangeRulerUnit={setRulerUnit}
-        selectionBoundsX={selectionBoundsX}
         onStartDragHGuide={handleStartDragHGuide}
         onClearGuides={clearUserGuides}
         hasGuides={userGuides.length > 0}
         showUserGuides={showUserGuides}
         onToggleShowGuides={() => setShowUserGuides(!showUserGuides)}
+        lockUserGuides={lockUserGuides}
+        onToggleLockGuides={() => setLockUserGuides(!lockUserGuides)}
       />
 
       <div className="flex flex-1 overflow-hidden relative" dir="ltr">
@@ -1069,7 +1122,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
           heightMM={heightMM}
           canvasPxH={canvasHeight}
           rulerUnit={rulerUnit}
-          selectionBoundsY={selectionBoundsY}
+          marginPxY={marginPxY}
           onStartDragVGuide={handleStartDragVGuide}
         />
 

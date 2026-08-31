@@ -19,23 +19,25 @@ const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog"
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import { HugeIcon, Spinner } from "@/components/ui/huge-icon";
+import { Spinner } from "@/components/ui/huge-icon";
 import {
-  Grid02Icon,
-  Image02Icon,
-  ShieldCheckIcon,
-  Moon02Icon,
-  Sun01Icon,
-  SidebarLeft01Icon,
-  Settings01Icon,
-  MinusSignIcon,
-  SquareIcon,
-  Copy01Icon,
-  Cancel01Icon,
-  LockKeyIcon,
-  Key01Icon,
-  UserIcon,
-} from "@hugeicons/core-free-icons";
+  Grid20Regular,
+  Image20Regular,
+  ShieldCheckmark20Regular,
+  WeatherMoon20Regular,
+  WeatherMoon16Regular,
+  WeatherSunny20Regular,
+  WeatherSunny16Regular,
+  PanelRight20Regular,
+  Settings20Regular,
+  Subtract16Regular,
+  Square16Regular,
+  SquareMultiple16Regular,
+  Dismiss16Regular,
+  LockClosed48Regular,
+  Key16Regular,
+  Person20Regular,
+} from "@fluentui/react-icons";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -214,7 +216,7 @@ export default function App() {
                 className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
                 title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
               >
-                {theme === "light" ? <HugeIcon icon={Moon02Icon} size={14} /> : <HugeIcon icon={Sun01Icon} size={14} />}
+                {theme === "light" ? <WeatherMoon16Regular className="w-3.5 h-3.5" /> : <WeatherSunny16Regular className="w-3.5 h-3.5" />}
               </Button>
 
               <div className="w-px h-5 bg-border mx-1" />
@@ -226,7 +228,7 @@ export default function App() {
                 className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
                 title="تصغير"
               >
-                <HugeIcon icon={MinusSignIcon} size={16} />
+                <Subtract16Regular className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -235,7 +237,7 @@ export default function App() {
                 className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
                 title={isMaximized ? "استعادة" : "تكبير"}
               >
-                {isMaximized ? <HugeIcon icon={Copy01Icon} size={14} /> : <HugeIcon icon={SquareIcon} size={14} />}
+                {isMaximized ? <SquareMultiple16Regular className="w-3.5 h-3.5" /> : <Square16Regular className="w-3.5 h-3.5" />}
               </Button>
               <Button
                 variant="ghost"
@@ -244,7 +246,7 @@ export default function App() {
                 className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
                 title="إغلاق"
               >
-                <HugeIcon icon={Cancel01Icon} size={16} />
+                <Dismiss16Regular className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -254,7 +256,7 @@ export default function App() {
         <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-right p-6">
           <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-xl space-y-6 text-center fluent-specular">
             <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
-              <HugeIcon icon={LockKeyIcon} size={40} />
+              <LockClosed48Regular className="w-10 h-10" />
             </div>
             
             <div className="space-y-2">
@@ -299,7 +301,7 @@ export default function App() {
                   </button>
                 </div>
                 <div className="relative">
-                  <HugeIcon icon={Key01Icon} size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                  <Key16Regular className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4" />
                   <input
                     type="text"
                     required
@@ -394,7 +396,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <HugeIcon icon={Grid02Icon} size={16} />
+              <Grid20Regular className="w-4 h-4" />
               <span className="leading-none font-bold">كولاج</span>
             </Button>
 
@@ -418,7 +420,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <HugeIcon icon={Image02Icon} size={16} />
+              <Image20Regular className="w-4 h-4" />
               <span className="leading-none font-bold">تعديل حر</span>
             </Button>
           </div>
@@ -432,9 +434,9 @@ export default function App() {
               title="الحساب والتراخيص"
             >
               {isLicenseActive ? (
-                <HugeIcon icon={ShieldCheckIcon} size={18} className="text-emerald-500" />
+                <ShieldCheckmark20Regular className="w-4.5 h-4.5 text-emerald-500" />
               ) : (
-                <HugeIcon icon={UserIcon} size={18} className="text-muted-foreground" />
+                <Person20Regular className="w-4.5 h-4.5 text-muted-foreground" />
               )}
               {user?.plan === "trial" && (
                 <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
@@ -447,7 +449,7 @@ export default function App() {
               className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
             >
-              {theme === "light" ? <HugeIcon icon={Moon02Icon} size={16} /> : <HugeIcon icon={Sun01Icon} size={16} />}
+              {theme === "light" ? <WeatherMoon20Regular className="w-4 h-4" /> : <WeatherSunny20Regular className="w-4 h-4" />}
             </Button>
 
             {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
@@ -463,7 +465,7 @@ export default function App() {
               )}
               title={rightSidebarOpen ? "إخفاء لوحة القوالب (Ctrl+B)" : "إظهار لوحة القوالب (Ctrl+B)"}
             >
-              <HugeIcon icon={SidebarLeft01Icon} size={16} />
+              <PanelRight20Regular className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
@@ -477,7 +479,7 @@ export default function App() {
               )}
               title={leftSidebarOpen ? "إخفاء لوحة الخصائص (Ctrl+Shift+B)" : "إظهار لوحة الخصائص (Ctrl+Shift+B)"}
             >
-              <HugeIcon icon={Settings01Icon} size={16} />
+              <Settings20Regular className="w-4 h-4" />
             </Button>
 
             <Button
@@ -486,7 +488,7 @@ export default function App() {
               className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
               onClick={() => setMobileTemplatesOpen(true)}
             >
-              <HugeIcon icon={SidebarLeft01Icon} size={16} />
+              <PanelRight20Regular className="w-4 h-4" />
               <span className="text-xs font-semibold">القوالب</span>
             </Button>
             <Button
@@ -495,7 +497,7 @@ export default function App() {
               className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
               onClick={() => setMobilePropsOpen(true)}
             >
-              <HugeIcon icon={Settings01Icon} size={16} />
+              <Settings20Regular className="w-4 h-4" />
               <span className="text-xs font-semibold">خصائص</span>
             </Button>
 
@@ -510,7 +512,7 @@ export default function App() {
               className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
               title="تصغير"
             >
-              <HugeIcon icon={MinusSignIcon} size={16} />
+              <Subtract16Regular className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
@@ -519,7 +521,7 @@ export default function App() {
               className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
               title={isMaximized ? "استعادة" : "تكبير"}
             >
-              {isMaximized ? <HugeIcon icon={Copy01Icon} size={14} /> : <HugeIcon icon={SquareIcon} size={14} />}
+              {isMaximized ? <SquareMultiple16Regular className="w-3.5 h-3.5" /> : <Square16Regular className="w-3.5 h-3.5" />}
             </Button>
             <Button
               variant="ghost"
@@ -528,7 +530,7 @@ export default function App() {
               className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
               title="إغلاق"
             >
-              <HugeIcon icon={Cancel01Icon} size={16} />
+              <Dismiss16Regular className="w-4 h-4" />
             </Button>
           </div>
         </div>

@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { getSnapPositions, getSnapPositionsWithTargets } from "../src/lib/canvas/snap-utils";
-import { CanvasElement } from "../src/lib/editor-store";
 
 describe("snap-utils - Magnetic Alignment (Snap to Grid/Guides) Tests", () => {
   const vTargets = [

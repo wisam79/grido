@@ -11,8 +11,7 @@ import {
   FluentIconButton,
 } from '../src/components/ui/blocks';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { HugeIcon } from '../src/components/ui/huge-icon';
-import { Settings01Icon, SparklesIcon, Folder01Icon } from '@hugeicons/core-free-icons';
+import { Settings20Regular, Sparkle20Regular, Folder20Regular } from '@fluentui/react-icons';
 
 /**
  * اختبارات الوصول (a11y) — تفعيل بنية jest-axe الموجودة مسبقاً في setup.ts.
@@ -22,7 +21,7 @@ describe('Accessibility (jest-axe)', () => {
   it('FluentSection has no accessibility violations', async () => {
     const { container } = render(
       <FluentSection
-        icon={<HugeIcon icon={Settings01Icon} />}
+        icon={<Settings20Regular className="size-4 shrink-0" />}
         title="إعدادات الكانفاس"
         subtitle="تعديل الأبعاد والهوامش"
         action={<button>إعادة ضبط</button>}
@@ -63,7 +62,7 @@ describe('Accessibility (jest-axe)', () => {
   it('FluentEmptyState has no violations', async () => {
     const { container } = render(
       <FluentEmptyState
-        icon={<HugeIcon icon={Folder01Icon} />}
+        icon={<Folder20Regular className="size-8 shrink-0" />}
         title="لا توجد مشاريع"
         description="أنشئ مشروعاً جديداً للبدء"
         actionLabel="مشروع جديد"
@@ -76,7 +75,7 @@ describe('Accessibility (jest-axe)', () => {
   it('FluentIconButton has no violations', async () => {
     const { container } = render(
       <TooltipProvider>
-        <FluentIconButton icon={<HugeIcon icon={SparklesIcon} />} tooltip="تطبيق التأثير" onClick={() => {}}>
+        <FluentIconButton icon={<Sparkle20Regular className="size-3.5 shrink-0" />} tooltip="تطبيق التأثير" onClick={() => {}}>
           تنفيذ
         </FluentIconButton>
       </TooltipProvider>
