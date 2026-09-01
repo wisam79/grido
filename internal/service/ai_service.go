@@ -295,7 +295,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("User-Agent", "GridoStudio-Desktop/1.2.15")
+	req.Header.Set("User-Agent", "GridoStudio-Desktop/"+AppVersion)
 
 	client := &http.Client{Timeout: 3 * time.Minute}
 	resp, err := client.Do(req)

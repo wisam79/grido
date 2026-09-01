@@ -15,7 +15,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
       {/* بطاقة 1: اللون والتعبئة */}
       <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3 overflow-hidden">
         <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
-          <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
+          <Palette className="w-4 h-4 text-primary" weight="duotone" />
           <span>اللون والتعبئة</span>
         </Label>
         
@@ -59,7 +59,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
       {/* بطاقة 2: الحدود والاستدارة */}
       <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3">
         <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
-          <Square className="w-3.5 h-3.5 text-primary" weight="duotone" />
+          <Square className="w-4 h-4 text-primary" weight="duotone" />
           <span>الحدود والاستدارة</span>
         </Label>
 
@@ -74,7 +74,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
 
         <SliderControl
           label={element.shape === "line" ? "سمك الخط" : "سماكة الحد"}
-          icon={<BoundingBox className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+          icon={<BoundingBox className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
           value={element.shape === "line" ? (element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4) : (element.strokeWidth ?? 0)}
           min={element.shape === "line" ? 1 : 0}
           max={50}
@@ -87,7 +87,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
         {element.shape === "rect" && (
           <SliderControl
             label="استدارة الزوايا"
-            icon={<Square className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+            icon={<Square className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
             value={element.radius ?? 0}
             min={0}
             max={50}

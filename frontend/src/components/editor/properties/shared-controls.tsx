@@ -121,13 +121,16 @@ export function SliderControl({
   }, []);
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 select-none">
       <div className="flex justify-between items-center text-xs">
-        <span className="text-muted-foreground flex items-center gap-1.5 font-semibold">
-          {icon}
-          {label}
+        <span className="text-muted-foreground flex items-center gap-1.5 font-semibold text-xs text-foreground/90">
+          {icon && <span className="text-primary shrink-0">{icon}</span>}
+          <span>{label}</span>
         </span>
-        <span className="font-mono text-xs font-semibold text-foreground/80" dir="ltr">
+        <span
+          className="font-mono text-[11px] font-bold text-foreground/90 bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded-md border border-border/40 select-none tracking-tight"
+          dir="ltr"
+        >
           {localValue} {unit}
         </span>
       </div>
@@ -176,15 +179,15 @@ export function PopoverColorPicker({
           disabled={disabled}
           className={cn(
             swatchOnly
-              ? "w-7 h-7 rounded-md border border-border p-0.5 bg-input hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-              : "flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border bg-input hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+              ? "w-8 h-8 rounded-lg border border-border/80 dark:border-white/10 p-0.5 bg-input/40 hover:bg-input hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              : "flex items-center justify-between gap-2 px-3 h-8.5 rounded-lg border border-border/80 dark:border-white/10 bg-input/40 hover:bg-input/80 hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
             className
           )}
           title="تغيير اللون"
         >
           {swatchOnly ? (
             <div
-              className="w-full h-full rounded-xs border border-border shadow-2xs relative overflow-hidden"
+              className="w-full h-full rounded-md border border-black/15 dark:border-white/20 shadow-2xs relative overflow-hidden transition-all before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
               style={{ backgroundColor: color === "transparent" ? previewWhite() : color }}
             >
               {color === "transparent" && (
@@ -201,12 +204,8 @@ export function PopoverColorPicker({
             <>
               {label && <div className="text-xs font-semibold text-muted-foreground shrink-0">{label}</div>}
               
-              <div className="flex-1 flex items-center justify-end gap-1.5 font-mono text-xs font-semibold text-foreground/80" dir="ltr">
-                {color.toUpperCase()}
-              </div>
-              
               <div
-                className="w-4.5 h-4.5 rounded-xs border border-border shrink-0 relative overflow-hidden shadow-2xs"
+                className="w-5.5 h-5.5 rounded-md border border-black/15 dark:border-white/20 shrink-0 relative overflow-hidden shadow-2xs before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
                 style={{ backgroundColor: color === "transparent" ? previewWhite() : color }}
               >
                 {color === "transparent" && (
@@ -223,7 +222,7 @@ export function PopoverColorPicker({
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-68 p-0 border-0 bg-transparent shadow-none" sideOffset={8} align="end">
+      <PopoverContent className="w-72 p-0 border-0 bg-transparent shadow-none" sideOffset={8} align="end">
         <ColorWheelPicker color={color} onChange={onChange} />
       </PopoverContent>
     </Popover>
@@ -296,8 +295,8 @@ export function ColorWheelPicker({
   const displayColor = isTransparent ? "#FFFFFF" : color;
 
   return (
-    <div className="p-3 bg-card backdrop-blur-2xl rounded-2xl border border-border shadow-2xl fluent-specular animate-in fade-in duration-150 flex flex-col gap-3 w-68 select-none" dir="rtl">
-      <div className="custom-color-picker w-full rounded-xl overflow-hidden shadow-inner">
+    <div className="p-3.5 bg-popover/98 backdrop-blur-2xl rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-24 fluent-specular animate-in fade-in duration-150 flex flex-col gap-3 w-72 select-none" dir="rtl">
+      <div className="custom-color-picker w-full rounded-xl overflow-hidden shadow-inner border border-border/40">
         <HexColorPicker
           color={isTransparent ? "#ffffff" : color}
           onChange={(newColor) => {
@@ -316,29 +315,29 @@ export function ColorWheelPicker({
             onChange("transparent");
           }}
           className={cn(
-            "w-8 h-8 rounded-md border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+            "w-8.5 h-8.5 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
             isTransparent
-              ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
+              ? "border-primary bg-primary/10 text-primary font-bold shadow-xs ring-2 ring-primary/30"
               : "border-border/60 bg-input/80 text-muted-foreground hover:bg-accent hover:text-foreground"
           )}
           title="خلفية شفافة"
         >
-          <Palette className="w-3.5 h-3.5" weight="regular" />
+          <Palette className="w-4 h-4" weight="regular" />
         </button>
 
         {hasEyeDropper && (
           <button
             type="button"
             onClick={handleEyeDropper}
-            className="w-8 h-8 rounded-md border border-border/60 bg-input/80 hover:bg-accent text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+            className="w-8.5 h-8.5 rounded-lg border border-border/60 bg-input/80 hover:bg-accent text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             title="سحب لون من الشاشة (قطارة)"
           >
-            <Eyedropper className="w-3.5 h-3.5" weight="regular" />
+            <Eyedropper className="w-4 h-4" weight="regular" />
           </button>
         )}
 
-        <div className="flex-1 flex items-center gap-1.5 bg-input/90 border border-border/80 rounded-md px-2 h-8 shadow-2xs focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all">
-          <span className="text-[10px] font-bold text-muted-foreground/60 select-none">#</span>
+        <div className="flex-1 flex items-center gap-1.5 bg-input/90 border border-border/80 rounded-lg px-2.5 h-8.5 shadow-2xs focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all">
+          <span className="text-[11px] font-bold text-muted-foreground/60 select-none">#</span>
           <input
             type="text"
             value={inputValue.startsWith("#") ? inputValue.slice(1) : inputValue}
@@ -352,10 +351,10 @@ export function ColorWheelPicker({
             className="text-muted-foreground/50 hover:text-foreground transition-colors p-0.5"
             title="نسخ كود اللون"
           >
-            {copied ? <Check className="w-3 h-3 text-emerald-500" weight="bold" /> : <Copy className="w-3 h-3" weight="regular" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" /> : <Copy className="w-3.5 h-3.5" weight="regular" />}
           </button>
           <div
-            className="w-4 h-4 rounded-xs border border-border/80 shadow-2xs shrink-0 relative overflow-hidden"
+            className="w-4.5 h-4.5 rounded-md border border-black/15 dark:border-white/20 shadow-2xs shrink-0 relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
             style={{
               backgroundColor: displayColor,
             }}
@@ -389,10 +388,10 @@ export function ColorWheelPicker({
                   onChange(bg.value);
                 }}
                 className={cn(
-                  "aspect-square w-full rounded-md border shadow-2xs transition-all cursor-pointer relative flex items-center justify-center active:scale-90 hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  "aspect-square w-full rounded-lg border shadow-2xs transition-all cursor-pointer relative flex items-center justify-center active:scale-90 hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
                   isActive 
                     ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10" 
-                    : "border-border/60 hover:border-foreground/40"
+                    : "border-black/10 dark:border-white/15 hover:border-foreground/40"
                 )}
                 style={{ backgroundColor: bg.value }}
                 title={bg.name}
@@ -400,7 +399,7 @@ export function ColorWheelPicker({
                 {isActive && (
                   <Check
                     className={cn(
-                      "w-3 h-3",
+                      "w-3.5 h-3.5 z-10 drop-shadow-xs",
                       bg.value === "#FFFFFF" || bg.value === "#F4F4F5" || bg.value === "#E4E4E7" || bg.value === "#F5F5F4"
                         ? "text-slate-900"
                         : "text-white"
@@ -408,13 +407,13 @@ export function ColorWheelPicker({
                     weight="bold"
                   />
                 )}
-                </button>
-              );
-            })}
-          </div>
+              </button>
+            );
+          })}
         </div>
       </div>
-    );
+    </div>
+  );
 }
 
 /**
@@ -451,18 +450,18 @@ export function StudioCanvasColorDeck({
 
   const studioPresets = [
     { name: "أبيض استوديو", value: "#FFFFFF" },
-    { name: "أزرق هوية وطنية", value: "#2563EB" },
-    { name: "كحلي رسمي", value: "#1E40AF" },
     { name: "رمادي وثائق", value: "#F1F5F9" },
     { name: "رمادي حيادي", value: "#E2E8F0" },
+    { name: "أزرق هوية وطنية", value: "#2563EB" },
+    { name: "كحلي رسمي", value: "#1E40AF" },
     { name: "أحمر جوازات", value: "#DC2626" },
     { name: "أسود داكن", value: "#18181B" },
   ];
 
   return (
-    <div className={cn("space-y-2 p-2 rounded-xl bg-card/60 border border-border/70 fluent-specular shadow-2xs", className)} dir="rtl">
-      {/* صف العينات السريعة للألوان الاستوديو */}
-      <div className="flex items-center justify-between gap-1.5">
+    <div className={cn("space-y-2.5 p-2.5 rounded-xl bg-card/60 border border-border/70 fluent-specular shadow-2xs w-full overflow-hidden", className)} dir="rtl">
+      {/* شبكة العينات السريعة للألوان (8 أعمدة متناسقة بنسبة 100%) */}
+      <div className="grid grid-cols-8 gap-1.5 w-full">
         {/* زر الشفاف */}
         <button
           type="button"
@@ -471,9 +470,9 @@ export function StudioCanvasColorDeck({
             useEditorStore.getState().pushHistory();
           }}
           className={cn(
-            "w-6.5 h-6.5 rounded-md border transition-all cursor-pointer relative overflow-hidden shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+            "aspect-square w-full rounded-lg border transition-all cursor-pointer relative overflow-hidden shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none flex items-center justify-center",
             isTransparent
-              ? "ring-2 ring-primary ring-offset-2 focus-visible:ring-offset-background border-primary scale-105"
+              ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10"
               : "border-border/60 hover:border-border"
           )}
           title="شفاف"
@@ -485,70 +484,74 @@ export function StudioCanvasColorDeck({
               backgroundSize: "4px 4px",
             }}
           />
+          {isTransparent && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Check className="w-3.5 h-3.5 text-slate-900 drop-shadow-xs" weight="bold" />
+            </div>
+          )}
         </button>
 
         {/* عينات الألوان المعتمدة */}
-        <div className="flex-1 flex items-center justify-between gap-1">
-          {studioPresets.map((preset) => {
-            const isSelected = color.toUpperCase() === preset.value.toUpperCase();
-            return (
-              <button
-                key={preset.value}
-                type="button"
-                onClick={() => {
-                  onChange(preset.value);
-                  useEditorStore.getState().pushHistory();
-                }}
-                className={cn(
-                  "w-6.5 h-6.5 rounded-md border transition-all cursor-pointer shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative flex items-center justify-center",
-                  isSelected
-                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10"
-                    : "border-border/60 hover:border-foreground/40"
-                )}
-                style={{ backgroundColor: preset.value }}
-                title={preset.name}
-              >
-                {isSelected && (
-                  <Check
-                    className={cn(
-                      "w-3.5 h-3.5",
-                      preset.value === "#FFFFFF" || preset.value === "#F1F5F9" || preset.value === "#E2E8F0"
-                        ? "text-slate-900"
-                        : "text-white"
-                    )}
-                    weight="bold"
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {studioPresets.map((preset) => {
+          const isSelected = color.toUpperCase() === preset.value.toUpperCase();
+          return (
+            <button
+              key={preset.value}
+              type="button"
+              onClick={() => {
+                onChange(preset.value);
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                "aspect-square w-full rounded-lg border transition-all cursor-pointer shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative flex items-center justify-center overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
+                isSelected
+                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10"
+                  : "border-black/10 dark:border-white/15 hover:border-foreground/40"
+              )}
+              style={{ backgroundColor: preset.value }}
+              title={preset.name}
+            >
+              {isSelected && (
+                <Check
+                  className={cn(
+                    "w-3.5 h-3.5 z-10 drop-shadow-xs",
+                    preset.value === "#FFFFFF" || preset.value === "#F1F5F9" || preset.value === "#E2E8F0"
+                      ? "text-slate-900"
+                      : "text-white"
+                  )}
+                  weight="bold"
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-        {/* زر القطارة لاختيار اللون من الشاشة */}
+      {/* صف منتقي اللون المخصص التفاعلي + القطارة */}
+      <div className="flex items-center gap-1.5 w-full">
+        <PopoverColorPicker
+          color={color}
+          onChange={onChange}
+          className="flex-1 h-8.5 rounded-lg border-border/80 bg-input/50 hover:bg-input/80 hover:border-primary/40 shadow-2xs"
+          label={
+            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+              <PaintBrush className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+              <span>لون مخصص</span>
+            </div>
+          }
+        />
+
         {hasEyeDropper && (
           <button
             type="button"
             onClick={handleEyeDropper}
-            className="w-6.5 h-6.5 rounded-md border border-border/70 bg-input/80 hover:bg-accent/70 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="w-8.5 h-8.5 rounded-lg border border-border/70 bg-input/80 hover:bg-accent/70 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="قطارة الألوان (سحب لون من الشاشة)"
           >
-            <Eyedropper className="w-3.5 h-3.5" weight="regular" />
+            <Eyedropper className="w-4 h-4" weight="regular" />
           </button>
         )}
       </div>
-
-      {/* شريط منتقي اللون المخصص التفاعلي */}
-      <PopoverColorPicker
-        color={color}
-        onChange={onChange}
-        className="w-full h-8 rounded-md border-border/80 bg-input/50 hover:bg-input/80 hover:border-primary/40 shadow-2xs"
-        label={
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-            <PaintBrush className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
-            <span>لون مخصص</span>
-          </div>
-        }
-      />
     </div>
   );
 }

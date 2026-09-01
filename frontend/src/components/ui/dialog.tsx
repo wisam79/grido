@@ -30,6 +30,25 @@ function DialogClose({
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
+const DialogCloseButton = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Close>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Close>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Close
+    ref={ref}
+    data-slot="dialog-close-button"
+    className={cn(
+      "rounded-lg p-1.5 text-muted-foreground/70 hover:text-foreground hover:bg-muted/80 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none cursor-pointer flex items-center justify-center shrink-0",
+      className
+    )}
+    {...props}
+  >
+    <X className="w-4 h-4 shrink-0" weight="bold" />
+    <span className="sr-only">إغلاق</span>
+  </DialogPrimitive.Close>
+));
+DialogCloseButton.displayName = "DialogCloseButton";
+
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -130,6 +149,7 @@ function DialogDescription({
 export {
   Dialog,
   DialogClose,
+  DialogCloseButton,
   DialogContent,
   DialogDescription,
   DialogFooter,

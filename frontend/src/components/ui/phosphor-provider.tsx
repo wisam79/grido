@@ -16,7 +16,7 @@ export interface PhosphorProviderProps {
 export function PhosphorProvider({
   children,
   weight = "regular",
-  size = 18,
+  size = 20,
   color = "currentColor",
   mirrored = false,
 }: PhosphorProviderProps) {

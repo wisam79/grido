@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogCloseButton,
 } from "@/components/ui/dialog";
 import {
   Keyboard,
@@ -95,15 +96,19 @@ export function KeyboardShortcutsDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
+        showCloseButton={false}
         className="w-[95vw] sm:max-w-[480px] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card backdrop-blur-2xl border border-border shadow-2xl rounded-2xl font-cairo fluent-specular transition-all duration-150 gap-0"
         dir="rtl"
       >
         {/* رأس النافذة الثابت */}
         <DialogHeader className="px-5 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            <Keyboard className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-            <span>اختصارات لوحة المفاتيح</span>
-          </DialogTitle>
+          <div className="flex items-center justify-between gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+              <Keyboard className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+              <span>اختصارات لوحة المفاتيح</span>
+            </DialogTitle>
+            <DialogCloseButton />
+          </div>
         </DialogHeader>
 
         {/* جسم النافذة القابل للتمرير بحدود ارتفاع محكومة */}

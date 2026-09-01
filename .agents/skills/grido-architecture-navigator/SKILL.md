@@ -22,8 +22,10 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
   - [print_service.go](file:///c:/projects/grido/internal/service/print_service.go): رسم الكولاج، التحويل إلى CMYK، التصدير لـ TIFF/PNG، وإدارة طباعة HTML.
   - [media_service.go](file:///c:/projects/grido/internal/service/media_service.go): استخراج أبعاد الصور `GetImageDimensions` والـ Local Image Handler.
   - [license_service.go](file:///c:/projects/grido/internal/service/license_service.go): الاتصال بـ Supabase (دخول البريد، OTP، Google OAuth، تفعيل الترخيص).
-  - [ai_service.go](file:///c:/projects/grido/internal/service/ai_service.go): إزالة الخلفية وترميم الوجوه عبر Modal AI الخارجي أو MediaPipe المحلي.
+  - [ai_service.go](file:///c:/projects/grido/internal/service/ai_service.go): إزالة الخلفية وترميم الوجوه عبر Modal AI الخارجي أو MediaPipe المحلي والتحقق من الحصص خادمياً.
   - [autosave_service.go](file:///c:/projects/grido/internal/service/autosave_service.go): الحفظ الذري الدوري لملفات المشاريع على القرص (`f.Sync()` + `os.Rename`).
+  - [updater.go](file:///c:/projects/grido/internal/service/updater.go): التحقق من التحديثات السحابية ومطابقة بصمة SHA-256 والتحديث الصامت.
+  - [logger.go](file:///c:/projects/grido/internal/service/logger.go): نظام التدوين والتسجيل الموحد (Lumberjack) وتصدير السجلات.
 - **`internal/repository/`**: حفظ البيانات المحلية في ملفات ومربعات SQLite / JSON.
 - **`internal/utils/`**: الأدوات المساعدة: `GetAppDir()`, `OpenBrowser()`, `GetDeviceID()`.
 
@@ -32,11 +34,14 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
 ### 🔹 React Frontend (`/frontend/src`)
 - **`src/lib/`**: المكتبات والخدمات المنطقية المنظمة حسب الاختصاص:
   - **`store/`**: إدارة الحالة المركزية عبر Zustand (`useEditorStore`):
-    - [editor-store.ts](file:///c:/projects/grido/frontend/src/lib/store/editor-store.ts): المتجر الرئيسي التجميعي للـ Slices.
-    - `slices/core-slice.ts`: الأبعاد، العناصر، النمط (`mode`: `single` | `collage`), الألوان، الحفظ والتحميل.
-    - `slices/history-slice.ts`: التراجع والإعادة (Undo/Redo) بنسخ سطحي محفّز.
-    - `slices/license-slice.ts`: مصادقة المستخدم، التراخيص، والدخول عبر جوجل.
-    - `slices/ui-slice.ts`: النوافذ المنبثقة، التكبير (Zoom)، المساطر، والحوارات.
+    - [index.ts](file:///c:/projects/grido/frontend/src/lib/store/index.ts): المتجر الرئيسي التجميعي للـ Slices السبعة.
+    - `slices/core-slice.ts`: الأبعاد، الورق المعياري، DPI، النمط (`mode`: `single` | `collage`)، الألوان، والحفظ والتحميل.
+    - `slices/element-slice.ts`: إدارة وإضافة وتعديل وحذف وتأمين العناصر الحرة (صور، نصوص، أشكال) والتحويلات.
+    - `slices/collage-slice.ts`: قوالب الكولاج، تعيين الصور في الخانات، التحويلات (`dragX`, `dragY`, `zoom`, `flip`, `rotation`)، والفواصل.
+    - `slices/grid-slice.ts`: إعدادات الشبكة الإرشادية والأعمدة والمحاذاة المغناطيسية (`snapToGrid`).
+    - `slices/history-slice.ts`: التراجع والإعادة (Undo/Redo) بنسخ سطحي محفّز وسقف 30 لقطة.
+    - `slices/license-slice.ts`: مصادقة المستخدم، التراخيص، الحصص اليومية، والدخول عبر جوجل.
+    - `slices/print-slice.ts`: إعدادات الطباعة، الهوامش، النزيف (Bleed)، وتوزيع النسخ وخطوط القص.
   - **`print/`**: محركات الطباعة والقص (`print-layout-math.ts`, `cut-lines-utils.ts`, `single-print-composition.ts`).
   - **`canvas/`**: هندسة الكانفاس والمحاذاة والتصدير (`snap-utils.ts`, `stage-context.tsx`, `render-quality.ts`, `konva-export-utils.ts`).
   - **`filters/`**: فلاتر الصور وتأطير الوجوه الذكي (`custom-filters.ts`, `konva-filters.ts`, `face-frame-utils.ts`).

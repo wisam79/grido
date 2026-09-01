@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogCloseButton,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -32,6 +33,7 @@ import {
   User,
   Plus,
   PaintBrush,
+  CaretRight,
 } from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -156,6 +158,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
       title={mode === "collage" ? "القوالب" : "المظهر والطبقات"}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
+      collapseIcon={<CaretRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" weight="bold" />}
       className="bg-transparent select-none"
     >
       {/* Hidden File Input for Templates Import */}
@@ -205,15 +208,22 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
           {/* Dialog for Full Official & Custom Templates Browser */}
           <Dialog open={templatesDialogOpen} onOpenChange={setTemplatesDialogOpen}>
-              <DialogContent className="max-w-2xl font-cairo rounded-2xl border border-border bg-card fluent-specular" dir="rtl">
-                <DialogHeader>
-                  <DialogTitle className="text-right text-base font-bold flex items-center gap-2">
-                    <FolderOpen className="w-5 h-5 text-primary" weight="duotone" />
-                    مكتبة قوالب الكولاج والطباعة
-                  </DialogTitle>
-                  <DialogDescription className="text-right text-xs text-muted-foreground">
-                    اختر من نماذج الطباعة الرسمية المجهزة أو قوالب الكولاج التي قمت بحفظها مسبقاً.
-                  </DialogDescription>
+              <DialogContent showCloseButton={false} className="max-w-2xl font-cairo rounded-2xl border border-border bg-card fluent-specular p-5 sm:p-6" dir="rtl">
+                <DialogHeader className="border-b border-border/40 pb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <FolderOpen className="w-5 h-5 text-primary shrink-0" weight="duotone" />
+                      <div className="min-w-0">
+                        <DialogTitle className="text-right text-base font-bold truncate">
+                          مكتبة قوالب الكولاج والطباعة
+                        </DialogTitle>
+                        <DialogDescription className="text-right text-xs text-muted-foreground mt-0.5 truncate">
+                          اختر من نماذج الطباعة الرسمية أو قوالبك المحفوظة
+                        </DialogDescription>
+                      </div>
+                    </div>
+                    <DialogCloseButton />
+                  </div>
                 </DialogHeader>
 
                 <Tabs defaultValue="official" className="w-full mt-2">

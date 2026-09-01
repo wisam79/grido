@@ -77,20 +77,17 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="flex h-[22px] w-full bg-neutral-200 dark:bg-neutral-900 border-b border-neutral-300 dark:border-neutral-700 z-20 shrink-0 select-none shadow-2xs" dir="ltr">
-      {/* 🧭 مربع الزاوية الكلاسيكي بنمط Microsoft Word (Tab Stop & Unit Box) */}
+    <div className="flex h-[20px] w-full bg-neutral-100 dark:bg-[#18181b] border-b border-neutral-300/80 dark:border-neutral-800 z-20 shrink-0 select-none shadow-2xs" dir="ltr">
+      {/* 🧭 مربع الزاوية القياسي بنمط Figma / Photoshop (Unit & Origin Box) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
             title="انقر لتغيير وحدة القياس أو إدارة الخطوط الإرشادية (Ctrl+R)"
             aria-label="خيارات وحدة قياس المسطرة"
-            className="w-[22px] h-[22px] shrink-0 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 border-r border-neutral-300 dark:border-neutral-700 flex flex-col items-center justify-center select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 relative"
+            className="w-[20px] h-[20px] shrink-0 bg-neutral-200/80 hover:bg-neutral-300/80 dark:bg-[#202024] dark:hover:bg-[#2a2a30] border-r border-neutral-300/80 dark:border-neutral-800 flex items-center justify-center select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-1 focus-visible:ring-primary relative"
           >
-            <span className="text-[9px] font-black text-neutral-800 dark:text-neutral-200 leading-none group-hover:text-primary transition-colors">
-              ∟
-            </span>
-            <span className="text-[6.5px] font-bold text-primary font-mono leading-none tracking-tighter">
+            <span className="text-[7.5px] font-bold text-primary font-mono leading-none tracking-tighter uppercase">
               {rulerUnit}
             </span>
           </button>
@@ -207,7 +204,7 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="w-[22px] h-full bg-neutral-200 dark:bg-neutral-900 border-r border-neutral-300 dark:border-neutral-700 z-20 shrink-0 select-none shadow-2xs" dir="ltr">
+    <div className="w-[20px] h-full bg-neutral-100 dark:bg-[#18181b] border-r border-neutral-300/80 dark:border-neutral-800 z-20 shrink-0 select-none shadow-2xs" dir="ltr">
       <VerticalRuler
         viewportHeight={viewportHeight}
         originY={originY}

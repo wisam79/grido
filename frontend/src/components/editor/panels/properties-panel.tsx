@@ -5,7 +5,7 @@ import { ElementProperties } from "../properties/element-properties";
 import { SlotProperties } from "../properties/slot-properties";
 import { CollageSettings } from "../properties/collage-settings";
 import { PanelShell } from "./panel-shell";
-import { SlidersHorizontal, FileText } from "@phosphor-icons/react";
+import { SlidersHorizontal, FileText, CaretLeft } from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
 
@@ -74,6 +74,7 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
       title="الخصائص"
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
+      collapseIcon={<CaretLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all" weight="bold" />}
       className="bg-transparent select-none"
     >
       <div className="space-y-3">
@@ -100,8 +101,8 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
                   onChange={setGeneralTab}
                   size="sm"
                   options={[
-                    { id: "collage", label: "تنسيق الكولاج", icon: <SlidersHorizontal className="w-4 h-4" weight="regular" /> },
-                    { id: "canvas", label: "الورقة والكانفس", icon: <FileText className="w-4 h-4" weight="regular" /> },
+                    { id: "collage", label: "الكولاج", icon: <SlidersHorizontal className="w-4 h-4" weight="regular" /> },
+                    { id: "canvas", label: "الورقة", icon: <FileText className="w-4 h-4" weight="regular" /> },
                   ]}
                 />
                 {generalTab === "collage" ? (

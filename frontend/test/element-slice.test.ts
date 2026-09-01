@@ -111,4 +111,30 @@ describe('ElementSlice Unit Tests', () => {
     expect(updated.flipX).toBe(true);
     expect(updated.flipY).toBe(false);
   });
+
+  it('groups elements and preserves their relative layout during alignment', () => {
+    useEditorStore.getState().addTextElement('النص 1');
+    useEditorStore.getState().addTextElement('النص 2');
+    const [el1, el2] = useEditorStore.getState().elements;
+
+    useEditorStore.getState().updateElement(el1.id, { x: 0.1, y: 0.2, width: 0.1, height: 0.1 });
+    useEditorStore.getState().updateElement(el2.id, { x: 0.3, y: 0.2, width: 0.1, height: 0.1 });
+
+    useEditorStore.getState().setSelectedIds([el1.id, el2.id]);
+    useEditorStore.getState().groupSelectedElements();
+
+    const grouped = useEditorStore.getState().elements;
+    expect(grouped[0].groupId).toBeDefined();
+    expect(grouped[0].groupId).toBe(grouped[1].groupId);
+
+    // محاذاة المجموعة ككتلة واحدة للمنتصف
+    useEditorStore.getState().alignSelectedElements('center');
+
+    const aligned = useEditorStore.getState().elements;
+    const initialRelativeDistance = 0.3 - 0.1; // 0.2
+    const newRelativeDistance = aligned[1].x - aligned[0].x;
+
+    // يجب أن تحافظ العناصر على المسافة النسبية بين بعضها تماماً
+    expect(Math.abs(newRelativeDistance - initialRelativeDistance)).toBeLessThan(0.0001);
+  });
 });

@@ -22,6 +22,7 @@ export interface PanelShellProps {
   /** يخفي الزر عند غيابه (مثل عرض اللوح داخل Sheet الجوال) */
   onCollapse?: () => void;
   collapseTitle?: string;
+  collapseIcon?: React.ReactNode;
   children: React.ReactNode;
   /** محتوى ثابت اسفل الجسم (اختياري) */
   footer?: React.ReactNode;
@@ -36,6 +37,7 @@ export const PanelShell = React.memo(function PanelShell({
   subtitle,
   onCollapse,
   collapseTitle = "إخفاء اللوحة",
+  collapseIcon,
   children,
   footer,
   headerExtra,
@@ -68,9 +70,9 @@ export const PanelShell = React.memo(function PanelShell({
             onClick={onCollapse}
             title={collapseTitle}
             aria-label={collapseTitle}
-            className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
           >
-            <SidebarSimple className="w-4.5 h-4.5" weight="regular" />
+            {collapseIcon || <SidebarSimple className="w-4.5 h-4.5" weight="regular" />}
           </button>
         )}
       </div>

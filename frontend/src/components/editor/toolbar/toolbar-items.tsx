@@ -11,14 +11,8 @@ import {
   TextHTwo,
   FileText,
   Sparkle,
-  Sun,
   Circle,
   Stack,
-  Shield,
-  Camera,
-  Tag,
-  Calendar,
-  Shapes,
   Square,
   Star,
   LineSegment,
@@ -29,13 +23,16 @@ import {
   Copy,
   Link,
   LinkBreak,
-  AlignCenterHorizontal,
-  AlignLeft,
-  AlignRight,
   Trash,
-  ArrowCounterClockwise,
-  ArrowClockwise,
+  ArrowUUpLeft,
+  ArrowUUpRight,
 } from "@phosphor-icons/react";
+import {
+  AlignLeftIcon,
+  AlignCenterHorizontalIcon,
+  AlignRightIcon,
+} from "@/components/ui/alignment-icons";
+import { GeometricShapesIcon } from "@/components/ui/image-icons";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { IMAGE_FILTERS } from "@/lib/templates";
@@ -85,67 +82,76 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
                 aria-label="إضافة نص"
                 className="h-8.5 px-3 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
               >
-                <TextT className="w-4.5 h-4.5" />
-                <CaretDown className="w-3 h-3 opacity-60" />
+                <TextT className="w-5 h-5" />
+                <CaretDown className="w-3.5 h-3.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
           </div>
         </TooltipBtn>
-        <DropdownMenuContent align="start" className="w-60 font-cairo max-h-96 overflow-y-auto custom-scrollbar rounded-xl backdrop-blur-xl fluent-specular">
-          <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground select-none">قوالب العناوين والفقرات</div>
-          <DropdownMenuItem onClick={() => addTextPreset("heading")} className="gap-2.5 text-xs font-bold cursor-pointer rounded-md">
-            <TextHOne className="w-4.5 h-4.5 text-primary" weight="bold" />
-            <span>عنوان رئيسي (48px)</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("subheading")} className="gap-2.5 text-xs font-semibold cursor-pointer rounded-md">
-            <TextHTwo className="w-4.5 h-4.5 text-primary/80" weight="bold" />
-            <span>عنوان فرعي (28px)</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("body")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <FileText className="w-4.5 h-4.5 text-muted-foreground" />
-            <span>نص وصفي / ملاحظة (18px)</span>
+        <DropdownMenuContent align="start" className="w-56 font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
+          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+            قوالب النصوص
+          </div>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("heading")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <TextHOne className="w-4.5 h-4.5" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-bold text-foreground truncate">عنوان رئيسي</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">نص عريض بارز</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
+              48px
+            </span>
           </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
-          <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground select-none">قوالب استوديو فاخرة</div>
-          <DropdownMenuItem onClick={() => addTextPreset("gold-luxury")} className="gap-2.5 text-xs font-bold text-amber-600 dark:text-amber-400 cursor-pointer rounded-md">
-            <Sparkle className="w-4.5 h-4.5 text-amber-500" weight="duotone" />
-            <span>عنوان ذهبي ملكي فاخر</span>
+          <DropdownMenuItem
+            onClick={() => addTextPreset("subheading")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary/80 flex items-center justify-center shrink-0">
+                <TextHTwo className="w-4.5 h-4.5" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">عنوان فرعي</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">نص متوسط</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
+              28px
+            </span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("neon-glow")} className="gap-2.5 text-xs font-bold text-sky-600 dark:text-sky-400 cursor-pointer rounded-md">
-            <Sun className="w-4.5 h-4.5 text-sky-500" weight="duotone" />
-            <span>توهج نيون مضيء ★</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("stamp-circle")} className="gap-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 cursor-pointer rounded-md">
-            <Circle className="w-4.5 h-4.5 text-rose-500" weight="bold" />
-            <span>ختم دائري رسمي ◯</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("3d-title")} className="gap-2.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer rounded-md">
-            <Stack className="w-4.5 h-4.5 text-indigo-500" weight="duotone" />
-            <span>عنوان بارز ثلاثي الأبعاد 3D</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("badge")} className="gap-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 cursor-pointer rounded-md">
-            <Shield className="w-4.5 h-4.5 text-blue-500" weight="duotone" />
-            <span>شارة هوية رقمية / شريط</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("photographer-tag")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <Camera className="w-4.5 h-4.5 text-purple-500" />
-            <span>توقيع وتوثيق المصور 📷</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("caption-card")} className="gap-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer rounded-md">
-            <Tag className="w-4.5 h-4.5 text-emerald-500" />
-            <span>بطاقة تعريفية مع إطار 🏷️</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addTextPreset("studio-date")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <Calendar className="w-4.5 h-4.5 text-amber-500" />
-            <span>توثيق التاريخ واليوم 📅</span>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("body")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                <FileText className="w-4.5 h-4.5" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-normal text-foreground truncate">نص عادي</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">فقرة تفاصيل</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
+              18px
+            </span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       {/* أشكال */}
       <DropdownMenu>
-        <TooltipBtn content={mode === "collage" ? "غير متاح في وضع الكولاج" : "إضافة شكل"}>
+        <TooltipBtn content={mode === "collage" ? "غير متاح في الكولاج" : "إضافة شكل"}>
           <div className={mode === "collage" ? "cursor-not-allowed" : ""}>
             <DropdownMenuTrigger asChild>
               <Button
@@ -155,28 +161,51 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
                 className="h-8.5 px-3 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
                 aria-label="إضافة شكل"
               >
-                <Shapes className="w-4.5 h-4.5" />
-                <CaretDown className="w-3 h-3 opacity-60" />
+                <GeometricShapesIcon className="w-5 h-5" />
+                <CaretDown className="w-3.5 h-3.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
           </div>
         </TooltipBtn>
-        <DropdownMenuContent align="start" className="w-40 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
-          <DropdownMenuItem onClick={() => addShapeElement("rect")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <Square className="w-4 h-4 text-primary" />
-            <span>مستطيل</span>
+        <DropdownMenuContent align="start" className="w-44 font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
+          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+            الأشكال
+          </div>
+          <DropdownMenuItem
+            onClick={() => addShapeElement("rect")}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Square className="w-4.5 h-4.5" />
+            </div>
+            <span className="font-semibold text-foreground">مستطيل</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addShapeElement("ellipse")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <Circle className="w-4 h-4 text-indigo-500" />
-            <span>دائرة</span>
+          <DropdownMenuItem
+            onClick={() => addShapeElement("ellipse")}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-indigo-500/10 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-500 flex items-center justify-center shrink-0">
+              <Circle className="w-4.5 h-4.5" />
+            </div>
+            <span className="font-semibold text-foreground">دائرة</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addShapeElement("star")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <Star className="w-4 h-4 text-amber-500" />
-            <span>نجمة</span>
+          <DropdownMenuItem
+            onClick={() => addShapeElement("star")}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-amber-500/10 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+              <Star className="w-4.5 h-4.5" />
+            </div>
+            <span className="font-semibold text-foreground">نجمة</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => addShapeElement("line")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <LineSegment className="w-4 h-4 text-rose-500" />
-            <span>خط</span>
+          <DropdownMenuItem
+            onClick={() => addShapeElement("line")}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-rose-500/10 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-lg bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
+              <LineSegment className="w-4.5 h-4.5" />
+            </div>
+            <span className="font-semibold text-foreground">خط</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -213,7 +242,7 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
             aria-label="المرشحات الجاهزة"
             className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
           >
-            <FadersHorizontal className="w-4 h-4" />
+            <FadersHorizontal className="w-4.5 h-4.5" />
           </Button>
         </PopoverTrigger>
       </TooltipBtn>
@@ -305,12 +334,12 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
         >
           {isRemovingBg ? (
             <>
-              <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
+              <Spinner className="w-4 h-4 shrink-0" size={16} />
               <span>{bgProgress > 0 ? `جاري العزل ... (${bgProgress}%)` : "جاري العزل ..."}</span>
             </>
           ) : (
             <>
-              <Sparkle className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+              <Sparkle className="w-4.5 h-4.5 text-primary shrink-0" weight="duotone" />
               <span>عزل الخلفية</span>
             </>
           )}
@@ -326,7 +355,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
             className="h-8 px-2 gap-1 text-xs font-semibold border border-primary/60 dark:border-primary/60 bg-transparent hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
             onClick={() => setRefineOpen(true)}
           >
-            <PaintBrush className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+            <PaintBrush className="w-4.5 h-4.5 text-primary shrink-0" weight="duotone" />
             <span>تعديل العزل</span>
           </Button>
         </TooltipBtn>
@@ -347,12 +376,12 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
         >
           {isFraming ? (
             <>
-              <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
+              <Spinner className="w-4 h-4 shrink-0" size={16} />
               <span>{frameProgress > 0 ? `جاري التأطير ... (${frameProgress}%)` : "جاري التأطير ..."}</span>
             </>
           ) : (
             <>
-              <UserSquare className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+              <UserSquare className="w-4.5 h-4.5 text-primary shrink-0" weight="duotone" />
               <span>تأطير الوجه</span>
             </>
           )}
@@ -371,7 +400,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           )}
           onClick={() => handleEnhance(selectedItem)}
         >
-          {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />}
+          {isEnhancing ? <Spinner className="w-4 h-4 text-primary shrink-0" size={16} /> : <MagicWand className="w-4.5 h-4.5 text-primary shrink-0" weight="duotone" />}
           <span>{isEnhancing ? (enhanceProgress > 0 ? `جاري الترميم ... (${enhanceProgress}%)` : "جاري الترميم ...") : "ترميم الوجه"}</span>
         </Button>
       </TooltipBtn>
@@ -487,7 +516,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           aria-label="تكرار"
           className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <Copy className="w-4.5 h-4.5" />
+          <Copy className="w-5 h-5" />
         </Button>
       </TooltipBtn>
 
@@ -508,7 +537,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             aria-label="تجميع"
             className="h-8.5 px-3 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
           >
-            <Link className="w-4.5 h-4.5" />
+            <Link className="w-5 h-5" />
           </Button>
         </TooltipBtn>
       )}
@@ -522,7 +551,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             aria-label="فك التجميع"
             className="h-8.5 px-3 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
           >
-            <LinkBreak className="w-4.5 h-4.5" />
+            <LinkBreak className="w-5 h-5" />
           </Button>
         </TooltipBtn>
       )}
@@ -538,22 +567,22 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1" 
             aria-label="محاذاة"
           >
-            <AlignCenterHorizontal className="w-4.5 h-4.5" />
-            <CaretDown className="w-3 h-3 opacity-60" />
+            <AlignCenterHorizontalIcon className="w-5 h-5" />
+            <CaretDown className="w-3.5 h-3.5 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-40 font-cairo rounded-xl backdrop-blur-xl fluent-specular">
-          <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <AlignLeft className="w-4 h-4 text-primary" />
-            <span>محاذاة لليسار</span>
+        <DropdownMenuContent align="start" className="w-40 font-cairo rounded-xl backdrop-blur-xl fluent-specular p-1 space-y-0.5">
+          <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground">
+            <AlignLeftIcon className="w-4.5 h-4.5 text-primary" />
+            <span className="font-semibold">محاذاة لليسار</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <AlignCenterHorizontal className="w-4 h-4 text-indigo-500" />
-            <span>توسيط أفقي</span>
+          <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground">
+            <AlignCenterHorizontalIcon className="w-4.5 h-4.5 text-primary" />
+            <span className="font-semibold">توسيط أفقي</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2.5 text-xs cursor-pointer rounded-md">
-            <AlignRight className="w-4 h-4 text-amber-500" />
-            <span>محاذاة لليمين</span>
+          <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground">
+            <AlignRightIcon className="w-4.5 h-4.5 text-primary" />
+            <span className="font-semibold">محاذاة لليمين</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -578,7 +607,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           aria-label="حذف"
           className="h-8.5 px-3 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
         >
-          <Trash className="w-4.5 h-4.5" />
+          <Trash className="w-5 h-5" />
         </Button>
       </TooltipBtn>
     </div>
@@ -602,7 +631,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           aria-label="تراجع"
           className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <ArrowCounterClockwise className="w-4.5 h-4.5" />
+          <ArrowUUpLeft className="w-5 h-5" />
         </Button>
       </TooltipBtn>
       <TooltipBtn content="إعادة (Ctrl+Y)">
@@ -614,7 +643,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           aria-label="إعادة"
           className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
-          <ArrowClockwise className="w-4.5 h-4.5" />
+          <ArrowUUpRight className="w-5 h-5" />
         </Button>
       </TooltipBtn>
     </div>

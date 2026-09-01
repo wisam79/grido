@@ -14,13 +14,15 @@ import {
   ArrowsOutCardinal,
   LockSimple,
   Drop,
-  AlignLeft,
-  AlignCenterHorizontal,
-  AlignRight,
-  AlignTop,
-  AlignCenterVertical,
-  AlignBottom,
 } from "@phosphor-icons/react";
+import {
+  AlignLeftIcon,
+  AlignCenterHorizontalIcon,
+  AlignRightIcon,
+  AlignTopIcon,
+  AlignCenterVerticalIcon,
+  AlignBottomIcon,
+} from "@/components/ui/alignment-icons";
 import { SliderControl, PopoverColorPicker } from "./shared-controls";
 import { scaleElementDecorations } from "@/lib/canvas/scale-decorations";
 import { cn } from "@/lib/utils";
@@ -73,22 +75,22 @@ export function ElementProperties({
         <Tabs value={activeTab} onValueChange={setSelectedTab} className="w-full">
             {/* أربعة مواضع ثابتة دائماً — إخفاء تبويب "الضبط" للنصوص والأشكال كان
                 يزيح التبويبات الأخرى ويكسر الذاكرة الحركية (تحسين الترتيب) */}
-            <TabsList className="grid w-full h-8 p-0.5 bg-muted/60 dark:bg-muted/30 rounded-lg border border-border/40 grid-cols-4">
+            <TabsList className="grid w-full h-10 p-1 bg-muted/60 dark:bg-black/25 backdrop-blur-xl rounded-xl border border-border/80 dark:border-white/10 shadow-inner grid-cols-4 gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <TabsTrigger
                     value="style"
                     className={cn(
-                      "h-7 rounded-md cursor-pointer transition-all text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center",
+                      "h-8 rounded-lg cursor-pointer transition-all duration-150 text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center relative",
                       activeTab === "style"
-                        ? "bg-background text-primary shadow-xs border border-border/80 ring-1 ring-primary/25"
-                        : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+                        ? "bg-card text-primary shadow-xs border border-border/80 dark:border-white/15 ring-1 ring-primary/30 scale-[1.02]"
+                        : "text-muted-foreground/75 hover:text-foreground hover:bg-card/50 active:scale-95"
                     )}
                   >
-                    <PaintBrush className="w-3.5 h-3.5" weight={activeTab === "style" ? "fill" : "regular"} />
+                    <PaintBrush className="w-5 h-5 transition-transform" weight={activeTab === "style" ? "duotone" : "regular"} />
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التنسيق والأدوات</TooltipContent>
+                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التنسيق</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -96,21 +98,21 @@ export function ElementProperties({
                   <TabsTrigger
                     value="adjust"
                     disabled={!hasAdjustTab}
-                    title={!hasAdjustTab ? "متاح لعناصر الصور فقط" : undefined}
+                    title={!hasAdjustTab ? "للصور فقط" : undefined}
                     className={cn(
-                      "h-7 rounded-md transition-all text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center",
-                      !hasAdjustTab && "opacity-35 cursor-not-allowed",
+                      "h-8 rounded-lg transition-all duration-150 text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center relative",
+                      !hasAdjustTab && "opacity-30 cursor-not-allowed",
                       hasAdjustTab && "cursor-pointer",
                       activeTab === "adjust"
-                        ? "bg-background text-primary shadow-xs border border-border/80 ring-1 ring-primary/25"
-                        : "text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/40"
+                        ? "bg-card text-primary shadow-xs border border-border/80 dark:border-white/15 ring-1 ring-primary/30 scale-[1.02]"
+                        : "text-muted-foreground/75 enabled:hover:text-foreground enabled:hover:bg-card/50 active:scale-95"
                     )}
                   >
-                    <SlidersHorizontal className="w-3.5 h-3.5" weight={activeTab === "adjust" ? "fill" : "regular"} />
+                    <SlidersHorizontal className="w-5 h-5 transition-transform" weight={activeTab === "adjust" ? "duotone" : "regular"} />
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">
-                  {hasAdjustTab ? "تعديل الألوان والسطوع" : "متاح لعناصر الصور فقط"}
+                  {hasAdjustTab ? "الألوان" : "للصور فقط"}
                 </TooltipContent>
               </Tooltip>
 
@@ -119,16 +121,16 @@ export function ElementProperties({
                   <TabsTrigger
                     value="effects"
                     className={cn(
-                      "h-7 rounded-md cursor-pointer transition-all text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center",
+                      "h-8 rounded-lg cursor-pointer transition-all duration-150 text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center relative",
                       activeTab === "effects"
-                        ? "bg-background text-primary shadow-xs border border-border/80 ring-1 ring-primary/25"
-                        : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+                        ? "bg-card text-primary shadow-xs border border-border/80 dark:border-white/15 ring-1 ring-primary/30 scale-[1.02]"
+                        : "text-muted-foreground/75 hover:text-foreground hover:bg-card/50 active:scale-95"
                     )}
                   >
-                    <Sparkle className="w-3.5 h-3.5" weight={activeTab === "effects" ? "fill" : "regular"} />
+                    <Sparkle className="w-5 h-5 transition-transform" weight={activeTab === "effects" ? "duotone" : "regular"} />
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التأثيرات والظلال</TooltipContent>
+                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التأثيرات</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -136,16 +138,16 @@ export function ElementProperties({
                   <TabsTrigger
                     value="arrange"
                     className={cn(
-                      "h-7 rounded-md cursor-pointer transition-all text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center",
+                      "h-8 rounded-lg cursor-pointer transition-all duration-150 text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center relative",
                       activeTab === "arrange"
-                        ? "bg-background text-primary shadow-xs border border-border/80 ring-1 ring-primary/25"
-                        : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+                        ? "bg-card text-primary shadow-xs border border-border/80 dark:border-white/15 ring-1 ring-primary/30 scale-[1.02]"
+                        : "text-muted-foreground/75 hover:text-foreground hover:bg-card/50 active:scale-95"
                     )}
                   >
-                    <ArrowsOutCardinal className="w-3.5 h-3.5" weight={activeTab === "arrange" ? "fill" : "regular"} />
+                    <ArrowsOutCardinal className="w-5 h-5 transition-transform" weight={activeTab === "arrange" ? "duotone" : "regular"} />
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">الموضع والترتيب</TooltipContent>
+                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">الترتيب</TooltipContent>
               </Tooltip>
             </TabsList>
 
@@ -176,7 +178,7 @@ export function ElementProperties({
             {/* بطاقة 1: الموضع والمحاذاة السريعة */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
               <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                <ArrowsOutCardinal className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                <ArrowsOutCardinal className="w-4 h-4 text-primary" weight="duotone" />
                 <span>الموضع والمحاذاة</span>
               </Label>
 
@@ -188,9 +190,9 @@ export function ElementProperties({
                       variant="ghost"
                       size="sm"
                       onClick={() => alignSelectedElements("left")}
-                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                      className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignLeft className="w-3.5 h-3.5" weight="regular" />
+                      <AlignLeftIcon className="w-4.5 h-4.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليسار</TooltipContent>
@@ -202,9 +204,9 @@ export function ElementProperties({
                       variant="ghost"
                       size="sm"
                       onClick={() => alignSelectedElements("center")}
-                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                      className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignCenterHorizontal className="w-3.5 h-3.5" weight="regular" />
+                      <AlignCenterHorizontalIcon className="w-4.5 h-4.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للوسط أفقياً</TooltipContent>
@@ -216,9 +218,9 @@ export function ElementProperties({
                       variant="ghost"
                       size="sm"
                       onClick={() => alignSelectedElements("right")}
-                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                      className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignRight className="w-3.5 h-3.5" weight="regular" />
+                      <AlignRightIcon className="w-4.5 h-4.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليمين</TooltipContent>
@@ -232,9 +234,9 @@ export function ElementProperties({
                       variant="ghost"
                       size="sm"
                       onClick={() => alignSelectedElements("top")}
-                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                      className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignTop className="w-3.5 h-3.5" weight="regular" />
+                      <AlignTopIcon className="w-4.5 h-4.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأعلى</TooltipContent>
@@ -246,9 +248,9 @@ export function ElementProperties({
                       variant="ghost"
                       size="sm"
                       onClick={() => alignSelectedElements("middle")}
-                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                      className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignCenterVertical className="w-3.5 h-3.5" weight="regular" />
+                      <AlignCenterVerticalIcon className="w-4.5 h-4.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للمنتصف عمودياً</TooltipContent>
@@ -260,9 +262,9 @@ export function ElementProperties({
                       variant="ghost"
                       size="sm"
                       onClick={() => alignSelectedElements("bottom")}
-                      className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
+                      className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignBottom className="w-3.5 h-3.5" weight="regular" />
+                      <AlignBottomIcon className="w-4.5 h-4.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأسفل</TooltipContent>
@@ -429,7 +431,8 @@ export function ElementProperties({
                 <PopoverColorPicker
                   color={element.shadowColor || "#000000"}
                   onChange={(val) => onUpdate(element.id, { shadowColor: val })}
-                  className="w-32 h-8 rounded-md"
+                  swatchOnly
+                  className="w-8 h-8"
                 />
               </div>
 

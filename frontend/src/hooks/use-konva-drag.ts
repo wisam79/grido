@@ -160,19 +160,11 @@ export function useKonvaDrag({
   };
 
   const onDragMove = (e: KonvaEventObject<DragEvent>) => {
-    const snapEnabled = snapToGrid !== false && !altPressedRef.current;
-    if (!snapEnabled) {
-      if (prevGuidesRef.current.length > 0) {
-        setActiveGuides([]);
-        prevGuidesRef.current = [];
-      }
-      return;
-    }
-
     const draggedNode = e.target;
     const draggedId = element.id;
     const startPos = dragStartPositionsRef.current[draggedId];
     
+    // 1. تحريك كافة العناصر المحددة الأخرى التابعة للمجموعة في نفس الوقت
     if (startPos) {
       const dx = draggedNode.x() - startPos.x;
       const dy = draggedNode.y() - startPos.y;
@@ -184,8 +176,6 @@ export function useKonvaDrag({
         const node = getKonvaNode(id);
         const nodeStart = dragStartPositionsRef.current[id];
         if (node && nodeStart) {
-          // الحدود نفسها التي يطبقها dragBoundFunc على القائد —
-          // منع التابعين من الخروج عن الكانفس أثناء السحب الجماعي
           const followerEl = currentElements.find((e) => e.id === id);
           if (followerEl?.locked) return;
           const fW = (followerEl?.width ?? element.width) * canvasWidth;
@@ -195,6 +185,16 @@ export function useKonvaDrag({
         }
       });
       e.target.getLayer()?.batchDraw();
+    }
+
+    // 2. معالجة الخطوط الإرشادية والمحاذاة المغناطيسية
+    const snapEnabled = snapToGrid !== false && !altPressedRef.current;
+    if (!snapEnabled) {
+      if (prevGuidesRef.current.length > 0) {
+        setActiveGuides([]);
+        prevGuidesRef.current = [];
+      }
+      return;
     }
 
     const stage = e.target.getStage();

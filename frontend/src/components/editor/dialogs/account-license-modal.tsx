@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import {
   ArrowSquareOut,
   DownloadSimple,
 } from "@phosphor-icons/react";
+import { GoogleIcon } from "@/components/ui/image-icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
@@ -300,85 +302,144 @@ export function AccountLicenseModal() {
   return (
     <Dialog open={accountModalOpen} onOpenChange={setAccountModalOpen}>
       <DialogContent 
-        className="max-w-sm bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-xl rounded-2xl p-5 dir-rtl fluent-specular" 
+        showCloseButton={false}
+        className="w-[95vw] sm:max-w-[460px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl rounded-2xl p-5 sm:p-6 dir-rtl fluent-specular overflow-hidden" 
         dir="rtl"
       >
-        <DialogHeader className="space-y-1 text-right border-b border-border/60 pb-3">
-          <DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
-            <ShieldCheck className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-            <span>الحساب والترخيص</span>
-          </DialogTitle>
+        {/* 🔹 1. رأس النافذة المتناسق مع زر الإغلاق المدمج */}
+        <DialogHeader className="text-right border-b border-border/40 pb-3.5 space-y-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-xs shrink-0">
+                <ShieldCheck className="w-5.5 h-5.5" weight="duotone" />
+              </div>
+              <div className="min-w-0">
+                <DialogTitle className="text-base font-bold text-foreground tracking-tight truncate">
+                  الحساب والترخيص
+                </DialogTitle>
+                <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">
+                  {user && user.token ? "إدارة اشتراكك وحسابك السحابي" : "سجل دخولك لتفعيل ميزات الذكاء الاصطناعي والمزامنة"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {/* شارة الخطة السريعة في الهيدر إن كان مسجلاً */}
+              {user && user.token && (
+                <div>
+                  {active ? (
+                    user?.plan === "trial" ? (
+                      <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        تجريبي ({trialDaysLeft} يوم)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        PRO احترافي
+                      </span>
+                    )
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground text-[10px] px-2 py-0 font-semibold rounded-full border-border/80">
+                      مجاني
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              {/* زر الإغلاق المدمج في شريط العنوان */}
+              <DialogCloseButton />
+            </div>
+          </div>
         </DialogHeader>
 
-        {/* 📊 بطاقة حالة الاشتراك والنظام */}
-        <div className="bg-muted/40 border border-border/60 p-3 rounded-xl space-y-2 mt-2 fluent-specular">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-muted-foreground text-[11px]">الباقة الحالية:</span>
-            {active ? (
-              user?.plan === "trial" ? (
-                <Badge variant="secondary" className="text-[10px] px-2 py-0 font-semibold rounded-md">
-                  تجريبي ({trialDaysLeft} يوم)
-                </Badge>
-              ) : (
-                <Badge className="bg-emerald-600 text-white text-[10px] px-2 py-0 font-semibold rounded-md">
-                  PRO احترافي
-                </Badge>
-              )
+        {/* 🔹 2. بطاقة الملف الشخصي للمستخدم المسجل (Profile Bento Hero) */}
+        {user && user.token && (
+          <div className="bg-muted/40 dark:bg-muted/20 border border-border/60 dark:border-white/10 p-3 rounded-xl flex items-center justify-between mt-3.5 fluent-specular">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold text-xs flex items-center justify-center shrink-0">
+                {(user.name || user.email || "U").charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 text-right">
+                <span className="text-xs font-bold text-foreground block truncate">
+                  {user.name || "مستخدم مسجل"}
+                </span>
+                <span className="font-mono text-[10.5px] text-muted-foreground truncate block">
+                  {user.email}
+                </span>
+              </div>
+            </div>
+
+            {showLogoutConfirm ? (
+              <div className="flex items-center gap-1 animate-in fade-in-50 duration-150 shrink-0">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-6.5 px-2 text-[10px] font-bold cursor-pointer rounded-md"
+                  onClick={confirmLogout}
+                >
+                  تأكيد الخروج
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6.5 px-1.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer rounded-md"
+                  onClick={() => setShowLogoutConfirm(false)}
+                >
+                  إلغاء
+                </Button>
+              </div>
             ) : (
-              <Badge variant="outline" className="text-muted-foreground text-[10px] px-2 py-0 font-semibold rounded-md">
-                مجاني
-              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2 cursor-pointer rounded-lg font-semibold shrink-0"
+                onClick={() => setShowLogoutConfirm(true)}
+              >
+                <SignOut className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                <span>خروج</span>
+              </Button>
             )}
           </div>
+        )}
 
-          {user && user.email ? (
-            <div className="flex justify-between items-center text-xs border-t border-border/40 pt-2">
-              <span className="text-[11px] text-muted-foreground">الحساب:</span>
-              <span className="font-mono text-[11px] text-foreground font-semibold">{user.email}</span>
-            </div>
-          ) : (
-            <div className="border border-border/60 rounded-md p-2 flex items-center gap-2 bg-background/50 text-[11px] text-muted-foreground">
-              <Warning className="text-amber-500 w-3.5 h-3.5 shrink-0" weight="duotone" />
-              <span>سجل دخولك لتشغيل ميزات الحساب السحابية</span>
-            </div>
-          )}
-        </div>
-
-        {/* 🎛️ التبويبات والمحتوى */}
-        <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="w-full mt-2">
-          <TabsList className="grid w-full grid-cols-2 bg-muted p-0.5 rounded-lg h-8 border border-border/40">
+        {/* 🔹 3. هيكل التبويبات والمحتوى الأساسي (Tabs & Core Deck) */}
+        <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="w-full mt-3.5">
+          <TabsList className="grid w-full grid-cols-2 bg-muted/70 p-1 rounded-xl h-9 border border-border/40">
             <TabsTrigger 
               value="auth" 
-              className="text-xs h-7 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-semibold cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="text-xs h-7 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs font-bold cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center gap-1.5 transition-all"
             >
-              تسجيل الحساب
+              <User className="w-3.5 h-3.5" weight="bold" />
+              <span>تسجيل الحساب</span>
             </TabsTrigger>
             <TabsTrigger 
               value="license" 
-              className="text-xs h-7 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground font-semibold cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="text-xs h-7 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs font-bold cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center gap-1.5 transition-all"
             >
-              مفتاح الترخيص
+              <Key className="w-3.5 h-3.5" weight="bold" />
+              <span>مفتاح الترخيص</span>
             </TabsTrigger>
           </TabsList>
 
           {/* 🔑 تبويب الدخول/التسجيل */}
-          <TabsContent value="auth" className="mt-3 space-y-3">
+          <TabsContent value="auth" className="mt-3.5 space-y-3.5 animate-in fade-in-50 duration-150">
             {showRecoveryOtp ? (
               <form onSubmit={handleVerifyRecovery} className="space-y-3">
                 {error && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                    <Warning className="w-3.5 h-3.5 shrink-0" weight="duotone" />
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-center gap-2 text-destructive text-xs font-semibold">
+                    <Warning className="w-4 h-4 shrink-0" weight="duotone" />
                     <span>{error}</span>
                   </div>
                 )}
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">البريد الإلكتروني</Label>
+                  <Label className="text-xs font-bold text-foreground/90">البريد الإلكتروني</Label>
                   <div className="relative">
-                    <EnvelopeSimple className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                    <EnvelopeSimple className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                     <Input
                       type="email"
                       placeholder="name@example.com"
-                      className="pr-8 h-8 text-xs rounded-md"
+                      className="pr-9 h-9 text-xs rounded-lg"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -386,32 +447,32 @@ export function AccountLicenseModal() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">كود الاستعادة (OTP)</Label>
+                  <Label className="text-xs font-bold text-foreground/90">كود الاستعادة (OTP)</Label>
                   <div className="relative">
-                    <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                    <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                     <Input
                       type="text"
                       placeholder="123456"
                       maxLength={6}
-                      className="pr-8 h-8 text-xs tracking-widest text-center font-mono rounded-md"
+                      className="pr-9 h-9 text-xs tracking-widest text-center font-mono rounded-lg"
                       required
                       value={recoveryOtp}
                       onChange={(e) => setRecoveryOtp(e.target.value)}
                       dir="ltr"
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground text-center">
+                  <p className="text-[11px] text-muted-foreground text-center">
                     أدخل كود الاستعادة المكون من 6 أرقام المرسل إلى {email}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">كلمة المرور الجديدة</Label>
+                  <Label className="text-xs font-bold text-foreground/90">كلمة المرور الجديدة</Label>
                   <div className="relative">
-                    <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                     <Input
                       type="password"
                       placeholder="••••••••"
-                      className="pr-8 h-8 text-xs rounded-md"
+                      className="pr-9 h-9 text-xs rounded-lg"
                       required
                       minLength={6}
                       value={newPassword}
@@ -421,12 +482,12 @@ export function AccountLicenseModal() {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-8 text-xs font-bold rounded-md shadow-xs gap-1.5" 
+                  className="w-full h-9 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-pointer" 
                   disabled={loading}
                 >
                   {loading ? (
                     <>
-                      <Spinner className="w-3.5 h-3.5" size={14} />
+                      <Spinner className="w-4 h-4" size={16} />
                       <span>جاري الحفظ ...</span>
                     </>
                   ) : (
@@ -440,7 +501,7 @@ export function AccountLicenseModal() {
                       setShowRecoveryOtp(false);
                       setError(null);
                     }}
-                    className="text-[11px] text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+                    className="text-xs text-muted-foreground hover:text-foreground font-medium cursor-pointer"
                   >
                     إلغاء والعودة لتسجيل الدخول
                   </button>
@@ -448,41 +509,70 @@ export function AccountLicenseModal() {
               </form>
             ) : (
               <>
+                {/* زر الدخول السريع عبر Google في مقدمة التفاعل */}
+                <Button 
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  variant="outline"
+                  className="w-full h-9 text-xs font-bold gap-2.5 border-border/80 dark:border-white/15 bg-background hover:bg-muted/70 dark:bg-card/80 dark:hover:bg-accent rounded-lg shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+                  disabled={loading || loadingGoogle}
+                >
+                  {loadingGoogle ? (
+                    <>
+                      <Spinner className="w-4 h-4 text-primary" size={16} />
+                      <span>جاري الدخول عبر Google ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <GoogleIcon className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform duration-200" />
+                      <span className="font-semibold text-foreground/90 group-hover:text-foreground">
+                        متابعة باستخدام Google
+                      </span>
+                    </>
+                  )}
+                </Button>
+
+                <div className="relative flex py-0.5 items-center">
+                  <div className="flex-grow border-t border-border/40"></div>
+                  <span className="flex-shrink mx-3 text-[10px] text-muted-foreground font-medium">أو بالبريد الإلكتروني</span>
+                  <div className="flex-grow border-t border-border/40"></div>
+                </div>
+
                 <form onSubmit={handleAuth} className="space-y-3">
                   {error && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                      <Warning className="w-3.5 h-3.5 shrink-0" weight="duotone" />
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-center gap-2 text-destructive text-xs font-semibold">
+                      <Warning className="w-4 h-4 shrink-0" weight="duotone" />
                       <span>{error}</span>
                     </div>
                   )}
                   {showOtp ? (
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold">كود التحقق (OTP)</Label>
+                    <div className="space-y-2.5">
+                      <Label className="text-xs font-bold text-foreground/90">كود التحقق (OTP)</Label>
                       <div className="relative">
-                        <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                        <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                         <Input
                           type="text"
                           placeholder="123456"
                           maxLength={6}
-                          className="pr-8 h-8 text-xs tracking-widest text-center font-mono rounded-md"
+                          className="pr-9 h-9 text-xs tracking-widest text-center font-mono rounded-lg"
                           required
                           value={otpCode}
                           onChange={(e) => setOtpCode(e.target.value)}
                           dir="ltr"
                         />
                       </div>
-                      <p className="text-[10px] text-muted-foreground text-center">
+                      <p className="text-[11px] text-muted-foreground text-center">
                         تم إرسال الكود إلى {email}
                       </p>
 
                       <Button 
                         type="submit" 
-                        className="w-full h-8 text-xs font-bold rounded-md shadow-xs gap-1.5" 
+                        className="w-full h-9 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-pointer" 
                         disabled={loading}
                       >
                         {loading ? (
                           <>
-                            <Spinner className="w-3.5 h-3.5" size={14} />
+                            <Spinner className="w-4 h-4" size={16} />
                             <span>جاري تأكيد الكود ...</span>
                           </>
                         ) : (
@@ -490,16 +580,16 @@ export function AccountLicenseModal() {
                         )}
                       </Button>
 
-                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-border/40 mt-2">
+                      <div className="flex items-center justify-between text-xs pt-2 border-t border-border/40 mt-2">
                         <button
                           type="button"
                           onClick={handleResendOTP}
                           disabled={resending || resendCooldown > 0}
-                          className="text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline cursor-pointer"
+                          className="text-primary hover:underline font-semibold disabled:opacity-50 disabled:no-underline cursor-pointer"
                         >
                           {resending ? (
                             <span className="flex items-center gap-1">
-                              <Spinner className="w-3 h-3 inline" size={12} /> جاري الإرسال ...
+                              <Spinner className="w-3.5 h-3.5 inline" size={14} /> جاري الإرسال ...
                             </span>
                           ) : resendCooldown > 0 ? (
                             `إعادة الإرسال بعد (${resendCooldown} ث)`
@@ -514,7 +604,7 @@ export function AccountLicenseModal() {
                             setShowOtp(false);
                             setError(null);
                           }}
-                          className="text-muted-foreground hover:text-foreground cursor-pointer"
+                          className="text-muted-foreground hover:text-foreground cursor-pointer font-medium"
                         >
                           تغيير البريد
                         </button>
@@ -524,12 +614,12 @@ export function AccountLicenseModal() {
                     <>
                       {authMode === "register" && (
                         <div className="space-y-1">
-                          <Label className="text-xs font-semibold">الاسم الكامل</Label>
+                          <Label className="text-xs font-bold text-foreground/90">الاسم الكامل</Label>
                           <div className="relative">
-                            <User className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                            <User className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                             <Input
                               placeholder="الاسم"
-                              className="pr-8 h-8 text-xs rounded-md"
+                              className="pr-9 h-9 text-xs rounded-lg"
                               required
                               value={name}
                               onChange={(e) => setName(e.target.value)}
@@ -539,13 +629,13 @@ export function AccountLicenseModal() {
                       )}
 
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold">البريد الإلكتروني</Label>
+                        <Label className="text-xs font-bold text-foreground/90">البريد الإلكتروني</Label>
                         <div className="relative">
-                          <EnvelopeSimple className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                          <EnvelopeSimple className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                           <Input
                             type="email"
                             placeholder="name@example.com"
-                            className="pr-8 h-8 text-xs rounded-md"
+                            className="pr-9 h-9 text-xs rounded-lg"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -555,24 +645,24 @@ export function AccountLicenseModal() {
 
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs font-semibold">كلمة المرور</Label>
+                          <Label className="text-xs font-bold text-foreground/90">كلمة المرور</Label>
                           {authMode === "login" && (
                             <button
                               type="button"
                               onClick={handleResetPassword}
                               disabled={loading}
-                              className="text-[10px] text-primary hover:underline font-medium disabled:opacity-50 disabled:no-underline cursor-pointer"
+                              className="text-[11px] text-primary hover:underline font-semibold disabled:opacity-50 disabled:no-underline cursor-pointer"
                             >
                               نسيت كلمة المرور؟
                             </button>
                           )}
                         </div>
                         <div className="relative">
-                          <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                          <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                           <Input
                             type="password"
                             placeholder="••••••••"
-                            className="pr-8 h-8 text-xs rounded-md"
+                            className="pr-9 h-9 text-xs rounded-lg"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -582,12 +672,12 @@ export function AccountLicenseModal() {
 
                       <Button 
                         type="submit" 
-                        className="w-full h-8 text-xs font-bold rounded-md shadow-xs gap-1.5" 
+                        className="w-full h-9 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-pointer" 
                         disabled={loading || loadingGoogle}
                       >
                         {loading ? (
                           <>
-                            <Spinner className="w-3.5 h-3.5" size={14} />
+                            <Spinner className="w-4 h-4" size={16} />
                             <span>{authMode === "login" ? "جاري تسجيل الدخول ..." : "جاري إنشاء الحساب ..."}</span>
                           </>
                         ) : authMode === "login" ? (
@@ -596,46 +686,15 @@ export function AccountLicenseModal() {
                           "إنشاء حساب"
                         )}
                       </Button>
-
-                      <div className="relative flex py-1 items-center">
-                        <div className="flex-grow border-t border-border/40"></div>
-                        <span className="flex-shrink mx-2 text-[10px] text-muted-foreground">أو</span>
-                        <div className="flex-grow border-t border-border/40"></div>
-                      </div>
-
-                      <Button 
-                        type="button"
-                        onClick={handleGoogleLogin}
-                        variant="outline"
-                        className="w-full h-8 text-xs font-semibold gap-2 border-border rounded-md shadow-2xs"
-                        disabled={loading || loadingGoogle}
-                      >
-                        {loadingGoogle ? (
-                          <>
-                            <Spinner className="w-3.5 h-3.5" size={14} />
-                            <span>جاري الدخول عبر Google ...</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
-                              <path
-                                fill="#EA4335"
-                                d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.69 5.69 0 0 1 8.24 12.8a5.69 5.69 0 0 1 5.751-5.714c1.47 0 2.824.509 3.89 1.527l3.076-3.076C19.11 3.793 15.932 2.4 12.24 2.4a9.6 9.6 0 0 0-9.6 9.6c0 5.302 4.298 9.6 9.6 9.6c5.8 0 9.69-4.08 9.69-9.873c0-.622-.057-1.12-.132-1.44H12.24Z"
-                              />
-                            </svg>
-                            <span>متابعة باستخدام Google</span>
-                          </>
-                        )}
-                      </Button>
                     </>
                   )}
                 </form>
 
-                <div className="text-center pt-1">
+                <div className="text-center pt-2 border-t border-border/30">
                   <button
                     type="button"
                     onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
-                    className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
+                    className="text-xs text-primary hover:underline font-bold cursor-pointer"
                   >
                     {authMode === "login" ? "إنشاء حساب جديد" : "لديك حساب بالفعل؟ تسجيل الدخول"}
                   </button>
@@ -644,25 +703,24 @@ export function AccountLicenseModal() {
             )}
           </TabsContent>
 
-
           {/* 🏷️ تبويب تفعيل الترخيص */}
-          <TabsContent value="license" className="mt-3 space-y-3">
-            <div className="space-y-3">
+          <TabsContent value="license" className="mt-3.5 space-y-3.5 animate-in fade-in-50 duration-150">
+            <div className="space-y-3.5">
               {user && (user.plan === "pro" || user.plan === "enterprise") ? (
-                <div className="bg-muted/30 border border-border rounded-xl p-3 text-center space-y-2 fluent-specular">
-                  <div className="inline-flex p-2 bg-emerald-500/10 text-emerald-600 rounded-full">
-                    <ShieldCheck className="w-5 h-5 shrink-0" weight="duotone" />
+                <div className="bg-emerald-500/5 border border-emerald-500/20 dark:border-emerald-500/30 rounded-xl p-4 text-center space-y-2.5 fluent-specular">
+                  <div className="inline-flex p-2.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-500/30 shadow-2xs">
+                    <ShieldCheck className="w-6 h-6 shrink-0" weight="duotone" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-foreground">النسخة مفعلة بنجاح</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">الباقة: {user.plan === "pro" ? "Pro احترافي" : "Enterprise"}</p>
+                    <h3 className="text-sm font-bold text-foreground">النسخة مفعلة بنجاح</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-medium">الباقة: {user.plan === "pro" ? "Pro احترافي" : "Enterprise"}</p>
                   </div>
 
                   {user.licenseKey && (
-                    <div className="bg-background border border-border/60 rounded-md p-1.5 text-center text-[10px] flex items-center justify-between px-3">
+                    <div className="bg-background/80 border border-border/80 rounded-lg p-2 text-center text-xs flex items-center justify-between px-3">
                       <div>
-                        <span className="text-muted-foreground ml-1">مفتاح التفعيل:</span>
-                        <code className="font-mono text-primary font-bold">{user.licenseKey}</code>
+                        <span className="text-muted-foreground ml-1 font-medium">مفتاح التفعيل:</span>
+                        <code className="font-mono text-primary font-bold text-xs">{user.licenseKey}</code>
                       </div>
                       <button
                         type="button"
@@ -670,7 +728,7 @@ export function AccountLicenseModal() {
                           navigator.clipboard.writeText(user.licenseKey || "");
                           toast.success("تم نسخ المفتاح إلى الحافظة");
                         }}
-                        className="text-[10px] text-primary hover:underline font-medium cursor-pointer"
+                        className="text-xs text-primary hover:underline font-bold cursor-pointer"
                       >
                         نسخ
                       </button>
@@ -678,16 +736,16 @@ export function AccountLicenseModal() {
                   )}
                 </div>
               ) : (
-                <form onSubmit={handleActivate} className="space-y-3">
+                <form onSubmit={handleActivate} className="space-y-3.5">
                   {error && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                      <Warning className="w-3.5 h-3.5 shrink-0" weight="duotone" />
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-center gap-2 text-destructive text-xs font-semibold">
+                      <Warning className="w-4 h-4 shrink-0" weight="duotone" />
                       <span>{error}</span>
                     </div>
                   )}
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <Label className="text-xs font-semibold">مفتاح الترخيص (License Key)</Label>
+                      <Label className="text-xs font-bold text-foreground/90">مفتاح الترخيص (License Key)</Label>
                       <button
                         type="button"
                         onClick={async () => {
@@ -701,16 +759,16 @@ export function AccountLicenseModal() {
                             toast.error("يرجى لصق المفتاح يدوياً");
                           }
                         }}
-                        className="text-[10px] text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
+                        className="text-[11px] text-primary hover:underline font-bold cursor-pointer flex items-center gap-1"
                       >
                         <span>لصق من الحافظة 📋</span>
                       </button>
                     </div>
                     <div className="relative">
-                      <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                      <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                       <Input
                         placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
-                        className="pr-8 h-8 text-xs font-mono uppercase rounded-md"
+                        className="pr-9 h-9 text-xs font-mono uppercase rounded-lg tracking-wider"
                         required
                         value={licenseKey}
                         onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
@@ -720,12 +778,12 @@ export function AccountLicenseModal() {
 
                   <Button 
                     type="submit" 
-                    className="w-full h-8 text-xs font-bold rounded-md shadow-xs gap-1.5" 
+                    className="w-full h-9 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-pointer" 
                     disabled={loading}
                   >
                     {loading ? (
                       <>
-                        <Spinner className="w-3.5 h-3.5" size={14} />
+                        <Spinner className="w-4 h-4" size={16} />
                         <span>جاري تفعيل الترخيص ...</span>
                       </>
                     ) : (
@@ -735,53 +793,8 @@ export function AccountLicenseModal() {
                 </form>
               )}
 
-              <div className="flex items-center justify-between border-t border-border/50 pt-2.5 mt-2">
-                {user && user.token ? (
-                  showLogoutConfirm ? (
-                    <div className="flex items-center gap-1.5 text-xs animate-in fade-in-50 duration-150">
-                      <span className="text-[11px] text-muted-foreground">تأكيد الخروج؟</span>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="h-6 px-2 text-[10px] font-bold cursor-pointer rounded-md"
-                        onClick={confirmLogout}
-                      >
-                        نعم
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer rounded-md"
-                        onClick={() => setShowLogoutConfirm(false)}
-                      >
-                        إلغاء
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2 cursor-pointer rounded-md"
-                      onClick={() => setShowLogoutConfirm(true)}
-                    >
-                      <SignOut className="w-3 h-3 shrink-0" />
-                      <span>تسجيل الخروج</span>
-                    </Button>
-                  )
-                ) : (
-                  <div />
-                )}
-
-                <a
-                  href="https://grido.cloud-ip.cc"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 text-[11px] text-primary hover:underline font-semibold"
-                >
-                  <span>شراء ترخيص</span>
-                  <ArrowSquareOut className="w-3 h-3 shrink-0" />
-                </a>
-
+              {/* 🔹 الشريط السفلي للإجراءات والمعلومات */}
+              <div className="flex items-center justify-between border-t border-border/50 pt-3 mt-3">
                 <button
                   type="button"
                   onClick={async () => {
@@ -794,11 +807,21 @@ export function AccountLicenseModal() {
                       toast.error(e?.message || "فشل تصدير السجلات");
                     }
                   }}
-                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer font-medium"
                 >
-                  <span>تصدير السجلات</span>
-                  <DownloadSimple className="w-3 h-3 shrink-0" />
+                  <DownloadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                  <span>السجلات</span>
                 </button>
+
+                <a
+                  href="https://grido.cloud-ip.cc"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-xs text-primary hover:underline font-bold"
+                >
+                  <span>شراء ترخيص</span>
+                  <ArrowSquareOut className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                </a>
               </div>
             </div>
           </TabsContent>

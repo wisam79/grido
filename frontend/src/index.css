@@ -688,15 +688,107 @@
   will-change: opacity;
 }
 
+/* ==========================================================================
+   تأثيرات المايكرو أنيميشن القياسية بنظام Microsoft Fluent 2
+   (Fluent 2 Micro-Animations, Spring Physics & AI Shimmer Aura)
+   ========================================================================== */
+
+@keyframes fluent-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fluent-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes fluent-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0);
+  }
+}
+
+@keyframes fluent-scan-laser {
+  0% {
+    transform: translateY(0%);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(100%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0%);
+    opacity: 0.8;
+  }
+}
+
+/* فئات المايكرو أنيميشن المتقدمة */
+.fluent-pop {
+  animation: fluent-pop-in 220ms cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.fluent-press {
+  transition: transform 120ms cubic-bezier(0.1, 0.9, 0.2, 1), box-shadow 150ms ease, background-color 150ms ease;
+}
+.fluent-press:hover {
+  transform: translateY(-0.5px);
+}
+.fluent-press:active {
+  transform: translateY(0.5px) scale(0.96);
+}
+
+.fluent-hover-lift {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms ease;
+}
+.fluent-hover-lift:hover {
+  transform: translateY(-1.5px);
+  box-shadow: var(--fluent-shadow-4);
+}
+.fluent-hover-lift:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+/* حركة عينات الألوان والشرائح */
+.fluent-swatch {
+  transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 150ms ease;
+}
+.fluent-swatch:hover {
+  transform: scale(1.12);
+  z-index: 10;
+}
+.fluent-swatch:active {
+  transform: scale(0.94);
+}
+
 /* تأثير التكبير البسيط عند التفاعل مع الأزرار */
 .interactive-btn {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.15s cubic-bezier(0.1, 0.9, 0.2, 1), background-color 0.15s ease, opacity 0.15s ease;
 }
 .interactive-btn:hover {
-  transform: translateY(-0.5px) scale(1.02);
+  transform: translateY(-0.5px) scale(1.015);
 }
 .interactive-btn:active {
-  transform: translateY(0.5px) scale(0.97);
+  transform: translateY(0.5px) scale(0.96);
 }
 
 

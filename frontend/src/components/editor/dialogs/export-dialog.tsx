@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
+  DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -161,15 +162,20 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-w-md font-cairo rounded-2xl border border-border bg-card fluent-specular" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold">
-            <DownloadSimple className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-            <span>تصدير الصورة</span>
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            احفظ الصورة بأبعاد القالب المحدد بدقة عالية للطباعة
-          </DialogDescription>
+      <DialogContent showCloseButton={false} className="max-w-md font-cairo rounded-2xl border border-border bg-card fluent-specular p-5 sm:p-6" dir="rtl">
+        <DialogHeader className="border-b border-border/40 pb-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <DownloadSimple className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+              <div className="min-w-0">
+                <DialogTitle className="text-base font-bold truncate">تصدير الصورة</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
+                  احفظ الصورة بأبعاد القالب المحدد بدقة عالية للطباعة
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogCloseButton />
+          </div>
         </DialogHeader>
 
         <div className="space-y-4 py-2">

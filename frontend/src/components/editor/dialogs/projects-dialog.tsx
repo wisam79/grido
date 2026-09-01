@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -293,12 +294,15 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-        <DialogContent className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-xl rounded-2xl p-5 font-cairo fluent-specular" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground font-cairo">
-              <FolderOpen className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-              <span>مكتبة المشاريع المحلية</span>
-            </DialogTitle>
+        <DialogContent showCloseButton={false} className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-xl rounded-2xl p-5 font-cairo fluent-specular" dir="rtl">
+          <DialogHeader className="border-b border-border/40 pb-3">
+            <div className="flex items-center justify-between gap-2">
+              <DialogTitle className="flex items-center gap-2 text-foreground font-cairo text-base font-bold">
+                <FolderOpen className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+                <span>مكتبة المشاريع</span>
+              </DialogTitle>
+              <DialogCloseButton />
+            </div>
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4 font-cairo">
@@ -529,12 +533,15 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
 
       {/* تأكيد الاستيراد وخيارات الدمج/الاستبدال */}
       <Dialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
-        <DialogContent className="sm:max-w-[400px]" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
-              <UploadSimple className="text-primary w-4 h-4 shrink-0" weight="duotone" />
-              <span>استيراد المشاريع</span>
-            </DialogTitle>
+        <DialogContent showCloseButton={false} className="sm:max-w-[400px] p-5 rounded-2xl" dir="rtl">
+          <DialogHeader className="border-b border-border/40 pb-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
+                <UploadSimple className="text-primary w-4 h-4 shrink-0" weight="duotone" />
+                <span>استيراد المشاريع</span>
+              </DialogTitle>
+              <DialogCloseButton />
+            </div>
           </DialogHeader>
           <div className="space-y-4 py-2 font-cairo">
             <p className="text-xs text-muted-foreground">

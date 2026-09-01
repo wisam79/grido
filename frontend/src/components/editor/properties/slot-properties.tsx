@@ -30,7 +30,7 @@ import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { toast } from "sonner";
 import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
-import { SliderControl } from "./shared-controls";
+import { SliderControl, PopoverColorPicker } from "./shared-controls";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import { useBgRemoval } from "@/hooks/use-bg-removal";
@@ -181,7 +181,7 @@ export function SlotProperties({
   const renderAutoFillToggle = () => (
     <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
       <div className="flex items-center gap-1.5 text-right">
-        <Copy className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+        <Copy className="w-4 h-4 text-primary shrink-0" weight="regular" />
         <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية عند الرفع</span>
       </div>
       <Switch 
@@ -215,7 +215,7 @@ export function SlotProperties({
           className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all text-xs"
           onClick={handleOpenFile}
         >
-          <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
+          <ImageSquare className="w-4.5 h-4.5 text-primary" weight="regular" />
           <span>رفع صورة للخلية</span>
         </Button>
         {lastEditedImage && (
@@ -225,7 +225,7 @@ export function SlotProperties({
             className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer text-xs"
             onClick={handleUseLastImage}
           >
-            <Copy className="w-4 h-4 text-primary" weight="regular" />
+            <Copy className="w-4.5 h-4.5 text-primary" weight="regular" />
             <span>تعبئة بآخر صورة معدلة</span>
           </Button>
         )}
@@ -257,7 +257,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={handleOpenFile}
           >
-            <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
+            <ImageSquare className="w-4.5 h-4.5 text-primary" weight="regular" />
             <span>تغيير الصورة</span>
           </Button>
           <Button
@@ -266,7 +266,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={() => setCropOpen(true)}
           >
-            <Crop className="w-4 h-4 text-primary" weight="regular" />
+            <Crop className="w-4.5 h-4.5 text-primary" weight="regular" />
             <span>قص وتدوير</span>
           </Button>
         </div>
@@ -289,7 +289,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipHorizontal className="w-4 h-4" weight={slot.flipX ? "fill" : "regular"} />
+                <FlipHorizontal className="w-4.5 h-4.5" weight={slot.flipX ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب أفقي</TooltipContent>
@@ -309,7 +309,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipVertical className="w-4 h-4" weight={slot.flipY ? "fill" : "regular"} />
+                <FlipVertical className="w-4.5 h-4.5" weight={slot.flipY ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب عمودي</TooltipContent>
@@ -328,7 +328,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <ArrowClockwise className="w-4 h-4" weight="regular" />
+                <ArrowClockwise className="w-4.5 h-4.5" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">تدوير 90°</TooltipContent>
@@ -346,7 +346,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
+                <ArrowCounterClockwise className="w-4.5 h-4.5" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إعادة تعيين الاتجاه</TooltipContent>
@@ -365,7 +365,7 @@ export function SlotProperties({
                   size="sm"
                   className="h-7 px-2 text-[10px] rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
                 >
-                  <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
+                  <ArrowsLeftRight className="w-4 h-4" weight="bold" />
                   <span>تبديل الموضع</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -400,7 +400,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillRow}
               >
-                <Rows className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                <Rows className="w-4 h-4 text-primary shrink-0" weight="regular" />
                 <span>الصف</span>
               </Button>
             </TooltipTrigger>
@@ -414,7 +414,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillColumn}
               >
-                <Columns className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                <Columns className="w-4 h-4 text-primary shrink-0" weight="regular" />
                 <span>العمود</span>
               </Button>
             </TooltipTrigger>
@@ -432,7 +432,7 @@ export function SlotProperties({
                   }
                 }}
               >
-                <Sparkle className="w-4 h-4 text-primary shrink-0" weight="regular" />
+                <Sparkle className="w-4.5 h-4.5 text-primary shrink-0" weight="regular" />
                 <span>الفارغة</span>
               </Button>
             </TooltipTrigger>
@@ -446,7 +446,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillAll}
               >
-                <GridFour className="w-4 h-4 text-primary shrink-0" weight="regular" />
+                <GridFour className="w-4.5 h-4.5 text-primary shrink-0" weight="regular" />
                 <span>الكل</span>
               </Button>
             </TooltipTrigger>
@@ -466,7 +466,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Crosshair className="w-3.5 h-3.5 text-primary" weight="regular" />
+                <Crosshair className="w-4.5 h-4.5 text-primary" weight="regular" />
                 <span>توسيط الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -484,7 +484,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Trash className="w-3.5 h-3.5" weight="regular" />
+                <Trash className="w-4.5 h-4.5" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إفراغ الخلية</TooltipContent>
@@ -497,7 +497,7 @@ export function SlotProperties({
       {/* 3.5 كرت لون خلفية صورة الهوية المعزولة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/90">
-          <Palette className="w-4 h-4 text-primary" weight="duotone" />
+          <Palette className="w-4.5 h-4.5 text-primary" weight="duotone" />
           <span>خلفية الصورة</span>
         </div>
 
@@ -528,8 +528,10 @@ export function SlotProperties({
                   freshStore.pushHistory();
                 }}
                 className={cn(
-                  "w-7 h-7 rounded-md border border-border/80 flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-                  isActive && "ring-2 ring-primary ring-offset-1 border-primary font-bold"
+                  "w-7.5 h-7.5 rounded-lg border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
+                  isActive
+                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10"
+                    : "border-black/10 dark:border-white/15 hover:border-foreground/40"
                 )}
                 style={{
                   backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
@@ -539,31 +541,29 @@ export function SlotProperties({
                 }}
               >
                 {isActive && (
-                  <Check className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} weight="bold" />
+                  <Check className={cn("w-3.5 h-3.5 z-10 drop-shadow-xs", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} weight="bold" />
                 )}
               </button>
             );
           })}
 
-          {/* Color Picker مخصص */}
-          <div className="flex items-center gap-1 border border-border/80 rounded-md px-1.5 py-0.5 bg-background" title="لون مخصص">
-            <input
-              type="color"
-              value={slot.bgColor === "transparent" || !slot.bgColor ? "#ffffff" : slot.bgColor}
-              onChange={(e) => {
-                const freshStore = useEditorStore.getState();
-                if (autoFill) {
-                  freshStore.slots.forEach((s) => {
-                    freshStore.updateSlot(s.id, { bgColor: e.target.value });
-                  });
-                } else {
-                  onUpdate(slot.id, { bgColor: e.target.value });
-                }
-              }}
-              onBlur={() => useEditorStore.getState().pushHistory()}
-              className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent p-0"
-            />
-          </div>
+          {/* Color Picker مخصص فاخر */}
+          <PopoverColorPicker
+            color={slot.bgColor === "transparent" || !slot.bgColor ? "#ffffff" : slot.bgColor}
+            onChange={(val: string) => {
+              const freshStore = useEditorStore.getState();
+              if (autoFill) {
+                freshStore.slots.forEach((s) => {
+                  freshStore.updateSlot(s.id, { bgColor: val });
+                });
+              } else {
+                onUpdate(slot.id, { bgColor: val });
+              }
+              freshStore.pushHistory();
+            }}
+            swatchOnly
+            className="w-7.5 h-7.5"
+          />
         </div>
       </div>
 

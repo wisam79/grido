@@ -87,7 +87,7 @@ export function ImageAdjustProperties({
 
       <SliderControl
         label="السطوع"
-        icon={<Sun className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+        icon={<Sun className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
         value={element.brightness ?? 100}
         min={0}
         max={200}
@@ -100,7 +100,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="التباين"
-        icon={<CircleHalfTilt className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+        icon={<CircleHalfTilt className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
         value={element.contrast ?? 100}
         min={0}
         max={200}
@@ -113,7 +113,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="التشبع"
-        icon={<Drop className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+        icon={<Drop className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
         value={element.saturation ?? 100}
         min={0}
         max={200}
@@ -126,7 +126,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="الضبابية"
-        icon={<EyeSlash className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+        icon={<EyeSlash className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
         value={element.blur ?? 0}
         min={0}
         max={20}
@@ -154,7 +154,7 @@ export function ImageAdjustProperties({
             useEditorStore.getState().pushHistory();
           }}
         >
-          <ArrowClockwise className="w-3 h-3" weight="regular" />
+          <ArrowClockwise className="w-3.5 h-3.5" weight="regular" />
           <span>إعادة تعيين الألوان</span>
         </Button>
       )}
@@ -309,7 +309,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 variant={isRemovingBg ? "destructive" : "outline"}
                 title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية"}
                 className={cn(
-                  "h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs",
+                  "h-9 flex items-center justify-center gap-2 rounded-lg border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
                   isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
                 )}
                 onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
@@ -317,9 +317,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 {isRemovingBg ? (
                   <Spinner className="w-4 h-4 shrink-0" size={16} />
                 ) : (
-                  <Sparkle className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" weight="duotone" />
+                  <Sparkle className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-[11px] font-bold">{isRemovingBg ? "إلغاء" : "عزل الخلفية"}</span>
+                <span className="text-xs font-bold">{isRemovingBg ? "إلغاء" : "عزل الخلفية"}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -335,7 +335,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 title={`ترميم الوجه ورفع الدقة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit})`}
                 disabled={isEnhancing || isRemovingBg}
                 className={cn(
-                  "h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs",
+                  "h-9 flex items-center justify-center gap-2 rounded-lg border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
                   (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
                 )}
                 onClick={() => handleEnhance(element)}
@@ -343,9 +343,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 {isEnhancing ? (
                   <Spinner className="w-4 h-4 text-primary shrink-0" size={16} />
                 ) : (
-                  <MagicWand className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" weight="duotone" />
+                  <MagicWand className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-[11px] font-bold">{isEnhancing ? "معالجة..." : "ترميم الوجه"}</span>
+                <span className="text-xs font-bold">{isEnhancing ? "معالجة..." : "ترميم الوجه"}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -360,17 +360,17 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 variant={isFraming ? "destructive" : "outline"}
                 title={isFraming ? "إلغاء ضبط الوجه" : "تأطير الوجه تلقائياً"}
                 className={cn(
-                  "h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs",
-                  isFraming && "animate-pulse"
+                  "h-9 flex items-center justify-center gap-2 rounded-lg border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
+                  isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
                 )}
                 onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
               >
                 {isFraming ? (
                   <X className="w-4 h-4 text-destructive-foreground shrink-0" weight="bold" />
                 ) : (
-                  <UserFocus className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" weight="duotone" />
+                  <UserFocus className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-[11px] font-bold">{isFraming ? "إلغاء" : "تأطير الوجه"}</span>
+                <span className="text-xs font-bold">{isFraming ? "إلغاء" : "تأطير الوجه"}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -384,11 +384,11 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <Button
                 variant="outline"
                 title="مسح وتقويم المستند"
-                className="h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs"
+                className="h-9 flex items-center justify-center gap-2 rounded-lg border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]"
                 onClick={() => setScannerOpen(true)}
               >
-                <Scan className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" weight="duotone" />
-                <span className="text-[11px] font-bold">مسح المستند</span>
+                <Scan className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                <span className="text-xs font-bold">مسح المستند</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">

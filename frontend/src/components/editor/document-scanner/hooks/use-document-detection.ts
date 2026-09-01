@@ -18,7 +18,7 @@ export function useDocumentDetection(
     };
   }, []);
 
-  const runDetection = useCallback(async (mode: DetectionMode = "auto"): Promise<Point[] | null> => {
+  const runDetection = useCallback(async (mode: DetectionMode = "single"): Promise<Point[] | null> => {
     const img = imgRef.current;
     if (!img) return null;
 

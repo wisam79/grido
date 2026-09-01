@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   FloppyDisk,
-  Printer,
   Export,
 } from "@phosphor-icons/react";
+import { PrintIcon } from "@/components/ui/print-icon";
 import { ToolbarFileOps } from "./toolbar-file-ops";
 import {
   TooltipBtn,
@@ -86,9 +86,9 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               size="sm"
               onClick={onSave}
               aria-label="حفظ المشروع"
-              className="h-8.5 px-3 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98]"
+              className="h-8.5 px-3 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
             >
-              <FloppyDisk className="w-4 h-4" />
+              <FloppyDisk className="w-4.5 h-4.5 group-hover:scale-105 transition-transform" weight="duotone" />
               <span>حفظ</span>
             </Button>
           </TooltipBtn>
@@ -99,9 +99,9 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               size="sm"
               onClick={onPrint}
               aria-label="طباعة المستند"
-              className="h-8.5 px-3 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98]"
+              className="h-8.5 px-3 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
             >
-              <Printer className="w-4 h-4" />
+              <PrintIcon className="w-4.5 h-4.5 group-hover:scale-105 transition-transform" />
               <span>طباعة</span>
             </Button>
           </TooltipBtn>
@@ -113,7 +113,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               aria-label="تصدير صورة"
               className="h-8.5 px-3.5 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98]"
             >
-              <Export className="w-4 h-4" weight="bold" />
+              <Export className="w-4.5 h-4.5" weight="bold" />
               <span>تصدير</span>
             </Button>
           </TooltipBtn>

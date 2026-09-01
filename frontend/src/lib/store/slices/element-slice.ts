@@ -345,8 +345,12 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const state = get();
 
     const isLine = shape === "line";
-    const hPercent = isLine ? 0.03 : 0.3;
-    const wPercent = 0.35 * (state.canvasHeight / state.canvasWidth);
+    const basePx = Math.min(state.canvasWidth, state.canvasHeight) * 0.25;
+    const wPx = isLine ? basePx * 1.5 : basePx;
+    const hPx = isLine ? Math.max(16, basePx * 0.05) : basePx;
+
+    const wPercent = wPx / state.canvasWidth;
+    const hPercent = hPx / state.canvasHeight;
 
     const newEl: CanvasElement = {
       id,
@@ -713,51 +717,80 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const elementsToAlign = state.elements.filter((e: CanvasElement) => targetIds.includes(e.id) && !e.locked);
     if (elementsToAlign.length === 0) return;
 
-    let minX = Math.min(...elementsToAlign.map(e => e.x));
-    let maxX = Math.max(...elementsToAlign.map(e => e.x + e.width));
-    let minY = Math.min(...elementsToAlign.map(e => e.y));
-    let maxY = Math.max(...elementsToAlign.map(e => e.y + e.height));
-    let centerX = (minX + maxX) / 2;
-    let centerY = (minY + maxY) / 2;
+    // تقسيم العناصر إلى وحدات منطقية (مجموعات متماسكة أو عناصر مفردة)
+    const unitMap = new Map<string, CanvasElement[]>();
+    let ungroupedCounter = 0;
 
-    if (elementsToAlign.length === 1) {
-      minX = 0;
-      maxX = 1;
-      minY = 0;
-      maxY = 1;
-      centerX = 0.5;
-      centerY = 0.5;
+    elementsToAlign.forEach((el) => {
+      const key = el.groupId ? `group_${el.groupId}` : `single_${ungroupedCounter++}`;
+      if (!unitMap.has(key)) {
+        unitMap.set(key, []);
+      }
+      unitMap.get(key)!.push(el);
+    });
+
+    const units = Array.from(unitMap.values());
+    const isSingleUnit = units.length === 1;
+
+    let overallMinX = Math.min(...elementsToAlign.map(e => e.x));
+    let overallMaxX = Math.max(...elementsToAlign.map(e => e.x + e.width));
+    let overallMinY = Math.min(...elementsToAlign.map(e => e.y));
+    let overallMaxY = Math.max(...elementsToAlign.map(e => e.y + e.height));
+
+    if (isSingleUnit) {
+      // محاذاة الوحدة الواحدة بالنسبة لحدود الكانفس الكاملة (0..1)
+      overallMinX = 0;
+      overallMaxX = 1;
+      overallMinY = 0;
+      overallMaxY = 1;
     }
 
-    const patches = elementsToAlign.map((el) => {
-      let nextX = el.x;
-      let nextY = el.y;
+    const overallCenterX = (overallMinX + overallMaxX) / 2;
+    const overallCenterY = (overallMinY + overallMaxY) / 2;
+
+    const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
+
+    units.forEach((unitElements) => {
+      const uMinX = Math.min(...unitElements.map(e => e.x));
+      const uMaxX = Math.max(...unitElements.map(e => e.x + e.width));
+      const uMinY = Math.min(...unitElements.map(e => e.y));
+      const uMaxY = Math.max(...unitElements.map(e => e.y + e.height));
+      const uWidth = uMaxX - uMinX;
+      const uHeight = uMaxY - uMinY;
+
+      let dx = 0;
+      let dy = 0;
 
       switch (alignment) {
         case "left":
-          nextX = minX;
+          dx = overallMinX - uMinX;
           break;
         case "center":
-          nextX = centerX - el.width / 2;
+          dx = (overallCenterX - uWidth / 2) - uMinX;
           break;
         case "right":
-          nextX = maxX - el.width;
+          dx = (overallMaxX - uWidth) - uMinX;
           break;
         case "top":
-          nextY = minY;
+          dy = overallMinY - uMinY;
           break;
         case "middle":
-          nextY = centerY - el.height / 2;
+          dy = (overallCenterY - uHeight / 2) - uMinY;
           break;
         case "bottom":
-          nextY = maxY - el.height;
+          dy = (overallMaxY - uHeight) - uMinY;
           break;
       }
 
-      return {
-        id: el.id,
-        patch: { x: nextX, y: nextY },
-      };
+      unitElements.forEach((el) => {
+        patches.push({
+          id: el.id,
+          patch: {
+            x: el.x + dx,
+            y: el.y + dy,
+          },
+        });
+      });
     });
 
     get().updateElements(patches);

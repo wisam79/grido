@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor-store";
@@ -592,16 +593,21 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         onOpenChange(next);
       }}
     >
-      <DialogContent className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border bg-card rounded-2xl shadow-xl p-0 gap-0 fluent-specular" dir="rtl">
+      <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border bg-card rounded-2xl shadow-xl p-0 gap-0 fluent-specular" dir="rtl">
         {/* رأس النافذة */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
-            <Printer className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-            <span>إعدادات الطباعة</span>
-          </DialogTitle>
-          <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
-            اختر مقاس الورقة ونمط الألوان، ثم اضبط الهوامش وخطوط القص
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <DialogTitle className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground truncate">
+                <Printer className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+                <span>إعدادات الطباعة</span>
+              </DialogTitle>
+              <p className="text-[11px] font-medium text-muted-foreground mt-0.5 truncate">
+                اختر مقاس الورقة ونمط الألوان، ثم اضبط الهوامش وخطوط القص
+              </p>
+            </div>
+            <DialogCloseButton />
+          </div>
         </DialogHeader>
 
         {/* جسم النافذة الرئيسي */}

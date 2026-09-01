@@ -5,11 +5,11 @@ import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
-  Image,
-  Images,
-  FolderOpen,
+  Stack,
+  Folders,
   Broom,
 } from "@phosphor-icons/react";
+import { AddPhotoIcon } from "@/components/ui/image-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -206,9 +206,9 @@ export function ToolbarFileOps() {
             onClick={handleOpenFile}
             aria-label="إضافة صورة جديدة"
             title="إضافة صورة جديدة"
-            className="h-8.5 px-3 gap-2 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none"
+            className="h-8.5 px-3 gap-2 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
           >
-            <Image className="w-4.5 h-4.5 text-primary" weight="bold" />
+            <AddPhotoIcon className="w-5 h-5 text-primary group-hover:scale-105 transition-transform" />
             <span>إضافة صورة</span>
           </Button>
         </TooltipBtn>
@@ -221,9 +221,9 @@ export function ToolbarFileOps() {
             onClick={() => setIsBatchInsertOpen(true)}
             aria-label="إدراج دفعة صور ومعاملات"
             title="إدراج دفعة صور ومعاملات"
-            className="h-8.5 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none"
+            className="h-8.5 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
           >
-            <Images className="w-4.5 h-4.5" />
+            <Stack className="w-5 h-5 text-muted-foreground/90 group-hover:text-foreground group-hover:scale-105 transition-all" weight="duotone" />
             <span className="hidden sm:inline font-semibold">دفعة صور</span>
           </Button>
         </TooltipBtn>
@@ -237,9 +237,9 @@ export function ToolbarFileOps() {
               onClick={() => setIsProjectsOpen(true)}
               aria-label="مكتبة المشاريع المحلية"
               title="مكتبة المشاريع المحلية"
-              className="h-8.5 w-8.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer"
+              className="h-8.5 w-8.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer group"
             >
-              <FolderOpen className="w-4.5 h-4.5" />
+              <Folders className="w-5 h-5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
             </Button>
           </TooltipBtn>
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} />
@@ -256,9 +256,9 @@ export function ToolbarFileOps() {
           size="icon"
           onClick={handleClearCanvas}
           aria-label="جديد (مسح مساحة العمل)"
-          className="h-8.5 w-8.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer"
+          className="h-8.5 w-8.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer group"
         >
-          <Broom className="w-4.5 h-4.5" />
+          <Broom className="w-5 h-5 text-muted-foreground/90 group-hover:text-destructive group-hover:scale-105 transition-all" weight="duotone" />
         </Button>
       </TooltipBtn>
 

@@ -562,7 +562,7 @@ export async function detectDocumentAuto(
   src: HTMLCanvasElement | HTMLImageElement,
   originalWidth: number,
   originalHeight: number,
-  mode: DetectionMode = "auto"
+  mode: DetectionMode = "single"
 ): Promise<DetectionResult> {
   // 1. إذا كان OpenCV محملاً وجاهزاً، نستخدمه لأعلى دقة ممكنة
   if (getLoadedOpenCV()) {

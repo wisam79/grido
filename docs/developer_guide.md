@@ -66,7 +66,15 @@ $$\text{Pixel Position} = \text{Normalized Coordinate} \times \text{Canvas Dimen
 
 ## 3. Zustand Editor Store & History Stack
 
-The global store is defined in `frontend/src/lib/editor-store.ts`.
+The global store is structured into **7 domain-specific slices** under `frontend/src/lib/store/slices/` and combined in `frontend/src/lib/store/index.ts` (re-exported via `frontend/src/lib/editor-store.ts` for backward compatibility):
+
+1. **`core-slice.ts`**: Canvas dimensions, paper presets, DPI, orientation, background color, project metadata, reset/clear.
+2. **`element-slice.ts`**: Adding, updating, deleting, locking, ordering, duplicating, flipping, rotating, and aligning freeform elements (images, text, shapes).
+3. **`collage-slice.ts`**: Collage templates, slot assignment, slot image transformations (`zoom`, `dragX`, `dragY`, `flip`, `rotation`), slot sizing, and spacing.
+4. **`grid-slice.ts`**: Grid type, grid color, grid opacity, snap-to-grid, columns, gap, and margin.
+5. **`history-slice.ts`**: State snapshots for Undo/Redo with shallow cloning (`elements.map(el => ({...el}))`) and a 30-entry cap.
+6. **`license-slice.ts`**: Supabase authentication (email/password, OTP, Google OAuth), active session, JWT token, plan type, and AI quotas.
+7. **`print-slice.ts`**: Print configuration, margins, bleed area, cut lines, copy distribution, and paper dimensions.
 
 ### State History Queue (Undo & Redo)
 Grido manages a history queue of states to allow stepping backwards and forwards:

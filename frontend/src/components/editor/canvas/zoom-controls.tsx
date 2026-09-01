@@ -47,11 +47,11 @@ export const ZoomControls = React.memo(function ZoomControls({
         <TooltipTrigger asChild>
           <button
             type="button"
-            className="h-7 w-7 flex items-center justify-center hover:bg-background hover:text-foreground rounded-md transition-colors cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="h-7.5 w-7.5 flex items-center justify-center hover:bg-background hover:text-foreground rounded-md transition-colors cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             onClick={handleZoomOut}
             aria-label="تصغير (Zoom Out)"
           >
-            <MagnifyingGlassMinus className="w-3.5 h-3.5" weight="regular" />
+            <MagnifyingGlassMinus className="w-4 h-4" weight="regular" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={10} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -63,7 +63,7 @@ export const ZoomControls = React.memo(function ZoomControls({
         <TooltipTrigger asChild>
           <button
             type="button"
-            className="h-7 px-2 text-[11px] font-mono font-bold text-center select-none cursor-pointer hover:bg-background hover:text-primary rounded-md transition-all border border-transparent hover:border-border/30 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="h-7.5 px-2 text-[11px] font-mono font-bold text-center select-none cursor-pointer hover:bg-background hover:text-primary rounded-md transition-all border border-transparent hover:border-border/30 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             onClick={handleResetZoom}
             aria-label="إعادة ضبط المقياس إلى 100%"
           >
@@ -80,11 +80,11 @@ export const ZoomControls = React.memo(function ZoomControls({
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="h-7 w-7 flex items-center justify-center hover:bg-background hover:text-foreground rounded-md transition-colors cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="h-7.5 w-7.5 flex items-center justify-center hover:bg-background hover:text-foreground rounded-md transition-colors cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
               onClick={handleResetZoom}
               aria-label="إعادة تعيين 100%"
             >
-              <ArrowCounterClockwise className="w-3.5 h-3.5" weight="regular" />
+              <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={10} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -97,11 +97,11 @@ export const ZoomControls = React.memo(function ZoomControls({
         <TooltipTrigger asChild>
           <button
             type="button"
-            className="h-7 w-7 flex items-center justify-center hover:bg-background hover:text-foreground rounded-md transition-colors cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="h-7.5 w-7.5 flex items-center justify-center hover:bg-background hover:text-foreground rounded-md transition-colors cursor-pointer text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             onClick={handleZoomIn}
             aria-label="تكبير (Zoom In)"
           >
-            <MagnifyingGlassPlus className="w-3.5 h-3.5" weight="regular" />
+            <MagnifyingGlassPlus className="w-4 h-4" weight="regular" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={10} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">

@@ -14,23 +14,26 @@ description: دليل مهارة ضبط وتكامل خوارزميات الذك
 عند ترميم وتحسين صور الهوية، اتبع هذا المسار المزدوج لضمان أعلى جودة بدون استنزاف ذاكرة الـ GPU:
 
 1. **استعادة الوجه (Face Restoration):**
-   - استخدام نموذج `CodeFormer` مع تثبيت المعامل `w=0.7` للحفاظ على ملامح الوجه الأصلية الشديدة ومنع التغييرات الوهمية.
+   - استخدام نموذج `CodeFormer` مع تثبيت المعامل `w=0.85` وتعطيل التنعيم الكارتوني (`adain=False`) للحفاظ على ملامح الوجه الأصلية وملمس الجلد الحقيقي.
+   - تخصيص نسبة الدمج بـ **65% وجه مرمم + 35% وجه أصلي** لإعادة ملمس الجلد الطبيعي ومسام البشرة ومنع التأثير الشمعي.
 2. **رفع دقة الخلفية (Background Upscaling):**
-   - استخدام `Real-ESRGAN` بنسبة `x4` مع تفعيل `torch.autocast(device_type='cuda', dtype=torch.float16)` لتخفيف الضغط على ذاكرة VRAM.
+   - استخدام `Real-ESRGAN x2` (`outscale=2`) مع تفعيل `torch.autocast(device_type='cuda', dtype=torch.float16)` لتخفيف الضغط على ذاكرة VRAM وتسريع المعالجة.
 
 ---
 
 ## 💡 2. المعالجة المسبقة للإضاءة بـ OpenCV CLAHE
 
 قبل تمرير أي وجه مستخرج إلى CodeFormer:
-- طبق خوارزمية **Contrast Limited Adaptive Histogram Equalization (CLAHE)** من مكتبة OpenCV:
+- طبق خوارزمية **Contrast Limited Adaptive Histogram Equalization (CLAHE)** من مكتبة OpenCV بمعامل هادئ:
   ```python
-  clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-  lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-  lab[:, :, 0] = clahe.apply(lab[:, :, 0])
-  img = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+  clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(8, 8))
+  lab = cv2.cvtColor(cropped_face, cv2.COLOR_BGR2LAB)
+  l, a, b = cv2.split(lab)
+  cl = clahe.apply(l)
+  limg = cv2.merge((cl, a, b))
+  fixed_cropped_face = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
   ```
-- الهدف: إزالة الظلال القوية الناتجة عن إضاءة الاستوديو غير المتوازنة وتوحيد درجة لون البشرة.
+- الهدف: إزالة الظلال القوية الناتجة عن إضاءة الاستوديو غير المتوازنة وتوحيد درجة لون البشرة دون خلق تباين اصطناعي حاد على العينين والحواجب.
 
 ---
 

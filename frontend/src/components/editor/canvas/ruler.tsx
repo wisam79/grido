@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { rulerCursor } from "@/lib/canvas/canvas-colors";
 import type { RulerUnit } from "@/lib/store/slices/grid-slice";
+import { cn } from "@/lib/utils";
 
 export type { RulerUnit };
 
@@ -160,7 +161,7 @@ export function formatRulerCoordinate(val: number, unit: RulerUnit): string {
 }
 
 /**
- * 📏 المسطرة الأفقية القياسية بنمط Microsoft Office / Word الاحترافي النقي
+ * 📏 المسطرة الأفقية القياسية بنمط أدوات التصميم الاحترافية (Figma / Photoshop Standard)
  */
 export const HorizontalRuler = React.memo(function HorizontalRuler({
   viewportWidth,
@@ -169,14 +170,13 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
   mmWidth,
   pxWidth,
   unit = "mm",
-  marginPx = 0,
   onPointerDown,
 }: HorizontalRulerProps) {
   const span = getUnitSpan(mmWidth, pxWidth, unit);
 
-  const { subPath, midDots, labelElements } = useMemo(() => {
+  const { subPath, midPath, labelElements } = useMemo(() => {
     if (!displayW || !span || displayW <= 0 || span <= 0 || !viewportWidth || viewportWidth <= 0) {
-      return { subPath: "", midDots: [], labelElements: [] };
+      return { subPath: "", midPath: "", labelElements: [] };
     }
 
     const pixelsPerUnit = displayW / span;
@@ -189,7 +189,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
     const endStepIndex = Math.ceil(maxUnit / subStep);
 
     let subD = "";
-    const dots: { x: number; y: number }[] = [];
+    let midD = "";
     const labels: React.ReactNode[] = [];
 
     const labelRatio = Math.max(1, Math.round(labelStep / subStep));
@@ -199,67 +199,75 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       const u = idx * subStep;
       const x = originX + u * pixelsPerUnit;
 
-      if (x < -50 || x > viewportWidth + 50) continue;
+      if (x < -60 || x > viewportWidth + 60) continue;
 
       const isLabel = idx % labelRatio === 0;
       const isMid = !isLabel && midRatio > 0 && idx % midRatio === 0;
       const isZero = Math.abs(u) < 0.00001;
+      const isInsideCanvas = u >= -0.0001 && u <= span + 0.0001;
 
       if (isLabel) {
         labels.push(
           <g key={`h-lbl-${idx}`}>
             <line
               x1={x}
-              y1={isZero ? 4 : 14}
+              y1={isZero ? 2 : 10}
               x2={x}
-              y2={22}
+              y2={20}
               stroke="currentColor"
-              className={isZero ? "stroke-primary" : "stroke-neutral-400 dark:stroke-neutral-500"}
-              strokeWidth={isZero ? 1.5 : 0.85}
-            />
-            <text
-              x={x + (isZero ? 3.5 : 2.5)}
-              y={10.5}
-              fontSize={8.5}
               className={
                 isZero
-                  ? "fill-primary font-bold font-sans select-none tracking-tight"
-                  : "fill-neutral-700 dark:fill-neutral-200 font-sans font-semibold select-none tracking-tight"
+                  ? "stroke-primary"
+                  : isInsideCanvas
+                  ? "stroke-neutral-400 dark:stroke-neutral-500"
+                  : "stroke-neutral-300 dark:stroke-neutral-700"
               }
+              strokeWidth={isZero ? 1.5 : 0.8}
+            />
+            <text
+              x={x + (isZero ? 3 : 2)}
+              y={8}
+              fontSize={8}
+              className={cn(
+                "font-mono select-none tracking-tighter",
+                isZero
+                  ? "fill-primary font-bold text-[8.5px]"
+                  : isInsideCanvas
+                  ? "fill-neutral-700 dark:fill-neutral-300 font-medium"
+                  : "fill-neutral-400 dark:fill-neutral-600 font-normal"
+              )}
             >
               {formatRulerNumber(u, unit)}
             </text>
           </g>
         );
       } else if (isMid) {
-        dots.push({ x, y: 18 });
+        midD += `M${x} 14V20`;
       } else {
-        subD += `M${x} 19.5V22`;
+        subD += `M${x} 17V20`;
       }
     }
 
-    return { subPath: subD, midDots: dots, labelElements: labels };
+    return { subPath: subD, midPath: midD, labelElements: labels };
   }, [viewportWidth, originX, displayW, span, unit]);
 
   const endX = originX + displayW;
-  const leftIndentX = originX + marginPx;
-  const rightIndentX = endX - marginPx;
 
   return (
     <svg
       width={viewportWidth}
-      height={22}
+      height={20}
       onPointerDown={onPointerDown}
-      className="bg-neutral-200/90 dark:bg-neutral-900 text-foreground overflow-hidden select-none block cursor-ns-resize"
+      className="bg-neutral-100/95 dark:bg-[#18181b] text-foreground overflow-hidden select-none block cursor-ns-resize"
       style={{ touchAction: "none" }}
     >
-      {/* 1. مسار المسطرة ثنائي اللون (Word Two-Tone Track) */}
+      {/* 1. مسار مساحة العمل والورقة الفعلي */}
       <rect
         x={0}
         y={0}
         width={viewportWidth}
-        height={22}
-        className="fill-neutral-200/90 dark:fill-neutral-900"
+        height={20}
+        className="fill-neutral-200/60 dark:fill-[#141416]"
       />
 
       {displayW > 0 && (
@@ -267,84 +275,64 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
           {/* مساحة الورقة الفعلية (Paper Track Area) */}
           <rect
             x={originX}
-            y={0.5}
+            y={0}
             width={displayW}
-            height={21}
-            className="fill-white dark:fill-neutral-800"
+            height={20}
+            className="fill-white/90 dark:fill-[#202024]"
           />
-          {/* الحدود الجانبية الفاصلة للورقة */}
+          {/* خط بداية ونهاية الورقة */}
           <line
             x1={originX}
             y1={0}
             x2={originX}
-            y2={22}
-            className="stroke-neutral-400 dark:stroke-neutral-600"
+            y2={20}
+            className="stroke-primary/70"
             strokeWidth={1}
           />
           <line
             x1={endX}
             y1={0}
             x2={endX}
-            y2={22}
-            className="stroke-neutral-400 dark:stroke-neutral-600"
+            y2={20}
+            className="stroke-primary/70"
             strokeWidth={1}
           />
         </g>
       )}
 
-      {/* خطوط الإطار العلوي والسفلي */}
-      <line x1={0} y1={0.5} x2={viewportWidth} y2={0.5} className="stroke-neutral-300 dark:stroke-neutral-800" strokeWidth={1} />
-      <line x1={0} y1={21.5} x2={viewportWidth} y2={21.5} className="stroke-neutral-300 dark:stroke-neutral-700" strokeWidth={1} />
+      {/* خط الإطار السفلي الفاصل مع الكانفس */}
+      <line x1={0} y1={19.5} x2={viewportWidth} y2={19.5} className="stroke-neutral-300/80 dark:stroke-neutral-800" strokeWidth={1} />
 
-      {/* 2. النقاط وخطوط التدريج بنمط Word */}
-      {midDots.map((dot, i) => (
-        <circle
-          key={`dot-${i}`}
-          cx={dot.x}
-          cy={dot.y}
-          r={0.9}
-          className="fill-neutral-500 dark:fill-neutral-400"
-        />
-      ))}
+      {/* 2. خطوط التدريج الاحترافية (3-Tier Tick Marks) */}
       {subPath && (
         <path
           d={subPath}
           stroke="currentColor"
-          className="stroke-neutral-400 dark:stroke-neutral-600"
-          strokeWidth={0.7}
+          className="stroke-neutral-400/70 dark:stroke-neutral-600"
+          strokeWidth={0.65}
+        />
+      )}
+      {midPath && (
+        <path
+          d={midPath}
+          stroke="currentColor"
+          className="stroke-neutral-500/80 dark:stroke-neutral-500"
+          strokeWidth={0.75}
         />
       )}
 
       {/* 3. الأرقام والعلامات الرئيسية */}
       {labelElements}
 
-      {/* 4. مؤشرات الهوامش الأيقونية بنمط Microsoft Word (Indent Sliders) */}
-      {displayW > 0 && (
-        <g className="pointer-events-none select-none">
-          {/* مقبض الهامش الأيسر (Left Margin Hourglass Marker) */}
-          <g transform={`translate(${leftIndentX}, 0)`}>
-            <polygon points="-3.5,1 3.5,1 0,5.5" className="fill-white stroke-neutral-600 dark:fill-neutral-700 dark:stroke-neutral-300" strokeWidth={0.8} />
-            <polygon points="-3.5,16 3.5,16 0,11.5" className="fill-white stroke-neutral-600 dark:fill-neutral-700 dark:stroke-neutral-300" strokeWidth={0.8} />
-            <rect x={-3.5} y={16} width={7} height={4} className="fill-white stroke-neutral-600 dark:fill-neutral-700 dark:stroke-neutral-300" strokeWidth={0.8} rx={0.5} />
-          </g>
-
-          {/* مقبض الهامش الأيمن (Right Margin Marker) */}
-          <g transform={`translate(${rightIndentX}, 0)`}>
-            <polygon points="-3.5,16 3.5,16 0,11.5" className="fill-white stroke-neutral-600 dark:fill-neutral-700 dark:stroke-neutral-300" strokeWidth={0.8} />
-            <rect x={-3.5} y={16} width={7} height={4} className="fill-white stroke-neutral-600 dark:fill-neutral-700 dark:stroke-neutral-300" strokeWidth={0.8} rx={0.5} />
-          </g>
-        </g>
-      )}
-
-      {/* 5. مؤشر تتبع الماوس اللحظي النقي (Hairline Mouse Cursor) */}
+      {/* 4. مؤشر تتبع الماوس اللحظي النقي (Hairline Mouse Cursor) */}
       <line
         id="h-ruler-cursor"
         x1={0}
         y1={0}
         x2={0}
-        y2={22}
+        y2={20}
         stroke={rulerCursor()}
-        strokeWidth={1.5}
+        strokeWidth={1}
         style={{ display: "none" }}
       />
     </svg>
@@ -352,7 +340,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
 });
 
 /**
- * 📏 المسطرة الرأسية القياسية بنمط Microsoft Office / Word الاحترافي النقي
+ * 📏 المسطرة الرأسية القياسية بنمط أدوات التصميم الاحترافية (Figma / Photoshop Standard)
  */
 export const VerticalRuler = React.memo(function VerticalRuler({
   viewportHeight,
@@ -361,14 +349,13 @@ export const VerticalRuler = React.memo(function VerticalRuler({
   mmHeight,
   pxHeight,
   unit = "mm",
-  marginPx = 0,
   onPointerDown,
 }: VerticalRulerProps) {
   const span = getUnitSpan(mmHeight, pxHeight, unit);
 
-  const { subPath, midDots, labelElements } = useMemo(() => {
+  const { subPath, midPath, labelElements } = useMemo(() => {
     if (!displayH || !span || displayH <= 0 || span <= 0 || !viewportHeight || viewportHeight <= 0) {
-      return { subPath: "", midDots: [], labelElements: [] };
+      return { subPath: "", midPath: "", labelElements: [] };
     }
 
     const pixelsPerUnit = displayH / span;
@@ -381,7 +368,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
     const endStepIndex = Math.ceil(maxUnit / subStep);
 
     let subD = "";
-    const dots: { x: number; y: number }[] = [];
+    let midD = "";
     const labels: React.ReactNode[] = [];
 
     const labelRatio = Math.max(1, Math.round(labelStep / subStep));
@@ -391,34 +378,44 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       const u = idx * subStep;
       const y = originY + u * pixelsPerUnit;
 
-      if (y < -50 || y > viewportHeight + 50) continue;
+      if (y < -60 || y > viewportHeight + 60) continue;
 
       const isLabel = idx % labelRatio === 0;
       const isMid = !isLabel && midRatio > 0 && idx % midRatio === 0;
       const isZero = Math.abs(u) < 0.00001;
+      const isInsideCanvas = u >= -0.0001 && u <= span + 0.0001;
 
       if (isLabel) {
         labels.push(
           <g key={`v-lbl-${idx}`}>
             <line
-              x1={isZero ? 4 : 14}
+              x1={isZero ? 2 : 10}
               y1={y}
-              x2={22}
+              x2={20}
               y2={y}
               stroke="currentColor"
-              className={isZero ? "stroke-primary" : "stroke-neutral-400 dark:stroke-neutral-500"}
-              strokeWidth={isZero ? 1.5 : 0.85}
-            />
-            <text
-              x={7.5}
-              y={y}
-              fontSize={8.5}
               className={
                 isZero
-                  ? "fill-primary font-bold font-sans select-none tracking-tight"
-                  : "fill-neutral-700 dark:fill-neutral-200 font-sans font-semibold select-none tracking-tight"
+                  ? "stroke-primary"
+                  : isInsideCanvas
+                  ? "stroke-neutral-400 dark:stroke-neutral-500"
+                  : "stroke-neutral-300 dark:stroke-neutral-700"
               }
-              transform={`rotate(-90, 7.5, ${y})`}
+              strokeWidth={isZero ? 1.5 : 0.8}
+            />
+            <text
+              x={5.5}
+              y={y}
+              fontSize={8}
+              className={cn(
+                "font-mono select-none tracking-tighter",
+                isZero
+                  ? "fill-primary font-bold text-[8.5px]"
+                  : isInsideCanvas
+                  ? "fill-neutral-700 dark:fill-neutral-300 font-medium"
+                  : "fill-neutral-400 dark:fill-neutral-600 font-normal"
+              )}
+              transform={`rotate(-90, 5.5, ${y})`}
               textAnchor="middle"
               dominantBaseline="middle"
             >
@@ -427,114 +424,97 @@ export const VerticalRuler = React.memo(function VerticalRuler({
           </g>
         );
       } else if (isMid) {
-        dots.push({ x: 18, y });
+        midD += `M14 ${y}H20`;
       } else {
-        subD += `M19.5 ${y}H22`;
+        subD += `M17 ${y}H20`;
       }
     }
 
-    return { subPath: subD, midDots: dots, labelElements: labels };
+    return { subPath: subD, midPath: midD, labelElements: labels };
   }, [viewportHeight, originY, displayH, span, unit]);
 
   const endY = originY + displayH;
-  const topIndentY = originY + marginPx;
-  const bottomIndentY = endY - marginPx;
 
   return (
     <svg
-      width={22}
+      width={20}
       height={viewportHeight}
       onPointerDown={onPointerDown}
-      className="bg-neutral-200/90 dark:bg-neutral-900 text-foreground overflow-hidden select-none block cursor-ew-resize"
+      className="bg-neutral-100/95 dark:bg-[#18181b] text-foreground overflow-hidden select-none block cursor-ew-resize"
       style={{ touchAction: "none" }}
     >
-      {/* 1. مسار المسطرة ثنائي اللون */}
+      {/* 1. مسار مساحة العمل والورقة الفعلي */}
       <rect
         x={0}
         y={0}
-        width={22}
+        width={20}
         height={viewportHeight}
-        className="fill-neutral-200/90 dark:fill-neutral-900"
+        className="fill-neutral-200/60 dark:fill-[#141416]"
       />
 
       {displayH > 0 && (
         <g>
           {/* مساحة الورقة الفعلية (Paper Track Area) */}
           <rect
-            x={0.5}
+            x={0}
             y={originY}
-            width={21}
+            width={20}
             height={displayH}
-            className="fill-white dark:fill-neutral-800"
+            className="fill-white/90 dark:fill-[#202024]"
           />
-          {/* الحدود الجانبية الفاصلة للورقة */}
+          {/* خط بداية ونهاية الورقة */}
           <line
             x1={0}
             y1={originY}
-            x2={22}
+            x2={20}
             y2={originY}
-            className="stroke-neutral-400 dark:stroke-neutral-600"
+            className="stroke-primary/70"
             strokeWidth={1}
           />
           <line
             x1={0}
             y1={endY}
-            x2={22}
+            x2={20}
             y2={endY}
-            className="stroke-neutral-400 dark:stroke-neutral-600"
+            className="stroke-primary/70"
             strokeWidth={1}
           />
         </g>
       )}
 
-      {/* خطوط الإطار الأيسر والأيمن */}
-      <line x1={0.5} y1={0} x2={0.5} y2={viewportHeight} className="stroke-neutral-300 dark:stroke-neutral-800" strokeWidth={1} />
-      <line x1={21.5} y1={0} x2={21.5} y2={viewportHeight} className="stroke-neutral-300 dark:stroke-neutral-700" strokeWidth={1} />
+      {/* خط الإطار الأيمن الفاصل مع الكانفس */}
+      <line x1={19.5} y1={0} x2={19.5} y2={viewportHeight} className="stroke-neutral-300/80 dark:stroke-neutral-800" strokeWidth={1} />
 
-      {/* 2. النقاط وخطوط التدريج بنمط Word */}
-      {midDots.map((dot, i) => (
-        <circle
-          key={`vdot-${i}`}
-          cx={dot.x}
-          cy={dot.y}
-          r={0.9}
-          className="fill-neutral-500 dark:fill-neutral-400"
-        />
-      ))}
+      {/* 2. خطوط التدريج الاحترافية (3-Tier Tick Marks) */}
       {subPath && (
         <path
           d={subPath}
           stroke="currentColor"
-          className="stroke-neutral-400 dark:stroke-neutral-600"
-          strokeWidth={0.7}
+          className="stroke-neutral-400/70 dark:stroke-neutral-600"
+          strokeWidth={0.65}
+        />
+      )}
+      {midPath && (
+        <path
+          d={midPath}
+          stroke="currentColor"
+          className="stroke-neutral-500/80 dark:stroke-neutral-500"
+          strokeWidth={0.75}
         />
       )}
 
       {/* 3. الأرقام والعلامات الرئيسية */}
       {labelElements}
 
-      {/* 4. مؤشرات الهوامش الرأسية بنمط Word */}
-      {displayH > 0 && (
-        <g className="pointer-events-none select-none">
-          <g transform={`translate(0, ${topIndentY})`}>
-            <polygon points="1,-3.5 1,3.5 5.5,0" className="fill-white stroke-neutral-600 dark:fill-neutral-700 dark:stroke-neutral-300" strokeWidth={0.8} />
-          </g>
-          <g transform={`translate(0, ${bottomIndentY})`}>
-            <polygon points="16,-3.5 16,3.5 11.5,0" className="fill-white stroke-neutral-600 dark:fill-neutral-700 dark:stroke-neutral-300" strokeWidth={0.8} />
-            <rect x={16} y={-3.5} width={4} height={7} className="fill-white stroke-neutral-600 dark:fill-neutral-700 dark:stroke-neutral-300" strokeWidth={0.8} rx={0.5} />
-          </g>
-        </g>
-      )}
-
-      {/* 5. مؤشر تتبع الماوس اللحظي النقي (Hairline Mouse Cursor) */}
+      {/* 4. مؤشر تتبع الماوس اللحظي النقي (Hairline Mouse Cursor) */}
       <line
         id="v-ruler-cursor"
         x1={0}
         y1={0}
-        x2={22}
+        x2={20}
         y2={0}
         stroke={rulerCursor()}
-        strokeWidth={1.5}
+        strokeWidth={1}
         style={{ display: "none" }}
       />
     </svg>

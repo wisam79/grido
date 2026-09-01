@@ -244,7 +244,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     onClick={() => applyPreset(preset.id)}
                     className="h-7 px-1 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none truncate"
                   >
-                    <Icon className="w-3 h-3 shrink-0" weight="bold" />
+                    <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
                     <span className="truncate">{preset.label}</span>
                   </button>
                 );
@@ -279,7 +279,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <CaretDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
+                  <CaretDown className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
                 </div>
               </div>
 
@@ -311,7 +311,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <CaretDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
+                  <CaretDown className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
                 </div>
               </div>
             </div>
@@ -349,14 +349,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+                    "w-7.5 h-7.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
                     isBold
                        ? "bg-background text-primary shadow-xs font-extrabold"
                        : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
                   )}
                   title="عريض (B)"
                 >
-                  <TextB className="w-3.5 h-3.5" weight={isBold ? "bold" : "regular"} />
+                  <TextB className="w-4 h-4" weight={isBold ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -366,14 +366,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+                    "w-7.5 h-7.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
                     isItalic
                       ? "bg-background text-primary shadow-xs font-extrabold"
                       : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
                   )}
                   title="مائل (I)"
                 >
-                  <TextItalic className="w-3.5 h-3.5" weight={isItalic ? "bold" : "regular"} />
+                  <TextItalic className="w-4 h-4" weight={isItalic ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -383,14 +383,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+                    "w-7.5 h-7.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
                     isUnderline
                       ? "bg-background text-primary shadow-xs font-extrabold"
                       : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
                   )}
                   title="تسطير (U)"
                 >
-                  <TextUnderline className="w-3.5 h-3.5" weight={isUnderline ? "bold" : "regular"} />
+                  <TextUnderline className="w-4 h-4" weight={isUnderline ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -400,14 +400,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+                    "w-7.5 h-7.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
                     isLineThrough
                       ? "bg-background text-primary shadow-xs font-extrabold"
                       : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
                   )}
                   title="شطب (S)"
                 >
-                  <TextStrikethrough className="w-3.5 h-3.5" weight={isLineThrough ? "bold" : "regular"} />
+                  <TextStrikethrough className="w-4 h-4" weight={isLineThrough ? "bold" : "regular"} />
                 </button>
               </div>
 
@@ -421,14 +421,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+                    "w-7.5 h-7.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
                     textAlign === "right"
                       ? "bg-background text-primary shadow-xs font-extrabold"
                       : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
                   )}
                   title="يمين"
                 >
-                  <TextAlignRight className="w-3.5 h-3.5" weight={textAlign === "right" ? "bold" : "regular"} />
+                  <TextAlignRight className="w-4 h-4" weight={textAlign === "right" ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -438,14 +438,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+                    "w-7.5 h-7.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
                     textAlign === "center"
                       ? "bg-background text-primary shadow-xs font-extrabold"
                       : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
                   )}
                   title="توسيط"
                 >
-                  <TextAlignCenter className="w-3.5 h-3.5" weight={textAlign === "center" ? "bold" : "regular"} />
+                  <TextAlignCenter className="w-4 h-4" weight={textAlign === "center" ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -455,14 +455,14 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+                    "w-7.5 h-7.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
                     textAlign === "left"
                       ? "bg-background text-primary shadow-xs font-extrabold"
                       : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
                   )}
                   title="يسار"
                 >
-                  <TextAlignLeft className="w-3.5 h-3.5" weight={textAlign === "left" ? "bold" : "regular"} />
+                  <TextAlignLeft className="w-4 h-4" weight={textAlign === "left" ? "bold" : "regular"} />
                 </button>
               </div>
 
@@ -612,11 +612,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="h-8 px-2.5 rounded-md border border-border/80 bg-background hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 flex items-center gap-1.5 shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                    className="w-8 h-8 rounded-lg border border-border/80 dark:border-white/10 p-0.5 bg-input/40 hover:bg-input hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                     title="تغيير لون وتعبئة النص"
                   >
                     <div
-                      className="w-4 h-4 rounded-md border border-black/10 dark:border-white/10 shadow-2xs"
+                      className="w-full h-full rounded-md border border-black/15 dark:border-white/20 shadow-2xs relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
                       style={{
                         background:
                           element.fillType === "linear" || element.fillType === "radial"
@@ -624,9 +624,6 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                             : element.color || "#000000",
                       }}
                     />
-                    <span className="text-[10px] font-bold font-mono text-muted-foreground">
-                      {element.fillType === "linear" ? "خطي" : element.fillType === "radial" ? "دائري" : (element.color || "#000000").toUpperCase()}
-                    </span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent side="left" className="w-72 sm:w-80 p-3 font-cairo shadow-lg rounded-xl border-border/60 fluent-specular z-50 overflow-hidden">
@@ -702,17 +699,17 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       useEditorStore.getState().pushHistory();
                     }}
                     className={cn(
-                      "h-7 rounded-md border p-1 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 px-2",
-                      isCurrent ? "border-primary ring-2 ring-primary ring-offset-1 bg-primary/5" : "border-border/60 bg-background/60 hover:bg-background"
+                      "h-7.5 rounded-lg border p-1 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 px-2",
+                      isCurrent ? "border-primary ring-2 ring-primary ring-offset-1 bg-primary/5 font-bold" : "border-border/60 bg-background/60 hover:bg-background"
                     )}
                     title={c.label}
                   >
                     <div 
-                      className="w-3.5 h-3.5 rounded-full border border-black/10 dark:border-white/10 shrink-0 flex items-center justify-center shadow-2xs" 
+                      className="w-4 h-4 rounded-md border border-black/15 dark:border-white/20 shrink-0 flex items-center justify-center shadow-2xs relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none" 
                       style={{ backgroundColor: c.color }} 
                     >
                       {isCurrent && (
-                        <Check className={cn("w-2.5 h-2.5", c.color === "#ffffff" ? "text-black" : "text-white")} weight="bold" />
+                        <Check className={cn("w-2.5 h-2.5 z-10", c.color === "#ffffff" ? "text-black" : "text-white")} weight="bold" />
                       )}
                     </div>
                     <span className="text-[10px] font-bold truncate text-foreground/80">{c.label}</span>

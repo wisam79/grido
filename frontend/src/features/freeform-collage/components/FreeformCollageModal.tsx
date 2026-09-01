@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -434,22 +435,26 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        showCloseButton={false}
         className="w-[96vw] sm:max-w-[1100px] h-[93vh] max-h-[860px] overflow-hidden border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl rounded-2xl shadow-xl font-cairo flex flex-col p-3.5 gap-2.5 fluent-specular"
         dir="rtl"
       >
-        {/* Header — رأس النافذة مع محدد أبعاد الورقة المليمتري */}
+        {/* Header — رأس النافذة مع محدد أبعاد الورقة وزر الإغلاق في شريط العنوان */}
         <DialogHeader className="border-b border-border/40 pb-2.5 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
             <SquaresFour className="w-4 h-4 text-primary" weight="duotone" />
             <span>محرر الكولاج الحر المتقدم</span>
           </DialogTitle>
 
-          {/* قياسات وأبعاد الورقة عبر المكون المستقل */}
-          <FreeformPaperSelector
-            paperWidthMM={paperWidthMM}
-            paperHeightMM={paperHeightMM}
-            onPaperDimensionsChange={handlePaperDimensionsChange}
-          />
+          <div className="flex items-center gap-2">
+            {/* قياسات وأبعاد الورقة عبر المكون المستقل */}
+            <FreeformPaperSelector
+              paperWidthMM={paperWidthMM}
+              paperHeightMM={paperHeightMM}
+              onPaperDimensionsChange={handlePaperDimensionsChange}
+            />
+            <DialogCloseButton />
+          </div>
         </DialogHeader>
 
         {/* Content — محتوى الكانفس وأشرطة الأدوات والشبكات */}

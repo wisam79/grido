@@ -297,7 +297,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     }}
                   >
                     <Crop className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                    <span className="truncate">قص وتدوير الصورة</span>
+                    <span className="truncate">قص وتدوير</span>
                   </button>
 
                   <button
@@ -311,7 +311,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     }}
                   >
                     {isRemovingBg ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <Sparkle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-                    <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية (AI)"}</span>
+                    <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية"}</span>
                   </button>
 
                   <button
@@ -325,7 +325,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     }}
                   >
                     {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-                    <span className="truncate">{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه (AI)"}</span>
+                    <span className="truncate">{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه"}</span>
                   </button>
                 </div>
                 <div className="h-px bg-border/40 my-1" role="separator" />
@@ -346,7 +346,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 })}
               >
                 <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                <span className="truncate">نسخ العنصر</span>
+                <span className="truncate">نسخ</span>
               </button>
 
               <button
@@ -358,7 +358,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 })}
               >
                 <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                <span className="truncate">قص العنصر</span>
+                <span className="truncate">قص</span>
               </button>
 
               <button
@@ -370,7 +370,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 })}
               >
                 <ClipboardText className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                <span className="truncate">لصق العنصر</span>
+                <span className="truncate">لصق</span>
               </button>
 
               <button
@@ -387,7 +387,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 })}
               >
                 <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                <span className="truncate">تكرار العنصر</span>
+                <span className="truncate">تكرار</span>
               </button>
               
               <button
@@ -397,7 +397,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 onClick={() => handleAction(() => bringToFront(target.id!))}
               >
                 <ArrowUp className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
-                <span className="truncate">إحضار للأمام</span>
+                <span className="truncate">تقديم للأمام</span>
               </button>
               
               <button
@@ -407,7 +407,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 onClick={() => handleAction(() => sendToBack(target.id!))}
               >
                 <ArrowDown className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
-                <span className="truncate">إرسال للخلف</span>
+                <span className="truncate">تأخير للخلف</span>
               </button>
 
               <div className="h-px bg-border/40 my-1" role="separator" />
@@ -432,7 +432,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 })}
               >
                 <Trash className="w-3.5 h-3.5 text-destructive shrink-0" weight="regular" />
-                <span className="truncate font-bold">حذف العنصر</span>
+                <span className="truncate font-bold">حذف</span>
               </button>
             </div>
           </div>
@@ -516,7 +516,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     }}
                   >
                     <Crop className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                    <span className="truncate">قص وتدوير الصورة</span>
+                    <span className="truncate">قص وتدوير</span>
                   </button>
 
                   <button
@@ -532,7 +532,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     }}
                   >
                     {isRemovingBg ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <Sparkle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-                    <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية (AI)"}</span>
+                    <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية"}</span>
                   </button>
 
                   <button
@@ -548,7 +548,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     }}
                   >
                     {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-                    <span className="truncate">{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه (AI)"}</span>
+                    <span className="truncate">{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه"}</span>
                   </button>
                 </>
               )}
@@ -579,7 +579,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     onClick={() => handleActionWithHistory(() => updateSlot(target.id!, { dragX: 0, dragY: 0, zoom: 1 }))}
                   >
                     <Crosshair className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                    <span className="truncate">توسيط الصورة</span>
+                    <span className="truncate">توسيط</span>
                   </button>
 
                   <button
@@ -621,7 +621,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     onClick={() => handleActionWithHistory(() => state.fillAllSlots(slot.imageSrc!, target.id!))}
                   >
                     <GridFour className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                    <span className="truncate">تعبئة الورقة بالكامل</span>
+                    <span className="truncate">تعبئة الكل</span>
                   </button>
 
                   <button
@@ -631,7 +631,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     onClick={() => handleActionWithHistory(() => state.fillEmptySlots(slot.imageSrc!, target.id!))}
                   >
                     <Sparkle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />
-                    <span className="truncate">تعبئة الخانات الفارغة فقط</span>
+                    <span className="truncate">تعبئة الفارغ</span>
                   </button>
 
                   <button
@@ -641,7 +641,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     onClick={() => handleActionWithHistory(() => state.fillRowSlots(target.id!, slot.imageSrc!))}
                   >
                     <Rows className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                    <span className="truncate">تعبئة الصف الحالي</span>
+                    <span className="truncate">تعبئة الصف</span>
                   </button>
 
                   <button
@@ -651,7 +651,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                     onClick={() => handleActionWithHistory(() => state.fillColumnSlots(target.id!, slot.imageSrc!))}
                   >
                     <Columns className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                    <span className="truncate">تعبئة العمود الحالي</span>
+                    <span className="truncate">تعبئة العمود</span>
                   </button>
                 </div>
               </>
@@ -694,7 +694,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                 })}
               >
                 <ImageSquare className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                <span className="truncate">إضافة صورة جديدة</span>
+                <span className="truncate">إضافة صورة</span>
               </button>
 
               <button
@@ -707,7 +707,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
               >
                 <ClipboardText className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
                 <span className="truncate">
-                  لصق المحتوى {hasCopied ? `(${clipboardElements.length})` : ""}
+                  لصق {hasCopied ? `(${clipboardElements.length})` : ""}
                 </span>
               </button>
 
@@ -721,7 +721,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
                   })}
                 >
                   <Stack className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-                  <span className="truncate">تحديد كافة العناصر (Ctrl+A)</span>
+                  <span className="truncate">تحديد الكل</span>
                 </button>
               )}
             </div>

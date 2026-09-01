@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
+  DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -289,32 +290,38 @@ export function BatchInsertDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        showCloseButton={false}
         className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-2xl font-cairo fluent-specular transition-all duration-150 gap-0"
         dir="rtl"
       >
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <Images className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-              <div>
-                <DialogTitle className="text-base font-bold text-foreground">
+              <div className="min-w-0">
+                <DialogTitle className="text-base font-bold text-foreground truncate">
                   إدراج دفعة صور ومعاملات (Batch Studio)
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
                   توزيع شبكي ذكي، استيراد مجلدات، وتكرار نسخ المعاملات دفعة واحدة
                 </DialogDescription>
               </div>
             </div>
 
-            {/* Quick stats badge */}
-            {images.length > 0 && (
-              <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl bg-muted/60 border border-border/50 text-foreground">
-                <span>{images.length} صور</span>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-primary">{totalCopies} إجمالي النسخ</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2.5 shrink-0">
+              {/* Quick stats badge */}
+              {images.length > 0 && (
+                <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl bg-muted/60 border border-border/50 text-foreground">
+                  <span>{images.length} صور</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span className="text-primary">{totalCopies} إجمالي النسخ</span>
+                </div>
+              )}
+
+              {/* زر الإغلاق المدمج في شريط العنوان */}
+              <DialogCloseButton />
+            </div>
           </div>
         </DialogHeader>
 

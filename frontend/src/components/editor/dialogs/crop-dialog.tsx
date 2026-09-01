@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
+  DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -141,18 +142,21 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card backdrop-blur-2xl p-3 shadow-xl transition-all duration-150 fluent-specular" dir="rtl">
+      <DialogContent showCloseButton={false} className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card backdrop-blur-2xl p-3.5 shadow-xl transition-all duration-150 fluent-specular" dir="rtl">
         {/* هيدر النافذة */}
-        <DialogHeader className="pb-2 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
-          <div>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <Crop className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-              <span>قص وتدوير الصورة</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              قص وتدوير وضبط استقامة الصورة
-            </DialogDescription>
+        <DialogHeader className="pb-2.5 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Crop className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-bold text-foreground truncate">
+                قص وتدوير الصورة
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
+                قص وتدوير وضبط استقامة الصورة
+              </DialogDescription>
+            </div>
           </div>
+          <DialogCloseButton />
         </DialogHeader>
 
         {/* محتوى النافذة الرئيسي - يستغل 100% من المساحة المتاحة */}

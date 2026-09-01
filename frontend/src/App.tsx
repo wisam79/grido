@@ -367,8 +367,8 @@ export default function App() {
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
-              <h1 className="text-xs font-bold text-foreground tracking-wide">
-                Grido Studio | استوديو الهوية
+              <h1 className="text-xs font-black text-foreground tracking-wider font-mono">
+                GRIDO
               </h1>
             </div>
             <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />

@@ -68,7 +68,7 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
     height: 0.04,
   },
   badge: {
-    getText: () => "استوديو احترافي ★",
+    getText: () => "استوديو احترافي",
     fontSize: 20,
     fontWeight: 700,
     fontFamily: "Tajawal, sans-serif",
@@ -90,7 +90,7 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
   },
   "studio-date": {
     getText: () =>
-      `📅 ${new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" })}`,
+      new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" }),
     fontSize: 16,
     fontWeight: 600,
     fontFamily: "Cairo, sans-serif",
@@ -117,7 +117,7 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
     height: 0.065,
   },
   "neon-glow": {
-    getText: () => "GRIDO STUDIO ★",
+    getText: () => "GRIDO STUDIO",
     fontSize: 38,
     fontWeight: 800,
     fontFamily: "Alexandria, sans-serif",
@@ -131,7 +131,7 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
     height: 0.06,
   },
   "stamp-circle": {
-    getText: () => "★ استوديو التصوير المعتمد ★ 2026",
+    getText: () => "استوديو التصوير المعتمد · 2026",
     fontSize: 26,
     fontWeight: 700,
     fontFamily: "Reem Kufi, sans-serif",
@@ -167,7 +167,7 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
     height: 0.065,
   },
   "photographer-tag": {
-    getText: () => "📸 تصوير الفنان: استوديو الإبداع",
+    getText: () => "تصوير: استوديو الإبداع",
     fontSize: 22,
     fontWeight: 600,
     fontFamily: '"IBM Plex Sans Arabic", sans-serif',
@@ -176,7 +176,7 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
     height: 0.045,
   },
   "caption-card": {
-    getText: () => "📍 استوديو التصوير · القاهرة",
+    getText: () => "استوديو التصوير · 2026",
     fontSize: 16,
     fontWeight: 600,
     fontFamily: "Tajawal, sans-serif",

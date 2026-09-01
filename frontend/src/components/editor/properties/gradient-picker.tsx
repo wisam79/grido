@@ -202,12 +202,12 @@ export const GradientPicker = ({
       </div>
 
       {fillType === "solid" ? (
-        <div className="flex items-center justify-between gap-2 bg-background/50 p-1.5 rounded-lg border border-border/40 shadow-2xs w-full">
-          <span className="text-[10.5px] text-muted-foreground font-bold flex items-center gap-1.5 shrink-0">
-            <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
+        <div className="flex items-center justify-between gap-2 bg-background/50 p-2 rounded-xl border border-border/40 shadow-2xs w-full">
+          <span className="text-xs text-muted-foreground font-bold flex items-center gap-1.5 shrink-0">
+            <Palette className="w-4 h-4 text-primary" weight="duotone" />
             لون العنصر:
           </span>
-          <PopoverColorPicker color={color} onChange={onChangeSolidColor} className="w-28 h-7 rounded-md" />
+          <PopoverColorPicker color={color} onChange={onChangeSolidColor} swatchOnly className="w-8 h-8" />
         </div>
       ) : (
         <div className="space-y-2 w-full max-w-full overflow-hidden">
@@ -240,14 +240,14 @@ export const GradientPicker = ({
           </div>
 
           {/* محددات ألوان أطراف التدرج */}
-          <div className="grid grid-cols-2 gap-1.5 w-full">
-            <div className="space-y-0.5 bg-background/30 p-1 rounded-md border border-border/40 min-w-0">
-              <span className="text-[9.5px] text-muted-foreground font-bold block text-right">لون البداية:</span>
-              <PopoverColorPicker color={stop1} onChange={handleStop1Change} className="w-full h-7 rounded-md" />
+          <div className="grid grid-cols-2 gap-2 w-full">
+            <div className="flex items-center justify-between bg-background/40 px-2.5 py-1.5 rounded-lg border border-border/40 min-w-0">
+              <span className="text-[10.5px] text-muted-foreground font-bold">البداية:</span>
+              <PopoverColorPicker color={stop1} onChange={handleStop1Change} swatchOnly className="w-7.5 h-7.5" />
             </div>
-            <div className="space-y-0.5 bg-background/30 p-1 rounded-md border border-border/40 min-w-0">
-              <span className="text-[9.5px] text-muted-foreground font-bold block text-right">لون النهاية:</span>
-              <PopoverColorPicker color={stop2} onChange={handleStop2Change} className="w-full h-7 rounded-md" />
+            <div className="flex items-center justify-between bg-background/40 px-2.5 py-1.5 rounded-lg border border-border/40 min-w-0">
+              <span className="text-[10.5px] text-muted-foreground font-bold">النهاية:</span>
+              <PopoverColorPicker color={stop2} onChange={handleStop2Change} swatchOnly className="w-7.5 h-7.5" />
             </div>
           </div>
 
