@@ -2,24 +2,24 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Pin16Regular,
-  ArrowUndo16Regular,
-  ArrowRedo16Regular,
-  Add16Regular,
-  DocumentAdd16Regular,
-  Flash16Regular,
-  AlignCenterHorizontal16Regular,
-  AlignCenterVertical16Regular,
-  AlignDistributeLeft16Regular,
-  AlignDistributeTop16Regular,
-  LayoutColumnTwo16Regular,
-  LayoutRowTwo16Regular,
-  Cut16Regular,
-  ArrowClockwise16Regular,
-  Copy16Regular,
-  Delete16Regular,
-  ChevronDown12Regular,
-} from "@fluentui/react-icons";
+  PushPin,
+  ArrowUUpLeft,
+  ArrowUUpRight,
+  Plus,
+  FilePlus,
+  Lightning,
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignLeft,
+  AlignTop,
+  Columns,
+  Rows,
+  Scissors,
+  ArrowClockwise,
+  Copy,
+  Trash,
+  CaretDown,
+} from "@phosphor-icons/react";
 import type { PhotoPresetType, SlotAlignment, DistributionAxis, AutoPackStrategy } from "../types";
 import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from "../lib/freeform-math";
 import { cn } from "@/lib/utils";
@@ -88,7 +88,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onUndo}
               disabled={!canUndo}
             >
-              <ArrowUndo16Regular className="w-3.5 h-3.5" />
+              <ArrowUUpLeft className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تراجع (Ctrl+Z)</TooltipContent>
@@ -103,7 +103,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onRedo}
               disabled={!canRedo}
             >
-              <ArrowRedo16Regular className="w-3.5 h-3.5" />
+              <ArrowUUpRight className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">إعادة (Ctrl+Y)</TooltipContent>
@@ -120,7 +120,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={onAddSlot}
             >
-              <Add16Regular className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">إضافة خلية جديدة</TooltipContent>
@@ -134,9 +134,9 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               size="sm"
               className="h-7 px-2 text-[11px] gap-1 rounded-md border-border/70 hover:border-primary/40 bg-input/40 cursor-pointer font-bold"
             >
-              <DocumentAdd16Regular className="w-3.5 h-3.5 text-primary" />
+              <FilePlus className="w-3.5 h-3.5 text-primary" weight="bold" />
               <span>إدراج قياس</span>
-              <ChevronDown12Regular className="w-3 h-3 opacity-60" />
+              <CaretDown className="w-3 h-3 opacity-60" weight="bold" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-52 font-cairo text-xs">
@@ -167,9 +167,9 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               size="sm"
               className="h-7 px-2.5 text-[11px] gap-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer font-bold shadow-xs"
             >
-              <Flash16Regular className="w-3.5 h-3.5" />
+              <Lightning className="w-3.5 h-3.5" weight="bold" />
               <span>تعبئة الورقة</span>
-              <ChevronDown12Regular className="w-3 h-3 opacity-80" />
+              <CaretDown className="w-3 h-3 opacity-80" weight="bold" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 font-cairo text-xs">
@@ -240,7 +240,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={() => onAlignSlot("center-h")}
               disabled={!selectedSlotId}
             >
-              <AlignCenterHorizontal16Regular className="w-3.5 h-3.5" />
+              <AlignCenterHorizontal className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">توسيط أفقياً في منتصف الورقة</TooltipContent>
@@ -255,7 +255,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={() => onAlignSlot("center-v")}
               disabled={!selectedSlotId}
             >
-              <AlignCenterVertical16Regular className="w-3.5 h-3.5" />
+              <AlignCenterVertical className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">توسيط عمودياً في منتصف الورقة</TooltipContent>
@@ -269,7 +269,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={() => onDistributeSlots("horizontal")}
             >
-              <AlignDistributeLeft16Regular className="w-3.5 h-3.5" />
+              <AlignLeft className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">توزيع المسافات بالتساوي أفقياً</TooltipContent>
@@ -283,7 +283,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               className="h-7 w-7 rounded-md cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={() => onDistributeSlots("vertical")}
             >
-              <AlignDistributeTop16Regular className="w-3.5 h-3.5" />
+              <AlignTop className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">توزيع المسافات بالتساوي عمودياً</TooltipContent>
@@ -301,7 +301,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onSplitVertical}
               disabled={!selectedSlotId}
             >
-              <LayoutRowTwo16Regular className="w-3.5 h-3.5" />
+              <Rows className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تقسيم إلى صفين (أعلى وأسفل)</TooltipContent>
@@ -317,7 +317,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onSplitHorizontal}
               disabled={!selectedSlotId}
             >
-              <LayoutColumnTwo16Regular className="w-3.5 h-3.5" />
+              <Columns className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تقسيم إلى عمودين (يمين ويسار)</TooltipContent>
@@ -339,7 +339,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               )}
               onClick={onToggleCutLines}
             >
-              <Cut16Regular className="w-3.5 h-3.5" />
+              <Scissors className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -358,7 +358,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               )}
               onClick={onToggleSnapping}
             >
-              <Pin16Regular className="w-3.5 h-3.5" />
+              <PushPin className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -377,7 +377,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onRotateSlot}
               disabled={!selectedSlotId}
             >
-              <ArrowClockwise16Regular className="w-3.5 h-3.5" />
+              <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">تدوير الخلية 90°</TooltipContent>
@@ -392,7 +392,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onDuplicateSlot}
               disabled={!selectedSlotId}
             >
-              <Copy16Regular className="w-3.5 h-3.5" />
+              <Copy className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">مضاعفة الخلية (Ctrl+D)</TooltipContent>
@@ -407,7 +407,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={onRemoveSlot}
               disabled={!selectedSlotId}
             >
-              <Delete16Regular className="w-3.5 h-3.5" />
+              <Trash className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">حذف الخلية (Del)</TooltipContent>

@@ -12,16 +12,16 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
-  Grid16Regular,
-  FolderOpen16Regular,
-  Add16Regular,
-  Delete16Regular,
-  Dismiss16Regular,
-  ImageMultiple24Regular,
-  Checkmark16Regular,
-  Subtract16Regular,
-  LayerDiagonal20Regular,
-} from "@fluentui/react-icons";
+  SquaresFour,
+  FolderOpen,
+  Plus,
+  Trash,
+  X,
+  Images,
+  Check,
+  Minus,
+  Stack,
+} from "@phosphor-icons/react";
 import { openImageFileDialog, openDirectoryImageDialog } from "@/lib/io/file-dialog-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 import { useEditorStore } from "@/lib/editor-store";
@@ -296,7 +296,7 @@ export function BatchInsertDialog({
         <DialogHeader className="px-6 py-4 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <ImageMultiple24Regular className="text-primary w-6 h-6 shrink-0" />
+              <Images className="text-primary w-6 h-6 shrink-0" weight="duotone" />
               <div>
                 <DialogTitle className="text-base font-bold text-foreground">
                   إدراج دفعة صور ومعاملات (Batch Studio)
@@ -328,7 +328,7 @@ export function BatchInsertDialog({
               disabled={loading || isProcessing}
               className="h-8 rounded-md gap-1.5 text-xs font-medium border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
             >
-              <Add16Regular className="w-3.5 h-3.5 shrink-0" />
+              <Plus className="w-3.5 h-3.5 shrink-0" weight="bold" />
               إضافة صور...
             </Button>
 
@@ -339,7 +339,7 @@ export function BatchInsertDialog({
               disabled={loading || isProcessing}
               className="h-8 rounded-md gap-1.5 text-xs font-medium border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
             >
-              <FolderOpen16Regular className="w-3.5 h-3.5 shrink-0" />
+              <FolderOpen className="w-3.5 h-3.5 shrink-0" weight="bold" />
               استيراد مجلد كامل...
             </Button>
           </div>
@@ -381,7 +381,7 @@ export function BatchInsertDialog({
                 disabled={isProcessing}
                 className="h-8 rounded-md gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
-                <Delete16Regular className="w-3.5 h-3.5 shrink-0" />
+                <Trash className="w-3.5 h-3.5 shrink-0" />
                 تفريغ القائمة
               </Button>
             </div>
@@ -395,7 +395,7 @@ export function BatchInsertDialog({
             {images.length === 0 ? (
               <div className="flex flex-col items-center justify-center flex-1 py-12 px-4 text-center border-2 border-dashed border-border/50 rounded-xl bg-muted/10">
                 <div className="p-4 rounded-2xl bg-muted/40 text-muted-foreground/60 mb-3">
-                  <ImageMultiple24Regular className="w-8 h-8 shrink-0" />
+                  <Images className="w-8 h-8 shrink-0" weight="duotone" />
                 </div>
                 <h4 className="text-sm font-bold text-foreground">قائمة الصور فارغة</h4>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs leading-relaxed">
@@ -403,10 +403,10 @@ export function BatchInsertDialog({
                 </p>
                 <div className="flex items-center gap-2 mt-4">
                   <Button size="sm" onClick={handleAddFiles} className="h-8 gap-1.5 text-xs rounded-md">
-                    <Add16Regular className="w-3.5 h-3.5 shrink-0" /> اختيار صور
+                    <Plus className="w-3.5 h-3.5 shrink-0" weight="bold" /> اختيار صور
                   </Button>
                   <Button size="sm" variant="outline" onClick={handleAddDirectory} className="h-8 gap-1.5 text-xs rounded-md">
-                    <FolderOpen16Regular className="w-3.5 h-3.5 shrink-0" /> اختيار مجلد
+                    <FolderOpen className="w-3.5 h-3.5 shrink-0" weight="bold" /> اختيار مجلد
                   </Button>
                 </div>
               </div>
@@ -441,7 +441,7 @@ export function BatchInsertDialog({
                           onClick={() => handleRemoveImage(img.id)}
                           className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
                         >
-                          <Dismiss16Regular className="w-3.5 h-3.5 shrink-0" />
+                          <X className="w-3.5 h-3.5 shrink-0" weight="bold" />
                         </Button>
                       </div>
 
@@ -455,7 +455,7 @@ export function BatchInsertDialog({
                             onClick={() => handleUpdateCopies(img.id, -1)}
                             className="h-5 w-5 rounded text-muted-foreground hover:text-foreground"
                           >
-                            <Subtract16Regular className="w-3 h-3 shrink-0" />
+                            <Minus className="w-3 h-3 shrink-0" weight="bold" />
                           </Button>
                           <span className="text-xs font-bold text-foreground w-5 text-center">
                             {img.copies}
@@ -466,7 +466,7 @@ export function BatchInsertDialog({
                             onClick={() => handleUpdateCopies(img.id, 1)}
                             className="h-5 w-5 rounded text-muted-foreground hover:text-foreground"
                           >
-                            <Add16Regular className="w-3 h-3 shrink-0" />
+                            <Plus className="w-3 h-3 shrink-0" weight="bold" />
                           </Button>
                         </div>
                       </div>
@@ -497,7 +497,7 @@ export function BatchInsertDialog({
                     layoutMode === "grid" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-muted/60 text-foreground"
                   )}
                 >
-                  <Grid16Regular className="w-3.5 h-3.5 shrink-0" />
+                  <SquaresFour className="w-3.5 h-3.5 shrink-0" weight="bold" />
                   <span>شبكة منتظمة</span>
                 </Button>
 
@@ -511,7 +511,7 @@ export function BatchInsertDialog({
                     layoutMode === "cascade" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-muted/60 text-foreground"
                   )}
                 >
-                  <LayerDiagonal20Regular className="w-3.5 h-3.5 shrink-0" />
+                  <Stack className="w-3.5 h-3.5 shrink-0" weight="bold" />
                   <span>تتالي درجي</span>
                 </Button>
               </div>
@@ -627,7 +627,7 @@ export function BatchInsertDialog({
               disabled={images.length === 0 || isProcessing}
               className="h-8 rounded-md bg-primary text-primary-foreground gap-1.5 text-xs font-semibold px-4 shadow-sm"
             >
-              <Checkmark16Regular className="w-4 h-4 shrink-0" />
+              <Check className="w-4 h-4 shrink-0" weight="bold" />
               {isProcessing ? "جاري الإدراج ..." : "إدراج في مساحة العمل"}
             </Button>
           </div>

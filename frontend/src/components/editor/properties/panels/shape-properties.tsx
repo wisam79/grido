@@ -1,6 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { ShapeElement, useEditorStore } from "@/lib/editor-store";
-import { Color16Regular, Square16Regular, BorderAll16Regular } from "@fluentui/react-icons";
+import { Palette, Square, BoundingBox } from "@phosphor-icons/react";
 import { SliderControl, PopoverColorPicker } from "../shared-controls";
 import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-picker";
 
@@ -15,7 +15,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
       {/* بطاقة 1: اللون والتعبئة */}
       <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3 overflow-hidden">
         <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
-          <Color16Regular className="w-3.5 h-3.5 text-primary" />
+          <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
           <span>اللون والتعبئة</span>
         </Label>
         
@@ -59,7 +59,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
       {/* بطاقة 2: الحدود والاستدارة */}
       <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3">
         <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
-          <Square16Regular className="w-3.5 h-3.5 text-primary" />
+          <Square className="w-3.5 h-3.5 text-primary" weight="duotone" />
           <span>الحدود والاستدارة</span>
         </Label>
 
@@ -74,7 +74,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
 
         <SliderControl
           label={element.shape === "line" ? "سمك الخط" : "سماكة الحد"}
-          icon={<BorderAll16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+          icon={<BoundingBox className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
           value={element.shape === "line" ? (element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4) : (element.strokeWidth ?? 0)}
           min={element.shape === "line" ? 1 : 0}
           max={50}
@@ -87,7 +87,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
         {element.shape === "rect" && (
           <SliderControl
             label="استدارة الزوايا"
-            icon={<Square16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+            icon={<Square className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
             value={element.radius ?? 0}
             min={0}
             max={50}

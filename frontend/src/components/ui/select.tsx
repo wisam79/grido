@@ -2,11 +2,7 @@
 
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
-import {
-  Checkmark16Regular,
-  ChevronDown16Regular,
-  ChevronUp16Regular,
-} from "@fluentui/react-icons"
+import { Check, CaretDown, CaretUp } from "@phosphor-icons/react"
 
 import { cn } from "@/lib/utils"
 
@@ -34,7 +30,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown16Regular className="size-3.5 opacity-60 shrink-0" />
+      <CaretDown className="size-3.5 opacity-60 shrink-0" weight="bold" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -101,7 +97,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute right-1.5 flex size-3 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <Checkmark16Regular className="size-3.5 text-primary shrink-0" />
+        <Check className="size-3.5 text-primary shrink-0" weight="bold" />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
@@ -135,7 +131,7 @@ const SelectScrollUpButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronUp16Regular className="size-4 shrink-0" />
+    <CaretUp className="size-4 shrink-0" weight="bold" />
   </SelectPrimitive.ScrollUpButton>
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
@@ -153,7 +149,7 @@ const SelectScrollDownButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronDown16Regular className="size-4 shrink-0" />
+    <CaretDown className="size-4 shrink-0" weight="bold" />
   </SelectPrimitive.ScrollDownButton>
 ))
 SelectScrollDownButton.displayName =

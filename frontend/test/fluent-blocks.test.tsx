@@ -10,14 +10,14 @@ import {
   FluentIconButton,
 } from '../src/components/ui/blocks';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { Settings20Regular, Sparkle20Regular, Folder20Regular } from '@fluentui/react-icons';
+import { Gear, Sparkle, Folder } from '@phosphor-icons/react';
 
 describe('Fluent 2 UI Blocks Component Suite', () => {
   describe('FluentSection', () => {
     it('renders section title, subtitle, icon, action, and children', () => {
       render(
         <FluentSection
-          icon={<Settings20Regular data-testid="section-icon" className="size-4 shrink-0" />}
+          icon={<Gear data-testid="section-icon" className="size-4 shrink-0" />}
           title="إعدادات الكانفاس"
           subtitle="تعديل الأبعاد والهوامش"
           action={<button>إعادة ضبط</button>}
@@ -115,7 +115,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
       const handleAction = vi.fn();
       render(
         <FluentEmptyState
-          icon={<Folder20Regular data-testid="empty-icon" className="size-8 shrink-0" />}
+          icon={<Folder data-testid="empty-icon" className="size-8 shrink-0" />}
           title="لا توجد مشاريع"
           description="أنشئ مشروعاً جديداً للبدء"
           actionLabel="مشروع جديد"
@@ -139,7 +139,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
       render(
         <TooltipProvider>
           <FluentIconButton
-            icon={<Sparkle20Regular data-testid="btn-icon" className="size-3.5 shrink-0" />}
+            icon={<Sparkle data-testid="btn-icon" className="size-3.5 shrink-0" />}
             tooltip="تطبيق التأثير"
             onClick={handleClick}
           >

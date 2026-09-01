@@ -5,24 +5,18 @@ import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
-  Image20Regular,
-  Image20Filled,
-  TextCaseUppercase20Regular,
-  TextCaseUppercase20Filled,
-  Shapes20Regular,
-  Shapes20Filled,
-  Layer20Regular,
-  Layer20Filled,
-  Eye20Regular,
-  EyeOff20Regular,
-  EyeOff20Filled,
-  LockClosed20Regular,
-  LockClosed20Filled,
-  LockOpen20Regular,
-  Delete16Regular,
-  Copy16Regular,
-  ReOrderDotsVertical16Regular,
-} from "@fluentui/react-icons";
+  Image,
+  TextT,
+  Shapes,
+  Stack,
+  Eye,
+  EyeSlash,
+  LockSimple,
+  LockSimpleOpen,
+  Trash,
+  Copy,
+  DotsSixVertical,
+} from "@phosphor-icons/react";
 
 /* ────────────────────────────────────────────────────────
  * لوحة الطبقات الاحترافية (Layers Panel)
@@ -59,23 +53,16 @@ function getElementLabel(el: CanvasElement): string {
 }
 
 function getElementIcon(el: CanvasElement, isSelected = false) {
+  const weight = isSelected ? "fill" : "regular";
   switch (el.type) {
     case "image":
-      return isSelected
-        ? <Image20Filled className="w-3.5 h-3.5" />
-        : <Image20Regular className="w-3.5 h-3.5" />;
+      return <Image size={14} weight={weight} />;
     case "text":
-      return isSelected
-        ? <TextCaseUppercase20Filled className="w-3.5 h-3.5" />
-        : <TextCaseUppercase20Regular className="w-3.5 h-3.5" />;
+      return <TextT size={14} weight={isSelected ? "bold" : "regular"} />;
     case "shape":
-      return isSelected
-        ? <Shapes20Filled className="w-3.5 h-3.5" />
-        : <Shapes20Regular className="w-3.5 h-3.5" />;
+      return <Shapes size={14} weight={weight} />;
     default:
-      return isSelected
-        ? <Layer20Filled className="w-3.5 h-3.5" />
-        : <Layer20Regular className="w-3.5 h-3.5" />;
+      return <Stack size={14} weight={weight} />;
   }
 }
 
@@ -145,7 +132,7 @@ const LayerRow = React.memo(function LayerRow({
     >
       {/* مقبض السحب */}
       <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors shrink-0">
-        <ReOrderDotsVertical16Regular className="w-3 h-3" />
+        <DotsSixVertical size={13} weight="bold" />
       </div>
 
       {/* أيقونة النوع */}
@@ -186,7 +173,7 @@ const LayerRow = React.memo(function LayerRow({
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
               className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
-              <Copy16Regular className="w-3 h-3" />
+              <Copy size={13} weight="regular" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">نسخ</TooltipContent>
@@ -202,7 +189,7 @@ const LayerRow = React.memo(function LayerRow({
                 isHidden ? "text-destructive/60" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isHidden ? <EyeOff20Filled className="w-3.5 h-3.5" /> : <Eye20Regular className="w-3.5 h-3.5" />}
+              {isHidden ? <EyeSlash size={14} weight="bold" /> : <Eye size={14} weight="regular" />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">
@@ -220,7 +207,7 @@ const LayerRow = React.memo(function LayerRow({
                 isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isLocked ? <LockClosed20Filled className="w-3.5 h-3.5" /> : <LockOpen20Regular className="w-3.5 h-3.5" />}
+              {isLocked ? <LockSimple size={14} weight="fill" /> : <LockSimpleOpen size={14} weight="light" />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">
@@ -235,7 +222,7 @@ const LayerRow = React.memo(function LayerRow({
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
               className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
-              <Delete16Regular className="w-3 h-3" />
+              <Trash size={13} weight="regular" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-[10px]">حذف</TooltipContent>
@@ -348,7 +335,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">
         <div className="flex items-center gap-2 text-xs font-extrabold text-foreground">
           <div className="p-1 rounded-md bg-primary/10 text-primary">
-            <Layer20Regular className="w-3.5 h-3.5" />
+            <Stack size={16} weight="duotone" />
           </div>
           <span>الطبقات</span>
         </div>
@@ -362,7 +349,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
         {sortedElements.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-16 px-4">
             <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center mb-3">
-              <Layer20Regular className="w-5 h-5 text-muted-foreground/50" />
+              <Stack size={28} weight="thin" className="text-muted-foreground/50" />
             </div>
             <p className="text-[11px] text-muted-foreground font-bold">
               لا توجد عناصر بعد

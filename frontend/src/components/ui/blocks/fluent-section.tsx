@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown16Regular } from "@fluentui/react-icons";
+import { CaretDown } from "@phosphor-icons/react";
 
 export interface FluentSectionProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
@@ -103,7 +103,8 @@ export const FluentSection = React.memo(
             )}
             {collapsible && (
               <div className="p-0.5 rounded text-muted-foreground/70 group-hover/sec-header:text-foreground transition-colors">
-                <ChevronDown16Regular
+                <CaretDown
+                  weight="bold"
                   className={cn(
                     "size-3.5 shrink-0 transition-transform duration-200",
                     !isOpen && "rotate-90 rtl:-rotate-90"

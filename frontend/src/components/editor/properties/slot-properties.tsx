@@ -3,25 +3,23 @@ import { Button } from "@/components/ui/button";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { Label } from "@/components/ui/label";
 import {
-  ImageAdd20Regular,
-  Crop16Regular,
-  FlipHorizontal16Regular,
-  FlipHorizontal16Filled,
-  FlipVertical16Regular,
-  FlipVertical16Filled,
-  ArrowClockwise16Regular,
-  ArrowReset20Regular,
-  Sparkle16Regular,
-  Grid16Regular,
-  Target16Regular,
-  Delete16Regular,
-  Color16Regular,
-  Checkmark16Regular,
-  ArrowSwap16Regular,
-  Copy16Regular,
-  LayoutRowTwo16Regular,
-  LayoutColumnTwo16Regular,
-} from "@fluentui/react-icons";
+  ImageSquare,
+  Crop,
+  FlipHorizontal,
+  FlipVertical,
+  ArrowClockwise,
+  ArrowCounterClockwise,
+  Sparkle,
+  GridFour,
+  Crosshair,
+  Trash,
+  Palette,
+  Check,
+  ArrowsLeftRight,
+  Copy,
+  Rows,
+  Columns,
+} from "@phosphor-icons/react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -183,7 +181,7 @@ export function SlotProperties({
   const renderAutoFillToggle = () => (
     <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
       <div className="flex items-center gap-1.5 text-right">
-        <Copy16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
+        <Copy className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
         <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية عند الرفع</span>
       </div>
       <Switch 
@@ -217,7 +215,7 @@ export function SlotProperties({
           className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all text-xs"
           onClick={handleOpenFile}
         >
-          <ImageAdd20Regular className="w-4 h-4 text-primary" />
+          <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
           <span>رفع صورة للخلية</span>
         </Button>
         {lastEditedImage && (
@@ -227,7 +225,7 @@ export function SlotProperties({
             className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer text-xs"
             onClick={handleUseLastImage}
           >
-            <Copy16Regular className="w-4 h-4 text-primary" />
+            <Copy className="w-4 h-4 text-primary" weight="regular" />
             <span>تعبئة بآخر صورة معدلة</span>
           </Button>
         )}
@@ -259,7 +257,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={handleOpenFile}
           >
-            <ImageAdd20Regular className="w-4 h-4 text-primary" />
+            <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
             <span>تغيير الصورة</span>
           </Button>
           <Button
@@ -268,7 +266,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={() => setCropOpen(true)}
           >
-            <Crop16Regular className="w-4 h-4 text-primary" />
+            <Crop className="w-4 h-4 text-primary" weight="regular" />
             <span>قص وتدوير</span>
           </Button>
         </div>
@@ -291,10 +289,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                {slot.flipX
-                  ? <FlipHorizontal16Filled className="w-4 h-4" />
-                  : <FlipHorizontal16Regular className="w-4 h-4" />
-                }
+                <FlipHorizontal className="w-4 h-4" weight={slot.flipX ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب أفقي</TooltipContent>
@@ -314,10 +309,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                {slot.flipY
-                  ? <FlipVertical16Filled className="w-4 h-4" />
-                  : <FlipVertical16Regular className="w-4 h-4" />
-                }
+                <FlipVertical className="w-4 h-4" weight={slot.flipY ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">قلب عمودي</TooltipContent>
@@ -336,7 +328,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <ArrowClockwise16Regular className="w-4 h-4" />
+                <ArrowClockwise className="w-4 h-4" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">تدوير 90°</TooltipContent>
@@ -354,7 +346,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <ArrowReset20Regular className="w-4 h-4" />
+                <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إعادة تعيين الاتجاه</TooltipContent>
@@ -373,7 +365,7 @@ export function SlotProperties({
                   size="sm"
                   className="h-7 px-2 text-[10px] rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
                 >
-                  <ArrowSwap16Regular className="w-3.5 h-3.5" />
+                  <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
                   <span>تبديل الموضع</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -408,7 +400,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillRow}
               >
-                <LayoutRowTwo16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
+                <Rows className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
                 <span>الصف</span>
               </Button>
             </TooltipTrigger>
@@ -422,7 +414,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillColumn}
               >
-                <LayoutColumnTwo16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
+                <Columns className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
                 <span>العمود</span>
               </Button>
             </TooltipTrigger>
@@ -440,7 +432,7 @@ export function SlotProperties({
                   }
                 }}
               >
-                <Sparkle16Regular className="w-4 h-4 text-primary shrink-0" />
+                <Sparkle className="w-4 h-4 text-primary shrink-0" weight="regular" />
                 <span>الفارغة</span>
               </Button>
             </TooltipTrigger>
@@ -454,7 +446,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillAll}
               >
-                <Grid16Regular className="w-4 h-4 text-primary shrink-0" />
+                <GridFour className="w-4 h-4 text-primary shrink-0" weight="regular" />
                 <span>الكل</span>
               </Button>
             </TooltipTrigger>
@@ -474,7 +466,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Target16Regular className="w-3.5 h-3.5 text-primary" />
+                <Crosshair className="w-3.5 h-3.5 text-primary" weight="regular" />
                 <span>توسيط الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -492,7 +484,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Delete16Regular className="w-3.5 h-3.5" />
+                <Trash className="w-3.5 h-3.5" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[11px]">إفراغ الخلية</TooltipContent>
@@ -505,7 +497,7 @@ export function SlotProperties({
       {/* 3.5 كرت لون خلفية صورة الهوية المعزولة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/90">
-          <Color16Regular className="w-4 h-4 text-primary" />
+          <Palette className="w-4 h-4 text-primary" weight="duotone" />
           <span>خلفية الصورة</span>
         </div>
 
@@ -547,7 +539,7 @@ export function SlotProperties({
                 }}
               >
                 {isActive && (
-                  <Checkmark16Regular className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                  <Check className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} weight="bold" />
                 )}
               </button>
             );

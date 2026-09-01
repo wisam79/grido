@@ -7,6 +7,7 @@ Write-Host "==========================================================" -Foregro
 $envPath = ".env"
 $supabaseUrl = ""
 $supabaseAnonKey = ""
+$modalAiKey = ""
 if (Test-Path $envPath) {
     foreach ($line in Get-Content $envPath) {
         if ($line -match '^SUPABASE_URL=(.*)$') {
@@ -14,6 +15,9 @@ if (Test-Path $envPath) {
         }
         if ($line -match '^SUPABASE_ANON_KEY=(.*)$') {
             $supabaseAnonKey = $matches[1].Trim()
+        }
+        if ($line -match '^MODAL_AI_KEY=(.*)$') {
+            $modalAiKey = $matches[1].Trim()
         }
     }
 }
@@ -30,11 +34,11 @@ if (Test-Path $pythonScript) {
 
 $appVersion = (git describe --tags --abbrev=0 2>$null)
 if (-not $appVersion) {
-    $appVersion = "v1.3.24"
+    $appVersion = "v1.3.25"
 }
 
 Write-Host " [2/3] Building Wails Desktop App & NSIS Installer ($appVersion)..." -ForegroundColor Green
-$ldflags = "-s -w -X grido/internal/service.AppVersion=$appVersion -X grido/internal/service.SupabaseURL=$supabaseUrl -X grido/internal/service.SupabaseAnonKey=$supabaseAnonKey"
+$ldflags = "-s -w -X grido/internal/service.AppVersion=$appVersion -X grido/internal/service.SupabaseURL=$supabaseUrl -X grido/internal/service.SupabaseAnonKey=$supabaseAnonKey -X grido/internal/service.ModalAIKey=$modalAiKey"
 
 wails build -nsis -clean -ldflags $ldflags
 

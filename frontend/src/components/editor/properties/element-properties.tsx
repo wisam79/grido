@@ -3,24 +3,24 @@ import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
-  Sparkle16Regular,
-  Eye16Regular,
-  ArrowClockwise16Regular,
-  FlipHorizontal16Regular,
-  FlipVertical16Regular,
-  Square16Regular,
-  PaintBrush16Regular,
-  Options16Regular,
-  ArrowMove20Regular,
-  LockClosed16Regular,
-  Drop16Regular,
-  AlignLeft16Regular,
-  AlignCenterHorizontal16Regular,
-  AlignRight16Regular,
-  AlignTop16Regular,
-  AlignCenterVertical16Regular,
-  AlignBottom16Regular,
-} from "@fluentui/react-icons";
+  Sparkle,
+  Eye,
+  ArrowClockwise,
+  FlipHorizontal,
+  FlipVertical,
+  Square,
+  PaintBrush,
+  SlidersHorizontal,
+  ArrowsOutCardinal,
+  LockSimple,
+  Drop,
+  AlignLeft,
+  AlignCenterHorizontal,
+  AlignRight,
+  AlignTop,
+  AlignCenterVertical,
+  AlignBottom,
+} from "@phosphor-icons/react";
 import { SliderControl, PopoverColorPicker } from "./shared-controls";
 import { scaleElementDecorations } from "@/lib/canvas/scale-decorations";
 import { cn } from "@/lib/utils";
@@ -52,7 +52,7 @@ export function ElementProperties({
       {element.locked && (
         <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
           <div className="flex items-center gap-2">
-            <LockClosed16Regular className="w-3.5 h-3.5 shrink-0" />
+            <LockSimple className="w-3.5 h-3.5 shrink-0" weight="fill" />
             <span>عنصر مقفل</span>
           </div>
           <Button 
@@ -85,7 +85,7 @@ export function ElementProperties({
                         : "text-muted-foreground hover:text-foreground hover:bg-background/40"
                     )}
                   >
-                    <PaintBrush16Regular className="w-3.5 h-3.5" />
+                    <PaintBrush className="w-3.5 h-3.5" weight={activeTab === "style" ? "fill" : "regular"} />
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التنسيق والأدوات</TooltipContent>
@@ -106,7 +106,7 @@ export function ElementProperties({
                         : "text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/40"
                     )}
                   >
-                    <Options16Regular className="w-3.5 h-3.5" />
+                    <SlidersHorizontal className="w-3.5 h-3.5" weight={activeTab === "adjust" ? "fill" : "regular"} />
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">
@@ -125,7 +125,7 @@ export function ElementProperties({
                         : "text-muted-foreground hover:text-foreground hover:bg-background/40"
                     )}
                   >
-                    <Sparkle16Regular className="w-3.5 h-3.5" />
+                    <Sparkle className="w-3.5 h-3.5" weight={activeTab === "effects" ? "fill" : "regular"} />
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التأثيرات والظلال</TooltipContent>
@@ -142,7 +142,7 @@ export function ElementProperties({
                         : "text-muted-foreground hover:text-foreground hover:bg-background/40"
                     )}
                   >
-                    <ArrowMove20Regular className="w-3.5 h-3.5" />
+                    <ArrowsOutCardinal className="w-3.5 h-3.5" weight={activeTab === "arrange" ? "fill" : "regular"} />
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">الموضع والترتيب</TooltipContent>
@@ -176,7 +176,7 @@ export function ElementProperties({
             {/* بطاقة 1: الموضع والمحاذاة السريعة */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
               <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                <ArrowMove20Regular className="w-3.5 h-3.5 text-primary" />
+                <ArrowsOutCardinal className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>الموضع والمحاذاة</span>
               </Label>
 
@@ -190,7 +190,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("left")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignLeft16Regular className="w-3.5 h-3.5" />
+                      <AlignLeft className="w-3.5 h-3.5" weight="regular" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليسار</TooltipContent>
@@ -204,7 +204,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("center")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignCenterHorizontal16Regular className="w-3.5 h-3.5" />
+                      <AlignCenterHorizontal className="w-3.5 h-3.5" weight="regular" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للوسط أفقياً</TooltipContent>
@@ -218,7 +218,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("right")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignRight16Regular className="w-3.5 h-3.5" />
+                      <AlignRight className="w-3.5 h-3.5" weight="regular" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليمين</TooltipContent>
@@ -234,7 +234,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("top")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignTop16Regular className="w-3.5 h-3.5" />
+                      <AlignTop className="w-3.5 h-3.5" weight="regular" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأعلى</TooltipContent>
@@ -248,7 +248,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("middle")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignCenterVertical16Regular className="w-3.5 h-3.5" />
+                      <AlignCenterVertical className="w-3.5 h-3.5" weight="regular" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للمنتصف عمودياً</TooltipContent>
@@ -262,7 +262,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("bottom")}
                       className="h-7 w-7 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer"
                     >
-                      <AlignBottom16Regular className="w-3.5 h-3.5" />
+                      <AlignBottom className="w-3.5 h-3.5" weight="regular" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأسفل</TooltipContent>
@@ -341,13 +341,13 @@ export function ElementProperties({
             {/* بطاقة 2: التدوير والشفافية */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
               <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                <ArrowClockwise16Regular className="w-3.5 h-3.5 text-primary" />
+                <ArrowClockwise className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>التدوير والشفافية</span>
               </Label>
 
               <SliderControl
                 label="التدوير"
-                icon={<ArrowClockwise16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<ArrowClockwise className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                 value={element.rotation}
                 min={-180}
                 max={180}
@@ -368,7 +368,7 @@ export function ElementProperties({
                   title="تدوير 90 درجة"
                   className="h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
-                  <ArrowClockwise16Regular className="w-3.5 h-3.5 text-muted-foreground" />
+                  <ArrowClockwise className="w-3.5 h-3.5 text-muted-foreground" weight="regular" />
                 </Button>
                 <Button
                   variant="outline"
@@ -383,7 +383,7 @@ export function ElementProperties({
                     element.flipX && "bg-primary/10 border-primary/50 text-primary"
                   )}
                 >
-                  <FlipHorizontal16Regular className="w-3.5 h-3.5 text-muted-foreground" />
+                  <FlipHorizontal className="w-3.5 h-3.5 text-muted-foreground" weight={element.flipX ? "fill" : "regular"} />
                 </Button>
                 <Button
                   variant="outline"
@@ -398,13 +398,13 @@ export function ElementProperties({
                     element.flipY && "bg-primary/10 border-primary/50 text-primary"
                   )}
                 >
-                  <FlipVertical16Regular className="w-3.5 h-3.5 text-muted-foreground" />
+                  <FlipVertical className="w-3.5 h-3.5 text-muted-foreground" weight={element.flipY ? "fill" : "regular"} />
                 </Button>
               </div>
 
               <SliderControl
                 label="الشفافية"
-                icon={<Eye16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                 value={Math.round(element.opacity * 100)}
                 min={0}
                 max={100}
@@ -420,7 +420,7 @@ export function ElementProperties({
             {/* بطاقة 1: الظل والإضاءة */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
               <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                <Sparkle16Regular className="w-3.5 h-3.5 text-primary" />
+                <Sparkle className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>الظل والوهج</span>
               </Label>
               
@@ -435,7 +435,7 @@ export function ElementProperties({
 
               <SliderControl
                 label="الشفافية"
-                icon={<Eye16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                 value={Math.round((element.shadowOpacity ?? 0) * 100)}
                 min={0}
                 max={100}
@@ -447,7 +447,7 @@ export function ElementProperties({
               
               <SliderControl
                 label="التمويه"
-                icon={<Drop16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<Drop className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                 value={element.shadowBlur || 0}
                 min={0}
                 max={50}
@@ -459,7 +459,7 @@ export function ElementProperties({
 
               <SliderControl
                 label="إزاحة أفقية"
-                icon={<ArrowMove20Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<ArrowsOutCardinal className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                 value={element.shadowOffsetX || 0}
                 min={-50}
                 max={50}
@@ -471,7 +471,7 @@ export function ElementProperties({
 
               <SliderControl
                 label="إزاحة عمودية"
-                icon={<ArrowMove20Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                icon={<ArrowsOutCardinal className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                 value={element.shadowOffsetY || 0}
                 min={-50}
                 max={50}
@@ -486,12 +486,12 @@ export function ElementProperties({
             {(element.type === "image" || element.type === "shape") && (
               <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
                 <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                  <Square16Regular className="w-3.5 h-3.5 text-primary" />
+                  <Square className="w-3.5 h-3.5 text-primary" weight="duotone" />
                   <span>استدارة الحواف</span>
                 </Label>
                 <SliderControl
                   label="قطر الزاوية"
-                  icon={<Square16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+                  icon={<Square className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                   value={element.cornerRadius || 0}
                   min={0}
                   max={200}

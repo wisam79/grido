@@ -1,7 +1,7 @@
 import React from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
-import { ZoomIn20Regular, ZoomOut20Regular, ArrowReset20Regular } from "@fluentui/react-icons";
+import { MagnifyingGlassPlus, MagnifyingGlassMinus, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface ZoomControlsProps {
@@ -51,7 +51,7 @@ export const ZoomControls = React.memo(function ZoomControls({
             onClick={handleZoomOut}
             aria-label="تصغير (Zoom Out)"
           >
-            <ZoomOut20Regular className="w-3.5 h-3.5" />
+            <MagnifyingGlassMinus className="w-3.5 h-3.5" weight="regular" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={10} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -84,7 +84,7 @@ export const ZoomControls = React.memo(function ZoomControls({
               onClick={handleResetZoom}
               aria-label="إعادة تعيين 100%"
             >
-              <ArrowReset20Regular className="w-3.5 h-3.5" />
+              <ArrowCounterClockwise className="w-3.5 h-3.5" weight="regular" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={10} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">
@@ -101,7 +101,7 @@ export const ZoomControls = React.memo(function ZoomControls({
             onClick={handleZoomIn}
             aria-label="تكبير (Zoom In)"
           >
-            <ZoomIn20Regular className="w-3.5 h-3.5" />
+            <MagnifyingGlassPlus className="w-3.5 h-3.5" weight="regular" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={10} align="center" className="font-cairo text-[11px] font-semibold py-1 px-2.5 shadow-md">

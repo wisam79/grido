@@ -13,17 +13,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/huge-icon";
 import {
-  ShieldCheckmark24Regular,
-  ShieldCheckmark20Regular,
-  Warning16Regular,
-  Mail16Regular,
-  Key16Regular,
-  LockClosed16Regular,
-  Person16Regular,
-  ArrowExit16Regular,
-  Open16Regular,
-  ArrowDownload16Regular,
-} from "@fluentui/react-icons";
+  ShieldCheck,
+  Warning,
+  EnvelopeSimple,
+  Key,
+  Lock,
+  User,
+  SignOut,
+  ArrowSquareOut,
+  DownloadSimple,
+} from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
@@ -306,7 +305,7 @@ export function AccountLicenseModal() {
       >
         <DialogHeader className="space-y-1 text-right border-b border-border/60 pb-3">
           <DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
-            <ShieldCheckmark24Regular className="text-primary w-6 h-6 shrink-0" />
+            <ShieldCheck className="text-primary w-6 h-6 shrink-0" weight="duotone" />
             <span>الحساب والترخيص</span>
           </DialogTitle>
         </DialogHeader>
@@ -339,7 +338,7 @@ export function AccountLicenseModal() {
             </div>
           ) : (
             <div className="border border-border/60 rounded-md p-2 flex items-center gap-2 bg-background/50 text-[11px] text-muted-foreground">
-              <Warning16Regular className="text-amber-500 w-3.5 h-3.5 shrink-0" />
+              <Warning className="text-amber-500 w-3.5 h-3.5 shrink-0" weight="duotone" />
               <span>سجل دخولك لتشغيل ميزات الحساب السحابية</span>
             </div>
           )}
@@ -368,14 +367,14 @@ export function AccountLicenseModal() {
               <form onSubmit={handleVerifyRecovery} className="space-y-3">
                 {error && (
                   <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                    <Warning16Regular className="w-3.5 h-3.5 shrink-0" />
+                    <Warning className="w-3.5 h-3.5 shrink-0" weight="duotone" />
                     <span>{error}</span>
                   </div>
                 )}
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">البريد الإلكتروني</Label>
                   <div className="relative">
-                    <Mail16Regular className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                    <EnvelopeSimple className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
                     <Input
                       type="email"
                       placeholder="name@example.com"
@@ -389,7 +388,7 @@ export function AccountLicenseModal() {
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">كود الاستعادة (OTP)</Label>
                   <div className="relative">
-                    <Key16Regular className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                    <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
                     <Input
                       type="text"
                       placeholder="123456"
@@ -408,7 +407,7 @@ export function AccountLicenseModal() {
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">كلمة المرور الجديدة</Label>
                   <div className="relative">
-                    <LockClosed16Regular className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                    <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
                     <Input
                       type="password"
                       placeholder="••••••••"
@@ -452,7 +451,7 @@ export function AccountLicenseModal() {
                 <form onSubmit={handleAuth} className="space-y-3">
                   {error && (
                     <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                      <Warning16Regular className="w-3.5 h-3.5 shrink-0" />
+                      <Warning className="w-3.5 h-3.5 shrink-0" weight="duotone" />
                       <span>{error}</span>
                     </div>
                   )}
@@ -460,7 +459,7 @@ export function AccountLicenseModal() {
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold">كود التحقق (OTP)</Label>
                       <div className="relative">
-                        <Key16Regular className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                        <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
                         <Input
                           type="text"
                           placeholder="123456"
@@ -527,7 +526,7 @@ export function AccountLicenseModal() {
                         <div className="space-y-1">
                           <Label className="text-xs font-semibold">الاسم الكامل</Label>
                           <div className="relative">
-                            <Person16Regular className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                            <User className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
                             <Input
                               placeholder="الاسم"
                               className="pr-8 h-8 text-xs rounded-md"
@@ -542,7 +541,7 @@ export function AccountLicenseModal() {
                       <div className="space-y-1">
                         <Label className="text-xs font-semibold">البريد الإلكتروني</Label>
                         <div className="relative">
-                          <Mail16Regular className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                          <EnvelopeSimple className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
                           <Input
                             type="email"
                             placeholder="name@example.com"
@@ -569,7 +568,7 @@ export function AccountLicenseModal() {
                           )}
                         </div>
                         <div className="relative">
-                          <LockClosed16Regular className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                          <Lock className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
                           <Input
                             type="password"
                             placeholder="••••••••"
@@ -652,7 +651,7 @@ export function AccountLicenseModal() {
               {user && (user.plan === "pro" || user.plan === "enterprise") ? (
                 <div className="bg-muted/30 border border-border rounded-xl p-3 text-center space-y-2 fluent-specular">
                   <div className="inline-flex p-2 bg-emerald-500/10 text-emerald-600 rounded-full">
-                    <ShieldCheckmark20Regular className="w-5 h-5 shrink-0" />
+                    <ShieldCheck className="w-5 h-5 shrink-0" weight="duotone" />
                   </div>
                   <div>
                     <h3 className="text-xs font-bold text-foreground">النسخة مفعلة بنجاح</h3>
@@ -682,7 +681,7 @@ export function AccountLicenseModal() {
                 <form onSubmit={handleActivate} className="space-y-3">
                   {error && (
                     <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2.5 flex items-center gap-2 text-destructive text-xs font-medium">
-                      <Warning16Regular className="w-3.5 h-3.5 shrink-0" />
+                      <Warning className="w-3.5 h-3.5 shrink-0" weight="duotone" />
                       <span>{error}</span>
                     </div>
                   )}
@@ -708,7 +707,7 @@ export function AccountLicenseModal() {
                       </button>
                     </div>
                     <div className="relative">
-                      <Key16Regular className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
+                      <Key className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5 shrink-0" />
                       <Input
                         placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
                         className="pr-8 h-8 text-xs font-mono uppercase rounded-md"
@@ -765,7 +764,7 @@ export function AccountLicenseModal() {
                       className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2 cursor-pointer rounded-md"
                       onClick={() => setShowLogoutConfirm(true)}
                     >
-                      <ArrowExit16Regular className="w-3 h-3 shrink-0" />
+                      <SignOut className="w-3 h-3 shrink-0" />
                       <span>تسجيل الخروج</span>
                     </Button>
                   )
@@ -780,7 +779,7 @@ export function AccountLicenseModal() {
                   className="flex items-center gap-1 text-[11px] text-primary hover:underline font-semibold"
                 >
                   <span>شراء ترخيص</span>
-                  <Open16Regular className="w-3 h-3 shrink-0" />
+                  <ArrowSquareOut className="w-3 h-3 shrink-0" />
                 </a>
 
                 <button
@@ -798,7 +797,7 @@ export function AccountLicenseModal() {
                   className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   <span>تصدير السجلات</span>
-                  <ArrowDownload16Regular className="w-3 h-3 shrink-0" />
+                  <DownloadSimple className="w-3 h-3 shrink-0" />
                 </button>
               </div>
             </div>

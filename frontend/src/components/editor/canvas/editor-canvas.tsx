@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { Spinner } from "@/components/ui/huge-icon";
-import { ArrowRotateClockwise20Regular, Dismiss20Regular } from "@fluentui/react-icons";
+import { ArrowClockwise, X } from "@phosphor-icons/react";
 import { OpenFile, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
@@ -103,7 +103,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
           }}
           title="استبدال الصورة"
         >
-          {isLoading ? <Spinner className="w-3.5 h-3.5" size={14} /> : <ArrowRotateClockwise20Regular className="w-3.5 h-3.5 text-primary" />}
+          {isLoading ? <Spinner className="w-3.5 h-3.5" size={14} /> : <ArrowClockwise className="w-3.5 h-3.5 text-primary" weight="bold" />}
         </button>
 
         <div className="w-px h-3 bg-border/60 mx-0.5" />
@@ -117,7 +117,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
           }}
           title="إزالة الصورة"
         >
-          <Dismiss20Regular className="w-3.5 h-3.5" />
+          <X className="w-3.5 h-3.5" weight="regular" />
         </button>
       </div>
     </div>

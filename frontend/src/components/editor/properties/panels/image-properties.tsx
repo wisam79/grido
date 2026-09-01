@@ -5,24 +5,24 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/huge-icon";
 import {
-  Sparkle16Regular,
-  Wand16Regular,
-  PersonSquare16Regular,
-  Crop16Regular,
-  ImageAdd20Regular,
-  ArrowReset20Regular,
-  Eye16Regular,
-  PaintBrush16Regular,
-  Color16Regular,
-  Checkmark16Regular,
-  WeatherSunny16Regular,
-  BrightnessHigh16Regular,
-  Drop16Regular,
-  EyeOff16Regular,
-  ArrowClockwise12Regular,
-  Dismiss16Regular,
-  ScanDash16Regular,
-} from "@fluentui/react-icons";
+  Sparkle,
+  MagicWand,
+  UserFocus,
+  Crop,
+  ImageSquare,
+  ArrowCounterClockwise,
+  Eye,
+  PaintBrush,
+  Palette,
+  Check,
+  Sun,
+  CircleHalfTilt,
+  Drop,
+  EyeSlash,
+  ArrowClockwise,
+  X,
+  Scan,
+} from "@phosphor-icons/react";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -87,7 +87,7 @@ export function ImageAdjustProperties({
 
       <SliderControl
         label="السطوع"
-        icon={<WeatherSunny16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+        icon={<Sun className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
         value={element.brightness ?? 100}
         min={0}
         max={200}
@@ -100,7 +100,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="التباين"
-        icon={<BrightnessHigh16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+        icon={<CircleHalfTilt className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
         value={element.contrast ?? 100}
         min={0}
         max={200}
@@ -113,7 +113,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="التشبع"
-        icon={<Drop16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+        icon={<Drop className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
         value={element.saturation ?? 100}
         min={0}
         max={200}
@@ -126,7 +126,7 @@ export function ImageAdjustProperties({
       />
       <SliderControl
         label="الضبابية"
-        icon={<EyeOff16Regular className="w-3.5 h-3.5 text-muted-foreground/75" />}
+        icon={<EyeSlash className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
         value={element.blur ?? 0}
         min={0}
         max={20}
@@ -154,7 +154,7 @@ export function ImageAdjustProperties({
             useEditorStore.getState().pushHistory();
           }}
         >
-          <ArrowClockwise12Regular className="w-3 h-3" />
+          <ArrowClockwise className="w-3 h-3" weight="regular" />
           <span>إعادة تعيين الألوان</span>
         </Button>
       )}
@@ -169,42 +169,80 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
    const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
    const [refineOpen, setRefineOpen] = useState(false);
 
-  const handleScannerSave = async (processedBase64: string) => {
+  const handleScannerSave = async (processedResult: string | string[]) => {
     try {
-      const localPath = await SaveImageFromBase64(processedBase64);
+      const base64List = Array.isArray(processedResult) ? processedResult : [processedResult];
+      if (base64List.length === 0) return;
 
-      const img = new Image();
-       img.onload = () => {
-         const width = img.width;
-         const height = img.height;
-         img.onload = null;
-         img.onerror = null;
-         img.src = "";
-         if (!isMountedRef.current) return;
+      const state = useEditorStore.getState();
+      const canvasRatio = state.canvasWidth / state.canvasHeight;
 
-        const docAspect = width / height;
-        const state = useEditorStore.getState();
-        const canvasRatio = state.canvasWidth / state.canvasHeight;
-        const newHeight = (element.width * canvasRatio) / docAspect;
+      // 1. المستند الأول يحل محل العنصر الحالي
+      const firstPath = await SaveImageFromBase64(base64List[0]);
+      await new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const width = img.width;
+          const height = img.height;
+          img.onload = null;
+          img.onerror = null;
+          img.src = "";
+          if (isMountedRef.current) {
+            const docAspect = width / height;
+            const newHeight = (element.width * canvasRatio) / docAspect;
 
-        onUpdate(element.id, {
-          imageSrc: localPath,
-          height: newHeight,
-        });
+            onUpdate(element.id, {
+              imageSrc: firstPath,
+              height: newHeight,
+            });
 
-        state.setLastEditedImageAspect(docAspect);
-        useEditorStore.getState().pushHistory();
+            state.setLastEditedImageAspect(docAspect);
+          }
+          resolve();
+        };
+        img.onerror = () => {
+          img.onload = null;
+          img.onerror = null;
+          img.src = "";
+          onUpdate(element.id, { imageSrc: firstPath });
+          resolve();
+        };
+        img.src = firstPath;
+      });
+
+      // 2. إدراج بقية المستندات المحددة كعناصر جديدة على الكانفاس بتسلسل مؤكد
+      if (base64List.length > 1) {
+        for (let i = 1; i < base64List.length; i++) {
+          const docPath = await SaveImageFromBase64(base64List[i]);
+          await new Promise<void>((resolve) => {
+            const docImg = new Image();
+            docImg.onload = () => {
+              const aspect = docImg.width / docImg.height;
+              docImg.onload = null;
+              docImg.onerror = null;
+              docImg.src = "";
+              useEditorStore.getState().addImageElement(docPath, aspect);
+              resolve();
+            };
+            docImg.onerror = () => {
+              docImg.onload = null;
+              docImg.onerror = null;
+              docImg.src = "";
+              useEditorStore.getState().addImageElement(docPath);
+              resolve();
+            };
+            docImg.src = docPath;
+          });
+        }
+      }
+
+      // 🔒 حفظ التاريخ بعد اكتمال إدراج جميع العناصر بالكامل
+      useEditorStore.getState().pushHistory();
+      if (base64List.length > 1) {
+        toast.success(`تم استعدال وإدراج ${base64List.length} مستندات على اللوحة بنجاح! 🎯`);
+      } else {
         toast.success("تم استعدال وعزل المستند بنجاح!");
-      };
-       img.onerror = () => {
-         img.onload = null;
-         img.onerror = null;
-         img.src = "";
-         onUpdate(element.id, { imageSrc: localPath });
-         useEditorStore.getState().pushHistory();
-         toast.success("تم استعدال وعزل المستند بنجاح!");
-       };
-       img.src = localPath;
+      }
     } catch (err) {
       console.error(err);
       toast.error("فشل حفظ المستند المستعدل");
@@ -279,7 +317,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 {isRemovingBg ? (
                   <Spinner className="w-4 h-4 shrink-0" size={16} />
                 ) : (
-                  <Sparkle16Regular className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <Sparkle className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" weight="duotone" />
                 )}
                 <span className="text-[11px] font-bold">{isRemovingBg ? "إلغاء" : "عزل الخلفية"}</span>
               </Button>
@@ -305,7 +343,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 {isEnhancing ? (
                   <Spinner className="w-4 h-4 text-primary shrink-0" size={16} />
                 ) : (
-                  <Wand16Regular className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <MagicWand className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" weight="duotone" />
                 )}
                 <span className="text-[11px] font-bold">{isEnhancing ? "معالجة..." : "ترميم الوجه"}</span>
               </Button>
@@ -328,9 +366,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
               >
                 {isFraming ? (
-                  <Dismiss16Regular className="w-4 h-4 text-destructive-foreground shrink-0" />
+                  <X className="w-4 h-4 text-destructive-foreground shrink-0" weight="bold" />
                 ) : (
-                  <PersonSquare16Regular className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <UserFocus className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" weight="duotone" />
                 )}
                 <span className="text-[11px] font-bold">{isFraming ? "إلغاء" : "تأطير الوجه"}</span>
               </Button>
@@ -349,7 +387,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-12 flex flex-col items-center justify-center gap-1 rounded-lg border border-border/70 hover:border-primary/50 bg-input/40 hover:bg-primary/10 transition-all cursor-pointer p-1 group shadow-2xs"
                 onClick={() => setScannerOpen(true)}
               >
-                <ScanDash16Regular className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                <Scan className="w-4 h-4 text-primary group-hover:scale-110 transition-transform shrink-0" weight="duotone" />
                 <span className="text-[11px] font-bold">مسح المستند</span>
               </Button>
             </TooltipTrigger>
@@ -409,7 +447,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       {/* 🎴 بطاقة 2: خلفية الصورة */}
       <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/85">
-          <Color16Regular className="w-4 h-4 text-primary" />
+          <Palette className="w-4 h-4 text-primary" weight="duotone" />
           <span>خلفية الصورة</span>
         </div>
 
@@ -444,7 +482,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     }}
                   >
                     {isActive && (
-                      <Checkmark16Regular className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} />
+                      <Check className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} weight="bold" />
                     )}
                   </button>
                 </TooltipTrigger>
@@ -477,7 +515,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={() => setCropOpen(true)}
               >
-                <Crop16Regular className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <Crop className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" weight="regular" />
                 <span>قص وتدوير</span>
               </Button>
             </TooltipTrigger>
@@ -492,7 +530,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={handleOpenFile}
               >
-                <ImageAdd20Regular className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <ImageSquare className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" weight="regular" />
                 <span>تبديل الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -518,7 +556,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 }}
                 title="استعادة الصورة الأصلية وإلغاء العزل أو الترميم"
               >
-                <ArrowReset20Regular className="w-4 h-4" />
+                <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
                 <span>استعادة الأصل</span>
               </Button>
 
@@ -546,7 +584,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 }}
                 title="اضغط مطولاً للمقارنة مع الصورة الأصلية"
               >
-                <Eye16Regular className="w-4 h-4" />
+                <Eye className="w-4 h-4" weight="regular" />
                 <span>مقارنة الأصل</span>
               </Button>
             </div>
@@ -557,7 +595,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               onClick={() => setRefineOpen(true)}
               title="تعديل تفاصيل العزل وحواف الصورة يدوياً"
             >
-              <PaintBrush16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
+              <PaintBrush className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
               <span>تعديل العزل يدوياً</span>
             </Button>
           </div>

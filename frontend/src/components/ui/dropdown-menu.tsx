@@ -2,11 +2,7 @@
 
 import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
-import {
-  Checkmark16Regular,
-  ChevronRight16Regular,
-  Circle16Filled,
-} from "@fluentui/react-icons"
+import { Check, CaretRight, Circle } from "@phosphor-icons/react"
 
 import { cn } from "@/lib/utils"
 
@@ -69,7 +65,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   >
     <span className="pointer-events-none absolute left-1.5 flex size-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Checkmark16Regular className="size-3.5 text-primary shrink-0" />
+        <Check className="size-3.5 text-primary shrink-0" weight="bold" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -92,7 +88,7 @@ const DropdownMenuRadioItem = React.forwardRef<
   >
     <span className="pointer-events-none absolute left-1.5 flex size-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Circle16Filled className="size-2 fill-primary text-primary shrink-0" />
+        <Circle className="size-2 fill-primary text-primary shrink-0" weight="fill" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -166,7 +162,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <ChevronRight16Regular className="ml-auto size-3.5 shrink-0 rtl:rotate-180" />
+    <CaretRight className="ml-auto size-3.5 shrink-0 rtl:rotate-180" weight="bold" />
   </DropdownMenuPrimitive.SubTrigger>
 ))
 DropdownMenuSubTrigger.displayName =

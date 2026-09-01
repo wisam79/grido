@@ -1,11 +1,11 @@
 import {
-  ArrowMove20Regular,
-  Square16Regular,
-  BorderAll16Regular,
-  Cut16Regular,
-  LayoutRowTwo16Regular,
-  Grid16Regular,
-} from "@fluentui/react-icons";
+  ArrowsOutCardinal,
+  Square,
+  BoundingBox,
+  Scissors,
+  Rows,
+  GridFour,
+} from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";
@@ -60,7 +60,7 @@ export function CollageSettings() {
     <div className="flex flex-col gap-3 font-cairo" dir="rtl">
       {/* 🎴 بطاقة 1: المسافات والاستدارة */}
       <FluentSection
-        icon={<Grid16Regular className="w-3.5 h-3.5" />}
+        icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
         title="المسافات والاستدارة"
         collapsible
         defaultOpen={true}
@@ -68,7 +68,7 @@ export function CollageSettings() {
         <div className="flex flex-col gap-2.5">
           <FluentSliderField
             label="التباعد الداخلي"
-            icon={<LayoutRowTwo16Regular className="w-3.5 h-3.5" />}
+            icon={<Rows className="w-3.5 h-3.5" weight="regular" />}
             value={collageGap}
             min={0}
             max={30}
@@ -79,7 +79,7 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الهوامش الخارجية"
-            icon={<ArrowMove20Regular className="w-3.5 h-3.5" />}
+            icon={<ArrowsOutCardinal className="w-3.5 h-3.5" weight="regular" />}
             value={collageMargin}
             min={0}
             max={100}
@@ -90,7 +90,7 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="استدارة الزوايا"
-            icon={<Square16Regular className="w-3.5 h-3.5" />}
+            icon={<Square className="w-3.5 h-3.5" weight="regular" />}
             value={collageRadius}
             min={0}
             max={50}
@@ -104,7 +104,7 @@ export function CollageSettings() {
 
       {/* 🎴 بطاقة 2: إطار وحدود الخلايا */}
       <FluentSection
-        icon={<BorderAll16Regular className="w-3.5 h-3.5" />}
+        icon={<BoundingBox className="w-3.5 h-3.5" weight="duotone" />}
         title="إطار وحدود الصور"
         collapsible
         defaultOpen={true}
@@ -112,7 +112,7 @@ export function CollageSettings() {
         <div className="space-y-2.5">
           <FluentSliderField
             label="سُمك الإطار"
-            icon={<BorderAll16Regular className="w-3.5 h-3.5" />}
+            icon={<BoundingBox className="w-3.5 h-3.5" weight="regular" />}
             value={collageStrokeWidth}
             min={0}
             max={15}
@@ -179,7 +179,7 @@ export function CollageSettings() {
 
       {/* 🎴 بطاقة 3: خطوط وعلامات القص */}
       <FluentSection
-        icon={<Cut16Regular className="w-3.5 h-3.5" />}
+        icon={<Scissors className="w-3.5 h-3.5" weight="duotone" />}
         title="خطوط القص والمحاذاة"
         collapsible
         defaultOpen={true}

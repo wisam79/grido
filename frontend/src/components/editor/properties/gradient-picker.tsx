@@ -1,12 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { PopoverColorPicker, SliderControl } from "./shared-controls";
-import {
-  Checkmark12Regular,
-  ArrowSwap16Regular,
-  Sparkle16Regular,
-  Color16Regular,
-} from "@fluentui/react-icons";
+import { Check, ArrowsLeftRight, Sparkle, Palette } from "@phosphor-icons/react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export interface GradientPickerProps {
@@ -209,7 +204,7 @@ export const GradientPicker = ({
       {fillType === "solid" ? (
         <div className="flex items-center justify-between gap-2 bg-background/50 p-1.5 rounded-lg border border-border/40 shadow-2xs w-full">
           <span className="text-[10.5px] text-muted-foreground font-bold flex items-center gap-1.5 shrink-0">
-            <Color16Regular className="w-3.5 h-3.5 text-primary" />
+            <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
             لون العنصر:
           </span>
           <PopoverColorPicker color={color} onChange={onChangeSolidColor} className="w-28 h-7 rounded-md" />
@@ -227,7 +222,7 @@ export const GradientPicker = ({
                     onClick={handleReverseStops}
                     className="h-5 px-2 rounded-md bg-muted/60 hover:bg-primary/15 hover:text-primary text-muted-foreground text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 border border-border/40 active:scale-95"
                   >
-                    <ArrowSwap16Regular className="w-2.5 h-2.5" />
+                    <ArrowsLeftRight className="w-2.5 h-2.5" weight="bold" />
                     <span>عكس الألوان</span>
                   </button>
                 </TooltipTrigger>
@@ -308,7 +303,7 @@ export const GradientPicker = ({
           <div className="space-y-1.5 pt-1.5 border-t border-border/40 w-full max-w-full overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-[10.5px] font-extrabold text-foreground flex items-center gap-1">
-                <Sparkle16Regular className="w-3 h-3 text-amber-500" />
+                <Sparkle className="w-3 h-3 text-amber-500" weight="duotone" />
                 تدرجات جاهزة
               </span>
               <span className="text-[9.5px] text-muted-foreground font-mono">({filteredPresets.length})</span>
@@ -374,7 +369,7 @@ export const GradientPicker = ({
                         >
                           {isSelected && (
                             <div className="w-3.5 h-3.5 rounded-full bg-black/55 backdrop-blur-xs flex items-center justify-center text-white border border-white/70 shadow-xs z-10 animate-in zoom-in-75 duration-150">
-                              <Checkmark12Regular className="w-2.5 h-2.5" />
+                              <Check className="w-2.5 h-2.5" weight="bold" />
                             </div>
                           )}
                         </div>

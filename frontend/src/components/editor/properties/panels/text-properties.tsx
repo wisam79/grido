@@ -2,31 +2,31 @@ import React, { useState } from "react";
 import { TextElement, useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import {
-  TextCaseUppercase16Regular,
-  Color16Regular,
-  Sparkle16Regular,
-  TextHeader120Regular,
-  TextHeader220Regular,
-  Document16Regular,
-  Target16Regular,
-  ArrowClockwise16Regular,
-  ChevronDown12Regular,
-  TextBold16Regular,
-  TextItalic16Regular,
-  TextUnderline16Regular,
-  TextStrikethrough16Regular,
-  TextAlignRight16Regular,
-  TextAlignCenter16Regular,
-  TextAlignLeft16Regular,
-  NumberSymbol16Regular,
-  ArrowAutofitContent20Regular,
-  TextLineSpacing16Regular,
-  TextWordCount20Regular,
-  Eye12Regular,
-  Checkmark12Regular,
-  Square16Regular,
-  ArrowReset20Regular,
-} from "@fluentui/react-icons";
+  TextAa,
+  Palette,
+  Sparkle,
+  TextHOne,
+  TextHTwo,
+  Article,
+  Tag,
+  Stamp,
+  CaretDown,
+  TextB,
+  TextItalic,
+  TextUnderline,
+  TextStrikethrough,
+  TextAlignRight,
+  TextAlignCenter,
+  TextAlignLeft,
+  Hash,
+  ArrowsInLineHorizontal,
+  ArrowsInLineVertical,
+  ArrowsHorizontal,
+  Eye,
+  Check,
+  Square,
+  ArrowCounterClockwise,
+} from "@phosphor-icons/react";
 import { PopoverColorPicker } from "../shared-controls";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-picker";
@@ -182,7 +182,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
           )}
         >
-          <TextCaseUppercase16Regular className="w-3.5 h-3.5" />
+          <TextAa className="w-3.5 h-3.5" weight={activeTab === "type" ? "bold" : "regular"} />
           <span>الخط والنمط</span>
         </button>
 
@@ -196,7 +196,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
           )}
         >
-          <Color16Regular className="w-3.5 h-3.5" />
+          <Palette className="w-3.5 h-3.5" weight={activeTab === "color" ? "bold" : "regular"} />
           <span>الألوان</span>
         </button>
 
@@ -210,7 +210,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
               : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
           )}
         >
-          <Sparkle16Regular className="w-3.5 h-3.5" />
+          <Sparkle className="w-3.5 h-3.5" weight={activeTab === "effects" ? "bold" : "regular"} />
           {/* تمييز الاسم عن تبويب "التأثيرات والظلال" الخارجي لتفادي الالتباس */}
           <span>الظلال والتقويس</span>
           {(hasBadge || hasStroke || hasShadow || hasCurve) && (
@@ -230,11 +230,11 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             {/* النمط السريع */}
             <div className="grid grid-cols-5 gap-1 text-[10px]">
               {[
-                { id: "heading" as const, label: "رئيسي", icon: TextHeader120Regular },
-                { id: "subheading" as const, label: "فرعي", icon: TextHeader220Regular },
-                { id: "body" as const, label: "عادي", icon: Document16Regular },
-                { id: "badge" as const, label: "شارة", icon: Target16Regular },
-                { id: "stamp" as const, label: "ختم", icon: ArrowClockwise16Regular },
+                { id: "heading" as const, label: "رئيسي", icon: TextHOne },
+                { id: "subheading" as const, label: "فرعي", icon: TextHTwo },
+                { id: "body" as const, label: "عادي", icon: Article },
+                { id: "badge" as const, label: "شارة", icon: Tag },
+                { id: "stamp" as const, label: "ختم", icon: Stamp },
               ].map((preset) => {
                 const Icon = preset.icon;
                 return (
@@ -244,7 +244,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                     onClick={() => applyPreset(preset.id)}
                     className="h-7 px-1 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none truncate"
                   >
-                    <Icon className="w-3 h-3 shrink-0" />
+                    <Icon className="w-3 h-3 shrink-0" weight="bold" />
                     <span className="truncate">{preset.label}</span>
                   </button>
                 );
@@ -279,7 +279,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown12Regular className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <CaretDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
                 </div>
               </div>
 
@@ -311,7 +311,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown12Regular className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <CaretDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
                 </div>
               </div>
             </div>
@@ -356,7 +356,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="عريض (B)"
                 >
-                  <TextBold16Regular className="w-3.5 h-3.5" />
+                  <TextB className="w-3.5 h-3.5" weight={isBold ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -373,7 +373,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="مائل (I)"
                 >
-                  <TextItalic16Regular className="w-3.5 h-3.5" />
+                  <TextItalic className="w-3.5 h-3.5" weight={isItalic ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -390,7 +390,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="تسطير (U)"
                 >
-                  <TextUnderline16Regular className="w-3.5 h-3.5" />
+                  <TextUnderline className="w-3.5 h-3.5" weight={isUnderline ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -407,7 +407,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="شطب (S)"
                 >
-                  <TextStrikethrough16Regular className="w-3.5 h-3.5" />
+                  <TextStrikethrough className="w-3.5 h-3.5" weight={isLineThrough ? "bold" : "regular"} />
                 </button>
               </div>
 
@@ -428,7 +428,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="يمين"
                 >
-                  <TextAlignRight16Regular className="w-3.5 h-3.5" />
+                  <TextAlignRight className="w-3.5 h-3.5" weight={textAlign === "right" ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -445,7 +445,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="توسيط"
                 >
-                  <TextAlignCenter16Regular className="w-3.5 h-3.5" />
+                  <TextAlignCenter className="w-3.5 h-3.5" weight={textAlign === "center" ? "bold" : "regular"} />
                 </button>
 
                 <button
@@ -462,7 +462,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                   )}
                   title="يسار"
                 >
-                  <TextAlignLeft16Regular className="w-3.5 h-3.5" />
+                  <TextAlignLeft className="w-3.5 h-3.5" weight={textAlign === "left" ? "bold" : "regular"} />
                 </button>
               </div>
 
@@ -482,7 +482,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 )}
                 title="أرقام عربية (١٢٣)"
               >
-                <NumberSymbol16Regular className="w-3 h-3" />
+                <Hash className="w-3 h-3" weight={isArabicNumerals ? "bold" : "regular"} />
                 <span>١٢٣</span>
               </button>
             </div>
@@ -521,7 +521,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                 className="px-2 py-0.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-[9.5px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                 title="ملاءمة عرض الصندوق للنص تلقائياً"
               >
-                <ArrowAutofitContent20Regular className="w-3 h-3" />
+                <ArrowsInLineHorizontal className="w-3 h-3" weight="bold" />
                 <span>ملاءمة العرض</span>
               </button>
             </div>
@@ -532,7 +532,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                  <TextLineSpacing16Regular className="w-3 h-3 text-primary/70" />
+                  <ArrowsInLineVertical className="w-3 h-3 text-primary/70" weight="regular" />
                   <span>ارتفاع الأسطر</span>
                 </span>
                 <div className="relative">
@@ -556,13 +556,13 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown12Regular className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <CaretDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-                  <TextWordCount20Regular className="w-3 h-3 text-primary/70" />
+                  <ArrowsHorizontal className="w-3 h-3 text-primary/70" weight="regular" />
                   <span>{isArabic ? "تباعد الكلمات" : "تباعد الحروف"}</span>
                 </span>
                 <div className="relative">
@@ -586,7 +586,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown12Regular className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <CaretDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
                 </div>
               </div>
             </div>
@@ -604,7 +604,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Color16Regular className="w-3.5 h-3.5 text-primary" />
+                <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>لون النص والتعبئة</span>
               </span>
 
@@ -673,7 +673,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
             <div className="space-y-1 p-2 bg-muted/20 rounded-lg border border-border/30">
               <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Eye12Regular className="w-3 h-3 text-primary/70" />
+                  <Eye className="w-3 h-3 text-primary/70" weight="regular" />
                   <span>الشفافية</span>
                 </span>
                 <span className="font-mono text-foreground font-bold">{currentOpacity}%</span>
@@ -712,7 +712,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       style={{ backgroundColor: c.color }} 
                     >
                       {isCurrent && (
-                        <Checkmark12Regular className={cn("w-2.5 h-2.5", c.color === "#ffffff" ? "text-black" : "text-white")} />
+                        <Check className={cn("w-2.5 h-2.5", c.color === "#ffffff" ? "text-black" : "text-white")} weight="bold" />
                       )}
                     </div>
                     <span className="text-[10px] font-bold truncate text-foreground/80">{c.label}</span>
@@ -734,7 +734,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Color16Regular className="w-3.5 h-3.5 text-primary" />
+                <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>الخلفية والشارة</span>
               </span>
 
@@ -838,7 +838,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Square16Regular className="w-3.5 h-3.5 text-primary" />
+                <Square className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>الإطار والحدود</span>
               </span>
 
@@ -899,7 +899,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Sparkle16Regular className="w-3.5 h-3.5 text-primary" />
+                <Sparkle className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>الظل والتوهج</span>
               </span>
 
@@ -989,7 +989,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <ArrowClockwise16Regular className="w-3.5 h-3.5 text-primary" />
+                <ArrowCounterClockwise className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>تقويس النص</span>
               </span>
 
@@ -1050,7 +1050,7 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
                       className="px-1.5 py-0.5 bg-background border border-border/60 hover:border-primary/40 rounded-md text-[9px] text-foreground font-bold cursor-pointer flex items-center gap-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                       title="استقامة"
                     >
-                      <ArrowReset20Regular className="w-2.5 h-2.5" />
+                      <ArrowCounterClockwise className="w-2.5 h-2.5" weight="bold" />
                       <span>تصفير</span>
                     </button>
                     <span>+100°</span>

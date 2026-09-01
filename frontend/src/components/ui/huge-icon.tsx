@@ -1,65 +1,59 @@
 import * as React from "react";
-import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react";
-import { ArrowClockwise20Regular } from "@fluentui/react-icons";
+import { type IconProps } from "@phosphor-icons/react";
+import { CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
-export interface HugeIconProps extends Omit<HugeiconsIconProps, "icon" | "className"> {
-  icon?: any;
+export interface HugeIconProps {
+  icon?: React.ComponentType<any> | React.ReactElement | null;
   className?: string;
   size?: number;
   strokeWidth?: number;
   style?: React.CSSProperties;
+  weight?: IconProps["weight"];
   [key: string]: any;
 }
 
 /**
- * Reusable Icon component with Fluent 2 & Hugeicons backward-compatibility support.
+ * Reusable Icon component — Phosphor-only wrapper.
+ * Accepts a Phosphor component (function) or a React element.
  */
-export const HugeIcon = React.forwardRef<HTMLElement | SVGElement, HugeIconProps>(
-  ({ icon, size = 20, strokeWidth = 1.5, className, style, ...props }, ref) => {
+export const HugeIcon = React.forwardRef<SVGSVGElement, HugeIconProps>(
+  ({ icon, size = 20, className, style, weight, ...props }, ref) => {
     if (!icon) return null;
 
-    // If icon is already a React element (e.g. <Settings20Regular />)
+    // If icon is already a React element, clone it with our props
     if (React.isValidElement(icon)) {
       return React.cloneElement(icon as React.ReactElement<any>, {
         className: cn("inline-block shrink-0 align-middle", className, (icon.props as any)?.className),
         style: { width: size, height: size, fontSize: size, ...style, ...(icon.props as any)?.style },
+        ...(weight ? { weight } : {}),
         ...props,
       });
     }
 
-    // If icon is a React Component (function or object with $$typeof / render, like @fluentui/react-icons)
-    if (typeof icon === "function" || (typeof icon === "object" && ("$$typeof" in icon || "render" in icon))) {
+    // Treat as a Phosphor component (function or forwardRef object)
+    if (typeof icon === "function" || (typeof icon === "object" && icon !== null)) {
       const IconComponent = icon as React.ComponentType<any>;
       return (
         <IconComponent
           ref={ref}
+          size={size}
           className={cn("inline-block shrink-0 align-middle", className)}
-          style={{ width: size, height: size, fontSize: size, ...style }}
+          style={style}
+          {...(weight ? { weight } : {})}
           {...props}
         />
       );
     }
 
-    // Otherwise treat as Hugeicons data definition
-    return (
-      <HugeiconsIcon
-        ref={ref as any}
-        icon={icon}
-        size={size}
-        strokeWidth={strokeWidth}
-        className={cn("inline-block shrink-0 align-middle", className)}
-        style={style}
-        {...props}
-      />
-    );
+    return null;
   }
 );
 
 HugeIcon.displayName = "HugeIcon";
 
 /**
- * Standardized modern animated spinner for Fluent 2 Design System.
+ * Standardized animated spinner using Phosphor Icons.
  */
 export const Spinner: React.FC<{ size?: number; className?: string; style?: React.CSSProperties }> = ({
   size = 16,
@@ -67,12 +61,11 @@ export const Spinner: React.FC<{ size?: number; className?: string; style?: Reac
   style,
 }) => {
   return (
-    <ArrowClockwise20Regular
+    <CircleNotch
+      size={size}
+      weight="bold"
       className={cn("animate-spin shrink-0", className)}
-      style={{ width: size, height: size, fontSize: size, ...style }}
+      style={style}
     />
   );
 };
-
-export { HugeiconsIcon };
-export type { HugeiconsIconProps };

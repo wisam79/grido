@@ -25,18 +25,14 @@ import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
 import {
-  Grid20Regular,
-  Grid16Regular,
-  FolderOpen20Regular,
-  Document20Regular,
-  Document16Regular,
-  Image20Regular,
-  Image16Regular,
-  Person20Regular,
-  Person16Regular,
-  Add20Regular,
-  PaintBrush20Regular,
-} from "@fluentui/react-icons";
+  GridFour,
+  FolderOpen,
+  FileText,
+  Image,
+  User,
+  Plus,
+  PaintBrush,
+} from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudioCanvasColorDeck } from "../properties/shared-controls";
@@ -156,7 +152,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
   return (
     <PanelShell
-      icon={<Grid20Regular className="w-4.5 h-4.5 text-primary" />}
+      icon={<GridFour className="w-4.5 h-4.5 text-primary" weight="duotone" />}
       title={mode === "collage" ? "القوالب" : "المظهر والطبقات"}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
@@ -212,7 +208,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
               <DialogContent className="max-w-2xl font-cairo rounded-2xl border border-border bg-card fluent-specular" dir="rtl">
                 <DialogHeader>
                   <DialogTitle className="text-right text-base font-bold flex items-center gap-2">
-                    <FolderOpen20Regular className="w-5 h-5 text-primary" />
+                    <FolderOpen className="w-5 h-5 text-primary" weight="duotone" />
                     مكتبة قوالب الكولاج والطباعة
                   </DialogTitle>
                   <DialogDescription className="text-right text-xs text-muted-foreground">
@@ -223,11 +219,11 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                 <Tabs defaultValue="official" className="w-full mt-2">
                   <TabsList className="grid w-full grid-cols-2 bg-input p-1 rounded-xl h-8 border border-border">
                     <TabsTrigger value="official" className="rounded-lg font-bold text-xs cursor-pointer py-1 flex items-center justify-center gap-1.5">
-                      <Document16Regular className="w-3.5 h-3.5" />
+                      <FileText className="w-3.5 h-3.5" weight="duotone" />
                       <span>نماذج الطباعة الرسمية</span>
                     </TabsTrigger>
                     <TabsTrigger value="saved" className="rounded-lg font-bold text-xs cursor-pointer py-1 flex items-center justify-center gap-1.5">
-                      <Image16Regular className="w-3.5 h-3.5" />
+                      <Image className="w-3.5 h-3.5" weight="duotone" />
                       <span>قوالبي المحفوظة</span>
                       {savedTemplates.length > 0 && (
                         <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-bold">
@@ -241,10 +237,10 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                     {/* فلاتر الفئات بالأيقونات */}
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-none">
                       {[
-                        { id: "all", label: "الكل", icon: Grid16Regular },
-                        { id: "id_passport", label: "هوية وجواز", icon: Person16Regular },
-                        { id: "docs", label: "وثائق ومعاملات", icon: Document16Regular },
-                        { id: "grid", label: "شبكات كولاج", icon: Image16Regular },
+                        { id: "all", label: "الكل", icon: GridFour },
+                        { id: "id_passport", label: "هوية وجواز", icon: User },
+                        { id: "docs", label: "وثائق ومعاملات", icon: FileText },
+                        { id: "grid", label: "شبكات كولاج", icon: Image },
                       ].map((cat) => {
                         const isCatActive = officialFilter === cat.id;
                         const IconComponent = cat.icon;
@@ -262,6 +258,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                           >
                             <IconComponent
                               className={cn("w-3.5 h-3.5", isCatActive ? "text-primary-foreground" : "text-primary")}
+                              weight={isCatActive ? "fill" : "duotone"}
                             />
                             <span>{cat.label}</span>
                           </button>
@@ -322,7 +319,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
                     {savedTemplates.length === 0 ? (
                       <FluentEmptyState
-                        icon={<Add20Regular className="w-8 h-8 text-primary" />}
+                        icon={<Plus className="w-8 h-8 text-primary" weight="duotone" />}
                         title="لا توجد قوالب مخصصة محفوظة"
                         description="قم بتخصيص شبكة كولاج من اللوحة وحفظها لتظهر هنا للوصول السريع."
                       />
@@ -348,7 +345,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
       ) : (
         <div className="space-y-4" dir="rtl">
           <FluentSection
-            icon={<PaintBrush20Regular className="w-4 h-4 text-primary" />}
+            icon={<PaintBrush className="w-4 h-4 text-primary" weight="duotone" />}
             title="خلفية مساحة العمل"
           >
             <StudioCanvasColorDeck

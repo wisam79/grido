@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/huge-icon";
-import { Grid16Regular, Checkmark16Regular, Save16Regular } from "@fluentui/react-icons";
+import { SquaresFour, Check, FloppyDisk } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import type {
   FreeformLayout,
@@ -440,7 +440,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         {/* Header — رأس النافذة مع محدد أبعاد الورقة المليمتري */}
         <DialogHeader className="border-b border-border/40 pb-2.5 shrink-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Grid16Regular className="w-4 h-4 text-primary" />
+            <SquaresFour className="w-4 h-4 text-primary" weight="duotone" />
             <span>محرر الكولاج الحر المتقدم</span>
           </DialogTitle>
 
@@ -539,7 +539,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                 </>
               ) : (
                 <>
-                  <Save16Regular className="w-3.5 h-3.5 text-emerald-500" />
+                  <FloppyDisk className="w-3.5 h-3.5 text-emerald-500" weight="bold" />
                   <span>حفظ كقالب</span>
                 </>
               )}
@@ -572,7 +572,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                 </>
               ) : (
                 <>
-                  <Checkmark16Regular className="w-3.5 h-3.5" />
+                  <Check className="w-3.5 h-3.5" weight="bold" />
                   <span>تطبيق على الكانفس</span>
                 </>
               )}

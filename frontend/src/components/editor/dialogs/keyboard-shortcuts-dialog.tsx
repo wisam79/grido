@@ -6,11 +6,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Keyboard24Regular,
-  ArrowUp16Regular,
-  ArrowDown16Regular,
-  Sparkle16Regular,
-} from "@fluentui/react-icons";
+  Keyboard,
+  ArrowUp,
+  ArrowDown,
+  Sparkle,
+} from "@phosphor-icons/react";
 import { Separator } from "@/components/ui/separator";
 
 interface ShortcutItem {
@@ -101,7 +101,7 @@ export function KeyboardShortcutsDialog() {
         {/* رأس النافذة الثابت */}
         <DialogHeader className="px-5 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            <Keyboard24Regular className="text-primary w-6 h-6 shrink-0" />
+            <Keyboard className="text-primary w-6 h-6 shrink-0" weight="duotone" />
             <span>اختصارات لوحة المفاتيح</span>
           </DialogTitle>
         </DialogHeader>
@@ -111,7 +111,7 @@ export function KeyboardShortcutsDialog() {
           {categories.map((cat, catIdx) => (
             <div key={catIdx} className="space-y-2">
               <div className="text-[11px] font-extrabold text-primary flex items-center gap-1.5 px-0.5">
-                <Sparkle16Regular className="opacity-70 w-3.5 h-3.5 shrink-0" />
+                <Sparkle className="opacity-70 w-3.5 h-3.5 shrink-0" weight="duotone" />
                 <span>{cat.title}</span>
               </div>
               <div className="bg-muted/30 rounded-xl border border-border/40 p-2 space-y-1">
@@ -129,8 +129,8 @@ export function KeyboardShortcutsDialog() {
                           >
                             {key === "الأسهم" ? (
                               <div className="flex items-center gap-0.5">
-                                <ArrowUp16Regular className="w-3.5 h-3.5 shrink-0" />
-                                <ArrowDown16Regular className="w-3.5 h-3.5 shrink-0" />
+                                <ArrowUp className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                                <ArrowDown className="w-3.5 h-3.5 shrink-0" weight="bold" />
                               </div>
                             ) : (
                               key

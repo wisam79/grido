@@ -3,12 +3,12 @@ import { MIXED_COLLAGE_PRESETS } from "../lib/mixed-presets";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Checkmark16Regular,
-  Grid16Regular,
-  LayoutRowTwo16Regular,
-  LayoutColumnTwo16Regular,
-  Sparkle16Regular,
-} from "@fluentui/react-icons";
+  Check,
+  SquaresFour,
+  Rows,
+  Columns,
+  Sparkle,
+} from "@phosphor-icons/react";
 import type { MixedPreset } from "../types";
 
 interface MixedPresetsGridProps {
@@ -17,16 +17,16 @@ interface MixedPresetsGridProps {
 }
 
 function PresetIcon({ iconName, className }: { iconName: string; className?: string }) {
-  if (iconName === "Columns") return <LayoutColumnTwo16Regular className={className} />;
-  if (iconName === "Rows") return <LayoutRowTwo16Regular className={className} />;
-  return <Grid16Regular className={className} />;
+  if (iconName === "Columns") return <Columns className={className} weight="bold" />;
+  if (iconName === "Rows") return <Rows className={className} weight="bold" />;
+  return <SquaresFour className={className} weight="bold" />;
 }
 
 export const MixedPresetsGrid: React.FC<MixedPresetsGridProps> = React.memo(function MixedPresetsGrid({ activePresetId, onSelectPreset }) {
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none font-cairo">
       <div className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground me-1 shrink-0 select-none">
-        <Sparkle16Regular className="w-3.5 h-3.5 text-amber-500" />
+        <Sparkle className="w-3.5 h-3.5 text-amber-500" weight="duotone" />
         <span>القوالب:</span>
       </div>
 
@@ -47,7 +47,7 @@ export const MixedPresetsGrid: React.FC<MixedPresetsGridProps> = React.memo(func
                 )}
               >
                 {isActive ? (
-                  <Checkmark16Regular className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
                 ) : (
                   <PresetIcon iconName={preset.iconName} className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" />
                 )}

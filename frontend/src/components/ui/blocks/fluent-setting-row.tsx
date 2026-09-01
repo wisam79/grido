@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { QuestionCircle16Regular } from "@fluentui/react-icons";
+import { Question } from "@phosphor-icons/react";
 
 export interface FluentSettingRowProps extends React.HTMLAttributes<HTMLDivElement> {
   label: React.ReactNode;
@@ -45,7 +45,7 @@ export const FluentSettingRow = React.memo(
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer"
                       aria-label="مزيد من المعلومات"
                     >
-                      <QuestionCircle16Regular className="size-3.5 shrink-0" />
+                      <Question className="size-3.5 shrink-0" weight="bold" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-cairo">
@@ -85,7 +85,7 @@ export const FluentSettingRow = React.memo(
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer inline-flex"
                       aria-label="مزيد من المعلومات"
                     >
-                      <QuestionCircle16Regular className="size-3.5 shrink-0" />
+                      <Question className="size-3.5 shrink-0" weight="bold" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-cairo">

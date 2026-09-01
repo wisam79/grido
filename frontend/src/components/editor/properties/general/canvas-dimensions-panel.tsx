@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowSwap16Regular, ChevronDown16Regular, Checkmark16Regular, Crop16Regular } from "@fluentui/react-icons";
+import { ArrowsLeftRight, CaretDown, Check, Crop } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -169,7 +169,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   return (
     <FluentSection
-      icon={<Crop16Regular className="w-3.5 h-3.5 text-primary" />}
+      icon={<Crop className="w-3.5 h-3.5 text-primary" weight="duotone" />}
       title="مساحة العمل"
       collapsible
       defaultOpen={true}
@@ -192,7 +192,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 <span className="truncate">
                   {activePreset ? activePreset.name.split(" (")[0] : "مقاس مخصص"}
                 </span>
-                <ChevronDown16Regular className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <CaretDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8" align="start">
@@ -203,7 +203,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 className="text-xs text-right justify-between font-bold cursor-pointer rounded-md"
               >
                 <span>مقاس مخصص يدوي</span>
-                {activePresetId === "custom" && <Checkmark16Regular className="w-3.5 h-3.5 text-primary" />}
+                {activePresetId === "custom" && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
               </DropdownMenuItem>
               {PAPER_SIZES.map((p) => {
                 const nameParts = p.name.split(" (");
@@ -216,7 +216,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                     className="text-xs text-right justify-between cursor-pointer rounded-md flex items-center"
                   >
                     <span>{label}</span>
-                    {activePresetId === p.id && <Checkmark16Regular className="w-3.5 h-3.5 text-primary" />}
+                    {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
                   </DropdownMenuItem>
                 );
               })}
@@ -276,7 +276,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             aria-label="تبديل الاتجاه (أفقي/عمودي)"
             className="w-8 h-8 rounded-md bg-input hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none"
           >
-            <ArrowSwap16Regular className="w-3.5 h-3.5" />
+            <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
           </button>
 
           {/* الارتفاع H */}

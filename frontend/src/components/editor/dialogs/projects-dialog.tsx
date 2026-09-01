@@ -19,20 +19,19 @@ import { domain } from "../../../../wailsjs/go/models";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/huge-icon";
 import {
-  FolderOpen24Regular,
-  FolderOpen16Regular,
-  Save16Regular,
-  Delete16Regular,
-  Calendar20Regular,
-  Database16Regular,
-  ArrowDownload16Regular,
-  ArrowUpload16Regular,
-  Warning16Regular,
-  Search16Regular,
-  ArrowSort20Regular,
-  Pin16Regular,
-  PinOff16Regular,
-} from "@fluentui/react-icons";
+  FolderOpen,
+  FloppyDisk,
+  Trash,
+  Calendar,
+  Database,
+  DownloadSimple,
+  UploadSimple,
+  Warning,
+  MagnifyingGlass,
+  ArrowsDownUp,
+  PushPin,
+  PushPinSlash,
+} from "@phosphor-icons/react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -297,7 +296,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
         <DialogContent className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-xl rounded-2xl p-5 font-cairo fluent-specular" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-foreground font-cairo">
-              <FolderOpen24Regular className="text-primary w-6 h-6 shrink-0" />
+              <FolderOpen className="text-primary w-6 h-6 shrink-0" weight="duotone" />
               <span>مكتبة المشاريع المحلية</span>
             </DialogTitle>
           </DialogHeader>
@@ -305,15 +304,15 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4 font-cairo">
             <TabsList className="grid grid-cols-3 mb-4">
               <TabsTrigger value="save" className="flex items-center gap-1.5 justify-center">
-                <Save16Regular className="w-3.5 h-3.5 shrink-0" />
+                <FloppyDisk className="w-3.5 h-3.5 shrink-0" />
                 <span>حفظ المشروع</span>
               </TabsTrigger>
               <TabsTrigger value="list" className="flex items-center gap-1.5 justify-center" onClick={fetchProjects}>
-                <FolderOpen16Regular className="w-3.5 h-3.5 shrink-0" />
+                <FolderOpen className="w-3.5 h-3.5 shrink-0" />
                 <span>المشاريع</span>
               </TabsTrigger>
               <TabsTrigger value="backup" className="flex items-center gap-1.5 justify-center">
-                <Database16Regular className="w-3.5 h-3.5 shrink-0" />
+                <Database className="w-3.5 h-3.5 shrink-0" />
                 <span>نسخ احتياطي</span>
               </TabsTrigger>
             </TabsList>
@@ -338,7 +337,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                   </>
                 ) : (
                   <>
-                    <Save16Regular className="w-3.5 h-3.5 shrink-0" />
+                    <FloppyDisk className="w-3.5 h-3.5 shrink-0" weight="bold" />
                     <span>حفظ المشروع</span>
                   </>
                 )}
@@ -349,7 +348,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               {/* شريط البحث والفرز */}
               <div className="flex gap-2 items-center">
                 <div className="relative flex-1">
-                  <Search16Regular className="absolute right-2.5 top-2 text-muted-foreground w-4 h-4 shrink-0" />
+                  <MagnifyingGlass className="absolute right-2.5 top-2 text-muted-foreground w-4 h-4 shrink-0" />
                   <Input
                     placeholder="بحث في المشاريع..."
                     className="pr-8 h-8 text-xs rounded-md"
@@ -364,7 +363,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("date") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="الفرز حسب التاريخ"
                   >
-                    <Calendar20Regular className="w-3.5 h-3.5 shrink-0" />
+                    <Calendar className="w-3.5 h-3.5 shrink-0" weight={sortBy.startsWith("date") ? "bold" : "regular"} />
                   </button>
                   <button 
                     type="button"
@@ -372,7 +371,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("name") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="الفرز الأبجدي"
                   >
-                    <ArrowSort20Regular className="w-3.5 h-3.5 shrink-0" />
+                    <ArrowsDownUp className="w-3.5 h-3.5 shrink-0" weight={sortBy.startsWith("name") ? "bold" : "regular"} />
                   </button>
                 </div>
               </div>
@@ -403,7 +402,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                       {isPinned && <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />}
                       <div className="space-y-1 pl-2 pr-1">
                         <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                          {isPinned && <Pin16Regular className="text-primary w-3 h-3 shrink-0" />}
+                          {isPinned && <PushPin className="text-primary w-3 h-3 shrink-0" weight="fill" />}
                           {project.name}
                         </h4>
                         <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
@@ -411,7 +410,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                             {project.mode === "single" ? "صورة مفردة" : "كولاج مجمع"}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Calendar20Regular className="w-3 h-3 shrink-0" />
+                            <Calendar className="w-3 h-3 shrink-0" />
                             {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString("ar-EG") : ""}
                           </span>
                         </div>
@@ -425,7 +424,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                           className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title={isPinned ? "إلغاء التثبيت" : "تثبيت في الأعلى"}
                         >
-                          {isPinned ? <PinOff16Regular className="w-3.5 h-3.5 shrink-0" /> : <Pin16Regular className="w-3.5 h-3.5 shrink-0" />}
+                          {isPinned ? <PushPinSlash className="w-3.5 h-3.5 shrink-0" /> : <PushPin className="w-3.5 h-3.5 shrink-0" />}
                         </Button>
                         <Button
                           variant="ghost"
@@ -433,7 +432,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                           onClick={(e) => handleDelete(project.id, e)}
                           className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
-                          <Delete16Regular className="w-3.5 h-3.5 shrink-0" />
+                          <Trash className="w-3.5 h-3.5 shrink-0" />
                         </Button>
                       </div>
                     </div>
@@ -462,7 +461,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                       </>
                     ) : (
                       <>
-                        <ArrowDownload16Regular className="w-3.5 h-3.5 shrink-0" />
+                        <DownloadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
                         <span>تصدير JSON</span>
                       </>
                     )}
@@ -476,7 +475,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                   </div>
                   <label className="cursor-pointer">
                     <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
-                      <ArrowUpload16Regular className="w-3.5 h-3.5 shrink-0" />
+                      <UploadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
                       <span>رفع ملف</span>
                     </span>
                     <input
@@ -501,7 +500,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
                     disabled={backupActionLoading}
                     className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-xs"
                   >
-                    <Delete16Regular className="w-3.5 h-3.5 shrink-0" />
+                    <Trash className="w-3.5 h-3.5 shrink-0" weight="bold" />
                     <span>حذف الكل</span>
                   </Button>
                 </div>
@@ -533,7 +532,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
         <DialogContent className="sm:max-w-[400px]" dir="rtl">
           <DialogHeader>
             <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
-              <ArrowUpload16Regular className="text-primary w-4 h-4 shrink-0" />
+              <UploadSimple className="text-primary w-4 h-4 shrink-0" weight="duotone" />
               <span>استيراد المشاريع</span>
             </DialogTitle>
           </DialogHeader>
@@ -585,7 +584,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-right flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-bold">
-              <Warning16Regular className="w-4 h-4 shrink-0" />
+              <Warning className="w-4 h-4 shrink-0" weight="duotone" />
               <span>تحذير: تهيئة مكتبة المشاريع</span>
             </AlertDialogTitle>
             <AlertDialogDescription className="font-cairo text-right text-xs">

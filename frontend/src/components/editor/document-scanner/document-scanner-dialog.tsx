@@ -11,38 +11,53 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/huge-icon";
 import {
-  DocumentSearch24Regular,
-  Sparkle16Regular,
-  ArrowRotateClockwise20Regular,
-  Checkmark16Regular,
-  Eye16Regular,
-  ArrowReset20Regular,
-  Crop16Regular,
-  Document16Regular,
-  ContactCard16Regular,
-  Grid16Regular,
-} from "@fluentui/react-icons";
+  Scan,
+  Sparkle,
+  ArrowClockwise,
+  Check,
+  Eye,
+  ArrowCounterClockwise,
+  FileText,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import {
   Point,
   warpPerspective,
   inferSmartDocumentAspect,
   detectDocumentAuto,
+  DetectedDocument,
+  DocumentAspectType,
+  ScannerFilterMode,
+  DetectionMode,
+  splitQuadIntoIdCards,
+  addManualDocumentQuad,
+  rotateCanvas,
 } from "./perspective-transform";
 import { toast } from "sonner";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { ScannerSidebar } from "./components/scanner-sidebar";
 
 interface DocumentScannerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   imageSrc: string;
-  onSave: (processedBase64: string) => void;
+  onSave: (processedBase64: string | string[]) => void;
 }
 
-type AspectRatioOption = "free" | "a4_p" | "a4_l" | "id_card" | "square";
-type FilterType = "original" | "magic" | "bw";
+function isPointInQuad(p: Point, quad: Point[]): boolean {
+  if (!quad || quad.length < 4) return false;
+  let inside = false;
+  for (let i = 0, j = quad.length - 1; i < quad.length; j = i++) {
+    const xi = quad[i].x, yi = quad[i].y;
+    const xj = quad[j].x, yj = quad[j].y;
+    const denom = yj - yi;
+    if (denom === 0) continue;
+    const intersect = ((yi > p.y) !== (yj > p.y)) && (p.x < ((xj - xi) * (p.y - yi)) / denom + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
 
 export function DocumentScannerDialog({
   open,
@@ -54,10 +69,16 @@ export function DocumentScannerDialog({
   const [activeCorner, setActiveCorner] = useState<number | null>(null);
   const [isHoveringCorner, setIsHoveringCorner] = useState<number | null>(null);
   const [loupePos, setLoupePos] = useState<{ x: number; y: number } | null>(null);
-  const [aspect, setAspect] = useState<AspectRatioOption>("free");
-  const [filter, setFilter] = useState<FilterType>("original");
+  const [aspect, setAspect] = useState<DocumentAspectType>("free");
+  const [filter, setFilter] = useState<ScannerFilterMode>("original");
+  const [rotation, setRotation] = useState<number>(0);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+
+  // حالة المستندات المتعددة المكتشفة وتحديدها
+  const [detectedDocs, setDetectedDocs] = useState<DetectedDocument[]>([]);
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+  const [activeDocIndex, setActiveDocIndex] = useState<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -67,35 +88,81 @@ export function DocumentScannerDialog({
   const [imgSize, setImgSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const displayScaleRef = useRef<number>(1);
   const [isDetecting, setIsDetecting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const activeReqIdRef = useRef<number>(0);
+  const drawRafRef = useRef<number | null>(null);
+  const loupeRafRef = useRef<number | null>(null);
+
+  const selectDocument = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= detectedDocs.length) return;
+      setActiveDocIndex(index);
+      const doc = detectedDocs[index];
+      setCorners(doc.corners);
+      setAspect(doc.aspectType || "free");
+      setRotation(doc.rotation || 0);
+      if (isPreviewMode) {
+        setIsPreviewMode(false);
+        setPreviewSrc(null);
+      }
+    },
+    [detectedDocs, isPreviewMode]
+  );
+
+  const toggleDocSelection = useCallback((id: string) => {
+    setSelectedDocIds((prev) =>
+      prev.includes(id) ? (prev.length > 1 ? prev.filter((d) => d !== id) : prev) : [...prev, id]
+    );
+  }, []);
+
+  const selectAllDocs = useCallback(() => {
+    if (selectedDocIds.length === detectedDocs.length) {
+      if (detectedDocs[activeDocIndex]) {
+        setSelectedDocIds([detectedDocs[activeDocIndex].id]);
+      }
+    } else {
+      setSelectedDocIds(detectedDocs.map((d) => d.id));
+    }
+  }, [detectedDocs, selectedDocIds, activeDocIndex]);
 
   const runDetection = useCallback(
-    async (notify: boolean) => {
+    async (notify: boolean, mode: DetectionMode = "auto") => {
       const img = imgRef.current;
       if (!img) return;
       const reqId = ++activeReqIdRef.current;
       setIsDetecting(true);
       try {
-        const result = await detectDocumentAuto(img, img.naturalWidth, img.naturalHeight);
+        const result = await detectDocumentAuto(img, img.naturalWidth, img.naturalHeight, mode);
         if (reqId !== activeReqIdRef.current) return;
-        if (result.corners) {
-          setCorners(result.corners);
-          const inferred = inferSmartDocumentAspect(result.corners);
-          if (inferred !== "free") setAspect(inferred);
+        if (result.documents && result.documents.length > 0) {
+          setDetectedDocs(result.documents);
+          setSelectedDocIds(result.documents.map((d) => d.id));
+          setActiveDocIndex(0);
+          const first = result.documents[0];
+          setCorners(first.corners);
+          if (first.aspectType !== "free") setAspect(first.aspectType);
+
           if (notify) {
-            if (result.method === "opencv") {
-              toast.success(`كشف دقيق عبر OpenCV (${Math.round(result.confidence * 100)}%) 🎯`);
+            if (result.documents.length > 1) {
+              toast.success(`تم اكتشاف ${result.documents.length} مستندات في الصورة بنجاح! 🎯`);
+            } else if (result.method === "scanic" || result.method === "opencv") {
+              toast.success(`كشف تلقائي دقيق (${Math.round(result.confidence * 100)}%) 🎯`);
             } else if (result.method === "js") {
-              toast.success("كشف عبر الخوارزمية الاحتياطية 🎯");
+              toast.success("كشف ذكي للمستند/البطاقة 🎯");
             } else {
               toast.warning("لم يُكتشف المستند بدقة — اضبط الأركان يدوياً ⚠️");
             }
           }
+        } else if (result.corners) {
+          setCorners(result.corners);
+          const inferred = inferSmartDocumentAspect(result.corners);
+          if (inferred !== "free") setAspect(inferred);
+          if (notify) toast.success("تم كشف المستند 🎯");
         } else {
           if (notify) toast.warning("لم يُنتج الكشف أي أركان — استخدم التعديل اليدوي ⚠️");
         }
-      } catch (err) {
+      } catch {
         if (reqId === activeReqIdRef.current && notify) {
           toast.error("حدث خطأ أثناء الكشف — جرب مرة أخرى");
         }
@@ -108,13 +175,25 @@ export function DocumentScannerDialog({
     []
   );
 
-  // 🔒 إصلاح BUG-3 & BUG-13: التحقق من التلغية عند فك المكون وإزالة prevOpen المزدوج
+  // 🔒 تنظيف الحالات عند الإغلاق والفتح
   useEffect(() => {
     if (!open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsDetecting(false);
       setIsPreviewMode(false);
       setPreviewSrc(null);
+      setRotation(0);
+      setActiveCorner(null);
+      setIsHoveringCorner(null);
+      setLoupePos(null);
+      if (drawRafRef.current !== null) {
+        cancelAnimationFrame(drawRafRef.current);
+        drawRafRef.current = null;
+      }
+      if (loupeRafRef.current !== null) {
+        cancelAnimationFrame(loupeRafRef.current);
+        loupeRafRef.current = null;
+      }
       return;
     }
     if (!imageSrc) return;
@@ -127,9 +206,19 @@ export function DocumentScannerDialog({
       if (isCancelled) return;
       imgRef.current = img;
       setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+      
+      const padX = Math.round(img.naturalWidth * 0.05);
+      const padY = Math.round(img.naturalHeight * 0.05);
+      setCorners([
+        { x: padX, y: padY },
+        { x: img.naturalWidth - padX, y: padY },
+        { x: img.naturalWidth - padX, y: img.naturalHeight - padY },
+        { x: padX, y: img.naturalHeight - padY },
+      ]);
       setIsPreviewMode(false);
       setPreviewSrc(null);
-      // Run detection asynchronously with OpenCV + JS fallback
+      setRotation(0);
+
       runDetection(false);
     };
 
@@ -149,36 +238,164 @@ export function DocumentScannerDialog({
     };
   }, [open, imageSrc, runDetection]);
 
+  // 🔒 تحكم الأسهم الدقيق بالدبابيس واختصارات التبديل بين المستندات
+  useEffect(() => {
+    if (!open || isPreviewMode) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+
+      // التبديل السريع بين المستندات بالأرقام (1-9)
+      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+        const num = parseInt(e.key, 10);
+        if (!isNaN(num) && num >= 1 && num <= detectedDocs.length) {
+          selectDocument(num - 1);
+          return;
+        }
+      }
+
+      if (activeCorner === null || corners.length !== 4) return;
+      const baseStep = e.shiftKey ? 10 : 2;
+      const canvasRect = canvasRef.current?.getBoundingClientRect();
+      const displayScale = canvasRect && canvasRect.width > 0 ? canvasRect.width / Math.max(1, imgSize.w) : 1;
+      const step = Math.max(1, Math.round(baseStep / Math.max(0.05, displayScale)));
+
+      let dx = 0;
+      let dy = 0;
+      if (e.key === "ArrowLeft") dx = -step;
+      else if (e.key === "ArrowRight") dx = step;
+      else if (e.key === "ArrowUp") dy = -step;
+      else if (e.key === "ArrowDown") dy = step;
+      else return;
+
+      e.preventDefault();
+      setCorners((prev) => {
+        const next = [...prev];
+        const cur = next[activeCorner];
+        next[activeCorner] = {
+          x: Math.max(0, Math.min(imgSize.w, cur.x + dx)),
+          y: Math.max(0, Math.min(imgSize.h, cur.y + dy)),
+        };
+        return next;
+      });
+      setDetectedDocs((prev) =>
+        prev.map((doc, idx) =>
+          idx === activeDocIndex
+            ? {
+                ...doc,
+                aspectType: "free",
+                corners: doc.corners.map((pt, cIdx) =>
+                  cIdx === activeCorner
+                    ? {
+                        x: Math.max(0, Math.min(imgSize.w, pt.x + dx)),
+                        y: Math.max(0, Math.min(imgSize.h, pt.y + dy)),
+                      }
+                    : pt
+                ),
+              }
+            : doc
+        )
+      );
+      setAspect("free");
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, isPreviewMode, activeCorner, corners, imgSize, detectedDocs, activeDocIndex, selectDocument]);
+
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
     if (!canvas || !img) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const container = containerRef.current;
     if (!container) return;
 
-    const maxW = container.clientWidth - 16;
-    const maxH = container.clientHeight - 16;
+    const maxW = Math.max(container.clientWidth - 16, 200);
+    const maxH = Math.max(container.clientHeight - 16, 200);
 
     const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
+    if (scale <= 0) return;
     displayScaleRef.current = scale;
 
-    const canvasW = Math.round(img.naturalWidth * scale);
-    const canvasH = Math.round(img.naturalHeight * scale);
+    const displayW = Math.max(1, Math.round(img.naturalWidth * scale));
+    const displayH = Math.max(1, Math.round(img.naturalHeight * scale));
 
-    canvas.width = canvasW;
-    canvas.height = canvasH;
+    // دعم دقة الشاشات العالية HiDPI / Retina
+    const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2.5) : 1;
+    const pixelW = Math.round(displayW * dpr);
+    const pixelH = Math.round(displayH * dpr);
 
-    // رسم الصورة الأساسية دائماً — كانت المنطقة سوداء تماماً عند فشل الكشف
-    // التلقائي لعدم وجود 4 أركان (إصلاح Bug#21)
-    ctx.drawImage(img, 0, 0, canvasW, canvasH);
+    if (canvas.width !== pixelW || canvas.height !== pixelH) {
+      canvas.width = pixelW;
+      canvas.height = pixelH;
+    }
+    canvas.style.width = `${displayW}px`;
+    canvas.style.height = `${displayH}px`;
 
-    if (isPreviewMode || corners.length !== 4) return;
+    ctx.save();
+    ctx.scale(dpr, dpr);
 
-    // المضلع المحيطي التفاعلي الشفاف
+    // رسم الصورة الأساسية
+    ctx.drawImage(img, 0, 0, displayW, displayH);
+
+    if (isPreviewMode) {
+      ctx.restore();
+      return;
+    }
+
+    // رسم المضلعات المكتشفة الأخرى غير النشطة (Inactive Document Polygons)
+    if (detectedDocs.length > 1) {
+      detectedDocs.forEach((doc, idx) => {
+        if (idx === activeDocIndex || !doc.corners || doc.corners.length !== 4) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(doc.corners[0].x * scale, doc.corners[0].y * scale);
+        ctx.lineTo(doc.corners[1].x * scale, doc.corners[1].y * scale);
+        ctx.lineTo(doc.corners[2].x * scale, doc.corners[2].y * scale);
+        ctx.lineTo(doc.corners[3].x * scale, doc.corners[3].y * scale);
+        ctx.closePath();
+
+        ctx.fillStyle = "rgba(16, 185, 129, 0.12)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(16, 185, 129, 0.85)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 4]);
+        ctx.stroke();
+
+        // رسم شارة رقم المستند في المنتصف
+        const cx =
+          ((doc.corners[0].x + doc.corners[1].x + doc.corners[2].x + doc.corners[3].x) / 4) * scale;
+        const cy =
+          ((doc.corners[0].y + doc.corners[1].y + doc.corners[2].y + doc.corners[3].y) / 4) * scale;
+        ctx.fillStyle = "rgba(16, 185, 129, 0.95)";
+        ctx.beginPath();
+        ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 11px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`${idx + 1}`, cx, cy);
+        ctx.restore();
+      });
+    }
+
+    if (corners.length !== 4) {
+      ctx.restore();
+      return;
+    }
+
+    // المضلع المحيطي التفاعلي الشفاف للمستند النشط
     ctx.beginPath();
     ctx.moveTo(corners[0].x * scale, corners[0].y * scale);
     ctx.lineTo(corners[1].x * scale, corners[1].y * scale);
@@ -216,10 +433,35 @@ export function DocumentScannerDialog({
       ctx.fillStyle = isActive ? "#ffffff" : docScannerInner();
       ctx.fill();
     });
-  }, [corners, activeCorner, isHoveringCorner, isPreviewMode]);
+
+    ctx.restore();
+  }, [corners, activeCorner, isHoveringCorner, isPreviewMode, detectedDocs, activeDocIndex]);
 
   useEffect(() => {
-    drawCanvas();
+    if (drawRafRef.current !== null) {
+      cancelAnimationFrame(drawRafRef.current);
+    }
+    drawRafRef.current = requestAnimationFrame(() => {
+      drawRafRef.current = null;
+      drawCanvas();
+    });
+    return () => {
+      if (drawRafRef.current !== null) {
+        cancelAnimationFrame(drawRafRef.current);
+        drawRafRef.current = null;
+      }
+    };
+  }, [drawCanvas]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const ro = new ResizeObserver(() => {
+      drawCanvas();
+    });
+    ro.observe(container);
+    return () => ro.disconnect();
   }, [drawCanvas]);
 
   const updateLoupe = useCallback(
@@ -234,8 +476,8 @@ export function DocumentScannerDialog({
       if (!lCtx) return;
 
       const loupeSize = 110;
-      loupeCanvas.width = loupeSize;
-      loupeCanvas.height = loupeSize;
+      if (loupeCanvas.width !== loupeSize) loupeCanvas.width = loupeSize;
+      if (loupeCanvas.height !== loupeSize) loupeCanvas.height = loupeSize;
 
       lCtx.clearRect(0, 0, loupeSize, loupeSize);
 
@@ -251,6 +493,7 @@ export function DocumentScannerDialog({
       const sx = Math.max(0, Math.min(img.naturalWidth - srcRegionW, pt.x - srcRegionW / 2));
       const sy = Math.max(0, Math.min(img.naturalHeight - srcRegionH, pt.y - srcRegionH / 2));
 
+      lCtx.imageSmoothingEnabled = false;
       lCtx.drawImage(img, sx, sy, srcRegionW, srcRegionH, 0, 0, loupeSize, loupeSize);
 
       const center = loupeSize / 2;
@@ -267,27 +510,48 @@ export function DocumentScannerDialog({
 
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
-        setLoupePos({
-          x: clientX - containerRect.left - loupeSize / 2,
-          y: clientY - containerRect.top - loupeSize - 20,
-        });
+        let lx = clientX - containerRect.left - loupeSize / 2;
+        let ly = clientY - containerRect.top - loupeSize - 20;
+
+        // 🔒 حماية المكبرة من الخروج أعلى الإطار عبر قلب موضعها للأسفل
+        if (ly < 10) {
+          ly = clientY - containerRect.top + 30;
+        }
+
+        lx = Math.max(8, Math.min(containerRect.width - loupeSize - 8, lx));
+        ly = Math.max(8, Math.min(containerRect.height - loupeSize - 8, ly));
+
+        setLoupePos({ x: lx, y: ly });
       }
     },
     [corners]
   );
 
+  const scheduleLoupeUpdate = useCallback(
+    (cornerIndex: number, clientX: number, clientY: number) => {
+      if (loupeRafRef.current !== null) {
+        cancelAnimationFrame(loupeRafRef.current);
+      }
+      loupeRafRef.current = requestAnimationFrame(() => {
+        loupeRafRef.current = null;
+        updateLoupe(cornerIndex, clientX, clientY);
+      });
+    },
+    [updateLoupe]
+  );
+
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (isPreviewMode || corners.length !== 4) return;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !imgSize.w || !imgSize.h) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scale = displayScaleRef.current;
-    const clickX = (e.clientX - rect.left) / scale;
-    const clickY = (e.clientY - rect.top) / scale;
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const clickX = (e.clientX - rect.left) * (imgSize.w / rect.width);
+    const clickY = (e.clientY - rect.top) * (imgSize.h / rect.height);
 
     let closestIdx = -1;
-    let minDist = 30;
+    let minDist = 32;
 
     corners.forEach((pt, idx) => {
       const dist = Math.hypot(pt.x - clickX, pt.y - clickY);
@@ -299,31 +563,57 @@ export function DocumentScannerDialog({
 
     if (closestIdx !== -1) {
       setActiveCorner(closestIdx);
-      canvas.setPointerCapture(e.pointerId);
-      updateLoupe(closestIdx, e.clientX, e.clientY);
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+      scheduleLoupeUpdate(closestIdx, e.clientX, e.clientY);
+    } else if (detectedDocs.length > 1) {
+      const clickedDocIdx = detectedDocs.findIndex(
+        (doc, idx) => idx !== activeDocIndex && isPointInQuad({ x: clickX, y: clickY }, doc.corners)
+      );
+      if (clickedDocIdx !== -1) {
+        selectDocument(clickedDocIdx);
+      }
     }
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (isPreviewMode) return;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !imgSize.w || !imgSize.h) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scale = displayScaleRef.current;
-    const currX = Math.max(0, Math.min(imgSize.w, (e.clientX - rect.left) / scale));
-    const currY = Math.max(0, Math.min(imgSize.h, (e.clientY - rect.top) / scale));
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const clickX = (e.clientX - rect.left) * (imgSize.w / rect.width);
+    const clickY = (e.clientY - rect.top) * (imgSize.h / rect.height);
 
-    if (activeCorner !== null) {
-      const nextCorners = [...corners];
-      nextCorners[activeCorner] = { x: Math.round(currX), y: Math.round(currY) };
+    if (activeCorner !== null && corners.length === 4) {
+      const clampedX = Math.max(0, Math.min(imgSize.w, Math.round(clickX)));
+      const clampedY = Math.max(0, Math.min(imgSize.h, Math.round(clickY)));
+
+      const nextCorners = corners.map((pt, idx) =>
+        idx === activeCorner ? { x: clampedX, y: clampedY } : pt
+      );
       setCorners(nextCorners);
-      updateLoupe(activeCorner, e.clientX, e.clientY);
+      setDetectedDocs((prev) =>
+        prev.map((doc, idx) => (idx === activeDocIndex ? { ...doc, corners: nextCorners, aspectType: "free" } : doc))
+      );
+      if (aspect !== "free") {
+        setAspect("free");
+      }
+
+      scheduleLoupeUpdate(activeCorner, e.clientX, e.clientY);
     } else {
       let hoverIdx: number | null = null;
+      let minHoverDist = 25;
       corners.forEach((pt, idx) => {
-        const dist = Math.hypot(pt.x - currX, pt.y - currY);
-        if (dist < 25) hoverIdx = idx;
+        const dist = Math.hypot(pt.x - clickX, pt.y - clickY);
+        if (dist < minHoverDist) {
+          minHoverDist = dist;
+          hoverIdx = idx;
+        }
       });
       setIsHoveringCorner(hoverIdx);
     }
@@ -333,30 +623,168 @@ export function DocumentScannerDialog({
     if (activeCorner !== null) {
       setActiveCorner(null);
       setLoupePos(null);
-      if (canvasRef.current) {
-        canvasRef.current.releasePointerCapture(e.pointerId);
+      setDetectedDocs((prev) =>
+        prev.map((doc, idx) => (idx === activeDocIndex ? { ...doc, corners } : doc))
+      );
+      try {
+        if (
+          canvasRef.current &&
+          typeof canvasRef.current.releasePointerCapture === "function" &&
+          typeof canvasRef.current.hasPointerCapture === "function" &&
+          canvasRef.current.hasPointerCapture(e.pointerId)
+        ) {
+          canvasRef.current.releasePointerCapture(e.pointerId);
+        }
+      } catch {
+        // ignore
       }
     }
   };
 
-  const handleAutoDetect = () => {
-    runDetection(true);
+  const handleAutoDetect = (mode?: DetectionMode) => {
+    runDetection(true, mode || "auto");
+  };
+
+  const handleAddManualDocument = () => {
+    if (!imgSize.w || !imgSize.h) return;
+    const newDoc = addManualDocumentQuad(detectedDocs, imgSize.w, imgSize.h);
+    const nextDocs = [...detectedDocs, newDoc];
+    setDetectedDocs(nextDocs);
+    setSelectedDocIds((prev) => [...prev, newDoc.id]);
+    setActiveDocIndex(nextDocs.length - 1);
+    setCorners(newDoc.corners);
+    setAspect(newDoc.aspectType);
+    if (isPreviewMode) {
+      setIsPreviewMode(false);
+      setPreviewSrc(null);
+    }
+    toast.success(`تمت إضافة ${newDoc.label} — اضبط حدوده بالسحب أو الأسهم 🎯`);
+  };
+
+  const handleDeleteDocument = (id: string) => {
+    if (detectedDocs.length <= 1) {
+      toast.warning("يجب الإبقاء على مستند واحد على الأقل");
+      return;
+    }
+    const deletedIdx = detectedDocs.findIndex((d) => d.id === id);
+    if (deletedIdx === -1) return;
+
+    const prevSelectedSet = new Set(selectedDocIds);
+    const survivingDocs = detectedDocs.filter((d) => d.id !== id);
+
+    // إعادة التسمية مع الحفاظ على كائنات جديدة نقية (Immutability)
+    const nextDocs: DetectedDocument[] = survivingDocs.map((doc, idx) => {
+      let aspectLabel = "مستند";
+      if (doc.aspectType === "id_card") aspectLabel = "بطاقة هوية";
+      else if (doc.aspectType === "a4_p" || doc.aspectType === "a4_l") aspectLabel = "ورقة A4";
+      else if (doc.aspectType === "square") aspectLabel = "مستند مربع";
+
+      return {
+        ...doc,
+        id: `doc-${idx + 1}`,
+        label: `مستند ${idx + 1} (${aspectLabel})`,
+      };
+    });
+
+    // مزامنة دقيقة للمستندات المحددة استناداً للمستندات المتبقية التي كانت محددة بالفعل
+    const nextSelected: string[] = [];
+    survivingDocs.forEach((oldDoc, idx) => {
+      if (prevSelectedSet.has(oldDoc.id)) {
+        nextSelected.push(nextDocs[idx].id);
+      }
+    });
+    const finalSelected = nextSelected.length > 0 ? nextSelected : [nextDocs[0].id];
+
+    setDetectedDocs(nextDocs);
+    setSelectedDocIds(finalSelected);
+
+    const newActiveIdx = Math.max(
+      0,
+      Math.min(
+        nextDocs.length - 1,
+        deletedIdx === activeDocIndex
+          ? 0
+          : deletedIdx < activeDocIndex
+          ? activeDocIndex - 1
+          : activeDocIndex
+      )
+    );
+    setActiveDocIndex(newActiveIdx);
+    setCorners(nextDocs[newActiveIdx].corners);
+    setAspect(nextDocs[newActiveIdx].aspectType || "free");
+
+    if (isPreviewMode) {
+      setIsPreviewMode(false);
+      setPreviewSrc(null);
+    }
+    toast.info("تم حذف المستند");
+  };
+
+  const handleSplitIdCards = () => {
+    if (corners.length !== 4) return;
+    const cards = splitQuadIntoIdCards(corners, "vertical");
+    if (cards.length === 2) {
+      setDetectedDocs(cards);
+      setSelectedDocIds(cards.map((c) => c.id));
+      setActiveDocIndex(0);
+      setCorners(cards[0].corners);
+      setAspect("id_card");
+      if (isPreviewMode) {
+        setIsPreviewMode(false);
+        setPreviewSrc(null);
+      }
+      toast.success("تم تقسيم المستند إلى بطاقتي هوية (وجه أمامي وخلفي) 🎯");
+    }
   };
 
   const handleResetCorners = () => {
     if (!imgSize.w || !imgSize.h) return;
-    setCorners([
+    const resetPts = [
       { x: Math.floor(imgSize.w * 0.05), y: Math.floor(imgSize.h * 0.05) },
       { x: Math.floor(imgSize.w * 0.95), y: Math.floor(imgSize.h * 0.05) },
       { x: Math.floor(imgSize.w * 0.95), y: Math.floor(imgSize.h * 0.95) },
       { x: Math.floor(imgSize.w * 0.05), y: Math.floor(imgSize.h * 0.95) },
-    ]);
-    toast.info("تمت إعادة ضبط الأركان لليمين واليسار");
+    ];
+    setCorners(resetPts);
+    setDetectedDocs((prev) =>
+      prev.map((doc, idx) => (idx === activeDocIndex ? { ...doc, corners: resetPts } : doc))
+    );
+    toast.info("تمت إعادة ضبط الأركان");
   };
 
-  const generateWarpedCanvas = (): HTMLCanvasElement | null => {
+  const handleRotateClockwise = () => {
+    const nextRot = (rotation + 90) % 360;
+    setRotation(nextRot);
+    setDetectedDocs((prev) =>
+      prev.map((doc, idx) => (idx === activeDocIndex ? { ...doc, rotation: nextRot } : doc))
+    );
+    if (isPreviewMode) {
+      setIsPreviewMode(false);
+      setPreviewSrc(null);
+    }
+  };
+
+  const handleRotateCounterClockwise = () => {
+    const nextRot = (rotation + 270) % 360;
+    setRotation(nextRot);
+    setDetectedDocs((prev) =>
+      prev.map((doc, idx) => (idx === activeDocIndex ? { ...doc, rotation: nextRot } : doc))
+    );
+    if (isPreviewMode) {
+      setIsPreviewMode(false);
+      setPreviewSrc(null);
+    }
+  };
+
+  const generateWarpedForDoc = (
+    docCorners: Point[],
+    docAspect: DocumentAspectType,
+    isPreview: boolean = false,
+    docRotation?: number,
+    docFilter?: ScannerFilterMode
+  ): HTMLCanvasElement | null => {
     const img = imgRef.current;
-    if (!img || corners.length !== 4) return null;
+    if (!img || docCorners.length !== 4) return null;
 
     const srcCanvas = document.createElement("canvas");
     srcCanvas.width = img.naturalWidth;
@@ -365,51 +793,92 @@ export function DocumentScannerDialog({
     if (!srcCtx) return null;
     srcCtx.drawImage(img, 0, 0);
 
+    // حساب الأبعاد الحقيقية ديناميكياً للحفاظ على دقة الطباعة الكاملة
+    const topW = Math.hypot(docCorners[1].x - docCorners[0].x, docCorners[1].y - docCorners[0].y);
+    const botW = Math.hypot(docCorners[2].x - docCorners[3].x, docCorners[2].y - docCorners[3].y);
+    const leftH = Math.hypot(docCorners[3].x - docCorners[0].x, docCorners[3].y - docCorners[0].y);
+    const rightH = Math.hypot(docCorners[2].x - docCorners[1].x, docCorners[2].y - docCorners[1].y);
+
+    const maxEdgeW = Math.round(Math.max(topW, botW));
+    const maxEdgeH = Math.round(Math.max(leftH, rightH));
+
     let targetW: number | undefined;
     let targetH: number | undefined;
 
-    if (aspect === "a4_p") {
-      targetW = 1240;
-      targetH = 1754;
-    } else if (aspect === "a4_l") {
-      targetW = 1754;
-      targetH = 1240;
-    } else if (aspect === "id_card") {
-      targetW = 1000;
-      targetH = 630;
-    } else if (aspect === "square") {
-      targetW = 1200;
-      targetH = 1200;
+    if (isPreview) {
+      const maxDim = 800;
+      const s = Math.min(1, maxDim / Math.max(maxEdgeW, maxEdgeH, 1));
+      targetW = Math.round(maxEdgeW * s);
+      targetH = Math.round(maxEdgeH * s);
+    } else {
+      targetW = maxEdgeW;
+      targetH = maxEdgeH;
     }
 
+    if (docAspect === "a4_p") {
+      if (isPreview) {
+        targetW = 620;
+        targetH = 877;
+      } else {
+        const baseW = Math.max(1400, maxEdgeW);
+        targetW = baseW;
+        targetH = Math.round(baseW * Math.SQRT2);
+      }
+    } else if (docAspect === "a4_l") {
+      if (isPreview) {
+        targetW = 877;
+        targetH = 620;
+      } else {
+        const baseW = Math.max(1980, maxEdgeW);
+        targetW = baseW;
+        targetH = Math.round(baseW / Math.SQRT2);
+      }
+    } else if (docAspect === "id_card") {
+      if (isPreview) {
+        targetW = 500;
+        targetH = 315;
+      } else {
+        const baseW = Math.max(1200, maxEdgeW);
+        targetW = baseW;
+        targetH = Math.round(baseW / (85.60 / 53.98));
+      }
+    } else if (docAspect === "square") {
+      const avg = isPreview ? 600 : Math.max(1200, Math.round((maxEdgeW + maxEdgeH) / 2));
+      targetW = avg;
+      targetH = avg;
+    }
+
+    const effectiveFilter = docFilter || filter;
     const resCanvas = warpPerspective(
       srcCtx,
       img.naturalWidth,
       img.naturalHeight,
-      corners,
+      docCorners,
       targetW,
       targetH,
-      filter
+      effectiveFilter
     );
 
-    // 🔒 تنظيف srcCanvas (BUG-6)
     srcCanvas.width = 0;
     srcCanvas.height = 0;
+
+    const rotToApply = docRotation !== undefined ? docRotation : rotation;
+    if (rotToApply !== 0 && resCanvas) {
+      return rotateCanvas(resCanvas, rotToApply, true);
+    }
 
     return resCanvas;
   };
 
   const handleTogglePreview = () => {
     if (!isPreviewMode) {
-      const warped = generateWarpedCanvas();
+      const warped = generateWarpedForDoc(corners, aspect, true);
       if (warped) {
         setPreviewSrc(warped.toDataURL("image/png"));
         setIsPreviewMode(true);
-        // 🔒 تنظيف warped canvas (BUG-12)
         warped.width = 0;
         warped.height = 0;
       } else {
-        // لا أركان بعد (فشل الكشف التلقائي) — ردّ فعل واضح بدل زر صامت (إصلاح Bug#21)
         toast.error("حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط");
       }
     } else {
@@ -417,33 +886,80 @@ export function DocumentScannerDialog({
     }
   };
 
-  // 🔒 إغلاق/تحديث المعاينة عند تغيير الفلتر أو نسبة الأبعاد (BUG-9)
-  const handleFilterChange = (newFilter: FilterType) => {
+  const handleFilterChange = (newFilter: ScannerFilterMode) => {
     setFilter(newFilter);
+    setDetectedDocs((prev) =>
+      prev.map((doc, idx) => (idx === activeDocIndex ? { ...doc, filterMode: newFilter } : doc))
+    );
     if (isPreviewMode) {
       setIsPreviewMode(false);
       setPreviewSrc(null);
     }
   };
 
-  const handleAspectChange = (newAspect: AspectRatioOption) => {
+  const handleAspectChange = (newAspect: DocumentAspectType) => {
     setAspect(newAspect);
+    setDetectedDocs((prev) =>
+      prev.map((doc, idx) => (idx === activeDocIndex ? { ...doc, aspectType: newAspect } : doc))
+    );
     if (isPreviewMode) {
       setIsPreviewMode(false);
       setPreviewSrc(null);
     }
   };
 
-  const handleApply = () => {
-    const warped = generateWarpedCanvas();
-    if (warped) {
-      onSave(warped.toDataURL("image/png"));
-      // 🔒 تنظيف warped canvas (BUG-12)
-      warped.width = 0;
-      warped.height = 0;
-      onOpenChange(false);
-    } else {
-      toast.error("حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط");
+  const handleApplyActive = async () => {
+    setIsExporting(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const warped = generateWarpedForDoc(corners, aspect, false);
+      if (warped) {
+        onSave(warped.toDataURL("image/png"));
+        warped.width = 0;
+        warped.height = 0;
+        onOpenChange(false);
+      } else {
+        toast.error("حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط");
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleApplySelected = async () => {
+    const docsToExport = detectedDocs.filter((d) => selectedDocIds.includes(d.id));
+    if (docsToExport.length === 0) {
+      toast.error("يرجى تحديد مستند واحد على الأقل للإدراج");
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const results: string[] = [];
+      for (const doc of docsToExport) {
+        await new Promise((resolve) => setTimeout(resolve, 30)); // Yield to UI
+        const warped = generateWarpedForDoc(
+          doc.corners,
+          doc.aspectType,
+          false,
+          doc.rotation ?? rotation,
+          doc.filterMode ?? filter
+        );
+        if (warped) {
+          results.push(warped.toDataURL("image/png"));
+          warped.width = 0;
+          warped.height = 0;
+        }
+      }
+
+      if (results.length > 0) {
+        onSave(results.length === 1 ? results[0] : results);
+        onOpenChange(false);
+      } else {
+        toast.error("فشل معالجة المستندات المحددة");
+      }
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -452,18 +968,18 @@ export function DocumentScannerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[1180px] w-[90vw] h-[86vh] max-h-[90vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card backdrop-blur-2xl p-4 shadow-xl transition-all duration-150 fluent-specular"
+        className="sm:max-w-[1200px] w-[92vw] h-[88vh] max-h-[92vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card backdrop-blur-2xl p-4 shadow-xl transition-all duration-150 fluent-specular"
         dir="rtl"
       >
         {/* Top Header */}
         <DialogHeader className="pb-3 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div>
             <DialogTitle className="flex items-center gap-2.5 text-base font-bold text-foreground">
-              <DocumentSearch24Regular className="text-primary w-6 h-6 shrink-0" />
+              <Scan size={24} weight="duotone" className="text-primary shrink-0" />
               <div className="flex flex-col">
-                <span>ماسح وتقويم المستندات (Document Scanner)</span>
+                <span>ماسح وتقويم المستندات والبطاقات (Document Scanner)</span>
                 <span className="text-[11px] font-normal text-muted-foreground mt-0.5">
-                  استعدال المنظور وتحديد حدود الورقة وتبييض الخلفية تلقائياً للطباعة
+                  كشف متعدد للمستندات والبطاقات، استعدال المنظور وتبييض الخلفية تلقائياً للطباعة
                 </span>
               </div>
             </DialogTitle>
@@ -482,18 +998,25 @@ export function DocumentScannerDialog({
               <div className="px-3.5 py-1.5 rounded-full bg-sidebar/90 border border-border text-[11px] font-semibold text-foreground shadow-md backdrop-blur-md flex items-center gap-2">
                 {isDetecting ? (
                   <>
-                    <ArrowRotateClockwise20Regular className="text-primary w-3.5 h-3.5 shrink-0 animate-spin" />
-                    <span>جاري فحص الحواف وتحديد أركان المستند تلقائياً ...</span>
+                    <ArrowClockwise size={14} weight="bold" className="text-primary shrink-0 animate-spin" />
+                    <span>جاري فحص الحواف واكتشاف المستندات والبطاقات ...</span>
                   </>
                 ) : isPreviewMode ? (
                   <>
-                    <Eye16Regular className="text-blue-500 w-3.5 h-3.5 shrink-0" />
+                    <Eye size={14} weight="duotone" className="text-blue-500 shrink-0" />
                     <span>معاينة المستند بعد الاستعدال والمعالجة</span>
+                  </>
+                ) : detectedDocs.length > 1 ? (
+                  <>
+                    <FileText size={14} weight="duotone" className="text-emerald-500 shrink-0" />
+                    <span>
+                      تم تحديد {detectedDocs.length} مستندات — انقر على أي مستند أو اضغط أرقام (1-{detectedDocs.length}) للتبديل
+                    </span>
                   </>
                 ) : (
                   <>
-                    <Sparkle16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
-                    <span>اسحب الدبابيس الأربعة لضبط حدود المستند بدقة</span>
+                    <Sparkle size={14} weight="duotone" className="text-primary shrink-0" />
+                    <span>اسحب الدبابيس لضبط الحدود، أو اضغط "+ إضافة" لإضافة بطاقة ثانية</span>
                   </>
                 )}
               </div>
@@ -511,6 +1034,7 @@ export function DocumentScannerDialog({
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
                 className={cn(
                   "touch-none rounded-xl cursor-crosshair transition-opacity duration-150",
                   activeCorner !== null && "cursor-grabbing"
@@ -536,178 +1060,27 @@ export function DocumentScannerDialog({
           </div>
 
           {/* Right Control Sidebar */}
-          <div className="w-full md:w-64 flex flex-col gap-3 shrink-0 bg-card/50 dark:bg-card/30 p-3 rounded-xl border border-border/40 overflow-y-auto h-full min-h-0 fluent-specular">
-            {/* 1. كشف الحواف والأركان */}
-            <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
-              <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Sparkle16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
-                <span>كشف الأركان</span>
-              </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="h-8 rounded-md font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-primary hover:bg-primary/90"
-                      onClick={handleAutoDetect}
-                      disabled={isDetecting}
-                    >
-                      {isDetecting ? (
-                        <ArrowRotateClockwise20Regular className="shrink-0 w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Sparkle16Regular className="shrink-0 w-3.5 h-3.5" />
-                      )}
-                      <span>{isDetecting ? "جاري الكشف ..." : "كشف تلقائي"}</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">كشف أركان المستند آلياً بالذكاء الاصطناعي</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 rounded-md border-border/60 hover:bg-accent text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
-                      onClick={handleResetCorners}
-                    >
-                      <ArrowReset20Regular className="text-muted-foreground w-3.5 h-3.5 shrink-0" />
-                      <span>إعادة ضبط</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">إعادة توزيع الأركان على كامل الصورة</TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-
-            {/* 2. فلاتر وتصفية الورقة */}
-            <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
-              <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Document16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
-                <span>معالجة وتصفية الورقة</span>
-              </Label>
-              <div className="flex flex-col gap-1.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={filter === "original" ? "default" : "outline"}
-                      size="sm"
-                      className={cn(
-                        "h-8 rounded-md text-[11px] font-semibold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
-                        filter === "original" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-accent/60 text-foreground/80"
-                      )}
-                      onClick={() => handleFilterChange("original")}
-                    >
-                      <Document16Regular className="shrink-0 w-3.5 h-3.5" />
-                      <div className="flex flex-col items-start leading-tight">
-                        <span>الألوان الأصلية</span>
-                      </div>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left">الاحتفاظ بألوان وإضاءة الصورة الأصلية</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={filter === "magic" ? "default" : "outline"}
-                      size="sm"
-                      className={cn(
-                        "h-8 rounded-md text-[11px] font-bold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
-                        filter === "magic" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
-                      )}
-                      onClick={() => handleFilterChange("magic")}
-                    >
-                      <Sparkle16Regular className="shrink-0 w-3.5 h-3.5 text-amber-300" />
-                      <div className="flex flex-col items-start leading-tight">
-                        <span>ماسح ذكي</span>
-                      </div>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left">تبييض الورقة وإزالة الظلال وتحسين ووضوح النص</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={filter === "bw" ? "default" : "outline"}
-                      size="sm"
-                      className={cn(
-                        "h-8 rounded-md text-[11px] font-semibold justify-start px-3 gap-2.5 cursor-pointer transition-all border-border/40",
-                        filter === "bw" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-accent/60 text-foreground/80"
-                      )}
-                      onClick={() => handleFilterChange("bw")}
-                    >
-                      <Grid16Regular className="shrink-0 w-3.5 h-3.5" />
-                      <div className="flex flex-col items-start leading-tight">
-                        <span>أبيض وأسود</span>
-                      </div>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left">تحويل المستند لأبيض وأسود عالي التباين</TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-
-            {/* 3. نسبة الأبعاد والقياس */}
-            <div className="space-y-2 bg-background/40 dark:bg-background/20 p-2.5 rounded-xl border border-border/30">
-              <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
-                <Crop16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
-                <span>قياس ونسبة المستند</span>
-              </Label>
-              <div className="grid grid-cols-2 gap-1.5">
-                <Button
-                  variant={aspect === "free" ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-8 rounded-md text-[11px] font-bold cursor-pointer transition-all border-border/40",
-                    aspect === "free" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
-                  )}
-                  onClick={() => handleAspectChange("free")}
-                >
-                  حر
-                </Button>
-
-                <Button
-                  variant={aspect === "a4_p" ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-8 rounded-md text-[11px] font-semibold cursor-pointer transition-all border-border/40",
-                    aspect === "a4_p" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
-                  )}
-                  onClick={() => handleAspectChange("a4_p")}
-                >
-                  A4 طولي
-                </Button>
-
-                <Button
-                  variant={aspect === "a4_l" ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-8 rounded-md text-[11px] font-semibold cursor-pointer transition-all border-border/40",
-                    aspect === "a4_l" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
-                  )}
-                  onClick={() => handleAspectChange("a4_l")}
-                >
-                  A4 عرضي
-                </Button>
-
-                <Button
-                  variant={aspect === "id_card" ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-8 rounded-md text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/40",
-                    aspect === "id_card" ? "bg-primary text-primary-foreground shadow-2xs" : "hover:bg-accent/60 text-foreground/80"
-                  )}
-                  onClick={() => handleAspectChange("id_card")}
-                >
-                  <ContactCard16Regular className="w-3 h-3 shrink-0" />
-                  <span>بطاقة هوية</span>
-                </Button>
-              </div>
-            </div>
-          </div>
+          <ScannerSidebar
+            detectedDocs={detectedDocs}
+            activeDocIndex={activeDocIndex}
+            selectedDocIds={selectedDocIds}
+            onSelectDoc={selectDocument}
+            onToggleCheckDoc={toggleDocSelection}
+            onSelectAllDocs={selectAllDocs}
+            onAddDocument={handleAddManualDocument}
+            onDeleteDoc={handleDeleteDocument}
+            onSplitIdCards={handleSplitIdCards}
+            isDetecting={isDetecting}
+            onAutoDetect={handleAutoDetect}
+            onReset={handleResetCorners}
+            filterMode={filter}
+            onFilterChange={handleFilterChange}
+            aspectType={aspect}
+            onAspectChange={handleAspectChange}
+            rotation={rotation}
+            onRotateClockwise={handleRotateClockwise}
+            onRotateCounterClockwise={handleRotateCounterClockwise}
+          />
         </div>
 
         {/* Footer Bar */}
@@ -722,12 +1095,12 @@ export function DocumentScannerDialog({
             >
               {isPreviewMode ? (
                 <>
-                  <ArrowReset20Regular className="text-primary w-3.5 h-3.5 shrink-0" />
+                  <ArrowCounterClockwise size={14} weight="bold" className="text-primary shrink-0" />
                   <span>رجوع للتعديل</span>
                 </>
               ) : (
                 <>
-                  <Eye16Regular className="text-primary w-3.5 h-3.5 shrink-0" />
+                  <Eye size={14} weight="bold" className="text-primary shrink-0" />
                   <span>معاينة</span>
                 </>
               )}
@@ -738,18 +1111,32 @@ export function DocumentScannerDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
               className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer"
+              disabled={isExporting}
             >
               إلغاء
             </Button>
 
+            {detectedDocs.length > 1 && selectedDocIds.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-xs transition-all active:scale-[0.98]"
+                onClick={handleApplySelected}
+                disabled={isExporting}
+              >
+                {isExporting ? <Spinner className="w-3.5 h-3.5 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
+                <span>{isExporting ? "جاري التصدير ..." : `إدراج المحددة (${selectedDocIds.length})`}</span>
+              </Button>
+            )}
+
             <Button
-              onClick={handleApply}
-              disabled={!cornersReady}
+              onClick={handleApplyActive}
+              disabled={!cornersReady || isExporting}
               title={cornersReady ? undefined : "حدّد أركان المستند أولاً"}
               className="rounded-md h-8 px-5 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98] disabled:cursor-not-allowed"
             >
-              <Checkmark16Regular className="w-3.5 h-3.5 shrink-0" />
-              <span>تطبيق الاستعدال</span>
+              {isExporting ? <Spinner className="w-3.5 h-3.5 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
+              <span>{isExporting ? "جاري المعالجة ..." : detectedDocs.length > 1 ? "إدراج المستند النشط" : "تطبيق واستعدال"}</span>
             </Button>
           </div>
         </DialogFooter>
@@ -757,4 +1144,5 @@ export function DocumentScannerDialog({
     </Dialog>
   );
 }
+
 

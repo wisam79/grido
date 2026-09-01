@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { CollageTemplate } from "@/lib/templates";
-import { Delete16Regular, Delete20Regular, Image20Regular, Grid16Regular } from "@fluentui/react-icons";
+import { Trash, Image, GridFour } from "@phosphor-icons/react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,13 +60,13 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
               className="absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
               title="حذف القالب"
             >
-              <Delete16Regular className="w-3.5 h-3.5" />
+              <Trash className="w-3.5 h-3.5" weight="regular" />
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent className="font-cairo text-right rounded-2xl border fluent-specular" dir="rtl" onClick={(e) => e.stopPropagation()}>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-right">
-                <Delete20Regular className="w-5 h-5 text-destructive" />
+                <Trash className="w-5 h-5 text-destructive" weight="duotone" />
                 <span>حذف القالب</span>
               </AlertDialogTitle>
               <AlertDialogDescription>
@@ -102,11 +102,12 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
                 height: `calc(${c.h * 100}% - 2px)`,
               }}
             >
-              <Image20Regular
+              <Image
                 className={cn(
                   "w-4 h-4 transition-transform duration-300 group-hover:scale-110",
                   isActive ? "text-primary" : "text-muted-foreground/45 group-hover:text-primary/75"
                 )}
+                weight="regular"
               />
             </div>
           ))}
@@ -131,8 +132,9 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             {tpl.slots} صور
           </span>
           <div className="flex items-center gap-1">
-            <Grid16Regular
+            <GridFour
               className={cn("w-3 h-3", isActive ? "text-primary" : "text-muted-foreground/70")}
+              weight="duotone"
             />
             <span className="text-[8px] font-bold text-muted-foreground">تخطيط تلقائي</span>
           </div>

@@ -11,7 +11,7 @@ import {
   FluentIconButton,
 } from '../src/components/ui/blocks';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { Settings20Regular, Sparkle20Regular, Folder20Regular } from '@fluentui/react-icons';
+import { Gear, Sparkle, Folder } from '@phosphor-icons/react';
 
 /**
  * اختبارات الوصول (a11y) — تفعيل بنية jest-axe الموجودة مسبقاً في setup.ts.
@@ -21,7 +21,7 @@ describe('Accessibility (jest-axe)', () => {
   it('FluentSection has no accessibility violations', async () => {
     const { container } = render(
       <FluentSection
-        icon={<Settings20Regular className="size-4 shrink-0" />}
+        icon={<Gear className="size-4 shrink-0" />}
         title="إعدادات الكانفاس"
         subtitle="تعديل الأبعاد والهوامش"
         action={<button>إعادة ضبط</button>}
@@ -32,13 +32,15 @@ describe('Accessibility (jest-axe)', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('FluentSettingRow + checkbox has no violations', async () => {
+  it('FluentSettingRow has no accessibility violations', async () => {
     const { container } = render(
       <TooltipProvider>
         <FluentSettingRow
-          label="علامات القص"
-          description="إظهار خطوط القص التلقائية"
-          control={<input type="checkbox" aria-label="علامات القص" />}
+          icon={<Gear className="size-3.5 shrink-0" />}
+          label="عرض الشبكة"
+          description="تفعيل خطوط الشبكة على الكانفاس"
+          tooltip="يساعد في محاذاة الصور بدقة"
+          control={<input type="checkbox" aria-label="تفعيل الشبكة" />}
         />
       </TooltipProvider>
     );
@@ -48,12 +50,13 @@ describe('Accessibility (jest-axe)', () => {
   it('FluentSegmentedControl has no violations', async () => {
     const { container } = render(
       <FluentSegmentedControl
-        value="a"
-        onChange={() => {}}
         options={[
-          { id: 'a', label: 'الخيار الأول' },
-          { id: 'b', label: 'الخيار الثاني' },
+          { label: 'الكل', id: 'all' },
+          { label: 'شخصي', id: 'personal' },
+          { label: 'رسمي', id: 'official' },
         ]}
+        value="all"
+        onChange={() => {}}
       />
     );
     expect(await axe(container)).toHaveNoViolations();
@@ -62,7 +65,7 @@ describe('Accessibility (jest-axe)', () => {
   it('FluentEmptyState has no violations', async () => {
     const { container } = render(
       <FluentEmptyState
-        icon={<Folder20Regular className="size-8 shrink-0" />}
+        icon={<Folder className="size-8 shrink-0" />}
         title="لا توجد مشاريع"
         description="أنشئ مشروعاً جديداً للبدء"
         actionLabel="مشروع جديد"
@@ -75,7 +78,7 @@ describe('Accessibility (jest-axe)', () => {
   it('FluentIconButton has no violations', async () => {
     const { container } = render(
       <TooltipProvider>
-        <FluentIconButton icon={<Sparkle20Regular className="size-3.5 shrink-0" />} tooltip="تطبيق التأثير" onClick={() => {}}>
+        <FluentIconButton icon={<Sparkle className="size-3.5 shrink-0" />} tooltip="تطبيق التأثير" onClick={() => {}}>
           تنفيذ
         </FluentIconButton>
       </TooltipProvider>

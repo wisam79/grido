@@ -1,11 +1,11 @@
 import React from "react"
 import { Toaster as Sonner, ToasterProps } from "sonner"
 import {
-  CheckmarkCircle20Regular,
-  DismissCircle20Regular,
-  Warning20Regular,
-  Info20Regular,
-} from "@fluentui/react-icons"
+  CheckCircle,
+  XCircle,
+  WarningCircle,
+  Info,
+} from "@phosphor-icons/react"
 import { Spinner } from "@/components/ui/huge-icon"
 
 const Toaster = ({ ...props }: ToasterProps) => {
@@ -18,10 +18,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
       dir="rtl"
       className="toaster group"
       icons={{
-        success: <CheckmarkCircle20Regular className="w-4 h-4 text-emerald-500 shrink-0" />,
-        error: <DismissCircle20Regular className="w-4 h-4 text-rose-500 shrink-0" />,
-        warning: <Warning20Regular className="w-4 h-4 text-amber-500 shrink-0" />,
-        info: <Info20Regular className="w-4 h-4 text-blue-500 shrink-0" />,
+        success: <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" weight="duotone" />,
+        error: <XCircle className="w-4 h-4 text-rose-500 shrink-0" weight="duotone" />,
+        warning: <WarningCircle className="w-4 h-4 text-amber-500 shrink-0" weight="duotone" />,
+        info: <Info className="w-4 h-4 text-blue-500 shrink-0" weight="duotone" />,
         loading: <Spinner size={16} className="w-4 h-4 text-indigo-500" />,
       }}
       toastOptions={{

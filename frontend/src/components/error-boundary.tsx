@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Warning24Regular } from "@fluentui/react-icons";
+import { WarningOctagon } from "@phosphor-icons/react";
 import { LogFrontendError } from "../../wailsjs/go/main/App";
 
 interface Props {
@@ -43,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6 text-center font-cairo" dir="rtl">
           <div className="max-w-md w-full bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl p-6 shadow-xl space-y-4 fluent-specular">
             <div className="mx-auto w-12 h-12 bg-destructive/10 text-destructive rounded-full flex items-center justify-center">
-              <Warning24Regular className="w-6 h-6 shrink-0" />
+              <WarningOctagon className="w-6 h-6 shrink-0" weight="duotone" />
             </div>
             <h1 className="text-base font-bold text-foreground">عذراً، حدث خطأ غير متوقع</h1>
             <p className="text-xs text-muted-foreground leading-relaxed">

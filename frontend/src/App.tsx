@@ -20,30 +20,30 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Spinner } from "@/components/ui/huge-icon";
+import { PhosphorProvider } from "@/components/ui/phosphor-provider";
 import {
-  Grid20Regular,
-  Image20Regular,
-  ShieldCheckmark20Regular,
-  WeatherMoon20Regular,
-  WeatherMoon16Regular,
-  WeatherSunny20Regular,
-  WeatherSunny16Regular,
-  PanelRight20Regular,
-  Settings20Regular,
-  Subtract16Regular,
-  Square16Regular,
-  SquareMultiple16Regular,
-  Dismiss16Regular,
-  LockClosed48Regular,
-  Key16Regular,
-  Person20Regular,
-} from "@fluentui/react-icons";
+  SquaresFour,
+  Image,
+  ShieldCheck,
+  Moon,
+  Sun,
+  SidebarSimple,
+  SlidersHorizontal,
+  Minus,
+  Square,
+  CopySimple,
+  X,
+  LockSimple,
+  Key,
+  User,
+} from "@phosphor-icons/react";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useAutoSave } from "@/hooks/use-autosave";
 import { useEditorStore } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
+import { warmupOpenCV } from "@/components/editor/document-scanner/opencv-loader";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -131,6 +131,8 @@ export default function App() {
     };
     check();
 
+    warmupOpenCV();
+
     // Check periodically every 5 minutes to ensure dynamic state updates
     const intervalId = setInterval(() => {
       checkLicenseStatus();
@@ -216,7 +218,7 @@ export default function App() {
                 className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
                 title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
               >
-                {theme === "light" ? <WeatherMoon16Regular className="w-3.5 h-3.5" /> : <WeatherSunny16Regular className="w-3.5 h-3.5" />}
+                {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
               </Button>
 
               <div className="w-px h-5 bg-border mx-1" />
@@ -228,7 +230,7 @@ export default function App() {
                 className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
                 title="تصغير"
               >
-                <Subtract16Regular className="w-4 h-4" />
+                <Minus className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -237,7 +239,7 @@ export default function App() {
                 className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
                 title={isMaximized ? "استعادة" : "تكبير"}
               >
-                {isMaximized ? <SquareMultiple16Regular className="w-3.5 h-3.5" /> : <Square16Regular className="w-3.5 h-3.5" />}
+                {isMaximized ? <CopySimple className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
               </Button>
               <Button
                 variant="ghost"
@@ -246,7 +248,7 @@ export default function App() {
                 className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
                 title="إغلاق"
               >
-                <Dismiss16Regular className="w-4 h-4" />
+                <X className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -256,7 +258,7 @@ export default function App() {
         <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-right p-6">
           <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-xl space-y-6 text-center fluent-specular">
             <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
-              <LockClosed48Regular className="w-10 h-10" />
+              <LockSimple className="w-10 h-10" weight="duotone" />
             </div>
             
             <div className="space-y-2">
@@ -301,7 +303,7 @@ export default function App() {
                   </button>
                 </div>
                 <div className="relative">
-                  <Key16Regular className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4" />
+                  <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4" />
                   <input
                     type="text"
                     required
@@ -344,13 +346,14 @@ export default function App() {
   }
 
   return (
-    <TooltipProvider delayDuration={650} skipDelayDuration={150}>
-      <div 
-        className={cn(
-          "h-screen flex flex-col overflow-hidden font-cairo bg-background",
-        )}
-        dir="rtl"
-      >
+    <PhosphorProvider weight="regular" size={18}>
+      <TooltipProvider delayDuration={650} skipDelayDuration={150}>
+        <div 
+          className={cn(
+            "h-screen flex flex-col overflow-hidden font-cairo bg-background",
+          )}
+          dir="rtl"
+        >
       {!isMaximized && <WindowResizeHandles />}
       {/* الرأس الموحد للنافذة بتصميم Fluent 2 Acrylic */}
       <header
@@ -396,7 +399,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <Grid20Regular className="w-4 h-4" />
+              <SquaresFour className="w-4 h-4" weight={mode === "collage" ? "fill" : "regular"} />
               <span className="leading-none font-bold">كولاج</span>
             </Button>
 
@@ -420,7 +423,7 @@ export default function App() {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-              <Image20Regular className="w-4 h-4" />
+              <Image className="w-4 h-4" weight={mode === "single" ? "fill" : "regular"} />
               <span className="leading-none font-bold">تعديل حر</span>
             </Button>
           </div>
@@ -434,9 +437,9 @@ export default function App() {
               title="الحساب والتراخيص"
             >
               {isLicenseActive ? (
-                <ShieldCheckmark20Regular className="w-4.5 h-4.5 text-emerald-500" />
+                <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" weight="duotone" />
               ) : (
-                <Person20Regular className="w-4.5 h-4.5 text-muted-foreground" />
+                <User className="w-4.5 h-4.5 text-muted-foreground" />
               )}
               {user?.plan === "trial" && (
                 <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
@@ -449,7 +452,7 @@ export default function App() {
               className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
               title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
             >
-              {theme === "light" ? <WeatherMoon20Regular className="w-4 h-4" /> : <WeatherSunny20Regular className="w-4 h-4" />}
+              {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </Button>
 
             {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
@@ -465,7 +468,7 @@ export default function App() {
               )}
               title={rightSidebarOpen ? "إخفاء لوحة القوالب (Ctrl+B)" : "إظهار لوحة القوالب (Ctrl+B)"}
             >
-              <PanelRight20Regular className="w-4 h-4" />
+              <SidebarSimple className="w-4 h-4" weight={rightSidebarOpen ? "fill" : "regular"} />
             </Button>
             <Button
               variant="ghost"
@@ -479,7 +482,7 @@ export default function App() {
               )}
               title={leftSidebarOpen ? "إخفاء لوحة الخصائص (Ctrl+Shift+B)" : "إظهار لوحة الخصائص (Ctrl+Shift+B)"}
             >
-              <Settings20Regular className="w-4 h-4" />
+              <SlidersHorizontal className="w-4 h-4" weight={leftSidebarOpen ? "bold" : "regular"} />
             </Button>
 
             <Button
@@ -488,7 +491,7 @@ export default function App() {
               className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
               onClick={() => setMobileTemplatesOpen(true)}
             >
-              <PanelRight20Regular className="w-4 h-4" />
+              <SidebarSimple className="w-4 h-4" />
               <span className="text-xs font-semibold">القوالب</span>
             </Button>
             <Button
@@ -497,7 +500,7 @@ export default function App() {
               className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
               onClick={() => setMobilePropsOpen(true)}
             >
-              <Settings20Regular className="w-4 h-4" />
+              <SlidersHorizontal className="w-4 h-4" />
               <span className="text-xs font-semibold">خصائص</span>
             </Button>
 
@@ -512,7 +515,7 @@ export default function App() {
               className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
               title="تصغير"
             >
-              <Subtract16Regular className="w-4 h-4" />
+              <Minus className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
@@ -521,7 +524,7 @@ export default function App() {
               className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
               title={isMaximized ? "استعادة" : "تكبير"}
             >
-              {isMaximized ? <SquareMultiple16Regular className="w-3.5 h-3.5" /> : <Square16Regular className="w-3.5 h-3.5" />}
+              {isMaximized ? <CopySimple className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
             </Button>
             <Button
               variant="ghost"
@@ -530,7 +533,7 @@ export default function App() {
               className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
               title="إغلاق"
             >
-              <Dismiss16Regular className="w-4 h-4" />
+              <X className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -661,5 +664,6 @@ export default function App() {
       <KeyboardShortcutsDialog />
     </div>
     </TooltipProvider>
+    </PhosphorProvider>
   );
 }

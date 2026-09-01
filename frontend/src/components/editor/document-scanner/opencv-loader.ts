@@ -14,7 +14,20 @@ export type CvRuntime = typeof cv;
 let cached: CvRuntime | null = null;
 let inFlight: Promise<CvRuntime | null> | null = null;
 
-const LOAD_TIMEOUT_MS = 15_000;
+const LOAD_TIMEOUT_MS = 3_000;
+
+/**
+ * فحص فوري بدون أي انتظار لمعرفة ما إذا كان OpenCV جاهزاً ومحملاً مسبقاً
+ */
+export function getLoadedOpenCV(): CvRuntime | null {
+  if (cached && (cached as any).Mat) return cached;
+  const gCv = (globalThis as any).cv;
+  if (gCv && typeof gCv.Mat === "function") {
+    cached = gCv as CvRuntime;
+    return cached;
+  }
+  return null;
+}
 
 export async function loadOpenCV(): Promise<CvRuntime | null> {
   if (cached) return cached;
@@ -134,6 +147,10 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
  */
 export function warmupOpenCV(): void {
   if (typeof window === "undefined") return;
+  // Skip warmup in automated test runners to avoid blocking / slow timeouts
+  const gProc = (globalThis as any).process;
+  if (gProc && (gProc.env?.VITEST || gProc.env?.NODE_ENV === "test")) return;
+  if (typeof WebAssembly === "undefined") return;
   void loadOpenCV().catch((err) => {
     console.debug("[OpenCV] Warmup deferred:", err);
   });

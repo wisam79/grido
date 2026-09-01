@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Grid16Regular, Table16Regular } from "@fluentui/react-icons";
+import { GridFour, Columns } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import {
@@ -66,7 +66,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
   return (
     <FluentSection
-      icon={<Grid16Regular className="w-3.5 h-3.5 text-primary" />}
+      icon={<GridFour className="w-3.5 h-3.5 text-primary" weight="duotone" />}
       title="الشبكة والأعمدة"
       collapsible
       defaultOpen={true}
@@ -83,8 +83,8 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
           onChange={setActiveGridTab}
           size="sm"
           options={[
-            { id: "grid", label: "الشبكة", icon: <Grid16Regular className="w-3.5 h-3.5" /> },
-            { id: "columns", label: "الأعمدة", icon: <Table16Regular className="w-3.5 h-3.5" /> },
+            { id: "grid", label: "الشبكة", icon: <GridFour className="w-3.5 h-3.5" weight="regular" /> },
+            { id: "columns", label: "الأعمدة", icon: <Columns className="w-3.5 h-3.5" weight="regular" /> },
           ]}
         />
 

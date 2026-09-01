@@ -9,16 +9,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Checkmark20Regular,
-  Delete20Regular,
-  Eye20Regular,
-  EyeOff20Regular,
-  EyeOff20Filled,
-  LockClosed20Regular,
-  LockClosed20Filled,
-  LockOpen20Regular,
-  Ruler20Regular,
-} from "@fluentui/react-icons";
+  Check,
+  Trash,
+  Eye,
+  EyeSlash,
+  LockSimple,
+  LockSimpleOpen,
+  Ruler,
+} from "@phosphor-icons/react";
 
 export interface ViewportFixedRulersProps {
   showRuler: boolean;
@@ -101,7 +99,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
           <div dir="rtl">
             <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <Ruler20Regular className="w-3.5 h-3.5 text-primary shrink-0" />
+                <Ruler className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
                 <span>وحدة قياس المسطرة</span>
               </span>
               <span className="text-[10px] text-muted-foreground/70 font-mono">Ctrl+R</span>
@@ -122,7 +120,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                     </div>
                     <span className="text-[10px] text-muted-foreground font-normal">{u.sub}</span>
                   </div>
-                  {isSelected && <Checkmark20Regular className="w-3.5 h-3.5 text-primary shrink-0" />}
+                  {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />}
                 </DropdownMenuItem>
               );
             })}
@@ -139,9 +137,9 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
               >
                 <div className="flex items-center gap-2">
                   {showUserGuides ? (
-                    <EyeOff20Filled className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <EyeSlash className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="fill" />
                   ) : (
-                    <Eye20Regular className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <Eye className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="regular" />
                   )}
                   <span>{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
                 </div>
@@ -155,9 +153,9 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                 className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-xs"
               >
                 {lockUserGuides ? (
-                  <LockOpen20Regular className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <LockSimpleOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="regular" />
                 ) : (
-                  <LockClosed20Filled className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <LockSimple className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="fill" />
                 )}
                 <span>{lockUserGuides ? "إلغاء قفل الخطوط الإرشادية" : "قفل الخطوط الإرشادية"}</span>
               </DropdownMenuItem>
@@ -168,7 +166,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                 onClick={onClearGuides}
                 className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-destructive hover:bg-destructive/10 text-xs"
               >
-                <Delete20Regular className="w-3.5 h-3.5 shrink-0" />
+                <Trash className="w-3.5 h-3.5 shrink-0" weight="regular" />
                 <span>مسح كافة الخطوط الإرشادية</span>
               </DropdownMenuItem>
             )}

@@ -12,32 +12,30 @@ import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import {
-  ImageAdd20Regular,
-  ImageMultiple20Regular,
-  Image20Regular,
-  FolderOpen20Regular,
-  ArrowDownload20Regular,
-  Print20Regular,
-  Broom20Regular,
-  ArrowUndo20Regular,
-  ArrowRedo20Regular,
-  Copy20Regular,
-  Delete20Regular,
-  SelectAllOn20Regular,
-  ZoomIn20Regular,
-  ZoomOut20Regular,
-  Ruler20Regular,
-  Grid20Regular,
-  Eye20Regular,
-  PanelRight20Regular,
-  Settings20Regular,
-  ArrowRotateClockwise20Regular,
-  Cut20Regular,
-  ShieldCheckmark20Regular,
-  Sparkle20Regular,
-  QuestionCircle20Regular,
-  Info20Regular,
-} from "@fluentui/react-icons";
+  Image,
+  Images,
+  FolderOpen,
+  Export,
+  Printer,
+  Broom,
+  ArrowCounterClockwise,
+  ArrowClockwise,
+  Copy,
+  Trash,
+  SelectionAll,
+  MagnifyingGlassPlus,
+  MagnifyingGlassMinus,
+  Ruler,
+  SquaresFour,
+  Eye,
+  SidebarSimple,
+  SlidersHorizontal,
+  Scissors,
+  ShieldCheck,
+  Sparkle,
+  Question,
+  Info,
+} from "@phosphor-icons/react";
 import { openDirectoryImageDialog } from "@/lib/io/file-dialog-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 import { toast } from "sonner";
@@ -153,7 +151,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-file-dialog"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ImageAdd20Regular className="w-4 h-4 text-muted-foreground" />
+            <Image className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">إضافة صورة...</span>
             <DropdownMenuShortcut>Ctrl+O</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -162,7 +160,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-batch-insert-dialog"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ImageMultiple20Regular className="w-4 h-4 text-muted-foreground" />
+            <Images className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">إدراج دفعة صور...</span>
             <DropdownMenuShortcut>Ctrl+Shift+O</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -171,7 +169,7 @@ export function DesktopMenuBar() {
             onClick={handleOpenDirectory}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <FolderOpen20Regular className="w-4 h-4 text-muted-foreground" />
+            <FolderOpen className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">استيراد مجلد...</span>
           </DropdownMenuItem>
 
@@ -182,7 +180,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <FolderOpen20Regular className="w-4 h-4 text-primary" />
+              <FolderOpen className="w-4 h-4 text-primary" />
               <span className="font-medium">مكتبة المشاريع...</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -195,7 +193,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-export-dialog"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ArrowDownload20Regular className="w-4 h-4 text-muted-foreground" />
+            <Export className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تصدير...</span>
             <DropdownMenuShortcut>Ctrl+E</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -204,7 +202,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-print-dialog"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Print20Regular className="w-4 h-4 text-muted-foreground" />
+            <Printer className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">طباعة...</span>
             <DropdownMenuShortcut>Ctrl+P</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -215,7 +213,7 @@ export function DesktopMenuBar() {
             onClick={() => useEditorStore.getState().reset()}
             className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
           >
-            <Broom20Regular className="w-4 h-4" />
+            <Broom className="w-4 h-4" />
             <span className="font-medium">مسح مساحة العمل</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -238,7 +236,7 @@ export function DesktopMenuBar() {
             onClick={undo}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ArrowUndo20Regular className="w-4 h-4 text-muted-foreground" />
+            <ArrowCounterClockwise className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تراجع</span>
             <DropdownMenuShortcut>Ctrl+Z</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -248,7 +246,7 @@ export function DesktopMenuBar() {
             onClick={redo}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ArrowRedo20Regular className="w-4 h-4 text-muted-foreground" />
+            <ArrowClockwise className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">إعادة</span>
             <DropdownMenuShortcut>Ctrl+Y</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -262,7 +260,7 @@ export function DesktopMenuBar() {
             }}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Copy20Regular className="w-4 h-4 text-muted-foreground" />
+            <Copy className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تكرار المحدد</span>
             <DropdownMenuShortcut>Ctrl+D</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -275,7 +273,7 @@ export function DesktopMenuBar() {
             }}
             className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
           >
-            <Delete20Regular className="w-4 h-4" />
+            <Trash className="w-4 h-4" />
             <span className="font-medium">حذف المحدد</span>
             <DropdownMenuShortcut>Del</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -286,7 +284,7 @@ export function DesktopMenuBar() {
             onClick={selectAllElements}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <SelectAllOn20Regular className="w-4 h-4 text-muted-foreground" />
+            <SelectionAll className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تحديد الكل</span>
             <DropdownMenuShortcut>Ctrl+A</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -317,7 +315,7 @@ export function DesktopMenuBar() {
             onClick={() => setCanvasZoom((z) => Math.min(5, parseFloat((z + 0.1).toFixed(2))))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ZoomIn20Regular className="w-4 h-4 text-muted-foreground" />
+            <MagnifyingGlassPlus className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تكبير</span>
             <DropdownMenuShortcut>Ctrl++</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -326,7 +324,7 @@ export function DesktopMenuBar() {
             onClick={() => setCanvasZoom((z) => Math.max(0.1, parseFloat((z - 0.1).toFixed(2))))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ZoomOut20Regular className="w-4 h-4 text-muted-foreground" />
+            <MagnifyingGlassMinus className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تصغير</span>
             <DropdownMenuShortcut>Ctrl+-</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -345,7 +343,7 @@ export function DesktopMenuBar() {
             onClick={() => setShowRuler(!showRuler)}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Ruler20Regular className="w-4 h-4 text-muted-foreground" />
+            <Ruler className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">{showRuler ? "إخفاء المساطر" : "إظهار المساطر"}</span>
             <DropdownMenuShortcut>Ctrl+R</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -354,7 +352,7 @@ export function DesktopMenuBar() {
             onClick={() => setShowGrid(!showGrid)}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Grid20Regular className="w-4 h-4 text-muted-foreground" />
+            <SquaresFour className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">{showGrid ? "إخفاء الشبكة" : "إظهار الشبكة"}</span>
             <DropdownMenuShortcut>Ctrl+'</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -363,7 +361,7 @@ export function DesktopMenuBar() {
             onClick={() => setShowUserGuides(!showUserGuides)}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Eye20Regular className="w-4 h-4 text-muted-foreground" />
+            <Eye className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
             <DropdownMenuShortcut>Ctrl+;</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -373,7 +371,7 @@ export function DesktopMenuBar() {
               onClick={clearUserGuides}
               className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
             >
-              <Delete20Regular className="w-4 h-4" />
+              <Trash className="w-4 h-4" />
               <span className="font-medium">مسح كافة الخطوط الإرشادية</span>
             </DropdownMenuItem>
           )}
@@ -384,7 +382,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:toggle-right-sidebar"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <PanelRight20Regular className="w-4 h-4 text-muted-foreground" />
+            <SidebarSimple className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">لوحة القوالب</span>
             <DropdownMenuShortcut>Ctrl+B</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -393,7 +391,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:toggle-left-sidebar"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Settings20Regular className="w-4 h-4 text-muted-foreground" />
+            <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">لوحة الخصائص</span>
             <DropdownMenuShortcut>Ctrl+Shift+B</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -417,8 +415,9 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <Grid20Regular
+              <SquaresFour
                 className={cn("w-4 h-4", mode === "collage" ? "text-primary" : "text-muted-foreground")}
+                weight={mode === "collage" ? "fill" : "regular"}
               />
               <span className="font-medium">وضع الكولاج</span>
             </div>
@@ -432,8 +431,9 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <Image20Regular
+              <Image
                 className={cn("w-4 h-4", mode === "single" ? "text-primary" : "text-muted-foreground")}
+                weight={mode === "single" ? "fill" : "regular"}
               />
               <span className="font-medium">الوضع الحر</span>
             </div>
@@ -448,7 +448,7 @@ export function DesktopMenuBar() {
             onClick={handleToggleOrientation}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ArrowRotateClockwise20Regular className="w-4 h-4 text-muted-foreground" />
+            <ArrowClockwise className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تدوير الورقة</span>
           </DropdownMenuItem>
 
@@ -456,7 +456,7 @@ export function DesktopMenuBar() {
             onClick={() => setCollageShowCutLines(!collageShowCutLines)}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Cut20Regular className="w-4 h-4 text-muted-foreground" />
+            <Scissors className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">{collageShowCutLines ? "إخفاء علامات القص" : "إظهار علامات القص"}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -479,7 +479,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <ShieldCheckmark20Regular className="w-4 h-4 text-emerald-500" />
+              <ShieldCheck className="w-4 h-4 text-emerald-500" weight="duotone" />
               <span className="font-medium">الحساب والترخيص</span>
             </div>
             <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold">مرخص</span>
@@ -490,7 +490,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <Sparkle20Regular className="w-4 h-4 text-primary" />
+              <Sparkle className="w-4 h-4 text-primary" weight="duotone" />
               <span className="font-medium">معالجة الدفعات</span>
             </div>
             <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">AI Pro</span>
@@ -514,7 +514,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-shortcuts"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <QuestionCircle20Regular className="w-4 h-4 text-muted-foreground" />
+            <Question className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">اختصارات المفاتيح</span>
             <DropdownMenuShortcut>Ctrl+/</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -523,7 +523,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:check-updates"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Info20Regular className="w-4 h-4 text-muted-foreground" />
+            <Info className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">التحقق من التحديثات</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

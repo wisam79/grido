@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/huge-icon";
-import { Sparkle16Regular, ArrowDownload16Regular, ArrowCircleUp12Regular } from "@fluentui/react-icons";
+import { Sparkle, DownloadSimple, ArrowCircleUp } from "@phosphor-icons/react";
 import { CheckForUpdate, DownloadAndInstallUpdate } from "../../../../wailsjs/go/main/App";
 import { service } from "../../../../wailsjs/go/models";
 import { EventsOn, EventsOff, BrowserOpenURL } from "../../../../wailsjs/runtime/runtime";
@@ -72,7 +72,7 @@ export function UpdateNotifier() {
       >
         <DialogHeader className="space-y-1 text-right border-b border-border/60 pb-3">
           <DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
-            <Sparkle16Regular className="w-4 h-4 text-primary" />
+            <Sparkle className="w-4 h-4 text-primary" weight="duotone" />
             <span>تحديث جديد متوفر</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -90,7 +90,7 @@ export function UpdateNotifier() {
           <div className="flex items-center justify-between text-xs border-t border-border/40 pt-2">
             <span className="text-muted-foreground text-[11px]">الإصدار الجديد:</span>
             <span className="bg-primary text-primary-foreground font-mono text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
-              <ArrowCircleUp12Regular className="w-3 h-3" />
+              <ArrowCircleUp className="w-3 h-3" weight="bold" />
               {updateInfo.latest_version}
             </span>
           </div>
@@ -136,7 +136,7 @@ export function UpdateNotifier() {
                   onClick={handleStartUpdate}
                   className="flex-1 h-8 text-xs font-semibold gap-1.5 rounded-md shadow-xs cursor-pointer"
                 >
-                  <ArrowDownload16Regular className="w-3.5 h-3.5" />
+                  <DownloadSimple className="w-3.5 h-3.5" />
                   تثبيت التحديث الآن
                 </Button>
               ) : (
@@ -151,7 +151,7 @@ export function UpdateNotifier() {
                   }}
                   className="flex-1 h-8 text-xs font-semibold gap-1.5 rounded-md shadow-xs cursor-pointer"
                 >
-                  <ArrowDownload16Regular className="w-3.5 h-3.5" />
+                  <DownloadSimple className="w-3.5 h-3.5" />
                   تحميل يدوي (عبر المتصفح)
                 </Button>
               )}

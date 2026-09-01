@@ -5,7 +5,7 @@ import { ElementProperties } from "../properties/element-properties";
 import { SlotProperties } from "../properties/slot-properties";
 import { CollageSettings } from "../properties/collage-settings";
 import { PanelShell } from "./panel-shell";
-import { Options20Regular, Document20Regular } from "@fluentui/react-icons";
+import { SlidersHorizontal, FileText } from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
 
@@ -70,7 +70,7 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
 
   return (
     <PanelShell
-      icon={<Options20Regular className="w-4.5 h-4.5" />}
+      icon={<SlidersHorizontal className="w-4.5 h-4.5 text-primary" weight="duotone" />}
       title="الخصائص"
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
@@ -100,8 +100,8 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
                   onChange={setGeneralTab}
                   size="sm"
                   options={[
-                    { id: "collage", label: "تنسيق الكولاج", icon: <Options20Regular className="w-4 h-4" /> },
-                    { id: "canvas", label: "الورقة والكانفس", icon: <Document20Regular className="w-4 h-4" /> },
+                    { id: "collage", label: "تنسيق الكولاج", icon: <SlidersHorizontal className="w-4 h-4" weight="regular" /> },
+                    { id: "canvas", label: "الورقة والكانفس", icon: <FileText className="w-4 h-4" weight="regular" /> },
                   ]}
                 />
                 {generalTab === "collage" ? (
