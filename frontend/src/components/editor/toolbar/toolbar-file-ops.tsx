@@ -119,14 +119,14 @@ export function ToolbarFileOps() {
           if (localPaths.length === 1) {
             const targetSlotId = freshSelectedId || freshSlots[0]?.id;
             if (targetSlotId) {
-              setSlotImage(targetSlotId, localPaths[0]);
+              freshState.setSlotImage(targetSlotId, localPaths[0]);
               toast.success("تم إدراج الصورة في الخلية المحددة");
             }
           } else {
             let filled = 0;
             freshSlots.forEach((slot, index) => {
               if (index < localPaths.length) {
-                setSlotImage(slot.id, localPaths[index]);
+                freshState.setSlotImage(slot.id, localPaths[index]);
                 filled++;
               }
             });
@@ -145,7 +145,7 @@ export function ToolbarFileOps() {
               }
             }
             const aspect = await resolveImageAspectRatio(finalSrc);
-            addImageElement(finalSrc, aspect);
+            freshState.addImageElement(finalSrc, aspect);
             toast.success("تمت إضافة الصورة إلى مساحة العمل");
           } else {
             const items: { src: string; aspectRatio: number }[] = [];

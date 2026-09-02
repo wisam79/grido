@@ -854,7 +854,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
        } else {
          if (uploadedSrcs.length === 1) {
            const aspect = await resolveImageAspectRatio(uploadedSrcs[0]);
-           addImageElement(uploadedSrcs[0], aspect);
+           freshState.addImageElement(uploadedSrcs[0], aspect);
          } else {
            const items: { src: string; aspectRatio: number }[] = [];
            for (const src of uploadedSrcs) {

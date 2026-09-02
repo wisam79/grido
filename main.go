@@ -80,6 +80,23 @@ func main() {
 
 	app := NewApp(repository.NewCustomTemplateRepository(db))
 
+	// 🖼️ دعم خيار "فتح باستخدام" وسحب الملفات على أيقونة التطبيق (CLI file open)
+	if len(os.Args) > 1 {
+		for _, arg := range os.Args[1:] {
+			if strings.HasPrefix(arg, "-") {
+				continue
+			}
+			if fi, err := os.Stat(arg); err == nil && !fi.IsDir() {
+				ext := strings.ToLower(filepath.Ext(arg))
+				switch ext {
+				case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
+					app.SetStartupFile(arg)
+					break
+				}
+			}
+		}
+	}
+
 	err = wails.Run(&options.App{
 		Title:       "Grido Studio",
 		Width:       initialWidth,
@@ -165,13 +182,15 @@ func main() {
 		OnStartup: func(ctx context.Context) {
 			// استعادة موضع النافذة وحالة التكبير عند بدء التشغيل
 			if state, err := loadWindowState(); err == nil {
-				// تجاهل المواقع خارج الشاشة (بعد تغيير الدقة أو نقل Monitor)
+				// حماية متقدمة: التحقق أن الموضع السابق يقع ضمن شاشة متصلة فعلياً (لمنع النوافذ الشبحية عند فصل شاشة خارجية)
 				const maxScreenSize = 50000
 				if state.X > -maxScreenSize && state.X < maxScreenSize &&
-					state.Y > -maxScreenSize && state.Y < maxScreenSize {
-					if state.X != 0 || state.Y != 0 {
-						wailsruntime.WindowSetPosition(ctx, state.X, state.Y)
-					}
+					state.Y > -maxScreenSize && state.Y < maxScreenSize &&
+					(state.X != 0 || state.Y != 0) &&
+					isPointOnAnyMonitor(state.X+50, state.Y+50) {
+					wailsruntime.WindowSetPosition(ctx, state.X, state.Y)
+				} else if state.X != 0 || state.Y != 0 {
+					wailsruntime.WindowCenter(ctx)
 				}
 				if state.Max {
 					wailsruntime.WindowMaximise(ctx)

@@ -22,7 +22,6 @@ import { toast } from "sonner";
 import { CheckForUpdate, DownloadAndInstallUpdate } from "../../../../wailsjs/go/main/App";
 import { service } from "../../../../wailsjs/go/models";
 import { EventsOn, EventsOff, BrowserOpenURL } from "../../../../wailsjs/runtime/runtime";
-import { cn } from "@/lib/utils";
 
 /**
  * معالجة وتنسيق ملاحظات التحديث لتحويل أسطر Markdown إلى عناصر واجهة نقية
@@ -100,6 +99,7 @@ export function UpdateNotifier() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     performCheck(false);
 
     const handleManualCheck = () => performCheck(true);

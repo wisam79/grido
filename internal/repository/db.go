@@ -115,6 +115,10 @@ func CloseDB() error {
 	if err != nil {
 		return err
 	}
+
+	// 🗄️ دمج وتفريغ سجل الـ WAL بالكامل إلى ملف .db وتصفير حجمه قبل الإغلاق لمنع تضخم الملفات على القرص
+	_, _ = sqlDB.Exec("PRAGMA wal_checkpoint(TRUNCATE);")
+
 	err = sqlDB.Close()
 	if err == nil {
 		dbInstance = nil

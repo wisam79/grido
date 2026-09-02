@@ -13,6 +13,7 @@ import {
   DesktopMenuBar,
 } from "@/components/editor";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { GetStartupFile } from "../wailsjs/go/main/App";
 
 const ExportDialog = lazy(() => import("@/components/editor/dialogs/export-dialog").then(module => ({ default: module.ExportDialog })));
 const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog").then(module => ({ default: module.PrintDialog })));
@@ -122,6 +123,22 @@ export default function App() {
         const profile = await checkLicenseStatus();
         if (!profile || !profile.token) {
           setAccountModalOpen(true);
+        }
+        // فحص وجود صورة ممررة عند الإقلاع (مثل النقر بالزر الأيمن "فتح بواسطة" في ويندوز)
+        try {
+          if (typeof GetStartupFile === "function") {
+            const startupUrl = await GetStartupFile();
+            if (startupUrl) {
+              const img = new window.Image();
+              img.onload = () => {
+                const aspect = (img.naturalWidth && img.naturalHeight) ? img.naturalWidth / img.naturalHeight : 1;
+                useEditorStore.getState().addImageElement(startupUrl, aspect);
+              };
+              img.src = startupUrl;
+            }
+          }
+        } catch {
+          // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
         }
       } catch (err) {
         console.error("Failed to check license status during init:", err);

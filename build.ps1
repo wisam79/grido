@@ -34,7 +34,10 @@ if (Test-Path $pythonScript) {
 
 $appVersion = (git describe --tags --abbrev=0 2>$null)
 if (-not $appVersion) {
-    $appVersion = "v1.3.26"
+    $appVersion = (git describe --tags --always 2>$null)
+}
+if (-not $appVersion) {
+    $appVersion = "v0.0.0-dev"
 }
 
 Write-Host " [2/3] Building Wails Desktop App & NSIS Installer ($appVersion)..." -ForegroundColor Green

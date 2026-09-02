@@ -38,3 +38,7 @@ func checkSingleInstance() (func(), error) {
 	}
 	return cleanup, nil
 }
+
+func isPointOnAnyMonitor(_, _ int) bool {
+	return true
+}

@@ -75,6 +75,13 @@ ShowInstDetails show
 
 Function .onInit
    !insertmacro wails.checkArchitecture
+
+   # Prevent running multiple installer instances at the same time
+   System::Call 'kernel32::CreateMutex(p 0, i 0, t "GridoStudio_Installer_Mutex") ?e'
+   Pop $R0
+   StrCmp $R0 0 +3
+       MessageBox MB_OK|MB_ICONEXCLAMATION "مثبت Grido Studio قيد التشغيل بالفعل." /SD IDOK
+       Abort
 FunctionEnd
 
 Function .onInstSuccess
@@ -116,6 +123,12 @@ SectionEnd
 
 Section "uninstall"
     !insertmacro wails.setShellContext
+
+    # Clean up user's data from AppData\Roaming and LocalAppData
+    SetShellVarContext current
+    RMDir /r "$APPDATA\GridoStudio"
+    RMDir /r "$LOCALAPPDATA\GridoStudio"
+    SetShellVarContext all
 
     RMDir /r "$AppData\GridoStudio"
 

@@ -20,6 +20,7 @@ type App struct {
 	aiSvc       *service.AIService
 	imageProc   *service.ImageProcessorService
 	autosaveSvc *service.AutosaveService
+	startupFile string
 }
 
 func NewApp(templates domain.CustomTemplateRepository) *App {
@@ -257,4 +258,18 @@ func (a *App) OpenExportsFolder() error {
 	outDir := filepath.Join(utils.GetAppDir(), "Exports")
 	_ = os.MkdirAll(outDir, 0755)
 	return utils.OpenFolder(outDir)
+}
+
+func (a *App) SetStartupFile(filePath string) {
+	a.startupFile = filePath
+}
+
+// GetStartupFile يعيد رابط الصورة المحلية لأي ملف تم فتحه عند الإقلاع عبر سطر الأوامر أو "فتح بواسطة"
+func (a *App) GetStartupFile() (string, error) {
+	if a.startupFile == "" {
+		return "", nil
+	}
+	f := a.startupFile
+	a.startupFile = "" // استهلاك المسار لمرة واحدة فقط لمنع التكرار
+	return a.mediaSvc.ProcessOpenedFile(f)
 }

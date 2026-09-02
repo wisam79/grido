@@ -12,7 +12,6 @@ import {
   FileText,
   Sparkle,
   Circle,
-  Stack,
   Square,
   Star,
   LineSegment,
@@ -33,7 +32,7 @@ import {
   AlignRightIcon,
 } from "@/components/ui/alignment-icons";
 import { GeometricShapesIcon } from "@/components/ui/image-icons";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { IMAGE_FILTERS } from "@/lib/templates";
 import { useShallow } from "zustand/react/shallow";

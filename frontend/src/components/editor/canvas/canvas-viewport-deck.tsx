@@ -7,7 +7,6 @@ import {
   Magnet,
   Columns,
   Scissors,
-  ArrowClockwise,
   Eye,
   EyeSlash,
   MagnifyingGlassPlus,

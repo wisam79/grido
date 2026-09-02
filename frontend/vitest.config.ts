@@ -17,6 +17,8 @@ export default defineConfig({
     globals: true,
     css: true,
     pool: 'threads',
+    maxWorkers: 3,
+    minWorkers: 1,
     server: {
       deps: {
         inline: ['konva', 'react-konva']

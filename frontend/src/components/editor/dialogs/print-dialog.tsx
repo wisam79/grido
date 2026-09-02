@@ -105,6 +105,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const handlePrintRef = useRef<() => void>(() => { });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsExporting(false);
     if (open) {
       // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة.
       useEditorStore.getState().selectElement(null);

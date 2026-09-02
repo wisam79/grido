@@ -104,11 +104,19 @@ jobs:
           Set-Content frontend/dist/index.html "<html></html>"
           wails generate module
 
-      - name: Run Go Vet
-        run: go vet ./internal/...
+      - name: Run Go Vet & Unit Tests
+        run: |
+          go vet ./internal/...
+          go test ./internal/...
+
+      - name: Validate Frontend Typecheck & Tests
+        working-directory: ./frontend
+        run: |
+          npm run typecheck
+          npm run test
 
       - name: Build Wails App & NSIS Installer
-        run: wails build -platform windows/amd64 -nsis -ldflags "-X grido/internal/service.AppVersion=${{ github.ref_name }} -X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }}"
+        run: wails build -platform windows/amd64 -nsis -ldflags "-X grido/internal/service.AppVersion=${{ github.ref_name }} -X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.MODAL_AI_KEY }}"
 
       - name: Prepare Executable Assets
         shell: powershell
@@ -200,11 +208,12 @@ jobs:
           fail_on_unmatched_files: false
           draft: false
           prerelease: false
+          generate_release_notes: true
           name: Grido Studio Release ${{ github.ref_name }}
           body: |
             ## 🚀 Grido Studio Release
-            - النسخة الفورية المبنية تلقائياً لنظام الويندوز.
-            - يتضمن أحدث خوارزميات المعالجة والطباعة بالذكاء الاصطناعي.
-            - يشمل نسخة Portable وملف تثبيت Installer.
+            - النسخة الفورية المبنية تلقائياً لنظام الويندوز (Windows 64-bit).
+            - يتضمن أحدث خوارزميات المعالجة والطباعة بالذكاء الاصطناعي مع دعم كامل للبصمات والتحديث التلقائي.
+            - يشمل نسخة Portable وملف تثبيت Installer ومطابقة بصمات SHA-256.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
