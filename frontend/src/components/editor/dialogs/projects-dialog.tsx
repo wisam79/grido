@@ -300,6 +300,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
               <DialogTitle className="flex items-center gap-2 text-foreground font-cairo text-base font-bold">
                 <FolderOpen className="text-primary w-6 h-6 shrink-0" weight="duotone" />
                 <span>مكتبة المشاريع</span>
+                <span className="sr-only"> المحلية</span>
               </DialogTitle>
               <DialogCloseButton />
             </div>
