@@ -547,3 +547,57 @@ export function evaluateVanishingPointPhysics(quad: Point[]): number {
   return 0.5 * cosH + 0.3 * cosV + 0.2 * ortho;
 }
 
+/**
+ * 🌟 تقويم وتسوية المضلع شبه الأفقي/المتعامد (Orthogonal Rectification & Deskew)
+ * يضمن بقاء أضلاع المستندات والبطاقات الممسوحة أفقية ومستقيمة 100% دون انحرافات ناتجة عن تباين الصور
+ */
+export function rectifyNearAxisAlignedQuad(quad: Point[]): Point[] {
+  if (quad.length !== 4) return quad;
+  const s = sortCornerPoints(quad);
+
+  // حساب زوايا الأضلاع بالدرجات
+  const topAngle = Math.atan2(s[1].y - s[0].y, s[1].x - s[0].x) * (180 / Math.PI);
+  const botAngle = Math.atan2(s[2].y - s[3].y, s[2].x - s[3].x) * (180 / Math.PI);
+  const leftAngle = Math.atan2(s[3].y - s[0].y, s[3].x - s[0].x) * (180 / Math.PI);
+  const rightAngle = Math.atan2(s[2].y - s[1].y, s[2].x - s[1].x) * (180 / Math.PI);
+
+  // إذا كان المستند مائلاً بزاوية طفيفة جداً (< 5.0 درجات)، يتم تسويته أفقياً تماماً
+  if (
+    Math.abs(topAngle) < 5.0 &&
+    Math.abs(botAngle) < 5.0 &&
+    Math.abs(leftAngle - 90) < 5.0 &&
+    Math.abs(rightAngle - 90) < 5.0
+  ) {
+    const minX = Math.min(s[0].x, s[3].x);
+    const maxX = Math.max(s[1].x, s[2].x);
+    const minY = Math.min(s[0].y, s[1].y);
+    const maxY = Math.max(s[2].y, s[3].y);
+    return [
+      { x: minX, y: minY },
+      { x: maxX, y: minY },
+      { x: maxX, y: maxY },
+      { x: minX, y: maxY },
+    ];
+  }
+
+  // إذا كان أحد الضلعين أفقياً تقريباً والآخر مائلاً (تشوه غير متجانس ناتج عن صورة الشخص أو الشعار)
+  const diffH = Math.abs(topAngle - botAngle);
+  if (diffH > 2.0 && (Math.abs(topAngle) < 16 || Math.abs(botAngle) < 16)) {
+    const refAngle = Math.abs(botAngle) < Math.abs(topAngle) ? botAngle : topAngle;
+    if (Math.abs(refAngle) < 5.0) {
+      const minX = Math.min(s[0].x, s[3].x);
+      const maxX = Math.max(s[1].x, s[2].x);
+      const avgTopY = Math.round(Math.min(s[0].y, s[1].y));
+      const avgBotY = Math.round(Math.max(s[2].y, s[3].y));
+      return [
+        { x: minX, y: avgTopY },
+        { x: maxX, y: avgTopY },
+        { x: maxX, y: avgBotY },
+        { x: minX, y: avgBotY },
+      ];
+    }
+  }
+
+  return s;
+}
+

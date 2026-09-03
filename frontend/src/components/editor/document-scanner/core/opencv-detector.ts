@@ -1,11 +1,11 @@
 import { Point, DetectedDocument, DetectionResult, ScoredCandidate, DetectionMode } from "./types";
+import { computePolygonArea as calculatePolygonArea } from "./contour-tracer";
 import {
   sortCornerPoints,
-  calculatePolygonArea,
   computeQuadOrthogonality,
   computeQuadOverlapStats,
   inferSmartDocumentAspect,
-} from "./geometry";
+} from "./quad-geometry";
 import { splitQuadIntoIdCards } from "./multi-doc-segmenter";
 import { loadOpenCV, getLoadedOpenCV, CvRuntime } from "../opencv-loader";
 

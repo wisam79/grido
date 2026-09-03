@@ -1,4 +1,14 @@
-import { Point, DetectedDocument, DetectionResult, ScoredCandidate, DetectionMode } from "./types";
+import {
+  Point,
+  DetectedDocument,
+  DetectionResult,
+  ScoredCandidate,
+  DetectionMode,
+  STACKED_SPLIT_MIN_RATIO,
+  STACKED_SPLIT_MAX_RATIO,
+  ID_HALF_MIN_RATIO,
+  ID_HALF_MAX_RATIO,
+} from "./types";
 import {
   rgbaToGrayscale,
   fastBoxBlur,
@@ -31,6 +41,7 @@ import {
 } from "./multi-doc-segmenter";
 import { refineCornersSubPixel } from "./perspective-warper";
 import { detectDocumentsWithOpenCV } from "./opencv-detector";
+import { detectDocumentWithMl } from "./ml-detector";
 import { getLoadedOpenCV } from "../opencv-loader";
 
 export { splitQuadIntoIdCards, addManualDocumentQuad };
@@ -39,10 +50,6 @@ const FRAME_HULL_MIN = 0.88;
 const FRAME_HULL_MAX = 0.999;
 const RING_UNIFORM_THRESHOLD = 0.08;
 const FRAME_TIER_BEST_AREA = 0.65;
-const STACKED_SPLIT_MIN_RATIO = 0.66;
-const STACKED_SPLIT_MAX_RATIO = 0.90;
-const ID_HALF_MIN_RATIO = 1.44;
-const ID_HALF_MAX_RATIO = 1.84;
 
 function quadAreaRatio(quad: Point[], w: number, h: number): number {
   return computePolygonArea(quad) / (w * h);
@@ -564,19 +571,33 @@ export async function detectDocumentAuto(
   originalHeight: number,
   mode: DetectionMode = "single"
 ): Promise<DetectionResult> {
-  // 1. إذا كان OpenCV محملاً وجاهزاً، نستخدمه لأعلى دقة ممكنة
+  // 1. 🌟 في نمط المسح المفرد (أو التلقائي): الأولوية لنموذج الذكاء الاصطناعي المدرب (DocCornerNet)
+  if (mode !== "multi") {
+    try {
+      const mlResult = await detectDocumentWithMl(src, originalWidth, originalHeight);
+      if (mlResult && mlResult.documents && mlResult.documents.length > 0 && mlResult.confidence >= 0.55) {
+        return mlResult;
+      }
+    } catch {
+      // Fall through to classical OpenCV / JS detection
+    }
+  }
+
+  // 2. 🌟 محرك OpenCV WASM (يُستدعى مرة واحدة بحسب النمط المطلوب دون تكرار)
   if (getLoadedOpenCV()) {
     try {
       const cvResult = await detectDocumentsWithOpenCV(src, originalWidth, originalHeight, mode);
       if (cvResult && cvResult.documents && cvResult.documents.length > 0) {
-        return cvResult;
+        if (mode !== "multi" || cvResult.documents.length >= 2) {
+          return cvResult;
+        }
       }
     } catch {
       // Fall through to pure JS detection
     }
   }
 
-  // 🌟 هرم المقاييس المتعددة (Multi-Scale Vision Pyramid)
+  // 3. 🌟 هرم المقاييس المتعددة للرؤية النقية (Pure JS Multi-Scale Vision Pyramid)
   const maxDim1 = 480;
   const procScale1 = Math.min(1, maxDim1 / originalWidth, maxDim1 / originalHeight);
   const sw1 = Math.max(1, Math.round(originalWidth * procScale1));
@@ -671,6 +692,18 @@ export async function detectDocumentAuto(
           documents: refinedDocs,
         };
       }
+    }
+  }
+
+  // 4. شبكة أمان: إذا كنا في نمط multi ولم يجد OpenCV أو JS أي شيء، نجرب ML كمحاولة أخيرة
+  if (mode === "multi") {
+    try {
+      const mlFallback = await detectDocumentWithMl(src, originalWidth, originalHeight);
+      if (mlFallback && mlFallback.documents && mlFallback.documents.length > 0 && mlFallback.confidence >= 0.55) {
+        return mlFallback;
+      }
+    } catch {
+      // Fall through to default inset
     }
   }
 

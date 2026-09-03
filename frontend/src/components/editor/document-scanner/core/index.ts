@@ -5,4 +5,6 @@ export * from "./quad-geometry";
 export * from "./multi-doc-segmenter";
 export * from "./perspective-warper";
 export * from "./filters";
+export * from "./ml-detector";
+export * from "./opencv-detector";
 export * from "./document-detector";

@@ -520,7 +520,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
 
   it("should refine corners with localized sub-pixel accuracy without allocating full image", async () => {
     const { refineCornersSubPixel } = await import(
-      "../src/components/editor/document-scanner/core/corner-refiner"
+      "../src/components/editor/document-scanner/core/perspective-warper"
     );
 
     const width = 100;
@@ -750,6 +750,131 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     ];
     expect(isPhysicallyPlausibleDocumentQuad(acuteNeedle)).toBe(false);
     expect(computeQuadOrthogonality(acuteNeedle)).toBe(0);
+  });
+
+  it("should provide valid asset base url and safe warmup for ML detector", async () => {
+    const { getScanicAssetBaseUrl, warmupMlDetector } = await import(
+      "../src/components/editor/document-scanner/core/ml-detector"
+    );
+
+    const url = getScanicAssetBaseUrl();
+    expect(url).toBeDefined();
+    expect(url).toContain("models/scanic/");
+
+    // Safe warmup should not throw even in Node/JSDOM
+    await expect(warmupMlDetector()).resolves.toBeUndefined();
+  });
+
+  it("should handle detectDocumentWithMl gracefully and return null or valid scanic result", async () => {
+    const { detectDocumentWithMl } = await import(
+      "../src/components/editor/document-scanner/core/ml-detector"
+    );
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 300;
+    canvas.height = 200;
+
+    // In a test environment without a running HTTP server for .ort, it should gracefully return null
+    const res = await detectDocumentWithMl(canvas, 300, 200);
+    if (res !== null) {
+      expect(res.method).toBe("scanic");
+      expect(res.corners.length).toBe(4);
+      expect(res.documents?.length).toBeGreaterThan(0);
+    } else {
+      expect(res).toBeNull();
+    }
+  });
+
+  it("should correctly process and refine corners when ML detector succeeds", async () => {
+    const { detectDocumentWithMl, setScanicModuleForTesting } = await import(
+      "../src/components/editor/document-scanner/core/ml-detector"
+    );
+
+    try {
+      setScanicModuleForTesting({
+        scanDocument: async () => ({
+          success: true,
+          score: 0.96,
+          corners: {
+            topLeft: { x: 20, y: 15 },
+            topRight: { x: 280, y: 25 },
+            bottomRight: { x: 275, y: 185 },
+            bottomLeft: { x: 25, y: 175 },
+          },
+        }),
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 300;
+      canvas.height = 200;
+
+      const res = await detectDocumentWithMl(canvas, 300, 200);
+      expect(res).not.toBeNull();
+      expect(res?.method).toBe("scanic");
+      expect(res?.confidence).toBeGreaterThanOrEqual(0.95);
+      expect(res?.corners.length).toBe(4);
+      expect(res?.documents?.length).toBe(1);
+      expect(res?.documents?.[0].corners[0].x).toBeCloseTo(20, -1);
+    } finally {
+      setScanicModuleForTesting(null);
+    }
+  });
+
+  it("should faithfully retain low ML confidence scores without inflating with a false floor", async () => {
+    const { detectDocumentWithMl, setScanicModuleForTesting } = await import(
+      "../src/components/editor/document-scanner/core/ml-detector"
+    );
+
+    try {
+      setScanicModuleForTesting({
+        scanDocument: async () => ({
+          success: true,
+          score: 0.32,
+          corners: {
+            topLeft: { x: 20, y: 15 },
+            topRight: { x: 280, y: 15 },
+            bottomRight: { x: 280, y: 185 },
+            bottomLeft: { x: 20, y: 185 },
+          },
+        }),
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 300;
+      canvas.height = 200;
+
+      const res = await detectDocumentWithMl(canvas, 300, 200);
+      expect(res).not.toBeNull();
+      // Score should accurately reflect 0.32 and NOT be inflated to >= 0.75
+      expect(res?.confidence).toBeCloseTo(0.32, 2);
+    } finally {
+      setScanicModuleForTesting(null);
+    }
+  });
+
+  it("should rectify slightly tilted/skewed corners to perfect horizontal alignment", async () => {
+    const { rectifyNearAxisAlignedQuad } = await import(
+      "../src/components/editor/document-scanner/core/quad-geometry"
+    );
+
+    // Quad with slightly tilted top edge due to contrast/photo (y=25 on left vs y=15 on right) but horizontal bottom (y=180 on both)
+    const skewedQuad = [
+      { x: 20, y: 32 },
+      { x: 280, y: 15 },
+      { x: 280, y: 180 },
+      { x: 20, y: 180 },
+    ];
+
+    const rectified = rectifyNearAxisAlignedQuad(skewedQuad);
+    expect(rectified.length).toBe(4);
+    // Top edges should now have matching y
+    expect(rectified[0].y).toBe(rectified[1].y);
+    // Bottom edges should have matching y
+    expect(rectified[2].y).toBe(rectified[3].y);
+    // Left edges should have matching x
+    expect(rectified[0].x).toBe(rectified[3].x);
+    // Right edges should have matching x
+    expect(rectified[1].x).toBe(rectified[2].x);
   });
 });
 

@@ -41,3 +41,9 @@ export interface ScoredCandidate {
   aspectRatio?: number;
 }
 
+// 🌟 ثوابت هندسية موحدة لتقسيم البطاقات المكدسة والنسب المرجعية
+export const STACKED_SPLIT_MIN_RATIO = 0.66;
+export const STACKED_SPLIT_MAX_RATIO = 0.90;
+export const ID_HALF_MIN_RATIO = 1.44;
+export const ID_HALF_MAX_RATIO = 1.84;
+

@@ -35,6 +35,7 @@ import {
   splitQuadIntoIdCards,
   addManualDocumentQuad,
   rotateCanvas,
+  warmupMlDetector,
 } from "./perspective-transform";
 import { toast } from "sonner";
 import { ScannerSidebar } from "./components/scanner-sidebar";
@@ -150,7 +151,9 @@ export function DocumentScannerDialog({
           if (notify) {
             if (result.documents.length > 1) {
               toast.success(`تم اكتشاف ${result.documents.length} مستندات في الصورة بنجاح! 🎯`);
-            } else if (result.method === "scanic" || result.method === "opencv") {
+            } else if (result.method === "scanic") {
+              toast.success(`كشف فائق بالذكاء الاصطناعي (${Math.round(result.confidence * 100)}%) 🎯`);
+            } else if (result.method === "opencv") {
               toast.success(`كشف تلقائي دقيق (${Math.round(result.confidence * 100)}%) 🎯`);
             } else if (result.method === "js") {
               toast.success("كشف ذكي للمستند/البطاقة 🎯");
@@ -200,6 +203,9 @@ export function DocumentScannerDialog({
       }
       return;
     }
+    // تسخين نموذج الذكاء الاصطناعي مسبقاً في الخلفية
+    warmupMlDetector();
+
     if (!imageSrc) return;
 
     let isCancelled = false;
@@ -235,9 +241,10 @@ export function DocumentScannerDialog({
 
     img.src = imageSrc;
 
+    const reqIdAtMount = activeReqIdRef.current;
     return () => {
       isCancelled = true;
-      activeReqIdRef.current++;
+      activeReqIdRef.current = reqIdAtMount + 1;
       img.onload = null;
       img.onerror = null;
     };
