@@ -1,5 +1,8 @@
 $ErrorActionPreference = "Stop"
 
+Stop-Process -Name "GridoStudio" -Force -ErrorAction SilentlyContinue
+Start-Sleep -Milliseconds 300
+
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host " 🚀 Grido Studio Local Build & Packaging Workflow" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
