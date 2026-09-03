@@ -13,7 +13,9 @@ import { RulerUnit } from "./ruler";
 import { TextEditingOverlay } from "./text-editing-overlay";
 import { CanvasContextMenu } from "./canvas-context-menu";
 import { checkerColor, guideCenter, guideEdge } from "@/lib/canvas/canvas-colors";
-import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
+import { useCanvasViewport } from "./use-canvas-viewport";
+import { useUserGuides } from "./use-user-guides";
+import { useImageDrop } from "./use-image-drop";
 
 /**
  * شريط الأدوات السريع للخانة المحددة (إزالة/استبدال الصورة).
@@ -165,12 +167,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
     originY: 0,
   });
 
-  const hRulerCursorRef = useRef<SVGLineElement | null>(null);
-  const vRulerCursorRef = useRef<SVGLineElement | null>(null);
   const lastDblClickRef = useRef<number>(0);
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   const mouseMoveRafId = useRef<number | null>(null);
 
@@ -186,14 +185,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
     userGuides,
     showUserGuides,
     lockUserGuides,
-    addUserGuide,
-    updateUserGuide,
-    removeUserGuide,
     clearUserGuides,
     setShowUserGuides,
     setLockUserGuides,
-    selectedId,
-    slots,
   } = useEditorStore(
     useShallow((state) => ({
       rulerUnit: state.rulerUnit,
@@ -201,42 +195,24 @@ export const EditorCanvas = React.memo(React.forwardRef<
       userGuides: state.userGuides,
       showUserGuides: state.showUserGuides,
       lockUserGuides: state.lockUserGuides,
-      addUserGuide: state.addUserGuide,
-      updateUserGuide: state.updateUserGuide,
-      removeUserGuide: state.removeUserGuide,
       clearUserGuides: state.clearUserGuides,
       setShowUserGuides: state.setShowUserGuides,
       setLockUserGuides: state.setLockUserGuides,
-      selectedId: state.selectedId,
-      slots: state.slots,
     }))
   );
 
-  // حالة سحب خط إرشادي جديد من المسطرة أو تحريك خط قائم
-  const [dragGuideState, setDragGuideState] = useState<{
-    type: "h" | "v";
-    pos: number; // 0..1 نسبي إلى الكانفس
-    guideId?: string;
-  } | null>(null);
-
-  // 🛡️ تقسيم الاشتراك: الدوال (هويات ثابتة أبداً) منفصلة عن الحالة،
-  // وحالة الخانة (slots/selectedId) انتقلت إلى SelectedSlotQuickBar —
-  // تعديل أي خانة لم يعد يعيد رسم قشرة المحرر.
+  // 🛡️ تقسيم الاشتراك: الدوال (هويات ثابتة أبداً) منفصلة عن الحالة
   const {
     selectElement,
     setEditingTextId,
     updateElement,
     pushHistory,
-    addImageElement,
-    addImageElementsBatch,
     setCanvasZoom,
   } = useEditorStore(useShallow((state) => ({
     selectElement: state.selectElement,
     setEditingTextId: state.setEditingTextId,
     updateElement: state.updateElement,
     pushHistory: state.pushHistory,
-    addImageElement: state.addImageElement,
-    addImageElementsBatch: state.addImageElementsBatch,
     setCanvasZoom: state.setCanvasZoom,
   })));
 
@@ -267,6 +243,37 @@ export const EditorCanvas = React.memo(React.forwardRef<
     selectedIds: state.selectedIds,
     collageMargin: state.collageMargin,
   })));
+
+  // 🧭 منطق الزوم والتحريك (كان مضمّناً في هذا الملف)
+  useCanvasViewport(containerRef, innerRef);
+
+  const aspect = canvasWidth / canvasHeight;
+  const maxW = (containerSize.w - 32) * canvasZoom;
+  const maxH = (containerSize.h - 32) * canvasZoom;
+  let displayW = maxW;
+  let displayH = displayW / aspect;
+  if (displayH > maxH) {
+    displayH = maxH;
+    displayW = displayH * aspect;
+  }
+  displayW = Math.max(100 * canvasZoom, displayW);
+  displayH = Math.max(100 * canvasZoom, displayH);
+
+  // 🧭 الخطوط الإرشادية (كانت مضمّنة في هذا الملف)
+  const {
+    dragGuideState,
+    setDragGuideState,
+    handleStartDragHGuide,
+    handleStartDragVGuide,
+  } = useUserGuides(innerRef, displayW, displayH, printMode, elements);
+
+  // 🧭 منطق إسقاط الصور (كان مضمّناً في هذا الملف)
+  const {
+    isLoading,
+    setIsLoading,
+    handleDragOver,
+    handleDrop,
+  } = useImageDrop(innerRef);
 
   const updateRulerPositions = useCallback(() => {
     if (!showRuler || printMode) return;
@@ -327,162 +334,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, [updateRulerPositions]);
-
-  const aspect = canvasWidth / canvasHeight;
-  const maxW = (containerSize.w - 32) * canvasZoom;
-  const maxH = (containerSize.h - 32) * canvasZoom;
-  let displayW = maxW;
-  let displayH = displayW / aspect;
-  if (displayH > maxH) {
-    displayH = maxH;
-    displayW = displayH * aspect;
-  }
-  displayW = Math.max(100 * canvasZoom, displayW);
-  displayH = Math.max(100 * canvasZoom, displayH);
-
-  const prevZoomRef = useRef(canvasZoom);
-  const prevCanvasRectRef = useRef<DOMRect | null>(null);
-  const zoomPivotRef = useRef<{ pctX: number, pctY: number, screenX: number, screenY: number } | null>(null);
-
-  useEffect(() => {
-    const spacePressedRef = { current: false };
-    const isPanningRef = { current: false };
-    const node = containerRef.current;
-    if (!node) return;
-
-    let pendingZoom: number | null = null;
-    let rafId: number | null = null;
-
-    const applyZoom = () => {
-      rafId = null;
-      if (pendingZoom === null) return;
-
-      const newZoom = pendingZoom;
-      pendingZoom = null;
-
-      if (newZoom !== useEditorStore.getState().canvasZoom) {
-        if (innerRef.current) {
-          const canvasRect = innerRef.current.getBoundingClientRect();
-          prevCanvasRectRef.current = canvasRect;
-          zoomPivotRef.current = {
-            pctX: (lastWheelClientX - canvasRect.left) / canvasRect.width,
-            pctY: (lastWheelClientY - canvasRect.top) / canvasRect.height,
-            screenX: lastWheelClientX,
-            screenY: lastWheelClientY
-          };
-        }
-        setCanvasZoom(newZoom);
-      }
-    };
-
-    let lastWheelClientX = 0;
-    let lastWheelClientY = 0;
-
-    const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        lastWheelClientX = e.clientX;
-        lastWheelClientY = e.clientY;
-
-        const baseZoom = pendingZoom !== null ? pendingZoom : useEditorStore.getState().canvasZoom;
-        const factor = Math.exp(-e.deltaY * 0.003);
-        const newZoom = Math.min(Math.max(0.1, baseZoom * factor), 5);
-
-        pendingZoom = newZoom;
-        if (rafId === null) {
-          rafId = requestAnimationFrame(applyZoom);
-        }
-      }
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const activeTag = (e.target as HTMLElement)?.tagName;
-      if (e.code === "Space" && activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
-        if (!spacePressedRef.current) {
-          spacePressedRef.current = true;
-          node.style.cursor = "grab";
-        }
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        spacePressedRef.current = false;
-        node.style.cursor = "";
-      }
-    };
-
-    const handlePointerDown = (e: PointerEvent) => {
-      if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
-        e.preventDefault();
-        isPanningRef.current = true;
-        node.style.cursor = "grabbing";
-        window.addEventListener("pointermove", handlePointerMove);
-        window.addEventListener("pointerup", handlePointerUp, { once: true });
-      }
-    };
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (isPanningRef.current) {
-        e.preventDefault();
-        node.scrollLeft -= e.movementX;
-        node.scrollTop -= e.movementY;
-      }
-    };
-
-    const handlePointerUp = () => {
-      isPanningRef.current = false;
-      node.style.cursor = spacePressedRef.current ? "grab" : "";
-      window.removeEventListener("pointermove", handlePointerMove);
-    };
-
-    node.addEventListener("wheel", handleWheel, { passive: false });
-    node.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      node.removeEventListener("wheel", handleWheel);
-      node.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-      if (rafId !== null) cancelAnimationFrame(rafId);
-    };
-  }, [setCanvasZoom]);
-
-  React.useLayoutEffect(() => {
-    if (canvasZoom !== prevZoomRef.current) {
-      if (containerRef.current && innerRef.current) {
-        const container = containerRef.current;
-        const canvas = innerRef.current;
-
-        if (zoomPivotRef.current) {
-           const { pctX, pctY, screenX, screenY } = zoomPivotRef.current;
-           const newCanvasRect = canvas.getBoundingClientRect();
-
-           const currentScreenX = newCanvasRect.left + pctX * newCanvasRect.width;
-           const currentScreenY = newCanvasRect.top + pctY * newCanvasRect.height;
-
-           container.scrollLeft += (currentScreenX - screenX);
-           container.scrollTop += (currentScreenY - screenY);
-
-           zoomPivotRef.current = null;
-        } else {
-           const canvasRect = canvas.getBoundingClientRect();
-           const newCenterX = canvasRect.left + canvasRect.width / 2;
-           const newCenterY = canvasRect.top + canvasRect.height / 2;
-           const containerRect = container.getBoundingClientRect();
-           const viewportCenterX = containerRect.left + containerRect.width / 2;
-           const viewportCenterY = containerRect.top + containerRect.height / 2;
-           container.scrollLeft += (newCenterX - viewportCenterX);
-           container.scrollTop += (newCenterY - viewportCenterY);
-        }
-      }
-      prevZoomRef.current = canvasZoom;
-    }
-  }, [canvasZoom]);
 
   const widthMM = useMemo(() => {
     if (template) return template.widthMM;
@@ -579,297 +430,70 @@ export const EditorCanvas = React.memo(React.forwardRef<
     if (vCursor) vCursor.style.display = "none";
   };
 
-  // محاذاة مغناطيسية ذكية للخطوط الإرشادية أثناء السحب نحو الحواف والمراكز والعناصر
-  const snapGuidePos = useCallback((rawPos: number, type: "h" | "v", displayDim: number): number => {
-    if (displayDim <= 0) return rawPos;
-    const SNAP_THRESHOLD_PX = 6;
-    const thresholdNorm = SNAP_THRESHOLD_PX / displayDim;
-
-    // أهداف المغناطيسية: 0 (البداية)، 0.5 (المنتصف)، 1 (النهاية)
-    const targets = [0, 0.5, 1];
-
-    // أهداف حواف ومراكز العناصر المضافة على الكانفاس
-    for (const el of elements) {
-      if (type === "h") {
-        targets.push(el.y, el.y + el.height / 2, el.y + el.height);
-      } else {
-        targets.push(el.x, el.x + el.width / 2, el.x + el.width);
-      }
-    }
-
-    for (const target of targets) {
-      if (Math.abs(rawPos - target) < thresholdNorm) {
-        return target;
-      }
-    }
-    return rawPos;
-  }, [elements]);
-
-  // بدء سحب خط إرشادي جديد من المسطرة الأفقية
-  const handleStartDragHGuide = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
-    if (printMode || !innerRef.current || displayH <= 0 || lockUserGuides) return;
-    e.preventDefault();
-    const paperRect = innerRef.current.getBoundingClientRect();
-    const relY = (e.clientY - paperRect.top) / displayH;
-    setDragGuideState({
-      type: "h",
-      pos: snapGuidePos(relY, "h", displayH),
-    });
-  }, [printMode, displayH, lockUserGuides, snapGuidePos]);
-
-  // بدء سحب خط إرشادي جديد من المسطرة الرأسية
-  const handleStartDragVGuide = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
-    if (printMode || !innerRef.current || displayW <= 0 || lockUserGuides) return;
-    e.preventDefault();
-    const paperRect = innerRef.current.getBoundingClientRect();
-    const relX = (e.clientX - paperRect.left) / displayW;
-    setDragGuideState({
-      type: "v",
-      pos: snapGuidePos(relX, "v", displayW),
-    });
-  }, [printMode, displayW, lockUserGuides, snapGuidePos]);
-
-  // متابعة سحب الخط الإرشادي عالمياً
-  useEffect(() => {
-    if (!dragGuideState) return;
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (!innerRef.current) return;
-      const paperRect = innerRef.current.getBoundingClientRect();
-      if (dragGuideState.type === "h") {
-        const h = paperRect.height || 1;
-        const rawPos = (e.clientY - paperRect.top) / h;
-        const pos = snapGuidePos(rawPos, "h", h);
-        setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
-      } else {
-        const w = paperRect.width || 1;
-        const rawPos = (e.clientX - paperRect.left) / w;
-        const pos = snapGuidePos(rawPos, "v", w);
-        setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
-      }
-    };
-
-    const handlePointerUp = () => {
-      if (dragGuideState) {
-        const { type, pos, guideId } = dragGuideState;
-        if (pos >= -0.04 && pos <= 1.04) {
-          const clamped = Math.min(1, Math.max(0, pos));
-          if (guideId) {
-            updateUserGuide(guideId, clamped);
-          } else {
-            addUserGuide({ type, pos: clamped });
-          }
-        } else if (guideId) {
-          // سحبه خارج الكانفس يؤدي إلى حذفه
-          removeUserGuide(guideId);
-        }
-        setDragGuideState(null);
-      }
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-  }, [dragGuideState, addUserGuide, updateUserGuide, removeUserGuide, snapGuidePos]);
-
   const handleDoubleClick = useCallback(async (el: CanvasElement) => {
-     if (printMode || isLoading) return;
-     // العنصر المقفل لا يُحرَّر بالنقر المزدوج — السحب والـ Transformer يحترمان القفل أيضاً
-     if (el.locked) return;
-     if (el.type === "image") {
-       try {
-         setIsLoading(true);
-         const b64 = await OpenFile();
-         if (b64) {
-           const isWailsDesktop = wailsIsDesktop();
-           let srcToUse = b64;
-           if (isWailsDesktop && b64.startsWith("data:image/")) {
-             try {
-               const localPath = await SaveImageFromBase64(b64);
-               if (localPath) srcToUse = localPath;
-             } catch (e) {
-               console.error("Failed to save image locally:", e);
-             }
-           }
-           updateElement(el.id, { imageSrc: srcToUse });
-           pushHistory();
-         }
-       } catch (err) {
-         console.error("Open file error:", err);
-       } finally {
-         setIsLoading(false);
-       }
-     } else if (el.type === "text") {
-       setEditingTextId(el.id);
-     }
-   }, [printMode, isLoading, updateElement, pushHistory, setEditingTextId]);
+    if (printMode || isLoading) return;
+    // العنصر المقفل لا يُحرَّر بالنقر المزدوج — السحب والـ Transformer يحترمان القفل أيضاً
+    if (el.locked) return;
+    if (el.type === "image") {
+      try {
+        setIsLoading(true);
+        const b64 = await OpenFile();
+        if (b64) {
+          const isWailsDesktop = wailsIsDesktop();
+          let srcToUse = b64;
+          if (isWailsDesktop && b64.startsWith("data:image/")) {
+            try {
+              const localPath = await SaveImageFromBase64(b64);
+              if (localPath) srcToUse = localPath;
+            } catch (e) {
+              console.error("Failed to save image locally:", e);
+            }
+          }
+          updateElement(el.id, { imageSrc: srcToUse });
+          pushHistory();
+        }
+      } catch (err) {
+        console.error("Open file error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (el.type === "text") {
+      setEditingTextId(el.id);
+    }
+  }, [printMode, isLoading, updateElement, pushHistory, setEditingTextId, setIsLoading]);
 
   const handleSlotClick = useCallback((slotId: string) => {
     if (printMode) return;
     selectElement(slotId);
   }, [printMode, selectElement]);
 
-    const handleSlotDblClick = useCallback(async (slotId: string) => {
-      if (printMode || isLoading) return;
-      const now = Date.now();
-      if (now - lastDblClickRef.current < 200) return;
-      lastDblClickRef.current = now;
-     try {
-       setIsLoading(true);
-       const b64 = await OpenFile();
-       if (b64) {
-         const isWailsDesktop = wailsIsDesktop();
-         let srcToUse = b64;
-         if (isWailsDesktop && b64.startsWith("data:image/")) {
-           try {
-             const localPath = await SaveImageFromBase64(b64);
-             if (localPath) srcToUse = localPath;
-           } catch (e) {
-             console.error("Failed to save image locally:", e);
-           }
-         }
-         useEditorStore.getState().setSlotImage(slotId, srcToUse);
-       }
-     } catch (err) {
-       console.error("Open file error:", err);
-     } finally {
-       setIsLoading(false);
-     }
-   }, [printMode, isLoading]);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type.startsWith("image/"));
-    if (files.length === 0) return;
-
-    const MAX_FILE_SIZE = 50 * 1024 * 1024;
-    const CHUNK_SIZE = 3;
-
+  const handleSlotDblClick = useCallback(async (slotId: string) => {
+    if (printMode || isLoading) return;
+    const now = Date.now();
+    if (now - lastDblClickRef.current < 200) return;
+    lastDblClickRef.current = now;
     try {
       setIsLoading(true);
-      const uploadedSrcs: string[] = [];
-      for (let i = 0; i < files.length; i += CHUNK_SIZE) {
-        const chunk = files.slice(i, i + CHUNK_SIZE);
-        const results = await Promise.all(chunk.map(async (file) => {
-          if (file.size > MAX_FILE_SIZE) {
-            console.warn(`Skipping oversized file: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`);
-            return null;
-          }
+      const b64 = await OpenFile();
+      if (b64) {
+        const isWailsDesktop = wailsIsDesktop();
+        let srcToUse = b64;
+        if (isWailsDesktop && b64.startsWith("data:image/")) {
           try {
-            const dataUrl = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = () => reject(reader.error);
-              reader.readAsDataURL(file);
-            });
-            const src = await SaveImageFromBase64(dataUrl);
-            return src || null;
-          } catch {
-            return null;
+            const localPath = await SaveImageFromBase64(b64);
+            if (localPath) srcToUse = localPath;
+          } catch (e) {
+            console.error("Failed to save image locally:", e);
           }
-        }));
-        for (const src of results) {
-          if (src) uploadedSrcs.push(src);
         }
-        await new Promise((r) => setTimeout(r, 0));
+        useEditorStore.getState().setSlotImage(slotId, srcToUse);
       }
-
-      if (uploadedSrcs.length === 0) return;
-
-      const freshState = useEditorStore.getState();
-      const freshMode = freshState.mode;
-      const freshSlots = freshState.slots;
-      const freshCollageTemplate = freshState.collageTemplate;
-      // قراءة الأبعاد من الحالة الطازجة أيضاً — قد تتغير إعدادات الكولاج أثناء
-      // رفع الملفات فلا تُطابق خانات محسوبة بقيم قديمة (إصلاح Bug#15)
-      const freshCanvasWidth = freshState.canvasWidth;
-      const freshCanvasHeight = freshState.canvasHeight;
-      const freshCollageMargin = freshState.collageMargin;
-      const freshCollageGap = freshState.collageGap;
-
-      if (freshMode === "collage" || freshSlots.length > 0) {
-        if (freshMode !== "collage") {
-          freshState.setMode("collage");
-        }
-
-        let targetSlotId: string | null = null;
-        if (innerRef.current) {
-          const rect = innerRef.current.getBoundingClientRect();
-          // إحداثيات منطقية بمساحة الكانفس (مثل konva-collage-layer) بدل نسبة عرض الشاشة —
-          // القانون يشمل هوامش الكولاج وفجواته: margin + slot.x * availW + gap/2
-          const scale = rect.width / freshCanvasWidth;
-          const logicalX = (e.clientX - rect.left) / scale;
-          const logicalY = (e.clientY - rect.top) / scale;
-          const hasPhysical = freshCollageTemplate?.physicalLayout;
-          const margin = hasPhysical ? 0 : freshCollageMargin;
-          const gap = hasPhysical ? 0 : freshCollageGap;
-          const availW = freshCanvasWidth - 2 * margin;
-          const availH = freshCanvasHeight - 2 * margin;
-
-          const matched = freshSlots.find((s) => {
-            const sx = margin + s.x * availW + gap / 2;
-            const sy = margin + s.y * availH + gap / 2;
-            const sw = s.w * availW - gap;
-            const sh = s.h * availH - gap;
-            return logicalX >= sx && logicalX <= sx + sw && logicalY >= sy && logicalY <= sy + sh;
-          });
-          if (matched) {
-            targetSlotId = matched.id;
-          }
-        }
-
-        const assignments: { slotId: string; src: string }[] = [];
-        if ((freshCollageTemplate?.physicalLayout || freshSlots.length > 1) && uploadedSrcs.length === 1 && uploadedSrcs[0]) {
-          for (const s of freshSlots) {
-            assignments.push({ slotId: s.id, src: uploadedSrcs[0] });
-          }
-        } else if (targetSlotId && uploadedSrcs[0]) {
-          assignments.push({ slotId: targetSlotId, src: uploadedSrcs[0] });
-          let srcIdx = 1;
-          for (const s of freshSlots) {
-            if (s.id !== targetSlotId && !s.imageSrc && srcIdx < uploadedSrcs.length) {
-              assignments.push({ slotId: s.id, src: uploadedSrcs[srcIdx++] });
-            }
-          }
-        } else {
-          let srcIdx = 0;
-          for (const s of freshSlots) {
-            if (!s.imageSrc && srcIdx < uploadedSrcs.length) {
-              assignments.push({ slotId: s.id, src: uploadedSrcs[srcIdx++] });
-            }
-          }
-          if (srcIdx === 0 && freshSlots[0] && uploadedSrcs[0]) {
-            assignments.push({ slotId: freshSlots[0].id, src: uploadedSrcs[0] });
-          }
-        }
-        // دفعة واحدة بخطوة تراجع واحدة بدل خطوة لكل صورة (الإسقاط المتعدد)
-        freshState.setSlotImagesBatch(assignments, uploadedSrcs[0] || null);
-       } else {
-         if (uploadedSrcs.length === 1) {
-           const aspect = await resolveImageAspectRatio(uploadedSrcs[0]);
-           freshState.addImageElement(uploadedSrcs[0], aspect);
-         } else {
-           const items: { src: string; aspectRatio: number }[] = [];
-           for (const src of uploadedSrcs) {
-             const aspect = await resolveImageAspectRatio(src);
-             items.push({ src, aspectRatio: aspect });
-           }
-           freshState.addImageElementsBatch(items);
-         }
-       }
     } catch (err) {
-      console.error("Drop file error:", err);
+      console.error("Open file error:", err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [printMode, isLoading, setIsLoading]);
 
   const handleCanvasContextMenu = useCallback((e: any) => {
     if (printMode) return;
@@ -996,7 +620,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
             onDoubleClick={(e) => {
               if (lockUserGuides) return;
               e.stopPropagation();
-              removeUserGuide(guide.id);
+              useEditorStore.getState().removeUserGuide(guide.id);
             }}
             className={`absolute z-[45] group transition-colors select-none ${
               lockUserGuides
