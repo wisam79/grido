@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
 import * as LicenseHandler from "../../../../wailsjs/go/handlers/LicenseHandler";
+import * as App from "../../../../wailsjs/go/main/App";
 import { domain } from "../../../../wailsjs/go/models";
 
 export type UserProfile = domain.UserProfile;
@@ -33,11 +34,69 @@ export interface LicenseSlice {
   resetPassword: (email: string) => Promise<void>;
   verifyRecoveryOTP: (email: string, token: string, newPassword: string) => Promise<UserProfile>;
   isLicenseActive: () => boolean;
-  
+
+  /** ملء سجلات AI من AppData عند الإقلاع (يُستدعى مرة من تأثير التطبيق) */
+  hydrateAiUsageLogs: () => Promise<AiUsageRecord[]>;
+
   logAiUsage: (record: Omit<AiUsageRecord, "id" | "timestamp">) => void;
 }
 
 const DEFAULT_AI_LOGS: AiUsageRecord[] = [];
+const AI_LOGS_STORAGE_KEY = "grido_ai_usage_logs";
+const AI_LOGS_MAX_ENTRIES = 200;
+
+/**
+ * حفظ سجلات استخدام الذكاء الاصطناعي في AppData عبر Wails (ذرياً)،
+ * مع الرجوع إلى localStorage في بيئة المتصفح/الاختبارات حيث جسر Wails
+ * غير معرّف — أي فشل في Wails يستقر في localStorage كشبكة أمان.
+ * 🛡️ استبقاء الأخطاء: فشل الحفظ لا يوقف الواجهة — يسجل تحذيراً فقط.
+ */
+async function persistAiLogs(logs: AiUsageRecord[]): Promise<void> {
+  const payload = JSON.stringify(logs.slice(0, AI_LOGS_MAX_ENTRIES));
+  try {
+    await App.SaveAiUsageLogs(payload);
+  } catch (wailsErr) {
+    try {
+      localStorage.setItem(AI_LOGS_STORAGE_KEY, payload);
+    } catch (lsErr) {
+      console.error("Failed to persist AI log:", wailsErr, lsErr);
+    }
+  }
+}
+
+/**
+ * استرجاع السجلات من AppData مع ترحيل شفاف من localStorage القديم:
+ * إن كان ملف AppData فارغاً و localStorage يحوي بيانات قديمة، تُرحّل
+ * ثم يُمسح localStorage لتفادي التكرار مستقبلاً.
+ */
+async function loadAiLogs(): Promise<AiUsageRecord[]> {
+  let saved: string = "";
+  try {
+    saved = await App.LoadAiUsageLogs();
+  } catch {
+    // بيئة متصفح/اختبار بدون Wails — جرب localStorage مباشرة
+  }
+  try {
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : DEFAULT_AI_LOGS;
+    }
+    // لا ملف AppData — حاول الترحيل من localStorage القديم
+    const legacy = localStorage.getItem(AI_LOGS_STORAGE_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
+      const migrated = Array.isArray(parsed) ? parsed : DEFAULT_AI_LOGS;
+      if (migrated.length > 0) {
+        void persistAiLogs(migrated);
+      }
+      localStorage.removeItem(AI_LOGS_STORAGE_KEY);
+      return migrated;
+    }
+  } catch {
+    // JSON تالف — نبدأ نظيفين
+  }
+  return DEFAULT_AI_LOGS;
+}
 
 // جيل الطلبات: يمنع نداء checkLicenseStatus قديماً (in-flight) من استعادة
 // جلسة بعد تسجيل الخروج (إصلاح Bug#4 — race guard)
@@ -47,21 +106,38 @@ let licenseCheckEpoch = 0;
 // وهي null قبل اكتمال الأحدث، فيفتح نافذة الحساب زوراً رغم وجود جلسة صالحة.
 let inFlightCheck: Promise<UserProfile | null> | null = null;
 
+// 🛡️ Single-flight لتحميل السجلات: StrictMode يستدعي تأثير الإقلاع مرتين —
+// نداءان متزامنان يتشاركان نفس الوعد بدل تحميل الملف مرتين
+let inFlightAiLogsLoad: Promise<AiUsageRecord[]> | null = null;
+
 export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice> = (set, get) => ({
   user: null,
   licenseLoading: false,
   accountModalOpen: false,
-  aiUsageLogs: (() => {
-    try {
-      const saved = localStorage.getItem("grido_ai_usage_logs");
-      const parsed = saved ? JSON.parse(saved) : DEFAULT_AI_LOGS;
-      return Array.isArray(parsed) ? parsed : DEFAULT_AI_LOGS;
-    } catch {
-      return DEFAULT_AI_LOGS;
-    }
-  })(),
+  // تبدأ فارغة وتُملأ غير متزامنًا من AppData (hydrateAiUsageLogs)
+  aiUsageLogs: DEFAULT_AI_LOGS,
 
   setAccountModalOpen: (open) => set({ accountModalOpen: open }),
+
+  hydrateAiUsageLogs: () => {
+    if (inFlightAiLogsLoad) return inFlightAiLogsLoad;
+    inFlightAiLogsLoad = (async () => {
+      try {
+        const logs = await loadAiLogs();
+        // لا نطغى على سجلات أُضيت أثناء التحميل (مكسب نادر لكن ممكن)
+        const current = get().aiUsageLogs;
+        if (current.length === 0) {
+          set({ aiUsageLogs: logs });
+        } else if (logs.length > current.length) {
+          set({ aiUsageLogs: logs });
+        }
+        return logs;
+      } finally {
+        inFlightAiLogsLoad = null;
+      }
+    })();
+    return inFlightAiLogsLoad;
+  },
 
   logAiUsage: (record) => {
     const cryptoId = typeof window !== "undefined" && window.crypto?.randomUUID ? window.crypto.randomUUID() : Date.now().toString(36);
@@ -72,11 +148,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     };
     const updated = [newLog, ...get().aiUsageLogs];
     set({ aiUsageLogs: updated });
-    try {
-      localStorage.setItem("grido_ai_usage_logs", JSON.stringify(updated.slice(0, 200)));
-    } catch (err) {
-      console.error("Failed to persist AI log:", err);
-    }
+    void persistAiLogs(updated);
   },
 
   checkLicenseStatus: async () => {

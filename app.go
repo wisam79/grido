@@ -20,6 +20,7 @@ type App struct {
 	aiSvc       *service.AIService
 	imageProc   *service.ImageProcessorService
 	autosaveSvc *service.AutosaveService
+	aiLogsSvc   *service.AiLogsService
 	startupFile string
 }
 
@@ -30,6 +31,7 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 		aiSvc:       service.NewAIService(),
 		imageProc:   service.NewImageProcessorService(mediaSvc),
 		autosaveSvc: service.NewAutosaveService(templates),
+		aiLogsSvc:   service.NewAiLogsService(),
 	}
 }
 
@@ -86,6 +88,16 @@ func (a *App) ExportSupportLogs() (string, error) {
 
 var imageFilters = []runtime.FileFilter{
 	{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp"},
+}
+
+// LoadAiUsageLogs يسترجع سجلات استخدام الذكاء الاصطناعي من AppData
+func (a *App) LoadAiUsageLogs() (string, error) {
+	return a.aiLogsSvc.LoadAiUsageLogs()
+}
+
+// SaveAiUsageLogs يحفظ سجلات استخدام الذكاء الاصطناعي ذرياً في AppData
+func (a *App) SaveAiUsageLogs(jsonData string) error {
+	return a.aiLogsSvc.SaveAiUsageLogs(jsonData)
 }
 
 var saveFilters = []runtime.FileFilter{

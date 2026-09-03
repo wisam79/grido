@@ -276,7 +276,11 @@ describe('LicenseSlice Tests', () => {
     expect(store.isLicenseActive()).toBe(false);
   });
 
-  it('logAiUsage appends records and persists to localStorage', () => {
+  it('logAiUsage appends records and persists (Wails with localStorage fallback)', async () => {
+    // في بيئة الاختبار جسر Wails غير معرّف — persistAiLogs يجب أن يستقر
+    // في localStorage كشبكة أمان دون أن يكسر الواجهة
+    localStorage.removeItem('grido_ai_usage_logs');
+
     const store = useEditorStore.getState();
     store.logAiUsage({
       email: 'test@example.com',
@@ -292,10 +296,14 @@ describe('LicenseSlice Tests', () => {
     expect(logs[0].serviceName).toBe('عزل الخلفية الذكي');
     expect(logs[0].status).toBe('success');
 
-    const saved = localStorage.getItem('grido_ai_usage_logs');
-    expect(saved).not.toBeNull();
-    const parsed = JSON.parse(saved!);
+    // انتظار دورة الحفظ غير المتزامنة (fallback إلى localStorage)
+    await vi.waitFor(() => {
+      expect(localStorage.getItem('grido_ai_usage_logs')).not.toBeNull();
+    });
+    const parsed = JSON.parse(localStorage.getItem('grido_ai_usage_logs')!);
     expect(parsed.length).toBe(1);
     expect(parsed[0].email).toBe('test@example.com');
+
+    localStorage.removeItem('grido_ai_usage_logs');
   });
 });

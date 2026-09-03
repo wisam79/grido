@@ -124,6 +124,8 @@ export default function App() {
         if (!profile || !profile.token) {
           setAccountModalOpen(true);
         }
+        // ملء سجلات استخدام AI من AppData (مع ترحيل localStorage القديم)
+        void useEditorStore.getState().hydrateAiUsageLogs();
         // فحص وجود صورة ممررة عند الإقلاع (مثل النقر بالزر الأيمن "فتح بواسطة" في ويندوز)
         try {
           if (typeof GetStartupFile === "function") {
