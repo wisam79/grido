@@ -1,265 +1,22 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
-import { cn } from "@/lib/utils";
-import {
-  Lightning,
-  GridFour,
-  Folder,
-  Plus,
-  Minus,
-  Crop,
-  Check,
-  Crosshair,
-  X,
-  FloppyDisk,
-  Sparkle,
-  UploadSimple,
-  Trash,
-  ArrowSquareOut,
-  Rows,
-  Columns,
-  CornersOut,
-} from "@phosphor-icons/react";
-import { CollageTemplate, COLLAGE_TEMPLATES } from "@/lib/templates";
+import { Lightning, GridFour, Folder, Plus } from "@phosphor-icons/react";
+import { CollageTemplate } from "@/lib/templates";
 import { FreeformCollageModal } from "@/features/freeform-collage";
-import { FluentSection, FluentSegmentedControl } from "@/components/ui/blocks";
-import { StudioCanvasColorDeck } from "../properties/shared-controls";
-
-function DocumentPresetGraphic({ type, active }: { type: string; active: boolean }) {
-  const activeBorder = active ? "border-primary bg-primary/25 shadow-2xs" : "border-muted-foreground/40 bg-muted/30";
-  const activeIcon = active ? "text-primary font-bold" : "text-muted-foreground/60";
-
-  if (type === "stretch") {
-    return (
-      <div className={cn("w-4 h-4 rounded-[2px] border border-dashed flex items-center justify-center transition-all", activeBorder)}>
-        <Crop className={cn("w-2.5 h-2.5", activeIcon)} weight="regular" />
-      </div>
-    );
-  }
-
-  if (type === "visa") {
-    return (
-      <div className={cn("w-4 h-4 rounded-[3px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
-        <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
-        <div className={cn("w-2.5 h-1 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
-      </div>
-    );
-  }
-
-  if (type === "iq-national-id") {
-    return (
-      <div className={cn("w-3.5 h-4.5 rounded-[2px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
-        <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
-        <div className={cn("w-2.5 h-1.5 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
-      </div>
-    );
-  }
-
-  if (type === "iq-civil-id") {
-    return (
-      <div className={cn("w-3.5 h-4 rounded-[2px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
-        <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
-        <div className={cn("w-2 h-1 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
-      </div>
-    );
-  }
-
-  if (type === "iq-general-id") {
-    return (
-      <div className={cn("w-3 h-5 rounded-[2px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
-        <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
-        <div className={cn("w-2 h-1.5 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn("w-3.5 h-4 rounded-[2px] border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
-      <div className={cn("w-1.5 h-1.5 rounded-full border border-current opacity-80 mt-0.5 shrink-0", activeIcon)} />
-      <div className={cn("w-2 h-1 rounded-t-full bg-current opacity-50 -mb-0.5 shrink-0", activeIcon)} />
-    </div>
-  );
-}
-
-function PresetMiniDiagram({ templateId, active }: { templateId: string; active: boolean }) {
-  const tpl = COLLAGE_TEMPLATES.find((t) => t.id === templateId);
-  const cells = tpl?.cells || [];
-
-  return (
-    <div
-      className={cn(
-        "w-8 h-11 rounded-md border shrink-0 relative p-1 transition-all duration-150 shadow-2xs flex items-center justify-center",
-        active
-          ? "border-primary bg-primary/15 shadow-xs ring-1 ring-primary/40"
-          : "border-border bg-input"
-      )}
-      dir="ltr"
-      aria-hidden="true"
-    >
-      <svg
-        viewBox="0 0 100 150"
-        className="w-full h-full block"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        {cells.map((cell, idx) => (
-          <rect
-            key={idx}
-            x={cell.x * 100}
-            y={cell.y * 150}
-            width={cell.w * 100}
-            height={cell.h * 150}
-            rx={1}
-            ry={1}
-            className={cn(
-              "transition-colors",
-              active
-                ? "fill-primary/60 stroke-primary stroke-[1.5]"
-                : "fill-muted-foreground/30 stroke-muted-foreground/50 stroke-[1]"
-            )}
-          />
-        ))}
-      </svg>
-    </div>
-  );
-}
-
-type GridAlignment =
-  | "center"
-  | "top-left"
-  | "top-center"
-  | "top-right"
-  | "center-left"
-  | "center-right"
-  | "bottom-left"
-  | "bottom-center"
-  | "bottom-right";
-
-const ALIGNMENT_MATRIX: GridAlignment[][] = [
-  ["top-left", "top-center", "top-right"],
-  ["center-left", "center", "center-right"],
-  ["bottom-left", "bottom-center", "bottom-right"],
-];
-
-const ALIGNMENT_LABELS: Record<GridAlignment, string> = {
-  "top-left": "أعلى اليسار (للقص السريع)",
-  "top-center": "أعلى الوسط",
-  "top-right": "أعلى اليمين",
-  "center-left": "منتصف اليسار",
-  "center": "توسيط في المنتصف",
-  "center-right": "منتصف اليمين",
-  "bottom-left": "أسفل اليسار",
-  "bottom-center": "أسفل الوسط",
-  "bottom-right": "أسفل اليمين",
-};
-
-// 🎴 قوالب الشيت الكامل
-const STUDIO_FULL_SHEET_PRESETS = [
-  {
-    id: "collage-iq-national",
-    title: "8 صور بطاقة وجواز",
-    spec: "35 × 45 mm",
-    badge: "2×4",
-    slots: 8,
-  },
-  {
-    id: "collage-iq-civil",
-    title: "8 صور أحوال وجنسية",
-    spec: "32 × 40 mm",
-    badge: "2×4",
-    slots: 8,
-  },
-  {
-    id: "collage-iq-general",
-    title: "4 صور معاملات عامة",
-    spec: "40 × 60 mm",
-    badge: "2×2",
-    slots: 4,
-  },
-  {
-    id: "collage-iq-mixed",
-    title: "طقم معاملات مختلط",
-    spec: "4 (35×45) + 2 (40×60) mm",
-    badge: "طقم",
-    slots: 6,
-  },
-  {
-    id: "collage-4",
-    title: "4 صور متساوية",
-    spec: "2 × 2 شبكة متساوية",
-    badge: "2×2",
-    slots: 4,
-  },
-  {
-    id: "collage-8",
-    title: "8 صور متساوية",
-    spec: "4 × 2 شبكة متساوية",
-    badge: "4×2",
-    slots: 8,
-  },
-];
-
-// 📏 قوالب الصف الواحد (Single Row Strip) — الأكثر طلباً للطباعة والقص السريع
-const STUDIO_SINGLE_ROW_PRESETS = [
-  {
-    id: "collage-iq-national-row4",
-    title: "4 صور جواز وبطاقة",
-    spec: "35 × 45 mm",
-    badge: "1×4",
-    slots: 4,
-  },
-  {
-    id: "collage-iq-civil-row4",
-    title: "4 صور أحوال وجنسية",
-    spec: "32 × 40 mm",
-    badge: "1×4",
-    slots: 4,
-  },
-  {
-    id: "collage-iq-general-row2",
-    title: "صورتان معاملات عامة",
-    spec: "40 × 60 mm",
-    badge: "1×2",
-    slots: 2,
-  },
-  {
-    id: "collage-iq-pension-row4",
-    title: "4 صور متقاعدين",
-    spec: "30 × 40 mm",
-    badge: "1×4",
-    slots: 4,
-  },
-  {
-    id: "collage-1x4-row",
-    title: "4 صور متساوية",
-    spec: "تمدد حر متساوي",
-    badge: "1×4",
-    slots: 4,
-  },
-  {
-    id: "collage-6v-row",
-    title: "6 صور متساوية",
-    spec: "تمدد حر متساوي",
-    badge: "1×6",
-    slots: 6,
-  },
-  {
-    id: "collage-1x3-row",
-    title: "3 صور متساوية",
-    spec: "تمدد حر متساوي",
-    badge: "1×3",
-    slots: 3,
-  },
-  {
-    id: "collage-2h",
-    title: "صورتان متساويتان",
-    spec: "أفقي متساوي",
-    badge: "1×2",
-    slots: 2,
-  },
-];
+import { FluentSegmentedControl } from "@/components/ui/blocks";
+import {
+  PhotoGridType,
+  GridAlignment,
+  getGridLimits,
+  getPhotoDimensions,
+  buildPhysicalGridCells,
+  buildStretchGridCells,
+} from "./collage/collage-grid-math";
+import { STUDIO_SINGLE_ROW_PRESETS, STUDIO_FULL_SHEET_PRESETS } from "./collage/collage-preset-data";
+import { CollagePresetsTab } from "./collage/collage-presets-tab";
+import { CollageCustomGridTab } from "./collage/collage-custom-grid-tab";
+import { CollageLibraryTab } from "./collage/collage-library-tab";
 
 interface CustomCollageCardProps {
   onSelect: (t: CollageTemplate) => void;
@@ -292,6 +49,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       }))
     );
 
+  const storedDpi = printSettings?.dpi || 300;
+
   // التبويب الرئيسي للوحة الكولاج (3-Tab Navigation)
   const [activeTab, setActiveTab] = useState<"presets" | "custom" | "library">("presets");
 
@@ -300,12 +59,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
   const [rows, setRows] = useState(1);
   const [cols, setCols] = useState(4);
-  const [photoType, setPhotoType] = useState<
-    "stretch" | "passport" | "id" | "visa" | "iq-national-id" | "iq-civil-id" | "iq-general-id" | "iq-transactions"
-  >("iq-national-id");
+  const [photoType, setPhotoType] = useState<PhotoGridType>("iq-national-id");
   const [gridAlign, setGridAlign] = useState<GridAlignment>("top-left");
-  const [showSaveForm, setShowSaveForm] = useState(false);
-  const [saveName, setSaveName] = useState("");
   const [showFreeformModal, setShowFreeformModal] = useState(false);
 
   const isCustomActive =
@@ -339,8 +94,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         const pl = collageTemplate.physicalLayout;
         if (pl.rows) setRows(pl.rows);
         if (pl.cols) setCols(pl.cols);
-        if (pl.type) setPhotoType(pl.type as any);
-        if (pl.align) setGridAlign(pl.align as any);
+        if (pl.type) setPhotoType(pl.type as PhotoGridType);
+        if (pl.align) setGridAlign(pl.align as GridAlignment);
       } else if (collageTemplate.cells && collageTemplate.cells.length > 0) {
         const count = collageTemplate.cells.length;
         if (count === 4) { setRows(2); setCols(2); }
@@ -352,212 +107,34 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     });
   }, [collageTemplate]);
 
-  const getMaxGridConfig = useCallback(() => {
-    const W = canvasWidth || 2480;
-    const H = canvasHeight || 3508;
-    const storedDpi = printSettings?.dpi || 300;
-
-    let dpi = storedDpi;
-    if (typeof W === "number" && typeof H === "number" && W > 0 && H > 0) {
-      for (const [pW, pH] of [
-        [210, 297],
-        [148, 210],
-        [100, 150],
-        [127, 178],
-        [297, 420],
-      ] as [number, number][]) {
-        const expectedW = (pW * storedDpi) / 25.4;
-        const expectedH = (pH * storedDpi) / 25.4;
-        if (
-          Math.abs(W - expectedW) / expectedW < 0.02 &&
-          Math.abs(H - expectedH) / expectedH < 0.02
-        ) {
-          const dpiFromW = (W * 25.4) / pW;
-          const dpiFromH = (H * 25.4) / pH;
-          dpi = (dpiFromW + dpiFromH) / 2;
-          break;
-        }
-      }
-    }
-
-    if (photoType === "stretch") {
-      return { maxRows: 12, maxCols: 12 };
-    }
-
-    let wMM = 35;
-    let hMM = 45;
-    if (photoType === "iq-national-id" || photoType === "passport") {
-      wMM = 35;
-      hMM = 45;
-    } else if (photoType === "iq-civil-id") {
-      wMM = 32;
-      hMM = 40;
-    } else if (photoType === "iq-general-id") {
-      wMM = 40;
-      hMM = 60;
-    } else if (photoType === "iq-transactions" || photoType === "id") {
-      wMM = 30;
-      hMM = 40;
-    } else if (photoType === "visa") {
-      wMM = 50;
-      hMM = 50;
-    }
-
-    const cellW_px = (wMM * dpi) / 25.4;
-    const cellH_px = (hMM * dpi) / 25.4;
-
-    const maxCols = Math.max(1, Math.floor(W / cellW_px));
-    const maxRows = Math.max(1, Math.floor(H / cellH_px));
-
-    return { maxRows, maxCols };
-  }, [canvasWidth, canvasHeight, printSettings, photoType]);
-
-  const { maxRows, maxCols } = getMaxGridConfig();
-
   const applyCustomCollage = useCallback(
     (
       targetRows: number,
       targetCols: number,
-      customPhotoType?: typeof photoType,
+      customPhotoType?: PhotoGridType,
       customAlign?: GridAlignment
     ) => {
       const activePhotoType = customPhotoType ?? photoType;
       const activeAlign = customAlign ?? gridAlign;
 
       if (activePhotoType === "stretch") {
-        const cells = [];
-        const cellW = 1 / targetCols;
-        const cellH = 1 / targetRows;
-        for (let row = 0; row < targetRows; row++) {
-          for (let col = 0; col < targetCols; col++) {
-            cells.push({
-              x: col * cellW,
-              y: row * cellH,
-              w: cellW,
-              h: cellH,
-            });
-          }
-        }
         onSelect({
           id: "collage-custom",
           name: `كولاج مخصص (${targetRows}×${targetCols})`,
           slots: targetRows * targetCols,
-          cells,
+          cells: buildStretchGridCells(targetRows, targetCols),
           icon: GridFour,
         });
         return;
       }
 
-      const W = canvasWidth || 2480;
-      const H = canvasHeight || 3508;
-      const storedDpi = printSettings?.dpi || 300;
-
-      let dpi = storedDpi;
-      if (typeof W === "number" && typeof H === "number" && W > 0 && H > 0) {
-        for (const [pW, pH] of [
-          [210, 297],
-          [148, 210],
-          [100, 150],
-          [127, 178],
-          [297, 420],
-        ] as [number, number][]) {
-          const expectedW = (pW * storedDpi) / 25.4;
-          const expectedH = (pH * storedDpi) / 25.4;
-          if (
-            Math.abs(W - expectedW) / expectedW < 0.02 &&
-            Math.abs(H - expectedH) / expectedH < 0.02
-          ) {
-            const dpiFromW = (W * 25.4) / pW;
-            const dpiFromH = (H * 25.4) / pH;
-            dpi = (dpiFromW + dpiFromH) / 2;
-            break;
-          }
-        }
-      }
-
-      let wMM = 35;
-      let hMM = 45;
-      let label = "بطاقة وطنية";
-      if (activePhotoType === "iq-national-id" || activePhotoType === "passport") {
-        wMM = 35;
-        hMM = 45;
-        label = "بطاقة وطنية / جواز";
-      } else if (activePhotoType === "iq-civil-id") {
-        wMM = 32;
-        hMM = 40;
-        label = "هوية أحوال";
-      } else if (activePhotoType === "iq-general-id") {
-        wMM = 40;
-        hMM = 60;
-        label = "هوية عامة";
-      } else if (activePhotoType === "iq-transactions" || activePhotoType === "id") {
-        wMM = 30;
-        hMM = 40;
-        label = "متقاعدون / معاملات";
-      } else if (activePhotoType === "visa") {
-        wMM = 50;
-        hMM = 50;
-        label = "فيزا سفر 5×5";
-      }
-
-      const cellW_px = (wMM * dpi) / 25.4;
-      const cellH_px = (hMM * dpi) / 25.4;
-
-      const normW = cellW_px / W;
-      const normH = cellH_px / H;
-
-      const totalGridW = targetCols * normW;
-      const totalGridH = targetRows * normH;
-
-      let startX = 0;
-      let startY = 0;
-
-      if (activeAlign === "center") {
-        startX = Math.max(0, (1 - totalGridW) / 2);
-        startY = Math.max(0, (1 - totalGridH) / 2);
-      } else if (activeAlign === "top-left") {
-        startX = 0;
-        startY = 0;
-      } else if (activeAlign === "top-center") {
-        startX = Math.max(0, (1 - totalGridW) / 2);
-        startY = 0;
-      } else if (activeAlign === "top-right") {
-        startX = Math.max(0, 1 - totalGridW);
-        startY = 0;
-      } else if (activeAlign === "center-left") {
-        startX = 0;
-        startY = Math.max(0, (1 - totalGridH) / 2);
-      } else if (activeAlign === "center-right") {
-        startX = Math.max(0, 1 - totalGridW);
-        startY = Math.max(0, (1 - totalGridH) / 2);
-      } else if (activeAlign === "bottom-left") {
-        startX = 0;
-        startY = Math.max(0, 1 - totalGridH);
-      } else if (activeAlign === "bottom-center") {
-        startX = Math.max(0, (1 - totalGridW) / 2);
-        startY = Math.max(0, 1 - totalGridH);
-      } else if (activeAlign === "bottom-right") {
-        startX = Math.max(0, 1 - totalGridW);
-        startY = Math.max(0, 1 - totalGridH);
-      }
-
-      const cells = [];
-      for (let row = 0; row < targetRows; row++) {
-        for (let col = 0; col < targetCols; col++) {
-          cells.push({
-            x: startX + col * normW,
-            y: startY + row * normH,
-            w: normW,
-            h: normH,
-          });
-        }
-      }
+      const { label } = getPhotoDimensions(activePhotoType);
 
       onSelect({
         id: "collage-custom",
         name: `كولاج ${label} (${targetRows}×${targetCols})`,
         slots: targetRows * targetCols,
-        cells,
+        cells: buildPhysicalGridCells(activePhotoType, targetRows, targetCols, activeAlign, canvasWidth, canvasHeight, storedDpi),
         icon: GridFour,
         physicalLayout: {
           type: activePhotoType,
@@ -567,138 +144,23 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         },
       });
     },
-    [canvasWidth, canvasHeight, printSettings, photoType, gridAlign, onSelect]
+    [canvasWidth, canvasHeight, photoType, gridAlign, onSelect, storedDpi]
   );
 
-  const handleSave = () => {
-    if (!saveName.trim()) {
-      toast.error("يرجى إدخال اسم للقالب");
-      return;
-    }
+  const handleSaveCurrentAsTemplate = useCallback(
+    (name: string) => {
+      const cells =
+        photoType === "stretch"
+          ? buildStretchGridCells(rows, cols)
+          : buildPhysicalGridCells(photoType, rows, cols, gridAlign, canvasWidth, canvasHeight, storedDpi);
+      onSaveTemplate(name, cells);
+    },
+    [photoType, rows, cols, gridAlign, canvasWidth, canvasHeight, storedDpi, onSaveTemplate]
+  );
 
-    const W = canvasWidth || 2480;
-    const H = canvasHeight || 3508;
-    const storedDpi = printSettings?.dpi || 300;
-
-    let dpi = storedDpi;
-    if (typeof W === "number" && typeof H === "number" && W > 0 && H > 0) {
-      for (const [pW, pH] of [
-        [210, 297],
-        [148, 210],
-        [100, 150],
-        [127, 178],
-        [297, 420],
-      ] as [number, number][]) {
-        const expectedW = (pW * storedDpi) / 25.4;
-        const expectedH = (pH * storedDpi) / 25.4;
-        if (
-          Math.abs(W - expectedW) / expectedW < 0.02 &&
-          Math.abs(H - expectedH) / expectedH < 0.02
-        ) {
-          const dpiFromW = (W * 25.4) / pW;
-          const dpiFromH = (H * 25.4) / pH;
-          dpi = (dpiFromW + dpiFromH) / 2;
-          break;
-        }
-      }
-    }
-
-    if (photoType === "stretch") {
-      const cells = [];
-      const cellW = 1 / cols;
-      const cellH = 1 / rows;
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-          cells.push({
-            x: col * cellW,
-            y: row * cellH,
-            w: cellW,
-            h: cellH,
-          });
-        }
-      }
-      onSaveTemplate(saveName, cells);
-    } else {
-      let wMM = 35;
-      let hMM = 45;
-      if (photoType === "iq-national-id" || photoType === "passport") {
-        wMM = 35;
-        hMM = 45;
-      } else if (photoType === "iq-civil-id") {
-        wMM = 32;
-        hMM = 40;
-      } else if (photoType === "iq-general-id") {
-        wMM = 40;
-        hMM = 60;
-      } else if (photoType === "iq-transactions" || photoType === "id") {
-        wMM = 30;
-        hMM = 40;
-      } else if (photoType === "visa") {
-        wMM = 50;
-        hMM = 50;
-      }
-
-      const cellW_px = (wMM * dpi) / 25.4;
-      const cellH_px = (hMM * dpi) / 25.4;
-
-      const normW = cellW_px / W;
-      const normH = cellH_px / H;
-
-      const totalGridW = cols * normW;
-      const totalGridH = rows * normH;
-
-      let startX = 0;
-      let startY = 0;
-
-      if (gridAlign === "center") {
-        startX = Math.max(0, (1 - totalGridW) / 2);
-        startY = Math.max(0, (1 - totalGridH) / 2);
-      } else if (gridAlign === "top-left") {
-        startX = 0;
-        startY = 0;
-      } else if (gridAlign === "top-center") {
-        startX = Math.max(0, (1 - totalGridW) / 2);
-        startY = 0;
-      } else if (gridAlign === "top-right") {
-        startX = Math.max(0, 1 - totalGridW);
-        startY = 0;
-      } else if (gridAlign === "center-left") {
-        startX = 0;
-        startY = Math.max(0, (1 - totalGridH) / 2);
-      } else if (gridAlign === "center-right") {
-        startX = Math.max(0, 1 - totalGridW);
-        startY = Math.max(0, (1 - totalGridH) / 2);
-      } else if (gridAlign === "bottom-left") {
-        startX = 0;
-        startY = Math.max(0, 1 - totalGridH);
-      } else if (gridAlign === "bottom-center") {
-        startX = Math.max(0, (1 - totalGridW) / 2);
-        startY = Math.max(0, 1 - totalGridH);
-      } else if (gridAlign === "bottom-right") {
-        startX = Math.max(0, 1 - totalGridW);
-        startY = Math.max(0, 1 - totalGridH);
-      }
-
-      const cells = [];
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-          cells.push({
-            x: startX + col * normW,
-            y: startY + row * normH,
-            w: normW,
-            h: normH,
-          });
-        }
-      }
-      onSaveTemplate(saveName, cells);
-    }
-
-    setShowSaveForm(false);
-    setSaveName("");
-  };
-
+  // ضبط الصفوف/الأعمدة تلقائياً عند تغيّر حدود الورقة أو مقاس الصورة
   useEffect(() => {
-    const { maxRows: currentMaxRows, maxCols: currentMaxCols } = getMaxGridConfig();
+    const { maxRows: currentMaxRows, maxCols: currentMaxCols } = getGridLimits(photoType, canvasWidth, canvasHeight, storedDpi);
     let changed = false;
     let adjustedRows = rows;
     let adjustedCols = cols;
@@ -719,10 +181,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
       });
     }
-  }, [photoType, canvasWidth, canvasHeight, rows, cols, getMaxGridConfig, applyCustomCollage, gridAlign]);
-
-  const activePresetsList =
-    presetCategory === "row" ? STUDIO_SINGLE_ROW_PRESETS : STUDIO_FULL_SHEET_PRESETS;
+  }, [photoType, canvasWidth, canvasHeight, rows, cols, applyCustomCollage, gridAlign, storedDpi]);
 
   return (
     <div className="flex flex-col gap-3 font-cairo" dir="rtl">
@@ -753,506 +212,63 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             },
           ]}
           value={activeTab}
-          onChange={(val) => setActiveTab(val as any)}
+          onChange={(val) => setActiveTab(val as "presets" | "custom" | "library")}
           size="sm"
         />
       </div>
 
-      {/* ⚡ التبويب 1: نماذج الاستوديو السريعة */}
       {activeTab === "presets" && (
-        <div className="space-y-3 animate-in fade-in duration-200">
-          {/* محول الفئات البارز والأنيق */}
-          <div className="bg-muted/50 p-1 rounded-xl border border-border/60 shadow-2xs">
-            <FluentSegmentedControl
-              options={[
-                {
-                  id: "row",
-                  label: "صف واحد",
-                  icon: <Rows className="w-4 h-4 text-primary" weight="regular" />,
-                },
-                {
-                  id: "full",
-                  label: "شيت كامل",
-                  icon: <GridFour className="w-4 h-4 text-primary" weight="duotone" />,
-                },
-              ]}
-              value={presetCategory}
-              onChange={(val) => setPresetCategory(val as "row" | "full")}
-              size="sm"
-            />
-          </div>
-
-          <FluentSection
-            icon={<Lightning className="w-4 h-4 text-amber-500" weight="duotone" />}
-            title="النماذج الجاهزة"
-          >
-            <div className="grid grid-cols-2 gap-2">
-              {activePresetsList.map((preset) => {
-                const isActive = activeTemplateId === preset.id;
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    aria-pressed={isActive}
-                    aria-label={`${preset.title} - ${preset.spec}`}
-                    onClick={() => {
-                      const tpl = COLLAGE_TEMPLATES.find((t) => t.id === preset.id);
-                      if (tpl) onSelect(tpl);
-                    }}
-                    className={cn(
-                      "p-2 rounded-xl border text-right transition-all cursor-pointer flex flex-col justify-between select-none relative active:scale-[0.98] shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none min-h-[82px]",
-                      isActive
-                        ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/30"
-                        : "bg-input border-border hover:border-primary/40 text-foreground hover:bg-muted/30"
-                    )}
-                  >
-                    {/* المخطط الهندسي المصغر + شارة التحديد / البادج */}
-                    <div className="flex items-start justify-between w-full mb-1">
-                      <PresetMiniDiagram templateId={preset.id} active={isActive} />
-                      <div className="flex flex-col items-end gap-1">
-                        {isActive ? (
-                          <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-2xs">
-                            <Check className="w-3.5 h-3.5" weight="bold" />
-                          </div>
-                        ) : preset.badge ? (
-                          <span
-                            dir="ltr"
-                            className="text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40 leading-none"
-                          >
-                            {preset.badge}
-                          </span>
-                        ) : null}
-                        <span className="text-[9.5px] font-mono text-muted-foreground font-medium leading-none">
-                          {preset.slots} صور
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* تفاصيل ومعلومات القالب */}
-                    <div className="flex flex-col items-start w-full min-w-0">
-                      <span className="text-[11.5px] font-bold leading-tight line-clamp-1 w-full text-right" title={preset.title}>
-                        {preset.title}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground mt-0.5 font-mono leading-none truncate w-full text-right" dir="ltr">
-                        {preset.spec}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </FluentSection>
-
-          {/* لون خلفية مساحة العمل مدمج بأناقة */}
-          <div className="pt-1">
-            <StudioCanvasColorDeck
-              color={backgroundColor}
-              onChange={setBackgroundColor}
-            />
-          </div>
-        </div>
+        <CollagePresetsTab
+          presetCategory={presetCategory}
+          onPresetCategoryChange={setPresetCategory}
+          activeTemplateId={activeTemplateId}
+          onSelect={onSelect}
+          backgroundColor={backgroundColor}
+          onBackgroundColorChange={setBackgroundColor}
+        />
       )}
 
-      {/* 📐 التبويب 2: تخصيص الشبكة المنتظمة للمحترفين */}
       {activeTab === "custom" && (
-        <div className="space-y-3 animate-in fade-in duration-200">
-          <FluentSection
-            icon={<GridFour className="w-5 h-5 text-primary" weight="duotone" />}
-            title="تقسيم الصفوف والأعمدة"
-            action={
-              <div className="text-xs font-bold text-muted-foreground bg-muted/60 px-2.5 py-0.5 rounded-md border border-border/40 flex items-center gap-1.5">
-                <span>{rows * cols} صورة</span>
-                <span className="font-mono text-muted-foreground/75" dir="ltr">({rows}×{cols})</span>
-              </div>
-            }
-          >
-            {/* عدادات الصفوف والأعمدة */}
-            <div className="grid grid-cols-2 gap-2">
-              {/* Rows */}
-              <div className="flex flex-col items-center gap-1.5 bg-background/70 border border-border/70 hover:border-primary/40 rounded-xl p-2.5 transition-colors shadow-2xs">
-                <span className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground select-none">
-                  <Rows className="w-3.5 h-3.5 text-primary/80" weight="regular" />
-                  الصفوف (أفقي)
-                </span>
-                <div className="flex items-center justify-between w-full gap-1" dir="ltr">
-                  <button
-                    type="button"
-                    disabled={rows <= 1}
-                    onClick={() => {
-                      const r = Math.max(1, rows - 1);
-                      setRows(r);
-                      applyCustomCollage(r, cols);
-                    }}
-                    title={rows <= 1 ? "الحد الأدنى" : "تقليل صف"}
-                    className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
-                  >
-                    <Minus className="w-4 h-4" weight="bold" />
-                  </button>
-                  <span className="font-mono text-base font-black text-foreground w-6 text-center leading-none select-none">
-                    {rows}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={rows >= maxRows}
-                    onClick={() => {
-                      const r = Math.min(maxRows, rows + 1);
-                      setRows(r);
-                      applyCustomCollage(r, cols);
-                    }}
-                    title={rows >= maxRows ? `الحد الأقصى للورقة (${maxRows})` : "إضافة صف"}
-                    className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
-                  >
-                    <Plus className="w-4 h-4" weight="bold" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Columns */}
-              <div className="flex flex-col items-center gap-1.5 bg-background/70 border border-border/70 hover:border-primary/40 rounded-xl p-2.5 transition-colors shadow-2xs">
-                <span className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground select-none">
-                  <Columns className="w-3.5 h-3.5 text-primary/80" weight="regular" />
-                  الأعمدة (عمودي)
-                </span>
-                <div className="flex items-center justify-between w-full gap-1" dir="ltr">
-                  <button
-                    type="button"
-                    disabled={cols <= 1}
-                    onClick={() => {
-                      const c = Math.max(1, cols - 1);
-                      setCols(c);
-                      applyCustomCollage(rows, c);
-                    }}
-                    title={cols <= 1 ? "الحد الأدنى" : "تقليل عمود"}
-                    className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
-                  >
-                    <Minus className="w-4 h-4" weight="bold" />
-                  </button>
-                  <span className="font-mono text-base font-black text-foreground w-6 text-center leading-none select-none">
-                    {cols}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={cols >= maxCols}
-                    onClick={() => {
-                      const c = Math.min(maxCols, cols + 1);
-                      setCols(c);
-                      applyCustomCollage(rows, c);
-                    }}
-                    title={cols >= maxCols ? `الحد الأقصى للورقة (${maxCols})` : "إضافة عمود"}
-                    className="w-8 h-8 rounded-md bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border/60 hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
-                  >
-                    <Plus className="w-4 h-4" weight="bold" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* أبعاد ومقاسات صور الوثائق */}
-            <div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
-              <span className="text-[11px] font-bold text-muted-foreground">أبعاد ونوع صور الوثائق</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {([
-                  { value: "stretch", label: "تمدد حر", sub: "ملء الخلية" },
-                  { value: "iq-national-id", label: "بطاقة وطنية", sub: "35 × 45 mm" },
-                  { value: "iq-civil-id", label: "هوية أحوال", sub: "32 × 40 mm" },
-                  { value: "iq-general-id", label: "هوية عامة", sub: "40 × 60 mm" },
-                  { value: "iq-transactions", label: "متقاعدون", sub: "30 × 40 mm" },
-                  { value: "visa", label: "فيزا سفر", sub: "50 × 50 mm" },
-                ] as const).map((opt) => {
-                  const isActive = photoType === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      aria-pressed={isActive}
-                      aria-label={`${opt.label} - ${opt.sub}`}
-                      onClick={() => {
-                        setPhotoType(opt.value);
-                        applyCustomCollage(rows, cols, opt.value);
-                      }}
-                      className={cn(
-                        "relative flex items-center gap-2 p-2 rounded-xl border text-right transition-all cursor-pointer active:scale-[0.98] select-none h-11.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-                        isActive
-                          ? "border-2 border-primary bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/30"
-                          : "bg-background/80 border-border/60 hover:bg-muted/40 hover:border-primary/40 text-foreground"
-                      )}
-                    >
-                      <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-md bg-muted/40 border border-border/40">
-                        <DocumentPresetGraphic type={opt.value} active={isActive} />
-                      </div>
-
-                      <div className="flex flex-col items-start min-w-0 flex-1">
-                        <span className="text-xs font-bold leading-tight truncate w-full">{opt.label}</span>
-                        <span
-                          className={cn(
-                            "text-[10px] font-mono leading-none mt-0.5",
-                            isActive ? "text-primary font-bold" : "text-muted-foreground"
-                          )}
-                          dir="ltr"
-                        >
-                          {opt.sub}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* لوحة محاذاة موضع الصور على الورقة (Sleek Compact Anchor Widget) */}
-            {photoType !== "stretch" && (
-              <div className="p-3 rounded-xl bg-background/50 border border-border/80 shadow-2xs space-y-2.5 fluent-specular animate-in fade-in duration-200">
-                {/* الرأس: العنوان + شارة المحاذاة */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <GridFour className="w-4 h-4 text-primary" weight="duotone" />
-                    <span>موضع الصور على الورقة</span>
-                  </span>
-                  <span className="text-[10px] text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
-                    {ALIGNMENT_LABELS[gridAlign] || "أعلى اليسار"}
-                  </span>
-                </div>
-
-                {/* الحاوية المدمجة: مصفوفة الارتكاز المصغرة + أزرار التحديد السريع */}
-                <div className="flex items-center gap-2.5 bg-card/90 p-2 rounded-lg border border-border/60">
-                  {/* شبكة الارتكاز التفاعلية المصغرة (Figma / InDesign Anchor Widget) */}
-                  <div
-                    className="w-14 h-16 rounded-md border border-border bg-background p-1 grid grid-cols-3 grid-rows-3 gap-0.5 shrink-0 shadow-2xs select-none"
-                    dir="ltr"
-                  >
-                    {ALIGNMENT_MATRIX.map((row) =>
-                      row.map((alignId) => {
-                        const isActive = gridAlign === alignId;
-                        return (
-                          <button
-                            key={alignId}
-                            type="button"
-                            aria-label={ALIGNMENT_LABELS[alignId]}
-                            aria-pressed={isActive}
-                            onClick={() => {
-                              setGridAlign(alignId);
-                              applyCustomCollage(rows, cols, photoType, alignId);
-                            }}
-                            title={ALIGNMENT_LABELS[alignId]}
-                            className={cn(
-                              "flex items-center justify-center rounded-xs transition-all cursor-pointer group",
-                              isActive
-                                ? "bg-primary/20 ring-1 ring-primary/40"
-                                : "hover:bg-muted/70"
-                            )}
-                          >
-                            <div
-                              className={cn(
-                                "rounded-full transition-all duration-150",
-                                isActive
-                                    ? "w-2.5 h-2.5 bg-primary shadow-xs ring-2 ring-primary/30"
-                                  : "w-1 h-1 bg-muted-foreground/40 group-hover:bg-primary/70 group-hover:scale-125"
-                              )}
-                            />
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* زرا الإجراءات الأكثر استخداماً في الاستوديو */}
-                  <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGridAlign("top-left");
-                        applyCustomCollage(rows, cols, photoType, "top-left");
-                      }}
-                      className={cn(
-                        "h-7 px-2.5 rounded-md text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer select-none",
-                        gridAlign === "top-left"
-                          ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
-                          : "bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground border-border/50"
-                      )}
-                    >
-                      <span className="flex items-center gap-1.5 truncate">
-                        <CornersOut className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                        <span>أعلى اليسار</span>
-                      </span>
-                      <span className={cn("text-[9.5px] shrink-0", gridAlign === "top-left" ? "text-primary-foreground/85" : "text-muted-foreground/80")}>قص سريع</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGridAlign("center");
-                        applyCustomCollage(rows, cols, photoType, "center");
-                      }}
-                      className={cn(
-                        "h-7 px-2.5 rounded-md text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer select-none",
-                        gridAlign === "center"
-                          ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
-                          : "bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground border-border/50"
-                      )}
-                    >
-                      <span className="flex items-center gap-1.5 truncate">
-                        <Crosshair className="w-3.5 h-3.5 shrink-0" weight="regular" />
-                        <span>توسيط</span>
-                      </span>
-                      <span className={cn("text-[9.5px] shrink-0", gridAlign === "center" ? "text-primary-foreground/85" : "text-muted-foreground/80")}>متوازن</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* أزرار الإجراءات والتطبيق */}
-            {!showSaveForm ? (
-              <div className="flex gap-2 pt-2 border-t border-border/40">
-                <button
-                  type="button"
-                  onClick={() => applyCustomCollage(rows, cols)}
-                  className="flex-1 h-9 text-xs font-bold rounded-md transition-all border active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 shadow-xs bg-primary text-primary-foreground border-primary hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                >
-                  <GridFour className="w-4 h-4" weight="bold" />
-                  <span>{isCustomActive ? "تحديث وتطبيق الشبكة" : "تطبيق التقسيم"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSaveName(`كولاج مخصص ${rows}×${cols}`);
-                    setShowSaveForm(true);
-                  }}
-                  className="w-9 h-9 text-xs font-bold rounded-md border border-border/80 bg-background hover:bg-accent hover:border-primary/40 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center active:scale-[0.98] transition-all shadow-2xs shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                  title="حفظ كقالب جديد في مكتبتي"
-                >
-                  <Folder className="w-4 h-4" weight="duotone" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2 bg-muted/30 p-2.5 rounded-xl border border-border/80 shadow-2xs animate-in slide-in-from-top-2 duration-200">
-                <span className="text-[10px] font-bold text-muted-foreground block">اسم القالب الجديد</span>
-                <input
-                  type="text"
-                  value={saveName}
-                  onChange={(e) => setSaveName(e.target.value)}
-                  placeholder="مثال: شيت البطاقة الوطنية"
-                  className="w-full h-8 px-3 text-xs bg-background border border-border/80 rounded-md text-right font-cairo focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
-                />
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowSaveForm(false)}
-                    className="flex-1 h-8 text-[10px] font-bold rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer transition-all flex items-center justify-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
-                  >
-                    <X className="w-3 h-3" weight="bold" />
-                    إلغاء
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    className="flex-1 h-8 text-[10px] font-bold rounded-md bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer transition-all flex items-center justify-center gap-1 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                  >
-                    <FloppyDisk className="w-3 h-3" weight="bold" />
-                    حفظ القالب
-                  </button>
-                </div>
-              </div>
-            )}
-          </FluentSection>
-        </div>
+        <CollageCustomGridTab
+          rows={rows}
+          cols={cols}
+          photoType={photoType}
+          gridAlign={gridAlign}
+          isCustomActive={isCustomActive}
+          canvasWidth={canvasWidth || 2480}
+          canvasHeight={canvasHeight || 3508}
+          storedDpi={storedDpi}
+          onRowsChange={(r) => {
+            setRows(r);
+            applyCustomCollage(r, cols);
+          }}
+          onColsChange={(c) => {
+            setCols(c);
+            applyCustomCollage(rows, c);
+          }}
+          onApply={applyCustomCollage}
+          onPhotoTypeChange={(t) => {
+            setPhotoType(t);
+            applyCustomCollage(rows, cols, t);
+          }}
+          onGridAlignChange={(a) => {
+            setGridAlign(a);
+            applyCustomCollage(rows, cols, photoType, a);
+          }}
+          onSaveCurrentAsTemplate={handleSaveCurrentAsTemplate}
+        />
       )}
 
-      {/* 🗂️ التبويب 3: كولاج حر ومكتبتي */}
       {activeTab === "library" && (
-        <div className="space-y-3 animate-in fade-in duration-200">
-          {/* Freeform Mixed Builder Action Button */}
-          <button
-            type="button"
-            onClick={() => setShowFreeformModal(true)}
-            className="w-full h-10 px-3.5 rounded-md bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/50 text-xs font-bold transition-all cursor-pointer flex items-center justify-between group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none shadow-2xs fluent-specular"
-          >
-            <div className="flex items-center gap-2.5">
-              <Sparkle className="w-4.5 h-4.5 text-primary shrink-0 group-hover:rotate-12 transition-transform" weight="duotone" />
-              <div className="flex flex-col items-start text-right">
-                <span className="font-bold">كولاج حر ومختلط</span>
-                <span className="text-[9.5px] text-muted-foreground font-normal">دمج أحجام وقياسات متعددة في ورقة واحدة</span>
-              </div>
-            </div>
-            <span className="text-[9px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-bold">
-              فتح
-            </span>
-          </button>
-
-          {/* القوالب المحفوظة الخاصة بالمستخدم */}
-          <FluentSection
-            icon={<Folder className="w-4 h-4 text-primary" weight="duotone" />}
-            title="قوالبي المحفوظة"
-            action={
-              <button
-                type="button"
-                onClick={() => fileInputRef?.current?.click()}
-                className="text-[10px] text-primary hover:underline font-bold flex items-center gap-1 cursor-pointer"
-                title="استيراد قوالب من ملف JSON"
-              >
-                <UploadSimple className="w-3 h-3" weight="bold" />
-                <span>استيراد</span>
-              </button>
-            }
-          >
-            {savedTemplates.length === 0 ? (
-              <div className="p-4 text-center text-xs text-muted-foreground bg-muted/20 border border-dashed border-border/60 rounded-xl">
-                لا توجد قوالب محفوظة بعد. يمكنك تخصيص شبكة وحفظها من تبويب "تخصيص الشبكة".
-              </div>
-            ) : (
-              <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-                {savedTemplates.map((t) => {
-                  const isActive = activeTemplateId === t.id;
-                  return (
-                    <div
-                      key={t.id}
-                      onClick={() => onSelect(t)}
-                      className={cn(
-                        "p-2.5 rounded-xl border flex items-center justify-between transition-all cursor-pointer select-none group",
-                        isActive
-                          ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
-                          : "bg-background/80 border-border/70 hover:bg-muted/50 hover:border-primary/40 text-foreground"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <GridFour className="w-4 h-4 text-primary" weight="duotone" />
-                        <span className="text-xs font-bold truncate">{t.name}</span>
-                        <span className="text-[9px] bg-muted/60 text-muted-foreground px-1.5 py-0.5 rounded font-mono">
-                          {t.slots} خانات
-                        </span>
-                      </div>
-                      {onDeleteTemplate && (
-                        <button
-                          type="button"
-                          onClick={(e) => onDeleteTemplate(t.id, e)}
-                          title="حذف القالب"
-                          className="w-6 h-6 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                        >
-                          <Trash className="w-3 h-3" weight="regular" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </FluentSection>
-
-          {/* زر فتح مكتبة القوالب الكاملة */}
-          {onOpenTemplatesDialog && (
-            <button
-              type="button"
-              onClick={onOpenTemplatesDialog}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-border/80 bg-muted/30 hover:bg-muted/60 hover:border-primary/40 text-foreground transition-all cursor-pointer active:scale-[0.98] shadow-2xs font-bold text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <GridFour className="w-4 h-4 text-primary" weight="duotone" />
-                <span>تصفح كافة القوالب الرسمية</span>
-              </div>
-              <ArrowSquareOut className="w-3.5 h-3.5 opacity-60" weight="bold" />
-            </button>
-          )}
-        </div>
+        <CollageLibraryTab
+          savedTemplates={savedTemplates}
+          activeTemplateId={activeTemplateId}
+          onSelect={onSelect}
+          onDeleteTemplate={onDeleteTemplate}
+          onOpenFreeformModal={() => setShowFreeformModal(true)}
+          onImportClick={() => fileInputRef?.current?.click()}
+          onOpenTemplatesDialog={onOpenTemplatesDialog}
+        />
       )}
 
       <FreeformCollageModal open={showFreeformModal} onOpenChange={setShowFreeformModal} />
