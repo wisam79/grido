@@ -104,6 +104,28 @@ const restoreEntry = (entry: HistoryEntry) => {
 // الـ WeakMap يسمح بتجميع الإدخالات المهملة تلقائياً (إصلاح Bug#17)
 const entryJsonCache = new WeakMap<HistoryEntry, string>();
 
+// سقف مزدوج للأرشيف: عدد اللقطات + حجم تقديري للذاكرة (بايت).
+// اللقطات القديمة تُسقط أولاً حتى يهبط الحجم تحت السقف — يمنع تضخم الذاكرة
+// مع صور عالية الدقة كثيرة العناصر (كل لقطة تحمل مراجع عناصر ضخمة).
+const HISTORY_MAX_ENTRIES = 30;
+const HISTORY_MAX_BYTES = 50 * 1024 * 1024;
+
+// تقدير الحجم دون تسلسل كامل: نحصي أطوال سلاسل الصور (imageSrc/originalImageSrc)
+// لأنها تهيمن على الذاكرة أمام الحقول العددية والمراجع الصغيرة.
+const estimateEntryBytes = (entry: HistoryEntry): number => {
+  let total = 2048; // مصروف إداري لكل لقطة (مصفوفات + حقول عددية)
+  for (const el of entry.elements) {
+    if (el.type === "image") {
+      total += el.imageSrc.length;
+      if (el.originalImageSrc) total += el.originalImageSrc.length;
+    }
+  }
+  for (const sl of entry.slots) {
+    if (typeof sl.imageSrc === "string") total += sl.imageSrc.length;
+  }
+  return total;
+};
+
 export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice> = (set, get) => ({
   ...DEFAULT_HISTORY_STATE,
 
@@ -152,7 +174,13 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
 
     newHistory.push(snapshot);
 
-    if (newHistory.length > 30) newHistory.shift();
+    // سقف العدد أولاً، ثم سقف الحجم بإسقاط الأقدم حتى يهبط الاستهلاك تحت الحد
+    if (newHistory.length > HISTORY_MAX_ENTRIES) newHistory.shift();
+    let totalBytes = newHistory.reduce((sum, e) => sum + estimateEntryBytes(e), 0);
+    while (newHistory.length > 1 && totalBytes > HISTORY_MAX_BYTES) {
+      const dropped = newHistory.shift();
+      if (dropped) totalBytes -= estimateEntryBytes(dropped);
+    }
     set({ history: newHistory, historyIndex: newHistory.length - 1 });
   },
 
