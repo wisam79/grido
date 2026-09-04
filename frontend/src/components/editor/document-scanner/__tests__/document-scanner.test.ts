@@ -549,4 +549,32 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(score).toBeGreaterThan(0.5);
     });
   });
+
+  describe("useScannerProcessor Hook & Modal Cleanup", () => {
+    it("resets isExporting and previewMode when open transitions to false", async () => {
+      const { renderHook, act } = await import("@testing-library/react");
+      const { useScannerProcessor } = await import("../hooks/use-scanner-processor");
+
+      const imgRef = { current: null };
+      let isOpen = true;
+
+      const { result, rerender } = renderHook(() =>
+        useScannerProcessor(imgRef, "original", 0, isOpen)
+      );
+
+      expect(result.current.isExporting).toBe(false);
+      expect(result.current.isPreviewMode).toBe(false);
+
+      // Transition to open = false
+      isOpen = false;
+      act(() => {
+        rerender();
+      });
+
+      expect(result.current.isExporting).toBe(false);
+      expect(result.current.isPreviewMode).toBe(false);
+      expect(result.current.previewSrc).toBeNull();
+    });
+  });
 });
+

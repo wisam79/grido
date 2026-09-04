@@ -123,7 +123,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const { isExporting } = exporter;
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     exporter.setIsExporting(false);
     if (open) {
       // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة.

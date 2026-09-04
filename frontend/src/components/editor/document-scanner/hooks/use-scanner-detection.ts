@@ -300,13 +300,10 @@ export function useScannerDetection(
   // 🔒 تنظيف الحالات عند الإغلاق
   useEffect(() => {
     if (!open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset detection state on close
       setDetectedDocs([]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedDocIds([]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveDocIndex(0);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDetectionMode("single");
       imgRef.current = null;
     }

@@ -37,15 +37,11 @@ if (!(Test-Path $FacePath)) {
     Write-Host "Google Face Landmarker Model already exists."
 }
 
-# 3. تنزيل ملفات WASM الخاصة بـ MediaPipe Tasks-Vision v0.10.35 (الثلاثية الكاملة)
+# 3. تنزيل ملفات WASM الخاصة بـ MediaPipe Tasks-Vision v0.10.35 (نسخة Module الحديثة المستخدمة في الـ Workers)
 $WasmBaseUrl = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm"
 $WasmFiles = @(
-    "vision_wasm_internal.js",
-    "vision_wasm_internal.wasm",
     "vision_wasm_module_internal.js",
-    "vision_wasm_module_internal.wasm",
-    "vision_wasm_nosimd_internal.js",
-    "vision_wasm_nosimd_internal.wasm"
+    "vision_wasm_module_internal.wasm"
 )
 
 foreach ($file in $WasmFiles) {

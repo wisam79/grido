@@ -407,11 +407,9 @@ export function useScannerCanvasRender(
   // 🔒 إلغاء إطارات الرسم المعلقة عند الإغلاق
   useEffect(() => {
     if (!open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset canvas drag/hover state on close
       setActiveCorner(null);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsHoveringCorner(null);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoupePos(null);
       if (drawRafRef.current !== null) {
         cancelAnimationFrame(drawRafRef.current);

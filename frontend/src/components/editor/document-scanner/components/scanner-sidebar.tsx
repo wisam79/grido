@@ -75,7 +75,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
   const isMultiActive = detectionMode === "multi" || detectedDocs.length > 1;
 
   return (
-    <div className="w-full md:w-72 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-2xl border border-border/60 overflow-y-auto h-full min-h-0 fluent-specular select-none custom-scrollbar">
+    <div className="w-full md:w-72 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/60 overflow-y-auto h-full min-h-0 fluent-specular select-none custom-scrollbar">
       {/* 🔹 1. محدد نمط المسح (المسح المفرد الافتراضي vs المسح المتعدد الثانوي) */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <div className="flex items-center justify-between">
@@ -98,7 +98,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             }}
             disabled={isDetecting}
             className={cn(
-              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none",
+              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               detectionMode === "single"
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
@@ -116,7 +116,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             }}
             disabled={isDetecting}
             className={cn(
-              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none",
+              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               detectionMode === "multi"
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
@@ -133,7 +133,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             <Button
               variant="default"
               size="sm"
-              className="w-full h-8.5 rounded-lg font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground active:scale-[0.99]"
+              className="w-full h-8 rounded-md font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               onClick={() => onAutoDetect("single")}
               disabled={isDetecting}
             >
@@ -142,14 +142,14 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
               ) : (
                 <Sparkle size={15} weight="fill" className="shrink-0" />
               )}
-              <span>{isDetecting ? "جاري الكشف ..." : "كشف تلقائي ذكي"}</span>
+              <span>{isDetecting ? "جاري الكشف ..." : "كشف تلقائي"}</span>
             </Button>
           ) : (
             <div className="grid grid-cols-2 gap-1.5">
               <Button
                 variant="default"
                 size="sm"
-                className="h-8.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground active:scale-[0.99]"
+                className="h-8 rounded-md font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 onClick={() => onAutoDetect("multi")}
                 disabled={isDetecting}
               >
@@ -165,12 +165,12 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8.5 rounded-lg border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer active:scale-[0.99]"
+                  className="h-8 rounded-md border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   onClick={onSplitIdCards}
                   disabled={isDetecting}
                 >
                   <Copy size={13} weight="bold" className="shrink-0" />
-                  <span>تقسيم بطاقتين</span>
+                  <span>تقسيم هوية</span>
                 </Button>
               )}
             </div>
@@ -249,7 +249,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 variant={filterMode === "original" ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-lg text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50",
+                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                   filterMode === "original"
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -269,7 +269,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 variant={filterMode === "magic" ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-lg text-xs font-bold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50",
+                  "h-8 rounded-md text-xs font-bold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                   filterMode === "magic"
                     ? "bg-primary text-primary-foreground shadow-2xs"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -277,7 +277,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 onClick={() => onFilterChange("magic")}
               >
                 <Sparkle size={14} weight={filterMode === "magic" ? "fill" : "duotone"} className="shrink-0 text-amber-400" />
-                <span>تلقائي ذكي</span>
+                <span>ذكي</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">تبييض الورقة وإزالة الظلال وتوضيح النصوص</TooltipContent>
@@ -289,7 +289,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 variant={filterMode === "grayscale" ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-lg text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50",
+                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                   filterMode === "grayscale"
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -297,7 +297,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 onClick={() => onFilterChange("grayscale")}
               >
                 <Circle size={14} weight={filterMode === "grayscale" ? "fill" : "regular"} className="shrink-0 text-muted-foreground" />
-                <span>تدرج رمادي</span>
+                <span>رمادي</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">تدرج رمادي ناعم لطباعة الليزر</TooltipContent>
@@ -309,7 +309,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 variant={filterMode === "bw" ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-lg text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50",
+                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                   filterMode === "bw"
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -329,7 +329,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 variant={filterMode === "sharpen" ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-lg text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50",
+                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                   filterMode === "sharpen"
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -337,7 +337,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 onClick={() => onFilterChange("sharpen")}
               >
                 <Lightning size={14} weight={filterMode === "sharpen" ? "fill" : "duotone"} className="shrink-0 text-cyan-500" />
-                <span>شحذ النصوص</span>
+                <span>شحذ</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">شحذ فائق للحروف الدقيقة والأختام والباركود</TooltipContent>
@@ -349,7 +349,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 variant={filterMode === "deyellow" ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-lg text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50",
+                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                   filterMode === "deyellow"
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -376,7 +376,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             variant={aspectType === "free" ? "default" : "outline"}
             size="sm"
             className={cn(
-              "h-8 rounded-lg text-xs font-bold cursor-pointer transition-all border-border/50",
+              "h-8 rounded-md text-xs font-bold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               aspectType === "free"
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -390,7 +390,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             variant={aspectType === "a4_p" ? "default" : "outline"}
             size="sm"
             className={cn(
-              "h-8 rounded-lg text-xs font-semibold cursor-pointer transition-all border-border/50",
+              "h-8 rounded-md text-xs font-semibold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               aspectType === "a4_p"
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -404,7 +404,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             variant={aspectType === "a4_l" ? "default" : "outline"}
             size="sm"
             className={cn(
-              "h-8 rounded-lg text-xs font-semibold cursor-pointer transition-all border-border/50",
+              "h-8 rounded-md text-xs font-semibold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               aspectType === "a4_l"
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -418,7 +418,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             variant={aspectType === "id_card" ? "default" : "outline"}
             size="sm"
             className={cn(
-              "h-8 rounded-lg text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/50",
+              "h-8 rounded-md text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               aspectType === "id_card"
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "hover:bg-accent/60 text-foreground/80 bg-background/60"
@@ -426,7 +426,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             onClick={() => onAspectChange("id_card")}
           >
             <IdentificationCard size={14} weight={aspectType === "id_card" ? "fill" : "regular"} className="shrink-0" />
-            <span>بطاقة هوية</span>
+            <span>هوية</span>
           </Button>
         </div>
       </div>
@@ -452,7 +452,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onRotateCounterClockwise}
-                className="h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-border/50 bg-background/60 hover:bg-accent"
+                className="h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-border/50 bg-background/60 hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
                 <ArrowCounterClockwise size={13} weight="bold" className="shrink-0 text-muted-foreground" />
                 <span>90° يساراً</span>
@@ -467,7 +467,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onRotateClockwise}
-                className="h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-border/50 bg-background/60 hover:bg-accent"
+                className="h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-border/50 bg-background/60 hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
                 <ArrowClockwise size={13} weight="bold" className="shrink-0 text-muted-foreground" />
                 <span>90° يميناً</span>
@@ -480,12 +480,12 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
         <Button
           variant="outline"
           size="sm"
-          className="w-full h-8 rounded-lg border-border/50 hover:bg-accent text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer bg-background/60 mt-1"
+          className="w-full h-8 rounded-md border-border/50 hover:bg-accent text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer bg-background/60 mt-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           onClick={onReset}
           disabled={isDetecting}
         >
           <ArrowsCounterClockwise size={13} weight="bold" className="text-muted-foreground shrink-0" />
-          <span>إعادة ضبط الأركان</span>
+          <span>إعادة الضبط</span>
         </Button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Point,
@@ -16,11 +16,22 @@ import {
 export function useScannerProcessor(
   imgRef: React.RefObject<HTMLImageElement | null>,
   fallbackFilter: ScannerFilterMode,
-  fallbackRotation: number
+  fallbackRotation: number,
+  open?: boolean
 ) {
   const [isExporting, setIsExporting] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+
+  // 🔒 تنظيف وتصفير حالات التصدير والمعاينة عند إغلاق النافذة
+  useEffect(() => {
+    if (open === false) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset export/preview state on close
+      setIsExporting(false);
+      setIsPreviewMode(false);
+      setPreviewSrc(null);
+    }
+  }, [open]);
 
   const generateWarpedForDoc = useCallback(
     (
@@ -212,6 +223,12 @@ export function useScannerProcessor(
     setPreviewSrc(null);
   }, []);
 
+  const resetProcessorState = useCallback(() => {
+    setIsExporting(false);
+    setIsPreviewMode(false);
+    setPreviewSrc(null);
+  }, []);
+
   return {
     isExporting,
     isPreviewMode,
@@ -222,5 +239,6 @@ export function useScannerProcessor(
     handleApplyActive,
     handleApplySelected,
     resetPreview,
+    resetProcessorState,
   };
 }

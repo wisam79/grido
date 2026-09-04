@@ -65,7 +65,7 @@ export function AccountLicenseModal() {
     if (!accountModalOpen) return;
     const currentUser = useEditorStore.getState().user;
     setActiveTab(currentUser && currentUser.token ? "license" : "auth");
-  }, [accountModalOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [accountModalOpen]);
 
   useEffect(() => {
     if (user && user.plan === "trial" && user.expiresAt) {
