@@ -8,17 +8,20 @@ import { Windows11Section } from '../components/landing/Windows11Section';
 import { AudienceSection } from '../components/landing/AudienceSection';
 import { RoiCalculator } from '../components/landing/RoiCalculator';
 import { ComparisonSection } from '../components/landing/ComparisonSection';
+import { TestimonialsSection } from '../components/landing/TestimonialsSection';
 import { PricingSection } from '../components/landing/PricingSection';
 import { FaqSection } from '../components/landing/FaqSection';
 import { CtaBanner } from '../components/landing/CtaBanner';
 import { Footer } from '../components/landing/Footer';
 import { WhatsAppFloatingButton } from '../components/landing/WhatsAppButton';
+import type { CurrencyCode } from '../data/landing-content';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 export default function LandingPage() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showFloatingCta, setShowFloatingCta] = useState(false);
+  const [currency, setCurrency] = useState<CurrencyCode>('IQD');
 
   // Global mousemove tracker for Spotlight Card Glow Effect
   useEffect(() => {
@@ -140,7 +143,7 @@ export default function LandingPage() {
 
         {/* Interactive ROI Calculator */}
         <div className="reveal-on-scroll">
-          <RoiCalculator />
+          <RoiCalculator currency={currency} onCurrencyChange={setCurrency} />
         </div>
 
         {/* Speed & Legacy Comparison */}
@@ -148,9 +151,14 @@ export default function LandingPage() {
           <ComparisonSection />
         </div>
 
+        {/* Section: Studio Testimonials & Social Proof */}
+        <div className="reveal-on-scroll">
+          <TestimonialsSection />
+        </div>
+
         {/* Section 6: Lifetime Pricing & Licensing */}
         <div className="reveal-on-scroll">
-          <PricingSection />
+          <PricingSection currency={currency} onCurrencyChange={setCurrency} />
         </div>
 
         {/* FAQ Accordion */}

@@ -1,75 +1,161 @@
 import { useState } from 'react';
-import { Sparkles, Shield, Scissors, Maximize2, Zap } from 'lucide-react';
+import { Sparkles, Scissors, Maximize2, Zap, CheckCircle2, ShieldCheck, Minus, Square, X } from 'lucide-react';
+import { MOCKUP_PRESETS, type MockupPreset } from '../../data/landing-content';
+import { useAppVersion } from '../../lib/version';
 
 export function AppMockup() {
+  const [activePreset, setActivePreset] = useState<MockupPreset>(MOCKUP_PRESETS[0]);
   const [isZoomed, setIsZoomed] = useState(false);
+  const version = useAppVersion();
+  const displayVersion = version ? `v${version}` : 'v2.4';
 
   return (
-    <div className="relative w-full max-w-[760px] mx-auto group">
+    <div className="relative w-full max-w-5xl mx-auto group">
       
-      {/* Glow Backdrop */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-[#3b82f6]/20 via-[#60a5fa]/10 to-[#3b82f6]/20 rounded-3xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      {/* Dynamic Ambient Glow Behind Showcase */}
+      <div className="absolute -inset-2 bg-gradient-to-r from-[#3b82f6]/25 via-[#60a5fa]/15 to-[#3b82f6]/25 rounded-3xl blur-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
       {/* Main Authentic Windows 11 Window Frame */}
-      <div className="relative rounded-2xl border border-[#2C2C2C] bg-[#141414] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] overflow-hidden fluent-specular transition-all duration-300">
+      <div className="relative rounded-2xl border border-[#333333] bg-[#141414] shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)] overflow-hidden fluent-specular transition-all duration-300">
         
-        {/* Real App Screenshot Showcase */}
-        <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#121212] select-none">
+        {/* Windows 11 Title Bar */}
+        <div className="h-10 bg-[#1A1A1A] border-b border-[#2C2C2C] px-3.5 flex items-center justify-between select-none" dir="ltr">
+          {/* Left: App Brand & Session File */}
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="Grido Logo"
+              className="w-4 h-4 object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/appicon.png';
+              }}
+            />
+            <div className="flex items-center gap-1.5 text-xs text-[#9E9E9E]">
+              <span className="font-bold text-white">Grido Studio</span>
+              <span className="text-[#666666]">•</span>
+              <span className="font-mono text-[11px] text-[#A3A3A3]">session_{activePreset.id}.grido</span>
+            </div>
+          </div>
+
+          {/* Center: Live Preset Switcher Tabs inside Window Toolbar */}
+          <div className="hidden sm:flex items-center gap-1 bg-[#141414] p-1 rounded-xl border border-[#2C2C2C]" dir="rtl">
+            {MOCKUP_PRESETS.map((preset) => {
+              const isActive = activePreset.id === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => setActivePreset(preset)}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    isActive
+                      ? 'bg-[#262626] text-white border border-white/10 shadow-xs'
+                      : 'text-[#9E9E9E] hover:text-white hover:bg-white/[0.04]'
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  <span>{preset.countryFlag}</span>
+                  <span>{preset.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right: Windows 11 Window Controls */}
+          <div className="flex items-center text-[#9E9E9E]">
+            <div className="w-8 h-8 flex items-center justify-center hover:bg-white/10 transition-colors cursor-default" title="Minimize">
+              <Minus className="w-3.5 h-3.5" />
+            </div>
+            <div className="w-8 h-8 flex items-center justify-center hover:bg-white/10 transition-colors cursor-default" title="Maximize">
+              <Square className="w-3 h-3" />
+            </div>
+            <div className="w-8 h-8 flex items-center justify-center hover:bg-[#c42b1c] hover:text-white transition-colors cursor-default" title="Close">
+              <X className="w-3.5 h-3.5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile-only Preset Bar */}
+        <div className="sm:hidden p-2 bg-[#171717] border-b border-[#2C2C2C] flex items-center justify-between gap-1 overflow-x-auto">
+          {MOCKUP_PRESETS.map((preset) => {
+            const isActive = activePreset.id === preset.id;
+            return (
+              <button
+                key={preset.id}
+                onClick={() => setActivePreset(preset)}
+                className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap ${
+                  isActive ? 'bg-[#3b82f6] text-white' : 'text-[#9E9E9E] bg-[#141414]'
+                }`}
+              >
+                <span>{preset.countryFlag}</span>
+                <span>{preset.name}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Real App Interface Canvas Viewport */}
+        <div className="relative w-full aspect-[16/10] max-h-[520px] overflow-hidden bg-[#121212] select-none">
           <img
             src="/grido-desktop-ui.png"
-            alt="Grido Studio Real UI Application"
-            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
+            alt={`واجهة تطبيق Grido Studio - قالب ${activePreset.name}`}
+            className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.01]"
             draggable={false}
           />
 
-          {/* Subtle Corner Vignette */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#141414]/40 via-transparent to-transparent pointer-events-none" />
+          {/* Biometric Interactive HUD Overlay */}
+          <div className="absolute inset-0 pointer-events-none transition-all duration-300">
+            {/* Top-End Zoom Button */}
+            <button
+              onClick={() => setIsZoomed(true)}
+              className="absolute top-3.5 end-3.5 w-8 h-8 rounded-xl bg-black/65 hover:bg-black/85 backdrop-blur-md border border-white/10 flex items-center justify-center text-white text-xs transition-all shadow-xl pointer-events-auto cursor-pointer"
+              title="تكبير واستعراض الواجهة بدقة فائقة"
+              aria-label="تكبير الواجهة"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
 
-          {/* Interactive Floating Hotspot Badges (Mobile Responsive) */}
-          {/* Badge 1: Top Right */}
-          <div className="absolute top-2.5 start-2.5 sm:top-4 sm:start-4 bg-[#1E1E1E]/90 backdrop-blur-md px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-[#2C2C2C] shadow-lg flex items-center gap-1.5 sm:gap-2 text-white pointer-events-none">
-            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#10b981] animate-ping" />
-            <span className="font-bold text-[9px] sm:text-[11px]">مساطر وتخطيط بيومتري دقيق</span>
+            {/* Bottom Floating Guidelines Capsule */}
+            <div className="absolute bottom-3.5 start-3.5 max-w-[90%] bg-[#141414]/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-[#2C2C2C] shadow-xl flex flex-wrap items-center gap-2.5 text-xs text-[#F5F5F5]">
+              <div className="flex items-center gap-1.5 text-[#10b981]">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span className="font-bold">{activePreset.specStandard}</span>
+              </div>
+              <span className="text-[#666666] hidden sm:inline">•</span>
+              <span className="text-[#9E9E9E] hidden sm:inline">{activePreset.headRatio}</span>
+              <span className="text-[#666666] hidden md:inline">•</span>
+              <span className="text-[#60a5fa] font-mono font-semibold hidden md:inline">{activePreset.eyeLine}</span>
+            </div>
+
+            {/* Bottom-End Live Version Capsule */}
+            <div className="absolute bottom-3.5 end-3.5 bg-[#141414]/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-[#2C2C2C] shadow-xl flex items-center gap-1.5 text-white">
+              <Sparkles className="w-3.5 h-3.5 text-[#60a5fa]" />
+              <span className="font-bold text-xs font-mono text-white">
+                {displayVersion}
+              </span>
+            </div>
           </div>
-
-          {/* Badge 2: Bottom Left */}
-          <div className="absolute bottom-2.5 end-2.5 sm:bottom-4 sm:end-4 bg-[#1E1E1E]/90 backdrop-blur-md px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border border-[#2C2C2C] shadow-lg flex items-center gap-1.5 sm:gap-2 text-white pointer-events-none">
-            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#60a5fa]" />
-            <span className="font-bold text-[9px] sm:text-[11px]">الواجهة الرسمية المباشرة v2.4</span>
-          </div>
-
-          {/* Zoom Overlay Trigger (Always accessible on touch devices) */}
-          <button
-            onClick={() => setIsZoomed(true)}
-            className="absolute top-2.5 end-2.5 sm:top-4 sm:end-4 w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-center text-white text-xs transition-all shadow-lg opacity-90 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
-            title="تكبير واستعراض الواجهة"
-            aria-label="تكبير الواجهة"
-          >
-            <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
         </div>
 
-        {/* Bottom Feature Strip */}
-        <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 bg-[#171717] border-t border-[#2C2C2C] flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs">
-          <div className="flex items-center gap-2 sm:gap-4 text-[#9E9E9E] text-[10px] sm:text-[11px]">
-            <div className="flex items-center gap-1 sm:gap-1.5 text-white">
-              <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#3b82f6]" />
-              <span className="font-semibold">إقلاع فوري وسريع</span>
+        {/* Bottom Status & Capability Bar */}
+        <div className="px-4 py-3 bg-[#171717] border-t border-[#2C2C2C] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3 sm:gap-5 text-[#9E9E9E] text-xs">
+            <div className="flex items-center gap-1.5 text-white">
+              <Zap className="w-3.5 h-3.5 text-[#3b82f6]" />
+              <span className="font-semibold">{activePreset.sheetCount}</span>
             </div>
             <span>•</span>
-            <div className="flex items-center gap-1 sm:gap-1.5 text-white">
-              <Scissors className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f59e0b]" />
-              <span>خطوط قص آلية A4</span>
+            <div className="flex items-center gap-1.5 text-white">
+              <Scissors className="w-3.5 h-3.5 text-[#f59e0b]" />
+              <span className="font-semibold">{activePreset.cutMargins}</span>
             </div>
             <span className="hidden sm:inline">•</span>
             <div className="hidden sm:flex items-center gap-1.5 text-white">
-              <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-              <span>100% بدون إنترنت</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-[#10b981]" />
+              <span className="font-semibold">100% دون إنترنت</span>
             </div>
           </div>
 
-          <span className="text-[9px] sm:text-[10px] font-bold text-[#60a5fa] bg-[#141414] px-2 py-0.5 rounded border border-[#2C2C2C]">
-            معاينة مباشرة
+          <span className="text-xs font-bold text-[#60a5fa] bg-[#141414] px-2.5 py-1 rounded-lg border border-[#2C2C2C]">
+            محاذاة مغناطيسية فورية
           </span>
         </div>
 
@@ -79,11 +165,11 @@ export function AppMockup() {
       {isZoomed && (
         <div
           onClick={() => setIsZoomed(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-xl animate-fadeIn cursor-zoom-out"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-xl animate-fadeIn cursor-zoom-out"
         >
           <div className="relative max-w-6xl w-full rounded-2xl overflow-hidden border border-[#2C2C2C] shadow-2xl bg-[#141414]">
             <div className="p-3 bg-[#171717] border-b border-[#2C2C2C] flex items-center justify-between text-xs text-white">
-              <span className="font-bold">واجهة Grido Studio الحقيقية الكاملة</span>
+              <span className="font-bold">واجهة Grido Studio الكاملة — {activePreset.name}</span>
               <span className="text-[#9E9E9E]">انقر في أي مكان للإغلاق ✕</span>
             </div>
             <img

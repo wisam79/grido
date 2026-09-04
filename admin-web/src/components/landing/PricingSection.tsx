@@ -1,4 +1,5 @@
 import { Check, Sparkles, Download, ShieldCheck, Zap, Star, RefreshCw, Headphones, Award } from 'lucide-react';
+import { CURRENCIES, type CurrencyCode } from '../../data/landing-content';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
@@ -17,22 +18,29 @@ const FEATURES = [
 const GUARANTEES = [
   {
     title: 'استثمار لمرة واحدة',
-    desc: 'تدفع 75,000 دينار مرة واحدة فقط وتمتلك البرنامج للأبد مع كافة التحديثات مجاناً.',
+    desc: 'تدفع المبلغ لمرة واحدة فقط وتمتلك البرنامج للأبد مع كافة التحديثات مجاناً دون أي اشتراكات.',
     icon: Award,
   },
   {
     title: 'ضمان استرجاع 14 يوماً',
-    desc: 'جرب البرنامج بحرية؛ إن لم يناسبك، نضمن لك استرجاع المبلغ بالكامل.',
+    desc: 'جرب البرنامج بحرية؛ إن لم يناسبك، نضمن لك استرجاع المبلغ بالكامل دون أي تعقيدات.',
     icon: RefreshCw,
   },
   {
     title: 'تفعيل فوري ودعم فني',
-    desc: 'مفتاح ترخيص فوري مع مساعدة في التثبيت والإعداد على كافة أجهزتك.',
+    desc: 'مفتاح ترخيص فوري مع مساعدة في التثبيت والإعداد على كافة أجهزتك من فريق الدعم.',
     icon: Headphones,
   },
 ];
 
-export function PricingSection() {
+interface PricingSectionProps {
+  currency?: CurrencyCode;
+  onCurrencyChange?: (c: CurrencyCode) => void;
+}
+
+export function PricingSection({ currency = 'IQD', onCurrencyChange }: PricingSectionProps) {
+  const currentCurr = CURRENCIES[currency] || CURRENCIES.IQD;
+
   return (
     <section id="pricing" className="py-16 md:py-24 relative scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,9 +54,32 @@ export function PricingSection() {
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-2.5 tracking-tight">
             استثمر مرة واحدة، واستفد للأبد
           </h2>
-          <p className="text-sm sm:text-base text-[#9E9E9E]">
-            لا اشتراكات شهرية ولا تكاليف خفية.
+          <p className="text-sm sm:text-base text-[#9E9E9E] mb-5">
+            لا اشتراكات شهرية ولا تكاليف خفية — ترخيص دائم لكافة أجهزتك.
           </p>
+
+          {/* Currency Switcher Pill Bar */}
+          {onCurrencyChange && (
+            <div className="inline-flex items-center gap-1.5 p-1 rounded-xl bg-[#1E1E1E] border border-[#2C2C2C] shadow-sm">
+              {(['IQD', 'SAR', 'USD'] as CurrencyCode[]).map((c) => {
+                const isActive = currency === c;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => onCurrencyChange(c)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-[#3b82f6] text-white shadow-sm'
+                        : 'text-[#9E9E9E] hover:text-white hover:bg-white/[0.04]'
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    {CURRENCIES[c].label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* 2-Column Balanced Pricing Layout */}
@@ -75,13 +106,17 @@ export function PricingSection() {
                 <h3 className="text-2xl font-black text-white mb-1">Grido Studio</h3>
                 <p className="text-xs text-[#9E9E9E] mb-5">النسخة الكاملة لاستوديوهات ومراكز الطباعة</p>
 
-                {/* Price Row in Dinar */}
+                {/* Price Row (Dynamic Currency) */}
                 <div className="flex items-baseline justify-center gap-2.5 mb-2.5">
-                  <span className="text-sm text-[#666666] line-through font-mono">150,000</span>
-                  <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tight">75,000</span>
+                  <span className="text-sm text-[#666666] line-through font-mono">
+                    {currentCurr.originalPriceFormatted}
+                  </span>
+                  <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tight">
+                    {currentCurr.priceFormatted}
+                  </span>
                   <div className="flex flex-col items-start text-start">
-                    <span className="text-sm font-bold text-[#3b82f6]">دينار</span>
-                    <span className="text-[10px] text-[#9E9E9E]">دفع لمرة واحدة فقط</span>
+                    <span className="text-sm font-bold text-[#3b82f6]">{currentCurr.unit}</span>
+                    <span className="text-[10px] text-[#9E9E9E]">{currentCurr.note}</span>
                   </div>
                 </div>
                 

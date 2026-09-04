@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Menu, X, Sparkles, Layers, ShieldCheck, HelpCircle, DollarSign } from 'lucide-react';
+import { Download, Menu, X, Sparkles, Layers, ShieldCheck, HelpCircle, DollarSign, Award } from 'lucide-react';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: '#capabilities', label: 'القدرات الأساسية', icon: Layers },
   { href: '#ai-engine', label: 'محرك الذكاء الاصطناعي', icon: Sparkles },
   { href: '#windows-experience', label: 'تجربة ويندوز 11', icon: ShieldCheck },
+  { href: '#testimonials', label: 'آراء الاستوديوهات', icon: Award },
   { href: '#pricing', label: 'الأسعار والتراخيص', icon: DollarSign },
   { href: '#faq', label: 'الأسئلة الشائعة', icon: HelpCircle },
 ];
@@ -34,7 +35,7 @@ export function Header() {
 
   // Scrollspy
   useEffect(() => {
-    const ids = ['capabilities', 'ai-engine', 'windows-experience', 'pricing', 'faq'];
+    const ids = ['capabilities', 'ai-engine', 'windows-experience', 'testimonials', 'pricing', 'faq'];
     const sections = ids
       .map((id) => document.getElementById(id))
       .filter((el): el is HTMLElement => el !== null);

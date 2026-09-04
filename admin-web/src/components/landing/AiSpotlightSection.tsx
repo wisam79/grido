@@ -38,6 +38,28 @@ export function AiSpotlightSection() {
     setSliderPos(percentage);
   }, []);
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSliderPos((prev) => Math.max(0, prev - 5));
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSliderPos((prev) => Math.min(100, prev + 5));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setSliderPos(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setSliderPos(100);
+    } else if (e.key === 'PageDown') {
+      e.preventDefault();
+      setSliderPos((prev) => Math.max(0, prev - 20));
+    } else if (e.key === 'PageUp') {
+      e.preventDefault();
+      setSliderPos((prev) => Math.min(100, prev + 20));
+    }
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsDragging(true);
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -95,25 +117,33 @@ export function AiSpotlightSection() {
           <div
             ref={containerRef}
             dir="ltr"
+            role="slider"
+            tabIndex={0}
+            aria-label="مقارنة الصورة قبل وبعد المعالجة بالذكاء الاصطناعي"
+            aria-valuenow={Math.round(sliderPos)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuetext={`${Math.round(sliderPos)}% بعد المعالجة`}
+            onKeyDown={handleKeyDown}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
-            className="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[380px] rounded-xl overflow-hidden border border-[#2C2C2C] bg-[#141414] select-none shadow-inner flex items-center justify-center cursor-ew-resize touch-none"
+            className="relative w-full max-w-md mx-auto aspect-[3/4] rounded-2xl overflow-hidden border border-[#333333] bg-[#141414] select-none shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] flex items-center justify-center cursor-ew-resize touch-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#141414] focus-visible:outline-none"
           >
             {/* Layer 1: AFTER Image */}
             <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#141414]">
               <img
                 src="/sample-passport-after.png"
                 alt="After AI Processing"
-                className="w-full h-full object-contain object-center pointer-events-none"
+                className="w-full h-full object-cover object-top pointer-events-none"
                 draggable={false}
               />
               <div
                 dir="rtl"
                 className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-[#2C2C2C] shadow-lg pointer-events-none z-10"
               >
-                ✨ بعد المعالجة
+                ✨ بعد المعالجة (عزل نقي)
               </div>
             </div>
 
@@ -125,7 +155,7 @@ export function AiSpotlightSection() {
               <img
                 src="/sample-passport-before.png"
                 alt="Before AI Processing"
-                className="w-full h-full object-contain object-center pointer-events-none"
+                className="w-full h-full object-cover object-top pointer-events-none"
                 draggable={false}
               />
               <div
@@ -138,10 +168,10 @@ export function AiSpotlightSection() {
 
             {/* Draggable Divider Line */}
             <div
-              className="absolute inset-y-0 w-0.5 bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)] z-30 pointer-events-none flex items-center justify-center"
+              className="absolute inset-y-0 w-0.5 bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)] z-30 pointer-events-none flex items-center justify-center"
               style={{ left: `${sliderPos}%` }}
             >
-              <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center shadow-2xl font-bold text-[10px] border-2 border-[#3b82f6]">
+              <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-2xl font-bold text-xs border-2 border-[#3b82f6]">
                 ↔
               </div>
             </div>

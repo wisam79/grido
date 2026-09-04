@@ -1,4 +1,9 @@
+import { useAppVersion } from '../../lib/version';
+
 export function Footer() {
+  const version = useAppVersion();
+  const displayVersion = version ? `v${version}` : 'v2.4';
+
   return (
     <footer className="bg-[#141414] border-t border-[#2C2C2C] pt-14 pb-8 text-xs text-[#9E9E9E]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,7 +25,7 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-2 text-[11px] text-[#10b981] bg-[#1E1E1E] px-3 py-1 rounded-full border border-[#2C2C2C]">
               <span className="w-2 h-2 rounded-full bg-[#10b981]" />
-              <span>جميع الأنظمة تعمل بكفاءة (v2.4 Ready)</span>
+              <span>جميع الأنظمة تعمل بكفاءة ({displayVersion} Ready)</span>
             </div>
           </div>
 
