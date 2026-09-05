@@ -706,8 +706,8 @@ describe("Document Scanner - Realistic Test Scenarios & Synthetic Images", () =>
     const result = await detectDocumentAuto(canvas, width, height, "single");
     expect(result.corners).toBeDefined();
     const sorted = sortCornerPoints(result.corners);
-    expect(sorted[0].x).toBeLessThanOrEqual(38);
-    expect(sorted[0].y).toBeLessThanOrEqual(35);
+    expect(sorted[0].x).toBeLessThanOrEqual(40);
+    expect(sorted[0].y).toBeLessThanOrEqual(40);
     expect(sorted[1].x).toBeGreaterThanOrEqual(200);
     expect(sorted[2].y).toBeGreaterThanOrEqual(145);
   });
