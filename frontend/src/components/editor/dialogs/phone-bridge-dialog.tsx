@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   DeviceMobileCamera,
-  QrCode,
   Copy,
   Check,
   ArrowClockwise,
@@ -42,6 +41,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
   // Invariant: Modal Loading State Cleanup
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(false);
     setError(null);
     setCopied(false);
@@ -69,9 +69,11 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       initBridge();
     }
   }, [open, initBridge]);
+
 
   // Poll status occasionally while dialog is open to refresh photo count
   useEffect(() => {
