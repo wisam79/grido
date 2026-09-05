@@ -8,6 +8,7 @@ import {
   Stack,
   Folders,
   Broom,
+  DeviceMobileCamera,
 } from "@phosphor-icons/react";
 import { AddPhotoIcon } from "@/components/ui/image-icons";
 import {
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProjectsDialog } from "../dialogs/projects-dialog";
 import { BatchInsertDialog } from "../dialogs/batch-insert-dialog";
+import { PhoneBridgeDialog } from "../dialogs/phone-bridge-dialog";
 import { ClearAutoSave, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { wailsIsDesktop } from "@/lib/wails-env";
@@ -51,6 +53,7 @@ export function ToolbarFileOps() {
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [isBatchInsertOpen, setIsBatchInsertOpen] = useState(false);
+  const [isPhoneBridgeOpen, setIsPhoneBridgeOpen] = useState(false);
 
   const {
     mode,
@@ -74,11 +77,14 @@ export function ToolbarFileOps() {
   useEffect(() => {
     const openProjects = () => setIsProjectsOpen(true);
     const openBatch = () => setIsBatchInsertOpen(true);
+    const openPhoneBridge = () => setIsPhoneBridgeOpen(true);
     window.addEventListener("grido:open-projects-dialog", openProjects);
     window.addEventListener("grido:open-batch-insert-dialog", openBatch);
+    window.addEventListener("grido:open-phone-bridge", openPhoneBridge);
     return () => {
       window.removeEventListener("grido:open-projects-dialog", openProjects);
       window.removeEventListener("grido:open-batch-insert-dialog", openBatch);
+      window.removeEventListener("grido:open-phone-bridge", openPhoneBridge);
     };
   }, []);
 
@@ -228,6 +234,21 @@ export function ToolbarFileOps() {
           </Button>
         </TooltipBtn>
 
+        {/* كاميرا الهاتف اللاسلكية */}
+        <TooltipBtn content="كاميرا الهاتف اللاسلكية (QR)">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsPhoneBridgeOpen(true)}
+            aria-label="كاميرا الهاتف اللاسلكية"
+            title="كاميرا الهاتف اللاسلكية"
+            className="h-8.5 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
+          >
+            <DeviceMobileCamera className="w-5 h-5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
+            <span className="hidden sm:inline font-semibold">كاميرا الهاتف</span>
+          </Button>
+        </TooltipBtn>
+
         {/* المكتبة المحلية */}
         <Suspense fallback={null}>
           <TooltipBtn content="مكتبة المشاريع المحفوظة">
@@ -247,6 +268,9 @@ export function ToolbarFileOps() {
 
         {/* نافذة الإدراج المتعدد الذكي */}
         <BatchInsertDialog open={isBatchInsertOpen} onOpenChange={setIsBatchInsertOpen} />
+
+        {/* نافذة جسر كاميرا الهاتف اللاسلكي */}
+        <PhoneBridgeDialog open={isPhoneBridgeOpen} onOpenChange={setIsPhoneBridgeOpen} />
       </div>
 
       {/* جديد / مسح مساحة العمل */}

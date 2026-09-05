@@ -36,6 +36,7 @@ import {
   Sparkle,
   Question,
   Info,
+  DeviceMobileCamera,
 } from "@phosphor-icons/react";
 import { openDirectoryImageDialog } from "@/lib/io/file-dialog-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
@@ -178,6 +179,15 @@ export function DesktopMenuBar() {
             <span className="font-medium">إدراج دفعة...</span>
             <DropdownMenuShortcut>Ctrl+Shift+O</DropdownMenuShortcut>
           </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => window.dispatchEvent(new CustomEvent("grido:open-phone-bridge"))}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+          >
+            <DeviceMobileCamera className="w-4.5 h-4.5 text-primary" weight="duotone" />
+            <span className="font-medium">كاميرا الهاتف (QR)...</span>
+          </DropdownMenuItem>
+
 
           <DropdownMenuItem
             onClick={handleOpenDirectory}

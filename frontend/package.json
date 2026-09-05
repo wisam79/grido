@@ -46,6 +46,7 @@
     "framer-motion": "^12.23.2",
     "konva": "^10.3.0",
     "onnxruntime-web": "^1.29.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-colorful": "^5.7.0",
     "react-cropper": "^2.3.3",

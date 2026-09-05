@@ -49,6 +49,7 @@ import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { usePhoneBridgeListener } from "@/components/editor/system/use-phone-bridge";
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
@@ -85,6 +86,7 @@ export default function App() {
 
   useKeyboardShortcuts();
   useAutoSave();
+  usePhoneBridgeListener();
 
   const mode = useEditorStore((state) => state.mode);
   const setMode = useEditorStore((state) => state.setMode);

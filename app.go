@@ -16,35 +16,41 @@ import (
 )
 
 type App struct {
-	ctx         context.Context
-	mediaSvc    *service.MediaService
-	aiSvc       *service.AIService
-	imageProc   *service.ImageProcessorService
-	autosaveSvc *service.AutosaveService
-	aiLogsSvc   *service.AiLogsService
-	startupFile string
+	ctx            context.Context
+	mediaSvc       *service.MediaService
+	phoneBridgeSvc *service.PhoneBridgeService
+	aiSvc          *service.AIService
+	imageProc      *service.ImageProcessorService
+	autosaveSvc    *service.AutosaveService
+	aiLogsSvc      *service.AiLogsService
+	startupFile    string
 }
 
 func NewApp(templates domain.CustomTemplateRepository) *App {
 	mediaSvc := service.NewMediaService()
+	phoneBridgeSvc := service.NewPhoneBridgeService(mediaSvc)
 	return &App{
-		mediaSvc:    mediaSvc,
-		aiSvc:       service.NewAIService(),
-		imageProc:   service.NewImageProcessorService(mediaSvc),
-		autosaveSvc: service.NewAutosaveService(templates),
-		aiLogsSvc:   service.NewAiLogsService(),
+		mediaSvc:       mediaSvc,
+		phoneBridgeSvc: phoneBridgeSvc,
+		aiSvc:          service.NewAIService(),
+		imageProc:      service.NewImageProcessorService(mediaSvc),
+		autosaveSvc:    service.NewAutosaveService(templates),
+		aiLogsSvc:      service.NewAiLogsService(),
 	}
 }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.phoneBridgeSvc.SetContext(ctx)
 	service.InitLogger() // محمي بـ once — لا يعيد التهيئة إذا استدعي من main سابقاً
 	// تنظيف ملفات التحديث المهجورة في الخلفية فور بدء التشغيل
 	go service.CleanupTempUpdates()
 }
 
 func (a *App) shutdown(_ context.Context) {
-	// ... clean up resources ...
+	if a.phoneBridgeSvc != nil {
+		_ = a.phoneBridgeSvc.Stop()
+	}
 }
 
 func (a *App) LogFrontendError(level, message, stackTrace string) {
@@ -275,3 +281,19 @@ func (a *App) GetStartupFile() (string, error) {
 	a.startupFile = "" // استهلاك المسار لمرة واحدة فقط لمنع التكرار
 	return a.mediaSvc.ProcessOpenedFile(f)
 }
+
+// StartPhoneBridge يبدأ خادم جسر الهاتف اللاسلكي ويعيد بيانات الاتصال ورابط QR
+func (a *App) StartPhoneBridge() (*service.BridgeInfo, error) {
+	return a.phoneBridgeSvc.Start()
+}
+
+// StopPhoneBridge يوقف خادم جسر الهاتف
+func (a *App) StopPhoneBridge() error {
+	return a.phoneBridgeSvc.Stop()
+}
+
+// GetPhoneBridgeStatus يسترجع حالة خادم جسر الهاتف وعدد الصور المستلمة
+func (a *App) GetPhoneBridgeStatus() *service.BridgeStatus {
+	return a.phoneBridgeSvc.GetStatus()
+}
+
