@@ -20,6 +20,7 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
     await page.getByTitle('مكتبة المشاريع المحلية').click();
     await expect(page.getByRole('dialog', { name: /مكتبة المشاريع/ })).toBeVisible();
 
+    await page.getByRole('tab', { name: /حفظ المشروع/ }).click();
     await page.fill('#proj-name', 'مشروع اختباري');
 
     await page.getByRole('button', { name: /حفظ المشروع|حفظ في قاعدة البيانات/ }).click();

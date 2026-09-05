@@ -28,10 +28,10 @@ test.describe('Editor Core Workflows E2E', () => {
     await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
-  test('Add-text stays disabled on empty canvas, theme toggle works', async ({ page }) => {
-    // سلوك مقصود: لا عناصر بعد ⇒ زر النص معطل
+  test('Add-text is available, theme toggle works', async ({ page }) => {
+    // أصبح متاحاً الآن دائماً حتى في وضع الكولاج لإتاحة إضافة النصوص والأختام
     const addText = page.getByRole('button', { name: 'إضافة نص' }).first();
-    await expect(addText).toBeDisabled();
+    await expect(addText).toBeEnabled();
 
     // تبديل الوضع المضيء/الداكن لا يكسر التطبيق
     const themeToggle = page.getByRole('button', { name: 'الوضع المضيء' });
