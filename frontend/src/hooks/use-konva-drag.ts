@@ -1,7 +1,8 @@
 import React from "react";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { getSnapPositionsWithTargets, SnapTarget } from "@/lib/canvas/snap-utils";
+import { getSnapPositionsWithTargets, SnapTarget, SnapGuide } from "@/lib/canvas/snap-utils";
 import { KonvaEventObject } from "konva/lib/Node";
+import type Konva from "konva";
 
 interface UseKonvaDragProps {
   element: CanvasElement;
@@ -11,8 +12,8 @@ interface UseKonvaDragProps {
   gridSize?: number;
   altPressedRef: React.RefObject<boolean>;
   shiftPressedRef?: React.RefObject<boolean>;
-  getKonvaNode: (id: string) => any;
-  setActiveGuides: (guides: any[]) => void;
+  getKonvaNode: (id: string) => Konva.Node | null;
+  setActiveGuides: (guides: SnapGuide[]) => void;
 }
 
 export function useKonvaDrag({
@@ -31,7 +32,7 @@ export function useKonvaDrag({
     hTargets: SnapTarget[];
   } | null>(null);
   const dragStartPositionsRef = React.useRef<Record<string, { x: number; y: number }>>({});
-  const prevGuidesRef = React.useRef<any[]>([]);
+  const prevGuidesRef = React.useRef<SnapGuide[]>([]);
 
   const onDragStart = () => {
     const currentElements = useEditorStore.getState().elements;
@@ -226,7 +227,7 @@ export function useKonvaDrag({
       thresholdY
     );
     
-    const isGuidesEqual = (g1: any[], g2: any[]) => {
+    const isGuidesEqual = (g1: SnapGuide[], g2: SnapGuide[]) => {
       if (g1.length !== g2.length) return false;
       for (let i = 0; i < g1.length; i++) {
         if (g1[i].type !== g2[i].type || Math.abs(g1[i].coord - g2[i].coord) > 0.0001) return false;

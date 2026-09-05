@@ -1,4 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
+import type Konva from "konva";
+import type { KonvaEventObject } from "konva/lib/Node";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { Spinner } from "@/components/ui/huge-icon";
 import { ArrowClockwise, X } from "@phosphor-icons/react";
@@ -256,8 +258,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
     displayH = maxH;
     displayW = displayH * aspect;
   }
-  displayW = Math.max(100 * canvasZoom, displayW);
-  displayH = Math.max(100 * canvasZoom, displayH);
+  displayW = Math.round(Math.max(100 * canvasZoom, displayW));
+  displayH = Math.round(Math.max(100 * canvasZoom, displayH));
 
   // 🧭 الخطوط الإرشادية (كانت مضمّنة في هذا الملف)
   const {
@@ -495,7 +497,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
     }
   }, [printMode, isLoading, setIsLoading]);
 
-  const handleCanvasContextMenu = useCallback((e: any) => {
+  const handleCanvasContextMenu = useCallback((e: KonvaEventObject<MouseEvent>) => {
     if (printMode) return;
     const evt = e.evt;
     if (!evt) return;
@@ -512,8 +514,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
     if (!isBackground) {
       if (mode === "single") {
-        const elNode = typeof node.findAncestor === 'function' ? (node.findAncestor((n: any) => !!n.id(), true)) : null;
-        const id = elNode?.id() || node.id() || node.attrs?.id;
+        const elNode = typeof node.findAncestor === 'function' ? (node.findAncestor((n: Konva.Node) => !!n.id(), true)) : null;
+        const id = elNode?.id() || node.id() || (node.attrs as { id?: string } | undefined)?.id;
         if (id) {
           targetType = "element";
           targetId = id;
@@ -522,7 +524,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
           }
         }
       } else if (mode === "collage") {
-        const parentGroup = typeof node.findAncestor === 'function' ? node.findAncestor((n: any) => n.id() && n.id().startsWith("slot-"), true) : null;
+        const parentGroup = typeof node.findAncestor === 'function' ? node.findAncestor((n: Konva.Node) => !!n.id() && n.id().startsWith("slot-"), true) : null;
         if (parentGroup) {
           targetType = "slot";
           targetId = parentGroup.id().replace("slot-", "");
@@ -752,9 +754,12 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
         <div
           ref={(node) => {
-            (containerRef as any).current = node;
-            if (typeof ref === "function") ref(node);
-            else if (ref) (ref as any).current = node;
+            (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+            if (typeof ref === "function") {
+              ref(node);
+            } else if (ref && "current" in ref) {
+              (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+            }
           }}
           className="flex-1 overflow-auto workspace-grid relative"
           onMouseMove={handleWorkspaceMouseMove}

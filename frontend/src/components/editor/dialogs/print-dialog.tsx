@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type Konva from "konva";
 import {
   Dialog,
   DialogContent,
@@ -177,9 +178,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           const targetWidth = 400;
           const pRatio = Math.min(1, targetWidth / stage.width());
 
-          transformers.forEach((tr: any) => tr.hide());
-          gridLayers.forEach((gl: any) => gl.hide());
-          columnsLayers.forEach((cl: any) => cl.hide());
+          transformers.forEach((tr: Konva.Node) => tr.hide());
+          gridLayers.forEach((gl: Konva.Node) => gl.hide());
+          columnsLayers.forEach((cl: Konva.Node) => cl.hide());
           stage.batchDraw();
 
           const previewUrl = stage.toDataURL({
@@ -193,9 +194,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         } catch (err) {
           console.error("Failed to generate print preview image:", err);
         } finally {
-          transformers.forEach((tr: any) => tr.show());
-          gridLayers.forEach((gl: any) => gl.show());
-          columnsLayers.forEach((cl: any) => cl.show());
+          transformers.forEach((tr: Konva.Node) => tr.show());
+          gridLayers.forEach((gl: Konva.Node) => gl.show());
+          columnsLayers.forEach((cl: Konva.Node) => cl.show());
           stage.batchDraw();
         }
       }, 50);

@@ -41,8 +41,8 @@ describe("calculatePrintCutLines", () => {
 
   it("should calculate correct cut lines for collage mode with slots", () => {
     const slots = [
-      { id: "1", x: 0, y: 0, w: 0.5, h: 0.5, imageSrc: "test1.jpg" },
-      { id: "2", x: 0.5, y: 0, w: 0.5, h: 0.5, imageSrc: "test2.jpg" },
+      { id: "1", cellIndex: 0, x: 0, y: 0, w: 0.5, h: 0.5, imageSrc: "test1.jpg" },
+      { id: "2", cellIndex: 1, x: 0.5, y: 0, w: 0.5, h: 0.5, imageSrc: "test2.jpg" },
     ];
 
     const lines = calculatePrintCutLines({

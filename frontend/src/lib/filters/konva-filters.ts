@@ -1,4 +1,5 @@
 import Konva from "konva";
+import type { Filter } from "konva/lib/Node";
 
 export interface FilterOptions {
   filter?: string;
@@ -47,20 +48,23 @@ export function getKonvaFilters(options: FilterOptions) {
     totalBrightness = (totalBrightness / 100) * 102;
   }
 
-  const filters: any[] = [];
-  // سبيا بنسبة الشدة المطلوبة بدل فلتر Sepia الكامل — تطابق CSS/الطباعة
-  if (sepiaRatio > 0 && (Konva.Filters as any).SepiaBlend) {
-    filters.push((Konva.Filters as any).SepiaBlend);
+  const filters: Filter[] = [];
+  const konvaFilters = Konva.Filters as unknown as {
+    SepiaBlend?: Filter;
+    Brightness?: Filter;
+  };
+  if (sepiaRatio > 0 && konvaFilters.SepiaBlend) {
+    filters.push(konvaFilters.SepiaBlend);
   }
   if (useGrayscale) filters.push(Konva.Filters.Grayscale);
-  const brightnessFilter = (Konva.Filters as any).Brightness || Konva.Filters.Brighten;
+  const brightnessFilter = konvaFilters.Brightness || Konva.Filters.Brighten;
   if (totalBrightness !== 100) filters.push(brightnessFilter);
   if (totalContrast !== 100) filters.push(Konva.Filters.Contrast);
   if (totalSaturation !== 100) filters.push(Konva.Filters.HSL);
 
   return {
     filters,
-    brightness: brightnessFilter === (Konva.Filters as any).Brightness ? totalBrightness / 100 : (totalBrightness - 100) / 100,
+    brightness: brightnessFilter === konvaFilters.Brightness ? totalBrightness / 100 : (totalBrightness - 100) / 100,
     contrast: totalContrast !== 100 ? totalContrast - 100 : 0,
     saturation: totalSaturation !== 100 ? (totalSaturation - 100) / 100 : 0,
     sepiaRatio,

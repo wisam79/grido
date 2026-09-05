@@ -2,7 +2,8 @@ import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import { Palette, Eye, Check } from "@phosphor-icons/react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../../gradient-picker";
+import { GradientPicker } from "../../gradient-picker";
+import { gradientAngleFromPoints, gradientPointsFromAngle } from "../../gradient-utils";
 import { Slider } from "@/components/ui/slider";
 import type { TextTabProps } from "./text-tab-types";
 

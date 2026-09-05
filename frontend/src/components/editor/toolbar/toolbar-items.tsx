@@ -62,7 +62,6 @@ function TooltipBtn({ content, children }: TooltipBtnProps) {
 }
 
 const ToolbarAddTools = React.memo(function ToolbarAddTools() {
-  const mode = useEditorStore((state) => state.mode);
   const addTextElement = useEditorStore((state) => state.addTextElement);
   const addTextPreset = useEditorStore((state) => state.addTextPreset);
   const addShapeElement = useEditorStore((state) => state.addShapeElement);
@@ -71,21 +70,18 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
     <div className="fluent-command-group shadow-2xs">
       {/* نص مع قوالب جاهزة */}
       <DropdownMenu>
-        <TooltipBtn content={mode === "collage" ? "غير متاح في وضع الكولاج" : "إضافة نص أو قالب خطوط"}>
-          <div className={mode === "collage" ? "cursor-not-allowed" : ""}>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                disabled={mode === "collage"}
-                aria-label="إضافة نص"
-                className="h-8.5 px-3 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
-              >
-                <TextT className="w-5 h-5" />
-                <CaretDown className="w-3.5 h-3.5 opacity-60" />
-              </Button>
-            </DropdownMenuTrigger>
-          </div>
+        <TooltipBtn content="إضافة نص أو قالب خطوط">
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              aria-label="إضافة نص"
+              className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
+            >
+              <TextT className="w-5 h-5" />
+              <CaretDown className="w-3.5 h-3.5 opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
         </TooltipBtn>
         <DropdownMenuContent align="start" className="w-56 font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
           <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
@@ -150,21 +146,18 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
 
       {/* أشكال */}
       <DropdownMenu>
-        <TooltipBtn content={mode === "collage" ? "غير متاح في الكولاج" : "إضافة شكل"}>
-          <div className={mode === "collage" ? "cursor-not-allowed" : ""}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={mode === "collage"}
-                className="h-8.5 px-3 text-muted-foreground enabled:hover:text-foreground enabled:hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
-                aria-label="إضافة شكل"
-              >
-                <GeometricShapesIcon className="w-5 h-5" />
-                <CaretDown className="w-3.5 h-3.5 opacity-60" />
-              </Button>
-            </DropdownMenuTrigger>
-          </div>
+        <TooltipBtn content="إضافة شكل">
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
+              aria-label="إضافة شكل"
+            >
+              <GeometricShapesIcon className="w-5 h-5" />
+              <CaretDown className="w-3.5 h-3.5 opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
         </TooltipBtn>
         <DropdownMenuContent align="start" className="w-44 font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
           <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
@@ -301,7 +294,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
     return { selectedItem: target };
   }));
 
-  const onUpdate = React.useCallback((id: string, patch: any) => {
+  const onUpdate = React.useCallback((id: string, patch: Partial<Record<string, unknown>>) => {
     const store = useEditorStore.getState();
     if (store.mode === "collage") {
       store.updateSlot(id, patch);

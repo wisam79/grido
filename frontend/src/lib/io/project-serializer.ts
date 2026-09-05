@@ -60,7 +60,7 @@ export function serializeEditorState(state: EditorState, embeddedAssets?: Record
 }
 
 // Migration from legacy or unknown structures to current V1
-export function migrateProject(raw: any): ProjectFileV1 {
+export function migrateProject(raw: unknown): ProjectFileV1 {
   if (typeof raw === "string") {
     try {
       raw = JSON.parse(raw);
@@ -73,19 +73,21 @@ export function migrateProject(raw: any): ProjectFileV1 {
     throw new Error("Invalid project data format");
   }
 
+  const record = raw as Record<string, unknown>;
+
   // Normalize legacy format (without version) to v1
-  const version = typeof raw.version === "number" ? raw.version : CURRENT_PROJECT_VERSION;
+  const version = typeof record.version === "number" ? record.version : CURRENT_PROJECT_VERSION;
 
   const normalized = {
-    ...raw,
+    ...record,
     version,
     // Provide sensible defaults for missing fields if necessary
-    showGrid: raw.showGrid ?? false,
-    gridSize: raw.gridSize ?? 50,
-    collageGap: raw.collageGap ?? 0,
-    collageMargin: raw.collageMargin ?? 0,
-    collageRadius: raw.collageRadius ?? 0,
-    collageStrokeWidth: raw.collageStrokeWidth ?? 0,
+    showGrid: record.showGrid ?? false,
+    gridSize: record.gridSize ?? 50,
+    collageGap: record.collageGap ?? 0,
+    collageMargin: record.collageMargin ?? 0,
+    collageRadius: record.collageRadius ?? 0,
+    collageStrokeWidth: record.collageStrokeWidth ?? 0,
   };
 
   return normalized as ProjectFileV1;
@@ -103,7 +105,7 @@ export function deserializeProjectFile(raw: unknown): ProjectFileV1 {
 
 // Map from Domain (DB) to ProjectFile DTO
 export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV1 {
-	const parseSafely = (data: string | undefined | null, fallback: any) => {
+	const parseSafely = <T>(data: string | undefined | null, fallback: T): T => {
 		if (!data) return fallback;
 		try {
 			return JSON.parse(data);

@@ -211,6 +211,6 @@ ctx.onmessage = (e: MessageEvent<WorkerRequest>) => {
 };
 
 // إتاحة الإغلاق النظيف لموارد WebGL عند إنهاء الـ Worker
-ctx.addEventListener("close" as any, () => {
+ctx.addEventListener("close", () => {
   try { currentSegmenter?.close(); } catch { /* ignore */ }
 });

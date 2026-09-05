@@ -32,6 +32,7 @@ export function buildCSSFilter(el: FilterableObject | undefined): string {
 
 export const uid = () => crypto.randomUUID();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   const debounced = (...args: Parameters<T>) => {

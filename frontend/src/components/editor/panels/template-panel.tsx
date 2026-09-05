@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "../../../../wailsjs/go/main/App";
+import type { NormalizedCell } from "./collage/collage-grid-math";
 import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
@@ -109,7 +110,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
   const loadTemplates = useCallback(async () => {
     try {
       const templates = await GetCustomTemplates();
-      const mapped = templates.map((t: any) => ({
+      const mapped = templates.map((t) => ({
         id: "collage-user-" + t.id,
         name: t.name,
         slots: t.slots,
@@ -126,7 +127,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
     loadTemplates();
   }, [loadTemplates]);
 
-  const handleSaveTemplate = async (name: string, cells: any[]) => {
+  const handleSaveTemplate = async (name: string, cells: NormalizedCell[]) => {
     try {
       await SaveCustomTemplate(name, cells.length, JSON.stringify(cells));
       toast.success("تم حفظ القالب بنجاح");
@@ -258,7 +259,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                           <button
                             key={cat.id}
                             type="button"
-                            onClick={() => setOfficialFilter(cat.id as any)}
+                            onClick={() => setOfficialFilter(cat.id as "all" | "id_passport" | "docs" | "grid")}
                             className={cn(
                               "h-7 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none shrink-0",
                               isCatActive

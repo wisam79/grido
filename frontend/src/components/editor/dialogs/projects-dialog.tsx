@@ -50,15 +50,16 @@ interface ProjectsDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
+  defaultTab?: "save" | "list";
 }
 
-export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogProps) {
+export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save" }: ProjectsDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = open !== undefined;
   const isOpen = isControlled ? open : internalOpen;
   const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
-  const [activeTab, setActiveTab] = useState<string>("save");
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
   const [projectName, setProjectName] = useState("");
   const [projectsList, setProjectsList] = useState<domain.Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -107,7 +108,10 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (defaultTab) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setActiveTab(defaultTab);
+      }
       setIsLoading(false);
       setBackupActionLoading(false);
       Promise.resolve().then(() => {
@@ -117,7 +121,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
       setIsLoading(false);
       setBackupActionLoading(false);
     }
-  }, [isOpen]);
+  }, [isOpen, defaultTab]);
 
   const handleSave = async () => {
     if (!projectName.trim()) {
@@ -550,7 +554,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger }: ProjectsDialogPr
             </p>
             <RadioGroup 
               value={importMode} 
-              onValueChange={(val: any) => setImportMode(val)}
+              onValueChange={(val: string) => setImportMode(val as "merge" | "overwrite")}
               className="space-y-2"
             >
               <div className="flex items-center space-x-reverse space-x-2 border border-border/60 rounded-xl p-3 hover:bg-accent/40 cursor-pointer fluent-specular transition-colors">

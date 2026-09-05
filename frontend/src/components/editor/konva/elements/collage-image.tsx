@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo } from "react";
 import { Image as KonvaImage, Group } from "react-konva";
+import type Konva from "konva";
 import { useAsyncImage } from "@/hooks/use-async-image";
 import { getKonvaFilters } from "@/lib/filters/konva-filters";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
@@ -52,7 +53,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   onDblClick?: () => void;
 }) {
   const [image] = useAsyncImage(imageSrc);
-  const imageRef = useRef<any>(null);
+  const imageRef = useRef<Konva.Image | null>(null);
   const accumulatedDrag = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
   const dragStartRef = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
@@ -61,12 +62,10 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   // 🛡️ نمط latest-ref: المقارن المخصص أدناه يتجاهل هوية الدوال لتفادي إعادة
   // الرسم عند كل render للأب، لكن هذا قد يترك closures قديمة إن التقطت الدوال
   // حالة متغيرة. المراجع أدناه تضمن استدعاء آخر نسخة مُمرّرة دائماً.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- أي توقيع دالة مقبول هنا عمداً (Konva يمرر كائن الحدث)
-  type LatestRef = (...args: any[]) => void;
-  const onUpdateOffsetsRef = useRef<LatestRef | undefined>(onUpdateOffsets);
-  const onDragEndRef = useRef<LatestRef | undefined>(onDragEnd);
-  const onClickRef = useRef<LatestRef | undefined>(onClick);
-  const onDblClickRef = useRef<LatestRef | undefined>(onDblClick);
+  const onUpdateOffsetsRef = useRef<((x: number, y: number) => void) | undefined>(onUpdateOffsets);
+  const onDragEndRef = useRef<(() => void) | undefined>(onDragEnd);
+  const onClickRef = useRef<((e: unknown) => void) | undefined>(onClick);
+  const onDblClickRef = useRef<((e: unknown) => void) | undefined>(onDblClick);
   useEffect(() => {
     onUpdateOffsetsRef.current = onUpdateOffsets;
     onDragEndRef.current = onDragEnd;
@@ -204,7 +203,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
         filters={filterResult.filters}
         brightness={filterResult.brightness}
         contrast={filterResult.contrast}
-        saturation={(filterResult as any).saturation}
+        saturation={filterResult.saturation}
         sepiaRatio={filterResult.sepiaRatio}
         onClick={(e) => onClickRef.current?.(e)}
         onTap={(e) => onClickRef.current?.(e)}

@@ -18,6 +18,7 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import { exportCanvas, downloadBlob, exportSlotCanvas, applyBleedAndCropMarks, CanvasTooLargeError } from "@/lib/export";
+import { SelectExportDirectory } from "../../../../wailsjs/go/main/App";
 import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/canvas/stage-context";
 import { toast } from "sonner";
@@ -73,6 +74,13 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             return;
           }
 
+          // اختيار مجلد التصدير مرة واحدة لكافة الصور بدلاً من فتح نافذة لكل صورة
+          const targetDir = await SelectExportDirectory();
+          if (!targetDir) {
+            setLoading(false);
+            return;
+          }
+
           let successCount = 0;
           for (let i = 0; i < validSlots.length; i++) {
             if (isCancelledRef.current) break;
@@ -82,14 +90,14 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             if (blob) {
               const ext = format === "png" ? "png" : "jpg";
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
-              const res = await downloadBlob(blob, name);
+              const res = await downloadBlob(blob, name, targetDir);
               if (res === "success") successCount++;
               else if (res === "") break;
             }
             if (isCancelledRef.current) break;
             setProgress(((i + 1) / validSlots.length) * 100);
             
-            await new Promise(r => setTimeout(r, 250));
+            await new Promise(r => setTimeout(r, 60));
           }
           
           if (isCancelledRef.current) {

@@ -2,6 +2,8 @@ package repository
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -506,3 +508,61 @@ func runCleanupMedia() {
 	moveUnreferencedToTrash(mediaDir, trashDir, referenced)
 	purgeOldTrash(trashDir)
 }
+
+// CleanUnusedMediaNow يقوم بالتنظيف اليدوي الفوري لجميع الوسائط غير المستخدمة وإعادة إحصائيات ما تم تنظيفه
+func CleanUnusedMediaNow() (cleanedCount int, freedBytes int64, err error) {
+	dbMu.RLock()
+	db := dbInstance
+	dbMu.RUnlock()
+
+	if db == nil {
+		return 0, 0, errors.New("database not initialized")
+	}
+
+	var projects []domain.Project
+	if err := db.Select("elements, slots").Find(&projects).Error; err != nil {
+		return 0, 0, err
+	}
+
+	appDir := utils.GetAppDir()
+	mediaDir := filepath.Join(appDir, "Media")
+	trashDir := filepath.Join(appDir, "MediaTrash")
+
+	referenced, err := collectReferencedImages(projects, appDir)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to collect referenced images: %w", err)
+	}
+
+	files, err := os.ReadDir(mediaDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, 0, nil
+		}
+		return 0, 0, err
+	}
+
+	_ = os.MkdirAll(trashDir, 0755)
+
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+		filename := f.Name()
+		filePath := filepath.Join(mediaDir, filename)
+
+		if !referenced[filename] {
+			info, err := os.Stat(filePath)
+			if err == nil {
+				freedBytes += info.Size()
+				cleanedCount++
+			}
+			trashPath := filepath.Join(trashDir, filename)
+			_ = os.Rename(filePath, trashPath)
+		}
+	}
+
+	purgeOldTrash(trashDir)
+
+	return cleanedCount, freedBytes, nil
+}
+

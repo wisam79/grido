@@ -242,7 +242,7 @@ export function ToolbarFileOps() {
               <Folders className="w-5 h-5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
             </Button>
           </TooltipBtn>
-          <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} />
+          <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} defaultTab="list" />
         </Suspense>
 
         {/* نافذة الإدراج المتعدد الذكي */}

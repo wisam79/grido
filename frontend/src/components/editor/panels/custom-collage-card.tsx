@@ -12,6 +12,7 @@ import {
   getPhotoDimensions,
   buildPhysicalGridCells,
   buildStretchGridCells,
+  NormalizedCell,
 } from "./collage/collage-grid-math";
 import { STUDIO_SINGLE_ROW_PRESETS, STUDIO_FULL_SHEET_PRESETS } from "./collage/collage-preset-data";
 import { CollagePresetsTab } from "./collage/collage-presets-tab";
@@ -21,7 +22,7 @@ import { CollageLibraryTab } from "./collage/collage-library-tab";
 interface CustomCollageCardProps {
   onSelect: (t: CollageTemplate) => void;
   activeTemplateId: string | undefined;
-  onSaveTemplate: (name: string, cells: any[]) => void;
+  onSaveTemplate: (name: string, cells: NormalizedCell[]) => void;
   savedTemplates?: CollageTemplate[];
   onDeleteTemplate?: (id: string, e: React.MouseEvent) => void;
   onOpenTemplatesDialog?: () => void;

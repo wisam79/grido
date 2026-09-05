@@ -399,8 +399,8 @@ export async function exportCanvas(
           ctx.rect(left, top, width, height);
         }
         ctx.clip();
-        if ((slot as any).bgColor && (slot as any).bgColor !== "transparent") {
-          ctx.fillStyle = (slot as any).bgColor;
+        if (slot.bgColor && slot.bgColor !== "transparent") {
+          ctx.fillStyle = slot.bgColor;
           ctx.fillRect(left, top, width, height);
         }
         // يطبّق zoom/dragX/dragY/flipX/flipY/rotation كما في عقدة Konva (إصلاح E-7)
@@ -779,8 +779,8 @@ export async function exportSlotCanvas(
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    if ((slot as any).bgColor && (slot as any).bgColor !== "transparent") {
-      ctx.fillStyle = (slot as any).bgColor;
+    if (slot.bgColor && slot.bgColor !== "transparent") {
+      ctx.fillStyle = slot.bgColor;
       ctx.fillRect(0, 0, exportWidth, exportHeight);
     } else if (format === "jpg") {
       ctx.fillStyle = previewWhite();

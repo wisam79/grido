@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -115,6 +116,7 @@ func TestEnhanceImageWithAI_HTTPError_Rollback(t *testing.T) {
 }
 
 func TestAIRateLimiter_ConcurrentReserves(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
 	limiter := &AIRateLimiter{
 		usage: make(map[string]*AIRateEntry),
 	}
@@ -165,4 +167,55 @@ func TestPlanDailyLimit(t *testing.T) {
 		t.Errorf("Expected unknown fallback limit to be 5, got %d", planDailyLimit("unknown"))
 	}
 }
+
+func TestAIRateLimiter_DiskPersistence(t *testing.T) {
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "ai_rate_limits.json")
+
+	limiter1 := &AIRateLimiter{
+		usage:    make(map[string]*AIRateEntry),
+		filePath: filePath,
+	}
+
+	key := "test-user-persist"
+	limit := 5
+
+	for i := 0; i < 3; i++ {
+		if err := limiter1.Reserve(key, limit); err != nil {
+			t.Fatalf("Failed reserve %d: %v", i, err)
+		}
+	}
+
+	// Instance 2 simulating app restart
+	limiter2 := &AIRateLimiter{
+		usage:    make(map[string]*AIRateEntry),
+		filePath: filePath,
+	}
+
+	// Should be able to reserve 2 more
+	if err := limiter2.Reserve(key, limit); err != nil {
+		t.Fatalf("Expected success for 4th reserve, got: %v", err)
+	}
+	if err := limiter2.Reserve(key, limit); err != nil {
+		t.Fatalf("Expected success for 5th reserve, got: %v", err)
+	}
+
+	// 6th should fail because limit is 5
+	if err := limiter2.Reserve(key, limit); err == nil {
+		t.Fatal("Expected error exceeding limit of 5, got nil")
+	}
+
+	// Rollback one
+	limiter2.Rollback(key)
+
+	// Instance 3 should now be able to reserve 1
+	limiter3 := &AIRateLimiter{
+		usage:    make(map[string]*AIRateEntry),
+		filePath: filePath,
+	}
+	if err := limiter3.Reserve(key, limit); err != nil {
+		t.Fatalf("Expected success after rollback in instance 3, got: %v", err)
+	}
+}
+
 

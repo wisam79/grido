@@ -2,6 +2,7 @@ import { useState } from "react";
 import { buildCSSFilter, cn } from "@/lib/utils";
 import { calculatePrintCutLines } from "@/lib/print/cut-lines-utils";
 import { computeBlockPosition, computeSlotRectMM } from "@/lib/print/print-layout-math";
+import type { CanvasSlot } from "@/lib/store/types";
 import type { SheetGrid } from "@/lib/print/print-layout-math";
 
 interface SheetPreviewProps {
@@ -19,7 +20,7 @@ interface SheetPreviewProps {
   previewImageSrc: string;
   paperWidthMM?: number;
   paperHeightMM?: number;
-  slots?: any[];
+  slots?: CanvasSlot[];
   collageGap?: number;
   collageMargin?: number;
   collageRadius?: number;
@@ -62,7 +63,7 @@ export function SheetPreview({
   // سحب dragX/dragY شبكة البكسل إلى إزاحة نقل (%) مطابقة لمنطق Konva/التصدير
   const [naturalSizes, setNaturalSizes] = useState<Record<string, { w: number; h: number }>>({});
 
-  const collageSlotTransform = (slot: any, rect: { wMM: number; hMM: number }) => {
+  const collageSlotTransform = (slot: CanvasSlot, rect: { wMM: number; hMM: number }) => {
     const zoomVal = slot.zoom && slot.zoom > 0 ? slot.zoom : 1;
     const normRot = (((slot.rotation || 0) % 360) + 360) % 360;
     const isQuarter = normRot === 90 || normRot === 270;

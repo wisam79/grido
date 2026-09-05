@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
+import type { TextElement, ShapeElement } from "@/lib/store/types";
 import { Button } from "@/components/ui/button";
 import {
   Stack,
@@ -38,8 +39,18 @@ function TooltipBtn({ content, children }: { content: string; children: React.Re
   );
 }
 
+interface SortableLayerItemProps {
+  el: CanvasElement;
+  isSelected: boolean;
+  toggleVisibility: (el: CanvasElement, e: React.MouseEvent) => void;
+  toggleLock: (el: CanvasElement, e: React.MouseEvent) => void;
+  deleteLayer: (id: string, e: React.MouseEvent) => void;
+  selectElement: (id: string) => void;
+  toggleElementSelection: (id: string) => void;
+}
+
 const SortableLayerItem = React.memo(
-  function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement, toggleElementSelection }: any) {
+  function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement, toggleElementSelection }: SortableLayerItemProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: el.id });
 
     const style = {
@@ -99,10 +110,10 @@ const SortableLayerItem = React.memo(
             {el.type === "image"
               ? "صورة"
               : el.type === "text"
-              ? el.text || "نص"
+              ? (el as TextElement).text || "نص"
               : el.shape === "rect"
               ? "مستطيل"
-              : el.shape === "circle" || el.shape === "ellipse"
+              : el.shape === "ellipse"
               ? "دائرة"
               : el.shape === "star"
               ? "نجمة"
@@ -156,8 +167,8 @@ const SortableLayerItem = React.memo(
       prevProps.el.type === nextProps.el.type &&
       prevProps.el.visible === nextProps.el.visible &&
       prevProps.el.locked === nextProps.el.locked &&
-      prevProps.el.text === nextProps.el.text &&
-      prevProps.el.shape === nextProps.el.shape &&
+      (prevProps.el as TextElement).text === (nextProps.el as TextElement).text &&
+      (prevProps.el as ShapeElement).shape === (nextProps.el as ShapeElement).shape &&
       prevProps.el.zIndex === nextProps.el.zIndex
     );
   }

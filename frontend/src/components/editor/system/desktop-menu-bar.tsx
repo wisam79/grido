@@ -40,6 +40,7 @@ import {
 import { openDirectoryImageDialog } from "@/lib/io/file-dialog-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 import { toast } from "sonner";
+import { GetMediaStorageStats, CleanUnusedMediaNow } from "../../../../wailsjs/go/main/App";
 
 export function DesktopMenuBar() {
   const {
@@ -132,6 +133,18 @@ export function DesktopMenuBar() {
 
   const handleToggleOrientation = () => {
     setCanvasSize(canvasHeight, canvasWidth);
+  };
+
+  const handleCleanMediaCache = async () => {
+    try {
+      const stats = await GetMediaStorageStats();
+      const mb = (stats.totalBytes / (1024 * 1024)).toFixed(1);
+      const res = await CleanUnusedMediaNow();
+      const freedMb = ((res?.freedBytes || 0) / (1024 * 1024)).toFixed(1);
+      toast.success(`تم تنظيف ${res?.cleanedCount || 0} ملف غير مستخدم واستعادة ${freedMb} ميجابايت (من أصل ${mb} ميجابايت)`);
+    } catch (e) {
+      toast.error("حدث خطأ أثناء تنظيف كاش الوسائط: " + String(e));
+    }
   };
 
   return (
@@ -492,6 +505,18 @@ export function DesktopMenuBar() {
               <span className="font-medium">معالجة الدفعات</span>
             </div>
             <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">AI Pro</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            onClick={handleCleanMediaCache}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between text-muted-foreground hover:text-foreground"
+          >
+            <div className="flex items-center gap-2.5">
+              <Broom className="w-4.5 h-4.5 text-primary" />
+              <span className="font-medium">تنظيف كاش الوسائط</span>
+            </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

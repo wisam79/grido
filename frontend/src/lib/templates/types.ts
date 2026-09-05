@@ -21,7 +21,7 @@ export interface PhotoTemplate {
   background: string; // اللون الموصى به للخلفية
   backgroundHint: string;
   notes?: string;
-  icon?: React.ComponentType<{ className?: string; [key: string]: any }> | any;
+  icon?: React.ComponentType<Record<string, unknown>>;
 }
 
 export interface CollageTemplate {
@@ -37,7 +37,7 @@ export interface CollageTemplate {
     label?: string;
     rotation?: number;
   }[];
-  icon?: React.ComponentType<{ className?: string; [key: string]: any }> | any;
+  icon?: React.ComponentType<Record<string, unknown>>;
   physicalLayout?: {
     type:
       | "iq-national-id"

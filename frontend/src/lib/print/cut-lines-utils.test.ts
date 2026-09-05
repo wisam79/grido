@@ -150,10 +150,10 @@ describe("calculatePrintCutLines", () => {
     const actualCopies = 1;
 
     const slots = [
-      { x: 0, y: 0, w: 0.5, h: 0.5, imageSrc: "/local-image/a.png" },
-      { x: 0.5, y: 0, w: 0.5, h: 0.5, imageSrc: "/local-image/b.png" },
-      { x: 0, y: 0.5, w: 0.5, h: 0.5, imageSrc: "/local-image/c.png" },
-      { x: 0.5, y: 0.5, w: 0.5, h: 0.5, imageSrc: "/local-image/d.png" },
+      { id: "s1", cellIndex: 0, x: 0, y: 0, w: 0.5, h: 0.5, imageSrc: "/local-image/a.png" },
+      { id: "s2", cellIndex: 1, x: 0.5, y: 0, w: 0.5, h: 0.5, imageSrc: "/local-image/b.png" },
+      { id: "s3", cellIndex: 2, x: 0, y: 0.5, w: 0.5, h: 0.5, imageSrc: "/local-image/c.png" },
+      { id: "s4", cellIndex: 3, x: 0.5, y: 0.5, w: 0.5, h: 0.5, imageSrc: "/local-image/d.png" },
     ];
 
     const lines = calculatePrintCutLines({

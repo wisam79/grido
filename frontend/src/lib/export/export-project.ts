@@ -12,9 +12,33 @@ function blobToDataURL(blob: Blob): Promise<string> {
   });
 }
 
-// تنزيل صورة من Blob عبر Wails
-export async function downloadBlob(blob: Blob, filename: string): Promise<string> {
+// تنزيل صورة من Blob عبر Wails (تيار ثنائي فائق السرعة مع fallback لـ Base64)
+export async function downloadBlob(blob: Blob, filename: string, dir?: string): Promise<string> {
   try {
+    // 🚀 مسار البث الثنائي المباشر: تجنب تحويل الـ Blob إلى Base64 DataURL في V8
+    if (typeof window !== "undefined" && window.location?.origin && !window.location.origin.startsWith("file:") && typeof fetch === "function") {
+      try {
+        const query = new URLSearchParams({ filename });
+        if (dir) query.set("dir", dir);
+        const resp = await fetch(`${window.location.origin}/api/save-file?${query.toString()}`, {
+          method: "POST",
+          body: blob,
+        });
+        if (resp.status === 204) {
+          return ""; // إلغاء الحفظ من المستخدم
+        }
+        if (resp.ok) {
+          const resJson = (await resp.json().catch(() => null)) as { status?: string } | null;
+          if (resJson?.status === "success") {
+            return "success";
+          }
+        }
+      } catch (streamErr) {
+        // Fallback إلى SaveFileDialog عبر JSON-RPC
+        console.warn("Binary stream save failed, falling back to IPC:", streamErr);
+      }
+    }
+
     const data = await blobToDataURL(blob);
     let displayName = "Image File";
     let pattern = "*.png;*.jpg;*.jpeg";

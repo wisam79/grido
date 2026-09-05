@@ -1,5 +1,7 @@
 import { useEffect } from "react";
-import { useEditorStore } from "@/lib/editor-store";
+import { useEditorStore, EditorState } from "@/lib/editor-store";
+
+type EditorStoreSnapshot = EditorState;
 import { debounce } from "@/lib/utils";
 import { deserializeProjectFile, serializeEditorState } from "@/lib/io/project-serializer";
 import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from "../../wailsjs/go/main/App";
@@ -72,13 +74,13 @@ export function useAutoSave() {
       }
     };
 
-    const handleStateChange = (state: any) => {
+    const handleStateChange = (state: EditorStoreSnapshot) => {
       const runSave = () => {
         if (disposed) return; // منع كتابة مسودة قديمة بعد إلغاء التنشيط
         const projectData = serializeEditorState(state);
         const isEmptyCanvas =
           projectData.elements.length === 0 &&
-          (!projectData.slots || projectData.slots.every((s: any) => !s.imageSrc));
+          (!projectData.slots || projectData.slots.every((s) => !s.imageSrc));
 
         if (isEmptyCanvas) {
           // مساحة العمل فارغة تماماً (تم مسح الكانفس أو الإعادة للوضع الافتراضي) — لا نحفظ مسودة فارغة
@@ -92,8 +94,8 @@ export function useAutoSave() {
         saveDraft(currentString);
       };
 
-      if (typeof window !== "undefined" && (window as any).requestIdleCallback) {
-        (window as any).requestIdleCallback(() => runSave(), { timeout: 1000 });
+      if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(() => runSave(), { timeout: 1000 });
       } else {
         // debounce سبق أن انتظر توقف التفاعل؛ لا نضيف مهمة صفّية إضافية.
         runSave();
@@ -103,7 +105,7 @@ export function useAutoSave() {
     // تأخير فحص وحفظ البيانات بالكامل لثانيتين بعد توقف حركة السحب/التعديل
     const debouncedSave = debounce(handleStateChange, 2000);
 
-    const getDeps = (state: any) => [
+    const getDeps = (state: EditorStoreSnapshot) => [
       state.elements, state.slots, state.mode, state.canvasWidth, state.canvasHeight, state.backgroundColor,
       state.template, state.collageTemplate, state.printSettings,
       state.showGrid, state.gridSize, state.gridColor, state.gridOpacity, state.gridSubdivisions,
@@ -142,7 +144,7 @@ export function useAutoSave() {
       const projectData = serializeEditorState(currentState);
       const isEmptyCanvas =
         projectData.elements.length === 0 &&
-        (!projectData.slots || projectData.slots.every((s: any) => !s.imageSrc));
+        (!projectData.slots || projectData.slots.every((s) => !s.imageSrc));
 
       if (!isEmptyCanvas) {
         const currentString = JSON.stringify(projectData);

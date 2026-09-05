@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"embed"
+	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"grido/internal/handlers"
 	"grido/internal/repository"
@@ -90,8 +94,7 @@ func main() {
 				ext := strings.ToLower(filepath.Ext(arg))
 				switch ext {
 				case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
-					app.SetStartupFile(arg)
-					break
+					app.setStartupFile(arg)
 				}
 			}
 		}
@@ -107,6 +110,81 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodPost && r.URL.Path == "/api/save-file" {
+					filename := r.URL.Query().Get("filename")
+					if filename == "" {
+						filename = "exported_photo.png"
+					}
+					filename = filepath.Base(filepath.Clean(filename))
+
+					var filePath string
+					dir := r.URL.Query().Get("dir")
+					if dir != "" {
+						cleanDir := filepath.Clean(dir)
+						if fi, err := os.Stat(cleanDir); err == nil && fi.IsDir() {
+							filePath = filepath.Join(cleanDir, filename)
+						}
+					}
+
+					if filePath == "" {
+						ext := strings.ToLower(filepath.Ext(filename))
+						var filters []wailsruntime.FileFilter
+						if ext == ".png" {
+							filters = []wailsruntime.FileFilter{{DisplayName: "PNG Image (*.png)", Pattern: "*.png"}}
+						} else {
+							filters = []wailsruntime.FileFilter{{DisplayName: "JPEG Image (*.jpg;*.jpeg)", Pattern: "*.jpg;*.jpeg"}}
+						}
+
+						var err error
+						filePath, err = wailsruntime.SaveFileDialog(app.ctx, wailsruntime.SaveDialogOptions{
+							Title:           "Save Image",
+							DefaultFilename: filename,
+							Filters:         filters,
+						})
+						if err != nil {
+							http.Error(w, "Dialog error: "+err.Error(), http.StatusInternalServerError)
+							return
+						}
+						if filePath == "" {
+							w.WriteHeader(http.StatusNoContent)
+							return
+						}
+					}
+
+					tmpPath := fmt.Sprintf("%s.%d.tmp", filePath, time.Now().UnixNano())
+					defer os.Remove(tmpPath)
+
+					outFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+					if err != nil {
+						http.Error(w, "Failed to create file: "+err.Error(), http.StatusInternalServerError)
+						return
+					}
+
+					limitReader := io.LimitReader(r.Body, service.MaxFileSize)
+					if _, err := io.Copy(outFile, limitReader); err != nil {
+						_ = outFile.Close()
+						http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
+						return
+					}
+					if err := outFile.Sync(); err != nil {
+						_ = outFile.Close()
+						http.Error(w, "Failed to sync file: "+err.Error(), http.StatusInternalServerError)
+						return
+					}
+					if err := outFile.Close(); err != nil {
+						http.Error(w, "Failed to close file: "+err.Error(), http.StatusInternalServerError)
+						return
+					}
+					if err := os.Rename(tmpPath, filePath); err != nil {
+						http.Error(w, "Failed to finalize file: "+err.Error(), http.StatusInternalServerError)
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.NewEncoder(w).Encode(map[string]string{"status": "success", "path": filePath})
+					return
+				}
+
 				if strings.HasPrefix(r.URL.Path, "/local-image/") {
 					filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
 					filename := filepath.Base(filepath.Clean(filePath))

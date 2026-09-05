@@ -47,9 +47,20 @@ export function ElementProperties({
   // "الضبط" نشط، نعيد التوجيه إلى "التنسيق" بدل البقاء في تبويب معطّل
   const activeTab = !hasAdjustTab && selectedTab === "adjust" ? "style" : selectedTab;
   const alignSelectedElements = useEditorStore((state) => state.alignSelectedElements);
+  const selectedIds = useEditorStore((state) => state.selectedIds);
+  const isMulti = selectedIds.length > 1 && selectedIds.includes(element.id);
 
   return (
     <div className="space-y-2.5 font-cairo">
+      {isMulti && (
+        <div className="bg-primary/10 border border-primary/20 text-primary p-2.5 rounded-xl flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+          <div className="flex items-center gap-2">
+            <Sparkle className="w-3.5 h-3.5 shrink-0 text-primary" weight="fill" />
+            <span>تحديد متعدد ({selectedIds.length} عناصر)</span>
+          </div>
+          <span className="text-[10px] text-muted-foreground/90 font-medium">التنسيق يُبث للجميع</span>
+        </div>
+      )}
 
       {element.locked && (
         <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">

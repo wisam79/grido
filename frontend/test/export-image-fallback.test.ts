@@ -4,6 +4,7 @@ import { useEditorStore } from "../src/lib/editor-store";
 import { computeSlotRectMM, computeSheetGrid } from "../src/lib/print/print-layout-math";
 import { calculatePrintCutLines } from "../src/lib/print/cut-lines-utils";
 import { collageCut, collageEndCut } from "../src/lib/canvas/canvas-colors";
+import type { CanvasSlot } from "../src/lib/store/types";
 
 const CANVAS_W = 2480;
 const CANVAS_H = 3508;
@@ -79,9 +80,10 @@ function setLicenseActive() {
   });
 }
 
-function baseSlot(overrides: Record<string, unknown>) {
+function baseSlot(overrides: Record<string, unknown>): CanvasSlot {
   return {
     id: "s1",
+    cellIndex: 0,
     x: 0,
     y: 0,
     w: 0.5,
@@ -97,7 +99,7 @@ function baseSlot(overrides: Record<string, unknown>) {
   };
 }
 
-function setupCollageState(slots: unknown[]) {
+function setupCollageState(slots: CanvasSlot[]) {
   useEditorStore.setState({
     mode: "collage",
     canvasWidth: CANVAS_W,
@@ -131,7 +133,7 @@ function recordedCutLineSegments(calls: DrawCall[]) {
 }
 
 // مقاطع خطوط القص المتوقعة من المصدر المشترك بعد تقريب الرسم إلى بكسل صحيح
-function expectedCutLineSegments(slots: unknown[]) {
+function expectedCutLineSegments(slots: CanvasSlot[]) {
   return calculatePrintCutLines({
     mode: "collage",
     actualCopies: 1,
@@ -213,7 +215,7 @@ describe("export-image manual fallback — golden tests", () => {
     expect(drawImages).toHaveLength(2);
 
     // مراكز الخانات تطابق computeSlotRectMM تماماً (x + w/2، y + h/2)
-    const expectedCenters = slots.map((s: any) => {
+    const expectedCenters = slots.map((s: CanvasSlot) => {
       const r = computeSlotRectMM(
         { xMM: 0, yMM: 0 },
         { x: s.x, y: s.y, w: s.w, h: s.h },

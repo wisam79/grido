@@ -1,5 +1,5 @@
 import { StateCreator } from "zustand";
-import { CanvasElement, ShapeElement, ImageElement } from "../types";
+import { CanvasElement, ShapeElement, ImageElement, TextElement } from "../types";
 import { uid } from "../../utils";
 import { computeSmartGridLayout } from "../../canvas/grid-layout-math";
 import { TextPresetType, TEXT_PRESETS } from "../../templates";
@@ -514,7 +514,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
       try {
         if (cloned.length === 1 && cloned[0].type === "text") {
-          const textVal = (cloned[0] as any).text || "";
+          const textVal = (cloned[0] as TextElement).text || "";
           navigator.clipboard.writeText(textVal);
         } else {
           navigator.clipboard.writeText("GRIDO_ELEMENTS:" + JSON.stringify(cloned));
@@ -544,7 +544,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     try {
       if (cloned.length === 1 && cloned[0].type === "text") {
-        const textVal = (cloned[0] as any).text || "";
+        const textVal = (cloned[0] as TextElement).text || "";
         navigator.clipboard.writeText(textVal);
       } else {
         navigator.clipboard.writeText("GRIDO_ELEMENTS:" + JSON.stringify(cloned));

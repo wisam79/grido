@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"grido/internal/core/domain"
+	"grido/internal/repository"
 	"grido/internal/service"
 	"grido/internal/utils"
 
@@ -146,37 +147,6 @@ func (a *App) OpenDirectoryDialog() ([]string, error) {
 	return a.mediaSvc.ProcessDirectoryImages(dirPath)
 }
 
-func (a *App) SaveFile(base64Data string) (string, error) {
-	decoded, mimeType, err := a.mediaSvc.DecodeBase64Image(base64Data)
-	if err != nil {
-		return "", err
-	}
-
-	if int64(len(decoded)) > service.MaxFileSize {
-		return "", fmt.Errorf("file too large: %d bytes (max %d)", len(decoded), service.MaxFileSize)
-	}
-
-	ext := a.mediaSvc.GetExtensionFromMime(mimeType)
-	defaultName := "edited_photo" + ext
-
-	filePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Save Image",
-		DefaultFilename: defaultName,
-		Filters:         saveFilters,
-	})
-	if err != nil {
-		return "", fmt.Errorf("save dialog: %w", err)
-	}
-	if filePath == "" {
-		return "", nil
-	}
-
-	if err := os.WriteFile(filePath, decoded, 0o644); err != nil {
-		return "", fmt.Errorf("write file: %w", err)
-	}
-
-	return "success", nil
-}
 
 func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
 	return a.mediaSvc.SaveImageFromBase64(base64Data)
@@ -185,6 +155,22 @@ func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
 func (a *App) GetImageDimensions(localPath string) (service.ImageDimensions, error) {
 	return a.mediaSvc.GetImageDimensions(localPath)
 }
+
+func (a *App) GetMediaStorageStats() (service.MediaStorageStats, error) {
+	return a.mediaSvc.GetStorageStats()
+}
+
+func (a *App) CleanUnusedMediaNow() (map[string]interface{}, error) {
+	cleanedCount, freedBytes, err := repository.CleanUnusedMediaNow()
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"cleanedCount": cleanedCount,
+		"freedBytes":   freedBytes,
+	}, nil
+}
+
 
 func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayName string, pattern string) (string, error) {
 	var decoded []byte
@@ -266,13 +252,17 @@ func (a *App) DownloadAndInstallUpdate(url string, sha256 string) error {
 	return updater.DownloadAndInstall(a.ctx, url, sha256)
 }
 
-func (a *App) OpenExportsFolder() error {
-	outDir := filepath.Join(utils.GetAppDir(), "Exports")
-	_ = os.MkdirAll(outDir, 0755)
-	return utils.OpenFolder(outDir)
+func (a *App) SelectExportDirectory() (string, error) {
+	dirPath, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "اختر مجلد تصدير الصور",
+	})
+	if err != nil {
+		return "", fmt.Errorf("select export directory: %w", err)
+	}
+	return dirPath, nil
 }
 
-func (a *App) SetStartupFile(filePath string) {
+func (a *App) setStartupFile(filePath string) {
 	a.startupFile = filePath
 }
 

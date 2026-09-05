@@ -38,8 +38,30 @@ let nextRequestId = 1;
 // فتضيع نتيجة الأولى. الحل: قفل مشترك + توزيع رسائل العامل على مالك requestId.
 let busyRequestId = 0;
 
+interface BgRemovalElement {
+  id: string;
+  imageSrc?: string;
+  originalImageSrc?: string;
+}
+
+type BgRemovalPatch = Partial<BgRemovalElement>;
+
+interface BgWorkerMessage {
+  type: string;
+  requestId?: number;
+  percent?: number;
+  text?: string;
+  message?: string;
+  result?: {
+    maskBase64: string;
+    targetW: number;
+    targetH: number;
+    inferredMs: number;
+  };
+}
+
 interface PendingBgRequest {
-  onMessage: (msg: any) => void;
+  onMessage: (msg: BgWorkerMessage) => void;
   onError: (message: string) => void;
 }
 const pendingBgRequests = new Map<number, PendingBgRequest>();
@@ -98,7 +120,7 @@ export function warmupBgRemovalWorker() {
   }
 }
 
-export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void) {
+export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => void) {
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => {
     onUpdateRef.current = onUpdate;
@@ -131,7 +153,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
     toast.info("تم إيقاف العملية.");
   };
 
-  const handleRemoveBg = async (element: any) => {
+  const handleRemoveBg = async (element: BgRemovalElement) => {
     if (!element.imageSrc) return;
 
     // التحقق من صلاحية الترخيص
@@ -185,12 +207,12 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
         settle();
         toast.error(message);
       },
-      onMessage: async (msg: any) => {
+      onMessage: async (msg: BgWorkerMessage) => {
         if (activeRequestRef.current !== requestId) return;
 
         if (msg.type === "progress") {
-          setBgProgress(msg.percent);
-          setBgProgressText(msg.text);
+          setBgProgress(msg.percent ?? 0);
+          setBgProgressText(msg.text ?? "");
           return;
         }
 
@@ -213,7 +235,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: Partial<any>) => void
           await preloadImageIntoCache(localPath);
 
           // 🔒 تعيين originalImageSrc في المرّة الأولى فقط لمنع فقدان الصورة الأصلية
-          const patch: Partial<any> = { imageSrc: localPath };
+          const patch: BgRemovalPatch = { imageSrc: localPath };
           if (!element.originalImageSrc) {
             patch.originalImageSrc = element.imageSrc;
           }

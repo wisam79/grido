@@ -270,7 +270,7 @@ export function ColorWheelPicker({
   const handleEyeDropper = async () => {
     if (typeof window !== "undefined" && "EyeDropper" in window) {
       try {
-        const eyeDropper = new (window as any).EyeDropper();
+        const eyeDropper = new (window as unknown as { EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> } }).EyeDropper();
         const result = await eyeDropper.open();
         if (result?.sRGBHex) {
           const upper = result.sRGBHex.toUpperCase();
@@ -434,7 +434,7 @@ export function StudioCanvasColorDeck({
   const handleEyeDropper = async () => {
     if (typeof window !== "undefined" && "EyeDropper" in window) {
       try {
-        const eyeDropper = new (window as any).EyeDropper();
+        const eyeDropper = new (window as unknown as { EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> } }).EyeDropper();
         const result = await eyeDropper.open();
         if (result?.sRGBHex) {
           onChange(result.sRGBHex.toUpperCase());

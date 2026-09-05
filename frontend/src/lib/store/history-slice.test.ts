@@ -1,18 +1,21 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createHistorySlice } from './slices/history-slice';
+import { createHistorySlice, HistoryCross } from './slices/history-slice';
 import { DEFAULT_COLLAGE_STATE } from './slices/collage-slice';
 import { create } from 'zustand';
+import type { UseBoundStore, StoreApi } from 'zustand';
+import type { CanvasElement } from './types';
 
 describe('history-slice', () => {
-  let store: any;
+  let store: UseBoundStore<StoreApi<HistoryCross>>;
 
   beforeEach(() => {
     // Mock the store for testing the slice — البذرة يجب أن تطابق الحالة الابتدائية
     // (نفس مرجع خانات الكولاج) وإلا فشل الـ dedupe في الدفعة الأولى
-      store = create((set: any, get: any, api: any) => ({
+      store = create<HistoryCross>((set, get, api) => ({
       ...createHistorySlice(set, get, api),
       elements: [],
       slots: DEFAULT_COLLAGE_STATE.slots,
+      editingTextId: null,
       backgroundColor: '#FFFFFF',
       canvasWidth: 2480,
       canvasHeight: 3508,
@@ -33,10 +36,10 @@ describe('history-slice', () => {
     const s = store.getState();
     s.pushHistory();
 
-    store.setState({ elements: [{ id: '1', type: 'rect' }] });
+    store.setState({ elements: [{ id: '1', type: 'shape' }] as CanvasElement[] });
     store.getState().pushHistory();
 
-    store.setState({ elements: [{ id: '1', type: 'rect' }, { id: '2', type: 'circle' }] });
+    store.setState({ elements: [{ id: '1', type: 'shape' }, { id: '2', type: 'shape' }] as CanvasElement[] });
     store.getState().pushHistory();
 
     const stateAfterAdds = store.getState();
@@ -62,7 +65,7 @@ describe('history-slice', () => {
     
     // Push 35 times
     for (let i = 0; i < 35; i++) {
-      store.setState({ elements: [{ id: String(i), type: 'rect' }] });
+      store.setState({ elements: [{ id: String(i), type: 'shape' }] as CanvasElement[] });
       store.getState().pushHistory();
     }
 
@@ -72,7 +75,7 @@ describe('history-slice', () => {
 
   it('should not push if the structural state is unchanged', () => {
     const s = store.getState();
-    store.setState({ elements: [{ id: '1', type: 'rect' }] });
+    store.setState({ elements: [{ id: '1', type: 'shape' }] as CanvasElement[] });
     store.getState().pushHistory();
 
     // Change something non-structural like selectedId

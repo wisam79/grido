@@ -15,8 +15,8 @@ let isWarmedUp = false;
 /**
  * مخصص للاختبارات الأوتوماتيكية لمحاكاة استجابة scanic
  */
-export function setScanicModuleForTesting(mock: any): void {
-  scanicModulePromise = mock ? Promise.resolve(mock) : null;
+export function setScanicModuleForTesting(mock: Partial<typeof import("scanic")> | null): void {
+  scanicModulePromise = mock ? Promise.resolve(mock as typeof import("scanic")) : null;
 }
 
 /**
@@ -25,7 +25,7 @@ export function setScanicModuleForTesting(mock: any): void {
 export function getScanicAssetBaseUrl(): string {
   if (typeof window !== "undefined" && window.location) {
     const origin = window.location.origin;
-    const base = (import.meta as any)?.env?.BASE_URL || "/";
+    const base = import.meta.env?.BASE_URL || "/";
     const cleanBase = base.endsWith("/") ? base : `${base}/`;
     return `${origin}${cleanBase}models/scanic/`;
   }
@@ -48,9 +48,10 @@ export async function warmupMlDetector(): Promise<void> {
   isWarmingUp = true;
   try {
     const scanic = await getScanic();
-    if (typeof (scanic as any)?.Scanner === "function") {
+    if (typeof (scanic as { Scanner?: unknown }).Scanner === "function") {
       const baseUrl = getScanicAssetBaseUrl();
-      const scanner = new (scanic as any).Scanner({
+      const ScannerCtor = (scanic as unknown as { Scanner: new (options: unknown) => { initialize: () => Promise<void> } }).Scanner;
+      const scanner = new ScannerCtor({
         detector: "ml",
         ml: {
           assetBaseUrl: baseUrl,

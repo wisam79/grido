@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useEditorStore } from "@/lib/editor-store";
+import type { CanvasElement } from "@/lib/store/types";
 import { GeneralSettings } from "../properties/general-settings";
 import { ElementProperties } from "../properties/element-properties";
 import { SlotProperties } from "../properties/slot-properties";
@@ -20,6 +21,7 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
     elements,
     slots,
     selectedId,
+    selectedIds,
     updateElement,
     updateSlot,
   } = useEditorStore(useShallow((state) => ({
@@ -27,28 +29,30 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
     elements: state.elements,
     slots: state.slots,
     selectedId: state.selectedId,
+    selectedIds: state.selectedIds,
     updateElement: state.updateElement,
     updateSlot: state.updateSlot,
   })));
 
   const [generalTab, setGeneralTab] = useState<"collage" | "canvas">("collage");
 
-  const selectedElement = elements.find((e) => e.id === selectedId);
+  const activeElementId = selectedId || (selectedIds.length > 0 ? selectedIds[0] : null);
+  const selectedElement = elements.find((e) => e.id === activeElementId);
   const selectedSlot = slots.find((s) => s.id === selectedId);
 
-  const handleUpdateElement = useCallback((id: string, patch: any) => {
+  const handleUpdateElement = useCallback((id: string, patch: Partial<Record<string, unknown>>) => {
     const { selectedIds, updateElements, updateElement } = useEditorStore.getState();
     const isMulti = selectedIds.length > 1 && selectedIds.includes(id);
     if (!isMulti) {
-      updateElement(id, patch);
+      updateElement(id, patch as Partial<CanvasElement>);
       return;
     }
 
     // التحديد المتعدد: الخيارات الأسلوبية تُبثّ لجميع المحددين (لون، خط، مرشحات، استدارة...)،
     // أما الإحداثيات والقفل فتُطبَّق على العنصر المعروض وحده — وإلا تتداخل العناصر بعضها فوق بعض
     const styleExcluded = new Set(["x", "y", "locked"]);
-    const stylePatch: any = {};
-    const positionalPatch: any = {};
+    const stylePatch: Record<string, unknown> = {};
+    const positionalPatch: Record<string, unknown> = {};
     for (const key of Object.keys(patch)) {
       (styleExcluded.has(key) ? positionalPatch : stylePatch)[key] = patch[key];
     }
@@ -60,13 +64,13 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
         (sid) => !freshElements.find((e) => e.id === sid)?.locked
       );
       if (broadcastIds.length > 0) {
-        updateElements(broadcastIds.map((sid) => ({ id: sid, patch: stylePatch })));
+        updateElements(broadcastIds.map((sid) => ({ id: sid, patch: stylePatch as Partial<CanvasElement> })));
       }
     }
     if (Object.keys(positionalPatch).length > 0) {
-      updateElement(id, positionalPatch);
+      updateElement(id, positionalPatch as Partial<CanvasElement>);
     }
-  }, [updateElement]);
+  }, []);
 
   return (
     <PanelShell

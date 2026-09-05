@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { Stage } from "react-konva";
 import Konva from "konva";
+import type { KonvaEventObject } from "konva/lib/Node";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/canvas/stage-context";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
@@ -19,7 +20,7 @@ interface KonvaCanvasProps {
   setActiveGuides: (guides: SnapGuide[]) => void;
   handleSlotClick?: (slotId: string) => void;
   handleSlotDblClick?: (slotId: string) => void;
-  onContextMenu?: (e: any) => void;
+  onContextMenu?: (e: KonvaEventObject<MouseEvent>) => void;
 }
 
 export const KonvaCanvas = React.memo(function KonvaCanvas({
@@ -32,7 +33,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   handleSlotDblClick,
   onContextMenu
 }: KonvaCanvasProps) {
-  const wheelTimeoutRef = useRef<any>(null);
+  const wheelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slotZoomFrameRef = useRef<number | null>(null);
   const pendingSlotZoomsRef = useRef(new Map<string, number>());
 
@@ -64,7 +65,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const updateSlot = useEditorStore((s) => s.updateSlot);
   const pushHistory = useEditorStore((s) => s.pushHistory);
 
-  const handleSlotWheel = React.useCallback((slot: { id: string; imageSrc?: string; zoom?: number }, e: any) => {
+  const handleSlotWheel = React.useCallback((slot: { id: string; imageSrc?: string; zoom?: number }, e: KonvaEventObject<WheelEvent>) => {
     // إيماءة Ctrl+عجلة مخصصة لتكبير الكانفس — لا نكبّر الصورة والكانفس معاً
     if (e.evt.ctrlKey || e.evt.metaKey) return;
     if (!slot.imageSrc || useEditorStore.getState().selectedId !== slot.id) return;
@@ -124,8 +125,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   })));
   const { slots, collageGap, collageMargin, collageTemplate, collageRadius, collageShowCutLines, collageShowEndCutLine, collageStrokeWidth, collageStrokeColor } = collage;
 
-  const trRef = useRef<any>(null);
-  const elementsRefs = useRef<Record<string, any>>({});
+  const trRef = useRef<Konva.Transformer | null>(null);
+  const elementsRefs = useRef<Record<string, Konva.Node>>({});
   const altPressedRef = useRef(false);
   const shiftPressedRef = useRef(false);
   const stageContextRef = useStageRef();
@@ -161,7 +162,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   }, []);
 
   useEffect(() => {
-    if (trRef.current && mode === "single") {
+    if (trRef.current && (mode === "single" || sortedElements.length > 0)) {
       if (selectedIds.length > 0) {
         const nodes = selectedIds
           .map((id) => elementsRefs.current[id])
@@ -176,7 +177,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     }
   }, [selectedIds, mode, sortedElements]);
 
-  const handleStageMouseDown = (e: any) => {
+  const handleStageMouseDown = (e: KonvaEventObject<MouseEvent>) => {
     const isBackgroundOrEmpty = e.target === e.target.getStage() || e.target.hasName("bg-rect");
     if (isBackgroundOrEmpty) {
       selectElement(null);
@@ -187,7 +188,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     updateElement(id, patch);
   }, [updateElement]);
 
-  const createElementMouseDown = React.useCallback((elId: string) => (e: any) => {
+  const createElementMouseDown = React.useCallback((elId: string) => (e: KonvaEventObject<MouseEvent>) => {
     const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
     if (!isMulti) {
       const { selectedIds } = useEditorStore.getState();
@@ -199,7 +200,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     }
   }, [selectElement, toggleElementSelection]);
 
-  const createElementClick = React.useCallback((elId: string) => (e: any) => {
+  const createElementClick = React.useCallback((elId: string) => (e: KonvaEventObject<MouseEvent>) => {
     const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
     if (!isMulti) {
       const { selectedIds } = useEditorStore.getState();
@@ -213,7 +214,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     get current() {
       return elementsRefs.current[elId];
     },
-    set current(val: any) {
+    set current(val: Konva.Node | null) {
       if (val) {
         elementsRefs.current[elId] = val;
       } else {
@@ -229,7 +230,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       scaleX={displayW / canvasWidth}
       scaleY={displayH / canvasHeight}
       onMouseDown={handleStageMouseDown}
-      onTouchStart={handleStageMouseDown}
+      onTouchStart={handleStageMouseDown as unknown as (e: KonvaEventObject<TouchEvent>) => void}
       dragDistance={5}
       onContextMenu={(e) => {
         e.evt.preventDefault();
@@ -277,7 +278,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
         />
       )}
 
-      {mode === "single" && (
+      {(mode === "single" || sortedElements.length > 0) && (
         <KonvaSingleLayer
           sortedElements={sortedElements}
           selectedIds={selectedIds}

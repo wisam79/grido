@@ -1,7 +1,29 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { SaveImageFromBase64, EnhanceImageWithAI } from "../../wailsjs/go/main/App";
 import { useEditorStore } from "@/lib/editor-store";
+import { create } from "zustand";
+
+interface AiEnhanceState {
+  isEnhancing: boolean;
+  enhanceProgress: number;
+  enhanceProgressText: string;
+  setIsEnhancing: (val: boolean) => void;
+  setEnhanceProgress: (val: number | ((prev: number) => number)) => void;
+  setEnhanceProgressText: (val: string) => void;
+}
+
+export const useAiEnhanceState = create<AiEnhanceState>((set) => ({
+  isEnhancing: false,
+  enhanceProgress: 0,
+  enhanceProgressText: "",
+  setIsEnhancing: (val) => set({ isEnhancing: val }),
+  setEnhanceProgress: (val) =>
+    set((state) => ({
+      enhanceProgress: typeof val === "function" ? val(state.enhanceProgress) : val,
+    })),
+  setEnhanceProgressText: (val) => set({ enhanceProgressText: val }),
+}));
 // 🌟 حساب الحد اليومي الديناميكي بحسب نوع باقة الحساب وصلاحية الأدمن
 export function getUserDailyLimit(): number {
   try {
@@ -32,39 +54,16 @@ export function getTodayUsageCount(): number {
     const logs = useEditorStore.getState().aiUsageLogs || [];
 
     // تصفية وحساب الطلبات الفعلية المكتملة بنجاح اليوم للحساب الحالي
-    const dbCount = logs.filter((log) => {
+    return logs.filter((log) => {
       const logDate = log.timestamp ? log.timestamp.substring(0, 10) : "";
       const isToday = logDate === todayStr || logDate === todayStr.replace(/-/g, "/");
       const isEnhance = log.serviceName && (log.serviceName.includes("ترميم") || log.serviceName.includes("GFPGAN"));
       const isUser = !log.email || log.email === userEmail;
       return isToday && isEnhance && isUser && log.status === "success";
     }).length;
-
-    // دعم الاحتياط من localStorage لتلافي أي انقطاع
-    const saved = localStorage.getItem("grido_ai_daily_usage");
-    let localCount = 0;
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.date === todayStr) {
-        localCount = parsed.count || 0;
-      }
-    }
-
-    return Math.max(dbCount, localCount);
   } catch (err) {
     console.error("Failed to calculate today's usage:", err);
     return 0;
-  }
-}
-
-function incrementLocalDailyUsage() {
-  try {
-    const todayStr = new Date().toLocaleDateString("sv-SE");
-    const current = getTodayUsageCount();
-    const updated = { date: todayStr, count: current + 1 };
-    localStorage.setItem("grido_ai_daily_usage", JSON.stringify(updated));
-  } catch (err) {
-    console.error("Failed to save local daily usage:", err);
   }
 }
 
@@ -107,15 +106,20 @@ export async function prepareImageForAiUpload(src: string, maxDim = 2048, qualit
 
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 
-export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void) {
+export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string, unknown>>) => void) {
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => {
     onUpdateRef.current = onUpdate;
   }, [onUpdate]);
 
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [enhanceProgress, setEnhanceProgress] = useState(0);
-  const [enhanceProgressText, setEnhanceProgressText] = useState("");
+  const {
+    isEnhancing,
+    enhanceProgress,
+    enhanceProgressText,
+    setIsEnhancing,
+    setEnhanceProgress,
+    setEnhanceProgressText,
+  } = useAiEnhanceState();
 
   // قراءة الحد اليومي الديناميكي بناءً على الحساب والسياسة
   const user = useEditorStore((state) => state.user);
@@ -126,6 +130,11 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
   const handleEnhance = async (element: { id: string; imageSrc?: string; originalImageSrc?: string }) => {
     if (!element.imageSrc) {
       toast.error("لا توجد صورة للتحسين");
+      return;
+    }
+
+    if (useAiEnhanceState.getState().isEnhancing) {
+      toast.warning("هناك عملية ترميم جارية بالفعل، يرجى الانتظار...");
       return;
     }
 
@@ -142,7 +151,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
     setEnhanceProgress(10);
     setEnhanceProgressText("جاري تجهيز الصورة وتحسين أبعاد الرفع ...");
 
-    let progressTimer: any = null;
+    let progressTimer: ReturnType<typeof setInterval> | null = null;
     // لا يدعم ربط Wails الإلغاء الفعلي — نستبدل AbortController الوهمي بمهلة
     // حقيقية عبر Promise.race ليعود للمستخدم خطأ واضح بدل انتظار لا نهائي
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -201,7 +210,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
         setEnhanceProgressText("حفظ الصورة المحسنة محلياً...");
         const localPath = await SaveImageFromBase64(result.image);
 
-        const patch: Partial<any> = { imageSrc: localPath };
+        const patch: Partial<Record<string, unknown>> = { imageSrc: localPath };
         if (!element.originalImageSrc) {
           patch.originalImageSrc = element.imageSrc;
         }
@@ -210,10 +219,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
         useEditorStore.getState().pushHistory();
         setEnhanceProgress(100);
 
-        // 🌟 1. زيادة العداد المحلي الاحتياطي
-        incrementLocalDailyUsage();
-
-        // 🌟 2. توثيق وتسجيل الطلب في سجلات تدقيق قاعدة البيانات الحية
+        // 🌟 1. توثيق وتسجيل الطلب في سجلات تدقيق قاعدة البيانات الحية
         const currentUser = useEditorStore.getState().user;
         useEditorStore.getState().logAiUsage({
           email: currentUser?.email || "unknown",
@@ -224,7 +230,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<any>) => void
           status: "success",
         });
 
-        // 🌟 3. عرض إشعار النجاح الأنيق للمستخدم مع الرصيد الدقيق المتبقي
+        // 🌟 2. عرض إشعار النجاح الأنيق للمستخدم مع الرصيد الدقيق المتبقي
         const updatedCount = getTodayUsageCount();
         const remText = ` (المتبقي اليوم: ${Math.max(0, dailyLimit - updatedCount)}/${dailyLimit})`;
         toast.success(`تم ترميم وتحسين دقة الصورة بنجاح ✨${remText}`);

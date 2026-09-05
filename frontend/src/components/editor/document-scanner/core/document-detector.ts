@@ -562,6 +562,99 @@ export function runJsDetection(
   return docs;
 }
 
+let detectorWorkerInstance: Worker | null = null;
+let nextWorkerReqId = 1;
+
+function getDetectorWorker(): Worker | null {
+  if (typeof window === "undefined" || typeof Worker === "undefined") {
+    return null;
+  }
+  if (!detectorWorkerInstance) {
+    try {
+      detectorWorkerInstance = new Worker(
+        new URL("../../../../workers/document-detector.worker.ts", import.meta.url),
+        { type: "module" }
+      );
+    } catch (e) {
+      console.warn("Failed to initialize document detector worker, falling back to sync:", e);
+      detectorWorkerInstance = null;
+    }
+  }
+  return detectorWorkerInstance;
+}
+
+/**
+ * تشغيل الكشف غير المتزامن عبر Web Worker لتفادي تجميد الخيط الرئيسي
+ */
+export async function runJsDetectionAsync(
+  src: CanvasImageSource,
+  sw: number,
+  sh: number,
+  originalWidth: number,
+  originalHeight: number
+): Promise<DetectedDocument[]> {
+  const offCanvas = document.createElement("canvas");
+  offCanvas.width = sw;
+  offCanvas.height = sh;
+  const offCtx = offCanvas.getContext("2d", { willReadFrequently: true });
+  if (!offCtx) return [];
+
+  offCtx.drawImage(src, 0, 0, sw, sh);
+  const smallImgData = offCtx.getImageData(0, 0, sw, sh);
+
+  offCanvas.width = 0;
+  offCanvas.height = 0;
+
+  const worker = getDetectorWorker();
+  if (worker) {
+    try {
+      const requestId = nextWorkerReqId++;
+      const buffer = smallImgData.data.buffer;
+
+      return await new Promise<DetectedDocument[]>((resolve, reject) => {
+        const handleMessage = (e: MessageEvent) => {
+          if (e.data && e.data.requestId === requestId) {
+            worker.removeEventListener("message", handleMessage);
+            worker.removeEventListener("error", handleError);
+            if (e.data.type === "success") {
+              resolve(e.data.docs || []);
+            } else {
+              reject(new Error(e.data.error || "Detection failed"));
+            }
+          }
+        };
+
+        const handleError = (e: ErrorEvent) => {
+          worker.removeEventListener("message", handleMessage);
+          worker.removeEventListener("error", handleError);
+          reject(e.error || new Error("Worker execution error"));
+        };
+
+        worker.addEventListener("message", handleMessage);
+        worker.addEventListener("error", handleError);
+
+        worker.postMessage(
+          {
+            type: "detect",
+            requestId,
+            buffer,
+            sw,
+            sh,
+            originalWidth,
+            originalHeight,
+          },
+          [buffer]
+        );
+      });
+    } catch (workerErr) {
+      console.warn("Worker detection failed, falling back to sync JS:", workerErr);
+    }
+  }
+
+  // Fallback متين في حال عدم توفر Web Worker
+  return autoDetectAllDocumentCorners(smallImgData, sw, sh, originalWidth, originalHeight);
+}
+
 /**
  * نقطة الدخول الشاملة للكشف التلقائي الفوري مع الصقل البكسلي المحمي
  */
@@ -597,13 +690,13 @@ export async function detectDocumentAuto(
     }
   }
 
-  // 3. 🌟 هرم المقاييس المتعددة للرؤية النقية (Pure JS Multi-Scale Vision Pyramid)
+  // 3. 🌟 هرم المقاييس المتعددة للرؤية النقية (Pure JS Multi-Scale Vision Pyramid عبر Web Worker)
   const maxDim1 = 480;
   const procScale1 = Math.min(1, maxDim1 / originalWidth, maxDim1 / originalHeight);
   const sw1 = Math.max(1, Math.round(originalWidth * procScale1));
   const sh1 = Math.max(1, Math.round(originalHeight * procScale1));
 
-  let jsDocs = runJsDetection(src, sw1, sh1, originalWidth, originalHeight);
+  let jsDocs = await runJsDetectionAsync(src, sw1, sh1, originalWidth, originalHeight);
 
   // إذا كانت الصورة بدقة عالية والنتائج بحاجة لتدعيم، نشغل مقياساً أدق (720px)
   const needsFinePyramid =
@@ -616,7 +709,7 @@ export async function detectDocumentAuto(
     const sw2 = Math.max(1, Math.round(originalWidth * procScale2));
     const sh2 = Math.max(1, Math.round(originalHeight * procScale2));
 
-    const fineDocs = runJsDetection(src, sw2, sh2, originalWidth, originalHeight);
+    const fineDocs = await runJsDetectionAsync(src, sw2, sh2, originalWidth, originalHeight);
     if (fineDocs && fineDocs.length > 0) {
       if (!jsDocs || jsDocs.length === 0) {
         jsDocs = fineDocs;

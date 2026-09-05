@@ -7,7 +7,7 @@ export function useWindowControls() {
 
   const checkMaximized = useCallback(async () => {
     try {
-      if (typeof window !== "undefined" && (window as any).runtime?.WindowIsMaximised) {
+      if (typeof window !== "undefined" && window.runtime?.WindowIsMaximised) {
         const max = await WindowIsMaximised();
         setIsMaximized(Boolean(max));
         return;

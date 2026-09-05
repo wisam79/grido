@@ -792,7 +792,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
 
     try {
       setScanicModuleForTesting({
-        scanDocument: async () => ({
+        scanDocument: (async () => ({
           success: true,
           score: 0.96,
           corners: {
@@ -801,7 +801,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
             bottomRight: { x: 275, y: 185 },
             bottomLeft: { x: 25, y: 175 },
           },
-        }),
+        })) as unknown as typeof import("scanic")["scanDocument"],
       });
 
       const canvas = document.createElement("canvas");
@@ -827,7 +827,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
 
     try {
       setScanicModuleForTesting({
-        scanDocument: async () => ({
+        scanDocument: (async () => ({
           success: true,
           score: 0.32,
           corners: {
@@ -836,7 +836,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
             bottomRight: { x: 280, y: 185 },
             bottomLeft: { x: 20, y: 185 },
           },
-        }),
+        })) as unknown as typeof import("scanic")["scanDocument"],
       });
 
       const canvas = document.createElement("canvas");

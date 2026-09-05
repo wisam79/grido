@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import { useEditorStore } from "@/lib/editor-store";
-import { CanvasElement } from "@/lib/store/types";
+import { CanvasElement, ShapeElement } from "@/lib/store/types";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -45,7 +45,7 @@ function getElementLabel(el: CanvasElement): string {
         star: "نجمة",
         path: "مسار",
       };
-      return shapeLabels[(el as any).shape] || "شكل";
+      return shapeLabels[(el as ShapeElement).shape] || "شكل";
     }
     default:
       return "عنصر";
@@ -315,7 +315,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
 
   const handleToggleVisibility = useCallback(
     (id: string, current: boolean | undefined) => {
-      updateElement(id, { visible: current === false ? true : false } as any);
+      updateElement(id, { visible: current === false ? true : false } as Partial<CanvasElement>);
       pushHistory();
     },
     [updateElement, pushHistory]
@@ -323,7 +323,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
 
   const handleToggleLock = useCallback(
     (id: string, current: boolean | undefined) => {
-      updateElement(id, { locked: !current } as any);
+      updateElement(id, { locked: !current } as Partial<CanvasElement>);
       pushHistory();
     },
     [updateElement, pushHistory]

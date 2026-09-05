@@ -2,7 +2,8 @@ import { Label } from "@/components/ui/label";
 import { ShapeElement, useEditorStore } from "@/lib/editor-store";
 import { Palette, Square, BoundingBox } from "@phosphor-icons/react";
 import { SliderControl, PopoverColorPicker } from "../shared-controls";
-import { GradientPicker, gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-picker";
+import { GradientPicker } from "../gradient-picker";
+import { gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-utils";
 
 interface ShapePropertiesProps {
   element: ShapeElement;

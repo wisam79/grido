@@ -2,15 +2,7 @@ import { useEffect, useCallback, useRef } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 
-// إدارة كاش Konva للعقد ذات الفلاتر بدقة تتبع التكبير الفعلي للمعاينة.
-//
-// ملاحظة معمارية: التكبير في Grido لا يغيّر stage.scale() بل يغيّر أبعاد الـ Stage
-// نفسه (CSS/حجم الكانفس)، لذلك stage.scaleX() يبقى 1 دائماً. مقياس العرض الحقيقي
-// هو stage.width() / canvasWidth. كان الكود السابق يعتمد على stage.scaleX()
-// فتُخبز العقد المفلترة بدقة ثابتة ولا تتحدث عند التكبير، فتظهر الصور المفلترة
-// أضفى (up-scaled) من نظيراتها غير المفلترة التي يعيد Konva رسمها من المصدر.
-
-interface CacheableKonvaNode {
+export interface CacheableKonvaNode {
   getStage?: () => { width: () => number } | null;
   width?: () => number;
   height?: () => number;

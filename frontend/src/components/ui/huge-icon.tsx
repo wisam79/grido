@@ -3,14 +3,15 @@ import { type IconProps } from "@phosphor-icons/react";
 import { CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
+type IconComponentProps = IconProps & React.SVGProps<SVGSVGElement> & Record<string, unknown>;
+
 export interface HugeIconProps {
-  icon?: React.ComponentType<any> | React.ReactElement | null;
+  icon?: React.ComponentType<IconComponentProps> | React.ReactElement | null;
   className?: string;
   size?: number;
   strokeWidth?: number;
   style?: React.CSSProperties;
   weight?: IconProps["weight"];
-  [key: string]: any;
 }
 
 /**
@@ -23,17 +24,18 @@ export const HugeIcon = React.forwardRef<SVGSVGElement, HugeIconProps>(
 
     // If icon is already a React element, clone it with our props
     if (React.isValidElement(icon)) {
-      return React.cloneElement(icon as React.ReactElement<any>, {
-        className: cn("inline-block shrink-0 align-middle", className, (icon.props as any)?.className),
-        style: { width: size, height: size, fontSize: size, ...style, ...(icon.props as any)?.style },
+      const elem = icon as React.ReactElement<{ className?: string; style?: React.CSSProperties }>;
+      return React.cloneElement(elem, {
+        className: cn("inline-block shrink-0 align-middle", className, elem.props?.className),
+        style: { width: size, height: size, fontSize: size, ...style, ...elem.props?.style },
         ...(weight ? { weight } : {}),
         ...props,
-      });
+      } as Record<string, unknown>);
     }
 
     // Treat as a Phosphor component (function or forwardRef object)
     if (typeof icon === "function" || (typeof icon === "object" && icon !== null)) {
-      const IconComponent = icon as React.ComponentType<any>;
+      const IconComponent = icon as React.ComponentType<IconComponentProps>;
       return (
         <IconComponent
           ref={ref}

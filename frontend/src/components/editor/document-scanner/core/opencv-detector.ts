@@ -8,6 +8,13 @@ import {
 } from "./quad-geometry";
 import { splitQuadIntoIdCards } from "./multi-doc-segmenter";
 import { loadOpenCV, getLoadedOpenCV, CvRuntime } from "../opencv-loader";
+import type { CvMat, CvMatVector, CvRuntimeLike } from "./cv-types";
+import type { CvPoint } from "./cv-types";
+
+interface CvDisposableLike {
+  delete: () => void;
+  isDeleted?: () => boolean;
+}
 
 /**
  * تقييم مضلع رباعي مستخرج من OpenCV وحساب درجة الجودة
@@ -95,18 +102,21 @@ export async function detectDocumentsWithOpenCV(
   originalHeight: number,
   mode: DetectionMode = "auto"
 ): Promise<DetectionResult | null> {
-  let cv: CvRuntime | null = getLoadedOpenCV();
-  if (!cv) {
+  let cvFull: CvRuntime | null = getLoadedOpenCV();
+  if (!cvFull) {
     try {
-      cv = await loadOpenCV();
+      cvFull = await loadOpenCV();
     } catch {
       return null;
     }
   }
 
-  if (!cv || !cv.Mat || typeof cv.matFromImageData !== "function") {
+  if (!cvFull || !cvFull.Mat || typeof cvFull.matFromImageData !== "function") {
     return null;
   }
+  // واجهة هيكلية مُحصورة بالدوال المستخدمة فعلياً — أنواع @techstark تفرض
+  // توقيعات Mat كاملة غير لازمة هنا، فنمرر عبر الواجهة الدقيقة cv-types.
+  const cv = cvFull as unknown as CvRuntimeLike;
 
   const maxDim = 640;
   const scale = Math.min(1, maxDim / originalWidth, maxDim / originalHeight);
@@ -124,10 +134,10 @@ export async function detectDocumentsWithOpenCV(
   const imgData = offCtx.getImageData(0, 0, sw, sh);
 
   // مصفوفات OpenCV للتنظيف الإجباري في النهاية
-  const matsToFree: any[] = [];
-  const track = <T>(mat: T): T => {
-    if (mat && typeof (mat as any).delete === "function") {
-      matsToFree.push(mat);
+  const matsToFree: CvDisposableLike[] = [];
+  const track = <T extends object>(mat: T): T => {
+    if (typeof (mat as { delete?: unknown }).delete === "function") {
+      matsToFree.push(mat as unknown as CvDisposableLike);
     }
     return mat;
   };
@@ -142,8 +152,8 @@ export async function detectDocumentsWithOpenCV(
 
     const grayData = new Uint8Array(grayMat.data);
 
-    // توليد الأقنعة الثنائية المختلفة
-    const binaryMats: any[] = [];
+  // توليد الأقنعة الثنائية المختلفة
+  const binaryMats: CvMat[] = [];
 
     // 1. قناع Canny مع تمديد الحواف
     const cannyMat = track(new cv.Mat());
@@ -171,8 +181,8 @@ export async function detectDocumentsWithOpenCV(
     const allCandidates: ScoredCandidate[] = [];
 
     for (const binMat of binaryMats) {
-      let contours: any = null;
-      let hierarchy: any = null;
+      let contours: CvMatVector | null = null;
+      let hierarchy: CvMat | null = null;
       try {
         contours = track(new cv.MatVector());
         hierarchy = track(new cv.Mat());
@@ -214,14 +224,14 @@ export async function detectDocumentsWithOpenCV(
             // ب) مضلع مستطيل الدوران الأدنى
             try {
               const rotRect = cv.minAreaRect(cnt);
-              let boxPts: any[] = [];
-              if (typeof (cv as any).rotatedRectPoints === "function") {
-                boxPts = (cv as any).rotatedRectPoints(rotRect);
-              } else if (cv.RotatedRect && typeof (cv.RotatedRect as any).points === "function") {
-                boxPts = (cv.RotatedRect as any).points(rotRect);
+              let boxPts: CvPoint[] = [];
+              if (typeof cv.rotatedRectPoints === "function") {
+                boxPts = cv.rotatedRectPoints(rotRect);
+              } else if (cv.RotatedRect && typeof cv.RotatedRect.points === "function") {
+                boxPts = cv.RotatedRect.points(rotRect);
               }
               if (boxPts && boxPts.length === 4) {
-                quads.push(boxPts.map((p: any) => ({ x: p.x, y: p.y })));
+                quads.push(boxPts.map((p) => ({ x: p.x, y: p.y })));
               }
             } catch {
               // ignore

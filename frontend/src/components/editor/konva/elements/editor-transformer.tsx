@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Transformer as KonvaTransformer, Group, Rect, Text } from "react-konva";
 import Konva from "konva";
+import type { KonvaEventObject } from "konva/lib/Node";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { getSnapPositionsWithTargets, SnapGuide, SnapTarget } from "@/lib/canvas/snap-utils";
 import {
@@ -17,7 +18,7 @@ interface EditorTransformerProps {
   canvasHeight: number;
   stageScale: number;
   isText: boolean;
-  onTransformEnd: (e: any) => void;
+  onTransformEnd: (e: KonvaEventObject<Event>) => void;
   setActiveGuides?: (guides: SnapGuide[]) => void;
   altPressedRef?: React.MutableRefObject<boolean>;
 }
@@ -49,8 +50,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   setActiveGuides,
   altPressedRef,
 }: EditorTransformerProps) {
-  const badgeRef = React.useRef<any>(null);
-  const textRef = React.useRef<any>(null);
+  const badgeRef = React.useRef<Konva.Group | null>(null);
+  const textRef = React.useRef<Konva.Text | null>(null);
 
   const printSettings = useEditorStore((state) => state.printSettings);
   const dpi = printSettings?.dpi || 300;
@@ -139,7 +140,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       transformer.off("transform dragmove", handleTransform);
       transformer.off("transformend dragend", handleTransformEndInternal);
     };
-  }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, resetResizeSnap]);
+  }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, resetResizeSnap, altPressedRef]);
 
   // تخصيص مظهر المحابث (Anchors) بنمط Figma المحترف
   const primaryColor = isLocked ? transformerLocked() : transformerPrimary();
@@ -148,7 +149,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   return (
     <React.Fragment>
       <KonvaTransformer
-        ref={trRef as any}
+        ref={trRef as unknown as React.Ref<Konva.Transformer>}
         anchorSize={9}
         anchorCornerRadius={4.5}
         anchorStroke={primaryColor}
@@ -170,7 +171,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             ? ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right"]
             : ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"]
         }
-        anchorStyleFunc={(anchor: any) => {
+        anchorStyleFunc={(anchor: Konva.Rect) => {
           // مقابض الحواف الحانبية بنمط Figma (حبوب مستطيلة خفيفة)
           if (anchor.hasName("middle-left") || anchor.hasName("middle-right")) {
             anchor.cornerRadius(2);

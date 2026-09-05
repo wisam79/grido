@@ -12,6 +12,7 @@ import {
   computeOtsuThreshold,
   Point,
 } from "../core";
+import type { DetectedDocument } from "../core/types";
 
 describe("Document Scanner - Core Geometry & Vision", () => {
   beforeAll(() => {
@@ -21,36 +22,40 @@ describe("Document Scanner - Core Geometry & Vision", () => {
         const canvas = this;
         const w = canvas.width || 100;
         const h = canvas.height || 100;
-        if (!(canvas as any)._mockData || (canvas as any)._mockData.length !== w * h * 4) {
-          (canvas as any)._mockData = new Uint8ClampedArray(w * h * 4);
+        const mockCanvas = canvas as HTMLCanvasElement & { _mockData?: Uint8ClampedArray };
+        if (!mockCanvas._mockData || mockCanvas._mockData.length !== w * h * 4) {
+          mockCanvas._mockData = new Uint8ClampedArray(w * h * 4);
         }
-        return {
+        const ctx2d = {
           canvas,
           createImageData: (cw: number, ch: number) => ({
             data: new Uint8ClampedArray(cw * ch * 4),
             width: cw,
             height: ch,
           }),
-          drawImage: (src: any) => {
-            if (src && (src as any)._mockData) {
-              const srcData = (src as any)._mockData;
-              const destData = (canvas as any)._mockData;
-              const len = Math.min(srcData.length, destData.length);
-              for (let i = 0; i < len; i++) {
-                destData[i] = srcData[i];
+          drawImage: (src: CanvasImageSource) => {
+            const mockSrc = src as (CanvasImageSource & { _mockData?: Uint8ClampedArray }) | null;
+            if (mockSrc && mockSrc._mockData) {
+              const srcData = mockSrc._mockData;
+              const destData = mockCanvas._mockData;
+              if (destData) {
+                const len = Math.min(srcData.length, destData.length);
+                for (let i = 0; i < len; i++) {
+                  destData[i] = srcData[i];
+                }
               }
             }
           },
           getImageData: (sx: number, sy: number, sw: number, sh: number) => {
             const data = new Uint8ClampedArray(sw * sh * 4);
-            const src = (canvas as any)._mockData || new Uint8ClampedArray(sw * sh * 4);
+            const src = mockCanvas._mockData || new Uint8ClampedArray(sw * sh * 4);
             for (let i = 0; i < data.length && i < src.length; i++) {
               data[i] = src[i];
             }
             return { data, width: sw, height: sh };
           },
-          putImageData: (imgData: any) => {
-            (canvas as any)._mockData = new Uint8ClampedArray(imgData.data);
+          putImageData: (imgData: ImageData) => {
+            mockCanvas._mockData = new Uint8ClampedArray(imgData.data);
           },
           translate: () => {},
           rotate: () => {},
@@ -63,10 +68,11 @@ describe("Document Scanner - Core Geometry & Vision", () => {
           fill: () => {},
           save: () => {},
           restore: () => {},
-        } as any;
+        } as unknown as CanvasRenderingContext2D;
+        return ctx2d;
       }
       return null;
-    };
+    } as unknown as typeof HTMLCanvasElement.prototype.getContext;
   });
   describe("approxPolyDP", () => {
     it("simplifies a segmented polygon with intermediate collinear-ish points into 4 corners", () => {
@@ -246,7 +252,7 @@ describe("Document Scanner - Core Geometry & Vision", () => {
 
   describe("addManualDocumentQuad", () => {
     it("adds a clean new document quad in an organized grid", () => {
-      const existing: any[] = [];
+      const existing: DetectedDocument[] = [];
       const doc1 = addManualDocumentQuad(existing, 1000, 800);
       expect(doc1.corners.length).toBe(4);
       expect(doc1.aspectType).toBe("free");
@@ -365,7 +371,7 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     });
 
     it("safely handles addManualDocumentQuad wrapping when count > 6", () => {
-      const existing: any[] = [];
+      const existing: DetectedDocument[] = [];
       for (let i = 0; i < 10; i++) {
         const doc = addManualDocumentQuad(existing, 1000, 800);
         existing.push(doc);

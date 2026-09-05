@@ -1,6 +1,13 @@
 import { CanvasElement } from "@/lib/editor-store";
 import { KonvaEventObject } from "konva/lib/Node";
+import type Konva from "konva";
+import type { SnapGuide } from "@/lib/canvas/snap-utils";
 
+/**
+ * عناصر Konva داخل `elementRef` تتنوع (Group/Rect/Image/Text/...).
+ * `Konva.Shape` هو الجذر المشترك لجميع العناصر المرئية في react-konva،
+ * فنمرّر النوع عبر cast محلي في مواقع الاستهلاك.
+ */
 export interface ElementProps {
   element: CanvasElement;
   isSelected: boolean;
@@ -12,14 +19,14 @@ export interface ElementProps {
   canvasWidth: number;
   canvasHeight: number;
   allElements: CanvasElement[];
-  setActiveGuides: (guides: any[]) => void;
-  elementRef: React.MutableRefObject<any>;
+  setActiveGuides: (guides: SnapGuide[]) => void;
+  elementRef: React.MutableRefObject<Konva.Node | null>;
   snapToGrid?: boolean;
   gridSize?: number;
   altPressedRef: React.RefObject<boolean>;
   shiftPressedRef?: React.RefObject<boolean>;
   onDblClick?: () => void;
-  getKonvaNode: (id: string) => any;
+  getKonvaNode: (id: string) => Konva.Node | null;
 }
 
 export const propsAreEqual = (prev: ElementProps, next: ElementProps) => {

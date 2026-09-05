@@ -74,7 +74,7 @@ export async function captureStageDataUrl(
   // حصر العناصر المحفوظة في الكاش وتكبير الكاش بدقة التصدير العالية لمنع فقدان تفاصيل الفلاتر
   const cachedNodes: CachedImageNode[] = [];
   try {
-    stage.find((node: any) => {
+    stage.find((node: Konva.Node) => {
       if (node && typeof node.isCached === "function" && node.isCached()) {
         cachedNodes.push(node as unknown as CachedImageNode);
       }

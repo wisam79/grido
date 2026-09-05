@@ -311,3 +311,33 @@ func (s *MediaService) ProcessDirectoryImages(dirPath string) ([]string, error) 
 	return s.ProcessMultipleOpenedFiles(imagePaths)
 }
 
+type MediaStorageStats struct {
+	Count      int   `json:"count"`
+	TotalBytes int64 `json:"totalBytes"`
+}
+
+func (s *MediaService) GetStorageStats() (MediaStorageStats, error) {
+	mediaDir := s.GetMediaDir()
+	entries, err := os.ReadDir(mediaDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return MediaStorageStats{}, nil
+		}
+		return MediaStorageStats{}, err
+	}
+
+	var stats MediaStorageStats
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		info, err := entry.Info()
+		if err == nil {
+			stats.Count++
+			stats.TotalBytes += info.Size()
+		}
+	}
+	return stats, nil
+}
+
+

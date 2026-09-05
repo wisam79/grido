@@ -1,5 +1,5 @@
 import { StateCreator } from "zustand";
-import { CanvasElement, CanvasSlot, PhotoTemplate, CollageTemplate } from "../types";
+import { CanvasElement, CanvasSlot, PhotoTemplate, CollageTemplate, PrintSettings, HistoryEntry } from "../types";
 import { uid } from "../../utils";
 import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
 
@@ -93,10 +93,10 @@ type CollageCross = CollageSlice & {
   selectedId: string | null;
   lastEditedImage: string | null;
   lastEditedImageAspect: number | null;
-  history: any[];
+  history: HistoryEntry[];
   historyIndex: number;
   pushHistory: () => void;
-  printSettings?: any;
+  printSettings?: PrintSettings;
 };
 
 export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice> = (set, get) => ({

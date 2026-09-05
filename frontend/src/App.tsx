@@ -302,7 +302,7 @@ export default function App() {
             }} className="space-y-4 text-right">
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-semibold text-foreground">أدخل مفتاح الترخيص</label>
+                  <label htmlFor="license-key-input" className="text-xs font-semibold text-foreground">أدخل مفتاح الترخيص</label>
                   <button
                     type="button"
                     onClick={async () => {
@@ -324,6 +324,7 @@ export default function App() {
                 <div className="relative">
                   <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4" />
                   <input
+                    id="license-key-input"
                     type="text"
                     required
                     placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"

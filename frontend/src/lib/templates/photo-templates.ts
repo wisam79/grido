@@ -415,7 +415,7 @@ export const CATEGORY_LABELS: Record<TemplateCategory, string> = {
   collage: "كولاج",
 };
 
-export const CATEGORY_ICONS: Record<TemplateCategory, any> = {
+export const CATEGORY_ICONS: Record<TemplateCategory, React.ComponentType<Record<string, unknown>>> = {
   passport: IdentificationBadge,
   visa: AirplaneTilt,
   id: IdentificationCard,

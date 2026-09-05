@@ -1,9 +1,31 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 import { preloadImageIntoCache } from "./use-async-image";
 import type { CanvasElement, CanvasSlot } from "@/lib/store/types";
+import { create } from "zustand";
+
+interface FaceFrameState {
+  isFraming: boolean;
+  frameProgress: number;
+  frameProgressText: string;
+  setIsFraming: (val: boolean) => void;
+  setFrameProgress: (val: number | ((prev: number) => number)) => void;
+  setFrameProgressText: (val: string) => void;
+}
+
+export const useFaceFrameState = create<FaceFrameState>((set) => ({
+  isFraming: false,
+  frameProgress: 0,
+  frameProgressText: "",
+  setIsFraming: (val) => set({ isFraming: val }),
+  setFrameProgress: (val) =>
+    set((state) => ({
+      frameProgress: typeof val === "function" ? val(state.frameProgress) : val,
+    })),
+  setFrameProgressText: (val) => set({ frameProgressText: val }),
+}));
 
 /**
  * useFaceFrame — يضبط مقاس وموضع الوجه تلقائياً وفق معايير صور الهوية
@@ -12,7 +34,7 @@ import type { CanvasElement, CanvasSlot } from "@/lib/store/types";
  * الإلغاء = terminate قسري فوري للـ Worker.
  */
 
-export type FramingPatch = Partial<any>;
+export type FramingPatch = Partial<Record<string, unknown>>;
 
 interface FrameWorkerProgressMessage {
   type: "progress";
@@ -114,9 +136,14 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
     onUpdateRef.current = onUpdate;
   }, [onUpdate]);
 
-  const [isFraming, setIsFraming] = useState(false);
-  const [frameProgress, setFrameProgress] = useState(0);
-  const [frameProgressText, setFrameProgressText] = useState("");
+  const {
+    isFraming,
+    frameProgress,
+    frameProgressText,
+    setIsFraming,
+    setFrameProgress,
+    setFrameProgressText,
+  } = useFaceFrameState();
   const modelCachedRef = useRef(false);
   const activeRequestRef = useRef<number>(0);
 

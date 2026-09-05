@@ -86,7 +86,7 @@ export function warpPerspective(
   arg2: Point[] | number,
   arg3?: number,
   arg4?: number | Point[],
-  arg5?: any,
+  arg5?: string | number,
   arg6?: number,
   arg7?: string
 ): HTMLCanvasElement {
@@ -104,8 +104,8 @@ export function warpPerspective(
     outHeight = typeof arg4 === "number" && arg4 > 0 ? arg4 : 400;
     if (typeof arg5 === "string") filterMode = arg5;
 
-    if ((src as any).canvas) {
-      srcCanvas = (src as any).canvas;
+    if ((src as { canvas?: HTMLCanvasElement }).canvas) {
+      srcCanvas = (src as { canvas: HTMLCanvasElement }).canvas;
     } else if (src instanceof HTMLCanvasElement) {
       srcCanvas = src;
     } else {
@@ -133,8 +133,8 @@ export function warpPerspective(
     outHeight = typeof arg6 === "number" && arg6 > 0 ? arg6 : srcH;
     if (typeof arg7 === "string") filterMode = arg7;
 
-    if ((src as any).canvas) {
-      srcCanvas = (src as any).canvas;
+    if ((src as { canvas?: HTMLCanvasElement }).canvas) {
+      srcCanvas = (src as { canvas: HTMLCanvasElement }).canvas;
     } else if (src instanceof HTMLCanvasElement) {
       srcCanvas = src;
     } else {

@@ -15,7 +15,7 @@ export async function getExifOrientation(
   input: File | Blob | string | ArrayBuffer
 ): Promise<ImageExifOrientation> {
   try {
-    const orientation = await exifr.orientation(input as any);
+    const orientation = await exifr.orientation(input as Parameters<typeof exifr.orientation>[0]);
     const tag = typeof orientation === "number" ? orientation : 1;
 
     let rotationDeg = 0;

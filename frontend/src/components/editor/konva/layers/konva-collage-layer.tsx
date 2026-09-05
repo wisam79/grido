@@ -1,7 +1,9 @@
 import React from "react";
 import { Layer, Group, Rect, Line } from "react-konva";
+import type Konva from "konva";
+import type { KonvaEventObject } from "konva/lib/Node";
 import { KonvaCollageImage } from "../elements/collage-image";
-import type { CanvasSlot as Slot } from "@/lib/store/types";
+import type { CanvasSlot as Slot, CollageTemplate } from "@/lib/store/types";
 import {
   collageCut, collageEndCut,
   slotPlaceholderBg, slotPlaceholderText,
@@ -18,12 +20,12 @@ interface KonvaCollageLayerProps {
   collageStrokeColor: string;
   collageShowCutLines: boolean;
   collageShowEndCutLine?: boolean;
-  collageTemplate?: any;
+  collageTemplate?: CollageTemplate | null;
   selectedId: string | null;
   handleSlotClick?: (slotId: string) => void;
   handleSlotDblClick?: (slotId: string) => void;
-  handleSlotWheel: (slot: { id: string; imageSrc?: string; zoom?: number }, e: any) => void;
-  updateSlot: (id: string, patch: any) => void;
+  handleSlotWheel: (slot: { id: string; imageSrc?: string; zoom?: number }, e: KonvaEventObject<WheelEvent>) => void;
+  updateSlot: (id: string, patch: Partial<Slot>) => void;
   pushHistory: () => void;
 }
 
@@ -172,7 +174,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               y={top}
               width={width}
               height={height}
-              clipFunc={(ctx: any) => {
+              clipFunc={(ctx: Konva.Context) => {
                 const r = Math.min(radius, width / 2, height / 2);
                 ctx.beginPath();
                 if (r > 0) {

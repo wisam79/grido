@@ -38,7 +38,7 @@ export const DEFAULT_HISTORY_STATE = {
   historyIndex: 0,
 };
 
-type HistoryCross = HistorySlice & {
+export type HistoryCross = HistorySlice & {
   elements: CanvasElement[];
   slots: CanvasSlot[];
   selectedId: string | null;

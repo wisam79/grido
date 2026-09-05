@@ -1,5 +1,6 @@
 import { computeBlockPosition, computeSlotRectMM } from "@/lib/print/print-layout-math";
 import type { SheetGrid } from "@/lib/print/print-layout-math";
+import type { CanvasSlot } from "@/lib/store/types";
 
 export type CutLineStyle = "dashed" | "dotted" | "solid" | "cropmarks";
 
@@ -20,7 +21,7 @@ export interface CalculateCutLinesParams {
   paperWidth: number;
   paperHeight: number;
   showEndCutLine?: boolean;
-  slots?: any[];
+  slots?: CanvasSlot[];
   collageMargin?: number;
   collageGap?: number;
   canvasWidth?: number;

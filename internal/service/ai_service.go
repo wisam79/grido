@@ -9,42 +9,113 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"grido/internal/utils"
 )
 
 
 type AIRateEntry struct {
-	count    int
-	resetDay string
+	Count    int    `json:"count"`
+	ResetDay string `json:"resetDay"`
 }
 
 type AIRateLimiter struct {
-	mu    sync.Mutex
-	usage map[string]*AIRateEntry
+	mu       sync.Mutex
+	usage    map[string]*AIRateEntry
+	filePath string
+	loaded   bool
 }
 
 var GlobalAIRateLimiter = &AIRateLimiter{
 	usage: make(map[string]*AIRateEntry),
 }
 
+func (l *AIRateLimiter) getFilePathLocked() string {
+	if l.filePath != "" {
+		return l.filePath
+	}
+	return filepath.Join(utils.GetAppDir(), "ai_rate_limits.json")
+}
+
+func (l *AIRateLimiter) loadLocked() {
+	if l.loaded {
+		return
+	}
+	l.loaded = true
+	p := l.getFilePathLocked()
+	if p == ":memory:" {
+		return
+	}
+	data, err := os.ReadFile(p)
+	if err != nil {
+		return
+	}
+	var stored map[string]*AIRateEntry
+	if err := json.Unmarshal(data, &stored); err == nil && stored != nil {
+		l.usage = stored
+	}
+}
+
+func (l *AIRateLimiter) saveLocked() {
+	p := l.getFilePathLocked()
+	if p == ":memory:" {
+		return
+	}
+	data, err := json.MarshalIndent(l.usage, "", "  ")
+	if err != nil {
+		return
+	}
+	tmpPath := p + ".tmp"
+	defer os.Remove(tmpPath)
+
+	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+	if err != nil {
+		slog.Warn("Failed to open tmp file for ai rate limits", "error", err)
+		return
+	}
+	if _, err := f.Write(data); err != nil {
+		_ = f.Close()
+		slog.Warn("Failed to write ai rate limits", "error", err)
+		return
+	}
+	if err := f.Sync(); err != nil {
+		_ = f.Close()
+		slog.Warn("Failed to sync ai rate limits", "error", err)
+		return
+	}
+	if err := f.Close(); err != nil {
+		slog.Warn("Failed to close ai rate limits tmp file", "error", err)
+		return
+	}
+	if err := os.Rename(tmpPath, p); err != nil {
+		slog.Warn("Failed to rename ai rate limits file", "error", err)
+	}
+}
+
 func (l *AIRateLimiter) Reserve(key string, limit int) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	l.loadLocked()
+
 	today := time.Now().Format("2006-01-02")
 	entry, exists := l.usage[key]
-	if !exists || entry.resetDay != today {
-		entry = &AIRateEntry{count: 0, resetDay: today}
+	if !exists || entry.ResetDay != today {
+		entry = &AIRateEntry{Count: 0, ResetDay: today}
 		l.usage[key] = entry
 	}
 
-	if entry.count >= limit {
+	if entry.Count >= limit {
 		return fmt.Errorf("تم تجاوز الحد اليومي لاستخدام الذكاء الاصطناعي (%d صورة/يومياً). يتجدد الرصيد غداً", limit)
 	}
 
-	entry.count++
+	entry.Count++
+	l.saveLocked()
 	return nil
 }
 
@@ -52,10 +123,13 @@ func (l *AIRateLimiter) Rollback(key string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	l.loadLocked()
+
 	today := time.Now().Format("2006-01-02")
 	entry, exists := l.usage[key]
-	if exists && entry.resetDay == today && entry.count > 0 {
-		entry.count--
+	if exists && entry.ResetDay == today && entry.Count > 0 {
+		entry.Count--
+		l.saveLocked()
 	}
 }
 type AIService struct{}

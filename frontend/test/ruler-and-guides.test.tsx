@@ -4,11 +4,13 @@ import React from 'react';
 import {
   HorizontalRuler,
   VerticalRuler,
+} from '../src/components/editor/canvas/ruler';
+import {
   getRulerSteps,
   formatRulerNumber,
   formatRulerCoordinate,
   getUnitSpan,
-} from '../src/components/editor/canvas/ruler';
+} from '../src/components/editor/canvas/ruler-utils';
 import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from '../src/components/editor/canvas/canvas-rulers';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 

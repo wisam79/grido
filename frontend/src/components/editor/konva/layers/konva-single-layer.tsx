@@ -1,5 +1,7 @@
 import React from "react";
 import { Layer } from "react-konva";
+import Konva from "konva";
+import type { KonvaEventObject } from "konva/lib/Node";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
 import { scaleElementDecorations } from "@/lib/canvas/scale-decorations";
@@ -14,16 +16,16 @@ interface KonvaSingleLayerProps {
   displayW: number;
   snapToGrid: boolean;
   gridSize: number;
-  trRef: React.RefObject<any>;
-  elementsRefs: React.MutableRefObject<Record<string, any>>;
+  trRef: React.RefObject<Konva.Transformer | null>;
+  elementsRefs: React.MutableRefObject<Record<string, Konva.Node>>;
   altPressedRef: React.MutableRefObject<boolean>;
   shiftPressedRef: React.MutableRefObject<boolean>;
   setActiveGuides: (guides: SnapGuide[]) => void;
   handleDoubleClick: (el: CanvasElement) => void;
   handleElementChange: (id: string, patch: Partial<CanvasElement>) => void;
-  createElementMouseDown: (elId: string) => (e: any) => void;
-  createElementClick: (elId: string) => (e: any) => void;
-  createElementRef: (elId: string) => { current: any };
+  createElementMouseDown: (elId: string) => (e: KonvaEventObject<MouseEvent>) => void;
+  createElementClick: (elId: string) => (e: KonvaEventObject<MouseEvent>) => void;
+  createElementRef: (elId: string) => { current: Konva.Node | null };
 }
 
 export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
@@ -86,9 +88,9 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
           element: el,
           isSelected: selectedIds.includes(el.id),
           onMouseDown: handleMouseDown,
-          onTouchStart: handleMouseDown,
+          onTouchStart: handleMouseDown as unknown as (e: KonvaEventObject<TouchEvent>) => void,
           onClick: handleClick,
-          onTap: handleClick,
+          onTap: handleClick as unknown as (e: KonvaEventObject<TouchEvent>) => void,
           onChange: (patch: Partial<CanvasElement>) => handleElementChange(el.id, patch),
           canvasWidth,
           canvasHeight,
@@ -135,7 +137,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
             if (!trRef.current) return;
             const nodes = trRef.current.nodes();
             const patches = nodes
-              .map((node: any) => {
+              .map((node: Konva.Node) => {
                 const id = node.id();
                 const el = sortedElements.find((x) => x.id === id);
                 if (!el) return null;
@@ -155,7 +157,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
 
                 node.width(newW);
                 if (el.type === "text") {
-                  node.fontSize?.(Math.max(6, Math.round((el.fontSize || 16) * absScaleY)));
+                  (node as Konva.Text).fontSize?.(Math.max(6, Math.round((el.fontSize || 16) * absScaleY)));
                 } else {
                   node.height(newH);
                 }
@@ -178,7 +180,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
 
                 if (el.type === "text") {
                   patch.height = node.height() / canvasHeight;
-                  (patch as any).fontSize = Math.max(6, Math.round((el.fontSize || 16) * absScaleY));
+                  (patch as Partial<Record<string, unknown>>).fontSize = Math.max(6, Math.round((el.fontSize || 16) * absScaleY));
                 } else {
                   patch.height = newH / canvasHeight;
                 }

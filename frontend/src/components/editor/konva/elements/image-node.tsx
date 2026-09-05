@@ -59,7 +59,7 @@ export const URLImage = React.memo(function URLImage({
       const targetOpacity = element.opacity;
       node.opacity(0);
       node.scale({ x: 0.8, y: 0.8 });
-      node.to({
+      (node as unknown as { to: (cfg: Record<string, unknown>) => void }).to({
         opacity: targetOpacity,
         scaleX: element.flipX === true ? -1 : 1,
         scaleY: element.flipY === true ? -1 : 1,
@@ -82,7 +82,7 @@ export const URLImage = React.memo(function URLImage({
     return { filters: res.filters, filterProps: res };
   }, [element.filter, element.brightness, element.contrast, element.saturation, element.blur]);
 
-  const imageNodeRef = React.useRef<any>(null);
+  const imageNodeRef = React.useRef<import("@/hooks/use-filter-cache").CacheableKonvaNode | null>(null);
   const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}_${element.width}_${element.height}`;
   const hasFilters = filters.length > 0;
 
@@ -96,8 +96,8 @@ export const URLImage = React.memo(function URLImage({
   const nodeH = element.height * canvasHeight;
 
   return (
-    <Group
-      ref={elementRef}
+      <Group
+        ref={elementRef as unknown as React.Ref<Konva.Group>}
       x={nodeX}
       y={nodeY}
       width={nodeW}
@@ -130,7 +130,7 @@ export const URLImage = React.memo(function URLImage({
         />
       )}
       <KonvaImage
-        ref={imageNodeRef}
+        ref={imageNodeRef as unknown as React.RefObject<Konva.Image>}
         image={image}
         x={0}
         y={0}
@@ -147,7 +147,7 @@ export const URLImage = React.memo(function URLImage({
         brightness={filterProps.brightness}
         contrast={filterProps.contrast}
         blurRadius={element.blur || 0}
-        saturation={(filterProps as any).saturation}
+        saturation={filterProps.saturation}
         sepiaRatio={filterProps.sepiaRatio}
       />
       {isEnhancing && (

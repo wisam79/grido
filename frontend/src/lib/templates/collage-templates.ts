@@ -201,7 +201,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     slots: 2,
     cells: [
       { x: 0, y: 0, w: 1, h: 0.5 },
-      { x: 0.5, y: 0.5, w: 1, h: 0.5 },
+      { x: 0, y: 0.5, w: 1, h: 0.5 },
     ],
     icon: GridFour,
   },

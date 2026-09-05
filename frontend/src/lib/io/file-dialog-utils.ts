@@ -84,8 +84,8 @@ export async function openDirectoryImageDialog(): Promise<string[]> {
   return new Promise<string[]>((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
-    (input as any).webkitdirectory = true;
-    (input as any).directory = true;
+    (input as HTMLInputElement & { webkitdirectory?: boolean }).webkitdirectory = true;
+    (input as HTMLInputElement & { directory?: boolean }).directory = true;
     input.multiple = true;
 
     input.onchange = async () => {

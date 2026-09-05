@@ -63,7 +63,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
       const targetOpacity = element.opacity;
       node.opacity(0);
       node.scale({ x: 0.8, y: 0.8 });
-      node.to({
+      (node as unknown as { to: (cfg: Record<string, unknown>) => void }).to({
         opacity: targetOpacity,
         scaleX: element.flipX === true ? -1 : 1,
         scaleY: element.flipY === true ? -1 : 1,
@@ -74,7 +74,6 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   }, [elementRef, element.opacity, element.flipX, element.flipY]);
 
   const shapeProps = {
-    ref: elementRef,
     x: flipped ? (element.x + element.width) * canvasWidth : element.x * canvasWidth,
     y: flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight,
     width: w,
@@ -86,7 +85,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     visible: element.visible !== false,
     id: element.id,
     perfectDrawEnabled: false,
-    globalCompositeOperation: element.globalCompositeOperation as any || "source-over",
+    globalCompositeOperation: (element.globalCompositeOperation as GlobalCompositeOperation | undefined) || "source-over",
     shadowColor: element.shadowColor,
     shadowBlur: element.shadowBlur || 0,
     shadowOffsetX: element.shadowOffsetX || 0,
@@ -115,6 +114,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     return (
       <KonvaEllipse
         {...shapeProps}
+        ref={elementRef as unknown as React.Ref<Konva.Ellipse>}
         radiusX={w / 2}
         radiusY={h / 2}
         offsetX={-w / 2}
@@ -129,6 +129,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     return (
       <KonvaLine
         {...shapeProps}
+        ref={elementRef as unknown as React.Ref<Konva.Line>}
         height={lineH}
         points={[0, lineH / 2, w, lineH / 2]}
         hitStrokeWidth={Math.max(30, strokeW + 20)}
@@ -140,6 +141,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     return (
       <KonvaStar
         {...shapeProps}
+        ref={elementRef as unknown as React.Ref<Konva.Star>}
         numPoints={5}
         innerRadius={Math.min(w, h) / 4}
         outerRadius={Math.min(w, h) / 2}
@@ -157,6 +159,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     return (
       <KonvaPath
         {...shapeProps}
+        ref={elementRef as unknown as React.Ref<Konva.Path>}
         data={element.svgPath || ""}
         scaleX={(flipped ? -1 : 1) * (w / vbW)}
         scaleY={(flippedY ? -1 : 1) * (h / vbH)}
@@ -167,6 +170,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   return (
     <KonvaRect
       {...shapeProps}
+      ref={elementRef as unknown as React.Ref<Konva.Rect>}
       cornerRadius={element.radius || 0}
     />
   );

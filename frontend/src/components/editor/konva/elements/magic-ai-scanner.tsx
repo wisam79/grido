@@ -10,7 +10,7 @@ import {
 } from "@/lib/canvas/canvas-colors";
 
 interface MagicAiScannerProps {
-  targetNodeRef?: React.RefObject<any>;
+  targetNodeRef?: React.RefObject<Konva.Node | null>;
   x?: number;
   y?: number;
   width: number;
@@ -72,7 +72,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
     return () => {
       anim.stop();
     };
-  }, [height, width]);
+  }, [height, width, targetNodeRef]);
 
   return (
     <Group ref={groupRef} x={x} y={y} rotation={rotation} listening={false}>

@@ -31,7 +31,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const element = _element as TextElement;
   const editingTextId = useEditorStore((state) => state.editingTextId);
   const hasAnimatedRef = React.useRef(false);
-  const textRef = useRef<any>(null);
+  const textRef = useRef<Konva.Text | null>(null);
 
   const {
     onDragStart,
@@ -90,7 +90,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         onChangeRef.current({ height: actualHeight });
       }
     }
-  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, canvasHeight, element.curve,
+  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, element.height, canvasHeight, element.curve,
       // هذه الخصائص تغيّر الالتفاف والارتفاع الفعلي أيضاً — إغفالها كان يترك
       // height في المخزن قديماً حتى يتغير حقل آخر (إصلاح Bug#14)
       element.lineHeight, element.letterSpacing, element.textTransform, element.arabicNumerals]);
@@ -144,7 +144,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
 
   return (
     <Group
-      ref={elementRef}
+      ref={elementRef as unknown as React.Ref<Konva.Group>}
       x={sharedX}
       y={sharedY}
       width={w}
@@ -222,7 +222,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
           width={w}
           text={renderText}
           perfectDrawEnabled={false}
-          globalCompositeOperation={element.globalCompositeOperation as any || "source-over"}
+          globalCompositeOperation={(element.globalCompositeOperation as GlobalCompositeOperation | undefined) || "source-over"}
           shadowColor={element.shadowColor}
           shadowBlur={element.shadowBlur || 0}
           shadowOffsetX={element.shadowGlow ? 0 : (element.shadowOffsetX || 0)}

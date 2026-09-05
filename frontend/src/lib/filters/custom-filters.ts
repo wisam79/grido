@@ -5,7 +5,7 @@ import Konva from "konva";
 // الشدة دائماً ولا يقبل نسبة — كان يجعل المحرر يظهر سبياً أقوى من المطبوع.
 // تُقرأ الشدة من خاصية العقدة sepiaRatio (Konva يستدعي الفلتر بـ this = العقدة).
 if (typeof Konva !== "undefined" && Konva.Filters) {
-  (Konva.Filters as any).SepiaBlend = function (this: any, imageData: ImageData) {
+  (Konva.Filters as unknown as Record<string, unknown>).SepiaBlend = function (this: Konva.Node & { sepiaRatio?: () => number }, imageData: ImageData) {
     const ratio = Math.max(0, Math.min(1, Number(this.sepiaRatio?.() ?? 1)));
     if (!ratio || ratio <= 0) return;
     const d = imageData.data;
