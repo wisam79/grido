@@ -107,11 +107,6 @@ func (a *App) SaveAiUsageLogs(jsonData string) error {
 	return a.aiLogsSvc.SaveAiUsageLogs(jsonData)
 }
 
-var saveFilters = []runtime.FileFilter{
-	{DisplayName: "PNG Image (*.png)", Pattern: "*.png"},
-	{DisplayName: "JPEG Image (*.jpg;*.jpeg)", Pattern: "*.jpg;*.jpeg"},
-}
-
 func (a *App) OpenFile() (string, error) {
 	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:   "Select an Image",

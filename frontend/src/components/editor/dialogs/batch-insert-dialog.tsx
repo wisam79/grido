@@ -446,7 +446,7 @@ export function BatchInsertDialog({
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemoveImage(img.id)}
-                          className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
                         >
                           <X className="w-3.5 h-3.5 shrink-0" weight="bold" />
                         </Button>
@@ -460,7 +460,7 @@ export function BatchInsertDialog({
                             size="icon"
                             disabled={img.copies <= 1}
                             onClick={() => handleUpdateCopies(img.id, -1)}
-                            className="h-5 w-5 rounded text-muted-foreground hover:text-foreground"
+                            className="h-7 w-7 rounded text-muted-foreground hover:text-foreground"
                           >
                             <Minus className="w-3 h-3 shrink-0" weight="bold" />
                           </Button>
@@ -471,7 +471,7 @@ export function BatchInsertDialog({
                             variant="ghost"
                             size="icon"
                             onClick={() => handleUpdateCopies(img.id, 1)}
-                            className="h-5 w-5 rounded text-muted-foreground hover:text-foreground"
+                            className="h-7 w-7 rounded text-muted-foreground hover:text-foreground"
                           >
                             <Plus className="w-3 h-3 shrink-0" weight="bold" />
                           </Button>
@@ -635,7 +635,7 @@ export function BatchInsertDialog({
               className="h-8 rounded-md bg-primary text-primary-foreground gap-1.5 text-xs font-semibold px-4 shadow-sm"
             >
               <Check className="w-4 h-4 shrink-0" weight="bold" />
-              {isProcessing ? "جاري الإدراج ..." : "إدراج في مساحة العمل"}
+              {isProcessing ? "جاري الإدراج ..." : "إدراج"}
             </Button>
           </div>
         </DialogFooter>

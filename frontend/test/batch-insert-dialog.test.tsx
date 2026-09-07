@@ -65,7 +65,7 @@ describe('BatchInsertDialog Component Tests', () => {
       expect(screen.getByText('صورة 1')).toBeInTheDocument();
     });
 
-    const executeBtn = screen.getByText('إدراج في مساحة العمل');
+    const executeBtn = screen.getByText('إدراج');
     fireEvent.click(executeBtn);
 
     await waitFor(() => {

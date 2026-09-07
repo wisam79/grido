@@ -159,8 +159,9 @@ export function CollageSettings() {
                   onChange={(e) => { setCollageStrokeColor(e.target.value); commitColorLater(); }}
                   className="w-full bg-transparent border-0 p-0 text-[11px] font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-bold"
                 />
-                <label aria-label="لون إطار الكولاج" className="relative w-4 h-4 rounded-full border border-border cursor-pointer overflow-hidden shrink-0 shadow-2xs transition-transform hover:scale-110">
+                <label aria-label="لون إطار الكولاج" htmlFor="collage-stroke-color-input" className="relative w-4 h-4 rounded-full border border-border cursor-pointer overflow-hidden shrink-0 shadow-2xs transition-transform hover:scale-110">
                   <input
+                    id="collage-stroke-color-input"
                     type="color"
                     value={collageStrokeColor}
                     onChange={(e) => { setCollageStrokeColor(e.target.value); commitColorLater(); }}

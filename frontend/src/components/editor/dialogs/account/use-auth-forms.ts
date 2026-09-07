@@ -187,9 +187,22 @@ export function useAuthForms(onAuthenticated: () => void) {
     }
   }, [email, recoveryOtp, newPassword, verifyRecoveryOTP, onAuthenticated]);
 
+  const resetForms = useCallback(() => {
+    setLoading(false);
+    setLoadingGoogle(false);
+    setResending(false);
+    setError(null);
+    setShowOtp(false);
+    setShowRecoveryOtp(false);
+    setOtpCode("");
+    setRecoveryOtp("");
+    setNewPassword("");
+  }, []);
+
   return {
     authMode,
     setAuthMode,
+    resetForms,
     name,
     setName,
     email,

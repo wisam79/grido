@@ -285,8 +285,10 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
      try {
        const [b64] = await openImageFileDialog(false);
        if (b64) {
-         const localPath = await SaveImageFromBase64(b64);
-         onUpdate(element.id, { imageSrc: localPath });
+         // OpenFile قد يعيد مساراً محفوظاً مسبقاً (/local-image/...) وليس بيانات
+         // base64 — SaveImageFromBase64 على مسار عادي يفجّر استثناء فك التشفير في Go
+         const finalPath = b64.startsWith("data:image/") ? await SaveImageFromBase64(b64) : b64;
+         onUpdate(element.id, { imageSrc: finalPath });
          useEditorStore.getState().pushHistory();
        }
      } catch (err) {
@@ -345,7 +347,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 ) : (
                   <MagicWand className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-xs font-bold">{isEnhancing ? "معالجة..." : "ترميم الوجه"}</span>
+                <span className="text-xs font-bold">{isEnhancing ? "جاري الترميم ..." : "ترميم الوجه"}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">

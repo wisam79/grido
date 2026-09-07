@@ -11,7 +11,7 @@ test.describe('Collage Mode and Filters E2E', () => {
     await page.goto('/');
 
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
-    await page.getByTitle('وضع الكولاج').click();
+    await page.getByRole('button', { name: /كولاج/ }).or(page.getByTitle('وضع الكولاج')).click();
 
     // لوحة القوالب تعرض بطاقات القوالب الجاهزة مباشرة (تصميم Fluent 2)
     const gridTemplateCard = page.getByRole('button', { name: /4 صور متساوية/ }).first();

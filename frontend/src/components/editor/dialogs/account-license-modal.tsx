@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -87,8 +87,17 @@ export function AccountLicenseModal() {
 
   const active = isLicenseActive();
 
+  // تصفير حالة النموذج عند إغلاق النافذة — أثناء طلب جارٍ كان الإغلاق
+  // يترك spinner التحميل عالقاً للفتح التالي
+  const handleModalOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      forms.resetForms();
+    }
+    setAccountModalOpen(open);
+  }, [forms, setAccountModalOpen]);
+
   return (
-    <Dialog open={accountModalOpen} onOpenChange={setAccountModalOpen}>
+    <Dialog open={accountModalOpen} onOpenChange={handleModalOpenChange}>
       <DialogContent
         showCloseButton={false}
         className="w-[95vw] sm:max-w-[460px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl rounded-2xl p-5 sm:p-6 dir-rtl fluent-specular overflow-hidden"
@@ -203,7 +212,7 @@ export function AccountLicenseModal() {
             </TabsTrigger>
             <TabsTrigger
               value="license"
-              className="text-xs h-7 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs font-bold cursor-pointer select-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center gap-1.5 transition-all"
+              className="text-xs h-7 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs font-bold cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center gap-1.5 transition-all"
             >
               <Key className="w-3.5 h-3.5" weight="bold" />
               <span>مفتاح الترخيص</span>

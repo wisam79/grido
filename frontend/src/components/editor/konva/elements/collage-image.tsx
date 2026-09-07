@@ -129,6 +129,12 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
       <KonvaImage
         draggable={draggable}
         onDragStart={() => {
+          // 🖼️ تفريغ كاش Konva قبل السحب — العقدة المخبأة تتجاهل تحديثات
+          // cropX/cropY أثناء onDragMove فتظل الصورة جامدة (Konva يرسم من الكاش)
+          const node = imageRef.current;
+          if (node && typeof node.isCached === "function" && node.isCached()) {
+            node.clearCache();
+          }
           dragStartRef.current = {
             dragX: accumulatedDrag.current.dragX,
             dragY: accumulatedDrag.current.dragY,
@@ -185,6 +191,17 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
         }}
         onDragEnd={() => {
           if (draggable && accumulatedDrag.current) {
+            // إعادة بناء الكاش بعد استقرار الإزاحة — الفلاتر تعود للعمل
+            // بدقة الشاشة العادية بعد الحركة
+            const node = imageRef.current;
+            if (node && hasFilters && typeof node.cache === "function") {
+              try {
+                node.cache({ pixelRatio: Math.max(1, window.devicePixelRatio || 1) });
+                node.getLayer()?.batchDraw();
+              } catch {
+                // تجاهل آمن — الكاش تحسين وليس شرطاً للرسم
+              }
+            }
             onUpdateOffsetsRef.current?.(accumulatedDrag.current.dragX, accumulatedDrag.current.dragY);
             onDragEndRef.current?.();
           }

@@ -307,7 +307,9 @@ export async function exportCanvas(
         if (fctx) {
           fctx.fillStyle = previewWhite();
           fctx.fillRect(0, 0, canvasWidth, canvasHeight);
-          fctx.drawImage(captured, 0, 0);
+          // تمرير الأبعاد المستهدفة صراحة — اللقطة قد تُلتقط بدقة مصغرة والرسم
+          // بحجمها الأصلي كان يترك إطاراً أبيض فارغاً على يمين وأسفل الصورة
+          fctx.drawImage(captured, 0, 0, canvasWidth, canvasHeight);
           dataUrl = flattenCanvas.toDataURL("image/jpeg", quality);
         }
       }
@@ -460,22 +462,26 @@ export async function exportCanvas(
 
       const lineW = Math.max(1, Math.round(canvasWidth / 1200));
 
-      // تقريب المواضع إلى بكسل صحيح كما كان سابقاً (الفرق عن المعاينة ≤ 0.5px)
-      for (const line of cutLines) {
+      // تجميع أوامر الرسم: مساران (عادي/ختامي) بدل beginPath+stroke لكل خط —
+      // تغيير strokeStyle/dash فقط عند الانتقال بين الفئتين
+      const regularLines = cutLines.filter((l) => !l.isBottomEnd);
+      const endLines = cutLines.filter((l) => l.isBottomEnd);
+
+      const strokeBatch = (lines: typeof cutLines, style: string, width: number, dash: number[]) => {
+        if (lines.length === 0) return;
+        ctx.strokeStyle = style;
+        ctx.lineWidth = width;
+        ctx.setLineDash(dash);
         ctx.beginPath();
-        if (line.isBottomEnd) {
-          ctx.strokeStyle = collageEndCut();
-          ctx.lineWidth = lineW * 1.5;
-          ctx.setLineDash([12, 6]);
-        } else {
-          ctx.strokeStyle = collageCut();
-          ctx.lineWidth = lineW;
-          ctx.setLineDash([8, 8]);
+        for (const line of lines) {
+          ctx.moveTo(Math.round(line.x1), Math.round(line.y1));
+          ctx.lineTo(Math.round(line.x2), Math.round(line.y2));
         }
-        ctx.moveTo(Math.round(line.x1), Math.round(line.y1));
-        ctx.lineTo(Math.round(line.x2), Math.round(line.y2));
         ctx.stroke();
-      }
+      };
+
+      strokeBatch(regularLines, collageCut(), lineW, [8, 8]);
+      strokeBatch(endLines, collageEndCut(), lineW * 1.5, [12, 6]);
       ctx.restore();
     }
   } else {
@@ -659,6 +665,9 @@ export async function exportCanvas(
 
           const deco = el.textDecoration || "none";
           const decoThickness = Math.max(1, fontSize / 16);
+          // تجميع مسارات التزيين لكل الأسطر ثم stroke واحد — beginPath+stroke
+          // لكل سطر كان مضاعفاً تكاليف الرسم في النصوص متعددة الأسطر
+          const decoSegments: { x: number; y: number; w: number }[] = [];
 
           wrappedLines.forEach((line, i) => {
             const lineY = startY + i * lineHeight;
@@ -674,19 +683,25 @@ export async function exportCanvas(
                     ? textX - lineW
                     : textX - lineW / 2;
               const decoY = deco === "underline" ? lineY + fontSize / 2 : lineY;
-              ctx.save();
-              ctx.strokeStyle =
-                typeof ctx.fillStyle === "string"
-                  ? ctx.fillStyle
-                  : el.color || TEXT_COLOR_DEFAULT;
-              ctx.lineWidth = decoThickness;
-              ctx.beginPath();
-              ctx.moveTo(fromX, decoY);
-              ctx.lineTo(fromX + lineW, decoY);
-              ctx.stroke();
-              ctx.restore();
+              decoSegments.push({ x: fromX, y: decoY, w: lineW });
             }
           });
+
+          if (decoSegments.length > 0) {
+            ctx.save();
+            ctx.strokeStyle =
+              typeof ctx.fillStyle === "string"
+                ? ctx.fillStyle
+                : el.color || TEXT_COLOR_DEFAULT;
+            ctx.lineWidth = decoThickness;
+            ctx.beginPath();
+            for (const seg of decoSegments) {
+              ctx.moveTo(seg.x, seg.y);
+              ctx.lineTo(seg.x + seg.w, seg.y);
+            }
+            ctx.stroke();
+            ctx.restore();
+          }
         }
       } else if (el.type === "shape") {
         ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.fill || gradientStart();
@@ -752,20 +767,25 @@ export async function exportSlotCanvas(
   format: "png" | "jpg" = "png",
   quality = 0.95
 ): Promise<Blob | null> {
-  const { canvasWidth, canvasHeight, slots } = useEditorStore.getState();
+  const { canvasWidth, canvasHeight, collageMargin = 0, collageGap = 0, collageTemplate, slots } = useEditorStore.getState();
   const slot = slots.find(s => s.id === slotId);
   if (!slot || !slot.imageSrc) return null;
 
   try {
     const img = await loadImage(slot.imageSrc);
-    
-    // حجم الخانة بكسل من print-layout-math — نفس الصيغة النسبية (بلا هوامش/فجوات)
+
+    // مزامنة القص مع هوامش/فجوات الكولاج الفعلية — تطبيق القيم الحقيقية
+    // (وليس صفراً) يطابق نسبة الخلية المعروضة في المحرر وإلا انحرف القص
+    // واقتطع أجزاء من رأس/وجه الشخص خلافاً للمعاينة
+    const hasPhysical = Boolean(collageTemplate?.physicalLayout);
+    const marginPx = hasPhysical ? 0 : collageMargin;
+    const gapPx = hasPhysical ? 0 : collageGap;
     const rect = computeSlotRectMM(
       { xMM: 0, yMM: 0 },
       { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
       { widthMM: canvasWidth, heightMM: canvasHeight },
-      { marginXMM: 0, marginYMM: 0 },
-      { gapXMM: 0, gapYMM: 0 }
+      { marginXMM: marginPx, marginYMM: marginPx },
+      { gapXMM: gapPx, gapYMM: gapPx }
     );
     const exportWidth = Math.max(1, rect.wMM);
     const exportHeight = Math.max(1, rect.hMM);

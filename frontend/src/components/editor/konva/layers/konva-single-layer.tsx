@@ -157,7 +157,10 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
 
                 node.width(newW);
                 if (el.type === "text") {
-                  (node as Konva.Text).fontSize?.(Math.max(6, Math.round((el.fontSize || 16) * absScaleY)));
+                  // node هنا Group (حاوية عنصر النص) — لا يمتلك fontSize.
+                  // نبحث عن عقدة النص الابن المباشرة لتطبيق القياس عليها
+                  const textChild = (node as Konva.Group).findOne<Konva.Text>((n: Konva.Node) => n.getClassName?.() === "Text");
+                  textChild?.fontSize(Math.max(6, Math.round((el.fontSize || 16) * absScaleY)));
                 } else {
                   node.height(newH);
                 }

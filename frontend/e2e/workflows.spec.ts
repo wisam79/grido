@@ -53,9 +53,9 @@ test.describe('Editor Core Workflows E2E', () => {
     const redo = page.getByRole('button', { name: 'إعادة' }).first();
 
     await expect(undo).toBeVisible();
-    await page.getByTitle('وضع الكولاج').click();
+    await page.getByRole('button', { name: /كولاج/ }).or(page.getByTitle('وضع الكولاج')).click();
     await expect(redo).toBeVisible();
-    await page.getByTitle('وضع التعديل الحر').click();
+    await page.getByRole('button', { name: /التعديل الحر/ }).or(page.getByTitle('وضع التعديل الحر')).click();
     await expect(undo).toBeVisible();
   });
 
@@ -67,7 +67,7 @@ test.describe('Editor Core Workflows E2E', () => {
   });
 
   test('Apply a quick collage template from the panel', async ({ page }) => {
-    await page.getByTitle('وضع الكولاج').click();
+    await page.getByRole('button', { name: /كولاج/ }).or(page.getByTitle('وضع الكولاج')).click();
     const card = page.getByRole('button', { name: /4 صور متساوية/ }).first();
     await expect(card).toBeVisible();
     await card.click();

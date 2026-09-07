@@ -129,14 +129,13 @@ export function ToolbarFileOps() {
               toast.success("تم إدراج الصورة في الخلية المحددة");
             }
           } else {
-            let filled = 0;
-            freshSlots.forEach((slot, index) => {
-              if (index < localPaths.length) {
-                freshState.setSlotImage(slot.id, localPaths[index]);
-                filled++;
-              }
-            });
-            toast.success(`تم إدراج ${filled} صورة في خلايا الكولاج`);
+            // إدراج مجمّع بلقطة تراجع واحدة — الاستدعاء الفردي داخل الحلقة
+            // كان يولد لقطة تاريخ لكل صورة (حتى 24) ويطفح سجل التراجع (30)
+            const assignments = freshSlots
+              .slice(0, localPaths.length)
+              .map((slot, index) => ({ slotId: slot.id, src: localPaths[index] }));
+            freshState.setSlotImagesBatch(assignments, localPaths[localPaths.length - 1]);
+            toast.success(`تم إدراج ${assignments.length} صورة في خلايا الكولاج`);
           }
         } else {
           // الوضع الحر: عند اختيار صورة واحدة تُدرج كالمعتاد، وعند اختيار أكثر من صورة تُدرج بتوزيع شبكي ذكي وخطوة تراجع واحدة
@@ -212,7 +211,7 @@ export function ToolbarFileOps() {
             onClick={handleOpenFile}
             aria-label="إضافة صورة جديدة"
             title="إضافة صورة جديدة"
-            className="h-8.5 px-3 gap-2 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
+            className="h-8 px-3 gap-2 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
           >
             <AddPhotoIcon className="w-5 h-5 text-primary group-hover:scale-105 transition-transform" />
             <span>إضافة صورة</span>
@@ -227,7 +226,7 @@ export function ToolbarFileOps() {
             onClick={() => setIsBatchInsertOpen(true)}
             aria-label="إدراج دفعة صور ومعاملات"
             title="إدراج دفعة صور ومعاملات"
-            className="h-8.5 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
+            className="h-8 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
           >
             <Stack className="w-5 h-5 text-muted-foreground/90 group-hover:text-foreground group-hover:scale-105 transition-all" weight="duotone" />
             <span className="hidden sm:inline font-semibold">دفعة صور</span>
@@ -242,7 +241,7 @@ export function ToolbarFileOps() {
             onClick={() => setIsPhoneBridgeOpen(true)}
             aria-label="كاميرا الهاتف اللاسلكية"
             title="كاميرا الهاتف اللاسلكية"
-            className="h-8.5 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
+            className="h-8 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
           >
             <DeviceMobileCamera className="w-5 h-5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
             <span className="hidden sm:inline font-semibold">كاميرا الهاتف</span>
@@ -258,7 +257,7 @@ export function ToolbarFileOps() {
               onClick={() => setIsProjectsOpen(true)}
               aria-label="مكتبة المشاريع المحلية"
               title="مكتبة المشاريع المحلية"
-              className="h-8.5 w-8.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer group"
+              className="h-8 w-8.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer group"
             >
               <Folders className="w-5 h-5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
             </Button>
@@ -280,7 +279,7 @@ export function ToolbarFileOps() {
           size="icon"
           onClick={handleClearCanvas}
           aria-label="جديد (مسح مساحة العمل)"
-          className="h-8.5 w-8.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer group"
+          className="h-8 w-8.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer group"
         >
           <Broom className="w-5 h-5 text-muted-foreground/90 group-hover:text-destructive group-hover:scale-105 transition-all" weight="duotone" />
         </Button>

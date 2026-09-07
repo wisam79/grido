@@ -85,8 +85,12 @@ Function .onInit
 FunctionEnd
 
 Function .onInstSuccess
-   IfSilent 0 +2
-       ExecShell "open" "$INSTDIR\${PRODUCT_EXECUTABLE}"
+    IfSilent skip_launch not_silent
+    skip_launch:
+        Goto done
+    not_silent:
+        ExecShell "open" "$INSTDIR\${PRODUCT_EXECUTABLE}"
+    done:
 FunctionEnd
 
 Function CreateDesktopShortcut

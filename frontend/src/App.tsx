@@ -304,7 +304,7 @@ export default function App() {
             }} className="space-y-4 text-right">
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <label htmlFor="license-key-input" className="text-xs font-semibold text-foreground">أدخل مفتاح الترخيص</label>
+                  <label htmlFor="license-key-input" className="text-xs font-semibold text-foreground">مفتاح الترخيص</label>
                   <button
                     type="button"
                     onClick={async () => {

@@ -262,12 +262,10 @@ describe("export-image manual fallback — golden tests", () => {
       [0, 3408, 2480, 3408], // خط نهاية منطقة الطباعة كامل العرض
     ]);
 
-    // خط النهاية يُرسم أخيراً باللون الأزرق (السمة المميزة له)
+    // التجميع الدفعي: فئة واحدة لكل نوع خط — setStrokeStyle مرتين فقط
+    // (خطوط القص العادية دفعة، ثم خط النهاية الأزرق دفعة)
     const strokeStyles = calls.filter((c) => c.op === "setStrokeStyle");
     expect(strokeStyles.map((c) => c.args[0])).toEqual([
-      collageCut(),
-      collageCut(),
-      collageCut(),
       collageCut(),
       collageEndCut(),
     ]);

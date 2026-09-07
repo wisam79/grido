@@ -563,6 +563,13 @@ export const EditorCanvas = React.memo(React.forwardRef<
       onClick={(e) => {
         if (e.target === e.currentTarget) selectElement(null);
       }}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          selectElement(null);
+        }
+      }}
+      role="presentation"
     >
       {isLoading && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md rounded-sm gap-2">
@@ -610,6 +617,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
           <div
             key={guide.id}
             title={lockUserGuides ? "خط إرشادي مقفل (انقر لفتح القفل من قائمة المسطرة)" : "خط إرشادي: اسحب للتحريك أو انقر مرتين للحذف"}
+            role="separator"
+            aria-orientation={isH ? "horizontal" : "vertical"}
             onPointerDown={(e) => {
               if (lockUserGuides) return;
               e.stopPropagation();
@@ -767,6 +776,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
         >
           <div
             className="min-w-full min-h-full flex p-4"
+            role="presentation"
             onClick={(e) => {
               if (e.target === e.currentTarget) selectElement(null);
             }}

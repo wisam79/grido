@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/image/tiff"
@@ -22,6 +23,8 @@ import (
 	"grido/internal/core/domain"
 	"grido/internal/utils"
 )
+
+var exportsCleanup atomic.Bool
 
 // ─────────────────────────────────────────────────────────────────────────────
 // print_export.go — حفظ مخرجات الطباعة وحقن بيانات DPI
@@ -37,22 +40,26 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 
 	// 🧹 تنظيف المخرجات القديمة (أقدم من 24 ساعة) في الخلفية لتفادي امتلاء القرص
 	// دون تأخير الطلب الحالي أو حذف ملف حوار طباعة ما زال مفتوحاً في المقدمة.
-	// نحذف ملفات الطباعة print_* فقط — لا نلمس ملفات المستخدم الخاصة
-	go func() {
-		if files, err := os.ReadDir(outDir); err == nil {
-			for _, f := range files {
-				if !strings.HasPrefix(f.Name(), "print_") {
-					continue
-				}
-				filePath := filepath.Join(outDir, f.Name())
-				if info, err := os.Stat(filePath); err == nil {
-					if time.Since(info.ModTime()) > 24*time.Hour {
-						_ = os.Remove(filePath)
+	// نحذف ملفات الطباعة print_* فقط — لا نلمس ملفات المستخدم الخاصة.
+	// الحارس الذري يمنع طوفان Goroutines في عمليات الطباعة الدفعية المتتالية.
+	if exportsCleanup.CompareAndSwap(false, true) {
+		go func() {
+			defer exportsCleanup.Store(false)
+			if files, err := os.ReadDir(outDir); err == nil {
+				for _, f := range files {
+					if !strings.HasPrefix(f.Name(), "print_") {
+						continue
+					}
+					filePath := filepath.Join(outDir, f.Name())
+					if info, err := os.Stat(filePath); err == nil {
+						if time.Since(info.ModTime()) > 24*time.Hour {
+							_ = os.Remove(filePath)
+						}
 					}
 				}
 			}
-		}
-	}()
+		}()
+	}
 
 	baseName := fmt.Sprintf("print_%d", time.Now().UnixNano())
 	isCMYK := strings.EqualFold(req.ColorSpace, "cmyk")

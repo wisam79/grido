@@ -325,7 +325,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   title="إعادة تحديد القص والتدوير للحالة الكاملة الأولية"
                 >
                   <ArrowCounterClockwise className="text-primary w-3.5 h-3.5 shrink-0" />
-                  <span>إعادة ضبط القص</span>
+                  <span>إعادة ضبط</span>
                 </Button>
 
                 {originalImageSrc && (

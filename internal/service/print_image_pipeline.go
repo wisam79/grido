@@ -40,6 +40,9 @@ func resolveLocalPath(src string) string {
 		if err != nil {
 			return fullPath
 		}
+		if resolvedMediaDir, err := filepath.EvalSymlinks(mediaDir); err == nil {
+			mediaDir = resolvedMediaDir
+		}
 		if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(mediaDir)+string(filepath.Separator)) {
 			slog.Warn("Blocked path traversal attempt in resolveLocalPath", "path", src)
 			return ""

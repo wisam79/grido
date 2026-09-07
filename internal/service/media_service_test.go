@@ -358,3 +358,56 @@ func TestMediaService_SaveImageFromBase64_AtomicWrite(t *testing.T) {
 		t.Fatalf("saved final file does not exist: %s", fullPath)
 	}
 }
+
+func TestMediaService_GetImageDimensions(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	svc := NewMediaService()
+	mediaDir := svc.GetMediaDir()
+	exportsDir := filepath.Join(tempDir, "Exports")
+	if err := os.MkdirAll(exportsDir, 0o755); err != nil {
+		t.Fatalf("failed to create Exports dir: %v", err)
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(validPNGBase64)
+	if err != nil {
+		t.Fatalf("failed to decode validPNGBase64: %v", err)
+	}
+
+	// 1. Regular media image in Media/
+	mediaFileName := "img_test_regular.png"
+	if err := os.WriteFile(filepath.Join(mediaDir, mediaFileName), decoded, 0o644); err != nil {
+		t.Fatalf("failed to write media file: %v", err)
+	}
+
+	dims, err := svc.GetImageDimensions("/local-image/" + mediaFileName)
+	if err != nil {
+		t.Fatalf("GetImageDimensions failed for regular media file: %v", err)
+	}
+	if dims.Width != 1 || dims.Height != 1 {
+		t.Errorf("expected 1x1 dimensions, got %dx%d", dims.Width, dims.Height)
+	}
+
+	// 2. Print preview image in Exports/
+	printFileName := "print_123456_preview.png"
+	if err := os.WriteFile(filepath.Join(exportsDir, printFileName), decoded, 0o644); err != nil {
+		t.Fatalf("failed to write exports print file: %v", err)
+	}
+
+	printDims, err := svc.GetImageDimensions("/local-image/" + printFileName)
+	if err != nil {
+		t.Fatalf("GetImageDimensions failed for print preview file in Exports: %v", err)
+	}
+	if printDims.Width != 1 || printDims.Height != 1 {
+		t.Errorf("expected 1x1 dimensions for print preview, got %dx%d", printDims.Width, printDims.Height)
+	}
+
+	// 3. Path traversal and missing file handling
+	if _, err := svc.GetImageDimensions("/local-image/../../evil.png"); err == nil {
+		t.Error("expected error for path traversal attempt, got nil")
+	}
+	if _, err := svc.GetImageDimensions("/local-image/nonexistent_image_12345.png"); err == nil {
+		t.Error("expected error for nonexistent file, got nil")
+	}
+}

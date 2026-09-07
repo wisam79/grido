@@ -95,9 +95,12 @@ export async function captureStageDataUrl(
 
   try {
     const dataUrl = await withHiddenOverlays(stage, targetPixelRatio, async () => {
-      // 🛡️ إصلاح: تحديد targetPixelRatio بحد أقصى 4 لمنع انهيار الذاكرة
-      // كان يستخدم القيمة غير المحددة مباشرة في toCanvas مما يسبب OOM عند DPI عالي
-      const safePixelRatio = Math.min(4, Math.max(1, targetPixelRatio));
+      // 🛡️ حاجز الأمان الحقيقي هو حد الميجابكسل الكلي (assertExportablePixels
+      // في export-image.ts) الذي يمنع OOM — سقف النسبة هنا يحمي العرض
+      // المؤقت فقط. أوراق 300DPI كبيرة (A4/A3) تحتاج نسبة 6×+ مع معاينة 400px،
+      // وقسرها على 4× كان يلتقط الكانفاس بدقة مصغرة تُرسم مشوهة عند التسطيح.
+      const MAX_EXPORT_RATIO = 8;
+      const safePixelRatio = Math.min(MAX_EXPORT_RATIO, Math.max(1, targetPixelRatio));
       const exportCanvas = stage.toCanvas({ pixelRatio: safePixelRatio });
       const blob = await new Promise<Blob | null>((resolve) => {
         exportCanvas.toBlob(resolve, mimeType, quality);

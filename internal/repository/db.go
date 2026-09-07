@@ -393,6 +393,8 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 	}
 
 	// 2. فحص مسار الصورة في مسودة التخزين التلقائي autosave.json
+	// ملف تالف/غير مكتمل يوقف التنظيف فوراً — إرجاع قائمة فارغة يعني اعتبار
+	// صور العمل الجاري «مهجورة» وحذفها (خطر فقدان بيانات المستخدم)
 	autosavePath := filepath.Join(appDir, "autosave.json")
 	if autosaveBytes, err := os.ReadFile(autosavePath); err == nil {
 		var autosaveData struct {
@@ -404,7 +406,7 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 			slotsBytes, _ := json.Marshal(autosaveData.Slots)
 			collectImageFilenames(string(elemsBytes), string(slotsBytes), referencedImages)
 		} else {
-			slog.Warn("Corrupt autosave.json encountered, skipping for cleanup", "error", err)
+			return nil, fmt.Errorf("corrupt autosave.json encountered: %w", err)
 		}
 	}
 

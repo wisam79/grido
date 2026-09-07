@@ -17,7 +17,7 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
 
     await expect(page.getByRole('button', { name: 'عزل الخلفية' }).first()).toBeVisible();
 
-    await page.getByTitle('مكتبة المشاريع المحلية').click();
+    await page.getByRole('button', { name: /مكتبة المشاريع/ }).or(page.getByTitle('مكتبة المشاريع المحلية')).click();
     await expect(page.getByRole('dialog', { name: /مكتبة المشاريع/ })).toBeVisible();
 
     await page.getByRole('tab', { name: /حفظ المشروع/ }).click();

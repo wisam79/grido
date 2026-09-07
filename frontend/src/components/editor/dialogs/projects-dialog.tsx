@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toErrorMessage } from "@/lib/wails-error";
 import {
   Dialog,
   DialogContent,
@@ -100,7 +101,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       setProjectsList(list);
     } catch (err) {
       console.error("Failed to load projects:", err);
-      toast.error("فشل في تحميل المشاريع من قاعدة البيانات");
+      toast.error(toErrorMessage(err, "فشل في تحميل المشاريع من قاعدة البيانات"));
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +146,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       setActiveTab("list"); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
     } catch (err) {
       console.error("Failed to save project:", err);
-      toast.error("فشل في حفظ المشروع");
+      toast.error(toErrorMessage(err, "فشل في حفظ المشروع"));
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +164,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       setIsOpen?.(false);
     } catch (err) {
       console.error("Failed to load project details:", err);
-      toast.error("فشل في تحميل بيانات هذا المشروع");
+      toast.error(toErrorMessage(err, "فشل في تحميل بيانات هذا المشروع"));
     }
   };
 
@@ -185,7 +186,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       fetchProjects();
     } catch (err) {
       console.error("Failed to delete project:", err);
-      toast.error("فشل في حذف المشروع");
+      toast.error(toErrorMessage(err, "فشل في حذف المشروع"));
     } finally {
       setDeleteId(null);
     }
@@ -209,7 +210,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       }
     } catch (err) {
       console.error(err);
-      toast.error("فشل تصدير النسخة الاحتياطية");
+      toast.error(toErrorMessage(err, "فشل تصدير النسخة الاحتياطية"));
     } finally {
       setBackupActionLoading(false);
     }
@@ -248,7 +249,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       fetchProjects();
     } catch (err) {
       console.error(err);
-      toast.error("فشل استيراد المشاريع");
+      toast.error(toErrorMessage(err, "فشل استيراد المشاريع"));
     } finally {
       setBackupActionLoading(false);
       setImportJsonData("");
@@ -268,7 +269,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       fetchProjects();
     } catch (err) {
       console.error(err);
-      toast.error("فشل تهيئة مكتبة المشاريع");
+      toast.error(toErrorMessage(err, "فشل تهيئة مكتبة المشاريع"));
     } finally {
       setBackupActionLoading(false);
     }
@@ -405,6 +406,14 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                     return (
                     <div
                       key={project.id}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleLoad(project);
+                        }
+                      }}
                       onClick={() => handleLoad(project)}
                       className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden fluent-specular"
                     >
@@ -583,7 +592,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                     <span>جاري الاستيراد ...</span>
                   </>
                 ) : (
-                  "تأكيد الاستيراد"
+                  "استيراد"
                 )}
               </Button>
             </div>
@@ -609,7 +618,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
               onClick={handleConfirmReset} 
               className="bg-red-600 hover:bg-red-700 text-white font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
             >
-              تأكيد حذف كل المشاريع
+              حذف الكل
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

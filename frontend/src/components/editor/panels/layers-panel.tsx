@@ -345,7 +345,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       </div>
 
       {/* قائمة الطبقات */}
-      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5" onDragEnd={handleDragEnd}>
+      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5" onDragEnd={handleDragEnd} role="presentation">
         {sortedElements.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-16 px-4">
             <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center mb-3">

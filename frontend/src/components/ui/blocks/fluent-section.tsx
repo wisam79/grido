@@ -63,6 +63,19 @@ export const FluentSection = React.memo(
         {/* Section Header */}
         <div
           onClick={collapsible ? handleToggle : undefined}
+          onKeyDown={
+            collapsible
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleToggle();
+                  }
+                }
+              : undefined
+          }
+          role={collapsible ? "button" : undefined}
+          tabIndex={collapsible ? 0 : undefined}
+          aria-expanded={collapsible ? isOpen : undefined}
           className={cn(
             "flex items-center justify-between gap-2 select-none",
             isOpen ? "pb-2.5 mb-2.5 border-b border-border/50" : "",
@@ -94,6 +107,7 @@ export const FluentSection = React.memo(
           <div className="shrink-0 flex items-center gap-1.5">
             {action && (
               <div
+                role="presentation"
                 onClick={(e) => {
                   if (collapsible) e.stopPropagation();
                 }}

@@ -13,6 +13,25 @@ import (
 // TestEnhanceImageWithAI_Success verifies end-to-end connection, payload structure,
 // User-Agent header, trailing slash cleanup, and successful JSON response parsing.
 func TestEnhanceImageWithAI_Success(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	GlobalAIRateLimiter.mu.Lock()
+	oldFilePath := GlobalAIRateLimiter.filePath
+	oldLoaded := GlobalAIRateLimiter.loaded
+	GlobalAIRateLimiter.usage = make(map[string]*AIRateEntry)
+	GlobalAIRateLimiter.filePath = filepath.Join(tempDir, "ai_rate_limits.json")
+	GlobalAIRateLimiter.loaded = true
+	GlobalAIRateLimiter.mu.Unlock()
+
+	defer func() {
+		GlobalAIRateLimiter.mu.Lock()
+		GlobalAIRateLimiter.filePath = oldFilePath
+		GlobalAIRateLimiter.loaded = oldLoaded
+		GlobalAIRateLimiter.usage = make(map[string]*AIRateEntry)
+		GlobalAIRateLimiter.mu.Unlock()
+	}()
+
 	// Mock Modal AI HTTP Server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 1. Verify HTTP Method
@@ -94,6 +113,25 @@ func TestEnhanceImageWithAI_Unauthenticated(t *testing.T) {
 
 // TestEnhanceImageWithAI_HTTPError_Rollback verifies rate limit rollback on HTTP 404 or 500 error.
 func TestEnhanceImageWithAI_HTTPError_Rollback(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	GlobalAIRateLimiter.mu.Lock()
+	oldFilePath := GlobalAIRateLimiter.filePath
+	oldLoaded := GlobalAIRateLimiter.loaded
+	GlobalAIRateLimiter.usage = make(map[string]*AIRateEntry)
+	GlobalAIRateLimiter.filePath = filepath.Join(tempDir, "ai_rate_limits.json")
+	GlobalAIRateLimiter.loaded = true
+	GlobalAIRateLimiter.mu.Unlock()
+
+	defer func() {
+		GlobalAIRateLimiter.mu.Lock()
+		GlobalAIRateLimiter.filePath = oldFilePath
+		GlobalAIRateLimiter.loaded = oldLoaded
+		GlobalAIRateLimiter.usage = make(map[string]*AIRateEntry)
+		GlobalAIRateLimiter.mu.Unlock()
+	}()
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error": "Endpoint not found"}`, http.StatusNotFound)
 	}))

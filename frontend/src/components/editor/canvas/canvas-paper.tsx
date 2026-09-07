@@ -32,6 +32,18 @@ export const CanvasPaper = React.memo(
       <div
         ref={ref}
         id="canvas-area"
+        role={onClick ? "button" : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        onKeyDown={
+          onClick
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onClick(e as unknown as React.MouseEvent<HTMLDivElement>);
+                }
+              }
+            : undefined
+        }
         className="relative rounded-sm overflow-hidden border border-black/10 dark:border-white/10 transition-shadow duration-300 shadow-md shadow-black/15 hover:shadow-lg hover:shadow-black/20 fluent-specular select-none"
         style={{
           width: displayW,

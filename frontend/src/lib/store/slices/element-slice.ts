@@ -803,54 +803,85 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const elementsToDistribute = state.elements.filter((e: CanvasElement) => targetIds.includes(e.id) && !e.locked);
     if (elementsToDistribute.length < 3) return;
 
+    // تقسيم العناصر إلى وحدات ذرية (مجموعة متماسكة واحدة أو عنصر مفرد) —
+    // التوزيع الفردي كان يشتت عناصر المجموعة الواحدة بين بقية العناصر
+    const unitMap = new Map<string, CanvasElement[]>();
+    let ungroupedCounter = 0;
+    elementsToDistribute.forEach((el) => {
+      const key = el.groupId ? `group_${el.groupId}` : `single_${ungroupedCounter++}`;
+      const bucket = unitMap.get(key) ?? [];
+      bucket.push(el);
+      unitMap.set(key, bucket);
+    });
+
+    interface Unit {
+      ids: string[];
+      minX: number;
+      minY: number;
+      maxX: number;
+      maxY: number;
+    }
+
+    const units: Unit[] = Array.from(unitMap.values()).map((unitElements) => ({
+      ids: unitElements.map((e) => e.id),
+      minX: Math.min(...unitElements.map((e) => e.x)),
+      minY: Math.min(...unitElements.map((e) => e.y)),
+      maxX: Math.max(...unitElements.map((e) => e.x + e.width)),
+      maxY: Math.max(...unitElements.map((e) => e.y + e.height)),
+    }));
+
+    if (units.length < 3) return;
+
     const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
 
     if (axis === "horizontal") {
-      const sorted = [...elementsToDistribute].sort((a, b) => a.x - b.x);
+      const sorted = [...units].sort((a, b) => a.minX - b.minX);
       const first = sorted[0];
       const last = sorted[sorted.length - 1];
-      const totalSpan = (last.x + last.width) - first.x;
-      const totalWidths = sorted.reduce((sum, el) => sum + el.width, 0);
-      const remainingSpace = totalSpan - totalWidths;
-      const gap = remainingSpace / (sorted.length - 1);
+      const totalSpan = last.maxX - first.minX;
+      const totalWidths = sorted.reduce((sum, u) => sum + (u.maxX - u.minX), 0);
+      const gap = (totalSpan - totalWidths) / (sorted.length - 1);
 
-      let currentX = first.x;
-      sorted.forEach((el, index) => {
-        if (index === 0 || index === sorted.length - 1) {
-          currentX += el.width + gap;
-        } else {
-          patches.push({
-            id: el.id,
-            patch: { x: currentX },
+      let currentX = first.minX;
+      sorted.forEach((u, index) => {
+        const dx = currentX - u.minX;
+        if (dx !== 0 && index > 0 && index < sorted.length - 1) {
+          const unitElements = elementsToDistribute.filter((e) => u.ids.includes(e.id));
+          unitElements.forEach((el) => {
+            patches.push({ id: el.id, patch: { x: el.x + dx } });
           });
-          currentX += el.width + gap;
         }
+        currentX += (u.maxX - u.minX) + gap;
       });
-    } else {
-      const sorted = [...elementsToDistribute].sort((a, b) => a.y - b.y);
-      const first = sorted[0];
-      const last = sorted[sorted.length - 1];
-      const totalSpan = (last.y + last.height) - first.y;
-      const totalHeights = sorted.reduce((sum, el) => sum + el.height, 0);
-      const remainingSpace = totalSpan - totalHeights;
-      const gap = remainingSpace / (sorted.length - 1);
-
-      let currentY = first.y;
-      sorted.forEach((el, index) => {
-        if (index === 0 || index === sorted.length - 1) {
-          currentY += el.height + gap;
-        } else {
-          patches.push({
-            id: el.id,
-            patch: { y: currentY },
-          });
-          currentY += el.height + gap;
-        }
-      });
+      if (patches.length > 0) {
+        get().updateElements(patches);
+        get().pushHistory();
+      }
+      return;
     }
 
-    if (patches.length > 0) {
-      get().updateElements(patches);
+    const sorted = [...units].sort((a, b) => a.minY - b.minY);
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const totalSpan = last.maxY - first.minY;
+    const totalHeights = sorted.reduce((sum, u) => sum + (u.maxY - u.minY), 0);
+    const gap = (totalSpan - totalHeights) / (sorted.length - 1);
+
+    let currentY = first.minY;
+    const vPatches: { id: string; patch: Partial<CanvasElement> }[] = [];
+    sorted.forEach((u, index) => {
+      const dy = currentY - u.minY;
+      if (dy !== 0 && index > 0 && index < sorted.length - 1) {
+        const unitElements = elementsToDistribute.filter((e) => u.ids.includes(e.id));
+        unitElements.forEach((el) => {
+          vPatches.push({ id: el.id, patch: { y: el.y + dy } });
+        });
+      }
+      currentY += (u.maxY - u.minY) + gap;
+    });
+
+    if (vPatches.length > 0) {
+      get().updateElements(vPatches);
       get().pushHistory();
     }
   },

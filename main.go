@@ -209,6 +209,9 @@ func main() {
 						http.Error(w, "Forbidden", http.StatusForbidden)
 						return
 					}
+					if resolvedBase, err := filepath.EvalSymlinks(baseDir); err == nil {
+						baseDir = resolvedBase
+					}
 					if !strings.HasPrefix(resolvedPath, filepath.Clean(baseDir)+string(filepath.Separator)) &&
 						resolvedPath != filepath.Clean(baseDir) {
 						http.Error(w, "Forbidden", http.StatusForbidden)

@@ -47,5 +47,25 @@ export default tseslint.config(
       'jsx-a11y/no-static-element-interactions': 'off',
       'jsx-a11y/aria-role': 'off',
     },
+  },
+  {
+    // مقابض تحجيم النافذة تحاكي حدود نظام التشغيل الأصيلة (window chrome)
+    // وليست عناصر واجهة قابلة للتركيز — التنفيذ الأصيل في OS غير قابل للوصول أيضاً
+    files: ['src/components/editor/system/window-resize-handles.tsx'],
+    rules: {
+      'jsx-a11y/no-static-element-interactions': 'off',
+    },
+  },
+  {
+    // ملفات تصدّر أنواع/interfaces بجانب المكوّنات — Fast Refresh لا يتأثر
+    // بتصدير الأنواع (type-only exports تُمحى في الـ build)
+    files: [
+      'src/components/editor/canvas/ruler.tsx',
+      'src/components/editor/properties/gradient-picker.tsx',
+      'src/features/freeform-collage/components/FreeformPaperSelector.tsx',
+    ],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
   }
 );

@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import {
   previewWhite, previewBlack, previewBlue, previewChecker,
 } from "@/lib/canvas/canvas-colors";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogCloseButton } from "@/components/ui/dialog";
+import { FluentSliderField } from "@/components/ui/blocks";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/huge-icon";
 import {
@@ -517,10 +518,8 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             <Sparkle className="text-primary w-6 h-6 shrink-0" weight="duotone" />
             <span>تعديل القص يدوياً</span>
           </DialogTitle>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md" onClick={() => onOpenChange(false)}>
-            <X className="w-4 h-4 shrink-0" weight="bold" />
-          </Button>
-        </DialogHeader>
+        <DialogCloseButton onClick={() => onOpenChange(false)} />
+      </DialogHeader>
 
         <div className="flex flex-1 overflow-hidden">
           {/* الأدوات - Sidebar */}
@@ -598,35 +597,26 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             </div>
 
             {tool !== "pan" && tool !== "magic" && (
-              <div className="space-y-3 bg-background p-3 rounded-xl border border-border/40">
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px] font-bold text-foreground/80">حجم الفرشاة</span>
-                  <span className="text-[10px] font-mono font-bold text-muted-foreground">{brushSize}px</span>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="150"
+              <div className="bg-background p-3 rounded-xl border border-border/40">
+                <FluentSliderField
+                  label="حجم الفرشاة"
                   value={brushSize}
-                  onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                  className="w-full accent-primary cursor-pointer"
+                  min={5}
+                  max={150}
+                  unit="px"
+                  onChange={setBrushSize}
                 />
               </div>
             )}
 
             {tool === "magic" && (
-              <div className="space-y-3 bg-background p-3 rounded-xl border border-border/40">
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px] font-bold text-foreground/80">الفارق اللوني</span>
-                  <span className="text-[10px] font-mono font-bold text-muted-foreground">{tolerance}</span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="100"
+              <div className="bg-background p-3 rounded-xl border border-border/40">
+                <FluentSliderField
+                  label="الفارق اللوني"
                   value={tolerance}
-                  onChange={(e) => setTolerance(parseInt(e.target.value))}
-                  className="w-full accent-primary cursor-pointer"
+                  min={1}
+                  max={100}
+                  onChange={setTolerance}
                 />
               </div>
             )}
@@ -665,8 +655,9 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
           </div>
 
           {/* مساحة الرسم - Main Canvas Area */}
-          <div 
+          <div
             ref={containerRef}
+            role="presentation"
             className="flex-1 bg-black/5 dark:bg-white/5 relative overflow-hidden select-none flex items-center justify-center touch-none"
             style={{ 
               backgroundImage: `radial-gradient(circle, ${previewChecker()} 1px, transparent 1px)`,
@@ -752,7 +743,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               </>
             ) : (
               <>
-                <span>حفظ التعديلات</span>
+                <span>حفظ</span>
                 <FloppyDisk className="w-3.5 h-3.5 mr-1 shrink-0" weight="bold" />
               </>
             )}

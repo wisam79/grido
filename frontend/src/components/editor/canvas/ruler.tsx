@@ -90,7 +90,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
     const labels: React.ReactNode[] = [];
 
     const labelRatio = Math.max(1, Math.round(labelStep / subStep));
-    const midRatio = Math.max(1, Math.round(midStep / subStep));
+    // فحص منتصف المسافة حسابياً بدل قسمة تقريبية — midStep/subStep = 5/2
 
     for (let idx = startStepIndex; idx <= endStepIndex; idx++) {
       const u = idx * subStep;
@@ -99,7 +99,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       if (x < -60 || x > viewportWidth + 60) continue;
 
       const isLabel = idx % labelRatio === 0;
-      const isMid = !isLabel && midRatio > 0 && idx % midRatio === 0;
+      const isMid = !isLabel && Math.abs(u % labelStep - labelStep / 2) < (subStep / 2) + 1e-9;
       const isZero = Math.abs(u) < 0.00001;
       const isInsideCanvas = u >= -0.0001 && u <= span + 0.0001;
 
@@ -269,7 +269,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
     const labels: React.ReactNode[] = [];
 
     const labelRatio = Math.max(1, Math.round(labelStep / subStep));
-    const midRatio = Math.max(1, Math.round(midStep / subStep));
+    // فحص منتصف المسافة حسابياً بدل قسمة تقريبية — midStep/subStep = 5/2
 
     for (let idx = startStepIndex; idx <= endStepIndex; idx++) {
       const u = idx * subStep;
@@ -278,7 +278,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       if (y < -60 || y > viewportHeight + 60) continue;
 
       const isLabel = idx % labelRatio === 0;
-      const isMid = !isLabel && midRatio > 0 && idx % midRatio === 0;
+      const isMid = !isLabel && Math.abs(u % labelStep - labelStep / 2) < (subStep / 2) + 1e-9;
       const isZero = Math.abs(u) < 0.00001;
       const isInsideCanvas = u >= -0.0001 && u <= span + 0.0001;
 

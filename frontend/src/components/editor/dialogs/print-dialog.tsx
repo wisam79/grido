@@ -286,13 +286,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   إعادة ضبط
                 </Button>
                 <div className="flex items-center gap-1 bg-slate-800/80 p-0.5 rounded-md border border-slate-700/80">
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-5 w-5 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
+                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-7 w-7 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
                     <MagnifyingGlassMinus className="w-3 h-3 shrink-0" />
                   </Button>
                   <span className="text-[10px] w-10 text-center font-mono font-semibold text-slate-300">
                     {Math.round(zoom * 100)}%
                   </span>
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-5 w-5 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
+                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-7 w-7 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
                     <MagnifyingGlassPlus className="w-3 h-3 shrink-0" />
                   </Button>
                 </div>

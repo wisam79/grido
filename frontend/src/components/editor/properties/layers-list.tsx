@@ -93,9 +93,12 @@ const SortableLayerItem = React.memo(
         } ${isDragging ? "shadow-md bg-card ring-1 ring-primary/30" : ""}`}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <div 
-            {...attributes} 
-            {...listeners} 
+          <div
+            {...attributes}
+            {...listeners}
+            role="button"
+            tabIndex={0}
+            aria-label="اسحب لإعادة ترتيب الطبقة"
             className="cursor-grab active:cursor-grabbing hover:bg-input p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
             onClick={(e) => e.stopPropagation()}
           >

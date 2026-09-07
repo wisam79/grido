@@ -116,7 +116,7 @@ jobs:
           npm run test
 
       - name: Build Wails App & NSIS Installer
-        run: wails build -platform windows/amd64 -nsis -ldflags "-X grido/internal/service.AppVersion=${{ github.ref_name }} -X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.MODAL_AI_KEY }}"
+        run: wails build -platform windows/amd64 -nsis -ldflags "-s -w -X grido/internal/service.AppVersion=${{ github.ref_name }} -X grido/internal/service.SupabaseURL=${{ secrets.SUPABASE_URL }} -X grido/internal/service.SupabaseAnonKey=${{ secrets.SUPABASE_ANON_KEY }} -X grido/internal/service.ModalAIKey=${{ secrets.MODAL_AI_KEY }}"
 
       - name: Prepare Executable Assets
         shell: powershell
@@ -146,10 +146,7 @@ jobs:
             build/bin/GridoStudio-installer.exe
 
       - name: Sign Executables via SignPath
-        env:
-          SIGNPATH_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-          SIGNPATH_ORG: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-        if: env.SIGNPATH_TOKEN != '' && env.SIGNPATH_ORG != ''
+        if: ${{ secrets.SIGNPATH_API_TOKEN != '' && secrets.SIGNPATH_ORGANIZATION_ID != '' }}
         continue-on-error: true
         uses: SignPath/github-action-submit-signing-request@v1
         with:
@@ -165,10 +162,7 @@ jobs:
           wait-for-completion-timeout-in-seconds: 1800
 
       - name: Deploy Signed Executable
-        if: env.SIGNPATH_TOKEN != '' && env.SIGNPATH_ORG != ''
-        env:
-          SIGNPATH_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-          SIGNPATH_ORG: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+        if: ${{ secrets.SIGNPATH_API_TOKEN != '' && secrets.SIGNPATH_ORGANIZATION_ID != '' }}
         shell: powershell
         run: |
           if (Test-Path "build\bin\signed") {

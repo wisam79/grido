@@ -117,6 +117,17 @@ export function UpdateNotifier() {
     };
   }, [performCheck]);
 
+  // تصفير حالات التحميل عند إغلاق النافذة — إغلاق المستخدم أثناء التنزيل
+  // كان يترك isDownloading/progress معلقة للجلسة التالية
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setIsDownloading(false);
+      setProgress(0);
+      setError(null);
+    }
+    setIsOpen(open);
+  }, []);
+
   if (!updateInfo || !isOpen) return null;
 
   const handleStartUpdate = async () => {
@@ -141,7 +152,7 @@ export function UpdateNotifier() {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !isDownloading && setIsOpen(open)}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (isDownloading) return; handleOpenChange(open); }}>
       <DialogContent
         showCloseButton={false}
         className="max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl rounded-2xl p-5 dir-rtl fluent-acrylic fluent-specular font-cairo"

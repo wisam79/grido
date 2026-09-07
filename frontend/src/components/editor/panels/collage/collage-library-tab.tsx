@@ -69,6 +69,14 @@ export function CollageLibraryTab({
               return (
                 <div
                   key={t.id}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelect(t);
+                    }
+                  }}
                   onClick={() => onSelect(t)}
                   className={cn(
                     "p-2.5 rounded-xl border flex items-center justify-between transition-all cursor-pointer select-none group",

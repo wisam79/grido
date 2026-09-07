@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "../../../../wailsjs/go/main/App";
 import type { NormalizedCell } from "./collage/collage-grid-math";
+import { toErrorMessage } from "@/lib/wails-error";
 import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
@@ -134,7 +135,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
       loadTemplates();
     } catch (e) {
       console.error(e);
-      toast.error("حدث خطأ أثناء حفظ القالب");
+      toast.error(toErrorMessage(e, "حدث خطأ أثناء حفظ القالب"));
     }
   };
 
@@ -149,7 +150,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
       }
     } catch (err) {
       console.error(err);
-      toast.error("فشل حذف القالب");
+      toast.error(toErrorMessage(err, "فشل حذف القالب"));
     }
   };
 
@@ -279,7 +280,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
                       {filteredOfficialTemplates.map((tpl) => (
-                        <div key={tpl.id} onClick={() => setTemplatesDialogOpen(false)}>
+                        <div key={tpl.id} role="presentation" onClick={() => setTemplatesDialogOpen(false)}>
                           <CollageTemplateCard
                             tpl={tpl}
                             onSelect={handleSelectTemplate}
@@ -337,7 +338,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
                         {savedTemplates.map((tpl) => (
-                          <div key={tpl.id} onClick={() => setTemplatesDialogOpen(false)}>
+                          <div key={tpl.id} role="presentation" onClick={() => setTemplatesDialogOpen(false)}>
                             <CollageTemplateCard
                               tpl={tpl}
                               onSelect={handleSelectTemplate}

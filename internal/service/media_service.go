@@ -38,16 +38,28 @@ func NewMediaService() *MediaService {
 }
 
 func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, error) {
-	mediaDir := s.GetMediaDir()
 	filename := filepath.Base(filepath.Clean(strings.TrimPrefix(localPath, "/local-image/")))
-	fullPath := filepath.Join(mediaDir, filename)
+	var baseDir string
+
+	// معاينات الطباعة (print_*) تُوجَّه لمجلد Exports في main.go —
+	// فحص baseDir هنا يمنع فشل قراءة أبعاد صور المعاينة ويحمي ضد Path Traversal
+	if strings.HasPrefix(filename, "print_") {
+		baseDir = filepath.Join(utils.GetAppDir(), "Exports")
+	} else {
+		baseDir = s.GetMediaDir()
+	}
+	fullPath := filepath.Join(baseDir, filename)
 
 	resolved, err := filepath.EvalSymlinks(fullPath)
 	if err != nil {
 		resolved = fullPath
 	}
-	if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(mediaDir)+string(filepath.Separator)) {
-		return ImageDimensions{}, fmt.Errorf("invalid path: outside media directory")
+	resolvedBase, err := filepath.EvalSymlinks(baseDir)
+	if err == nil {
+		baseDir = resolvedBase
+	}
+	if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(baseDir)+string(filepath.Separator)) {
+		return ImageDimensions{}, fmt.Errorf("invalid path: outside allowed directory")
 	}
 
 	f, err := os.Open(resolved)
@@ -143,20 +155,36 @@ func (s *MediaService) ProcessOpenedFile(filePath string) (string, error) {
 	}
 
 	mediaDir := s.GetMediaDir()
-	
+
 	// Prevent extension bypass by enforcing extension from MIME type
 	ext := s.GetExtensionFromMime(detectedType)
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
 
-	destFile, err := os.OpenFile(newPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	// كتابة ذرية: ملف مؤقت + fsync + rename — النسخ المباشر كان يترك
+	// ملفاً تالفاً/0 بايت عند انقطاع مفاجئ أثناء النقل
+	tmpPath := newPath + ".tmp"
+	defer func() {
+		_ = os.Remove(tmpPath)
+	}()
+	tmpFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		return "", fmt.Errorf("create dest file: %w", err)
+		return "", fmt.Errorf("create temp file: %w", err)
 	}
-	defer destFile.Close()
 
-	if _, err := io.Copy(destFile, srcFile); err != nil {
+	if _, err := io.Copy(tmpFile, srcFile); err != nil {
+		tmpFile.Close()
 		return "", fmt.Errorf("copy file: %w", err)
+	}
+	if err := tmpFile.Sync(); err != nil {
+		tmpFile.Close()
+		return "", fmt.Errorf("sync temp file: %w", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		return "", fmt.Errorf("close temp file: %w", err)
+	}
+	if err := os.Rename(tmpPath, newPath); err != nil {
+		return "", fmt.Errorf("finalize media file: %w", err)
 	}
 
 	return "/local-image/" + newName, nil

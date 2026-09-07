@@ -356,7 +356,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             ) : (
               <>
                 <DownloadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                <span>تنزيل الصورة</span>
+                <span>تصدير</span>
               </>
             )}
           </Button>

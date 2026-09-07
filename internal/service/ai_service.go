@@ -332,20 +332,14 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 
 	// 🛡️ الفحص الخادمي الرسمي — لا يستهلك الرصيد (check_only) ويستمر عبر إعادة التشغيل.
 	// RPC check_and_record_ai_usage يشتق الحد من الخطة ويحصي استهلاك اليوم في قاعدة البيانات.
+	// التسجيل الفعلي للاستهلاك يقوم به خادم Modal AI بنفسه بعد نجاح المعالجة
+	// (upscaler.py:311-334) — أي تسجيل إضافي هنا يعني خصماً مزدوجاً للحصة اليومية.
 	if SupabaseURL != "" && SupabaseAnonKey != "" {
 		userID, _, userErr := fetchSupabaseUserInfo(token)
 		if userErr == nil && userID != "" {
 			if rpcErr := callAIUsageRPC(token, userID, inputImageBytes, true); rpcErr != nil {
 				return "", fmt.Errorf("تجاوزت الحد اليومي أو تعذر التحقق من الحصة: %w", rpcErr)
 			}
-			// تسجيل الاستهلاك خادمياً بعد نجاح المعالجة فقط
-			defer func() {
-				if success {
-					if recErr := callAIUsageRPC(token, userID, inputImageBytes, false); recErr != nil {
-						slog.Error("Failed to record AI usage server-side", "error", recErr)
-					}
-				}
-			}()
 		}
 	}
 

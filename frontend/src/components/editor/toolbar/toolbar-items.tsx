@@ -76,7 +76,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               variant="ghost" 
               size="sm" 
               aria-label="إضافة نص"
-              className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
+              className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
             >
               <TextT className="w-5 h-5" />
               <CaretDown className="w-3.5 h-3.5 opacity-60" />
@@ -151,7 +151,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
+              className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
               aria-label="إضافة شكل"
             >
               <GeometricShapesIcon className="w-5 h-5" />
@@ -319,7 +319,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           variant={isRemovingBg ? "destructive" : "outline"}
           size="sm"
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-9 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(selectedItem)}
@@ -360,7 +360,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           size="sm"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-9 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
             isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
@@ -387,7 +387,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           size="sm"
           disabled={isEnhancing || isRemovingBg || isFraming}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-9 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(selectedItem)}
@@ -445,46 +445,10 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
   const removeElements = useEditorStore((state) => state.removeElements);
 
   const alignElement = useCallback((type: "left" | "center" | "right" | "top" | "middle" | "bottom") => {
-    const { selectedId, selectedIds, elements, updateElement, updateElements, pushHistory } = useEditorStore.getState();
-    if (!selectedId) return;
-
-    const targetIds = selectedIds.length > 1 ? selectedIds : [selectedId];
-    const targets = elements.filter((e) => targetIds.includes(e.id));
-    if (targets.length === 0) return;
-
-    if (targets.length === 1) {
-      const el = targets[0];
-      let patch = {};
-      if (type === "left") patch = { x: 0 };
-      else if (type === "center") patch = { x: 0.5 - el.width / 2 };
-      else if (type === "right") patch = { x: 1 - el.width };
-      else if (type === "top") patch = { y: 0 };
-      else if (type === "middle") patch = { y: 0.5 - el.height / 2 };
-      else if (type === "bottom") patch = { y: 1 - el.height };
-      updateElement(selectedId, patch);
-    } else {
-      // تعدد التحديد: محاذاة نسبة لحدود التحديد كلها لتظل المجموعة متماسكة
-      const minX = Math.min(...targets.map((e) => e.x));
-      const minY = Math.min(...targets.map((e) => e.y));
-      const maxX = Math.max(...targets.map((e) => e.x + e.width));
-      const maxY = Math.max(...targets.map((e) => e.y + e.height));
-      const width = maxX - minX;
-      const height = maxY - minY;
-
-      const patches = targets.map((el) => {
-        let patch = {};
-        if (type === "left") patch = { x: minX };
-        else if (type === "center") patch = { x: minX + (width - el.width) / 2 };
-        else if (type === "right") patch = { x: minX + width - el.width };
-        else if (type === "top") patch = { y: minY };
-        else if (type === "middle") patch = { y: minY + (height - el.height) / 2 };
-        else if (type === "bottom") patch = { y: minY + height - el.height };
-        return { id: el.id, patch };
-      });
-      updateElements(patches);
-    }
-
-    pushHistory();
+    // استخدام دالة الستور المعتمدة alignSelectedElements — المحاذاة المحلية
+    // كانت تعالج كل عنصر بمفرده وتسحق العناصر المجمعة فوق نفس الإحداثي
+    const { alignSelectedElements } = useEditorStore.getState();
+    alignSelectedElements(type);
   }, []);
 
   if (!hasSelection) return null;
@@ -506,7 +470,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             }
           }}
           aria-label="تكرار"
-          className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
           <Copy className="w-5 h-5" />
         </Button>
@@ -527,7 +491,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             size="sm"
             onClick={groupSelectedElements}
             aria-label="تجميع"
-            className="h-8.5 px-3 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
+            className="h-8 px-3 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
           >
             <Link className="w-5 h-5" />
           </Button>
@@ -541,7 +505,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             size="sm"
             onClick={ungroupSelectedElements}
             aria-label="فك التجميع"
-            className="h-8.5 px-3 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
+            className="h-8 px-3 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
           >
             <LinkBreak className="w-5 h-5" />
           </Button>
@@ -556,7 +520,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1" 
+            className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1" 
             aria-label="محاذاة"
           >
             <AlignCenterHorizontalIcon className="w-5 h-5" />
@@ -597,7 +561,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             }
           }}
           aria-label="حذف"
-          className="h-8.5 px-3 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
+          className="h-8 px-3 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
         >
           <Trash className="w-5 h-5" />
         </Button>
@@ -621,7 +585,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           onClick={undo}
           disabled={!canUndo}
           aria-label="تراجع"
-          className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
           <ArrowUUpLeft className="w-5 h-5" />
         </Button>
@@ -633,7 +597,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           onClick={redo}
           disabled={!canRedo}
           aria-label="إعادة"
-          className="h-8.5 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
           <ArrowUUpRight className="w-5 h-5" />
         </Button>
