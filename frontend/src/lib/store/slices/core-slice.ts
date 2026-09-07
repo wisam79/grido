@@ -79,7 +79,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
 
   setMode: (mode) => {
     set((s) => {
-      const nextState: Partial<CoreSliceCross> = { mode, selectedId: null };
+      const nextState: Partial<CoreSliceCross> = { mode, selectedId: null, selectedIds: [] };
 
       // إذا تم الانتقال لوضع الكولاج وكانت الخانات فارغة، نقوم بإعادة بناء الخلايا لتجنب ظهور الكانفس فارغاً
       const buildSlots = (): CanvasSlot[] | undefined => {

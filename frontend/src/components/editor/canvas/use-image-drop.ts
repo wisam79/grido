@@ -68,10 +68,7 @@ export function useImageDrop(
       const freshCollageMargin = freshState.collageMargin;
       const freshCollageGap = freshState.collageGap;
 
-      if (freshMode === "collage" || freshSlots.length > 0) {
-        if (freshMode !== "collage") {
-          freshState.setMode("collage");
-        }
+      if (freshMode === "collage") {
 
         let targetSlotId: string | null = null;
         if (innerRef.current) {

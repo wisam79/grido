@@ -136,7 +136,9 @@ export default function App() {
               const img = new window.Image();
               img.onload = () => {
                 const aspect = (img.naturalWidth && img.naturalHeight) ? img.naturalWidth / img.naturalHeight : 1;
-                useEditorStore.getState().addImageElement(startupUrl, aspect);
+                const store = useEditorStore.getState();
+                store.setMode("single");
+                store.addImageElement(startupUrl, aspect);
               };
               img.src = startupUrl;
             }

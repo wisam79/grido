@@ -162,8 +162,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   }, []);
 
   useEffect(() => {
-    if (trRef.current && (mode === "single" || sortedElements.length > 0)) {
-      if (selectedIds.length > 0) {
+    if (trRef.current) {
+      if (mode === "single" && selectedIds.length > 0) {
         const nodes = selectedIds
           .map((id) => elementsRefs.current[id])
           .filter(Boolean);
@@ -278,7 +278,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
         />
       )}
 
-      {(mode === "single" || sortedElements.length > 0) && (
+      {mode === "single" && (
         <KonvaSingleLayer
           sortedElements={sortedElements}
           selectedIds={selectedIds}

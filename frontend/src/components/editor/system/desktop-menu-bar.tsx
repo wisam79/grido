@@ -118,13 +118,23 @@ export function DesktopMenuBar() {
     try {
       const paths = await openDirectoryImageDialog();
       if (paths && paths.length > 0) {
-        const items: { src: string; aspectRatio: number }[] = [];
-        for (const p of paths) {
-          const aspect = await resolveImageAspectRatio(p);
-          items.push({ src: p, aspectRatio: aspect });
+        const freshState = useEditorStore.getState();
+        if (freshState.mode === "collage") {
+          const freshSlots = freshState.slots;
+          const assignments = freshSlots
+            .slice(0, paths.length)
+            .map((slot, index) => ({ slotId: slot.id, src: paths[index] }));
+          freshState.setSlotImagesBatch(assignments, paths[0] || null);
+          toast.success(`تم استيراد ${assignments.length} صورة إلى خلايا الكولاج`);
+        } else {
+          const items: { src: string; aspectRatio: number }[] = [];
+          for (const p of paths) {
+            const aspect = await resolveImageAspectRatio(p);
+            items.push({ src: p, aspectRatio: aspect });
+          }
+          addImageElementsBatch(items);
+          toast.success(`تم استيراد وتوزيع ${items.length} صورة من المجلد`);
         }
-        addImageElementsBatch(items);
-        toast.success(`تم استيراد وتوزيع ${items.length} صورة من المجلد`);
       }
     } catch (e) {
       console.error(e);

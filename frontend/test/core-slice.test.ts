@@ -6,12 +6,18 @@ describe('CoreSlice Unit Tests', () => {
     useEditorStore.getState().reset();
   });
 
-  it('sets mode correctly', () => {
+  it('sets mode correctly and resets selection', () => {
+    useEditorStore.setState({ selectedId: 'slot-1', selectedIds: ['el-1', 'el-2'] });
     useEditorStore.getState().setMode('single');
     expect(useEditorStore.getState().mode).toBe('single');
+    expect(useEditorStore.getState().selectedId).toBeNull();
+    expect(useEditorStore.getState().selectedIds).toEqual([]);
 
+    useEditorStore.setState({ selectedId: 'el-3', selectedIds: ['el-3'] });
     useEditorStore.getState().setMode('collage');
     expect(useEditorStore.getState().mode).toBe('collage');
+    expect(useEditorStore.getState().selectedId).toBeNull();
+    expect(useEditorStore.getState().selectedIds).toEqual([]);
   });
 
   it('sets canvas size correctly', () => {

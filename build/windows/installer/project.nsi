@@ -1,4 +1,4 @@
-﻿Unicode true
+Unicode true
 
 ####
 ## Wails NSIS Installer Script for Grido Studio
@@ -85,10 +85,8 @@ Function .onInit
 FunctionEnd
 
 Function .onInstSuccess
-    IfSilent skip_launch not_silent
-    skip_launch:
-        Goto done
-    not_silent:
+    IfSilent is_silent done
+    is_silent:
         ExecShell "open" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     done:
 FunctionEnd

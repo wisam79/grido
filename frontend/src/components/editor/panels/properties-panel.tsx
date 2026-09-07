@@ -37,8 +37,8 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
   const [generalTab, setGeneralTab] = useState<"collage" | "canvas">("collage");
 
   const activeElementId = selectedId || (selectedIds.length > 0 ? selectedIds[0] : null);
-  const selectedElement = elements.find((e) => e.id === activeElementId);
-  const selectedSlot = slots.find((s) => s.id === selectedId);
+  const selectedElement = mode === "single" ? elements.find((e) => e.id === activeElementId) : undefined;
+  const selectedSlot = mode === "collage" ? slots.find((s) => s.id === selectedId) : undefined;
 
   const handleUpdateElement = useCallback((id: string, patch: Partial<Record<string, unknown>>) => {
     const { selectedIds, updateElements, updateElement } = useEditorStore.getState();
