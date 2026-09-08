@@ -97,17 +97,19 @@ export function useImageDrop(
         }
 
         const assignments: { slotId: string; src: string }[] = [];
-        if ((freshCollageTemplate?.physicalLayout || freshSlots.length > 1) && uploadedSrcs.length === 1 && uploadedSrcs[0]) {
-          for (const s of freshSlots) {
-            assignments.push({ slotId: s.id, src: uploadedSrcs[0] });
-          }
-        } else if (targetSlotId && uploadedSrcs[0]) {
+        if (targetSlotId && uploadedSrcs[0]) {
+          // إذا أُسقطت الصورة فوق خانة معينة، نضعها في تلك الخانة أولاً
           assignments.push({ slotId: targetSlotId, src: uploadedSrcs[0] });
           let srcIdx = 1;
           for (const s of freshSlots) {
             if (s.id !== targetSlotId && !s.imageSrc && srcIdx < uploadedSrcs.length) {
               assignments.push({ slotId: s.id, src: uploadedSrcs[srcIdx++] });
             }
+          }
+        } else if (freshCollageTemplate?.physicalLayout && uploadedSrcs.length === 1 && uploadedSrcs[0]) {
+          // في قوالب طباعة صور الهوية (مثل 8 صور في ورقة واحدة) عند الإسقاط العام دون استهداف خانة محددة
+          for (const s of freshSlots) {
+            assignments.push({ slotId: s.id, src: uploadedSrcs[0] });
           }
         } else {
           let srcIdx = 0;

@@ -304,3 +304,223 @@ func TestLicenseRepository_AntiTamper(t *testing.T) {
 	}
 }
 
+func TestCustomTemplateRepository_CRUD(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+	if err := db.AutoMigrate(&domain.CustomTemplate{}); err != nil {
+		t.Fatalf("failed to migrate custom templates: %v", err)
+	}
+
+	repo := NewCustomTemplateRepository(db)
+
+	tmpl := &domain.CustomTemplate{
+		Name:  "Passport Grid 8x",
+		Slots: 8,
+		Cells: domain.JSONText(`[{"x":0,"y":0,"w":0.5,"h":0.25}]`),
+	}
+
+	// 1. Create
+	if err := repo.Create(tmpl); err != nil {
+		t.Fatalf("failed to create custom template: %v", err)
+	}
+	if tmpl.ID == 0 {
+		t.Error("expected template ID to be populated after creation")
+	}
+
+	// 2. FindAll
+	templates, err := repo.FindAll()
+	if err != nil {
+		t.Fatalf("failed to find templates: %v", err)
+	}
+	if len(templates) != 1 {
+		t.Errorf("expected 1 template, got %d", len(templates))
+	}
+	if templates[0].Name != "Passport Grid 8x" {
+		t.Errorf("expected template name 'Passport Grid 8x', got %q", templates[0].Name)
+	}
+
+	// 3. Delete
+	if err := repo.Delete(tmpl.ID); err != nil {
+		t.Fatalf("failed to delete template: %v", err)
+	}
+
+	remaining, err := repo.FindAll()
+	if err != nil {
+		t.Fatalf("failed to find templates after delete: %v", err)
+	}
+	if len(remaining) != 0 {
+		t.Errorf("expected 0 templates after delete, got %d", len(remaining))
+	}
+}
+
+func TestCleanUnusedMediaNow(t *testing.T) {
+	tempDir := t.TempDir()
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	t.Setenv("GRIDO_APP_DIR", appDir)
+
+	mediaDir := filepath.Join(appDir, "Media")
+	trashDir := filepath.Join(appDir, "MediaTrash")
+	_ = os.MkdirAll(mediaDir, 0755)
+
+	img1 := filepath.Join(mediaDir, "used.jpg")
+	img2 := filepath.Join(mediaDir, "unused.jpg")
+	_ = os.WriteFile(img1, []byte("referenced-data"), 0644)
+	_ = os.WriteFile(img2, []byte("unreferenced-data-to-clean"), 0644)
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+	_ = db.AutoMigrate(&domain.Project{}, &domain.CustomTemplate{})
+
+	p := &domain.Project{
+		ID:       "proj-clean-now",
+		Name:     "Test Project",
+		Elements: `[{"imageSrc": "/local-image/used.jpg"}]`,
+		Slots:    `[]`,
+	}
+	_ = db.Save(p)
+
+	dbMu.Lock()
+	dbInstance = db
+	dbMu.Unlock()
+	defer func() {
+		dbMu.Lock()
+		dbInstance = nil
+		dbMu.Unlock()
+	}()
+
+	cleanedCount, freedBytes, err := CleanUnusedMediaNow()
+	if err != nil {
+		t.Fatalf("CleanUnusedMediaNow returned error: %v", err)
+	}
+	if cleanedCount != 1 {
+		t.Errorf("expected 1 cleaned file, got %d", cleanedCount)
+	}
+	if freedBytes != int64(len("unreferenced-data-to-clean")) {
+		t.Errorf("expected freedBytes %d, got %d", len("unreferenced-data-to-clean"), freedBytes)
+	}
+
+	// used.jpg must still be in Media/
+	if _, err := os.Stat(img1); os.IsNotExist(err) {
+		t.Error("expected referenced used.jpg to remain in Media/")
+	}
+	// unused.jpg must be moved to MediaTrash/
+	if _, err := os.Stat(filepath.Join(trashDir, "unused.jpg")); os.IsNotExist(err) {
+		t.Error("expected unused.jpg to be in MediaTrash/")
+	}
+}
+
+func TestCollectReferencedImages_EdgeCases(t *testing.T) {
+	tempDir := t.TempDir()
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	_ = os.MkdirAll(appDir, 0755)
+
+	// 1. Case: corrupt autosave.json should abort and return error to protect user data
+	autosavePath := filepath.Join(appDir, "autosave.json")
+	_ = os.WriteFile(autosavePath, []byte("NOT_VALID_JSON{[[{"), 0644)
+
+	projects := []domain.Project{
+		{
+			ID:       "p-test",
+			Elements: `[{"imageSrc": "image.png", "originalImageSrc": "orig.png"}]`,
+			Slots:    `[{"imageSrc": "slot.png", "originalImageSrc": "orig_slot.png"}]`,
+		},
+	}
+
+	_, err := collectReferencedImages(projects, appDir)
+	if err == nil {
+		t.Error("expected error when autosave.json is corrupt, got nil")
+	}
+
+	// 2. Case: valid autosave.json with elements & slots
+	validAutosave := `{"elements":[{"imageSrc":"/local-image/draft1.jpg"}],"slots":[{"imageSrc":"/local-image/draft2.jpg"}]}`
+	_ = os.WriteFile(autosavePath, []byte(validAutosave), 0644)
+
+	referenced, err := collectReferencedImages(projects, appDir)
+	if err != nil {
+		t.Fatalf("expected no error with valid autosave: %v", err)
+	}
+
+	expectedKeys := []string{"image.png", "orig.png", "slot.png", "orig_slot.png", "draft1.jpg", "draft2.jpg"}
+	for _, key := range expectedKeys {
+		if !referenced[key] {
+			t.Errorf("expected %q to be in referenced map", key)
+		}
+	}
+}
+
+func TestProjectRepository_ImportProjects(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+	_ = db.AutoMigrate(&domain.Project{})
+
+	repo := NewProjectRepository(db)
+
+	p1 := domain.Project{ID: "p1", Name: "Project 1"}
+	p2 := domain.Project{ID: "p2", Name: "Project 2"}
+	_ = repo.Save(&p1)
+
+	// Test merge import (overwrite = false)
+	err = repo.ImportProjects([]domain.Project{p2}, false)
+	if err != nil {
+		t.Fatalf("ImportProjects (merge) failed: %v", err)
+	}
+	all, _ := repo.FindAll()
+	if len(all) != 2 {
+		t.Errorf("expected 2 projects after merge, got %d", len(all))
+	}
+
+	// Test overwrite import (overwrite = true)
+	p3 := domain.Project{ID: "p3", Name: "Project 3 Only"}
+	err = repo.ImportProjects([]domain.Project{p3}, true)
+	if err != nil {
+		t.Fatalf("ImportProjects (overwrite) failed: %v", err)
+	}
+	allOverwrite, _ := repo.FindAll()
+	if len(allOverwrite) != 1 || allOverwrite[0].ID != "p3" {
+		t.Errorf("expected only p3 after overwrite, got: %+v", allOverwrite)
+	}
+}
+
+func TestInitDB_And_CloseDB(t *testing.T) {
+	tempDir := t.TempDir()
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	t.Setenv("GRIDO_APP_DIR", appDir)
+
+	db, err := InitDB()
+	if err != nil {
+		t.Fatalf("InitDB failed: %v", err)
+	}
+	if db == nil {
+		t.Fatal("InitDB returned nil db")
+	}
+
+	// Calling InitDB again should be idempotent and return same instance
+	db2, err := InitDB()
+	if err != nil || db2 != db {
+		t.Errorf("expected idempotent db instance from InitDB")
+	}
+
+	// Test clean shutdown
+	if err := CloseDB(); err != nil {
+		t.Fatalf("CloseDB failed: %v", err)
+	}
+
+	// Closing when already closed should succeed gracefully
+	if err := CloseDB(); err != nil {
+		t.Errorf("expected nil error on repeated CloseDB, got %v", err)
+	}
+}
+
+func TestStopCleanupUnusedMedia(t *testing.T) {
+	// Should not panic even if no cleanup is running
+	StopCleanupUnusedMedia()
+}
+
+
+

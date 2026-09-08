@@ -116,8 +116,8 @@ const estimateEntryBytes = (entry: HistoryEntry): number => {
   let total = 2048; // مصروف إداري لكل لقطة (مصفوفات + حقول عددية)
   for (const el of entry.elements) {
     if (el.type === "image") {
-      total += el.imageSrc.length;
-      if (el.originalImageSrc) total += el.originalImageSrc.length;
+      if (typeof el.imageSrc === "string") total += el.imageSrc.length;
+      if (typeof el.originalImageSrc === "string") total += el.originalImageSrc.length;
     }
   }
   for (const sl of entry.slots) {

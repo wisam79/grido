@@ -148,6 +148,10 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 		if err != nil {
 			return "", fmt.Errorf("eval symlink: %w", err)
 		}
+		resolvedMediaDir, err := filepath.EvalSymlinks(mediaDir)
+		if err == nil {
+			mediaDir = resolvedMediaDir
+		}
 		if !strings.HasPrefix(filepath.Clean(resolvedPath), filepath.Clean(mediaDir)+string(filepath.Separator)) {
 			return "", fmt.Errorf("invalid image path: outside media directory")
 		}

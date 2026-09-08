@@ -169,3 +169,20 @@ func TestPhoneBridgeService_Endpoints(t *testing.T) {
 		t.Errorf("uploaded file not found with expected format in %s", mediaDir)
 	}
 }
+
+func TestPhoneBridgeService_DiscoverLocalIP(t *testing.T) {
+	bridgeSvc := NewPhoneBridgeService(NewMediaService())
+	ip, err := bridgeSvc.discoverLocalIP()
+	if err != nil {
+		t.Fatalf("discoverLocalIP returned error: %v", err)
+	}
+	if ip == "" {
+		t.Error("expected non-empty IP string")
+	}
+	// IP should be a valid IPv4 representation
+	parts := strings.Split(ip, ".")
+	if len(parts) != 4 {
+		t.Errorf("expected IPv4 address, got %q", ip)
+	}
+}
+

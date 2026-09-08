@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -409,5 +410,61 @@ func TestMediaService_GetImageDimensions(t *testing.T) {
 	}
 	if _, err := svc.GetImageDimensions("/local-image/nonexistent_image_12345.png"); err == nil {
 		t.Error("expected error for nonexistent file, got nil")
+	}
+}
+
+func TestMediaService_ProcessMultipleOpenedFiles_AtomicAndTmpCleanup(t *testing.T) {
+	svc := NewMediaService()
+	tmpDir := t.TempDir()
+
+	validImg := filepath.Join(tmpDir, "valid.png")
+	decoded, _ := base64.StdEncoding.DecodeString(validPNGBase64)
+	_ = os.WriteFile(validImg, decoded, 0644)
+
+	corruptImg := filepath.Join(tmpDir, "corrupt.txt")
+	_ = os.WriteFile(corruptImg, []byte("not-an-image"), 0644)
+
+	nonExistent := filepath.Join(tmpDir, "missing.png")
+
+	results, err := svc.ProcessMultipleOpenedFiles([]string{validImg, corruptImg, nonExistent})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Errorf("expected exactly 1 valid image processed, got %d", len(results))
+	}
+
+	// Verify no abandoned .tmp files in mediaDir
+	mediaDir := svc.GetMediaDir()
+	entries, _ := os.ReadDir(mediaDir)
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".tmp") {
+			t.Errorf("found abandoned temporary file in mediaDir: %s", entry.Name())
+		}
+	}
+}
+
+func TestMediaService_ProcessDirectoryImages_FiltersNonImages(t *testing.T) {
+	svc := NewMediaService()
+	tmpDir := t.TempDir()
+
+	img1 := filepath.Join(tmpDir, "photo1.png")
+	img2 := filepath.Join(tmpDir, "photo2.jpg")
+	txt1 := filepath.Join(tmpDir, "notes.txt")
+	subDir := filepath.Join(tmpDir, "subfolder")
+
+	decoded, _ := base64.StdEncoding.DecodeString(validPNGBase64)
+	_ = os.WriteFile(img1, decoded, 0644)
+	_ = os.WriteFile(img2, decoded, 0644)
+	_ = os.WriteFile(txt1, []byte("text"), 0644)
+	_ = os.Mkdir(subDir, 0755)
+
+	results, err := svc.ProcessDirectoryImages(tmpDir)
+	if err != nil {
+		t.Fatalf("ProcessDirectoryImages failed: %v", err)
+	}
+	if len(results) != 2 {
+		t.Errorf("expected 2 images processed from directory, got %d", len(results))
 	}
 }

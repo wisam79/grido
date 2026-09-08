@@ -104,8 +104,10 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 // GeneratePrintSheet يولّد ورقة الطباعة كاملة: تحقق ← تركيب ← معالجة متوازية للصور
 // ← رسم تسلسلي (gg ليس آمناً للتزامن) ← خطوط قص ← حفظ المخرجات.
 func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, string, error) {
-	// Ensure logical dimensions match orientation (defensive: callers may send raw 210x297 + landscape)
+	// Ensure logical dimensions match orientation (defensive: callers may send raw 210x297 + landscape or raw 297x210 + portrait)
 	if strings.EqualFold(req.Orientation, "landscape") && req.PaperWidthMM < req.PaperHeightMM {
+		req.PaperWidthMM, req.PaperHeightMM = req.PaperHeightMM, req.PaperWidthMM
+	} else if (req.Orientation == "" || strings.EqualFold(req.Orientation, "portrait")) && req.PaperWidthMM > req.PaperHeightMM {
 		req.PaperWidthMM, req.PaperHeightMM = req.PaperHeightMM, req.PaperWidthMM
 	}
 	widthPx, heightPx, err := s.validatePrintRequest(req)

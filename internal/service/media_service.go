@@ -238,8 +238,9 @@ func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string,
 		ext := s.GetExtensionFromMime(detectedType)
 		newName := fmt.Sprintf("img_%d_%d%s", time.Now().UnixNano(), i, ext)
 		newPath := filepath.Join(mediaDir, newName)
+		tmpPath := newPath + ".tmp"
 
-		destFile, err := os.OpenFile(newPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		destFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			srcFile.Close()
 			skippedNames = append(skippedNames, filepath.Base(filePath))
@@ -248,15 +249,25 @@ func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string,
 		}
 
 		_, copyErr := io.Copy(destFile, srcFile)
-		destFile.Close()
+		syncErr := destFile.Sync()
+		closeErr := destFile.Close()
 		srcFile.Close()
 
-		if copyErr == nil {
-			results = append(results, "/local-image/"+newName)
-		} else {
+		if copyErr != nil || syncErr != nil || closeErr != nil {
+			_ = os.Remove(tmpPath)
 			skippedNames = append(skippedNames, filepath.Base(filePath))
-			slog.Warn("Skipped file in multi-select: copy error", "file", filepath.Base(filePath), "error", copyErr)
+			slog.Warn("Skipped file in multi-select: write/sync error", "file", filepath.Base(filePath), "copyErr", copyErr, "syncErr", syncErr, "closeErr", closeErr)
+			continue
 		}
+
+		if err := os.Rename(tmpPath, newPath); err != nil {
+			_ = os.Remove(tmpPath)
+			skippedNames = append(skippedNames, filepath.Base(filePath))
+			slog.Warn("Skipped file in multi-select: rename error", "file", filepath.Base(filePath), "error", err)
+			continue
+		}
+
+		results = append(results, "/local-image/"+newName)
 	}
 
 	if len(skippedNames) > 0 {

@@ -30,21 +30,32 @@ Object.defineProperty(window, 'go', {
       App: {
         ApplyMaskToImage: () => Promise.resolve(''),
         CheckForUpdate: () => Promise.resolve({ has_update: false, current_version: 'v1.0.0', latest_version: 'v1.0.0', download_url: '', release_notes: '' }),
+        CleanUnusedMediaNow: () => Promise.resolve({ cleanedCount: 0, freedBytes: 0 }),
         ClearAutoSave: () => Promise.resolve(),
         DeleteCustomTemplate: () => Promise.resolve(),
         DownloadAndInstallUpdate: () => Promise.resolve(),
         EnhanceImageWithAI: () => Promise.resolve(''),
         ExportSupportLogs: () => Promise.resolve(''),
         GetCustomTemplates: () => Promise.resolve([]),
+        GetImageDimensions: () => Promise.resolve({ width: 800, height: 600 }),
+        GetMediaStorageStats: () => Promise.resolve({ count: 0, totalBytes: 0 }),
+        GetPhoneBridgeStatus: () => Promise.resolve({ isRunning: false, url: '', receivedCount: 0, lastReceived: '' }),
+        GetStartupFile: () => Promise.resolve(''),
+        LoadAiUsageLogs: () => Promise.resolve('[]'),
         LoadAutoSave: () => Promise.resolve(''),
         LogFrontendError: () => Promise.resolve(),
+        OpenDirectoryDialog: () => Promise.resolve([]),
         OpenFile: () => Promise.resolve(''),
         OpenMultipleFiles: () => Promise.resolve([]),
+        SaveAiUsageLogs: () => Promise.resolve(),
         SaveAutoSave: () => Promise.resolve(),
         SaveCustomTemplate: () => Promise.resolve(),
         SaveFile: () => Promise.resolve(''),
         SaveFileDialog: () => Promise.resolve(''),
         SaveImageFromBase64: () => Promise.resolve(''),
+        SelectExportDirectory: () => Promise.resolve(''),
+        StartPhoneBridge: () => Promise.resolve({ ip: '127.0.0.1', port: 8741, token: 'mock-token', url: 'http://127.0.0.1:8741?token=mock-token', isRunning: true }),
+        StopPhoneBridge: () => Promise.resolve(),
       }
     },
     handlers: {
@@ -78,7 +89,8 @@ Object.defineProperty(window, 'go', {
 
     }
   },
-  writable: true
+  writable: true,
+  configurable: true,
 });
 
 Object.defineProperty(window, 'runtime', {
@@ -111,6 +123,7 @@ Object.defineProperty(window, 'runtime', {
     LogError: () => {},
     LogFatal: () => {},
   },
-  writable: true
+  writable: true,
+  configurable: true,
 });
 

@@ -15,6 +15,12 @@ vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
   Logout: vi.fn(),
 }));
 
+vi.mock('../wailsjs/go/main/App', () => ({
+  SaveAiUsageLogs: vi.fn(() => Promise.reject(new Error('Wails bridge not available in test'))),
+  LoadAiUsageLogs: vi.fn(() => Promise.resolve('[]')),
+}));
+
+
 describe('LicenseSlice Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();

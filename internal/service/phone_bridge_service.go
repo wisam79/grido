@@ -367,8 +367,8 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 }
 
 func (s *PhoneBridgeService) discoverLocalIP() (string, error) {
-	// Attempt outbound UDP connection to determine primary routing interface
-	conn, err := net.Dial("udp", "8.8.8.8:80")
+	// 1. Attempt outbound UDP connection to determine primary routing interface
+	conn, err := net.DialTimeout("udp", "8.8.8.8:80", 500*time.Millisecond)
 	if err == nil {
 		defer conn.Close()
 		if udpAddr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
@@ -379,7 +379,74 @@ func (s *PhoneBridgeService) discoverLocalIP() (string, error) {
 		}
 	}
 
-	// Fallback: iterate network interface addresses
+	// 2. Intelligent physical interface scanning:
+	// Prioritize active (UP), non-loopback physical network adapters (Wi-Fi, Ethernet).
+	// On Windows, virtual adapters (WSL vEthernet, Hyper-V, Docker, VirtualBox, VMware)
+	// frequently hijack fallback selection if InterfaceAddrs() is read naively.
+	interfaces, ifErr := net.Interfaces()
+	if ifErr == nil {
+		var preferredIP string
+		var fallbackIP string
+
+		for _, ifi := range interfaces {
+			// Must be UP and not Loopback
+			if ifi.Flags&net.FlagUp == 0 || ifi.Flags&net.FlagLoopback != 0 {
+				continue
+			}
+
+			nameLower := strings.ToLower(ifi.Name)
+			// Skip known virtual / container / tunnel adapter names
+			isVirtual := strings.Contains(nameLower, "vethernet") ||
+				strings.Contains(nameLower, "wsl") ||
+				strings.Contains(nameLower, "docker") ||
+				strings.Contains(nameLower, "virtual") ||
+				strings.Contains(nameLower, "vbox") ||
+				strings.Contains(nameLower, "vmnet") ||
+				strings.Contains(nameLower, "tailscale") ||
+				strings.Contains(nameLower, "zerotier") ||
+				strings.Contains(nameLower, "tap") ||
+				strings.Contains(nameLower, "tun")
+
+			addrs, err := ifi.Addrs()
+			if err != nil {
+				continue
+			}
+
+			for _, addr := range addrs {
+				ipNet, ok := addr.(*net.IPNet)
+				if !ok || ipNet.IP.IsLoopback() {
+					continue
+				}
+				ipv4 := ipNet.IP.To4()
+				if ipv4 == nil {
+					continue
+				}
+
+				ipStr := ipv4.String()
+				// Check for private subnet ranges (192.168.x.x, 10.x.x.x)
+				isClassC := ipv4[0] == 192 && ipv4[1] == 168
+				isClassA := ipv4[0] == 10
+
+				if !isVirtual && (isClassC || isClassA) {
+					// Physical Wi-Fi or LAN subnet: immediate best choice
+					return ipStr, nil
+				} else if !isVirtual && preferredIP == "" {
+					preferredIP = ipStr
+				} else if fallbackIP == "" {
+					fallbackIP = ipStr
+				}
+			}
+		}
+
+		if preferredIP != "" {
+			return preferredIP, nil
+		}
+		if fallbackIP != "" {
+			return fallbackIP, nil
+		}
+	}
+
+	// 3. Last-resort fallback: iterate network interface addresses
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return "127.0.0.1", err
