@@ -312,6 +312,7 @@ export default function App() {
                   size="sm"
                   onClick={() => setAccountModalOpen(true)}
                   className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
+                  aria-label="الحساب والتراخيص"
                 >
                   {isLicenseActive ? (
                     <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" weight="duotone" />
@@ -332,6 +333,7 @@ export default function App() {
                   size="sm"
                   onClick={toggleTheme}
                   className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
+                  aria-label={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
                 >
                   {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                 </Button>
@@ -354,6 +356,7 @@ export default function App() {
                       ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
                       : "text-muted-foreground hover:bg-muted/80"
                   )}
+                  aria-label={rightSidebarOpen ? "إخفاء لوحة القوالب" : "إظهار لوحة القوالب"}
                 >
                   <SidebarSimple className="w-4 h-4" weight={rightSidebarOpen ? "fill" : "regular"} />
                 </Button>
@@ -377,6 +380,7 @@ export default function App() {
                       ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
                       : "text-muted-foreground hover:bg-muted/80"
                   )}
+                  aria-label={leftSidebarOpen ? "إخفاء لوحة الخصائص" : "إظهار لوحة الخصائص"}
                 >
                   <SlidersHorizontal className="w-4 h-4" weight={leftSidebarOpen ? "bold" : "regular"} />
                 </Button>
