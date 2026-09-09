@@ -406,6 +406,13 @@
     will-change: width;
   }
 
+  /* أنيميشن طي الألواح الجانبية: الحد/الظل يتقلصان مع العرض — بدونها
+     يقفز الخط الفاصل لحظة التبديل بين border-l و border-l-0 */
+  .fluent-panel-motion[data-collapsed="true"] {
+    border-width: 0;
+    box-shadow: none;
+  }
+
   /* تلاشي علوي خفيف فوق محتوى اللوح — إشارة بصرية هادئة لقابلية التمرير
      (Scroll Affordance) دون شريط مزدوج أو تشويش */
   .panel-scroll-hint {
