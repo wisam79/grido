@@ -1,7 +1,7 @@
 import type Konva from "konva";
 import { CanvasElement, ImageElement, useEditorStore } from "@/lib/editor-store";
 import { buildCSSFilter } from "@/lib/utils";
-import { captureStageDataUrl } from "@/lib/canvas/konva-export-utils";
+import { captureStageBlob } from "@/lib/canvas/konva-export-utils";
 import { calculatePrintCutLines } from "@/lib/print/cut-lines-utils";
 import { computeSheetGrid, computeSlotRectMM } from "@/lib/print/print-layout-math";
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
@@ -15,21 +15,6 @@ import {
   TEXT_COLOR_DEFAULT,
   previewWhite,
 } from "@/lib/canvas/canvas-colors";
-
-// [FIX #9] تحويل Data URL إلى Blob مباشرة في الذاكرة بدلاً من fetch غير الضروري
-export function dataURLToBlob(dataUrl: string): Blob {
-  const commaIndex = dataUrl.indexOf(",");
-  if (commaIndex === -1) {
-    throw new Error("Invalid data URL: missing base64 payload");
-  }
-  const header = dataUrl.slice(0, commaIndex);
-  const data = dataUrl.slice(commaIndex + 1);
-  const mime = header.match(/:(.*?);/)?.[1] || "image/png";
-  const bytes = atob(data);
-  const arr = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-  return new Blob([arr], { type: mime });
-}
 
 // تحميل صورة من رابط أو DataURL
 export function loadImage(src: string): Promise<HTMLImageElement> {
@@ -286,20 +271,20 @@ export async function exportCanvas(
 
   // محاولة التصدير مباشرةً من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
   if (stageRef) {
-    let dataUrl: string | null = null;
+    let stageBlob: Blob | null = null;
     try {
       const targetPixelRatio = canvasWidth / stageRef.width();
       // JPEG لا يدعم الشفافية — نلتقط PNG ثم نركّبه على خلفية بيضاء
       // (كان يُنتج خلفية سوداء للتصدير الشفاف)
       const needsWhiteFlatten = format === "jpg" && backgroundColor === "transparent";
-      dataUrl = await captureStageDataUrl(
+      stageBlob = await captureStageBlob(
         stageRef,
         targetPixelRatio,
         needsWhiteFlatten ? "image/png" : format === "png" ? "image/png" : "image/jpeg",
         needsWhiteFlatten ? undefined : quality
       );
-      if (needsWhiteFlatten && dataUrl) {
-        const captured = await loadImage(dataUrl);
+      if (needsWhiteFlatten && stageBlob) {
+        const captured = await createImageBitmap(stageBlob);
         const flattenCanvas = document.createElement("canvas");
         flattenCanvas.width = canvasWidth;
         flattenCanvas.height = canvasHeight;
@@ -310,20 +295,20 @@ export async function exportCanvas(
           // تمرير الأبعاد المستهدفة صراحة — اللقطة قد تُلتقط بدقة مصغرة والرسم
           // بحجمها الأصلي كان يترك إطاراً أبيض فارغاً على يمين وأسفل الصورة
           fctx.drawImage(captured, 0, 0, canvasWidth, canvasHeight);
-          dataUrl = flattenCanvas.toDataURL("image/jpeg", quality);
+          const flattenedBlob = await new Promise<Blob | null>((resolve) => {
+            flattenCanvas.toBlob(resolve, "image/jpeg", quality);
+          });
+          if (flattenedBlob) stageBlob = flattenedBlob;
         }
+        captured.close();
       }
     } catch (e) {
       console.error("Failed to export via Konva Stage, falling back to manual canvas:", e);
+      stageBlob = null;
     }
 
-    if (dataUrl) {
-      try {
-        const originalBlob = dataURLToBlob(dataUrl);
-        return await applyWatermarkIfFree(originalBlob, format, quality);
-      } catch (e) {
-        console.error("Failed to decode stage data URL, falling back to manual canvas:", e);
-      }
+    if (stageBlob) {
+      return await applyWatermarkIfFree(stageBlob, format, quality);
     }
   }
 

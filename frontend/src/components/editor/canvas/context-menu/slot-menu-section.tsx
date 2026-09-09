@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { useEditorStore } from "@/lib/editor-store";
 import { Spinner } from "@/components/ui/huge-icon";
 import {
@@ -56,10 +57,12 @@ export function SlotMenuSection({
   handleEnhance,
   onUpdateSlot,
 }: SlotMenuShared) {
-  const { updateSlot, pushHistory } = useEditorStore((state) => ({
+  // 🛡️ useShallow يمنع إعادة الرندر عند أي تغير في المتجر — كان selector
+  // الكائني يعيد كائناً جديداً في كل استدعاء فيكسر Memoization القسم بأكمله
+  const { updateSlot, pushHistory } = useEditorStore(useShallow((state) => ({
     updateSlot: state.updateSlot,
     pushHistory: state.pushHistory,
-  }));
+  })));
   const slot = useEditorStore((state) => state.slots?.find((s) => s.id === targetId));
 
   return (

@@ -185,6 +185,62 @@ func main() {
 					return
 				}
 
+			// رفع صورة الطباعة المؤقتة كتيار ثنائي (Blob) بدل تمرير DataURL
+				// عملاقة عبر جسر IPC — تُخزَّن في Exports باسم print_upload_* وتُخدَم
+				// لاحقاً عبر /local-image/ (المصرح بها في معالج القراءة أدناه).
+				// 🚀 W-B: يلغي اتجاه IPC الصاعد 25-60MB نص Base64 لكل طباعة.
+				if r.Method == http.MethodPost && r.URL.Path == "/api/upload-print-image" {
+					exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+					if err := os.MkdirAll(exportsDir, 0755); err != nil {
+						http.Error(w, "Failed to create exports dir", http.StatusInternalServerError)
+						return
+					}
+
+					ext := ".png"
+					if ct := r.Header.Get("Content-Type"); strings.HasPrefix(ct, "image/jpeg") {
+						ext = ".jpg"
+					}
+					// print_ prefix يجعل الملف مرئياً لـ /local-image/ ويشمله تنظيف 24h التلقائي
+					filename := fmt.Sprintf("print_upload_%d%s", time.Now().UnixNano(), ext)
+					absPath := filepath.Join(exportsDir, filename)
+
+					tmpPath := absPath + ".tmp"
+					defer os.Remove(tmpPath)
+					outFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+					if err != nil {
+						http.Error(w, "Failed to create file", http.StatusInternalServerError)
+						return
+					}
+
+					// 60MB سقفاً — صورة A3 300DPI PNG قد تتجاوز 40MB
+					limitReader := io.LimitReader(r.Body, 60*1024*1024)
+					if _, err := io.Copy(outFile, limitReader); err != nil {
+						_ = outFile.Close()
+						http.Error(w, "Failed to write file", http.StatusInternalServerError)
+						return
+					}
+					if err := outFile.Sync(); err != nil {
+						_ = outFile.Close()
+						http.Error(w, "Failed to sync file", http.StatusInternalServerError)
+						return
+					}
+					if err := outFile.Close(); err != nil {
+						http.Error(w, "Failed to close file", http.StatusInternalServerError)
+						return
+					}
+					if err := os.Rename(tmpPath, absPath); err != nil {
+						http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.NewEncoder(w).Encode(map[string]string{
+						"status":   "success",
+						"imageSrc": "/local-image/" + filename,
+					})
+					return
+				}
+
 				if strings.HasPrefix(r.URL.Path, "/local-image/") {
 					filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
 					filename := filepath.Base(filepath.Clean(filePath))

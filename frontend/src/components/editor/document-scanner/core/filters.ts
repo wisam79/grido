@@ -101,8 +101,13 @@ export function applyOtsuFilter(canvas: HTMLCanvasElement): HTMLCanvasElement {
   }
 
   // 1. الصورة التكاملية في زمن O(N)
+  // 🚀 Uint32Array (نصف ذاكرة Float64) مع 🛡️ حارس overflow: المجموع الكلي
+  // = 255×عدد البكسلات يتجاوز حد Uint32 عند ~16.8MP (A3 300DPI) — فوقه Float64
   const intW = w + 1;
-  const integral = new Float64Array((w + 1) * (h + 1));
+  const integral =
+    255 * totalPixels <= 4294967295
+      ? new Uint32Array((w + 1) * (h + 1))
+      : new Float64Array((w + 1) * (h + 1));
 
   for (let y = 0; y < h; y++) {
     let rowSum = 0;

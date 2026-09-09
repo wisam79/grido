@@ -100,9 +100,77 @@ const restoreEntry = (entry: HistoryEntry) => {
   return restored;
 };
 
-// كاش تسلسل JSON لكل إدخال تاريخ — يمنع إعادة تسلسل نفس الإدخال في كل دفعة.
-// الـ WeakMap يسمح بتجميع الإدخالات المهملة تلقائياً (إصلاح Bug#17)
-const entryJsonCache = new WeakMap<HistoryEntry, string>();
+/**
+ * 🚀 مقارنة عميقة بلا تسلسل JSON — كانت pushHistory تُسلسل اللقطة كاملة
+ * (JSON.stringify لميغابايتات صور) في كل عملية سحب/تعديل للمقارنة مع الإدخال
+ * الحالي. الحقول العددية تُقارن مباشرة، والسلاسل الضخمة (imageSrc) تُقارن
+ * بالطول أولاً (رفض O(1) سريع) ثم بالقيمة عند تطابق الطول.
+ */
+const isSameSnapshot = (a: HistoryEntry, b: HistoryEntry): boolean => {
+  if (a === b) return true;
+  if (a.elements.length !== b.elements.length) return false;
+  if (a.slots.length !== b.slots.length) return false;
+
+  const scalarKeys = [
+    "mode", "canvasWidth", "canvasHeight", "backgroundColor",
+    "collageGap", "collageMargin", "collageRadius",
+    "collageShowCutLines", "collageShowEndCutLine",
+    "collageStrokeWidth", "collageStrokeColor",
+    "lastEditedImage", "lastEditedImageAspect",
+  ] as const;
+  for (const key of scalarKeys) {
+    if ((a[key] ?? null) !== (b[key] ?? null)) return false;
+  }
+
+  const valuesEqual = (x: unknown, y: unknown): boolean => {
+    if (typeof x === "string" && typeof y === "string") {
+      // رفض سريع بالطول قبل مقارنة القيم — يستثني صور Base64 الضخمة فوراً
+      if (x.length !== y.length) return false;
+      return x === y;
+    }
+    return x === y;
+  };
+
+  // مقارنة عناصر حقل بحقل — مراجع السلاسل المشتركة (imageSrc نفس المرجع بين
+  // لقطتين متتاليتين) تُقارن بـ === فوري دون مسح المحتوى
+  for (let i = 0; i < a.elements.length; i++) {
+    const ea = a.elements[i];
+    const eb = b.elements[i];
+    if (ea === eb) continue;
+    const ka = Object.keys(ea) as (keyof typeof ea)[];
+    const kb = Object.keys(eb) as (keyof typeof eb)[];
+    if (ka.length !== kb.length) return false;
+    for (const k of ka) {
+      const va = ea[k];
+      const vb = eb[k];
+      if (typeof va === "object" && va !== null) {
+        if (JSON.stringify(va) !== JSON.stringify(vb)) return false;
+      } else if (!valuesEqual(va, vb)) {
+        return false;
+      }
+    }
+  }
+
+  for (let i = 0; i < a.slots.length; i++) {
+    const sa = a.slots[i];
+    const sb = b.slots[i];
+    if (sa === sb) continue;
+    const ka = Object.keys(sa) as (keyof typeof sa)[];
+    const kb = Object.keys(sb) as (keyof typeof sb)[];
+    if (ka.length !== kb.length) return false;
+    for (const k of ka) {
+      const va = sa[k];
+      const vb = sb[k];
+      if (typeof va === "object" && va !== null) {
+        if (JSON.stringify(va) !== JSON.stringify(vb)) return false;
+      } else if (!valuesEqual(va, vb)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
 
 // سقف مزدوج للأرشيف: عدد اللقطات + حجم تقديري للذاكرة (بايت).
 // اللقطات القديمة تُسقط أولاً حتى يهبط الحجم تحت السقف — يمنع تضخم الذاكرة
@@ -136,37 +204,12 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
     const snapshot = captureSnapshot(state);
 
     // Avoid pushing identical states with fast structural check
+    // 🚀 مقارنة عميقة بلا JSON.stringify — التسلسل كان يستهلك ميغابايتات
+    // في كل pushHistory (نهاية كل سحب/تعديل) على الخيط الرئيسي
     if (history.length > 0 && historyIndex >= 0) {
       const current = history[historyIndex];
-      if (
-        current.elements.length === snapshot.elements.length &&
-        current.slots.length === snapshot.slots.length &&
-        current.mode === snapshot.mode &&
-        current.canvasWidth === snapshot.canvasWidth &&
-        current.canvasHeight === snapshot.canvasHeight &&
-        current.backgroundColor === snapshot.backgroundColor &&
-        current.collageGap === snapshot.collageGap &&
-        current.collageMargin === snapshot.collageMargin &&
-        current.collageRadius === snapshot.collageRadius &&
-        current.collageShowCutLines === snapshot.collageShowCutLines &&
-        current.collageShowEndCutLine === snapshot.collageShowEndCutLine &&
-        current.collageStrokeWidth === snapshot.collageStrokeWidth &&
-        current.collageStrokeColor === snapshot.collageStrokeColor &&
-        current.lastEditedImage === snapshot.lastEditedImage &&
-        current.lastEditedImageAspect === snapshot.lastEditedImageAspect
-      ) {
-        // نسلسل اللقطة الجديدة مرة واحدة فقط، والإدخال الحالي يُؤخذ من الكاش
-        const snapshotJson = JSON.stringify(snapshot);
-        let currentJson = entryJsonCache.get(current);
-        if (currentJson === undefined) {
-          currentJson = JSON.stringify(current);
-          entryJsonCache.set(current, currentJson);
-        }
-        if (currentJson === snapshotJson) {
-          return; // No change
-        }
-        // اللقطة ستصبح الإدخال الحالي في الدفعة القادمة — نخزن تسلسلها مسبقاً
-        entryJsonCache.set(snapshot, snapshotJson);
+      if (isSameSnapshot(current, snapshot)) {
+        return; // No change
       }
     }
 

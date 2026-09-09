@@ -50,8 +50,18 @@ export function preloadImageIntoCache(src: string, crossOrigin?: string): Promis
 }
 
 export function useAsyncImage(src: string, crossOrigin?: string) {
-  const [image, setImage] = useState<HTMLImageElement | undefined>(undefined);
-  const [status, setStatus] = useState<"loading" | "loaded" | "failed">("loading");
+  // ⚡ تهيئة كسولة تزامنية من الكاش — كانت الحالة الابتدائية undefined دائماً
+  // فيطلق queueMicrotask + re-render إضافي حتى للصور المتواجدة مسبقاً في الكاش
+  const [image, setImage] = useState<HTMLImageElement | undefined>(() => {
+    if (!src) return undefined;
+    const cached = imageCache.get(`${src}__${crossOrigin || ""}`);
+    return cached && cached.complete ? cached : undefined;
+  });
+  const [status, setStatus] = useState<"loading" | "loaded" | "failed">(() => {
+    if (!src) return "failed";
+    const cached = imageCache.get(`${src}__${crossOrigin || ""}`);
+    return cached && cached.complete ? "loaded" : "loading";
+  });
 
   useEffect(() => {
     let isCurrent = true;
@@ -70,10 +80,14 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
     const cacheKey = `${src}__${crossOrigin || ""}`;
     const cached = imageCache.get(cacheKey);
     if (cached && cached.complete) {
+      // الحالة الأولية أصيبت تزامنياً من lazy initializer — هذا المسار يخدم
+      // فقط تغييرات src اللاحقة على مثيل مركّب. microtask يبقي التحديث خارج
+      // جسم الـ effect المتزامن (react-hooks/set-state-in-effect) مع بقاء
+      // تحديث واحد لا أكثر (functional updates لا تعيد رندر عند تطابق القيمة)
       queueMicrotask(() => {
         if (!isCurrent) return;
-        setImage(cached);
-        setStatus("loaded");
+        setImage((prev) => (prev === cached ? prev : cached));
+        setStatus((prev) => (prev === "loaded" ? prev : "loaded"));
       });
       return () => {
         isCurrent = false;

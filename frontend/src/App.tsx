@@ -448,11 +448,12 @@ export default function App() {
       <main className="flex-1 flex overflow-hidden">
         {/* لوحة القوالب — أول عنصر في flex مع dir="rtl" فيُعرض على يمين الشاشة */}
         <aside
+          data-collapsed={!rightSidebarOpen}
           className={cn(
             "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
             rightSidebarOpen
-              ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100"
-              : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0"
+              ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100 border-l border-sidebar-border shadow-sm"
+              : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none"
           )}
         >
           <TemplatePanel onCollapse={() => setRightSidebarOpen(false)} />
@@ -496,11 +497,12 @@ export default function App() {
 
         {/* لوحة الخصائص — ثاني عنصر في flex مع dir="rtl" فيُعرض على يسار الشاشة */}
         <aside
+          data-collapsed={!leftSidebarOpen}
           className={cn(
-            "hidden lg:flex h-full native-depth-sidebar flex-col no-print shadow-sm z-20 overflow-hidden fluent-panel-motion",
+            "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
             leftSidebarOpen
-              ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100"
-              : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0"
+              ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100 border-r border-sidebar-border shadow-sm"
+              : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none"
           )}
         >
           <PropertiesPanel onCollapse={() => setLeftSidebarOpen(false)} />

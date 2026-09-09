@@ -85,10 +85,19 @@ export function fastBoxBlur(src: Uint8Array, w: number, h: number, r: number = 2
 /**
  * بناء الصورة التكاملية (Integral Image / Summed-Area Table)
  * تمكن من حساب مجموع أي مستطيل في زمن ثابت O(1)
+ *
+ * 🚀 Uint32Array بدل Float64Array — يوفر نصف الذاكرة (48MB بدل 96MB
+ * لمستند 8MP). 🛡️ حارس overflow: المجموع الكلي = 255×عدد البكسلات ويتجاوز
+ * حد Uint32 عند ~16.8MP (A3 300DPI ≈ 17.4MP) — فوق ذلك نُبقي Float64Array.
  */
-export function buildIntegralImage(gray: Uint8Array, w: number, h: number): Float64Array {
+export function buildIntegralImage(gray: Uint8Array, w: number, h: number): Uint32Array | Float64Array {
   const stride = w + 1;
-  const integral = new Float64Array((w + 1) * (h + 1));
+  // 2^32-1 حد Uint32 — مجموع أقصى قيمة (255) مضروباً بعدد البكسلات
+  const maxTotal = 255 * w * h;
+  const integral =
+    maxTotal <= 4294967295
+      ? new Uint32Array((w + 1) * (h + 1))
+      : new Float64Array((w + 1) * (h + 1));
 
   for (let y = 0; y < h; y++) {
     let rowSum = 0;

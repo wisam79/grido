@@ -49,7 +49,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   }, []);
 
   return (
-    <div className="relative h-12 shrink-0 border-b border-border bg-sidebar/95 backdrop-blur-xl select-none no-print fluent-specular font-cairo">
+    <div className="relative h-12 shrink-0 border-b border-border bg-sidebar/95 backdrop-blur-xl select-none no-print font-cairo">
       <div
         ref={scrollRef}
         className="h-full flex items-center gap-2 px-3 overflow-x-auto scrollbar-none flex-nowrap"

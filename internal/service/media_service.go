@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -13,11 +14,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/webp"
+	"golang.org/x/sync/errgroup"
 
 	"grido/internal/utils"
 )
@@ -191,90 +195,133 @@ func (s *MediaService) ProcessOpenedFile(filePath string) (string, error) {
 }
 
 func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string, error) {
-	var results []string
-	var skippedNames []string
+	// 🚀 معالجة متوازية بعدد أنوية المعالج (errgroup.SetLimit) — كانت تسلسلية
+	// مع fsync لكل ملف على حدة فتستغرق N×(نسخ+مزامنة) لعشرات الصور المحددة
+	g, ctx := errgroup.WithContext(context.Background())
+	g.SetLimit(runtime.NumCPU())
+
 	mediaDir := s.GetMediaDir()
+	results := make([]string, len(filePaths))
+	skippedNames := make([]string, 0)
+	var mu sync.Mutex
 
 	for i, filePath := range filePaths {
-		stat, err := os.Stat(filePath)
-		if err != nil {
-			skippedNames = append(skippedNames, filepath.Base(filePath))
-			slog.Warn("Skipped file in multi-select: stat error", "file", filepath.Base(filePath), "error", err)
-			continue
+		i, filePath := i, filePath
+		g.Go(func() error {
+			select {
+			case <-ctx.Done():
+				return nil
+			default:
+			}
+
+			stat, err := os.Stat(filePath)
+			if err != nil {
+				mu.Lock()
+				skippedNames = append(skippedNames, filepath.Base(filePath))
+				mu.Unlock()
+				slog.Warn("Skipped file in multi-select: stat error", "file", filepath.Base(filePath), "error", err)
+				return nil
+			}
+			if stat.Size() > MaxFileSize {
+				mu.Lock()
+				skippedNames = append(skippedNames, filepath.Base(filePath))
+				mu.Unlock()
+				slog.Warn("Skipped file in multi-select: exceeds size limit", "file", filepath.Base(filePath), "size", stat.Size())
+				return nil
+			}
+
+			srcFile, err := os.Open(filePath)
+			if err != nil {
+				mu.Lock()
+				skippedNames = append(skippedNames, filepath.Base(filePath))
+				mu.Unlock()
+				slog.Warn("Skipped file in multi-select: open error", "file", filepath.Base(filePath), "error", err)
+				return nil
+			}
+			defer srcFile.Close()
+
+			buf := make([]byte, 512)
+			n, err := srcFile.Read(buf)
+			if err != nil && err != io.EOF {
+				mu.Lock()
+				skippedNames = append(skippedNames, filepath.Base(filePath))
+				mu.Unlock()
+				slog.Warn("Skipped file in multi-select: read error", "file", filepath.Base(filePath), "error", err)
+				return nil
+			}
+
+			detectedType := http.DetectContentType(buf[:n])
+			if !strings.HasPrefix(detectedType, "image/") {
+				mu.Lock()
+				skippedNames = append(skippedNames, filepath.Base(filePath))
+				mu.Unlock()
+				slog.Warn("Skipped file in multi-select: not an image", "file", filepath.Base(filePath), "detected", detectedType)
+				return nil
+			}
+
+			_, _ = srcFile.Seek(0, io.SeekStart)
+
+			// Prevent extension bypass
+			ext := s.GetExtensionFromMime(detectedType)
+			// UnixNano فريد لكل نداء لكن التوازي قد يجلب نفس النانو — الفهرس i
+			// يضمن التفرد (وهو أيضاً ما يحفظ ترتيب النتائج مطابقاً لترتيب التحديد)
+			newName := fmt.Sprintf("img_%d_%d%s", time.Now().UnixNano(), i, ext)
+			newPath := filepath.Join(mediaDir, newName)
+			tmpPath := newPath + ".tmp"
+
+			destFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			if err != nil {
+				mu.Lock()
+				skippedNames = append(skippedNames, filepath.Base(filePath))
+				mu.Unlock()
+				slog.Warn("Skipped file in multi-select: dest create error", "file", filepath.Base(filePath), "error", err)
+				return nil
+			}
+
+			_, copyErr := io.Copy(destFile, srcFile)
+			syncErr := destFile.Sync()
+			closeErr := destFile.Close()
+
+			if copyErr != nil || syncErr != nil || closeErr != nil {
+				_ = os.Remove(tmpPath)
+				mu.Lock()
+				skippedNames = append(skippedNames, filepath.Base(filePath))
+				mu.Unlock()
+				slog.Warn("Skipped file in multi-select: write/sync error", "file", filepath.Base(filePath), "copyErr", copyErr, "syncErr", syncErr, "closeErr", closeErr)
+				return nil
+			}
+
+			if err := os.Rename(tmpPath, newPath); err != nil {
+				_ = os.Remove(tmpPath)
+				mu.Lock()
+				skippedNames = append(skippedNames, filepath.Base(filePath))
+				mu.Unlock()
+				slog.Warn("Skipped file in multi-select: rename error", "file", filepath.Base(filePath), "error", err)
+				return nil
+			}
+
+			results[i] = "/local-image/" + newName
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	// تجميع النتائج بترتيب التحديد الأصلي — النتائج الفارغة (الملفات المتخطاة) تُسقط
+	loaded := make([]string, 0, len(filePaths))
+	for _, r := range results {
+		if r != "" {
+			loaded = append(loaded, r)
 		}
-		if stat.Size() > MaxFileSize {
-			skippedNames = append(skippedNames, filepath.Base(filePath))
-			slog.Warn("Skipped file in multi-select: exceeds size limit", "file", filepath.Base(filePath), "size", stat.Size())
-			continue
-		}
-
-		srcFile, err := os.Open(filePath)
-		if err != nil {
-			skippedNames = append(skippedNames, filepath.Base(filePath))
-			slog.Warn("Skipped file in multi-select: open error", "file", filepath.Base(filePath), "error", err)
-			continue
-		}
-
-		buf := make([]byte, 512)
-		n, err := srcFile.Read(buf)
-		if err != nil && err != io.EOF {
-			srcFile.Close()
-			skippedNames = append(skippedNames, filepath.Base(filePath))
-			slog.Warn("Skipped file in multi-select: read error", "file", filepath.Base(filePath), "error", err)
-			continue
-		}
-
-		detectedType := http.DetectContentType(buf[:n])
-		if !strings.HasPrefix(detectedType, "image/") {
-			srcFile.Close()
-			skippedNames = append(skippedNames, filepath.Base(filePath))
-			slog.Warn("Skipped file in multi-select: not an image", "file", filepath.Base(filePath), "detected", detectedType)
-			continue
-		}
-
-		_, _ = srcFile.Seek(0, io.SeekStart)
-
-		// Prevent extension bypass
-		ext := s.GetExtensionFromMime(detectedType)
-		newName := fmt.Sprintf("img_%d_%d%s", time.Now().UnixNano(), i, ext)
-		newPath := filepath.Join(mediaDir, newName)
-		tmpPath := newPath + ".tmp"
-
-		destFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-		if err != nil {
-			srcFile.Close()
-			skippedNames = append(skippedNames, filepath.Base(filePath))
-			slog.Warn("Skipped file in multi-select: dest create error", "file", filepath.Base(filePath), "error", err)
-			continue
-		}
-
-		_, copyErr := io.Copy(destFile, srcFile)
-		syncErr := destFile.Sync()
-		closeErr := destFile.Close()
-		srcFile.Close()
-
-		if copyErr != nil || syncErr != nil || closeErr != nil {
-			_ = os.Remove(tmpPath)
-			skippedNames = append(skippedNames, filepath.Base(filePath))
-			slog.Warn("Skipped file in multi-select: write/sync error", "file", filepath.Base(filePath), "copyErr", copyErr, "syncErr", syncErr, "closeErr", closeErr)
-			continue
-		}
-
-		if err := os.Rename(tmpPath, newPath); err != nil {
-			_ = os.Remove(tmpPath)
-			skippedNames = append(skippedNames, filepath.Base(filePath))
-			slog.Warn("Skipped file in multi-select: rename error", "file", filepath.Base(filePath), "error", err)
-			continue
-		}
-
-		results = append(results, "/local-image/"+newName)
 	}
 
 	if len(skippedNames) > 0 {
-		slog.Warn("Some files were skipped during multi-select", "skipped", skippedNames, "total", len(filePaths), "loaded", len(results))
+		slog.Warn("Some files were skipped during multi-select", "skipped", skippedNames, "total", len(filePaths), "loaded", len(loaded))
 	}
 
-	return results, nil
+	return loaded, nil
 }
 
 func (s *MediaService) SaveImageFromBase64(base64Data string) (string, error) {

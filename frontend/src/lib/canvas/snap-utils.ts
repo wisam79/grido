@@ -21,6 +21,32 @@ export interface SnapTarget {
   origin: string;
 }
 
+/** نتيجة محاذاة محور واحد إلى أقرب خط شبكي — O(1) بلا مسح خطي */
+export interface GridSnapAxis {
+  /** قيمة المحاذاة (خط الشبكة المطلق في فضاء 0-1) أو null إذا لم تكن ضمن العتبة */
+  snappedTo: number | null;
+}
+
+/**
+ * 🧲 محاذاة قيمة إلى أقرب خط شبكي — O(1) رياضية مباشرة بدل حشر مئات الخطوط
+ * في مصفوفات البحث الخطي (كان يفحص 600 هدف × 60 مرة/ثانية أثناء السحب).
+ * القيم كلها نسبية (0-1) كسائر أهداف المحاذاة في هذا الملف.
+ */
+export function snapToGridAxis(value: number, gridStep: number, threshold: number): GridSnapAxis {
+  if (gridStep <= 0) return { snappedTo: null };
+  const k = Math.round(value / gridStep);
+  const snapped = k * gridStep;
+  return Math.abs(snapped - value) <= threshold ? { snappedTo: snapped } : { snappedTo: null };
+}
+
+/** خيارات محاذاة الشبكة الرياضية O(1) — تُحسب لكل حافة بدل حقن الخطوط في المصفوفات */
+export interface GridSnapOptions {
+  /** خطوة الشبكة النسبية على المحور X (gridSize/canvasWidth) — 0 يعني معطلة */
+  stepX: number;
+  /** خطوة الشبكة النسبية على المحور Y (gridSize/canvasHeight) */
+  stepY: number;
+}
+
 export function getSnapPositionsWithTargets(
   x: number,
   y: number,
@@ -30,7 +56,8 @@ export function getSnapPositionsWithTargets(
   hTargets: SnapTarget[],
   thresholdX: number,
   thresholdY: number,
-  resizeHandle: string | null = null
+  resizeHandle: string | null = null,
+  grid?: GridSnapOptions
 ): SnapResult {
   const guides: SnapGuide[] = [];
   let snappedX = x;
@@ -40,9 +67,22 @@ export function getSnapPositionsWithTargets(
 
   // Snapping logic when MOVING
   if (!resizeHandle) {
-    // 1. Move Snap X
+    // 1. Move Snap X — الشبكة تُنافس رياضياً O(1) مع الأهداف الخطية
     let minDiffX = thresholdX;
     let bestVTarget = -1;
+
+    if (grid && grid.stepX > 0) {
+      for (const edge of [x, x + w / 2, x + w]) {
+        const k = Math.round(edge / grid.stepX);
+        const line = k * grid.stepX;
+        const diff = Math.abs(edge - line);
+        if (diff < minDiffX) {
+          minDiffX = diff;
+          snappedX = line - (edge === x ? 0 : edge === x + w / 2 ? w / 2 : w);
+          bestVTarget = line;
+        }
+      }
+    }
 
     for (const target of vTargets) {
       // Check left edge
@@ -71,9 +111,22 @@ export function getSnapPositionsWithTargets(
       guides.push({ type: "v", coord: bestVTarget });
     }
 
-    // 2. Move Snap Y
+    // 2. Move Snap Y — الشبكة تُنافس رياضياً O(1) مع الأهداف الخطية
     let minDiffY = thresholdY;
     let bestHTarget = -1;
+
+    if (grid && grid.stepY > 0) {
+      for (const edge of [y, y + h / 2, y + h]) {
+        const k = Math.round(edge / grid.stepY);
+        const line = k * grid.stepY;
+        const diff = Math.abs(edge - line);
+        if (diff < minDiffY) {
+          minDiffY = diff;
+          snappedY = line - (edge === y ? 0 : edge === y + h / 2 ? h / 2 : h);
+          bestHTarget = line;
+        }
+      }
+    }
 
     for (const target of hTargets) {
       // Check top edge
@@ -112,6 +165,16 @@ export function getSnapPositionsWithTargets(
       let bestVTarget = -1;
       const rightX = x + w;
 
+      if (grid && grid.stepX > 0) {
+        const k = Math.round(rightX / grid.stepX);
+        const line = k * grid.stepX;
+        const diff = Math.abs(rightX - line);
+        if (diff < minDiffX) {
+          minDiffX = diff;
+          snappedW = Math.max(0.05, line - x);
+          bestVTarget = line;
+        }
+      }
       for (const target of vTargets) {
         const diff = Math.abs(rightX - target.value);
         if (diff < minDiffX) {
@@ -128,6 +191,17 @@ export function getSnapPositionsWithTargets(
       let bestVTarget = -1;
       const rightX = x + w;
 
+      if (grid && grid.stepX > 0) {
+        const k = Math.round(x / grid.stepX);
+        const line = k * grid.stepX;
+        const diff = Math.abs(x - line);
+        if (diff < minDiffX) {
+          minDiffX = diff;
+          snappedX = line;
+          snappedW = Math.max(0.05, rightX - line);
+          bestVTarget = line;
+        }
+      }
       for (const target of vTargets) {
         const diff = Math.abs(x - target.value);
         if (diff < minDiffX) {
@@ -146,6 +220,16 @@ export function getSnapPositionsWithTargets(
       let bestHTarget = -1;
       const bottomY = y + h;
 
+      if (grid && grid.stepY > 0) {
+        const k = Math.round(bottomY / grid.stepY);
+        const line = k * grid.stepY;
+        const diff = Math.abs(bottomY - line);
+        if (diff < minDiffY) {
+          minDiffY = diff;
+          snappedH = Math.max(0.05, line - y);
+          bestHTarget = line;
+        }
+      }
       for (const target of hTargets) {
         const diff = Math.abs(bottomY - target.value);
         if (diff < minDiffY) {
@@ -162,6 +246,17 @@ export function getSnapPositionsWithTargets(
       let bestHTarget = -1;
       const bottomY = y + h;
 
+      if (grid && grid.stepY > 0) {
+        const k = Math.round(y / grid.stepY);
+        const line = k * grid.stepY;
+        const diff = Math.abs(y - line);
+        if (diff < minDiffY) {
+          minDiffY = diff;
+          snappedY = line;
+          snappedH = Math.max(0.05, bottomY - line);
+          bestHTarget = line;
+        }
+      }
       for (const target of hTargets) {
         const diff = Math.abs(y - target.value);
         if (diff < minDiffY) {

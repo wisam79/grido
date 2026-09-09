@@ -30,6 +30,7 @@ export function useKonvaDrag({
   const snapTargetsRef = React.useRef<{
     vTargets: SnapTarget[];
     hTargets: SnapTarget[];
+    gridSnap?: { stepX: number; stepY: number };
   } | null>(null);
   const dragStartPositionsRef = React.useRef<Record<string, { x: number; y: number }>>({});
   const prevGuidesRef = React.useRef<SnapGuide[]>([]);
@@ -70,19 +71,12 @@ export function useKonvaDrag({
       }
     }
 
-    // خطوط الشبكة عند تفعيل إظهار الشبكة
-    if (showGrid && effectiveGridSize && effectiveGridSize > 0) {
-      const numCols = Math.floor(canvasWidth / effectiveGridSize);
-      for (let i = 1; i < numCols; i++) {
-        vTargets.push({ value: (i * effectiveGridSize) / canvasWidth, origin: "grid" });
-      }
-      const numRows = Math.floor(canvasHeight / effectiveGridSize);
-      for (let j = 1; j < numRows; j++) {
-        hTargets.push({ value: (j * effectiveGridSize) / canvasHeight, origin: "grid" });
-      }
-    }
-
-    snapTargetsRef.current = { vTargets, hTargets };
+    // ⚡ محاذاة الشبكة تُحسب رياضياً O(1) في getSnapPositionsWithTargets —
+    // كان هنا حقن حتى 600 خط في مصفوفات البحث الخطي التي تُمسح 60 مرة/ثانية
+    const gridSnap = showGrid && effectiveGridSize > 0 && canvasWidth > 0 && canvasHeight > 0
+      ? { stepX: effectiveGridSize / canvasWidth, stepY: effectiveGridSize / canvasHeight }
+      : undefined;
+    snapTargetsRef.current = { vTargets, hTargets, gridSnap };
 
     const startPositions: Record<string, { x: number; y: number }> = {};
     selectedIds.forEach((id) => {
@@ -146,7 +140,9 @@ export function useKonvaDrag({
         targets.vTargets,
         targets.hTargets,
         thresholdX,
-        thresholdY
+        thresholdY,
+        null,
+        targets.gridSnap
       );
       xLogical = snapResult.x * canvasWidth;
       yLogical = snapResult.y * canvasHeight;
@@ -224,7 +220,9 @@ export function useKonvaDrag({
       targets.vTargets,
       targets.hTargets,
       thresholdX,
-      thresholdY
+      thresholdY,
+      null,
+      targets.gridSnap
     );
     
     const isGuidesEqual = (g1: SnapGuide[], g2: SnapGuide[]) => {
