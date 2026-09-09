@@ -150,7 +150,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
          const tempCanvas = document.createElement("canvas");
          tempCanvas.width = origImg!.width;
          tempCanvas.height = origImg!.height;
-         const tempCtx = tempCanvas.getContext("2d");
+          const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
          if (tempCtx) {
            tempCtx.drawImage(origImg!, 0, 0);
            originalImageDataRef.current = tempCtx.getImageData(0, 0, origImg!.width, origImg!.height);
@@ -188,7 +188,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !currentImage || !originalImage || !open) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -211,7 +211,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
   const saveHistory = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
     
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -228,7 +228,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     if (historyRef.current.length <= 1) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
     
     historyRef.current.pop(); // Remove current state
@@ -359,7 +359,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     const origImg = originalImage;
     if (!canvas || !origImg) return;
     
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     ctx.save();
@@ -400,7 +400,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     const origData = originalImageDataRef.current;
     if (!canvas || !origData) return;
     
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const width = canvas.width;

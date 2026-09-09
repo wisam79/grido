@@ -64,6 +64,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   const resizeSnapRef = React.useRef<{
     vTargets: SnapTarget[];
     hTargets: SnapTarget[];
+    gridSnap?: { stepX: number; stepY: number };
     oldBox: { x: number; y: number; width: number; height: number };
     L0: number; T0: number; R0: number; B0: number;
     unitX: number; unitY: number;
@@ -258,20 +259,16 @@ export const EditorTransformer = React.memo(function EditorTransformer({
                 if (g.type === "h") hTargets.push({ value: g.pos, origin: "user-guide" });
               }
             }
-            if (showGrid && gridSize && gridSize > 0) {
-              const numCols = Math.floor(canvasWidth / gridSize);
-              for (let i = 1; i < numCols; i++) {
-                vTargets.push({ value: (i * gridSize) / canvasWidth, origin: "grid" });
-              }
-              const numRows = Math.floor(canvasHeight / gridSize);
-              for (let j = 1; j < numRows; j++) {
-                hTargets.push({ value: (j * gridSize) / canvasHeight, origin: "grid" });
-              }
-            }
+            // ⚡ محاذاة الشبكة تُحسب رياضياً O(1) في getSnapPositionsWithTargets —
+            // كان هنا حقن مئات الخطوط في مصفوفات البحث الخطي أثناء التحجيم
+            const gridSnap = showGrid && gridSize > 0 && canvasWidth > 0 && canvasHeight > 0
+              ? { stepX: gridSize / canvasWidth, stepY: gridSize / canvasHeight }
+              : undefined;
 
             resizeSnapRef.current = {
               vTargets,
               hTargets,
+              gridSnap,
               oldBox: { ...oldBox },
               L0,
               T0,
@@ -301,7 +298,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             relL, relT, relR - relL, relB - relT,
             snap.vTargets, snap.hTargets,
             thresholdX, thresholdY,
-            handle
+            handle,
+            snap.gridSnap
           );
 
           // إعادة الحواف المنحازة إلى فضاء الصندوق (كل حافة تُعاير على حدة)

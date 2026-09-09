@@ -5,7 +5,7 @@ import { useStageRef } from "@/lib/canvas/stage-context";
 import { previewWhite } from "@/lib/canvas/canvas-colors";
 import { ExportPrintSheet, PrintNative } from "../../../../wailsjs/go/handlers/PrintHandler";
 import { domain } from "../../../../wailsjs/go/models";
-import { captureStageDataUrl } from "@/lib/canvas/konva-export-utils";
+import { captureStageBlob } from "@/lib/canvas/konva-export-utils";
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
 import { calculatePrintCutLines } from "@/lib/print/cut-lines-utils";
 import { computeBlockPosition, computeSlotAspect, computeSlotRectMM } from "@/lib/print/print-layout-math";
@@ -41,6 +41,30 @@ interface BuiltItems {
   items: domain.PrintItem[];
   cutLines: domain.CutLine[];
   composition: undefined;
+}
+
+/**
+ * 🚀 W-B: رفع صورة الطباعة كتيار ثنائي إلى /api/upload-print-image وإرجاع
+ * مسار /local-image/ — يقطع مرور DataURL عملاقة (25-60MB نص) عبر جسر
+ * Wails IPC. الفشل يرمي ليقع التعامل معه في المستدعي.
+ */
+async function uploadPrintImage(blob: Blob): Promise<string> {
+  if (typeof window === "undefined" || !window.location?.origin) {
+    throw new Error("upload unavailable: no window origin");
+  }
+  const resp = await fetch(`${window.location.origin}/api/upload-print-image`, {
+    method: "POST",
+    headers: { "Content-Type": blob.type || "image/png" },
+    body: blob,
+  });
+  if (!resp.ok) {
+    throw new Error(`upload failed: HTTP ${resp.status}`);
+  }
+  const resJson = (await resp.json().catch(() => null)) as { status?: string; imageSrc?: string } | null;
+  if (resJson?.status !== "success" || !resJson.imageSrc) {
+    throw new Error("upload failed: invalid server response");
+  }
+  return resJson.imageSrc;
 }
 
 /**
@@ -226,16 +250,21 @@ export function usePrintExport(ctx: PrintExportContext) {
 
     const isSimpleRaster = singleCompRes.eligible && !!singleCompRes.composition;
     const comp = singleCompRes.composition;
-    let singleDataUrl = "";
+    let singleImageSrc = "";
     if (!isSimpleRaster) {
       try {
         const targetPixelRatio = stage.width() > 0 ? printPixelW / stage.width() : 1;
-        const captured = await captureStageDataUrl(
+        const capturedBlob = await captureStageBlob(
           stage,
           targetPixelRatio,
           "image/png"
         );
-        singleDataUrl = captured || "";
+        if (!capturedBlob) {
+          throw new Error("stage capture returned no blob");
+        }
+        // 🚀 W-B: رفع ثنائي مباشر بدل DataURL عبر IPC — يوفر 33% من الحجم
+        // وحلقة فك ترميز كاملة في Go، ويُرجع مسار /local-image/ المُخدَم محلياً
+        singleImageSrc = await uploadPrintImage(capturedBlob);
       } catch (err) {
         console.error("Single composition capture failed:", err);
         toast.error("فشل تجهيز الصورة للطباعة: " + String(err));
@@ -303,7 +332,7 @@ export function usePrintExport(ctx: PrintExportContext) {
       } else {
         items.push(
           domain.PrintItem.createFrom({
-            imageSrc: singleDataUrl,
+            imageSrc: singleImageSrc,
             x: block.xMM,
             y: block.yMM,
             w: imageWidthMM,
@@ -392,6 +421,10 @@ export function usePrintExport(ctx: PrintExportContext) {
           }
         };
 
+        // 🖼️ المسار المحلي (/local-image/) يُحمَّل من سيرفر Wails وقد لا يكون
+        // الصورة قد اكتمل تحميلها لحظة الكتابة — دالة الصورة أدناه (img.decode
+        // + onload/onerror + fallbackTimer 10s) تغطي كلا الحالتين كما كانت
+        // تفعل مع Base64، لذا لا حاجة لأي معالجة خاصة هنا.
         const img = doc.querySelector("img");
         if (img) {
           let fallbackTimer: ReturnType<typeof setTimeout> | undefined;

@@ -174,20 +174,28 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	absImagePath := filepath.Join(outDir, htmlImageName)
 	fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(absImagePath), " ", "%20")
 
-	// 🛡️ تضمين الصورة كـ Inline Base64 يضمن عدم طباعة صفحة فارغة مطلقاً بسبب تأخر التحميل عبر الشبكة/القرص
+	// 🚀 مسار الصورة المحلي يُخدم من سيرفر Wails عبر /local-image/ (main.go) —
+	// بلا تضمين Base64: توفير 25-60MB نص لكل صفحة عبر جسر IPC ومنع تجميد الواجهة.
+	// iframe بـ about:blank يرث origin الأب فالمسار المطلق يعمل. شبكة الأمان في
+	// الفرونت إند (img.decode + fallback timer + PrintNative) تغطي فشل التحميل.
 	imageSrcForHTML := fileURI
-	if imgData, err := os.ReadFile(absImagePath); err == nil && len(imgData) > 0 {
-		mimeType := "image/png"
-		if strings.HasSuffix(strings.ToLower(htmlImageName), ".jpg") || strings.HasSuffix(strings.ToLower(htmlImageName), ".jpeg") {
-			mimeType = "image/jpeg"
+	if _, err := os.Stat(absImagePath); err != nil {
+		// 🛡️ احتياط فقط: الصورة لم تُحفظ على القرص — نضمّنها Base64 لتفادي صفحة فارغة
+		slog.Warn("print image missing on disk; falling back to inline base64", "path", absImagePath)
+		if imgData, err := os.ReadFile(absImagePath); err == nil && len(imgData) > 0 {
+			mimeType := "image/png"
+			if strings.HasSuffix(strings.ToLower(htmlImageName), ".jpg") || strings.HasSuffix(strings.ToLower(htmlImageName), ".jpeg") {
+				mimeType = "image/jpeg"
+			}
+			imageSrcForHTML = fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(imgData))
 		}
-		imageSrcForHTML = fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(imgData))
 	}
 
 	htmlContent := buildNativePrintHTML(req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
 	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 
-	// HTML مع مسار Inline Base64 للعرض والطباعة الفورية داخل WebView2 عبر iframe
+	// HTML بمسار الصورة المحلي للعرض والطباعة الفورية داخل WebView2 عبر iframe
+	// (صفر Base64 عبر IPC — المسار يُخدم من /local-image/ في سيرفر Wails المحلي)
 	selfContainedHTML := buildSelfContainedHTML(req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
 
 	return imagePath, selfContainedHTML, nil

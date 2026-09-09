@@ -62,16 +62,20 @@ export async function withHiddenOverlays<T>(
 }
 
 /**
- * يلتقط canvas من Stage مع إخفاء الطبقات المؤقتة وإعادة بناء الكاش على الدقة العالية لضمان نقاء الطباعة.
- * يعيد data URL أو null عند الفشل.
+ * 🛡️ سقف ميزانية الذاكرة لكاش عقد التصدير (بالبايت، منطقة بكسلات RGBA).
+ * node.cache({ pixelRatio }) يضخم مساحة البكسل بنسبة² — نسبة 8× تعني 64× مساحة
+ * العنصر الواحد. بدون سقف، عقدة 500×500 تستهلك ~64MB، ومجموعة عقد تسبب OOM.
  */
-export async function captureStageDataUrl(
+const EXPORT_CACHE_BUDGET_BYTES = 256 * 1024 * 1024;
+
+/**
+ * يجمع كاش العقد على نسبة التصدير ضمن ميزانية ذاكرة إجمالية، وتنازل تدريجي
+ * للنسبة عند تجاوزها (كل العقد تخفض معاً لتفادي خلط جودات داخل لقطة واحدة).
+ */
+function upgradeCachesForExport(
   stage: Konva.Stage,
   targetPixelRatio: number,
-  mimeType: string = "image/png",
-  quality?: number,
-): Promise<string | null> {
-  // حصر العناصر المحفوظة في الكاش وتكبير الكاش بدقة التصدير العالية لمنع فقدان تفاصيل الفلاتر
+): CachedImageNode[] {
   const cachedNodes: CachedImageNode[] = [];
   try {
     stage.find((node: Konva.Node) => {
@@ -79,22 +83,58 @@ export async function captureStageDataUrl(
         cachedNodes.push(node as unknown as CachedImageNode);
       }
     });
-
-    const exportRatio = Math.min(4, Math.max(1, targetPixelRatio));
-    for (const node of cachedNodes) {
-      try {
-        node.clearCache();
-        node.cache({ pixelRatio: exportRatio });
-      } catch (e) {
-        console.warn("Failed to upgrade node cache for export", e);
-      }
-    }
   } catch (err) {
     console.warn("Failed to query cached nodes before export", err);
+    return cachedNodes;
   }
 
+  if (cachedNodes.length === 0) return cachedNodes;
+
+  // تقدير الاستهلاك: width×height×4 بايت × النسبة² لكل عقدة
+  const estimateFor = (ratio: number) => {
+    let total = 0;
+    for (const node of cachedNodes) {
+      const n = node as unknown as { width?: () => number; height?: () => number };
+      const w = typeof n.width === "function" ? n.width() : 0;
+      const h = typeof n.height === "function" ? n.height() : 0;
+      total += w * h * 4 * ratio * ratio;
+    }
+    return total;
+  };
+
+  const MAX_NODE_RATIO = Math.min(4, Math.max(1, targetPixelRatio));
+  let exportRatio = MAX_NODE_RATIO;
+  // تنازل تدريجي (خطوة 0.5) حتى الدخول في الميزانية — 1× دائماً ضمن الحد
+  while (exportRatio > 1 && estimateFor(exportRatio) > EXPORT_CACHE_BUDGET_BYTES) {
+    exportRatio = Math.max(1, exportRatio - 0.5);
+  }
+
+  for (const node of cachedNodes) {
+    try {
+      node.clearCache();
+      node.cache({ pixelRatio: exportRatio });
+    } catch (e) {
+      console.warn("Failed to upgrade node cache for export", e);
+    }
+  }
+  return cachedNodes;
+}
+
+/**
+ * يلتقط canvas من Stage ويحوله إلى Blob مباشرة — مسار Blob-to-Blob بلا
+ * تمرير وسيط بـ Base64/DataURL (يوفر 33% من الحجم + حلقة فك ترميز كاملة).
+ * يعيد Blob أو null عند الفشل.
+ */
+export async function captureStageBlob(
+  stage: Konva.Stage,
+  targetPixelRatio: number,
+  mimeType: string = "image/png",
+  quality?: number,
+): Promise<Blob | null> {
+  const cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
+
   try {
-    const dataUrl = await withHiddenOverlays(stage, targetPixelRatio, async () => {
+    const blob = await withHiddenOverlays(stage, targetPixelRatio, async () => {
       // 🛡️ حاجز الأمان الحقيقي هو حد الميجابكسل الكلي (assertExportablePixels
       // في export-image.ts) الذي يمنع OOM — سقف النسبة هنا يحمي العرض
       // المؤقت فقط. أوراق 300DPI كبيرة (A4/A3) تحتاج نسبة 6×+ مع معاينة 400px،
@@ -102,20 +142,12 @@ export async function captureStageDataUrl(
       const MAX_EXPORT_RATIO = 8;
       const safePixelRatio = Math.min(MAX_EXPORT_RATIO, Math.max(1, targetPixelRatio));
       const exportCanvas = stage.toCanvas({ pixelRatio: safePixelRatio });
-      const blob = await new Promise<Blob | null>((resolve) => {
+      return await new Promise<Blob | null>((resolve) => {
         exportCanvas.toBlob(resolve, mimeType, quality);
-      });
-
-      if (!blob) return null;
-
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
       });
     });
 
-    return dataUrl;
+    return blob;
   } finally {
     // إعادة كاش العناصر للعرض العادي على الشاشة للحفاظ على سلاسة الأداء وخفة الذاكرة
     restoreScreenCache(cachedNodes);
