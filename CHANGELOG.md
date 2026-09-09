@@ -5,6 +5,37 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.32] - 2026-09-09
+
+### Refined (UI Excellence Program — من خطة `docs/plans/ui-excellence-plan.md`)
+
+**توحيد نظام الألوان (Token System Unification):**
+- **صفر ألوان مثبتة خارج الـ tokens**: استبدال كل `dark:bg-[#...]` و `slate/zinc` الخام في المساطر وبطاقات القوالب وحوار الطباعة ووحدة الكولاج الحر و`toolbar` الفلات وثنائيات المعاينة.
+- **متغيرات دلالية جديدة**: `--ruler-*` (أسطح المساطر الثمانية)، `--print-*` (واجهة آلة المعاينة الداكنة)، وتسجيل `--canvas-collage-cut/center/edge` كأصناف Tailwind متاحة.
+- **إصلاح `--font-mono`**: كان مربوطاً بالخط العربي (غير monospace فعلياً) — الآن `IBM Plex Mono → Cascadia → ui-monospace` للقراءات الرقمية و`kbd`.
+
+**إزالة الازدواجية (Deduplication):**
+- **حذف `zoom-controls.tsx`** (كود ميت بلا مستوردين).
+- **`WindowControls` مشترك**: أزرار النافذة الثلاثة (تصغير/تكبير/إغلاق) كانت مكررة بين شاشة القفل والهيدر — الآن مكوّن واحد.
+- **`QuickBarAiActions`**: الثلاثي (عزل → ضبط → ترميم) كان مكرراً حرفياً بين قسمي الخلية والعنصر الحر.
+- **توست sonner**: إزالة طبقة الـ `!important` المكررة من `classNames` (التنسيق الموحد يعيش في `index.css` فقط).
+- **زر الملاءمة**: تسمية صادقة موحدة «ملاءمة الورقة للشاشة (100%)» بدل التسمية المزدوجة المربكة.
+
+**مقياس الطبقات الموحد (Unified Z-Index Scale):**
+- متغيرات `--z-canvas-overlay/guides/ruler/print-toolbar/quick-bar/menu/popover` واستبدال كل القيم السحرية (`z-[45]` حتى `z-[99999]`).
+
+**تفكيك الملفات العملاقة (Decomposition):**
+- `canvas-quick-bar.tsx`: **798 → 153 سطراً** (ثلاثة أقسام مستقلة تحت `quick-bar/`).
+- `App.tsx`: **694 → 512** (شاشة قفل الترخيص مستقلة في `license-lock-screen.tsx` + أزرار النافذة مشتركة).
+- `editor-canvas.tsx`: **726 → 629** (منطق قياسات المساطر ومؤشر الفأرة في `use-ruler-metrics.ts`).
+
+**تنظيف الواجهة (UI Hygiene):**
+- إزالة الإيموجي من كل نصوص الواجهة والتوستات (📋 ✨ 🎯 🔒 ...) — تُركت في تعليقات JSDoc فقط.
+- توحيد الأحجام الاعتباطية: `text-[9px]/[11px]/[11.5px]` → `text-[10px]`/`text-xs` (142 موضعاً).
+- تحويل أزرار الهيدر الأيقونية من `title=` الأصلي إلى Radix Tooltip مع رقائق `kbd` للاختصارات.
+
+**التحقق:** typecheck ✅ / lint 0 أخطاء ✅ / 370/370 اختبار ✅ / build ✅ / مسوح rg: صفر hex خارج tokens، صفر slate/zinc في freeform، صفر z سحري، صفر أحجام اعتباطية.
+
 ## [v1.3.24] - 2026-08-27
 
 ### Added & Refined (Smart Snapping System, Viewport Deck Polish & Hugeicons Standardization)

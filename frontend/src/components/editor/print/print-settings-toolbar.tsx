@@ -25,7 +25,7 @@ import type { PrintSettings } from "@/lib/store/types";
 
 const toggleButtonClassName = (active: boolean, primary = false) =>
   cn(
-    "rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+    "rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
     active
       ? primary
         ? "bg-primary text-primary-foreground shadow-2xs font-bold"
@@ -88,7 +88,7 @@ export function PrintSettingsToolbar({
           <SelectTrigger className="h-8 text-xs font-semibold w-[150px] bg-background border-border/50 shadow-2xs focus:ring-primary/20">
             <SelectValue placeholder="مقاس الورقة" />
           </SelectTrigger>
-          <SelectContent className="z-[150]" dir="rtl">
+          <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
             {PAPER_SIZES.map((size) => (
               <SelectItem key={size.id} value={size.id} className="text-xs font-semibold cursor-pointer">
                 {size.name}
@@ -168,7 +168,7 @@ export function PrintSettingsToolbar({
               aria-label="نمط خطوط القص"
               value={printSettings.cutLineStyle || "dashed"}
               onChange={(e) => setPrintSettings({ cutLineStyle: e.target.value as PrintSettings["cutLineStyle"] })}
-              className="bg-background text-[11px] font-semibold border border-border/50 rounded-md px-1.5 py-0.5 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+              className="bg-background text-xs font-semibold border border-border/50 rounded-md px-1.5 py-0.5 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="dashed">متقطع</option>
               <option value="dotted">منقط</option>
@@ -230,7 +230,7 @@ export function PrintSettingsToolbar({
                       <Icon className="w-3.5 h-3.5 shrink-0" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-[11px] font-semibold">{label}</TooltipContent>
+                  <TooltipContent side="bottom" className="text-xs font-semibold">{label}</TooltipContent>
                 </Tooltip>
               ))}
             </div>

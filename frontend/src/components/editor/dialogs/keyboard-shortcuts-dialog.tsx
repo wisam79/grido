@@ -115,7 +115,7 @@ export function KeyboardShortcutsDialog() {
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 custom-scrollbar min-h-0 select-none">
           {categories.map((cat, catIdx) => (
             <div key={catIdx} className="space-y-2">
-              <div className="text-[11px] font-extrabold text-primary flex items-center gap-1.5 px-0.5">
+              <div className="text-xs font-extrabold text-primary flex items-center gap-1.5 px-0.5">
                 <Sparkle className="opacity-70 w-3.5 h-3.5 shrink-0" weight="duotone" />
                 <span>{cat.title}</span>
               </div>
@@ -130,7 +130,7 @@ export function KeyboardShortcutsDialog() {
                         {shortcut.keys.map((key, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 bg-background border border-border/70 rounded-md text-[11px] font-bold font-mono text-foreground shadow-2xs flex items-center justify-center min-w-7 h-6"
+                            className="px-2 py-0.5 bg-background border border-border/70 rounded-md text-xs font-bold font-mono text-foreground shadow-2xs flex items-center justify-center min-w-7 h-6"
                           >
                             {key === "الأسهم" ? (
                               <div className="flex items-center gap-0.5">
@@ -156,9 +156,9 @@ export function KeyboardShortcutsDialog() {
 
         {/* ذيل النافذة الثابت */}
         <div className="px-5 py-3 border-t border-border/40 bg-muted/20 text-center shrink-0">
-          <p className="text-[11px] text-muted-foreground font-semibold flex items-center justify-center gap-1.5">
+          <p className="text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1.5">
             <span>يمكنك فتح هذه النافذة دائماً بالضغط على</span>
-            <kbd className="px-2 py-0.5 bg-background rounded-md border border-border text-[11px] font-mono font-bold text-foreground shadow-2xs">
+            <kbd className="px-2 py-0.5 bg-background rounded-md border border-border text-xs font-mono font-bold text-foreground shadow-2xs">
               Ctrl + /
             </kbd>
           </p>

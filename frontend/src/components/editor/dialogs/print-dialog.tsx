@@ -233,7 +233,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <Printer className="text-primary w-6 h-6 shrink-0" weight="duotone" />
                 <span>إعدادات الطباعة</span>
               </DialogTitle>
-              <p className="text-[11px] font-medium text-muted-foreground mt-0.5 truncate">
+              <p className="text-xs font-medium text-muted-foreground mt-0.5 truncate">
                 اختر مقاس الورقة ونمط الألوان، ثم اضبط الهوامش وخطوط القص
               </p>
             </div>
@@ -267,10 +267,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           />
 
           {/* مساحة المعاينة التفاعلية المباشرة */}
-          <div className="border border-border/50 rounded-xl overflow-hidden bg-slate-900/95 flex flex-col flex-1 shadow-inner relative">
+          <div className="border border-border/50 rounded-xl overflow-hidden bg-print-surface flex flex-col flex-1 shadow-inner relative">
             {/* شريط عنوان وتكبير المعاينة */}
-            <div className="flex items-center justify-between px-3.5 py-2 border-b border-white/10 bg-slate-900/80 backdrop-blur-md select-none z-10">
-              <span className="text-xs font-bold text-slate-200 flex items-center gap-2">
+            <div className="flex items-center justify-between px-3.5 py-2 border-b border-print-header-border bg-print-header backdrop-blur-md select-none z-10">
+              <span className="text-xs font-bold text-print-header-title flex items-center gap-2">
                 <span className={cn("w-2 h-2 rounded-full", isOverflowing ? "bg-red-500 animate-ping" : "bg-emerald-400")} />
                 معاينة الورقة المطبوعة
               </span>
@@ -281,18 +281,18 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setZoom(1)}
-                  className="h-6 px-2 text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer font-medium"
+                  className="h-6 px-2 text-xs text-print-header-muted hover:text-white hover:bg-print-zoom-capsule cursor-pointer font-medium"
                 >
                   إعادة ضبط
                 </Button>
-                <div className="flex items-center gap-1 bg-slate-800/80 p-0.5 rounded-md border border-slate-700/80">
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-7 w-7 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
+                <div className="flex items-center gap-1 bg-print-zoom-capsule p-0.5 rounded-md border border-print-zoom-capsule-border">
+                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer">
                     <MagnifyingGlassMinus className="w-3 h-3 shrink-0" />
                   </Button>
-                  <span className="text-[10px] w-10 text-center font-mono font-semibold text-slate-300">
+                  <span className="text-[10px] w-10 text-center font-mono font-semibold text-print-zoom-text">
                     {Math.round(zoom * 100)}%
                   </span>
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-7 w-7 p-0 text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer">
+                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer">
                     <MagnifyingGlassPlus className="w-3 h-3 shrink-0" />
                   </Button>
                 </div>
@@ -302,7 +302,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* لوحة الورقة البيضاء الممركزة داخل مساحة العمل */}
             <div className="flex-1 overflow-auto p-6 flex items-center justify-center select-none workspace-grid relative">
               <div
-                className="bg-white rounded-xs relative border border-slate-300/60 shadow-md shadow-black/20 transition-all duration-200"
+                className="bg-white rounded-xs relative border border-print-paper-border shadow-md shadow-black/20 transition-all duration-200"
                 style={{
                   width: paperWidth * scaleFactor * zoom,
                   height: paperHeight * scaleFactor * zoom,
@@ -310,7 +310,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               >
                 {/* حدود الهامش الداخلي */}
                 <div
-                  className={cn("absolute border border-dashed pointer-events-none transition-colors", isOverflowing ? "border-red-400/80" : "border-slate-300/60")}
+                  className={cn("absolute border border-dashed pointer-events-none transition-colors", isOverflowing ? "border-red-400/80" : "border-print-margin-line")}
                   style={{
                     left: effectiveMarginMM * scaleFactor * zoom,
                     top: effectiveMarginMM * scaleFactor * zoom,

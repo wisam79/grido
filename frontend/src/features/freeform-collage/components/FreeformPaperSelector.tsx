@@ -37,7 +37,7 @@ export const PaperDimInput: React.FC<PaperDimInputProps> = ({ value, onCommit, a
       dir="ltr"
       aria-label={ariaLabel}
       value={text}
-      className="h-7 text-[11px] rounded-md w-[54px] font-mono font-bold text-center bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all"
+      className="h-7 text-xs rounded-md w-[54px] font-mono font-bold text-center bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all"
       onFocus={() => setFocused(true)}
       onChange={(e) => setText(e.target.value.replace(/[^\d]/g, "").slice(0, 4))}
       onBlur={() => {
@@ -98,7 +98,7 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
         >
           <SelectValue placeholder="اختر قياس..." />
         </SelectTrigger>
-        <SelectContent className="font-cairo z-[150] rounded-xl border-border/60">
+        <SelectContent className="font-cairo z-(--z-print-toolbar) rounded-xl border-border/60">
           <SelectItem value="custom" className="text-xs font-semibold rounded-md">
             مخصص (أرقام)
           </SelectItem>
@@ -124,7 +124,7 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
           ariaLabel="ارتفاع الورقة بالمليمتر"
           onCommit={(h) => onPaperDimensionsChange(paperWidthMM, h)}
         />
-        <span className="text-[11px] font-semibold text-muted-foreground">مم</span>
+        <span className="text-xs font-semibold text-muted-foreground">مم</span>
       </div>
     </div>
   );

@@ -525,7 +525,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
           {/* الأدوات - Sidebar */}
           <div className="w-56 border-l rtl:border-l rtl:border-r-0 ltr:border-r border-border/40 bg-muted/10 p-4 flex flex-col gap-5 shrink-0 overflow-y-auto">
             <div className="space-y-2">
-              <span className="text-[11px] font-bold text-muted-foreground block mb-2">نوع الأداة</span>
+              <span className="text-xs font-bold text-muted-foreground block mb-2">نوع الأداة</span>
               <Button
                 variant={tool === "erase" ? "default" : "outline"}
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "erase" && "bg-primary text-primary-foreground")}
@@ -570,7 +570,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
             {/* فحص نقاء العزل بخلفيات ملونة */}
             <div className="space-y-2 bg-background p-3 rounded-xl border border-border/40">
-              <span className="text-[11px] font-bold text-foreground/80 block">خلفية المعاينة</span>
+              <span className="text-xs font-bold text-foreground/80 block">خلفية المعاينة</span>
               <div className="grid grid-cols-4 gap-1.5">
                 {[
                   { id: "checker", label: "شفاف", bg: `repeating-conic-gradient(${previewChecker()} 0% 25%, transparent 0% 50%)` },

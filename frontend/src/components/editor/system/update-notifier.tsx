@@ -53,7 +53,7 @@ function FormattedReleaseNotes({ notes }: { notes: string }) {
         if (line.startsWith("-") || line.startsWith("*")) {
           const cleanItem = line.replace(/^[-*]\s*/, "").replace(/\*\*/g, "");
           return (
-            <div key={idx} className="flex items-start gap-2 pr-1 text-[11px] text-foreground/90">
+            <div key={idx} className="flex items-start gap-2 pr-1 text-xs text-foreground/90">
               <span className="w-1.5 h-1.5 rounded-full bg-primary/80 mt-1.5 shrink-0" />
               <span>{cleanItem}</span>
             </div>
@@ -62,7 +62,7 @@ function FormattedReleaseNotes({ notes }: { notes: string }) {
 
         // نص عادي
         return (
-          <p key={idx} className="text-[11px] text-muted-foreground">
+          <p key={idx} className="text-xs text-muted-foreground">
             {line.replace(/\*\*/g, "")}
           </p>
         );
@@ -204,7 +204,7 @@ export function UpdateNotifier() {
           {/* 2. ملاحظات الإصدار المنسقة */}
           {updateInfo.release_notes && !isDownloading && (
             <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <CheckCircle className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>أبرز ما يتضمنه هذا التحديث:</span>
               </span>
@@ -244,7 +244,7 @@ export function UpdateNotifier() {
 
           {/* 4. رسالة الخطأ في حال الفشل مع زر التحميل اليدوي */}
           {error && (
-            <div className="p-3 text-[11px] text-destructive bg-destructive/10 rounded-xl border border-destructive/20 font-medium flex items-start gap-2">
+            <div className="p-3 text-xs text-destructive bg-destructive/10 rounded-xl border border-destructive/20 font-medium flex items-start gap-2">
               <WarningCircle className="w-4 h-4 shrink-0 mt-0.5" weight="fill" />
               <span>{error}</span>
             </div>

@@ -234,7 +234,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         align="start"
         sideOffset={6}
         collisionPadding={12}
-        className="w-[305px] max-w-[calc(100vw-24px)] bg-card/95 backdrop-blur-2xl border border-border/80 rounded-xl shadow-xl z-[99999] p-2.5 space-y-2 font-cairo fluent-specular"
+        className="w-[305px] max-w-[calc(100vw-24px)] bg-card/95 backdrop-blur-2xl border border-border/80 rounded-xl shadow-xl z-(--z-popover) p-2.5 space-y-2 font-cairo fluent-specular"
         onKeyDown={handleKeyDown}
       >
         {/* Search Box & Custom Preview Toggle */}
@@ -283,7 +283,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 value={previewText}
                 onChange={(e) => setPreviewText(e.target.value)}
                 placeholder={`نص المعاينة (افتراضي: ${element.text || "أبجد هوز"})`}
-                className="w-full h-6 bg-transparent text-[11px] px-1 text-foreground placeholder:text-muted-foreground/50 outline-hidden"
+                className="w-full h-6 bg-transparent text-xs px-1 text-foreground placeholder:text-muted-foreground/50 outline-hidden"
               />
               {previewText && (
                 <button
@@ -378,7 +378,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                     {/* Font Meta Details */}
                     <div className="text-[9.5px] text-muted-foreground font-medium flex items-center gap-1.5 truncate">
                       <span className="font-bold text-foreground/75 truncate">{font.arabicName}</span>
-                      <span className="text-[9px] opacity-70 truncate font-mono">({font.englishName})</span>
+                      <span className="text-[10px] opacity-70 truncate font-mono">({font.englishName})</span>
                       {font.isOffline ? (
                         <span className="text-[7.5px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-1 py-px rounded font-bold">
                           أوفلاين

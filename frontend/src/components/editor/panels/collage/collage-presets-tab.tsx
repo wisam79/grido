@@ -139,7 +139,7 @@ export function CollagePresetsTab({
 
                 {/* تفاصيل ومعلومات القالب */}
                 <div className="flex flex-col items-start w-full min-w-0">
-                  <span className="text-[11.5px] font-bold leading-tight line-clamp-1 w-full text-right" title={preset.title}>
+                  <span className="text-xs font-bold leading-tight line-clamp-1 w-full text-right" title={preset.title}>
                     {preset.title}
                   </span>
                   <span className="text-[10px] text-muted-foreground mt-0.5 font-mono leading-none truncate w-full text-right" dir="ltr">

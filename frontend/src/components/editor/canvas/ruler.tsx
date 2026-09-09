@@ -116,8 +116,8 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
                 isZero
                   ? "stroke-primary"
                   : isInsideCanvas
-                  ? "stroke-neutral-400 dark:stroke-neutral-500"
-                  : "stroke-neutral-300 dark:stroke-neutral-700"
+                  ? "stroke-ruler-tick-major"
+                  : "stroke-ruler-tick"
               }
               strokeWidth={isZero ? 1.5 : 0.8}
             />
@@ -130,8 +130,8 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
                 isZero
                   ? "fill-primary font-bold text-[8.5px]"
                   : isInsideCanvas
-                  ? "fill-neutral-700 dark:fill-neutral-300 font-medium"
-                  : "fill-neutral-400 dark:fill-neutral-600 font-normal"
+                  ? "fill-ruler-tick-label-active font-medium"
+                  : "fill-ruler-tick-label font-normal"
               )}
             >
               {formatRulerNumber(u, unit)}
@@ -155,7 +155,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       width={viewportWidth}
       height={20}
       onPointerDown={onPointerDown}
-      className="bg-neutral-100/95 dark:bg-[#18181b] text-foreground overflow-hidden select-none block cursor-ns-resize"
+      className="bg-ruler-surface text-foreground overflow-hidden select-none block cursor-ns-resize"
       style={{ touchAction: "none" }}
     >
       {/* 1. مسار مساحة العمل والورقة الفعلي */}
@@ -164,7 +164,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
         y={0}
         width={viewportWidth}
         height={20}
-        className="fill-neutral-200/60 dark:fill-[#141416]"
+        className="fill-ruler-track"
       />
 
       {displayW > 0 && (
@@ -175,7 +175,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
             y={0}
             width={displayW}
             height={20}
-            className="fill-white/90 dark:fill-[#202024]"
+            className="fill-card"
           />
           {/* خط بداية ونهاية الورقة */}
           <line
@@ -198,14 +198,14 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       )}
 
       {/* خط الإطار السفلي الفاصل مع الكانفس */}
-      <line x1={0} y1={19.5} x2={viewportWidth} y2={19.5} className="stroke-neutral-300/80 dark:stroke-neutral-800" strokeWidth={1} />
+      <line x1={0} y1={19.5} x2={viewportWidth} y2={19.5} className="stroke-ruler-border" strokeWidth={1} />
 
       {/* 2. خطوط التدريج الاحترافية (3-Tier Tick Marks) */}
       {subPath && (
         <path
           d={subPath}
           stroke="currentColor"
-          className="stroke-neutral-400/70 dark:stroke-neutral-600"
+          className="stroke-ruler-tick/70"
           strokeWidth={0.65}
         />
       )}
@@ -213,7 +213,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
         <path
           d={midPath}
           stroke="currentColor"
-          className="stroke-neutral-500/80 dark:stroke-neutral-500"
+          className="stroke-ruler-tick-major/80"
           strokeWidth={0.75}
         />
       )}
@@ -295,8 +295,8 @@ export const VerticalRuler = React.memo(function VerticalRuler({
                 isZero
                   ? "stroke-primary"
                   : isInsideCanvas
-                  ? "stroke-neutral-400 dark:stroke-neutral-500"
-                  : "stroke-neutral-300 dark:stroke-neutral-700"
+                  ? "stroke-ruler-tick-major"
+                  : "stroke-ruler-tick"
               }
               strokeWidth={isZero ? 1.5 : 0.8}
             />
@@ -309,8 +309,8 @@ export const VerticalRuler = React.memo(function VerticalRuler({
                 isZero
                   ? "fill-primary font-bold text-[8.5px]"
                   : isInsideCanvas
-                  ? "fill-neutral-700 dark:fill-neutral-300 font-medium"
-                  : "fill-neutral-400 dark:fill-neutral-600 font-normal"
+                  ? "fill-ruler-tick-label-active font-medium"
+                  : "fill-ruler-tick-label font-normal"
               )}
               transform={`rotate(-90, 5.5, ${y})`}
               textAnchor="middle"
@@ -337,7 +337,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       width={20}
       height={viewportHeight}
       onPointerDown={onPointerDown}
-      className="bg-neutral-100/95 dark:bg-[#18181b] text-foreground overflow-hidden select-none block cursor-ew-resize"
+      className="bg-ruler-surface text-foreground overflow-hidden select-none block cursor-ew-resize"
       style={{ touchAction: "none" }}
     >
       {/* 1. مسار مساحة العمل والورقة الفعلي */}
@@ -346,7 +346,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
         y={0}
         width={20}
         height={viewportHeight}
-        className="fill-neutral-200/60 dark:fill-[#141416]"
+        className="fill-ruler-track"
       />
 
       {displayH > 0 && (
@@ -357,7 +357,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
             y={originY}
             width={20}
             height={displayH}
-            className="fill-white/90 dark:fill-[#202024]"
+            className="fill-card"
           />
           {/* خط بداية ونهاية الورقة */}
           <line
@@ -380,14 +380,14 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       )}
 
       {/* خط الإطار الأيمن الفاصل مع الكانفس */}
-      <line x1={19.5} y1={0} x2={19.5} y2={viewportHeight} className="stroke-neutral-300/80 dark:stroke-neutral-800" strokeWidth={1} />
+      <line x1={19.5} y1={0} x2={19.5} y2={viewportHeight} className="stroke-ruler-border" strokeWidth={1} />
 
       {/* 2. خطوط التدريج الاحترافية (3-Tier Tick Marks) */}
       {subPath && (
         <path
           d={subPath}
           stroke="currentColor"
-          className="stroke-neutral-400/70 dark:stroke-neutral-600"
+          className="stroke-ruler-tick/70"
           strokeWidth={0.65}
         />
       )}
@@ -395,7 +395,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
         <path
           d={midPath}
           stroke="currentColor"
-          className="stroke-neutral-500/80 dark:stroke-neutral-500"
+          className="stroke-ruler-tick-major/80"
           strokeWidth={0.75}
         />
       )}

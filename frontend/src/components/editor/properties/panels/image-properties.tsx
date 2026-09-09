@@ -239,7 +239,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       // 🔒 حفظ التاريخ بعد اكتمال إدراج جميع العناصر بالكامل
       useEditorStore.getState().pushHistory();
       if (base64List.length > 1) {
-        toast.success(`تم استعدال وإدراج ${base64List.length} مستندات على اللوحة بنجاح! 🎯`);
+        toast.success(`تم استبدال وإدراج ${base64List.length} مستندات على اللوحة بنجاح!`);
       } else {
         toast.success("تم استعدال وعزل المستند بنجاح!");
       }
@@ -402,7 +402,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         {/* أشرطة تقدم العمليات */}
         {isRemovingBg && (
           <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[9px] font-bold text-primary">
+            <div className="flex justify-between items-center text-[10px] font-bold text-primary">
               <span className="animate-pulse">{bgProgressText}</span>
               <span>{Math.round(bgProgress)}%</span>
             </div>
@@ -417,7 +417,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
         {isEnhancing && (
           <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[9px] font-bold text-primary">
+            <div className="flex justify-between items-center text-[10px] font-bold text-primary">
               <span className="animate-pulse">{enhanceProgressText}</span>
               <span>{Math.round(enhanceProgress)}%</span>
             </div>
@@ -432,7 +432,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
         {isFraming && (
           <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[9px] font-bold text-primary">
+            <div className="flex justify-between items-center text-[10px] font-bold text-primary">
               <span className="animate-pulse">{frameProgressText}</span>
               <span>{Math.round(frameProgress)}%</span>
             </div>

@@ -44,7 +44,7 @@ export const FluentEmptyState = React.memo(
         <div className="space-y-1 max-w-xs">
           <h4 className="text-xs font-bold text-foreground">{title}</h4>
           {description && (
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {description}
             </p>
           )}

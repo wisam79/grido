@@ -26,16 +26,17 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       toastOptions={{
         classNames: {
+          /* التنسيق البصري الموحد (الحبة العائمة) يعيش في index.css — هنا الأصناف الوظيفية فقط */
           toast:
-            "group toast font-sans !bg-card !text-foreground !border !border-border !shadow-md !rounded-full !backdrop-blur-md transition-all duration-150 !w-auto !max-w-fit !mx-auto px-3.5 py-1.5 min-h-[34px] gap-2 flex items-center",
+            "group toast font-sans transition-all duration-150",
           title: "text-xs font-medium text-foreground tracking-normal font-sans whitespace-nowrap",
-          description: "text-[11px] text-muted-foreground font-sans mt-0.5",
+          description: "text-xs text-muted-foreground font-sans mt-0.5",
           actionButton:
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:hover:bg-primary/90 text-xs font-medium px-2.5 py-1 rounded-full transition-colors",
           cancelButton:
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:hover:bg-muted/80 text-xs font-medium px-2.5 py-1 rounded-full transition-colors",
           closeButton:
-            "group-[.toast]:!bg-transparent group-[.toast]:!text-muted-foreground/60 group-[.toast]:hover:!text-foreground group-[.toast]:!border-none group-[.toast]:!rounded-full transition-colors p-0.5",
+            "group-[.toast]:text-muted-foreground/60 group-[.toast]:hover:text-foreground group-[.toast]:border-none group-[.toast]:rounded-full transition-colors p-0.5",
         },
       }}
       {...props}

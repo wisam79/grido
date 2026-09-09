@@ -202,7 +202,7 @@ export function SlotProperties({
           <div className="flex items-baseline gap-1 font-mono" dir="ltr">
             <span className="text-sm font-bold text-primary">{widthMM} × {heightMM}</span>
             <span className="text-[10px] font-semibold text-primary/80">mm</span>
-            <span className="text-[9px] text-muted-foreground/70 ml-1">({dpi} DPI)</span>
+            <span className="text-[10px] text-muted-foreground/70 ml-1">({dpi} DPI)</span>
           </div>
         </div>
 
@@ -244,7 +244,7 @@ export function SlotProperties({
           <span className="text-xs font-semibold text-muted-foreground">أبعاد الطباعة</span>
           <div className="flex items-center gap-1.5 font-mono" dir="ltr">
             <span className="text-xs font-bold text-primary">{widthMM} × {heightMM} mm</span>
-            <span className="text-[9px] font-semibold text-muted-foreground/80 bg-muted px-1.5 py-0.5 rounded-md border border-border/40 font-mono">
+            <span className="text-[10px] font-semibold text-muted-foreground/80 bg-muted px-1.5 py-0.5 rounded-md border border-border/40 font-mono">
               {dpi} DPI
             </span>
           </div>
@@ -292,7 +292,7 @@ export function SlotProperties({
                 <FlipHorizontal className="w-4.5 h-4.5" weight={slot.flipX ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">قلب أفقي</TooltipContent>
+            <TooltipContent side="top" className="text-xs">قلب أفقي</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -312,7 +312,7 @@ export function SlotProperties({
                 <FlipVertical className="w-4.5 h-4.5" weight={slot.flipY ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">قلب عمودي</TooltipContent>
+            <TooltipContent side="top" className="text-xs">قلب عمودي</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -331,7 +331,7 @@ export function SlotProperties({
                 <ArrowClockwise className="w-4.5 h-4.5" weight="regular" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">تدوير 90°</TooltipContent>
+            <TooltipContent side="top" className="text-xs">تدوير 90°</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -349,7 +349,7 @@ export function SlotProperties({
                 <ArrowCounterClockwise className="w-4.5 h-4.5" weight="regular" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">إعادة تعيين الاتجاه</TooltipContent>
+            <TooltipContent side="top" className="text-xs">إعادة تعيين الاتجاه</TooltipContent>
           </Tooltip>
         </div>
       </div>
@@ -404,7 +404,7 @@ export function SlotProperties({
                 <span>الصف</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">تعبئة الصف كاملاً</TooltipContent>
+            <TooltipContent side="top" className="text-xs">تعبئة الصف كاملاً</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -418,7 +418,7 @@ export function SlotProperties({
                 <span>العمود</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">تعبئة العمود كاملاً</TooltipContent>
+            <TooltipContent side="top" className="text-xs">تعبئة العمود كاملاً</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -436,7 +436,7 @@ export function SlotProperties({
                 <span>الفارغة</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">تعبئة الخانات الفارغة فقط</TooltipContent>
+            <TooltipContent side="top" className="text-xs">تعبئة الخانات الفارغة فقط</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -450,7 +450,7 @@ export function SlotProperties({
                 <span>الكل</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">تعبئة كافة الخلايا</TooltipContent>
+            <TooltipContent side="top" className="text-xs">تعبئة كافة الخلايا</TooltipContent>
           </Tooltip>
         </div>
 
@@ -470,7 +470,7 @@ export function SlotProperties({
                 <span>توسيط الصورة</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">تصفير الإزاحة وتوسيط الصورة داخل الخانة</TooltipContent>
+            <TooltipContent side="top" className="text-xs">تصفير الإزاحة وتوسيط الصورة داخل الخانة</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -487,7 +487,7 @@ export function SlotProperties({
                 <Trash className="w-4.5 h-4.5" weight="regular" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[11px]">إفراغ الخلية</TooltipContent>
+            <TooltipContent side="top" className="text-xs">إفراغ الخلية</TooltipContent>
           </Tooltip>
         </div>
 

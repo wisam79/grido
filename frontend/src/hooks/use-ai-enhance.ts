@@ -140,7 +140,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
 
     // 🔒 التحقق الدقيق من حد الاستهلاك اليومي المربوط بالحساب
     if (remainingQuota <= 0) {
-      toast.warning(`وصلت للحد الأقصى اليومي لاستخدام الذكاء الاصطناعي (${dailyLimit} صور/يومياً). يتجدد الرصيد غداً 🕛`, {
+      toast.warning(`وصلت للحد الأقصى اليومي لاستخدام الذكاء الاصطناعي (${dailyLimit} صور/يومياً). يتجدد الرصيد غداً`, {
         duration: 5000,
       });
       return;
@@ -161,14 +161,14 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
       const base64Image = await prepareImageForAiUpload(element.imageSrc, 2048, 0.92);
 
       const loadingMessages = [
-        "جاري إيقاظ خوادم الذكاء الاصطناعي ... 💤",
-        "جاري تهيئة معالجات الرسوميات (GPU) ... 🚀",
-        "جاري تحميل نماذج الترميم المتقدمة ... 🧠",
-        "جاري معالجة تفاصيل الوجه والملامح ... ✨",
-        "جاري تحليل البيانات واستعادة البيكسلات المفقودة ... 👁️",
-        "جاري إزالة التشويش وتوضيح الخلفية ... 🖼️",
-        "جاري وضع اللمسات الأخيرة وتحسين الجودة ... 🎨",
-        "جاري إنهاء العملية، شكراً لصبرك ... ⏳"
+        "جاري إيقاظ خوادم الذكاء الاصطناعي ...",
+        "جاري تهيئة معالجات الرسوميات (GPU) ...",
+        "جاري تحميل نماذج الترميم المتقدمة ...",
+        "جاري معالجة تفاصيل الوجه والملامح ...",
+        "جاري تحليل البيانات واستعادة البيكسلات المفقودة ...",
+        "جاري إزالة التشويش وتوضيح الخلفية ...",
+        "جاري وضع اللمسات الأخيرة وتحسين الجودة ...",
+        "جاري إنهاء العملية، شكراً لصبرك ..."
       ];
 
       setEnhanceProgress(15);
@@ -233,7 +233,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
         // 🌟 2. عرض إشعار النجاح الأنيق للمستخدم مع الرصيد الدقيق المتبقي
         const updatedCount = getTodayUsageCount();
         const remText = ` (المتبقي اليوم: ${Math.max(0, dailyLimit - updatedCount)}/${dailyLimit})`;
-        toast.success(`تم ترميم وتحسين دقة الصورة بنجاح ✨${remText}`);
+        toast.success(`تم ترميم وتحسين دقة الصورة بنجاح!${remText}`);
       }
     } catch (err) {
       if (progressTimer) clearInterval(progressTimer);

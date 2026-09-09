@@ -206,7 +206,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               label: "مكتبتي",
               icon: <Folder className="w-4 h-4 text-primary" weight="duotone" />,
               badge: savedTemplates.length > 0 ? (
-                <span className="text-[9px] bg-primary/20 text-primary font-bold px-1 rounded-full">
+                <span className="text-[10px] bg-primary/20 text-primary font-bold px-1 rounded-full">
                   {savedTemplates.length}
                 </span>
               ) : undefined,

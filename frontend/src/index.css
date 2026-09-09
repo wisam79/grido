@@ -8,7 +8,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-cairo);
-  --font-mono: var(--font-cairo);
+  /* خط monospace حقيقي للقراءات الرقمية والأكواد (كان مربوطاً بالخط العربي ففقد خاصيته) */
+  --font-mono: 'IBM Plex Mono', 'Cascadia Mono', ui-monospace, SFMono-Regular, 'Consolas', monospace;
   --font-cairo: var(--font-cairo);
   --font-tajawal: var(--font-tajawal);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -40,6 +41,41 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* ألوان المساطر الدلالية (Ruler Semantic Colors) */
+  --color-ruler-surface: var(--ruler-surface);
+  --color-ruler-corner: var(--ruler-corner);
+  --color-ruler-corner-hover: var(--ruler-corner-hover);
+  --color-ruler-track: var(--ruler-track);
+  --color-ruler-border: var(--ruler-border);
+  --color-ruler-tick: var(--ruler-tick);
+  --color-ruler-tick-major: var(--ruler-tick-major);
+  --color-ruler-tick-label: var(--ruler-tick-label);
+  --color-ruler-tick-label-active: var(--ruler-tick-label-active);
+  /* ألوان حوار الطباعة الدلالية (واجهة آلة المعاينة الداكنة) */
+  --color-print-surface: var(--print-surface);
+  --color-print-header: var(--print-header);
+  --color-print-header-border: var(--print-header-border);
+  --color-print-header-title: var(--print-header-title);
+  --color-print-header-muted: var(--print-header-muted);
+  --color-print-zoom-capsule: var(--print-zoom-capsule);
+  --color-print-zoom-capsule-border: var(--print-zoom-capsule-border);
+  --color-print-zoom-text: var(--print-zoom-text);
+  --color-print-zoom-hover: var(--print-zoom-hover);
+  --color-print-paper-border: var(--print-paper-border);
+  --color-print-margin-line: var(--print-margin-line);
+  /* ألوان الكانفس الدلالية (Canvas Semantic Colors) متاحة كأصناف Tailwind */
+  --color-canvas-collage-cut: var(--canvas-collage-cut);
+  --color-canvas-collage-end-cut: var(--canvas-collage-end-cut);
+  --color-canvas-guide-center: var(--canvas-guide-center);
+  --color-canvas-guide-edge: var(--canvas-guide-edge);
+  /* مقياس الطبقات الموحد (Unified Z-Index Scale) — يُمنع استخدام z-[رقم] خارج هذه القيم */
+  --z-canvas-overlay: 45;
+  --z-canvas-guides: 60;
+  --z-ruler: 100;
+  --z-print-toolbar: 150;
+  --z-quick-bar: 500;
+  --z-menu: 1000;
+  --z-popover: 1500;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -118,6 +154,30 @@
   --canvas-preview-black: #09090b;
   --canvas-preview-blue: #1d4ed8;
   --canvas-preview-checker: #80808033;
+
+  /* Ruler Semantic Surfaces (Light) — أسطح المساطر الدلالية الموحدة مع الثيم */
+  --ruler-surface: #f5f5f5;
+  --ruler-corner: #e5e5e5;
+  --ruler-corner-hover: #d4d4d4;
+  --ruler-track: #fafafa;
+  --ruler-border: #d4d4d4;
+  --ruler-tick: #d4d4d4;
+  --ruler-tick-major: #a3a3a3;
+  --ruler-tick-label: #525252;
+  --ruler-tick-label-active: #404040;
+
+  /* Print Dialog Machine Surface (داكن دائماً في الوضعين — واجهة «آلة المعاينة») */
+  --print-surface: #0f172a;
+  --print-header: #0f172ae6;
+  --print-header-border: #ffffff1a;
+  --print-header-title: #e2e8f0;
+  --print-header-muted: #94a3b8;
+  --print-zoom-capsule: #1e293bcc;
+  --print-zoom-capsule-border: #334155cc;
+  --print-zoom-text: #cbd5e1;
+  --print-zoom-hover: #33415580;
+  --print-paper-border: #cbd5e199;
+  --print-margin-line: #cbd5e199;
 
   /* Fluent 2 Elevation Shadows */
   --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.12), 0 0.3px 0.9px 0 rgba(0,0,0,0.08);
@@ -199,6 +259,19 @@
   --canvas-preview-black: #000000;
   --canvas-preview-blue: #1d4ed8;
   --canvas-preview-checker: #80808033;
+
+  /* Ruler Semantic Surfaces (Dark) — أسطح المساطر الفحمية الموحدة مع الثيم */
+  --ruler-surface: #18181b;
+  --ruler-corner: #202024;
+  --ruler-corner-hover: #2a2a30;
+  --ruler-track: #141416;
+  --ruler-border: #262626;
+  --ruler-tick: #404040;
+  --ruler-tick-major: #525252;
+  --ruler-tick-label: #d4d4d4;
+  --ruler-tick-label-active: #e5e5e5;
+
+  /* Print Dialog Machine Surface (نفس قيم الوضع الفاتح — داكنة دائماً عن قصد) */
 
   /* Fluent 2 Dark Mode Soft Clean Elevation Shadows */
   --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.30), 0 0.3px 0.9px 0 rgba(0,0,0,0.20);

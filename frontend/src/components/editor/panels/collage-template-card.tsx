@@ -42,7 +42,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
         "group flex flex-col items-stretch gap-2.5 p-3 rounded-xl border transition-all duration-300 text-right relative overflow-hidden bg-card dark:bg-card shadow-2xs hover:border-primary/50 hover:shadow-md active:scale-[0.98] cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
         isActive
           ? "border-2 border-primary bg-primary/10 dark:bg-primary/15 shadow-xs ring-1 ring-primary/30"
-          : "border-border/90 dark:border-white/12 hover:bg-muted/40 dark:hover:bg-[#2e2e38]"
+          : "border-border/90 hover:bg-muted/40 dark:hover:bg-secondary"
       )}
     >
       {/* Active Indicator Dot (Top Right) */}
@@ -84,8 +84,8 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
       )}
 
       {/* Collage Preview Frame */}
-      <div className="aspect-square w-full bg-muted/80 dark:bg-[#16161c] rounded-xl p-1.5 border border-border/70 dark:border-white/8 relative shrink-0">
-        <div className="w-full h-full relative overflow-hidden rounded-lg bg-background dark:bg-[#101014] shadow-inner border border-border/40 dark:border-white/10">
+      <div className="aspect-square w-full bg-muted/80 rounded-xl p-1.5 border border-border/70 relative shrink-0">
+        <div className="w-full h-full relative overflow-hidden rounded-lg bg-background shadow-inner border border-border/40">
           {tpl.cells.map((c, i) => (
             <div
               key={i}
@@ -93,7 +93,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
                 "absolute border rounded-md flex items-center justify-center overflow-hidden transition-all duration-300",
                 isActive
                   ? "bg-primary/15 border-primary/60"
-                  : "bg-card dark:bg-[#24242d] border-border dark:border-white/15 group-hover:bg-accent/40 group-hover:border-primary/40"
+                  : "bg-card border-border group-hover:bg-accent/40 group-hover:border-primary/40"
               )}
               style={{
                 left: `calc(${c.x * 100}% + 1px)`,
@@ -124,7 +124,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
         </div>
         <div className="flex items-center justify-between mt-0.5 border-t border-border/20 pt-2">
           <span className={cn(
-            "px-1.5 py-0.5 rounded-md font-mono text-[9px] font-bold border transition-colors",
+            "px-1.5 py-0.5 rounded-md font-mono text-[10px] font-bold border transition-colors",
             isActive
               ? "bg-primary/15 text-primary border-primary/30"
               : "bg-muted text-muted-foreground border-border"

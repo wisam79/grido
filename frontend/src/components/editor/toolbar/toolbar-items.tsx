@@ -84,7 +84,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           </DropdownMenuTrigger>
         </TooltipBtn>
         <DropdownMenuContent align="start" className="w-56 font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
-          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+          <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
             قوالب النصوص
           </div>
 
@@ -160,7 +160,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           </DropdownMenuTrigger>
         </TooltipBtn>
         <DropdownMenuContent align="start" className="w-44 font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
-          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+          <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
             الأشكال
           </div>
           <DropdownMenuItem
@@ -264,7 +264,7 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
                     : "border-border/60 bg-card hover:bg-accent text-muted-foreground"
                 )}
               >
-                <div className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-black/10 dark:border-white/10 bg-slate-100 relative">
+                <div className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
                   {imageSrc ? (
                     <img
                       src={imageSrc}
@@ -276,7 +276,7 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
                     <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500" style={{ filter: f.css }} />
                   )}
                 </div>
-                <span className="text-[9px] tracking-tight leading-tight truncate max-w-full text-center mt-0.5">{f.name}</span>
+                <span className="text-[10px] tracking-tight leading-tight truncate max-w-full text-center mt-0.5">{f.name}</span>
               </button>
             );
           })}
@@ -618,7 +618,7 @@ const TemplateInfo = React.memo(function TemplateInfo() {
   const Icon = template.icon;
 
   return (
-    <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/20 rounded-md px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium fluent-specular">
+    <div className="text-xs text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/20 rounded-md px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium fluent-specular">
       {Icon && typeof Icon === "function" && (
         <Icon size={16} className="text-primary" />
       )}

@@ -282,7 +282,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           <div className="border-t border-border/40 pt-3 space-y-2.5">
             {(template?.dpi || printSettings.dpi || 300) < 150 && (
-              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-[11px] text-destructive flex items-start gap-2">
+              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-xs text-destructive flex items-start gap-2">
                 <Warning className="shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
                 <span className="leading-tight font-medium">
                   الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُوصى بـ 300 DPI للطباعة الاحترافية.
@@ -290,7 +290,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               </div>
             )}
 
-            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-[11px] text-amber-800 dark:text-amber-200 flex items-start gap-2">
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
               <Warning className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
               <span className="leading-tight font-medium">تصدير الصورة بنظام الألوان القياسي RGB للطباعة الرقمية.</span>
             </div>
@@ -335,7 +335,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
         {loading && progress > 0 && (
           <div className="px-1 pb-2 space-y-1">
-            <div className="flex justify-between text-[11px] text-muted-foreground font-medium">
+            <div className="flex justify-between text-xs text-muted-foreground font-medium">
               <span>جاري التصدير ...</span>
               <span className="font-mono font-bold text-primary">{Math.round(progress)}%</span>
             </div>

@@ -196,7 +196,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <WifiHigh className="w-3.5 h-3.5 text-primary" weight="bold" />
-                    <span className="font-mono text-[11px]">{bridgeInfo.ip}:{bridgeInfo.port}</span>
+                    <span className="font-mono text-xs">{bridgeInfo.ip}:{bridgeInfo.port}</span>
                   </div>
                 </div>
 
@@ -217,7 +217,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                 <p className="text-xs font-semibold text-foreground">
                   امسح الرمز أعلاه بكاميرا هاتفك
                 </p>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   يجب أن يكون الهاتف والكمبيوتر متصلين بنفس شبكة الـ Wi-Fi. التقط الصور وستظهر في الكانفاس فورياً!
                 </p>
               </div>
@@ -228,13 +228,13 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                   type="text"
                   readOnly
                   value={bridgeInfo.url}
-                  className="w-full bg-transparent px-2.5 text-[11px] font-mono text-muted-foreground outline-none select-all truncate"
+                  className="w-full bg-transparent px-2.5 text-xs font-mono text-muted-foreground outline-none select-all truncate"
                 />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyUrl}
-                  className="h-7 px-2.5 gap-1 text-[11px] font-medium shrink-0 rounded-md"
+                  className="h-7 px-2.5 gap-1 text-xs font-medium shrink-0 rounded-md"
                   title="نسخ الرابط"
                 >
                   {copied ? (

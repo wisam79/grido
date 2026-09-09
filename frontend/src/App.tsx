@@ -30,16 +30,12 @@ import {
   Sun,
   SidebarSimple,
   SlidersHorizontal,
-  Minus,
-  Square,
-  CopySimple,
-  X,
-  LockSimple,
-  Key,
   User,
 } from "@phosphor-icons/react";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
+import { WindowControls } from "@/components/editor/system/window-controls";
+import { LicenseLockScreen } from "@/components/editor/system/license-lock-screen";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useAutoSave } from "@/hooks/use-autosave";
 import { useEditorStore } from "@/lib/editor-store";
@@ -48,7 +44,7 @@ import { warmupOpenCV } from "@/components/editor/document-scanner/opencv-loader
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { usePhoneBridgeListener } from "@/components/editor/system/use-phone-bridge";
 
 export default function App() {
@@ -116,9 +112,6 @@ export default function App() {
   // على تعيين enhancingElementId أثناء المعالجة
   const isBusy = useRenderQuality((s) => s.enhancingElementId !== null);
 
-  const [lockKey, setLockKey] = useState("");
-  const [lockLoading, setLockLoading] = useState(false);
-
   useEffect(() => {
     const check = async () => {
       try {
@@ -180,7 +173,7 @@ export default function App() {
 
   if (isInitializing) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background text-foreground font-cairo select-none" dir="rtl">
+      <div className="fixed inset-0 z-(--z-ruler) flex flex-col items-center justify-center bg-background text-foreground font-cairo select-none" dir="rtl">
         <div className="relative flex flex-col items-center max-w-xs text-center px-4">
           <motion.div 
             initial={{ scale: 0.85, opacity: 0 }}
@@ -213,159 +206,19 @@ export default function App() {
 
   if (!isLicenseActive) {
     return (
-      <div 
-        className="h-screen flex flex-col overflow-hidden font-cairo bg-background select-none" 
-        dir="rtl"
-      >
-        {!isMaximized && <WindowResizeHandles />}
-        {/* الرأس الموحد للنافذة */}
-        <header
-          className={`border-b bg-card/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 fluent-specular ${
-            !isFocused ? "opacity-75" : ""
-          }`}
-          onDoubleClick={handleMaximize}
-        >
-          <div className="flex items-center justify-between px-4 py-1.5 relative">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 animate-pulse" />
-              <h1 className="text-xs font-bold text-foreground/80">
-                Grido Studio | تفعيل الترخيص
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-2 title-bar-controls">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleTheme}
-                className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
-                title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
-              >
-                {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-              </Button>
-
-              <div className="w-px h-5 bg-border mx-1" />
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleMinimize}
-                className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
-                title="تصغير"
-              >
-                <Minus className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleMaximize}
-                className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
-                title={isMaximized ? "استعادة" : "تكبير"}
-              >
-                {isMaximized ? <CopySimple className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClose}
-                className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
-                title="إغلاق"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        {/* شاشة التفعيل المركزية */}
-        <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-right p-6">
-          <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-xl space-y-6 text-center fluent-specular">
-            <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
-              <LockSimple className="w-10 h-10" weight="duotone" />
-            </div>
-            
-            <div className="space-y-2">
-              <h1 className="text-xl font-extrabold text-foreground">النسخة مقفلة</h1>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                انتهت الفترة التجريبية. يرجى إدخال مفتاح التفعيل للمتابعة.
-              </p>
-            </div>
-
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              if (!lockKey) return;
-              setLockLoading(true);
-              try {
-                await activateLicenseKey(lockKey);
-                toast.success("تم تفعيل الترخيص بنجاح! شكراً لك.");
-              } catch (err) {
-                toast.error(err instanceof Error ? err.message : "فشل تفعيل الترخيص");
-              } finally {
-                setLockLoading(false);
-              }
-            }} className="space-y-4 text-right">
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <label htmlFor="license-key-input" className="text-xs font-semibold text-foreground">مفتاح الترخيص</label>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const text = await navigator.clipboard.readText();
-                        if (text) {
-                          setLockKey(text.trim().toUpperCase());
-                          toast.success("تم لصق المفتاح من الحافظة");
-                        }
-                      } catch {
-                        toast.error("يرجى لصق المفتاح يدوياً");
-                      }
-                    }}
-                    className="text-[10px] text-primary hover:underline font-medium cursor-pointer"
-                  >
-                    لصق من الحافظة 📋
-                  </button>
-                </div>
-                <div className="relative">
-                  <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4" />
-                  <input
-                    id="license-key-input"
-                    type="text"
-                    required
-                    placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
-                    value={lockKey}
-                    onChange={(e) => setLockKey(e.target.value.toUpperCase())}
-                    className="w-full pr-9 pl-4 h-8 text-xs border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase text-foreground"
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer shadow-xs gap-1.5 rounded-md" disabled={lockLoading}>
-                {lockLoading ? (
-                  <>
-                    <Spinner className="w-3.5 h-3.5" size={14} />
-                    <span>جاري التفعيل ...</span>
-                  </>
-                ) : (
-                  "تفعيل الترخيص الفوري"
-                )}
-              </Button>
-            </form>
-
-            <div className="border-t border-border/40 pt-4 flex flex-col gap-2">
-              <Button variant="outline" className="w-full text-xs font-semibold h-8 rounded-md cursor-pointer" onClick={() => setAccountModalOpen(true)}>
-                إدارة الحساب
-              </Button>
-              
-              {user && user.token && (
-                <Button variant="ghost" className="w-full text-xs text-red-500 hover:bg-red-500/5 h-8 rounded-md cursor-pointer" onClick={() => logoutAccount()}>
-                  تسجيل الخروج
-                </Button>
-              )}
-            </div>
-          </div>
-          <AccountLicenseModal />
-        </div>
-      </div>
+      <LicenseLockScreen
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        isMaximized={isMaximized}
+        isFocused={isFocused}
+        onMinimize={handleMinimize}
+        onMaximize={handleMaximize}
+        onClose={handleClose}
+        onActivate={activateLicenseKey}
+        onOpenAccount={() => setAccountModalOpen(true)}
+        onLogout={logoutAccount}
+        user={user}
+      />
     );
   }
 
@@ -409,7 +262,6 @@ export default function App() {
               size="sm"
               onClick={() => setMode("collage")}
               aria-label="وضع الكولاج"
-              title="وضع الكولاج"
               className={cn(
                 "h-8 px-3.5 rounded-md cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-all duration-150 select-none",
                 mode === "collage"
@@ -433,7 +285,6 @@ export default function App() {
               size="sm"
               onClick={() => setMode("single")}
               aria-label="وضع التعديل الحر"
-              title="وضع التعديل الحر"
               className={cn(
                 "h-8 px-3.5 rounded-md cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-all duration-150 select-none",
                 mode === "single"
@@ -454,61 +305,89 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1.5 title-bar-controls">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setAccountModalOpen(true)}
-              className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
-              title="الحساب والتراخيص"
-            >
-              {isLicenseActive ? (
-                <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" weight="duotone" />
-              ) : (
-                <User className="w-4.5 h-4.5 text-muted-foreground" />
-              )}
-              {user?.plan === "trial" && (
-                <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
-              title={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
-            >
-              {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAccountModalOpen(true)}
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
+                >
+                  {isLicenseActive ? (
+                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" weight="duotone" />
+                  ) : (
+                    <User className="w-4.5 h-4.5 text-muted-foreground" />
+                  )}
+                  {user?.plan === "trial" && (
+                    <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">الحساب والتراخيص</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleTheme}
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
+                >
+                  {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
+                {theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
+              </TooltipContent>
+            </Tooltip>
 
             {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setRightSidebarOpen((v) => !v)}
-              className={cn(
-                "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
-                rightSidebarOpen
-                  ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
-                  : "text-muted-foreground hover:bg-muted/80"
-              )}
-              title={rightSidebarOpen ? "إخفاء لوحة القوالب (Ctrl+B)" : "إظهار لوحة القوالب (Ctrl+B)"}
-            >
-              <SidebarSimple className="w-4 h-4" weight={rightSidebarOpen ? "fill" : "regular"} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLeftSidebarOpen((v) => !v)}
-              className={cn(
-                "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
-                leftSidebarOpen
-                  ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
-                  : "text-muted-foreground hover:bg-muted/80"
-              )}
-              title={leftSidebarOpen ? "إخفاء لوحة الخصائص (Ctrl+Shift+B)" : "إظهار لوحة الخصائص (Ctrl+Shift+B)"}
-            >
-              <SlidersHorizontal className="w-4 h-4" weight={leftSidebarOpen ? "bold" : "regular"} />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setRightSidebarOpen((v) => !v)}
+                  className={cn(
+                    "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
+                    rightSidebarOpen
+                      ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
+                      : "text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  <SidebarSimple className="w-4 h-4" weight={rightSidebarOpen ? "fill" : "regular"} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
+                <div className="flex items-center gap-1.5">
+                  <span>{rightSidebarOpen ? "إخفاء لوحة القوالب" : "إظهار لوحة القوالب"}</span>
+                  <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+B</kbd>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLeftSidebarOpen((v) => !v)}
+                  className={cn(
+                    "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
+                    leftSidebarOpen
+                      ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
+                      : "text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  <SlidersHorizontal className="w-4 h-4" weight={leftSidebarOpen ? "bold" : "regular"} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
+                <div className="flex items-center gap-1.5">
+                  <span>{leftSidebarOpen ? "إخفاء لوحة الخصائص" : "إظهار لوحة الخصائص"}</span>
+                  <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+Shift+B</kbd>
+                </div>
+              </TooltipContent>
+            </Tooltip>
 
             <Button
               variant="ghost"
@@ -533,33 +412,12 @@ export default function App() {
             <div className="w-px h-5 bg-border/60 mx-1" />
 
             {/* Window Buttons */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleMinimize}
-              className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
-              title="تصغير"
-            >
-              <Minus className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleMaximize}
-              className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
-              title={isMaximized ? "استعادة" : "تكبير"}
-            >
-              {isMaximized ? <CopySimple className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="w-9 h-7.5 p-0 flex items-center justify-center text-muted-foreground hover:bg-red-500 hover:text-white rounded-md transition-colors active:bg-red-600"
-              title="إغلاق"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+            <WindowControls
+              isMaximized={isMaximized}
+              onMinimize={handleMinimize}
+              onMaximize={handleMaximize}
+              onClose={handleClose}
+            />
           </div>
         </div>
       </header>

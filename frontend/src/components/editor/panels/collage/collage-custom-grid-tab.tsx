@@ -167,7 +167,7 @@ export function CollageCustomGridTab({
         <div className="grid grid-cols-2 gap-2">
           {/* Rows */}
           <div className="flex flex-col items-center gap-1.5 bg-background/70 border border-border/70 hover:border-primary/40 rounded-xl p-2.5 transition-colors shadow-2xs">
-            <span className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground select-none">
+            <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground select-none">
               <Rows className="w-3.5 h-3.5 text-primary/80" weight="regular" />
               الصفوف (أفقي)
             </span>
@@ -204,7 +204,7 @@ export function CollageCustomGridTab({
 
           {/* Columns */}
           <div className="flex flex-col items-center gap-1.5 bg-background/70 border border-border/70 hover:border-primary/40 rounded-xl p-2.5 transition-colors shadow-2xs">
-            <span className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground select-none">
+            <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground select-none">
               <Columns className="w-3.5 h-3.5 text-primary/80" weight="regular" />
               الأعمدة (عمودي)
             </span>
@@ -242,7 +242,7 @@ export function CollageCustomGridTab({
 
         {/* أبعاد ومقاسات صور الوثائق */}
         <div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
-          <span className="text-[11px] font-bold text-muted-foreground">أبعاد ونوع صور الوثائق</span>
+          <span className="text-xs font-bold text-muted-foreground">أبعاد ونوع صور الوثائق</span>
           <div className="grid grid-cols-2 gap-1.5">
             {PHOTO_TYPE_OPTIONS.map((opt) => {
               const isActive = photoType === opt.value;

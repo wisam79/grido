@@ -128,7 +128,7 @@ export function SliderControl({
           <span>{label}</span>
         </span>
         <span
-          className="font-mono text-[11px] font-bold text-foreground/90 bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded-md border border-border/40 select-none tracking-tight"
+          className="font-mono text-xs font-bold text-foreground/90 bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded-md border border-border/40 select-none tracking-tight"
           dir="ltr"
         >
           {localValue} {unit}
@@ -337,7 +337,7 @@ export function ColorWheelPicker({
         )}
 
         <div className="flex-1 flex items-center gap-1.5 bg-input/90 border border-border/80 rounded-lg px-2.5 h-8.5 shadow-2xs focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all">
-          <span className="text-[11px] font-bold text-muted-foreground/60 select-none">#</span>
+          <span className="text-xs font-bold text-muted-foreground/60 select-none">#</span>
           <input
             type="text"
             value={inputValue.startsWith("#") ? inputValue.slice(1) : inputValue}
@@ -373,7 +373,7 @@ export function ColorWheelPicker({
       </div>
 
       <div className="space-y-1.5 pt-2 border-t border-border/30">
-        <span className="text-[11px] font-extrabold text-muted-foreground block text-right">ألوان الاستوديو الرسمية</span>
+        <span className="text-xs font-extrabold text-muted-foreground block text-right">ألوان الاستوديو الرسمية</span>
         <div className="grid grid-cols-8 gap-1.5" dir="rtl">
           {BACKGROUND_COLORS.map((bg) => {
             const isActive = color.toUpperCase() === bg.value.toUpperCase();

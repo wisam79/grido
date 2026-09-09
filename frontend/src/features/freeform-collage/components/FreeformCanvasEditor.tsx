@@ -240,10 +240,10 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
   ).filter((pos) => pos > 0.005 && pos < 0.995);
 
   return (
-    <div className="w-full flex items-center justify-center bg-muted/20 dark:bg-zinc-950/60 rounded-2xl relative flex-1 min-h-0 overflow-hidden p-2 border border-border/40 font-cairo select-none">
+    <div className="w-full flex items-center justify-center bg-muted/20 rounded-2xl relative flex-1 min-h-0 overflow-hidden p-2 border border-border/40 font-cairo select-none">
       <div
         ref={paperRef}
-        className="relative bg-white dark:bg-zinc-900 border-2 border-slate-300 dark:border-zinc-700/80 shadow-md shadow-black/15 rounded-lg transition-colors overflow-hidden touch-none"
+        className="relative bg-background border-2 border-border shadow-md shadow-black/15 rounded-lg transition-colors overflow-hidden touch-none"
         style={{
           width: paperAspect >= 1 ? "98%" : "auto",
           height: paperAspect < 1 ? "98%" : "auto",
@@ -294,7 +294,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
         ))}
 
         {/* شارة أبعاد الورقة المليمترية مع عدد الخلايا */}
-        <div className="absolute bottom-1.5 left-1.5 bg-slate-900/90 dark:bg-zinc-800/90 text-white text-[9px] px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs border border-white/10 flex items-center gap-1.5" dir="ltr">
+        <div className="absolute bottom-1.5 left-1.5 bg-foreground/90 text-background text-[10px] px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs border border-background/10 flex items-center gap-1.5" dir="ltr">
           <span>{paperWidthMM} × {paperHeightMM} mm</span>
           <span className="opacity-40">|</span>
           <span>{slots.length} صور</span>

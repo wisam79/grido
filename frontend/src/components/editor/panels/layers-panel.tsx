@@ -150,7 +150,7 @@ const LayerRow = React.memo(function LayerRow({
       {/* اسم العنصر */}
       <span
         className={cn(
-          "flex-1 text-[11px] font-bold truncate min-w-0",
+          "flex-1 text-xs font-bold truncate min-w-0",
           isSelected ? "text-primary" : "text-foreground/80",
           isHidden && "line-through"
         )}
@@ -351,7 +351,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
             <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center mb-3">
               <Stack size={28} weight="thin" className="text-muted-foreground/50" />
             </div>
-            <p className="text-[11px] text-muted-foreground font-bold">
+            <p className="text-xs text-muted-foreground font-bold">
               لا توجد عناصر بعد
             </p>
             <p className="text-[10px] text-muted-foreground/60 mt-1">

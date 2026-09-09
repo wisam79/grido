@@ -431,7 +431,7 @@ export function BatchInsertDialog({
                         alt={`عنصر ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />
-                      <span className="absolute bottom-0.5 right-0.5 text-[9px] font-bold px-1 rounded bg-black/60 text-white backdrop-blur-xs">
+                      <span className="absolute bottom-0.5 right-0.5 text-[10px] font-bold px-1 rounded bg-black/60 text-white backdrop-blur-xs">
                         #{idx + 1}
                       </span>
                     </div>
@@ -453,7 +453,7 @@ export function BatchInsertDialog({
                       </div>
 
                       <div className="flex items-center justify-between mt-auto">
-                        <span className="text-[11px] text-muted-foreground">النسخ:</span>
+                        <span className="text-xs text-muted-foreground">النسخ:</span>
                         <div className="flex items-center gap-1 bg-muted/60 rounded-md p-0.5 border border-border/40">
                           <Button
                             variant="ghost"
@@ -587,7 +587,7 @@ export function BatchInsertDialog({
                 <div className="flex items-center justify-between pt-2 border-t border-border/30">
                   <div className="space-y-0.5">
                     <Label className="text-xs font-medium text-foreground">توسيط الصف الأخير</Label>
-                    <p className="text-[11px] text-muted-foreground">موازنة العناصر في الصف غير المكتمل</p>
+                    <p className="text-xs text-muted-foreground">موازنة العناصر في الصف غير المكتمل</p>
                   </div>
                   <Switch
                     checked={centerLastRow}
@@ -599,7 +599,7 @@ export function BatchInsertDialog({
 
             {mode === "collage" && (
               <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 text-xs text-primary/90 mt-2">
-                💡 أنت حالياً في وضع الكولاج. يمكنك ملء خانات الكولاج بتسلسل الصور المحدد.
+                أنت حالياً في وضع الكولاج. يمكنك ملء خانات الكولاج بتسلسل الصور المحدد.
               </div>
             )}
           </div>

@@ -114,7 +114,7 @@ export function AccountLicenseModal() {
                 <DialogTitle className="text-base font-bold text-foreground tracking-tight truncate">
                   الحساب والترخيص
                 </DialogTitle>
-                <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">
+                <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">
                   {user && user.token ? "إدارة اشتراكك وحسابك السحابي" : "سجل دخولك لتفعيل ميزات الذكاء الاصطناعي والمزامنة"}
                 </p>
               </div>

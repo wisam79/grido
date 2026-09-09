@@ -301,7 +301,7 @@ export function DocumentScannerDialog({
                   </span>
                 )}
               </div>
-              <span className="text-[11px] font-normal text-muted-foreground mt-0.5 truncate">
+              <span className="text-xs font-normal text-muted-foreground mt-0.5 truncate">
                 استعدال المنظور وتبييض الورقة تلقائياً للطباعة بدقة عالية
               </span>
             </div>
@@ -318,7 +318,7 @@ export function DocumentScannerDialog({
           >
             {/* Top Floating Status Badge */}
             <div className="absolute top-3 inset-x-0 mx-auto w-fit z-20 pointer-events-none">
-              <div className="px-3.5 py-1 rounded-full bg-card/90 dark:bg-card/80 border border-border/70 text-[11px] font-semibold text-foreground shadow-md backdrop-blur-md flex items-center gap-2">
+              <div className="px-3.5 py-1 rounded-full bg-card/90 dark:bg-card/80 border border-border/70 text-xs font-semibold text-foreground shadow-md backdrop-blur-md flex items-center gap-2">
                 {isDetecting ? (
                   <>
                     <ArrowClockwise size={13} weight="bold" className="text-primary shrink-0 animate-spin" />

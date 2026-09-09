@@ -26,7 +26,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
       {/* 🎴 بطاقة 1: لون النص والتعبئة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+          <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
             <span>لون النص والتعبئة</span>
           </span>

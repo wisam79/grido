@@ -115,7 +115,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
           <span className="text-foreground font-bold text-xs">
             {activePaper ? activePaper.name.split(" (")[0] : "مخصص"}
           </span>
-          <span className="text-[11px] text-muted-foreground/90 font-mono font-medium" dir="ltr">
+          <span className="text-xs text-muted-foreground/90 font-mono font-medium" dir="ltr">
             {Math.round((canvasWidth / currentDpi) * 25.4)} × {Math.round((canvasHeight / currentDpi) * 25.4)} mm
           </span>
           <Tooltip>
@@ -318,7 +318,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="h-7 min-w-[46px] px-1.5 text-[11px] font-mono font-bold text-center select-none cursor-pointer hover:bg-muted/60 hover:text-primary rounded-md transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                className="h-7 min-w-[46px] px-1.5 text-xs font-mono font-bold text-center select-none cursor-pointer hover:bg-muted/60 hover:text-primary rounded-md transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
                 onClick={handleResetZoom}
                 aria-label="إعادة تعيين المقياس إلى 100%"
               >
@@ -327,7 +327,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
               <div className="flex items-center gap-1.5">
-                <span>إعادة تعيين المقياس إلى 100%</span>
+                <span>ملاءمة الورقة للشاشة (100%)</span>
                 <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
               </div>
             </TooltipContent>
@@ -353,20 +353,23 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             </TooltipContent>
           </Tooltip>
 
-          {/* زر ملاءمة حجم الورقة */}
+          {/* زر ملاءمة الورقة للشاشة (Zoom = 100% = Fit) */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 className="w-7 h-7 flex items-center justify-center hover:bg-muted/60 hover:text-foreground rounded-md transition-all duration-150 cursor-pointer text-muted-foreground/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent"
                 onClick={handleResetZoom}
-                aria-label="ملاءمة حجم الورقة"
+                aria-label="ملاءمة الورقة للشاشة"
               >
                 <ArrowsOut className="w-4 h-4" weight="regular" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
-              ملاءمة حجم الورقة للمركز (100%)
+              <div className="flex items-center gap-1.5">
+                <span>ملاءمة الورقة للشاشة</span>
+                <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
+              </div>
             </TooltipContent>
           </Tooltip>
 

@@ -103,7 +103,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     onChange={(e) => setGridSize(Math.max(5, Math.min(200, parseInt(e.target.value) || 20)))}
                     className="w-full bg-transparent border-0 p-0 text-center text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                   />
-                  <span className="text-[9px] text-muted-foreground font-mono select-none">px</span>
+                  <span className="text-[10px] text-muted-foreground font-mono select-none">px</span>
                 </div>
               </div>
 
@@ -135,7 +135,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     type="button"
                     onClick={() => setGridType("dots")}
                     className={cn(
-                      "flex-1 h-full rounded text-[11px] font-bold transition-all cursor-pointer select-none",
+                      "flex-1 h-full rounded text-xs font-bold transition-all cursor-pointer select-none",
                       gridType === "dots"
                         ? "bg-primary text-primary-foreground shadow-2xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -147,7 +147,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     type="button"
                     onClick={() => setGridType("lines")}
                     className={cn(
-                      "flex-1 h-full rounded text-[11px] font-bold transition-all cursor-pointer select-none",
+                      "flex-1 h-full rounded text-xs font-bold transition-all cursor-pointer select-none",
                       gridType === "lines"
                         ? "bg-primary text-primary-foreground shadow-2xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -161,7 +161,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] text-muted-foreground font-bold">الشفافية</span>
-                  <span className="text-[9px] font-mono text-muted-foreground font-bold">{Math.round(gridOpacity * 100)}%</span>
+                  <span className="text-[10px] font-mono text-muted-foreground font-bold">{Math.round(gridOpacity * 100)}%</span>
                 </div>
                 <div className="flex items-center bg-input border border-border rounded-md px-2 h-8">
                   <input

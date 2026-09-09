@@ -41,7 +41,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
       {/* 🎴 بطاقة 1: الخلفية والشارة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+          <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
             <span>الخلفية والشارة</span>
           </span>
@@ -140,7 +140,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
       {/* 🎴 بطاقة 2: الإطار والحدود */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+          <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <Square className="w-3.5 h-3.5 text-primary" weight="duotone" />
             <span>الإطار والحدود</span>
           </span>
@@ -196,7 +196,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
       {/* 🎴 بطاقة 3: الظل والتوهج */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+          <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <Sparkle className="w-3.5 h-3.5 text-primary" weight="duotone" />
             <span>الظل والتوهج</span>
           </span>
@@ -281,7 +281,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
       {/* 🎴 بطاقة 4: تقويس النص */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold text-foreground/90 flex items-center gap-1.5">
+          <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <ArrowCounterClockwise className="w-3.5 h-3.5 text-primary" weight="duotone" />
             <span>تقويس النص</span>
           </span>
@@ -315,7 +315,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "px-1.5 py-0.5 rounded-md border text-[9px] font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                    "px-1.5 py-0.5 rounded-md border text-[10px] font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                     (element.curve ?? 0) === cp.value
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background hover:bg-primary/10 text-muted-foreground border-border/50"
@@ -335,7 +335,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                     onUpdate(element.id, { curve: 0 });
                     useEditorStore.getState().pushHistory();
                   }}
-                  className="px-1.5 py-0.5 bg-background border border-border/60 hover:border-primary/40 rounded-md text-[9px] text-foreground font-bold cursor-pointer flex items-center gap-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+                  className="px-1.5 py-0.5 bg-background border border-border/60 hover:border-primary/40 rounded-md text-[10px] text-foreground font-bold cursor-pointer flex items-center gap-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
                   title="استقامة"
                 >
                   <ArrowCounterClockwise className="w-2.5 h-2.5" weight="bold" />

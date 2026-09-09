@@ -159,7 +159,7 @@ export function SheetPreview({
         <div
           key={`v-cut-${idx}`}
           className={cn(
-            "absolute border-l border-slate-400/70 pointer-events-none z-20",
+            "absolute border-l border-canvas-collage-cut pointer-events-none z-20",
             borderStyleClass
           )}
           style={{
@@ -179,7 +179,7 @@ export function SheetPreview({
             "absolute pointer-events-none z-20",
             isBottomEnd
               ? "border-t-2 border-blue-500/80 border-dashed"
-              : cn("border-t border-slate-400/70", borderStyleClass)
+              : cn("border-t border-canvas-collage-cut", borderStyleClass)
           )}
           style={{
             top: topVal,
@@ -281,7 +281,7 @@ export function SheetPreview({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-xs text-muted-foreground font-cairo">
+          <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-xs text-muted-foreground font-cairo">
             جاري تحميل المعاينة ...
           </div>
         )}
@@ -318,7 +318,7 @@ export function SheetPreview({
             className="w-full h-full object-contain"
           />
         ) : (
-          <div className="w-full h-full bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-[10px] text-muted-foreground font-cairo">
+          <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-[10px] text-muted-foreground font-cairo">
             جاري التحميل ...
           </div>
         )}

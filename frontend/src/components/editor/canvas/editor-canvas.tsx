@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
+import React, { useRef, useState, useMemo, useCallback } from "react";
 import type Konva from "konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
@@ -18,6 +18,8 @@ import { checkerColor, guideCenter, guideEdge } from "@/lib/canvas/canvas-colors
 import { useCanvasViewport } from "./use-canvas-viewport";
 import { useUserGuides } from "./use-user-guides";
 import { useImageDrop } from "./use-image-drop";
+import { useRulerMetricsPreview } from "./use-ruler-metrics";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 /**
  * شريط الأدوات السريع للخانة المحددة (إزالة/استبدال الصورة).
@@ -78,51 +80,59 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
     >
       {/* شريط الإجراءات السريعة العائم فوق الخلية المحددة */}
       <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-card/90 dark:bg-sidebar/90 backdrop-blur-md p-0.5 rounded-lg border border-border/80 shadow-md pointer-events-auto transition-all select-none fluent-specular">
-        <button
-          className="w-6 h-6 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
-          onClick={async (e) => {
-            e.stopPropagation();
-            if (isLoading) return;
-            try {
-              setIsLoading(true);
-              const b64 = await OpenFile();
-              if (b64) {
-                const isWailsDesktop = wailsIsDesktop();
-                let srcToUse = b64;
-                if (isWailsDesktop && b64.startsWith("data:image/")) {
-                  try {
-                    const localPath = await SaveImageFromBase64(b64);
-                    if (localPath) srcToUse = localPath;
-                  } catch (e) {
-                    console.error("Failed to save image locally:", e);
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className="w-6 h-6 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (isLoading) return;
+                try {
+                  setIsLoading(true);
+                  const b64 = await OpenFile();
+                  if (b64) {
+                    const isWailsDesktop = wailsIsDesktop();
+                    let srcToUse = b64;
+                    if (isWailsDesktop && b64.startsWith("data:image/")) {
+                      try {
+                        const localPath = await SaveImageFromBase64(b64);
+                        if (localPath) srcToUse = localPath;
+                      } catch (e) {
+                        console.error("Failed to save image locally:", e);
+                      }
+                    }
+                    setSlotImage(selectedSlot.id, srcToUse);
                   }
+                } catch (err) {
+                  console.error("Replace image error:", err);
+                } finally {
+                  setIsLoading(false);
                 }
-                setSlotImage(selectedSlot.id, srcToUse);
-              }
-            } catch (err) {
-              console.error("Replace image error:", err);
-            } finally {
-              setIsLoading(false);
-            }
-          }}
-          title="استبدال الصورة"
-        >
-          {isLoading ? <Spinner className="w-3.5 h-3.5" size={14} /> : <ArrowClockwise className="w-3.5 h-3.5 text-primary" weight="bold" />}
-        </button>
+              }}
+            >
+              {isLoading ? <Spinner className="w-3.5 h-3.5" size={14} /> : <ArrowClockwise className="w-3.5 h-3.5 text-primary" weight="bold" />}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">استبدال الصورة</TooltipContent>
+        </Tooltip>
 
         <div className="w-px h-3 bg-border/60 mx-0.5" />
 
-        <button
-          className="w-6 h-6 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center cursor-pointer transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            updateSlot(selectedSlot.id, { imageSrc: undefined });
-            useEditorStore.getState().pushHistory();
-          }}
-          title="إزالة الصورة"
-        >
-          <X className="w-3.5 h-3.5" weight="regular" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className="w-6 h-6 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center cursor-pointer transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                updateSlot(selectedSlot.id, { imageSrc: undefined });
+                useEditorStore.getState().pushHistory();
+              }}
+            >
+              <X className="w-3.5 h-3.5" weight="regular" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">إزالة الصورة</TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );
@@ -162,18 +172,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
 
-  const [rulerMetrics, setRulerMetrics] = useState({
-    viewportWidth: 800,
-    viewportHeight: 600,
-    originX: 0,
-    originY: 0,
-  });
-
   const lastDblClickRef = useRef<number>(0);
-  const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
-
-  const mouseMoveRafId = useRef<number | null>(null);
 
   const [contextMenu, setContextMenu] = useState<{
     position: ContextMenuPosition;
@@ -249,7 +249,17 @@ export const EditorCanvas = React.memo(React.forwardRef<
   // 🧭 منطق الزوم والتحريك (كان مضمّناً في هذا الملف)
   useCanvasViewport(containerRef, innerRef);
 
+  // حجم العرض التقديري لحساب أبعاد الورقة (يُستخدم أيضاً كتبعية لقياسات المساطر)
   const aspect = canvasWidth / canvasHeight;
+
+  // 🧭 قياسات المساطر وحجم الحاوية ومؤشر الفأرة (كانت مضمّنة في هذا الملف)
+  const {
+    rulerMetrics,
+    containerSize,
+    handleWorkspaceMouseMove,
+    handleWorkspaceMouseLeave,
+  } = useRulerMetricsPreview(containerRef, innerRef, { showRuler, printMode }, { canvasZoom, mode, aspect });
+
   const maxW = (containerSize.w - 32) * canvasZoom;
   const maxH = (containerSize.h - 32) * canvasZoom;
   let displayW = maxW;
@@ -276,66 +286,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
     handleDragOver,
     handleDrop,
   } = useImageDrop(innerRef);
-
-  const updateRulerPositions = useCallback(() => {
-    if (!showRuler || printMode) return;
-    if (!containerRef.current || !innerRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const canvasRect = innerRef.current.getBoundingClientRect();
-
-    const originX = canvasRect.left - containerRect.left;
-    const originY = canvasRect.top - containerRect.top;
-    const viewportWidth = containerRect.width;
-    const viewportHeight = containerRect.height;
-
-    setRulerMetrics((prev) => {
-      if (
-        Math.abs(prev.originX - originX) < 0.5 &&
-        Math.abs(prev.originY - originY) < 0.5 &&
-        Math.abs(prev.viewportWidth - viewportWidth) < 0.5 &&
-        Math.abs(prev.viewportHeight - viewportHeight) < 0.5
-      ) {
-        return prev;
-      }
-      return { originX, originY, viewportWidth, viewportHeight };
-    });
-  }, [showRuler, printMode]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let rafId: number | null = null;
-    const handleLayout = () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerSize({ w: rect.width, h: rect.height });
-        updateRulerPositions();
-      });
-    };
-
-    const ro = new ResizeObserver(handleLayout);
-    ro.observe(container);
-    if (innerRef.current) {
-      ro.observe(innerRef.current);
-    }
-
-    window.addEventListener("resize", handleLayout);
-    container.addEventListener("scroll", handleLayout, { passive: true });
-
-    handleLayout();
-
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", handleLayout);
-      container.removeEventListener("scroll", handleLayout);
-      if (rafId !== null) cancelAnimationFrame(rafId);
-    };
-  }, [updateRulerPositions]);
 
   const widthMM = useMemo(() => {
     if (template) return template.widthMM;
@@ -367,70 +317,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
     return 0;
   }, [mode, collageMargin, canvasHeight, displayH, printSettings?.marginMM, heightMM]);
 
-  useEffect(() => {
-    let timerId: ReturnType<typeof setTimeout> | null = null;
-    const id1 = requestAnimationFrame(() => {
-      updateRulerPositions();
-      const id2 = requestAnimationFrame(() => {
-        updateRulerPositions();
-      });
-      timerId = setTimeout(updateRulerPositions, 40);
-      return () => cancelAnimationFrame(id2);
-    });
-    return () => {
-      cancelAnimationFrame(id1);
-      if (timerId) clearTimeout(timerId);
-    };
-  }, [updateRulerPositions, displayW, displayH, canvasZoom, mode, containerSize]);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const handleScroll = () => {
-      updateRulerPositions();
-    };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [updateRulerPositions]);
-
-  const handleWorkspaceMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!showRuler || printMode) return;
-    if (mouseMoveRafId.current !== null) return;
-    if (!containerRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - containerRect.left;
-    const y = e.clientY - containerRect.top;
-
-    mouseMoveRafId.current = requestAnimationFrame(() => {
-      mouseMoveRafId.current = null;
-
-      const hCursor = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
-      const vCursor = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
-
-      if (hCursor) {
-        hCursor.setAttribute("x1", x.toString());
-        hCursor.setAttribute("x2", x.toString());
-        hCursor.style.display = "block";
-      }
-      if (vCursor) {
-        vCursor.setAttribute("y1", y.toString());
-        vCursor.setAttribute("y2", y.toString());
-        vCursor.style.display = "block";
-      }
-    });
-  };
-
-  const handleWorkspaceMouseLeave = () => {
-    if (mouseMoveRafId.current !== null) {
-      cancelAnimationFrame(mouseMoveRafId.current);
-      mouseMoveRafId.current = null;
-    }
-    const hCursor = document.getElementById("h-ruler-cursor");
-    const vCursor = document.getElementById("v-ruler-cursor");
-    if (hCursor) hCursor.style.display = "none";
-    if (vCursor) vCursor.style.display = "none";
-  };
 
   const handleDoubleClick = useCallback(async (el: CanvasElement) => {
     if (printMode || isLoading) return;
@@ -633,7 +519,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
               e.stopPropagation();
               useEditorStore.getState().removeUserGuide(guide.id);
             }}
-            className={`absolute z-[45] group transition-colors select-none ${
+            className={`absolute z-(--z-canvas-overlay) group transition-colors select-none ${
               lockUserGuides
                 ? "cursor-default"
                 : isH
@@ -658,12 +544,12 @@ export const EditorCanvas = React.memo(React.forwardRef<
             <div
               className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded ${
                 lockUserGuides ? "bg-amber-600" : "bg-sky-600"
-              } text-white font-mono text-[9px] font-bold shadow-md z-50 pointer-events-none ${
+              } text-white font-mono text-[10px] font-bold shadow-md z-50 pointer-events-none ${
                 isH ? "left-3 -top-5" : "top-3 left-2"
               }`}
             >
               {formatGuideMeasurement(guide.pos, isH, rulerUnit, widthMM, heightMM, canvasWidth, canvasHeight)}
-              {lockUserGuides && " (🔒)"}
+              {lockUserGuides && " (مقفلة)"}
             </div>
           </div>
         );
@@ -672,7 +558,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       {/* 🧭 خط السحب الإرشادي المباشر (Live Dragging Guide Line) */}
       {!printMode && dragGuideState && (
         <div
-          className={`absolute z-[55] pointer-events-none select-none ${
+          className={`absolute z-(--z-canvas-guides) pointer-events-none select-none ${
             dragGuideState.type === "h"
               ? "left-0 right-0 h-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex items-center"
               : "top-0 bottom-0 w-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex justify-center"
@@ -682,7 +568,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
           }}
         >
           <div
-            className={`absolute flex items-center px-1.5 py-0.5 rounded bg-sky-600 text-white font-mono text-[9px] font-bold shadow-lg ${
+            className={`absolute flex items-center px-1.5 py-0.5 rounded bg-sky-600 text-white font-mono text-[10px] font-bold shadow-lg ${
               dragGuideState.type === "h" ? "left-3 -top-5" : "top-3 left-2"
             }`}
           >
@@ -698,7 +584,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
         return (
           <div
             key={idx}
-            className="absolute pointer-events-none z-[60] transition-opacity duration-75"
+            className="absolute pointer-events-none z-(--z-canvas-guides) transition-opacity duration-75"
             style={{
               left: guide.type === "v" ? `${guide.coord * 100}%` : 0,
               top: guide.type === "h" ? `${guide.coord * 100}%` : 0,

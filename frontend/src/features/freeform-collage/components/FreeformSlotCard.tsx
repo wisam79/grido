@@ -74,7 +74,7 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
         "absolute rounded-md border transition-[background-color,border-color,box-shadow] cursor-move flex flex-col items-center justify-center group select-none overflow-hidden touch-none p-1",
         isSelected
           ? "border-2 border-primary bg-primary/15 ring-2 ring-primary/30 z-20 shadow-md text-primary"
-          : "border-slate-300/80 dark:border-slate-700/80 bg-slate-50/95 dark:bg-zinc-800/90 hover:bg-white dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-100 z-10 shadow-2xs fluent-specular"
+          : "border-border/80 bg-muted/95 hover:bg-background text-foreground z-10 shadow-2xs fluent-specular"
       )}
       style={{
         left: `${slot.x * 100}%`,
@@ -85,8 +85,8 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
     >
       <div
         className={cn(
-          "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-xs mb-0.5 shrink-0 pointer-events-none transition-colors",
-          isSelected ? "bg-primary text-primary-foreground" : "bg-slate-700 text-white dark:bg-zinc-600"
+          "w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black shadow-xs mb-0.5 shrink-0 pointer-events-none transition-colors",
+          isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
         )}
       >
         {index + 1}
@@ -114,7 +114,7 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
-            className="absolute w-2.5 h-2.5 bg-primary border-2 border-white dark:border-zinc-900 rounded-xs shadow-sm hover:scale-125 transition-transform touch-none z-40"
+            className="absolute w-2.5 h-2.5 bg-primary border-2 border-background rounded-xs shadow-sm hover:scale-125 transition-transform touch-none z-40"
             style={{ ...pos, ...BORDER_BY_HANDLE[dir] }}
           />
         ))}

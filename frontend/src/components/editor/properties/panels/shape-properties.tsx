@@ -15,7 +15,7 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
     <div className="space-y-3 animate-in fade-in duration-200">
       {/* بطاقة 1: اللون والتعبئة */}
       <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3 overflow-hidden">
-        <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
+        <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
           <Palette className="w-4 h-4 text-primary" weight="duotone" />
           <span>اللون والتعبئة</span>
         </Label>
@@ -59,13 +59,13 @@ export function ShapeProperties({ element, onUpdate }: ShapePropertiesProps) {
 
       {/* بطاقة 2: الحدود والاستدارة */}
       <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3">
-        <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
+        <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
           <Square className="w-4 h-4 text-primary" weight="duotone" />
           <span>الحدود والاستدارة</span>
         </Label>
 
         <div className="flex items-center justify-between gap-4">
-          <span className="text-[11px] font-semibold text-foreground/80">لون الحد</span>
+          <span className="text-xs font-semibold text-foreground/80">لون الحد</span>
           <PopoverColorPicker
             color={element.stroke || element.fill || "#3b82f6"}
             onChange={(val) => onUpdate(element.id, { stroke: val })}

@@ -132,7 +132,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="outline"
               size="sm"
-              className="h-7 px-2 text-[11px] gap-1 rounded-md border-border/70 hover:border-primary/40 bg-input/40 cursor-pointer font-bold"
+              className="h-7 px-2 text-xs gap-1 rounded-md border-border/70 hover:border-primary/40 bg-input/40 cursor-pointer font-bold"
             >
               <FilePlus className="w-3.5 h-3.5 text-primary" weight="bold" />
               <span>إدراج قياس</span>
@@ -165,7 +165,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             <Button
               variant="default"
               size="sm"
-              className="h-7 px-2.5 text-[11px] gap-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer font-bold shadow-xs"
+              className="h-7 px-2.5 text-xs gap-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer font-bold shadow-xs"
             >
               <Lightning className="w-3.5 h-3.5" weight="bold" />
               <span>تعبئة الورقة</span>
@@ -181,32 +181,32 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               onClick={() => onAutoPack("id-max")}
               className="cursor-pointer py-1.5 font-semibold"
             >
-              🔹 أقصى عدد لصور البطاقة (35×45 مم)
+              أقصى عدد لصور البطاقة (35×45 مم)
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onAutoPack("passport-max")}
               className="cursor-pointer py-1.5 font-semibold"
             >
-              🛡️ أقصى عدد لصور الجواز (50×50 مم)
+              أقصى عدد لصور الجواز (50×50 مم)
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onAutoPack("transactions-max")}
               className="cursor-pointer py-1.5 font-semibold"
             >
-              📄 أقصى عدد للمعاملات (30×40 مم)
+              أقصى عدد للمعاملات (30×40 مم)
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => onAutoPack("combo-standard")}
               className="cursor-pointer py-1.5 font-semibold"
             >
-              ✨ طبعة مشتركة (جوازات + بطاقات)
+              طبعة مشتركة (جوازات + بطاقات)
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onAutoPack("combo-family")}
               className="cursor-pointer py-1.5 font-semibold"
             >
-              🖼️ طبعة عائلية (بورتريه رئيسي + بطاقات)
+              طبعة عائلية (بورتريه رئيسي + بطاقات)
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

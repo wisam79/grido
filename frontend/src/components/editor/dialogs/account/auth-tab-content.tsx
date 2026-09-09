@@ -88,7 +88,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             dir="ltr"
           />
         </div>
-        <p className="text-[11px] text-muted-foreground text-center">
+        <p className="text-xs text-muted-foreground text-center">
           أدخل كود الاستعادة المكون من 6 أرقام المرسل إلى {email}
         </p>
       </div>
@@ -188,7 +188,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 dir="ltr"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground text-center">
+            <p className="text-xs text-muted-foreground text-center">
               تم إرسال الكود إلى {email}
             </p>
 
@@ -278,7 +278,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                     type="button"
                     onClick={handleResetPassword}
                     disabled={loading}
-                    className="text-[11px] text-primary hover:underline font-semibold disabled:opacity-50 disabled:no-underline cursor-pointer"
+                    className="text-xs text-primary hover:underline font-semibold disabled:opacity-50 disabled:no-underline cursor-pointer"
                   >
                     نسيت كلمة المرور؟
                   </button>

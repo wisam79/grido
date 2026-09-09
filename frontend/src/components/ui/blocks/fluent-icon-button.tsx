@@ -30,7 +30,7 @@ export const FluentIconButton = React.memo(
     ref
   ) {
     const sizeClasses = {
-      compact: "h-7 px-2 text-[11px] gap-1",
+      compact: "h-7 px-2 text-xs gap-1",
       default: "h-8 px-2.5 text-xs gap-1.5",
       hero: "h-9 px-3 text-xs font-bold gap-2",
     }[size];

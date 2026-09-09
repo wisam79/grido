@@ -37,7 +37,7 @@ export function CollageLibraryTab({
             <span className="text-[9.5px] text-muted-foreground font-normal">دمج أحجام وقياسات متعددة في ورقة واحدة</span>
           </div>
         </div>
-        <span className="text-[9px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-bold">
+        <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-bold">
           فتح
         </span>
       </button>
@@ -88,7 +88,7 @@ export function CollageLibraryTab({
                   <div className="flex items-center gap-2">
                     <GridFour className="w-4 h-4 text-primary" weight="duotone" />
                     <span className="text-xs font-bold truncate">{t.name}</span>
-                    <span className="text-[9px] bg-muted/60 text-muted-foreground px-1.5 py-0.5 rounded font-mono">
+                    <span className="text-[10px] bg-muted/60 text-muted-foreground px-1.5 py-0.5 rounded font-mono">
                       {t.slots} خانات
                     </span>
                   </div>

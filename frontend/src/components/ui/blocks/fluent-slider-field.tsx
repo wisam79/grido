@@ -141,7 +141,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         </div>
         <span
           dir="ltr"
-          className="font-mono font-bold text-[11px] bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-foreground/90 select-none"
+          className="font-mono font-bold text-xs bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-foreground/90 select-none"
         >
           {displayVal}
         </span>

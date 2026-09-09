@@ -32,7 +32,7 @@ export function usePhoneBridgeListener() {
 
             if (targetSlot) {
               freshState.setSlotImage(targetSlot.id, src);
-              toast.success("تم استلام الصورة من الهاتف في خانة الكولاج ✨", {
+              toast.success("تم استلام الصورة من الهاتف في خانة الكولاج", {
                 description: "تم إسقاط الصورة بنجاح في القالب المختار",
               });
             } else {
@@ -42,7 +42,7 @@ export function usePhoneBridgeListener() {
             // وضع العناصر الحرة (Single Mode)
             const aspect = await resolveImageAspectRatio(src);
             useEditorStore.getState().addImageElement(src, aspect);
-            toast.success("تم استلام الصورة من الهاتف إلى مساحة العمل ✨", {
+            toast.success("تم استلام الصورة من الهاتف إلى مساحة العمل", {
               description: "تم إدراج الصورة مباشرة في الكانفاس",
             });
           }

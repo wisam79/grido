@@ -110,15 +110,15 @@ export function useScannerDetection(
 
           if (notify) {
             if (result.documents.length > 1) {
-              toast.success(`تم اكتشاف ${result.documents.length} مستندات في الصورة بنجاح! 🎯`);
+              toast.success(`تم اكتشاف ${result.documents.length} مستندات في الصورة بنجاح!`);
             } else if (result.method === "scanic") {
-              toast.success(`كشف فائق بالذكاء الاصطناعي (${Math.round(result.confidence * 100)}%) 🎯`);
+              toast.success(`كشف فائق بالذكاء الاصطناعي (${Math.round(result.confidence * 100)}%)`);
             } else if (result.method === "opencv") {
-              toast.success(`كشف تلقائي دقيق (${Math.round(result.confidence * 100)}%) 🎯`);
+              toast.success(`كشف تلقائي دقيق (${Math.round(result.confidence * 100)}%)`);
             } else if (result.method === "js") {
-              toast.success("كشف ذكي للمستند/البطاقة 🎯");
+              toast.success("كشف ذكي للمستند/البطاقة");
             } else {
-              toast.warning("لم يُكتشف المستند بدقة — اضبط الأركان يدوياً ⚠️");
+              toast.warning("لم يُكتشف المستند بدقة — اضبط الأركان يدوياً");
             }
           }
         } else if (result.corners) {
@@ -127,9 +127,9 @@ export function useScannerDetection(
           if (inferred !== "free") {
             cbsRef.current.onAspect(inferred);
           }
-          if (notify) toast.success("تم كشف المستند 🎯");
+          if (notify) toast.success("تم كشف المستند");
         } else {
-          if (notify) toast.warning("لم يُنتج الكشف أي أركان — استخدم التعديل اليدوي ⚠️");
+          if (notify) toast.warning("لم يُنتج الكشف أي أركان — استخدم التعديل اليدوي");
         }
       } catch {
         if (reqId === activeReqIdRef.current && notify) {
@@ -195,7 +195,7 @@ export function useScannerDetection(
       cornersSetter(newDoc.corners);
       aspectSetter(newDoc.aspectType);
       previewResetter();
-      toast.success(`تمت إضافة ${newDoc.label} — اضبط حدوده بالسحب أو الأسهم 🎯`);
+      toast.success(`تمت إضافة ${newDoc.label} — اضبط حدوده بالسحب أو الأسهم`);
     },
     [detectedDocs, imgSize]
   );
@@ -280,7 +280,7 @@ export function useScannerDetection(
         cornersSetter(cards[0].corners);
         aspectSetter("id_card");
         previewResetter();
-        toast.success("تم تقسيم المستند إلى بطاقتي هوية (وجه أمامي وخلفي) 🎯");
+        toast.success("تم تقسيم المستند إلى بطاقتي هوية (وجه أمامي وخلفي)");
       }
     },
     []

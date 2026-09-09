@@ -79,7 +79,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
       {/* 🔹 1. محدد نمط المسح (المسح المفرد الافتراضي vs المسح المتعدد الثانوي) */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <div className="flex items-center justify-between">
-          <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
+          <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <Scan size={15} weight="duotone" className="text-primary shrink-0" />
             <span>نمط المسح</span>
           </Label>
@@ -182,7 +182,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
       {isMultiActive && (
         <div className="space-y-2 bg-emerald-950/15 dark:bg-emerald-950/25 p-2.5 rounded-xl border border-emerald-500/30 animate-in fade-in-50 duration-200">
           <div className="flex items-center justify-between">
-            <Label className="text-[11.5px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+            <Label className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
               <FileText size={15} weight="duotone" className="shrink-0" />
               <span>المستندات المكتشفة ({detectedDocs.length})</span>
             </Label>
@@ -238,7 +238,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
 
       {/* 🔹 3. معالجة وتصفية الورقة (6 فلاتر نقية) */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
-        <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
+        <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
           <MagicWand size={15} weight="duotone" className="text-primary shrink-0" />
           <span>تصفية ومعالجة الورقة</span>
         </Label>
@@ -367,7 +367,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
 
       {/* 🔹 4. قياس ونسبة المستند */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
-        <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
+        <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
           <Crop size={15} weight="duotone" className="text-primary shrink-0" />
           <span>قياس ونسبة المستند</span>
         </Label>
@@ -434,7 +434,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
       {/* 🔹 5. تدوير المستند وإعادة الضبط */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <div className="flex items-center justify-between">
-          <Label className="text-[11.5px] font-bold text-foreground/90 flex items-center gap-1.5">
+          <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <ArrowClockwise size={15} weight="duotone" className="text-primary shrink-0" />
             <span>التدوير والضبط</span>
           </Label>

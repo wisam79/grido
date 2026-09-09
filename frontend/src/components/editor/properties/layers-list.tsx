@@ -233,8 +233,8 @@ export function LayersList() {
           <Stack className="w-4.5 h-4.5 opacity-80" weight="duotone" />
         </div>
         <div className="space-y-1">
-          <p className="text-[11px] font-bold text-foreground/80">لوحة الطبقات فارغة</p>
-          <p className="text-[9px] text-muted-foreground max-w-[170px] leading-normal mx-auto text-center" dir="rtl">أضف صوراً أو نصوصاً أو أشكالاً للتحكم بترتيبها من هنا</p>
+          <p className="text-xs font-bold text-foreground/80">لوحة الطبقات فارغة</p>
+          <p className="text-[10px] text-muted-foreground max-w-[170px] leading-normal mx-auto text-center" dir="rtl">أضف صوراً أو نصوصاً أو أشكالاً للتحكم بترتيبها من هنا</p>
         </div>
       </div>
     );

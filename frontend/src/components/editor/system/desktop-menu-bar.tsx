@@ -453,7 +453,7 @@ export function DesktopMenuBar() {
               <span className="font-medium">كولاج شبكي</span>
             </div>
             {mode === "collage" && (
-              <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">نشط</span>
+              <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">نشط</span>
             )}
           </DropdownMenuItem>
 
@@ -469,7 +469,7 @@ export function DesktopMenuBar() {
               <span className="font-medium">وضع حر</span>
             </div>
             {mode === "single" && (
-              <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">نشط</span>
+              <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">نشط</span>
             )}
           </DropdownMenuItem>
 
@@ -513,7 +513,7 @@ export function DesktopMenuBar() {
               <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" weight="duotone" />
               <span className="font-medium">الترخيص</span>
             </div>
-            <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold">مرخص</span>
+            <span className="text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold">مرخص</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -524,7 +524,7 @@ export function DesktopMenuBar() {
               <Sparkle className="w-4.5 h-4.5 text-primary" weight="duotone" />
               <span className="font-medium">معالجة الدفعات</span>
             </div>
-            <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">AI Pro</span>
+            <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">AI Pro</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

@@ -464,7 +464,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
                   <div>
                     <h4 className="text-xs font-bold text-foreground/90">تصدير نسخة احتياطية</h4>
-                    <p className="text-[11px] text-muted-foreground">حفظ جميع المشاريع في ملف JSON</p>
+                    <p className="text-xs text-muted-foreground">حفظ جميع المشاريع في ملف JSON</p>
                   </div>
                   <Button 
                     size="sm" 
@@ -489,7 +489,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
                   <div>
                     <h4 className="text-xs font-bold text-foreground/90">استيراد نسخة احتياطية</h4>
-                    <p className="text-[11px] text-muted-foreground">استعادة المشاريع من ملف JSON</p>
+                    <p className="text-xs text-muted-foreground">استعادة المشاريع من ملف JSON</p>
                   </div>
                   <label className="cursor-pointer">
                     <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
@@ -509,7 +509,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 <div className="p-3 border rounded-xl bg-red-500/5 border-red-500/20 flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-red-600 dark:text-red-400">تهيئة مكتبة المشاريع</h4>
-                    <p className="text-[11px] text-red-500/70">حذف جميع المشاريع المحفوظة نهائياً</p>
+                    <p className="text-xs text-red-500/70">حذف جميع المشاريع المحفوظة نهائياً</p>
                   </div>
                   <Button 
                     variant="destructive" 

@@ -77,7 +77,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="flex h-[20px] w-full bg-neutral-100 dark:bg-[#18181b] border-b border-neutral-300/80 dark:border-neutral-800 z-20 shrink-0 select-none shadow-2xs" dir="ltr">
+    <div className="flex h-[20px] w-full bg-ruler-surface border-b border-ruler-border z-20 shrink-0 select-none shadow-2xs" dir="ltr">
       {/* 🧭 مربع الزاوية القياسي بنمط Figma / Photoshop (Unit & Origin Box) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -85,14 +85,14 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
             type="button"
             title="انقر لتغيير وحدة القياس أو إدارة الخطوط الإرشادية (Ctrl+R)"
             aria-label="خيارات وحدة قياس المسطرة"
-            className="w-[20px] h-[20px] shrink-0 bg-neutral-200/80 hover:bg-neutral-300/80 dark:bg-[#202024] dark:hover:bg-[#2a2a30] border-r border-neutral-300/80 dark:border-neutral-800 flex items-center justify-center select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-1 focus-visible:ring-primary relative"
+            className="w-[20px] h-[20px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-1 focus-visible:ring-primary relative"
           >
             <span className="text-[7.5px] font-bold text-primary font-mono leading-none tracking-tighter uppercase">
               {rulerUnit}
             </span>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 font-cairo text-xs z-[100] rounded-xl backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16">
+        <DropdownMenuContent align="start" className="w-56 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16">
           <div dir="rtl">
             <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold flex items-center justify-between">
               <span className="flex items-center gap-1.5">
@@ -204,7 +204,7 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="w-[20px] h-full bg-neutral-100 dark:bg-[#18181b] border-r border-neutral-300/80 dark:border-neutral-800 z-20 shrink-0 select-none shadow-2xs" dir="ltr">
+    <div className="w-[20px] h-full bg-ruler-surface border-r border-ruler-border z-20 shrink-0 select-none shadow-2xs" dir="ltr">
       <VerticalRuler
         viewportHeight={viewportHeight}
         originY={originY}

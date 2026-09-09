@@ -103,9 +103,9 @@ export function LicenseTabContent({
                     toast.error("يرجى لصق المفتاح يدوياً");
                   }
                 }}
-                className="text-[11px] text-primary hover:underline font-bold cursor-pointer flex items-center gap-1"
+                className="text-xs text-primary hover:underline font-bold cursor-pointer flex items-center gap-1"
               >
-                <span>لصق من الحافظة 📋</span>
+                <span>لصق من الحافظة</span>
               </button>
             </div>
             <div className="relative">

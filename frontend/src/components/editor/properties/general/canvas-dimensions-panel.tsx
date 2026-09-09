@@ -229,7 +229,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => setUnit("px")}
               className={cn(
-                "px-2.5 h-full rounded text-[11px] font-bold transition-all cursor-pointer select-none",
+                "px-2.5 h-full rounded text-xs font-bold transition-all cursor-pointer select-none",
                 unit === "px" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -239,7 +239,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => setUnit("mm")}
               className={cn(
-                "px-2.5 h-full rounded text-[11px] font-bold transition-all cursor-pointer select-none",
+                "px-2.5 h-full rounded text-xs font-bold transition-all cursor-pointer select-none",
                 unit === "mm" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -265,7 +265,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               onKeyDown={(e) => e.key === "Enter" && handleWidthCommit()}
               className="w-full bg-transparent border-0 p-0 text-center text-xs font-mono focus:ring-0 focus:outline-hidden text-foreground font-bold"
             />
-            <span className="text-[9px] text-muted-foreground/60 select-none font-mono">{unit}</span>
+            <span className="text-[10px] text-muted-foreground/60 select-none font-mono">{unit}</span>
           </div>
 
           {/* زر تبديل الاتجاه والتدوير */}
@@ -294,7 +294,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               onKeyDown={(e) => e.key === "Enter" && handleHeightCommit()}
               className="w-full bg-transparent border-0 p-0 text-center text-xs font-mono focus:ring-0 focus:outline-hidden text-foreground font-bold"
             />
-            <span className="text-[9px] text-muted-foreground/60 select-none font-mono">{unit}</span>
+            <span className="text-[10px] text-muted-foreground/60 select-none font-mono">{unit}</span>
           </div>
         </div>
       </div>

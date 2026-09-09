@@ -53,7 +53,7 @@ export function ElementProperties({
   return (
     <div className="space-y-2.5 font-cairo">
       {isMulti && (
-        <div className="bg-primary/10 border border-primary/20 text-primary p-2.5 rounded-xl flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+        <div className="bg-primary/10 border border-primary/20 text-primary p-2.5 rounded-xl flex items-center justify-between text-xs font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
           <div className="flex items-center gap-2">
             <Sparkle className="w-3.5 h-3.5 shrink-0 text-primary" weight="fill" />
             <span>تحديد متعدد ({selectedIds.length} عناصر)</span>
@@ -63,7 +63,7 @@ export function ElementProperties({
       )}
 
       {element.locked && (
-        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl flex items-center justify-between text-xs font-semibold mb-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
           <div className="flex items-center gap-2">
             <LockSimple className="w-3.5 h-3.5 shrink-0" weight="fill" />
             <span>عنصر مقفل</span>
@@ -178,7 +178,7 @@ export function ElementProperties({
             <TabsContent value="adjust" className="mt-3.5 space-y-3.5">
               {element.type === "image" && (
                 <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
-                  <Label className="text-[11px] font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">تعديل الألوان</Label>
+                  <Label className="text-xs font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">تعديل الألوان</Label>
                   <ImageAdjustProperties element={element} onUpdate={onUpdate} showReset={true} />
                 </div>
               )}
@@ -188,7 +188,7 @@ export function ElementProperties({
           <TabsContent value="arrange" className="mt-3.5 space-y-3">
             {/* بطاقة 1: الموضع والمحاذاة السريعة */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
-              <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+              <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
                 <ArrowsOutCardinal className="w-4 h-4 text-primary" weight="duotone" />
                 <span>الموضع والمحاذاة</span>
               </Label>
@@ -353,7 +353,7 @@ export function ElementProperties({
 
             {/* بطاقة 2: التدوير والشفافية */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
-              <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+              <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
                 <ArrowClockwise className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>التدوير والشفافية</span>
               </Label>
@@ -432,13 +432,13 @@ export function ElementProperties({
           <TabsContent value="effects" className="mt-3.5 space-y-3">
             {/* بطاقة 1: الظل والإضاءة */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
-              <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+              <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
                 <Sparkle className="w-3.5 h-3.5 text-primary" weight="duotone" />
                 <span>الظل والوهج</span>
               </Label>
               
               <div className="flex items-center justify-between gap-4" title="لون الظل">
-                <span className="text-[11px] font-semibold text-muted-foreground">لون الظل</span>
+                <span className="text-xs font-semibold text-muted-foreground">لون الظل</span>
                 <PopoverColorPicker
                   color={element.shadowColor || "#000000"}
                   onChange={(val) => onUpdate(element.id, { shadowColor: val })}
@@ -499,7 +499,7 @@ export function ElementProperties({
             {/* بطاقة 2: استدارة الحواف */}
             {(element.type === "image" || element.type === "shape") && (
               <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
-                <Label className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+                <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
                   <Square className="w-3.5 h-3.5 text-primary" weight="duotone" />
                   <span>استدارة الحواف</span>
                 </Label>

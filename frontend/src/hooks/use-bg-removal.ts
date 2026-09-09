@@ -241,7 +241,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
           }
           onUpdateRef.current(element.id, patch);
           useEditorStore.getState().pushHistory();
-          toast.success("تم عزل خلفية الصورة بنجاح ✨");
+          toast.success("تم عزل خلفية الصورة بنجاح");
 
           // ⏱️ توثيق القياسات الفعلية بدلاً من القيم الثابتة (الاستدلال محلي — لا تكلفة سحابية)
           const totalSec = Math.round((performance.now() - startedAt) / 100) / 10;

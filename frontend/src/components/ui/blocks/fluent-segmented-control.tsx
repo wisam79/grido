@@ -49,7 +49,7 @@ export function FluentSegmentedControl<T extends string = string>({
             className={cn(
               "relative flex-1 flex items-center justify-center gap-1.5 font-cairo cursor-pointer rounded-md transition-all duration-150 z-10 select-none",
               "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
-              isSm ? "h-7 px-2.5 text-[11px]" : "h-8 px-3 text-xs",
+              isSm ? "h-7 px-2.5 text-xs" : "h-8 px-3 text-xs",
               isActive
                 ? "text-primary font-bold shadow-2xs"
                 : "text-muted-foreground hover:text-foreground font-medium",

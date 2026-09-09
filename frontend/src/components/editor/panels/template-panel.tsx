@@ -238,7 +238,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                       <Image className="w-3.5 h-3.5" weight="duotone" />
                       <span>قوالبي المحفوظة</span>
                       {savedTemplates.length > 0 && (
-                        <span className="text-[9px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-bold">
+                        <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-bold">
                           {savedTemplates.length}
                         </span>
                       )}
@@ -293,12 +293,12 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
                   <TabsContent value="saved" className="mt-4 focus-visible:outline-hidden">
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-[11px] font-bold text-foreground/80">القوالب المحفوظة</span>
+                      <span className="text-xs font-bold text-foreground/80">القوالب المحفوظة</span>
                       <div className="flex gap-2">
                         <button 
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="h-7 px-2.5 text-[11px] font-bold rounded-md border border-border bg-input hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
+                          className="h-7 px-2.5 text-xs font-bold rounded-md border border-border bg-input hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
                         >
                           استيراد
                         </button>
@@ -322,7 +322,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
                               toast.error("حدث خطأ أثناء التصدير");
                             }
                           }}
-                          className="h-7 px-2.5 text-[11px] font-bold rounded-md border border-border/80 bg-muted/40 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
+                          className="h-7 px-2.5 text-xs font-bold rounded-md border border-border/80 bg-muted/40 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
                         >
                           تصدير الكل
                         </button>
