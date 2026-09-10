@@ -104,10 +104,10 @@ export default function LandingPage() {
       dir="rtl"
       className="relative min-h-screen overflow-x-hidden bg-[#121212] font-sans text-[#F5F5F5] selection:bg-[#3b82f6]/30 selection:text-white"
     >
-      {/* Top Scroll Progress Bar */}
-      <div className="fixed top-0 inset-x-0 h-0.5 bg-[#1E1E1E] z-[60] pointer-events-none">
+      {/* Top Scroll Progress Bar — متدرج بلا توهج */}
+      <div className="fixed top-0 inset-x-0 h-[3px] bg-[#1A1A1A] z-[60] pointer-events-none">
         <div
-          className="absolute top-0 start-0 h-full bg-[#3b82f6] transition-all duration-150 ease-out"
+          className="absolute top-0 start-0 h-full bg-gradient-to-l from-[#60a5fa] via-[#3b82f6] to-[#2563eb] transition-[width] duration-150 ease-out"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
@@ -158,7 +158,7 @@ export default function LandingPage() {
 
         {/* Section 6: Lifetime Pricing & Licensing */}
         <div className="reveal-on-scroll">
-          <PricingSection currency={currency} onCurrencyChange={setCurrency} />
+          <PricingSection currency={currency} />
         </div>
 
         {/* FAQ Accordion */}
@@ -176,13 +176,13 @@ export default function LandingPage() {
       <Footer />
       <WhatsAppFloatingButton />
 
-      {/* Floating Bottom Quick Download Pill (Zero Glow) */}
+      {/* Floating Bottom Quick Download Pill */}
       {showFloatingCta && (
         <a
           href={GITHUB_RELEASE_DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-4 end-4 sm:bottom-6 sm:end-6 z-50 flex items-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold text-[11px] sm:text-xs shadow-lg transition-all duration-150 hover:scale-105 active:scale-95"
+          className="fixed bottom-4 end-4 sm:bottom-6 sm:end-6 z-50 flex items-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold text-[11px] sm:text-xs shadow-xl shadow-[#3b82f6]/25 transition-all duration-200 hover:scale-105 active:scale-95 animate-fadeIn"
           aria-label="تحميل مباشر الآن"
         >
           <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />

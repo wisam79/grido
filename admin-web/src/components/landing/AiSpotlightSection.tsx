@@ -135,7 +135,9 @@ export function AiSpotlightSection() {
             <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#141414]">
               <img
                 src="/sample-passport-after.png"
-                alt="After AI Processing"
+                alt="بعد معالجة الذكاء الاصطناعي — عزل خلفية نقي"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover object-top pointer-events-none"
                 draggable={false}
               />
@@ -154,7 +156,9 @@ export function AiSpotlightSection() {
             >
               <img
                 src="/sample-passport-before.png"
-                alt="Before AI Processing"
+                alt="الصورة الأصلية قبل المعالجة"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover object-top pointer-events-none"
                 draggable={false}
               />

@@ -1,5 +1,6 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+/* الخطوط تُحمّل مرة واحدة عبر <link> في index.html (preconnect + display=swap)
+   — كان الاستيراد هنا يكرر الطلب ذاته ويضاعف زمن التحميل. */
 
 @theme inline {
   --font-sans: 'IBM Plex Sans Arabic', 'Cairo', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -232,7 +233,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Pill badge (Clean Neutral - Zero Glow) */
 .ai-badge {
-  background: #1E1E1E;
+  background: rgba(30, 30, 30, 0.85);
   color: var(--grido-brand-light);
   border: 1px solid var(--grido-border-subtle);
   border-radius: 9999px;
@@ -242,6 +243,15 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Pill badge — متغير مميز بنقطة نابضة */
+.ai-badge-pulse {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #93c5fd;
 }
 
 /* ==========================================================================
@@ -249,14 +259,28 @@ h1, h2, h3, h4, h5, h6 {
    ========================================================================== */
 .reveal-on-scroll {
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  transform: translateY(14px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity, transform;
 }
 
 .reveal-on-scroll.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 @keyframes floatIcon {
@@ -270,6 +294,74 @@ h1, h2, h3, h4, h5, h6 {
 
 .animate-float {
   animation: floatIcon 3.5s ease-in-out infinite alternate;
+}
+
+/* ==========================================================================
+   Visual Polish Primitives — توهج ناعم، تدرجات نصية، فواصل، ضوضاء خفيفة
+   ========================================================================== */
+
+/* نص متدرج احترافي — بلا توهج زائد */
+.text-gradient-brand {
+  background: linear-gradient(120deg, #ffffff 20%, #93c5fd 55%, #38bdf8 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* حد علوي مضيء للبطاقات الرئيسية (Specular top edge) */
+.card-specular-edge {
+  position: relative;
+}
+.card-specular-edge::before {
+  content: '';
+  position: absolute;
+  inset-inline: 12%;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(147, 197, 253, 0.35), transparent);
+  pointer-events: none;
+}
+
+/* توهج سفلي أزرق خفيف جداً للبطاقات العائمة (يُستخدم بحدود واعية للأداء) */
+.soft-ambient-glow {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 24px 60px -24px rgba(59, 130, 246, 0.18);
+}
+
+/* فواصل أقسام متدرجة بدل خطوط صلبة */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #2C2C2C 20%, #2C2C2C 80%, transparent);
+  border: 0;
+}
+
+/* شبكة خلفية ناعمة للأقسام (نقاط 1px، تكلفة رسم شبه معدومة) */
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+/* حلقة توهج تتبع المؤشر على البطاقات (Spotlight) — يستعمل --mouse-x/y */
+.spotlight-hover {
+  position: relative;
+  overflow: hidden;
+}
+.spotlight-hover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(240px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(59, 130, 246, 0.06), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.spotlight-hover:hover::after {
+  opacity: 1;
+}
+
+/* تمرير سلس مع موضع الأقسام المثبتة */
+html {
+  scroll-behavior: smooth;
 }
 
 /* Scrollbars */
@@ -296,4 +388,144 @@ h1, h2, h3, h4, h5, h6 {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ==========================================================================
+   Grido Studio Landing Design System v2 — طبقة مكونات مشتركة موحدة
+   تُنهي تكرار الأنماط اليدوية (bg-[#1E1E1E] border-[#2C2C2C] ...) المنتشرة
+   في 15 مكوناً، وتوحّد البطاقات والشارات والأزرار العائمة على توكن واحد.
+   ========================================================================== */
+
+/* بطاقة القسم القياسية — سطح card + حد subtle + استدارة موحدة */
+.ds-card {
+  background: var(--grido-surface-card);
+  border: 1px solid var(--grido-border-subtle);
+  border-radius: var(--radius-2xl);
+}
+
+/* بطاقة غائرة (inset) للحقول والقيم الرقمية */
+.ds-card-inset {
+  background: var(--grido-surface-inset);
+  border: 1px solid var(--grido-border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+/* كبسولة قيمة mono — للأرقام والإحصاءات المميزة */
+.ds-value-pill {
+  background: var(--grido-surface-inset);
+  border: 1px solid var(--grido-border-subtle);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 2px 10px;
+}
+
+/* فاصل نقطي بين عناصر شريط الثقة */
+.ds-dot {
+  color: var(--grido-text-muted);
+  user-select: none;
+}
+
+/* ترويسة قسم موحدة — تُستخدم مع ai-badge + h2 + وصف */
+.ds-section-head {
+  text-align: center;
+  max-width: 42rem;
+  margin-inline: auto;
+}
+
+/* حالة التحويم الموحدة للبطاقات القابلة للنقر (بدون توهج) */
+.ds-card-interactive {
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+.ds-card-interactive:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--grido-surface-card-hover);
+}
+.ds-card-interactive:active {
+  transform: scale(0.99);
+}
+
+/* حلقة تركيز موحّدة WCAG — تستخدم مع كل عنصر تفاعلي مخصص */
+.ds-focusable:focus-visible {
+  outline: 2px solid var(--grido-brand-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+/* ==========================================================================
+   Grido App Mockup Advanced Biometric & AI Animations
+   ========================================================================== */
+@keyframes mockup-laser-sweep {
+  0% {
+    top: -5%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 105%;
+    opacity: 0;
+  }
+}
+
+@keyframes mockup-scan-hud {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes mockup-ai-wipe-down {
+  0% {
+    clip-path: inset(0 0 100% 0);
+  }
+  100% {
+    clip-path: inset(0 0 0% 0);
+  }
+}
+
+@keyframes mockup-beam-glow {
+  0% {
+    top: 0%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+@keyframes mockup-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(59, 130, 246, 0);
+  }
+}
+
+.animate-mockup-laser {
+  animation: mockup-laser-sweep 2.0s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-mockup-scan-hud {
+  animation: mockup-scan-hud 2.4s ease-in-out infinite;
+}
+
+.animate-mockup-wipe {
+  animation: mockup-ai-wipe-down 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-mockup-beam {
+  animation: mockup-beam-glow 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-mockup-pulse {
+  animation: mockup-glow-pulse 2s infinite ease-in-out;
 }

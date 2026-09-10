@@ -2,14 +2,31 @@ import { useState, lazy, Suspense } from 'react';
 import { Download, Play, Shield, Zap, Laptop, CheckCircle2 } from 'lucide-react';
 import { AppMockup } from './AppMockup';
 import { ErrorBoundary } from '../common/ErrorBoundary';
+import { TourModal } from '../common/TourModal';
 import { useAppVersion } from '../../lib/version';
 
 const Hero3DScene = lazy(() => import('./Hero3DScene').then((m) => ({ default: m.Hero3DScene })));
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
+/** جولة الخطوات الثلاث — تحل محل مودال الفيديو الوهمي بمحتوى حقيقي ملموس */
+const QUICK_TOUR_STEPS = [
+  {
+    title: 'اسحب صورة الزبون وأفلتها',
+    description: 'افتح الصورة من الكاميرا أو الجوال — Grido يكتشف الوجه ويقصّه تلقائياً وفق معيار الجواز المختار (عراقي، أمريكي، شينغن).',
+  },
+  {
+    title: 'عزل الخلفية بضغطة واحدة',
+    description: 'محرك الذكاء الاصطناعي المحلي يعزل الخلفية فورياً — أدق حواف للشعر والأطراف بلا هالات بيضاء، دون إنترنت تماماً.',
+  },
+  {
+    title: 'ورقة طباعة جاهزة في ثوانٍ',
+    description: 'توزيع آلي على ورقة A4 بخطوط قص دقيقة وحدود مستديرة — مطابقة تامة لمعايير الطباعة الرسمية، جاهزة للطابعة مباشرة.',
+  },
+];
+
 export function HeroSection() {
-  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   const version = useAppVersion();
   const displayVersion = version ? `إصدار v${version}` : 'إصدار 2026';
 
@@ -22,32 +39,31 @@ export function HeroSection() {
         </Suspense>
       </ErrorBoundary>
 
-      {/* Layered Cinematic Glows */}
-      <div className="absolute top-0 inset-x-0 h-[650px] bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(59,130,246,0.18),transparent_75%)] pointer-events-none z-0" />
-      <div className="absolute top-1/3 inset-x-0 h-[400px] bg-[radial-gradient(ellipse_50%_35%_at_50%_30%,rgba(56,189,248,0.08),transparent_70%)] pointer-events-none z-0" />
+      {/* Subtle Ambient Top Vignette — إضاءة خافتة جداً ونظيفة بأعلى الصفحة بلا ضبابية */}
+      <div className="absolute top-0 inset-x-0 h-[400px] bg-[radial-gradient(ellipse_60%_35%_at_50%_0%,rgba(59,130,246,0.06),transparent_70%)] pointer-events-none z-0" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* Top Header & Conversion Block */}
         <div className="flex flex-col items-center text-center max-w-5xl mx-auto mb-10 sm:mb-12">
-          
-          {/* Version Badge */}
-          <div className="ai-badge mb-4 sm:mb-5 shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-[#3b82f6] animate-pulse" />
+
+          {/* Version Badge — نسخة مميزة بنقطة نابضة */}
+          <div className="ai-badge ai-badge-pulse mb-4 sm:mb-5 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-[#60a5fa] animate-pulse" />
             <span className="font-semibold">{displayVersion} • محرك ذكاء اصطناعي محلي فوري</span>
           </div>
 
           {/* Grand Main Headline */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-black text-white tracking-tight leading-[1.2] mb-5 text-balance max-w-4xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-black text-white tracking-tight leading-[1.15] mb-5 text-balance max-w-4xl">
             <span className="inline-block">استوديو متكامل لصور الهوية والطباعة</span>
-            <span className="block mt-2 sm:mt-3 text-transparent bg-clip-text bg-gradient-to-l from-[#60a5fa] via-[#38bdf8] to-white">
-              عزل، تجهيز، وطباعة بـ 3 ثوانٍ فقط
+            <span className="block mt-2 sm:mt-3 text-gradient-brand">
+              عزل، تجهيز، وطباعة في ثوانٍ معدودة
             </span>
           </h1>
 
           {/* Sub-headline */}
           <p className="text-sm sm:text-base md:text-lg text-[#A3A3A3] leading-relaxed max-w-2xl mb-8 font-normal text-balance">
-            حل هندسي شامل لاستوديوهات ومراكز الطباعة: ضبط تلقائي لمعايير الجوازات والفيزا الدولية (ICAO)، عزل نقي للخلفيات، وتوفير 35% من الورق — يعمل محلياً 100% دون إنترنت.
+            حل هندسي شامل لاستوديوهات ومراكز الطباعة: ضبط تلقائي لمعايير الجوازات والفيزا الدولية (ICAO)، عزل نقي للخلفيات، وتوزيع شبكي يقلل هدر الورق — يعمل محلياً 100% دون إنترنت.
           </p>
 
           {/* Action Buttons Row */}
@@ -56,42 +72,35 @@ export function HeroSection() {
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary !h-13 !px-8 text-sm sm:text-base font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/35 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
+              className="btn-primary !h-13 !px-8 text-sm sm:text-base font-bold shadow-xl shadow-[#3b82f6]/25 hover:shadow-[#3b82f6]/40 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
             >
               <Download className="w-5 h-5" />
               <span>تحميل مجاني لـ Windows</span>
             </a>
 
             <button
-              onClick={() => setShowVideoModal(true)}
+              onClick={() => setShowTour(true)}
               className="btn-secondary !h-13 !px-6 text-xs sm:text-sm font-semibold hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
             >
               <Play className="w-4 h-4 text-[#60a5fa] fill-[#60a5fa]" />
-              <span>شاهد العرض السريع (60 ثانية)</span>
+              <span>جولة سريعة: 3 خطوات فقط</span>
             </button>
           </div>
 
-          {/* Unified Trust Strip */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 py-2 px-4 rounded-2xl bg-[#1A1A1A]/80 backdrop-blur-md border border-[#2C2C2C] text-xs text-[#9E9E9E] shadow-sm">
-            <div className="flex items-center gap-1.5 text-white">
-              <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-              <span className="font-semibold">100% محلي دون إنترنت</span>
-            </div>
-            <span className="text-[#404040]">•</span>
-            <div className="flex items-center gap-1.5 text-white">
-              <Zap className="w-3.5 h-3.5 text-[#3b82f6]" />
-              <span className="font-semibold">3 ثوانٍ فقط للزبون</span>
-            </div>
-            <span className="text-[#404040] hidden sm:inline">•</span>
-            <div className="hidden sm:flex items-center gap-1.5 text-white">
-              <Laptop className="w-3.5 h-3.5 text-[#60a5fa]" />
-              <span className="font-semibold">خفيف جداً (&lt; 120MB ذاكرة)</span>
-            </div>
-            <span className="text-[#404040] hidden sm:inline">•</span>
-            <div className="hidden sm:flex items-center gap-1.5 text-white">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#10b981]" />
-              <span className="font-semibold">مطابق لمعايير ICAO</span>
-            </div>
+          {/* Unified Trust Strip — فواصل نقطية أنظف */}
+          <div className="ds-card-inset flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-2.5 px-5 backdrop-blur-md text-xs text-[#9E9E9E] shadow-sm rounded-2xl border border-[#2C2C2C]/70">
+            {[
+              { icon: Shield, color: 'text-[#10b981]', label: '100% محلي دون إنترنت' },
+              { icon: Zap, color: 'text-[#3b82f6]', label: 'سير عمل أسرع بخطوات أقل' },
+              { icon: Laptop, color: 'text-[#60a5fa]', label: 'خفيف جداً (<120MB ذاكرة)' },
+              { icon: CheckCircle2, color: 'text-[#10b981]', label: 'مطابق لمعايير ICAO' },
+            ].map(({ icon: Icon, color, label }, i) => (
+              <div key={label} className="flex items-center gap-1.5 text-white">
+                {i > 0 && <span className="w-1 h-1 rounded-full bg-[#3b82f6]/50 mx-0.5" aria-hidden="true" />}
+                <Icon className={`w-3.5 h-3.5 ${color}`} />
+                <span className="font-semibold">{label}</span>
+              </div>
+            ))}
           </div>
 
         </div>
@@ -103,31 +112,13 @@ export function HeroSection() {
 
       </div>
 
-      {/* Demo Video Modal */}
-      {showVideoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn">
-          <div className="relative w-full max-w-3xl rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#2C2C2C] mb-4">
-              <h3 className="text-sm font-bold text-white">عرض سريع: كيف يعمل استوديو جريدو؟</h3>
-              <button
-                onClick={() => setShowVideoModal(false)}
-                className="w-7 h-7 rounded-lg bg-[#262626] hover:bg-[#333333] text-white flex items-center justify-center text-xs font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="aspect-video bg-black rounded-xl overflow-hidden flex flex-col items-center justify-center p-6 text-center text-[#9E9E9E]">
-              <div className="w-14 h-14 rounded-full bg-[#3b82f6]/20 border border-[#3b82f6]/50 flex items-center justify-center mb-3 text-[#60a5fa]">
-                <Play className="w-6 h-6 fill-current ms-1" />
-              </div>
-              <p className="text-sm font-bold text-white mb-1">سرعة العمل في الاستوديو</p>
-              <p className="text-xs max-w-sm text-[#9E9E9E]">
-                عزل الخلفية، ضبط معايير الجوازات، وتوزيع الصور للطباعة بـ 3 ثوانٍ.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Interactive Quick Tour Modal — بديل حقيقي متاح لمودال الفيديو الوهمي */}
+      <TourModal
+        open={showTour}
+        onClose={() => setShowTour(false)}
+        title="جولة سريعة: كيف يعمل استوديو جريدو؟"
+        steps={QUICK_TOUR_STEPS}
+      />
     </section>
   );
 }

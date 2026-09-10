@@ -29,9 +29,9 @@ export function BentoGrid() {
 
         {/* 4-Card Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5">
-          
+
           {/* Card 1: Large (col-span-12 lg:col-span-8) - AI ID & Biometric Passport */}
-          <div className="lg:col-span-8 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-white/20 transition-all duration-300 shadow-md">
+          <div className="lg:col-span-8 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-[#3b82f6]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
             <div>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -100,10 +100,12 @@ export function BentoGrid() {
                   <div className="sm:col-span-7 relative rounded-lg overflow-hidden border border-[#2C2C2C] aspect-[16/10] bg-black">
                     <img
                       src="/biometric-cutout-blend.jpg"
-                      alt="Biometric Cutout AI Process"
+                      alt="عزل حيوي نقي بالذكاء الاصطناعي — حواف دقيقة للشعر"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/sample-passport.png';
+                        (e.target as HTMLImageElement).src = '/sample-passport-after.png';
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-2.5">
@@ -139,7 +141,7 @@ export function BentoGrid() {
           </div>
 
           {/* Card 2: Medium (col-span-12 lg:col-span-4) - Smart Collage Canvas */}
-          <div className="lg:col-span-4 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-white/20 transition-all duration-300 shadow-md">
+          <div className="lg:col-span-4 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-[#3b82f6]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0">
@@ -183,7 +185,7 @@ export function BentoGrid() {
           </div>
 
           {/* Card 3: Medium (col-span-12 lg:col-span-4) - Offline & Privacy */}
-          <div className="lg:col-span-4 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-white/20 transition-all duration-300 shadow-md">
+          <div className="lg:col-span-4 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-[#10b981]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#10b981] shrink-0">
@@ -215,7 +217,7 @@ export function BentoGrid() {
           </div>
 
           {/* Card 4: Wide (col-span-12 lg:col-span-8) - Print & Cutter Sheets */}
-          <div className="lg:col-span-8 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-white/20 transition-all duration-300 shadow-md">
+          <div className="lg:col-span-8 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-[#f59e0b]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
             <div>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -283,7 +285,9 @@ export function BentoGrid() {
                   <div className="sm:col-span-7 relative rounded-lg overflow-hidden border border-[#2C2C2C] aspect-[16/9] bg-black">
                     <img
                       src="/studio-cutter-sheet.jpg"
-                      alt="Studio Cutter Sheet"
+                      alt="ورقة توزيع A4 بخطوط قص دقيقة من استوديو جريدو"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/cmyk-print-lab-macro.jpg';

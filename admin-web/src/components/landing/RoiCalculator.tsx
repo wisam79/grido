@@ -23,7 +23,7 @@ export function RoiCalculator({ currency = 'IQD', onCurrencyChange }: RoiCalcula
   const monthlyExtraRevenue = Math.round(dailyClients * sheetPrice * 26 * 0.25);
 
   return (
-    <section className="py-16 md:py-24 relative">
+    <section id="roi" className="py-16 md:py-24 relative scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Harmonized Charcoal Card */}
@@ -40,6 +40,7 @@ export function RoiCalculator({ currency = 'IQD', onCurrencyChange }: RoiCalcula
             </h2>
             <p className="text-xs sm:text-sm text-[#9E9E9E] mb-4">
               حرّك المؤشر لحساب الوقت والمال الموفر داخل الاستوديو بناءً على حجم زبائنك.
+              <span className="text-[#666]"> — العملة المختارة تنسحب أيضاً على قسم الأسعار أدناه.</span>
             </p>
 
             {/* Inline Currency Selector */}

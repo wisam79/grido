@@ -50,7 +50,7 @@ export function FaqSection() {
             </p>
 
             {/* Quick WhatsApp Support Box */}
-            <div className="w-full p-5 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] space-y-3">
+            <div className="ds-card w-full p-5 space-y-3">
               <div className="flex items-center gap-2.5 text-white font-bold text-sm">
                 <div className="w-8 h-8 rounded-lg bg-[#25D366]/10 border border-[#25D366]/30 flex items-center justify-center text-[#25D366]">
                   <MessageCircle className="w-4 h-4" />
@@ -78,10 +78,10 @@ export function FaqSection() {
               return (
                 <div
                   key={faq.q}
-                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                  className={`ds-card ds-card-interactive overflow-hidden ${
                     isOpen
-                      ? 'bg-[#1E1E1E] border-[#3b82f6]/40 shadow-md'
-                      : 'bg-[#1E1E1E] border-[#2C2C2C] hover:border-white/20'
+                      ? 'border-[#3b82f6]/40 shadow-md'
+                      : 'hover:border-white/20'
                   }`}
                 >
                   <button

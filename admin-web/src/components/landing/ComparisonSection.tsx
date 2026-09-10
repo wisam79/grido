@@ -53,7 +53,7 @@ const GRIDO_WAY = [
 
 export function ComparisonSection() {
   return (
-    <section className="py-16 md:py-24 relative">
+    <section id="comparison" className="py-16 md:py-24 relative scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}

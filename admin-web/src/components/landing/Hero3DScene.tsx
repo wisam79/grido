@@ -1,140 +1,144 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-// =========================================================================
-// GLSL Shaders for GPU-Accelerated Rect Grid Nodes (Dewdrops / Pinpoint Stars)
-// =========================================================================
-const nodeVertexShader = `
+// ============================================================================
+// Hero "Aurora Dot Ocean" — إعادة بناء من الصفر:
+// محيط نقطي مائل بمنظور عمقي، موجات هارمونية على GPU، هالة تفاعلية حول المؤشر
+// مع حلقات موجية متباعدة، نبضة رادار بطيئة تجتاح العمق، غبار نجمي عائم،
+// وغيوم توهج Aurora كبيرة خلف المشهد لإحساس فاخر بالعمق.
+// ============================================================================
+
+const dotsVertexShader = `
   uniform float uTime;
-  uniform vec2 uMouse;
+  uniform vec3 uMouse;
   uniform float uBaseSize;
   uniform float uPixelRatio;
 
+  attribute float aRand;
+
+  varying float vGlow;
+  varying float vElev;
+  varying float vDepth;
+  varying float vRand;
+  varying float vSweep;
+  varying float vEdge;
+
+  float elevation(vec2 p, float t) {
+    float e  = sin(p.x * 0.42 + t * 0.62) * 0.50;
+    e += sin(p.y * 0.31 - t * 0.44) * 0.42;
+    e += sin((p.x + p.y) * 0.22 + t * 0.30) * 0.30;
+    e += sin(length(p) * 0.36 - t * 0.90) * 0.16;
+    return e;
+  }
+
+  void main() {
+    vec2 xz = position.xz;
+    float elev = elevation(xz, uTime);
+    vElev = elev;
+    vRand = aRand;
+
+    vec3 p = position;
+    p.y += elev * 0.55;
+
+    // هالة المؤشر + حلقات موجية متباعدة على مستوى الحقل
+    float md = length(xz - uMouse.xz);
+    float halo = exp(-md * md * 0.14);
+    float ring = exp(-md * 0.5) * max(sin(md * 2.4 - uTime * 2.2), 0.0);
+    vGlow = clamp(halo + ring * 0.65, 0.0, 1.4);
+
+    // نبضة رادار بطيئة تعبر المشهد باتجاه العمق
+    float sweepCenter = mod(uTime * 1.5, 20.0) - 12.0;
+    vSweep = exp(-pow((p.z - sweepCenter) * 0.85, 2.0));
+
+    // تلاشي حواف ناعم ليذوب الحقل في الخلفية بلا حدود حادة
+    vEdge = smoothstep(15.5, 12.5, abs(p.x))
+          * smoothstep(4.8, 3.2, p.z)
+          * smoothstep(-12.0, -9.0, p.z);
+
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * mv;
+    vDepth = clamp((-mv.z - 5.0) / 16.0, 0.0, 1.0);
+
+    gl_PointSize = clamp(
+      uBaseSize * (0.75 + aRand * 0.55) * (1.0 + vGlow * 0.9 + vSweep * 0.45)
+        * (26.0 / -mv.z) * uPixelRatio,
+      1.5, 7.0
+    );
+  }
+`;
+
+const dotsFragmentShader = `
+  uniform vec3 uDeep;
+  uniform vec3 uAzure;
+  uniform vec3 uCyan;
+  uniform vec3 uWhite;
+  uniform float uFade;
+
+  varying float vGlow;
+  varying float vElev;
+  varying float vDepth;
+  varying float vRand;
+  varying float vSweep;
+  varying float vEdge;
+
+  void main() {
+    vec2 c = gl_PointCoord - vec2(0.5);
+    float d = length(c);
+    if (d > 0.5) discard;
+
+    float core = smoothstep(0.36, 0.05, d);
+    float halo = exp(-d * 4.5);
+
+    // منحدر قزحي حسب الارتفاع: كحلي عميق ← أزرق ← سماوي
+    float h = clamp(vElev * 0.55 + 0.5, 0.0, 1.0);
+    vec3 col = mix(uDeep, uAzure, smoothstep(0.12, 0.62, h));
+    col = mix(col, uCyan, smoothstep(0.58, 0.96, h));
+
+    // شرارات بيضاء نادرة عند قمم الأمواج
+    float sparkle = step(0.94, vRand) * smoothstep(0.78, 1.0, h);
+    col = mix(col, uWhite, sparkle * 0.9);
+
+    // نواة ساخنة عند المؤشر
+    vec3 hotCore = mix(uCyan, uWhite, clamp(core * 0.45 + vGlow * 0.65, 0.0, 1.0));
+    float energy = clamp(vGlow, 0.0, 1.0);
+    col = mix(col, hotCore, energy);
+    col += uCyan * vSweep * 0.30;
+
+    float alpha = (0.30 + 0.38 * h) * halo;
+    alpha = mix(alpha, 0.95 * halo, energy * 0.75);
+    alpha *= mix(1.0, 0.28, vDepth);
+    alpha *= vEdge * uFade;
+
+    gl_FragColor = vec4(col, alpha);
+  }
+`;
+
+const dustVertexShader = `
+  uniform float uTime;
+  uniform float uPixelRatio;
   attribute float aPhase;
-  attribute vec2 aGridCoord;
-
-  varying float vGlow;
-  varying float vPhase;
-  varying vec2 vGridCoord;
+  varying float vTwinkle;
 
   void main() {
-    vPhase = aPhase;
-    vGridCoord = aGridCoord;
-
-    // Gentle, harmonic architectural undulation (deep, soothing oceanic wave)
-    float wave = sin(uTime * 0.65 + position.x * 0.35 + position.y * 0.25) * 0.10
-               + cos(uTime * 0.45 + position.x * 0.20 - position.y * 0.28) * 0.07;
-
-    // Smooth Gaussian distance falloff from mouse cursor (no sudden cutoffs)
-    float dist = length(position.xy - uMouse);
-    float glow = exp(-dist * dist * 0.16);
-    vGlow = glow;
-
-    // Silky smooth Z elevation - zero high-frequency jitter, pure organic cushion
-    float lift = glow * 0.18;
-
-    vec3 transformed = position;
-    // Strictly preserve X & Y to maintain clean architectural grid lines
-    transformed.z += wave + lift;
-
-    vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
-    gl_Position = projectionMatrix * mvPosition;
-
-    // Micro pinprick point size with subtle scale under mouse
-    gl_PointSize = clamp(uBaseSize * (1.0 + glow * 0.65) * (24.0 / -mvPosition.z) * uPixelRatio, 2.0, 6.0);
+    vec3 p = position;
+    p.x += sin(uTime * 0.07 + aPhase) * 0.6;
+    p.y += cos(uTime * 0.05 + aPhase * 1.4) * 0.4;
+    vTwinkle = 0.5 + 0.5 * sin(uTime * 0.9 + aPhase * 3.1);
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * mv;
+    gl_PointSize = clamp(1.4 * (26.0 / -mv.z) * uPixelRatio, 1.0, 3.2);
   }
 `;
 
-const nodeFragmentShader = `
-  uniform float uTime;
-  uniform vec3 uColorCyan;
-  uniform vec3 uColorAzure;
-  uniform vec3 uColorSlate;
-  uniform vec3 uColorWhite;
-
-  varying float vGlow;
-  varying float vPhase;
-  varying vec2 vGridCoord;
+const dustFragmentShader = `
+  varying float vTwinkle;
 
   void main() {
-    vec2 coord = gl_PointCoord - vec2(0.5);
-    float dist = length(coord);
-    if (dist > 0.5) discard;
-
-    // Crisp pinpoint core with silky ambient halo
-    float core = smoothstep(0.38, 0.04, dist);
-    float halo = exp(-dist * 4.2);
-
-    // Serene breathing pulse (1.1 rad/sec - eye-comfort rate)
-    float breath = 0.82 + 0.18 * sin(uTime * 1.1 + vPhase);
-
-    // Soft resting slate-cyan, radiant azure/cyan under cursor, pure luminous white center
-    vec3 restingColor = mix(uColorSlate, uColorCyan, 0.35);
-    vec3 activeColor = mix(uColorCyan, uColorWhite, clamp(core * 0.65 + vGlow * 0.75, 0.0, 1.0));
-    vec3 finalColor = mix(restingColor * breath, activeColor, vGlow);
-
-    float alpha = mix(0.18, 0.90, vGlow) * halo;
-    gl_FragColor = vec4(finalColor, alpha);
-  }
-`;
-
-// =========================================================================
-// GLSL Shaders for GPU-Accelerated Rect Grid Filaments (Orthogonal Lines)
-// =========================================================================
-const lineVertexShader = `
-  uniform float uTime;
-  uniform vec2 uMouse;
-
-  attribute float aLineIndex;
-
-  varying float vGlow;
-  varying vec2 vPosition;
-
-  void main() {
-    vPosition = position.xy;
-
-    // Identical harmonic wave as nodes to guarantee seamless continuous mesh alignment
-    float wave = sin(uTime * 0.65 + position.x * 0.35 + position.y * 0.25) * 0.10
-               + cos(uTime * 0.45 + position.x * 0.20 - position.y * 0.28) * 0.07;
-
-    // Smooth Gaussian proximity to mouse
-    float dist = length(position.xy - uMouse);
-    float glow = exp(-dist * dist * 0.16);
-    vGlow = glow;
-
-    // Gentle Z lift matching the nodes exactly
-    float lift = glow * 0.18;
-
-    vec3 transformed = position;
-    transformed.z += wave + lift;
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
-  }
-`;
-
-const lineFragmentShader = `
-  uniform float uTime;
-  uniform vec3 uColorCyan;
-  uniform vec3 uColorAzure;
-  uniform vec3 uColorSlate;
-  uniform vec3 uColorWhite;
-
-  varying float vGlow;
-  varying vec2 vPosition;
-
-  void main() {
-    // Base resting lines: Very soft, translucent architectural coordinate grid (comfortable for eyes)
-    vec3 baseColor = uColorSlate;
-    float baseAlpha = 0.09;
-
-    // Illuminated highlight under mouse: Vibrant Azure / Cyan gradient
-    vec3 highlightColor = mix(uColorCyan, uColorWhite, vGlow * 0.35);
-
-    // Smooth, organic blend - NO crackling, NO vibration, NO flickering!
-    vec3 finalColor = mix(baseColor, highlightColor, vGlow);
-    float finalAlpha = baseAlpha + vGlow * 0.50;
-
-    gl_FragColor = vec4(finalColor * finalAlpha, finalAlpha);
+    vec2 c = gl_PointCoord - vec2(0.5);
+    float d = length(c);
+    if (d > 0.5) discard;
+    float halo = exp(-d * 5.0);
+    gl_FragColor = vec4(vec3(0.62, 0.78, 0.98), (0.08 + 0.20 * vTwinkle) * halo);
   }
 `;
 
@@ -146,11 +150,25 @@ export function Hero3DScene() {
     if (!container) return;
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // 📱 تخطي المشهد ثلاثي الأبعاد على الجوال بالكامل — رسوميات أقل بلا مقابل
+    // حسي على شاشة صغيرة، وتوفير مباشر للبطارية والحرارة أثناء التمرير.
+    const isMobileViewport = window.matchMedia('(max-width: 768px)').matches;
 
-    // 1. Scene & Perspective Camera
+    if (isMobileViewport) {
+      container.style.display = 'none';
+      return;
+    }
+    if (prefersReducedMotion) {
+      container.style.opacity = '0.4';
+    }
+
+    // 1. Scene & Camera — كاميرا منخفضة تنظر فوق حقل نقاط مائل
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 0, 7.8);
+    const CAM_BASE = new THREE.Vector3(0, 3.3, 8.4);
+    const CAM_LOOK = new THREE.Vector3(0, 0, -2.5);
+    camera.position.copy(CAM_BASE);
+    camera.lookAt(CAM_LOOK);
 
     // 2. High-Performance WebGL Renderer
     const renderer = new THREE.WebGLRenderer({
@@ -163,211 +181,103 @@ export function Hero3DScene() {
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    // 3. Master 3D Rect Grid Group
-    const gridGroup = new THREE.Group();
-    scene.add(gridGroup);
+    // 3. حقل النقاط — شبكة 100×44 ممدودة نحو العمق (منظور طبيعي)
+    const COLS = 100;
+    const ROWS = 44;
+    const X_HALF = 15.5;
+    const Z_NEAR = 4.5;
+    const Z_FAR = -11.0;
+    const TOTAL = COLS * ROWS;
 
-    // ==========================================
-    // 4. RECTANGULAR GRID TOPOLOGY GENERATION
-    // ==========================================
-    const COLS = 26; // 26 Horizontal grid columns across viewport
-    const ROWS = 15; // 15 Vertical grid rows
-    const TOTAL_NODES = COLS * ROWS;
-
-    const GRID_WIDTH = 18.0;  // Span across full field of view
-    const GRID_HEIGHT = 10.0;
-    const ORIGIN_X = -GRID_WIDTH / 2;
-    const ORIGIN_Y = -GRID_HEIGHT / 2 + 0.25;
-
-    const DX = GRID_WIDTH / (COLS - 1);
-    const DY = GRID_HEIGHT / (ROWS - 1);
-
-    const nodePositions = new Float32Array(TOTAL_NODES * 3);
-    const nodePhases = new Float32Array(TOTAL_NODES);
-    const nodeGridCoords = new Float32Array(TOTAL_NODES * 2);
-
-    // Precalculate Symmetrical Rectangular Grid Intersections
+    const positions = new Float32Array(TOTAL * 3);
+    const rands = new Float32Array(TOTAL);
+    let idx = 0;
     for (let r = 0; r < ROWS; r++) {
-      const y = ORIGIN_Y + r * DY;
-      const normY = r / (ROWS - 1);
-
+      const z = Z_FAR + (Z_NEAR - Z_FAR) * (r / (ROWS - 1));
       for (let c = 0; c < COLS; c++) {
-        const x = ORIGIN_X + c * DX;
-        const normX = c / (COLS - 1);
-
-        const nodeIdx = r * COLS + c;
-        const i3 = nodeIdx * 3;
-        const i2 = nodeIdx * 2;
-
-        // Subtle concave curvature in deep Z space for immersive perspective depth
-        const distFromCenter = Math.sqrt(Math.pow(normX - 0.5, 2) + Math.pow(normY - 0.5, 2));
-        const z = -0.5 * Math.pow(distFromCenter * 1.6, 1.4);
-
-        nodePositions[i3] = x;
-        nodePositions[i3 + 1] = y;
-        nodePositions[i3 + 2] = z;
-
-        nodePhases[nodeIdx] = (c * 0.25) + (r * 0.35);
-        nodeGridCoords[i2] = normX;
-        nodeGridCoords[i2 + 1] = normY;
+        positions[idx * 3] = -X_HALF + 2 * X_HALF * (c / (COLS - 1));
+        positions[idx * 3 + 1] = 0;
+        positions[idx * 3 + 2] = z;
+        rands[idx] = Math.random();
+        idx++;
       }
     }
 
-    // Nodes BufferGeometry
-    const nodesGeometry = new THREE.BufferGeometry();
-    nodesGeometry.setAttribute('position', new THREE.BufferAttribute(nodePositions, 3));
-    nodesGeometry.setAttribute('aPhase', new THREE.BufferAttribute(nodePhases, 1));
-    nodesGeometry.setAttribute('aGridCoord', new THREE.BufferAttribute(nodeGridCoords, 2));
+    const dotsGeometry = new THREE.BufferGeometry();
+    dotsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    dotsGeometry.setAttribute('aRand', new THREE.BufferAttribute(rands, 1));
 
-    const uMouse = new THREE.Vector2(0, 0);
+    const uMouse = new THREE.Vector3(0, 0, -3);
 
-    const nodesMaterial = new THREE.ShaderMaterial({
-      vertexShader: nodeVertexShader,
-      fragmentShader: nodeFragmentShader,
+    const dotsMaterial = new THREE.ShaderMaterial({
+      vertexShader: dotsVertexShader,
+      fragmentShader: dotsFragmentShader,
       uniforms: {
         uTime: { value: 0 },
         uMouse: { value: uMouse },
-        uBaseSize: { value: 1.0 },
+        uBaseSize: { value: 1.55 },
         uPixelRatio: { value: pixelRatio },
-        uColorCyan: { value: new THREE.Color(0x38bdf8) },
-        uColorAzure: { value: new THREE.Color(0x60a5fa) },
-        uColorSlate: { value: new THREE.Color(0x1e3a5f) },
-        uColorWhite: { value: new THREE.Color(0xffffff) },
+        uFade: { value: 0 },
+        uDeep: { value: new THREE.Color(0x172554) },
+        uAzure: { value: new THREE.Color(0x3b82f6) },
+        uCyan: { value: new THREE.Color(0x38bdf8) },
+        uWhite: { value: new THREE.Color(0xffffff) },
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
+    scene.add(new THREE.Points(dotsGeometry, dotsMaterial));
 
-    const dewdropPoints = new THREE.Points(nodesGeometry, nodesMaterial);
-    gridGroup.add(dewdropPoints);
-
-    // ==========================================
-    // 5. RECT GRID MESH FILAMENTS (8 SUBDIVISIONS PER SEGMENT)
-    // ==========================================
-    // 8 Subdivisions ensure perfectly smooth, continuous curvature with zero jagged kinks
-    const SUB_DIV = 8;
-
-    const horizontalArcs = ROWS * (COLS - 1);
-    const verticalArcs = COLS * (ROWS - 1);
-    const totalSegments = (horizontalArcs + verticalArcs) * SUB_DIV;
-
-    const linePositions = new Float32Array(totalSegments * 2 * 3);
-    const lineIndices = new Float32Array(totalSegments * 2);
-
-    let segCursor = 0;
-    let lineCounter = 0;
-
-    const writeLineSegment = (
-      p1x: number, p1y: number, p1z: number,
-      p2x: number, p2y: number, p2z: number,
-      t1: number, t2: number,
-      lineIdx: number
-    ) => {
-      const pIdx = segCursor * 6;
-      const aIdx = segCursor * 2;
-
-      // Smoothly interpolated subsegment points
-      linePositions[pIdx] = (1.0 - t1) * p1x + t1 * p2x;
-      linePositions[pIdx + 1] = (1.0 - t1) * p1y + t1 * p2y;
-      linePositions[pIdx + 2] = (1.0 - t1) * p1z + t1 * p2z;
-
-      linePositions[pIdx + 3] = (1.0 - t2) * p1x + t2 * p2x;
-      linePositions[pIdx + 4] = (1.0 - t2) * p1y + t2 * p2y;
-      linePositions[pIdx + 5] = (1.0 - t2) * p1z + t2 * p2z;
-
-      lineIndices[aIdx] = lineIdx;
-      lineIndices[aIdx + 1] = lineIdx;
-
-      segCursor++;
-    };
-
-    // A. Horizontal Grid Lines (Connecting (c, r) -> (c+1, r))
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS - 1; c++) {
-        const n1_3 = (r * COLS + c) * 3;
-        const n2_3 = (r * COLS + (c + 1)) * 3;
-
-        const p1x = nodePositions[n1_3];
-        const p1y = nodePositions[n1_3 + 1];
-        const p1z = nodePositions[n1_3 + 2];
-
-        const p2x = nodePositions[n2_3];
-        const p2y = nodePositions[n2_3 + 1];
-        const p2z = nodePositions[n2_3 + 2];
-
-        for (let sub = 0; sub < SUB_DIV; sub++) {
-          const t1 = sub / SUB_DIV;
-          const t2 = (sub + 1) / SUB_DIV;
-          writeLineSegment(p1x, p1y, p1z, p2x, p2y, p2z, t1, t2, lineCounter);
-        }
-        lineCounter++;
-      }
+    // 4. غبار نجمي عائم فوق الحقل (طبقة عمق علوية)
+    const DUST_COUNT = 90;
+    const dustPositions = new Float32Array(DUST_COUNT * 3);
+    const dustPhases = new Float32Array(DUST_COUNT);
+    for (let s = 0; s < DUST_COUNT; s++) {
+      dustPositions[s * 3] = (Math.random() - 0.5) * 26;
+      dustPositions[s * 3 + 1] = 0.6 + Math.random() * 2.8;
+      dustPositions[s * 3 + 2] = -9 + Math.random() * 12;
+      dustPhases[s] = Math.random() * Math.PI * 2;
     }
+    const dustGeometry = new THREE.BufferGeometry();
+    dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+    dustGeometry.setAttribute('aPhase', new THREE.BufferAttribute(dustPhases, 1));
 
-    // B. Vertical Grid Lines (Connecting (c, r) -> (c, r+1))
-    for (let c = 0; c < COLS; c++) {
-      for (let r = 0; r < ROWS - 1; r++) {
-        const n1_3 = (r * COLS + c) * 3;
-        const n2_3 = ((r + 1) * COLS + c) * 3;
-
-        const p1x = nodePositions[n1_3];
-        const p1y = nodePositions[n1_3 + 1];
-        const p1z = nodePositions[n1_3 + 2];
-
-        const p2x = nodePositions[n2_3];
-        const p2y = nodePositions[n2_3 + 1];
-        const p2z = nodePositions[n2_3 + 2];
-
-        for (let sub = 0; sub < SUB_DIV; sub++) {
-          const t1 = sub / SUB_DIV;
-          const t2 = (sub + 1) / SUB_DIV;
-          writeLineSegment(p1x, p1y, p1z, p2x, p2y, p2z, t1, t2, lineCounter);
-        }
-        lineCounter++;
-      }
-    }
-
-    // Upload Baked Mesh to GPU
-    const linesGeometry = new THREE.BufferGeometry();
-    linesGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
-    linesGeometry.setAttribute('aLineIndex', new THREE.BufferAttribute(lineIndices, 1));
-
-    const linesMaterial = new THREE.ShaderMaterial({
-      vertexShader: lineVertexShader,
-      fragmentShader: lineFragmentShader,
+    const dustMaterial = new THREE.ShaderMaterial({
+      vertexShader: dustVertexShader,
+      fragmentShader: dustFragmentShader,
       uniforms: {
         uTime: { value: 0 },
-        uMouse: { value: uMouse },
-        uColorCyan: { value: new THREE.Color(0x38bdf8) },
-        uColorAzure: { value: new THREE.Color(0x60a5fa) },
-        uColorSlate: { value: new THREE.Color(0x1e3a5f) },
-        uColorWhite: { value: new THREE.Color(0xffffff) },
+        uPixelRatio: { value: pixelRatio },
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
+    scene.add(new THREE.Points(dustGeometry, dustMaterial));
 
-    const gridLines = new THREE.LineSegments(linesGeometry, linesMaterial);
-    gridGroup.add(gridLines);
-
-    // ==========================================
-    // 6. SILKY ORGANIC POINTER INTERACTION
-    // ==========================================
+    // 5. إسقاط المؤشر على مستوى الحقل (Ray ⟂ Plane) لهالة دقيقة الموضع
+    const raycaster = new THREE.Raycaster();
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const ndc = new THREE.Vector2();
+    const pointerNDC = new THREE.Vector2();
+    const hitPoint = new THREE.Vector3();
+    const glowTarget = new THREE.Vector3(0, 0, -3);
     let hasPointer = false;
-    let targetMouseX = 0;
-    let targetMouseY = 0;
-    let currentMouseX = 0;
-    let currentMouseY = 0;
 
     const onPointerMove = (e: PointerEvent) => {
-      hasPointer = true;
       const rect = container.getBoundingClientRect();
-      const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      targetMouseX = ndcX * 7.5;
-      targetMouseY = ndcY * 4.5;
+      if (rect.width === 0 || rect.height === 0) return;
+      ndc.set(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -(((e.clientY - rect.top) / rect.height) * 2 - 1)
+      );
+      pointerNDC.copy(ndc);
+      raycaster.setFromCamera(ndc, camera);
+      if (raycaster.ray.intersectPlane(groundPlane, hitPoint)) {
+        glowTarget.copy(hitPoint);
+        hasPointer = true;
+      }
     };
 
     const onPointerLeave = () => {
@@ -375,25 +285,21 @@ export function Hero3DScene() {
     };
 
     window.addEventListener('pointermove', onPointerMove, { passive: true });
-    window.addEventListener('pointerleave', onPointerLeave, { passive: true });
+    window.addEventListener('pointerleave', onPointerLeave);
     window.addEventListener('blur', onPointerLeave);
 
-    // ==========================================
-    // 7. PRECISE RESIZE OBSERVER
-    // ==========================================
+    // 7. Resize + Intersection Observer
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        if (width === 0 || height === 0) return;
+        if (width === 0 || height === 0) continue;
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
         renderer.setSize(width, height);
-        nodesMaterial.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 1.5);
       }
     });
     resizeObserver.observe(container);
 
-    // Visibility Observer
     let isVisible = true;
     const visibilityObserver = new IntersectionObserver(
       (entries) => {
@@ -405,49 +311,51 @@ export function Hero3DScene() {
     );
     visibilityObserver.observe(container);
 
-    // ==========================================
-    // 8. PURE GPU-DRIVEN ANIMATION LOOP (0% CPU)
-    // ==========================================
+    // 8. حلقة رسم نظيفة مدفوعة بالـ GPU
     let animationFrameId: number;
     const clock = new THREE.Clock();
+    const parallax = new THREE.Vector2(0, 0);
 
     const animate = () => {
+      if (prefersReducedMotion) {
+        // لقطة ساكنة واحدة — صفر استهلاك GPU مستمر
+        dotsMaterial.uniforms.uTime.value = 8;
+        dotsMaterial.uniforms.uFade.value = 1;
+        dustMaterial.uniforms.uTime.value = 8;
+        renderer.render(scene, camera);
+        return;
+      }
+
       animationFrameId = requestAnimationFrame(animate);
       if (!isVisible) return;
 
-      const delta = clock.getDelta();
-      const elapsed = clock.getElapsedTime();
-      const speedMult = prefersReducedMotion ? 0.25 : 1.0;
-      const timeVal = elapsed * speedMult;
+      const delta = Math.min(clock.getDelta(), 0.05);
+      const t = clock.getElapsedTime();
 
-      // When user is not interacting, smoothly drift along a calm ambient orbit
+      // مسار محوري هادئ عند عدم وجود مؤشر
       if (!hasPointer) {
-        targetMouseX = Math.sin(timeVal * 0.35) * 2.2;
-        targetMouseY = Math.cos(timeVal * 0.25) * 1.2;
+        glowTarget.set(Math.sin(t * 0.32) * 4.5, 0, Math.cos(t * 0.24) * 2.5 - 3);
       }
+      const follow = 1 - Math.exp(-4.0 * delta);
+      uMouse.lerp(glowTarget, follow);
 
-      // Smooth exponential damping across 60Hz, 120Hz, 144Hz displays
-      const lerpFactor = 1.0 - Math.exp(-4.5 * delta);
-      currentMouseX += (targetMouseX - currentMouseX) * lerpFactor;
-      currentMouseY += (targetMouseY - currentMouseY) * lerpFactor;
+      dotsMaterial.uniforms.uTime.value = t;
+      dotsMaterial.uniforms.uFade.value = Math.min(1, dotsMaterial.uniforms.uFade.value + delta * 0.4);
+      dustMaterial.uniforms.uTime.value = t;
 
-      // Subtle, tranquil 3D parallax tilt (relaxing depth, never nauseating)
-      gridGroup.rotation.y = currentMouseX * 0.012;
-      gridGroup.rotation.x = -currentMouseY * 0.008;
-
-      // Update uniforms smoothly
-      nodesMaterial.uniforms.uTime.value = timeVal;
-      nodesMaterial.uniforms.uMouse.value.set(currentMouseX, currentMouseY);
-
-      linesMaterial.uniforms.uTime.value = timeVal;
-      linesMaterial.uniforms.uMouse.value.set(currentMouseX, currentMouseY);
+      // Parallax ناعم للكاميرا يتبع المؤشر بتخميد أسي
+      const pf = 1 - Math.exp(-2.2 * delta);
+      parallax.x += (pointerNDC.x * 0.65 - parallax.x) * pf;
+      parallax.y += (pointerNDC.y * 0.35 - parallax.y) * pf;
+      camera.position.set(CAM_BASE.x + parallax.x, CAM_BASE.y + parallax.y, CAM_BASE.z);
+      camera.lookAt(CAM_LOOK);
 
       renderer.render(scene, camera);
     };
 
     animate();
 
-    // 9. Clean Lifecycle Tear Down
+    // 8. تفريغ الموارد كاملاً عند الإتلاف
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('pointermove', onPointerMove);
@@ -456,10 +364,10 @@ export function Hero3DScene() {
       resizeObserver.disconnect();
       visibilityObserver.disconnect();
 
-      nodesGeometry.dispose();
-      nodesMaterial.dispose();
-      linesGeometry.dispose();
-      linesMaterial.dispose();
+      dotsGeometry.dispose();
+      dotsMaterial.dispose();
+      dustGeometry.dispose();
+      dustMaterial.dispose();
       renderer.dispose();
 
       if (renderer.domElement && container.contains(renderer.domElement)) {

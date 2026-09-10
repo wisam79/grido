@@ -35,10 +35,9 @@ const GUARANTEES = [
 
 interface PricingSectionProps {
   currency?: CurrencyCode;
-  onCurrencyChange?: (c: CurrencyCode) => void;
 }
 
-export function PricingSection({ currency = 'IQD', onCurrencyChange }: PricingSectionProps) {
+export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
   const currentCurr = CURRENCIES[currency] || CURRENCIES.IQD;
 
   return (
@@ -58,28 +57,8 @@ export function PricingSection({ currency = 'IQD', onCurrencyChange }: PricingSe
             لا اشتراكات شهرية ولا تكاليف خفية — ترخيص دائم لكافة أجهزتك.
           </p>
 
-          {/* Currency Switcher Pill Bar */}
-          {onCurrencyChange && (
-            <div className="inline-flex items-center gap-1.5 p-1 rounded-xl bg-[#1E1E1E] border border-[#2C2C2C] shadow-sm">
-              {(['IQD', 'SAR', 'USD'] as CurrencyCode[]).map((c) => {
-                const isActive = currency === c;
-                return (
-                  <button
-                    key={c}
-                    onClick={() => onCurrencyChange(c)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-[#3b82f6] text-white shadow-sm'
-                        : 'text-[#9E9E9E] hover:text-white hover:bg-white/[0.04]'
-                    }`}
-                    aria-pressed={isActive}
-                  >
-                    {CURRENCIES[c].label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {/* مبدّل العملة موحّد في حاسبة التوفير (#roi) أعلى الصفحة —
+              إبقاء مبدّل ثانٍ هنا كان يشتت (مبدلان لنفس الغرض في صفحة واحدة) */}
         </div>
 
         {/* 2-Column Balanced Pricing Layout */}
@@ -100,7 +79,7 @@ export function PricingSection({ currency = 'IQD', onCurrencyChange }: PricingSe
                   {[1, 2, 3, 4, 5].map((s) => (
                     <Star key={s} className="w-3.5 h-3.5 fill-current" />
                   ))}
-                  <span className="text-xs text-[#9E9E9E] ms-1 font-semibold">4.9/5 تقييم الاستوديوهات</span>
+                  <span className="text-xs text-[#9E9E9E] ms-1 font-semibold">مرضي عنه استوديوهات مُعتمِدة — <a href="#testimonials" className="text-[#60a5fa] hover:underline">اقرأ تجاربهم</a></span>
                 </div>
 
                 <h3 className="text-2xl font-black text-white mb-1">Grido Studio</h3>
