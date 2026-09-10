@@ -24,8 +24,8 @@ const STAGE_SEQUENCE: WorkflowStage[] = ['detect', 'isolate', 'print'];
 const STAGE_DURATION_MS = 3000;
 
   const AI_TOOLS = [
-    { icon: Sparkles, label: 'عزل', stage: 'isolate' as WorkflowStage, running: 'جاري العزل ...' },
     { icon: UserSquare, label: 'تأطير', stage: 'detect' as WorkflowStage, running: 'جاري التأطير ...' },
+    { icon: Sparkles, label: 'عزل', stage: 'isolate' as WorkflowStage, running: 'جاري العزل ...' },
     { icon: Wand2, label: 'ترميم', stage: 'print' as WorkflowStage, running: 'جاري التجهيز ...' },
   ];
 
@@ -33,6 +33,7 @@ export function AppMockup() {
   const [activePreset, setActivePreset] = useState<MockupPreset>(MOCKUP_PRESETS[0]);
   const [isZoomed, setIsZoomed] = useState(false);
   const [stage, setStage] = useState<WorkflowStage>('detect');
+  const [timerCycle, setTimerCycle] = useState(0);
   const [litSheets, setLitSheets] = useState(0);
   const zoomOpenerRef = useRef<HTMLButtonElement | null>(null);
   const version = useAppVersion();
@@ -47,7 +48,7 @@ export function AppMockup() {
       });
     }, STAGE_DURATION_MS);
     return () => window.clearInterval(stageTimer);
-  }, []);
+  }, [timerCycle]);
 
   // ملء خلايا الورقة بتسلسل هادئ وسلس خلال مرحلة الطباعة
   useEffect(() => {
@@ -61,9 +62,15 @@ export function AppMockup() {
     return () => window.clearInterval(sheetTimer);
   }, [stage]);
 
+  const handleStageClick = useCallback((newStage: WorkflowStage) => {
+    setStage(newStage);
+    setTimerCycle((c) => c + 1);
+  }, []);
+
   const selectPreset = useCallback((preset: MockupPreset) => {
     setActivePreset(preset);
     setStage('detect');
+    setTimerCycle((c) => c + 1);
   }, []);
 
   // a11y: إغلاق الـ Lightbox بـ Escape + قفل تمرير الخلفية + استعادة التركيز
@@ -96,18 +103,18 @@ export function AppMockup() {
   return (
     <div className="relative w-full max-w-6xl mx-auto">
       {/* ==================== App Window (bg-background #141414) ==================== */}
-      <div className="relative h-[580px] sm:h-[620px] lg:h-[640px] rounded-2xl border border-[#333333] bg-[#141414] shadow-[0_24px_70px_rgba(0,0,0,0.85),0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden transition-all duration-300 flex flex-col select-none">
+      <div className="relative h-[490px] xs:h-[530px] sm:h-[600px] lg:h-[640px] rounded-2xl border border-[#333333] bg-[#141414] shadow-[0_24px_70px_rgba(0,0,0,0.85),0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden transition-all duration-300 flex flex-col select-none">
 
-        {/* ==================== Title Bar (h-10, bg-sidebar #1A1A1A) ==================== */}
-        <div className="h-10 shrink-0 bg-[#1A1A1A]/95 backdrop-blur-xl border-b border-[#333] px-3.5 flex items-center justify-between" dir="rtl">
+        {/* ==================== Title Bar (h-9 sm:h-10, bg-sidebar #1A1A1A) ==================== */}
+        <div className="h-9 sm:h-10 shrink-0 bg-[#1A1A1A]/95 backdrop-blur-xl border-b border-[#333] px-2.5 sm:px-3.5 flex items-center justify-between" dir="rtl">
           {/* Right: Logo + Menu */}
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] ring-2 ring-[#3b82f6]/20" />
               <span className="text-xs font-black font-mono tracking-wider text-white">GRIDO</span>
               <span className="text-[10px] font-mono text-[#777] ml-0.5">{displayVersion}</span>
             </div>
-            <div className="w-px h-4 bg-[#333]/60 mx-0.5" />
+            <div className="w-px h-4 bg-[#333]/60 mx-0.5 hidden sm:block" />
             {/* Menu Bar */}
             <div className="hidden md:flex items-center gap-0.5">
               {menuItems.map((item) => (
@@ -132,10 +139,10 @@ export function AppMockup() {
 
           {/* Left: Account + Theme + Toggles + Window Controls */}
           <div className="flex items-center gap-1 ml-0.5">
-            <div className="w-7 h-7 rounded-md flex items-center justify-center text-emerald-400 hover:bg-white/10 transition-colors" title="الحساب — فعال">
+            <div className="hidden sm:flex w-7 h-7 rounded-md items-center justify-center text-emerald-400 hover:bg-white/10 transition-colors" title="الحساب — فعال">
               <ShieldCheck className="w-4 h-4" />
             </div>
-            <div className="w-7 h-7 rounded-md flex items-center justify-center text-[#ccc] hover:bg-white/10 transition-colors" title="الوضع الليلي">
+            <div className="hidden sm:flex w-7 h-7 rounded-md items-center justify-center text-[#ccc] hover:bg-white/10 transition-colors" title="الوضع الليلي">
               <Moon className="w-4 h-4" />
             </div>
             <div className="hidden lg:flex w-7 h-7 rounded-md items-center justify-center text-[#ccc] hover:bg-white/10 transition-colors" title="لوحة القوالب (Ctrl+B)">
@@ -144,63 +151,68 @@ export function AppMockup() {
             <div className="hidden lg:flex w-7 h-7 rounded-md items-center justify-center text-[#ccc] hover:bg-white/10 transition-colors" title="لوحة الخصائص (Ctrl+Shift+B)">
               <SlidersHorizontal className="w-4 h-4" />
             </div>
-            <div className="w-px h-5 bg-[#333]/60 mx-1" />
-            <div className="w-7 h-7 rounded-md flex items-center justify-center text-[#ccc] hover:bg-white/10 transition-colors" title="تصغير">
-              <Minus className="w-3.5 h-3.5" />
-            </div>
-            <div className="w-7 h-7 rounded-md flex items-center justify-center text-[#ccc] hover:bg-white/10 transition-colors" title="تكبير">
-              <Square className="w-3 h-3" />
-            </div>
-            <div className="w-7 h-7 rounded-md flex items-center justify-center text-[#ccc] hover:bg-[#c42b1c] hover:text-white transition-colors" title="إغلاق">
-              <X className="w-3.5 h-3.5" />
+            <div className="hidden sm:block w-px h-5 bg-[#333]/60 mx-1" />
+            <div className="flex items-center gap-1">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-[#ccc] hover:bg-white/10 transition-colors" title="تصغير">
+                <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              </div>
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-[#ccc] hover:bg-white/10 transition-colors" title="تكبير">
+                <Square className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              </div>
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-[#ccc] hover:bg-[#c42b1c] hover:text-white transition-colors" title="إغلاق">
+                <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ==================== Toolbar (h-12, Zero Horizontal Scroll) ==================== */}
-        <div className="h-12 shrink-0 bg-[#1A1A1A]/95 backdrop-blur-xl border-b border-[#333] px-3 sm:px-4 flex items-center justify-between gap-2 overflow-hidden" dir="rtl">
+        {/* ==================== Toolbar (Responsive, Zero Horizontal Scroll) ==================== */}
+        <div className="h-10 sm:h-12 shrink-0 bg-[#1A1A1A]/95 backdrop-blur-xl border-b border-[#333] px-2.5 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-2 overflow-hidden" dir="rtl">
           {/* Right Group: FileOps + AI tools */}
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             {/* FileOps capsule */}
             <div className="flex items-center bg-[#242424]/50 border border-[#333]/60 p-0.5 rounded-lg shrink-0">
-              <div className="h-8 px-2.5 sm:px-3 rounded-md text-xs font-bold text-[#3b82f6] bg-[#3b82f6]/10 hover:bg-[#3b82f6]/20 flex items-center gap-1.5 cursor-default whitespace-nowrap">
-                <Plus className="w-3.5 h-3.5" />
-                <span>صورة</span>
+              <div className="h-7 sm:h-8 px-2 sm:px-3 rounded-md text-xs font-bold text-[#3b82f6] bg-[#3b82f6]/10 hover:bg-[#3b82f6]/20 flex items-center gap-1 sm:gap-1.5 cursor-default whitespace-nowrap">
+                <Plus className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden xs:inline">صورة</span>
               </div>
-              <div className="w-8 h-8 rounded-md text-xs text-[#ccc] hover:bg-white/10 flex items-center justify-center cursor-default shrink-0 transition-colors" title="دفعة صور">
+              <div className="hidden sm:flex w-8 h-8 rounded-md text-xs text-[#ccc] hover:bg-white/10 items-center justify-center cursor-default shrink-0 transition-colors" title="دفعة صور">
                 <Layers className="w-3.5 h-3.5" />
               </div>
-              <div className="w-8 h-8 rounded-md text-xs text-[#ccc] hover:bg-white/10 flex items-center justify-center cursor-default shrink-0 transition-colors" title="كاميرا الهاتف">
+              <div className="hidden sm:flex w-8 h-8 rounded-md text-xs text-[#ccc] hover:bg-white/10 items-center justify-center cursor-default shrink-0 transition-colors" title="كاميرا الهاتف">
                 <Camera className="w-3.5 h-3.5" />
               </div>
             </div>
 
-            <div className="w-px h-4 bg-[#333]/60 shrink-0" />
+            <div className="w-px h-4 bg-[#333]/60 shrink-0 hidden xs:block" />
 
-            {/* AI tools — تتفعل تباعاً مع المرحلة */}
+            {/* AI tools — تتفعل تباعاً مع المرحلة وتستجيب للنقر مباشرة */}
             <div className="flex items-center gap-1 shrink-0">
               {AI_TOOLS.map(({ icon: Icon, label, stage: toolStage, running }) => {
                 const isRunning = stage === toolStage;
                 const isDone = STAGE_SEQUENCE.indexOf(stage) > STAGE_SEQUENCE.indexOf(toolStage);
                 return (
-                  <div
+                  <button
                     key={label}
+                    onClick={() => handleStageClick(toolStage)}
                     title={isRunning ? running : label}
-                    className={`h-8 px-2.5 sm:px-3 rounded-md text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all duration-300 whitespace-nowrap ${
+                    className={`h-7 sm:h-8 rounded-md text-xs font-semibold flex items-center gap-1 sm:gap-1.5 shrink-0 transition-all duration-300 cursor-pointer ${
                       isRunning
-                        ? 'bg-[#3b82f6] text-white shadow-md shadow-[#3b82f6]/30'
+                        ? 'px-2 sm:px-3 bg-[#3b82f6] text-white shadow-md shadow-[#3b82f6]/30'
                         : isDone
-                          ? 'border border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
-                          : 'border border-[#3b82f6]/60 bg-[#3b82f6]/5 text-[#60a5fa] hover:bg-[#3b82f6]/10'
+                          ? 'w-7 sm:w-auto px-0 sm:px-2.5 border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 justify-center'
+                          : 'w-7 sm:w-auto px-0 sm:px-2.5 border border-[#3b82f6]/50 bg-[#3b82f6]/5 text-[#60a5fa] hover:bg-[#3b82f6]/10 justify-center'
                     }`}
                   >
                     {isDone ? (
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                     ) : (
-                      <Icon className={`w-3.5 h-3.5 ${isRunning ? 'animate-spin' : ''}`} />
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isRunning ? 'animate-spin' : ''}`} />
                     )}
-                    <span>{isRunning ? running : label}</span>
-                  </div>
+                    <span className={isRunning ? 'inline' : 'hidden sm:inline'}>
+                      {isRunning ? running : label}
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -219,7 +231,7 @@ export function AppMockup() {
           </div>
 
           {/* Left Group: Template Info + Save/Print/Export capsule */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Template Info chip */}
             <div className="hidden xl:flex items-center gap-2 text-xs bg-[#242424]/40 border border-[#333]/40 rounded-md px-2.5 py-1 shrink-0">
               <span className="font-bold text-white">{activePreset.name}</span>
@@ -228,25 +240,47 @@ export function AppMockup() {
 
             {/* Save/Print/Export capsule */}
             <div className="flex items-center bg-[#242424] border border-[#333] p-0.5 rounded-lg shrink-0">
-              <div className="w-8 h-8 rounded-md text-[#ccc] hover:bg-white/10 flex items-center justify-center cursor-default transition-colors shrink-0" title="حفظ">
+              <div className="hidden sm:flex w-8 h-8 rounded-md text-[#ccc] hover:bg-white/10 items-center justify-center cursor-default transition-colors shrink-0" title="حفظ">
                 <Save className="w-3.5 h-3.5" />
               </div>
-              <div className="w-8 h-8 rounded-md text-[#ccc] hover:bg-white/10 flex items-center justify-center cursor-default transition-colors shrink-0" title="طباعة">
+              <div className="hidden sm:flex w-8 h-8 rounded-md text-[#ccc] hover:bg-white/10 items-center justify-center cursor-default transition-colors shrink-0" title="طباعة">
                 <Printer className="w-3.5 h-3.5" />
               </div>
               <div
-                className={`h-8 px-3 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-default ${
+                className={`h-7 sm:h-8 px-2.5 sm:px-3 rounded-md text-xs font-bold flex items-center gap-1 sm:gap-1.5 transition-all whitespace-nowrap cursor-default ${
                   stage === 'print'
                     ? 'bg-[#2563eb] text-white ring-2 ring-[#60a5fa] shadow-lg shadow-[#2563eb]/50 animate-pulse'
                     : 'bg-[#3b82f6] text-white hover:bg-[#2563eb]'
                 }`}
                 title="تصدير صورة"
               >
-                <ArrowUpRight className={`w-3.5 h-3.5 ${stage === 'print' ? 'animate-bounce' : ''}`} />
+                <ArrowUpRight className={`w-3.5 h-3.5 shrink-0 ${stage === 'print' ? 'animate-bounce' : ''}`} />
                 <span>تصدير</span>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Mobile & Tablet Presets Bar — تمكين مستخدم الهاتف من التبديل بين القوالب بسلاسة */}
+        <div className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-[#171717] border-b border-[#2d2d2d] overflow-x-auto no-scrollbar shrink-0" dir="rtl">
+          <span className="text-[10px] font-bold text-[#777] shrink-0 ml-1">القالب:</span>
+          {MOCKUP_PRESETS.map((preset) => {
+            const isActive = activePreset.id === preset.id;
+            return (
+              <button
+                key={preset.id}
+                onClick={() => selectPreset(preset)}
+                className={`h-6.5 px-2.5 rounded-md text-[11px] font-semibold shrink-0 transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? 'bg-[#3b82f6] text-white shadow-sm shadow-[#3b82f6]/30 font-bold'
+                    : 'bg-[#222] text-[#aaa] hover:text-white border border-[#333]'
+                }`}
+              >
+                <span>{preset.name}</span>
+                <span className="text-[9px] font-mono opacity-75" dir="ltr">{preset.dimensions}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* ==================== Main 3-Panel Layout ==================== */}
@@ -321,12 +355,12 @@ export function AppMockup() {
           {/* ===== Center: Canvas Workspace ===== */}
           <div className="flex-1 flex flex-col min-w-0 bg-[#1b1b1b]">
             {/* Ruler — بدون تكرار الصفر مع نقطة بداية محددة */}
-            <div className="h-5 shrink-0 bg-[#1A1A1A] border-b border-[#333] relative overflow-hidden" dir="ltr">
+            <div className="h-4.5 sm:h-5 shrink-0 bg-[#1A1A1A] border-b border-[#333] relative overflow-hidden" dir="ltr">
               {/* Origin zero highlighted */}
               <div className="absolute left-0 inset-y-0 w-6 bg-[#3b82f6]/15 border-r border-[#3b82f6] flex items-center justify-center z-10">
                 <span className="text-[8px] font-mono font-bold text-[#60a5fa]">0</span>
               </div>
-              <div className="absolute inset-0 flex items-center pl-8 gap-6 sm:gap-8">
+              <div className="absolute inset-0 flex items-center pl-8 gap-5 sm:gap-8">
                 {(isA4Sheet ? [5, 10, 15, 20, 25, 30] : [2, 4, 6, 8, 10, 12, 14, 15]).map((cm) => (
                   <div key={cm} className="flex items-center gap-1.5 shrink-0">
                     <div className="w-px h-1.5 bg-[#555]" />
@@ -338,7 +372,7 @@ export function AppMockup() {
 
             {/* Paper canvas area */}
             <div
-              className="flex-1 relative overflow-hidden flex items-center justify-center p-4 sm:p-6"
+              className="flex-1 relative overflow-hidden flex flex-col items-center justify-center p-2 xs:p-3 sm:p-6"
               style={{ backgroundColor: '#181818' }}
             >
               {/* subtle workspace grid */}
@@ -350,12 +384,33 @@ export function AppMockup() {
                 }}
               />
 
+              {/* Interactive Stage Stepper Pill (Visible across mobile & desktop) */}
+              <div className="mb-2 sm:mb-3 z-20 flex items-center gap-1 sm:gap-1.5 p-1 rounded-full bg-[#161616]/90 backdrop-blur-md border border-[#333] shadow-md" dir="rtl">
+                {AI_TOOLS.map(({ icon: Icon, label, stage: toolStage }) => {
+                  const isRunning = stage === toolStage;
+                  return (
+                    <button
+                      key={toolStage}
+                      onClick={() => handleStageClick(toolStage)}
+                      className={`h-5.5 sm:h-6 px-2.5 sm:px-3 rounded-full text-[10px] sm:text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                        isRunning
+                          ? 'bg-[#3b82f6] text-white shadow-sm shadow-[#3b82f6]/40 font-bold'
+                          : 'text-[#888] hover:text-white'
+                      }`}
+                    >
+                      <Icon className="w-3 h-3 shrink-0" />
+                      <span>{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Photo Paper Card — مقاس 10×15 سم (150×100 mm) لطباعة 8 صور هوية 35×45 مم بدون أي قص */}
               <div
-                className={`relative rounded-[3px] border border-black/30 shadow-2xl shadow-black/80 bg-white overflow-hidden select-none transition-all duration-300 ${
+                className={`relative rounded-[3px] border border-black/30 shadow-2xl shadow-black/80 bg-white overflow-hidden select-none transition-all duration-300 max-w-full ${
                   isA4Sheet
-                    ? 'w-[210px] sm:w-[240px] xl:w-[260px] aspect-[210/297]'
-                    : 'w-[290px] sm:w-[340px] xl:w-[375px] aspect-[15/10]'
+                    ? 'w-[180px] xs:w-[205px] sm:w-[240px] xl:w-[260px] aspect-[210/297]'
+                    : 'w-[245px] xs:w-[280px] sm:w-[340px] xl:w-[375px] aspect-[15/10]'
                 }`}
               >
                 {/* خطوط القص الشبكية الإرشادية الدقيقة (0.5mm) */}
@@ -425,9 +480,11 @@ export function AppMockup() {
                         draggable={false}
                       />
 
-                      {/* معالم التأطير الذكية ICAO على الصورة النشطة في طور الكشف */}
+                      {/* معالم التأطير الذكية ICAO مع شعاع ليزر المسح في طور الكشف */}
                       {isSelected && stage === 'detect' && (
-                        <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                          {/* شعاع ليزر المسح الضوئي الأزرق */}
+                          <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#60a5fa] to-transparent shadow-[0_0_8px_#3b82f6] animate-mockup-laser z-20" />
                           {/* خط مستوى العينين البيومتري القياسي */}
                           <div className="absolute top-[38%] inset-x-0 border-t border-[#3b82f6]/85 border-dashed" />
                           {/* خط قاعدة الذقن */}
@@ -437,6 +494,16 @@ export function AppMockup() {
                           {/* مقابض زوايا التركيز */}
                           <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-[#3b82f6]" />
                           <div className="absolute -bottom-0.5 -left-0.5 w-1.5 h-1.5 bg-[#3b82f6]" />
+                        </div>
+                      )}
+
+                      {/* إشارة نجاح العزل الفوري في طور العزل */}
+                      {isSelected && stage === 'isolate' && (
+                        <div className="absolute inset-0 pointer-events-none">
+                          <div className="absolute inset-0 border border-emerald-500/60 rounded-[1.5px] z-20" />
+                          <div className="absolute top-1 right-1 bg-emerald-500 text-white rounded-full p-0.5 shadow-md z-20 animate-fadeIn">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -562,14 +629,14 @@ export function AppMockup() {
           </aside>
         </div>
 
-        {/* ==================== Bottom Deck (h-10) ==================== */}
-        <div className="h-10 shrink-0 bg-[#1A1A1A] border-t border-[#333] px-3.5 sm:px-4 flex items-center justify-between gap-2" dir="rtl">
+        {/* ==================== Bottom Deck (Responsive) ==================== */}
+        <div className="h-9 sm:h-10 shrink-0 bg-[#1A1A1A] border-t border-[#333] px-2.5 sm:px-4 flex items-center justify-between gap-2" dir="rtl">
           {/* Right: paper info with dir=ltr on dimensions */}
-          <div className="flex items-center gap-2 h-7.5 px-3 rounded-lg bg-[#242424]/90 border border-[#333] backdrop-blur-xl">
-            <span className="text-[11px] font-bold text-white">
-              {isA4Sheet ? 'A4' : 'ورقة 10×15'}
+          <div className="flex items-center gap-1.5 sm:gap-2 h-7 sm:h-7.5 px-2 sm:px-3 rounded-lg bg-[#242424]/90 border border-[#333] backdrop-blur-xl">
+            <span className="text-[10px] sm:text-[11px] font-bold text-white">
+              {isA4Sheet ? 'A4' : '10×15 سم'}
             </span>
-            <span className="text-[10px] font-mono text-[#888]" dir="ltr">
+            <span className="text-[9px] sm:text-[10px] font-mono text-[#888]" dir="ltr">
               {isA4Sheet ? '210 × 297 mm' : '150 × 100 mm'}
             </span>
           </div>
@@ -595,10 +662,10 @@ export function AppMockup() {
             ))}
           </div>
 
-          {/* Left: Zoom Controls & Fullscreen (matching real CanvasViewportDeck) */}
-          <div className="flex items-center gap-2">
-            {/* Zoom controls capsule in dir=ltr */}
-            <div className="flex items-center gap-0.5 h-7.5 px-1 rounded-lg bg-[#242424]/90 border border-[#333] backdrop-blur-xl" dir="ltr">
+          {/* Left: Zoom Controls & Fullscreen */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Zoom controls capsule in dir=ltr (hidden on small mobile, visible sm+) */}
+            <div className="hidden sm:flex items-center gap-0.5 h-7.5 px-1 rounded-lg bg-[#242424]/90 border border-[#333] backdrop-blur-xl" dir="ltr">
               <div className="w-6 h-6 rounded flex items-center justify-center text-[#888] hover:text-white hover:bg-white/10 transition-colors cursor-default" title="تصغير">
                 <ZoomOut className="w-3.5 h-3.5" />
               </div>
@@ -606,16 +673,19 @@ export function AppMockup() {
               <div className="w-6 h-6 rounded flex items-center justify-center text-[#888] hover:text-white hover:bg-white/10 transition-colors cursor-default" title="تكبير">
                 <ZoomIn className="w-3.5 h-3.5" />
               </div>
-              <button
-                ref={zoomOpenerRef}
-                onClick={() => setIsZoomed(true)}
-                className="w-6 h-6 rounded flex items-center justify-center text-[#3b82f6] hover:bg-[#3b82f6]/20 transition-colors cursor-pointer"
-                title="عرض الواجهة الفعلية بدقة كاملة"
-                aria-label="عرض الواجهة الفعلية"
-              >
-                <Expand className="w-3.5 h-3.5" />
-              </button>
             </div>
+
+            {/* Fullscreen Expand CTA Button — متاح للموبايل والديسكتوب */}
+            <button
+              ref={zoomOpenerRef}
+              onClick={() => setIsZoomed(true)}
+              className="h-7 sm:h-7.5 px-2 sm:px-2.5 rounded-lg bg-[#242424]/90 border border-[#333] hover:border-[#3b82f6]/50 text-[#60a5fa] hover:bg-[#3b82f6]/10 flex items-center gap-1 text-[10px] sm:text-xs font-semibold transition-all cursor-pointer"
+              title="عرض الواجهة الفعلية بدقة كاملة"
+              aria-label="عرض الواجهة الفعلية"
+            >
+              <Expand className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">الواجهة الفعلية</span>
+            </button>
 
             {/* Offline badge */}
             <div className="hidden md:flex items-center gap-1.5 h-7.5 px-2.5 rounded-lg bg-[#242424]/90 border border-[#333] backdrop-blur-xl">

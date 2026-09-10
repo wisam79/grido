@@ -529,3 +529,12 @@ html {
 .animate-mockup-pulse {
   animation: mockup-glow-pulse 2s infinite ease-in-out;
 }
+
+/* Hide scrollbar for clean horizontal mobile strips */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
