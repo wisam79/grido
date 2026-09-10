@@ -136,19 +136,10 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
 
   const size = menuSize || { w: 190, h: 280 };
 
-  let maxRight = window.innerWidth - 8;
-  let maxBottom = window.innerHeight - 8;
-  let minLeft = 8;
-  let minTop = 8;
-
-  const canvasArea = document.getElementById("canvas-area");
-  if (canvasArea) {
-    const rect = canvasArea.getBoundingClientRect();
-    maxRight = Math.min(maxRight, rect.right);
-    maxBottom = Math.min(maxBottom, rect.bottom);
-    minLeft = Math.max(minLeft, rect.left);
-    minTop = Math.max(minTop, rect.top);
-  }
+  const maxRight = window.innerWidth - 8;
+  const maxBottom = window.innerHeight - 8;
+  const minLeft = 8;
+  const minTop = 8;
 
   let left = position.x;
   let top = position.y;

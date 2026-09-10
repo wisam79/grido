@@ -34,7 +34,7 @@ const anchorToCompass = (anchor: string): string => {
     case "bottom-left": return "sw";
     case "bottom-center": return "s";
     case "bottom-right": return "se";
-    default: return "se";
+    default: return "";
   }
 };
 
@@ -215,6 +215,11 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           const transformer = trRef.current;
           const node = transformer?.nodes()?.[0];
           if (!transformer || !node || selectedIds.length !== 1) return newBox;
+          const anchor = transformer.getActiveAnchor();
+          if (anchor === "rotater" || !anchor) return newBox;
+          const handle = anchorToCompass(anchor);
+          if (!handle) return newBox;
+
           const rotation = Math.abs(node.rotation() % 360);
           if (rotation > 0.5 && rotation < 359.5) return newBox;
 
@@ -288,9 +293,6 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           const relR = (R0 + (newBox.x + newBox.width - cBox.x - cBox.width) / unitX) / canvasWidth;
           const relB = (B0 + (newBox.y + newBox.height - cBox.y - cBox.height) / unitY) / canvasHeight;
 
-          const anchor = transformer.getActiveAnchor();
-          const handle = anchorToCompass(anchor || "");
-
           const thresholdX = 8 / (canvasWidth * stageScale);
           const thresholdY = 8 / (canvasHeight * stageScale);
 
@@ -308,10 +310,48 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           const snappedT = result.y;
           const snappedB = result.y + result.h;
 
-          const boxL = cBox.x + (snappedL * canvasWidth - L0) * unitX;
-          const boxR = cBox.x + cBox.width + (snappedR * canvasWidth - R0) * unitX;
-          const boxT = cBox.y + (snappedT * canvasHeight - T0) * unitY;
-          const boxB = cBox.y + cBox.height + (snappedB * canvasHeight - B0) * unitY;
+          let boxL = cBox.x + (snappedL * canvasWidth - L0) * unitX;
+          let boxR = cBox.x + cBox.width + (snappedR * canvasWidth - R0) * unitX;
+          let boxT = cBox.y + (snappedT * canvasHeight - T0) * unitY;
+          let boxB = cBox.y + cBox.height + (snappedB * canvasHeight - B0) * unitY;
+
+          // 🛡️ الحفاظ على نسبة العرض للارتفاع عند التحجيم من الزوايا بمحاذاة مغناطيسية
+          const isCorner = handle === "nw" || handle === "ne" || handle === "se" || handle === "sw";
+          const oldAspect = Math.abs(oldBox.width / (oldBox.height || 1));
+          const inputAspect = Math.abs(newBox.width / (newBox.height || 1));
+          const shouldPreserveRatio = isCorner && Math.abs(inputAspect - oldAspect) < 0.05 && oldAspect > 0.001;
+
+          if (shouldPreserveRatio) {
+            const relW = relR - relL;
+            const relH = relB - relT;
+            const snappedHoriz = Math.abs(result.w - relW) > 0.0001 || Math.abs(result.x - relL) > 0.0001;
+            const snappedVert = Math.abs(result.h - relH) > 0.0001 || Math.abs(result.y - relT) > 0.0001;
+
+            let finalW = boxR - boxL;
+            let finalH = boxB - boxT;
+
+            if (snappedHoriz && !snappedVert) {
+              finalH = finalW / oldAspect;
+              if (handle.includes("n")) boxT = boxB - finalH;
+              else boxB = boxT + finalH;
+            } else if (snappedVert && !snappedHoriz) {
+              finalW = finalH * oldAspect;
+              if (handle.includes("w")) boxL = boxR - finalW;
+              else boxR = boxL + finalW;
+            } else if (snappedHoriz && snappedVert) {
+              const diffX = Math.abs(result.w - relW);
+              const diffY = Math.abs(result.h - relH);
+              if (diffX <= diffY) {
+                finalH = finalW / oldAspect;
+                if (handle.includes("n")) boxT = boxB - finalH;
+                else boxB = boxT + finalH;
+              } else {
+                finalW = finalH * oldAspect;
+                if (handle.includes("w")) boxL = boxR - finalW;
+                else boxR = boxL + finalW;
+              }
+            }
+          }
 
           if (setActiveGuides) {
             const prev = prevResizeGuidesRef.current;

@@ -162,11 +162,6 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
 
     return () => {
       isCurrent = false;
-      if (!imageCache.has(cacheKey)) {
-        img.onload = null;
-        img.onerror = null;
-        img.src = "";
-      }
     };
   }, [src, crossOrigin]);
 

@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { 
+  Group as KonvaGroup,
   Rect as KonvaRect, 
   Ellipse as KonvaEllipse, 
   Line as KonvaLine, 
@@ -73,17 +74,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     }
   }, [elementRef, element.opacity, element.flipX, element.flipY]);
 
-  const shapeProps = {
-    x: flipped ? (element.x + element.width) * canvasWidth : element.x * canvasWidth,
-    y: flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight,
-    width: w,
-    height: h,
-    scaleX: flipped ? -1 : 1,
-    scaleY: flippedY ? -1 : 1,
-    rotation: element.rotation,
-    opacity: element.opacity,
-    visible: element.visible !== false,
-    id: element.id,
+  const commonVisualProps = {
     perfectDrawEnabled: false,
     globalCompositeOperation: (element.globalCompositeOperation as GlobalCompositeOperation | undefined) || "source-over",
     shadowColor: element.shadowColor,
@@ -91,11 +82,6 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     shadowOffsetX: element.shadowOffsetX || 0,
     shadowOffsetY: element.shadowOffsetY || 0,
     shadowOpacity: element.shadowOpacity ?? 0,
-    cornerRadius: element.cornerRadius || 0,
-    onMouseDown: onMouseDown,
-    onTouchStart: onTouchStart,
-    onClick: onClick,
-    onTap: onTap,
     ...getFillProps(element, w, h),
     stroke: element.shape === "line" 
       ? (element.stroke || element.fill || gradientStart()) 
@@ -103,75 +89,101 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     strokeWidth: element.shape === "line" 
       ? (element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4) 
       : (element.strokeWidth || 0),
-    draggable: !element.locked && isSelected,
-    onDragStart,
-    dragBoundFunc,
-    onDragMove,
-    onDragEnd,
   };
 
-  if (element.shape === "ellipse") {
-    return (
-      <KonvaEllipse
-        {...shapeProps}
-        ref={elementRef as unknown as React.Ref<Konva.Ellipse>}
-        radiusX={w / 2}
-        radiusY={h / 2}
-        offsetX={-w / 2}
-        offsetY={-h / 2}
-      />
-    );
-  }
+  const renderShapeGeometry = () => {
+    if (element.shape === "ellipse") {
+      return (
+        <KonvaEllipse
+          {...commonVisualProps}
+          x={w / 2}
+          y={h / 2}
+          radiusX={w / 2}
+          radiusY={h / 2}
+        />
+      );
+    }
 
-  if (element.shape === "line") {
-    const strokeW = element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4;
-    const lineH = Math.max(h, strokeW, 16);
-    return (
-      <KonvaLine
-        {...shapeProps}
-        ref={elementRef as unknown as React.Ref<Konva.Line>}
-        height={lineH}
-        points={[0, lineH / 2, w, lineH / 2]}
-        hitStrokeWidth={Math.max(30, strokeW + 20)}
-      />
-    );
-  }
+    if (element.shape === "line") {
+      const strokeW = element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4;
+      const lineH = Math.max(h, strokeW, 16);
+      return (
+        <KonvaLine
+          {...commonVisualProps}
+          x={0}
+          y={0}
+          height={lineH}
+          points={[0, lineH / 2, w, lineH / 2]}
+          hitStrokeWidth={Math.max(30, strokeW + 20)}
+        />
+      );
+    }
 
-  if (element.shape === "star") {
-    return (
-      <KonvaStar
-        {...shapeProps}
-        ref={elementRef as unknown as React.Ref<Konva.Star>}
-        numPoints={5}
-        innerRadius={Math.min(w, h) / 4}
-        outerRadius={Math.min(w, h) / 2}
-        offsetX={-w / 2}
-        offsetY={-h / 2}
-      />
-    );
-  }
+    if (element.shape === "star") {
+      return (
+        <KonvaStar
+          {...commonVisualProps}
+          x={w / 2}
+          y={h / 2}
+          numPoints={5}
+          innerRadius={Math.min(w, h) / 4}
+          outerRadius={Math.min(w, h) / 2}
+        />
+      );
+    }
 
-  if (element.shape === "path") {
-    // قياس المسار المتجه ليملأ صندوق العنصر (المسارات بإطارات مرجعية مختلفة الأحجام)
-    const def = VECTOR_SHAPES.find((s) => s.path === element.svgPath);
-    const vbW = def?.viewBox.w || 24;
-    const vbH = def?.viewBox.h || 24;
+    if (element.shape === "path") {
+      const def = VECTOR_SHAPES.find((s) => s.path === element.svgPath);
+      const vbW = def?.viewBox.w || 24;
+      const vbH = def?.viewBox.h || 24;
+      return (
+        <KonvaPath
+          {...commonVisualProps}
+          x={0}
+          y={0}
+          data={element.svgPath || ""}
+          scaleX={w / vbW}
+          scaleY={h / vbH}
+        />
+      );
+    }
+
     return (
-      <KonvaPath
-        {...shapeProps}
-        ref={elementRef as unknown as React.Ref<Konva.Path>}
-        data={element.svgPath || ""}
-        scaleX={(flipped ? -1 : 1) * (w / vbW)}
-        scaleY={(flippedY ? -1 : 1) * (h / vbH)}
+      <KonvaRect
+        {...commonVisualProps}
+        x={0}
+        y={0}
+        width={w}
+        height={h}
+        cornerRadius={element.radius || 0}
       />
     );
-  }
+  };
 
   return (
-    <KonvaRect
-      {...shapeProps}
-      ref={elementRef as unknown as React.Ref<Konva.Rect>}
-      cornerRadius={element.radius || 0}
-    />
+    <KonvaGroup
+      ref={elementRef as unknown as React.Ref<Konva.Group>}
+      x={flipped ? (element.x + element.width) * canvasWidth : element.x * canvasWidth}
+      y={flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight}
+      width={w}
+      height={h}
+      scaleX={flipped ? -1 : 1}
+      scaleY={flippedY ? -1 : 1}
+      rotation={element.rotation}
+      opacity={element.opacity}
+      visible={element.visible !== false}
+      id={element.id}
+      draggable={!element.locked && isSelected}
+      onDragStart={onDragStart}
+      dragBoundFunc={dragBoundFunc}
+      onDragMove={onDragMove}
+      onDragEnd={onDragEnd}
+      onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
+      onClick={onClick}
+      onTap={onTap}
+    >
+      {renderShapeGeometry()}
+    </KonvaGroup>
   );
 }, propsAreEqual);

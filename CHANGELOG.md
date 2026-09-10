@@ -5,6 +5,32 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.33] - 2026-09-10
+
+### Fixed (Canvas Engine Stability & Interaction Fixes)
+
+**إدارة الذاكرة وتحميل الصور (Image Loading & Memory):**
+- **إصلاح تسريب Promise ميت في `useAsyncImage`**: عدم إلغاء مستمعات الأحداث في دالة التنظيف والاكتفاء بعلم `isCurrent = false` لضمان اكتمال أو رفض الطلبات وتنظيف `pendingLoads` دائماً لمنع تعليق الصور في حالة التحميل.
+
+**محاذاة وسحب العناصر (Drag & Snap Alignment):**
+- **تصحيح Snap العناصر المقلوبة في `useKonvaDrag`**: احتساب الحافة الحقيقية للعناصر المقلوبة (`flipX` و `flipY`) لمنع الإزاحة الخاطئة في حسابات المغناطيسية والخطوط الإرشادية.
+- **ضبط حدود الـ Margin Clamping**: معاملة الحواف المنطقية بالتساوي للعناصر العادية والمقلوبة.
+
+**محول التحجيم والدوران (Transformer & Geometry):**
+- **حماية مقبض الدوران (`rotater`)**: استبعاد مقبض الدوران صراحةً من إطلاق `boundBoxFunc` لـ snap التحجيم ومنع تشوه أبعاد العنصر أثناء تدويره.
+- **الحفاظ التلقائي على نسبة الأبعاد أثناء الـ Snap**: عند التحجيم بمحاذاة مغناطيسية على الزوايا مع تفعيل `keepRatio`، يتم ضبط البعد غير المنجذب تلقائياً بنسبة `oldBox` لمنع مط أو استطالة العنصر.
+
+**الأشكال المتجهة (Vector Shapes):**
+- **حماية مسارات SVG والخطوط من الانهيار**: تغليف `KonvaShapeElement` بمجموعة `<KonvaGroup ref={elementRef}>` ذرية لعزل مقاييس الـ ViewBox الداخلية (`scaleX = w / vbW`) وحمايتها من أنيميشن الدخول والتحويلات.
+
+**مسرح الكانفس والواجهة (Canvas Stage & Viewport):**
+- **منع تشوه المسرح في اللوحات العريضة أو الطويلة**: استبدال التقييد المستقل لـ `displayW` و `displayH` بتكبير نسبي متطابق يضمن ثبات `scaleX === scaleY` دائماً.
+- **إظهار خطوط السحب الإرشادية الحية**: نقل `dragGuideState` خارج حدود `overflow-hidden` الخاصة بورقة الكانفس ليبقى خط السحب وشارة القياس ظاهرين عند السحب من المساطر أو لخارج الورقة.
+- **تحسين تموضع قائمة السياق الموحدة**: الاعتماد على حدود نافذة المتصفح الفعلية بدلاً من تقييد القائمة المنبثقة بحدود الكانفس، مع إزالة طبقة الـ portal الزائدة.
+
+**إسقاط الملفات (Drag & Drop):**
+- **مسار بديل آمن لرفع الصور**: إضافة Fallback لاستخدام `dataUrl` مباشرة عند فشل أو غياب دالة Wails `SaveImageFromBase64`.
+
 ## [v1.3.32] - 2026-09-09
 
 ### Refined (UI Excellence Program — من خطة `docs/plans/ui-excellence-plan.md`)

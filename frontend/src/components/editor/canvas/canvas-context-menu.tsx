@@ -1,5 +1,4 @@
 import React from "react";
-import { createPortal } from "react-dom";
 import { ContextMenu, ContextMenuPosition, ContextMenuTarget } from "./context-menu";
 
 interface CanvasContextMenuProps {
@@ -18,12 +17,11 @@ export const CanvasContextMenu = React.memo(function CanvasContextMenu({
 }: CanvasContextMenuProps) {
   if (!contextMenu || printMode) return null;
 
-  return createPortal(
+  return (
     <ContextMenu
       position={contextMenu.position}
       target={contextMenu.target}
       onClose={onClose}
-    />,
-    document.body
+    />
   );
 });

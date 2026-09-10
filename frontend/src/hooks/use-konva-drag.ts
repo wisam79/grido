@@ -113,10 +113,15 @@ export function useKonvaDrag({
       }
     }
 
+    const flipped = element.flipX === true;
+    const flippedY = element.flipY === true;
+    const elW = element.width * canvasWidth;
+    const elH = element.height * canvasHeight;
+
     const snapEnabled = snapToGrid !== false && !altPressedRef.current;
     if (snapEnabled) {
-      const x = xLogical / canvasWidth;
-      const y = yLogical / canvasHeight;
+      const normX = flipped ? (xLogical - elW) / canvasWidth : xLogical / canvasWidth;
+      const normY = flippedY ? (yLogical - elH) / canvasHeight : yLogical / canvasHeight;
       // عتبة 8 بكسل شاشي مستقلة عن مقياس التكبير (Screen-pixel consistent threshold)
       const thresholdX = 8 / (canvasWidth * stageScale);
       const thresholdY = 8 / (canvasHeight * stageScale);
@@ -133,8 +138,8 @@ export function useKonvaDrag({
         ],
       };
       const snapResult = getSnapPositionsWithTargets(
-        x,
-        y,
+        normX,
+        normY,
         element.width,
         element.height,
         targets.vTargets,
@@ -144,15 +149,19 @@ export function useKonvaDrag({
         null,
         targets.gridSnap
       );
-      xLogical = snapResult.x * canvasWidth;
-      yLogical = snapResult.y * canvasHeight;
+      const snappedLeftPx = snapResult.x * canvasWidth;
+      const snappedTopPx = snapResult.y * canvasHeight;
+      xLogical = flipped ? snappedLeftPx + elW : snappedLeftPx;
+      yLogical = flippedY ? snappedTopPx + elH : snappedTopPx;
     }
 
-    const elW = element.width * canvasWidth;
-    const elH = element.height * canvasHeight;
     const margin = 0.25;
-    xLogical = Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - elW, xLogical));
-    yLogical = Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - elH, yLogical));
+    let leftPx = flipped ? xLogical - elW : xLogical;
+    let topPx = flippedY ? yLogical - elH : yLogical;
+    leftPx = Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - elW, leftPx));
+    topPx = Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - elH, topPx));
+    xLogical = flipped ? leftPx + elW : leftPx;
+    yLogical = flippedY ? topPx + elH : topPx;
     return { x: xLogical * stageScale, y: yLogical * stageScale };
   };
 
@@ -196,8 +205,12 @@ export function useKonvaDrag({
 
     const stage = e.target.getStage();
     const stageScale = stage?.scaleX() || 1;
-    const x = e.target.x() / canvasWidth;
-    const y = e.target.y() / canvasHeight;
+    const flipped = element.flipX === true;
+    const flippedY = element.flipY === true;
+    const rawX = e.target.x() / canvasWidth;
+    const rawY = e.target.y() / canvasHeight;
+    const x = flipped ? rawX - element.width : rawX;
+    const y = flippedY ? rawY - element.height : rawY;
     const thresholdX = 8 / (canvasWidth * stageScale);
     const thresholdY = 8 / (canvasHeight * stageScale);
     const targets = snapTargetsRef.current || {

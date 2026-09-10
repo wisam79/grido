@@ -43,8 +43,12 @@ export function useImageDrop(
               reader.onerror = () => reject(reader.error);
               reader.readAsDataURL(file);
             });
-            const src = await SaveImageFromBase64(dataUrl);
-            return src || null;
+            try {
+              const src = await SaveImageFromBase64(dataUrl);
+              return src || dataUrl;
+            } catch {
+              return dataUrl;
+            }
           } catch {
             return null;
           }

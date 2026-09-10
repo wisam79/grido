@@ -268,8 +268,14 @@ export const EditorCanvas = React.memo(React.forwardRef<
     displayH = maxH;
     displayW = displayH * aspect;
   }
-  displayW = Math.round(Math.max(100 * canvasZoom, displayW));
-  displayH = Math.round(Math.max(100 * canvasZoom, displayH));
+  const minDim = 100 * canvasZoom;
+  if (displayW < minDim || displayH < minDim) {
+    const minScale = Math.max(minDim / (displayW || 1), minDim / (displayH || 1));
+    displayW *= minScale;
+    displayH *= minScale;
+  }
+  displayW = Math.round(displayW);
+  displayH = Math.round(displayH);
 
   // 🧭 الخطوط الإرشادية (كانت مضمّنة في هذا الملف)
   const {
@@ -432,12 +438,19 @@ export const EditorCanvas = React.memo(React.forwardRef<
 
   const canvasArea = (
     <div
-      ref={innerRef}
-      id="canvas-area"
-      className="relative rounded-sm overflow-hidden border border-black/10 dark:border-white/10 transition-shadow duration-300 shadow-md shadow-black/15 hover:shadow-lg hover:shadow-black/20 fluent-specular"
+      className="relative shrink-0"
       style={{
         width: displayW,
         height: displayH,
+      }}
+    >
+      <div
+        ref={innerRef}
+        id="canvas-area"
+        className="relative w-full h-full rounded-sm overflow-hidden border border-black/10 dark:border-white/10 transition-shadow duration-300 shadow-md shadow-black/15 hover:shadow-lg hover:shadow-black/20 fluent-specular"
+        style={{
+          width: displayW,
+          height: displayH,
         backgroundColor,
         backgroundImage:
           backgroundColor === "transparent"
@@ -555,28 +568,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
         );
       })}
 
-      {/* 🧭 خط السحب الإرشادي المباشر (Live Dragging Guide Line) */}
-      {!printMode && dragGuideState && (
-        <div
-          className={`absolute z-(--z-canvas-guides) pointer-events-none select-none ${
-            dragGuideState.type === "h"
-              ? "left-0 right-0 h-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex items-center"
-              : "top-0 bottom-0 w-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex justify-center"
-          }`}
-          style={{
-            [dragGuideState.type === "h" ? "top" : "left"]: `${dragGuideState.pos * 100}%`,
-          }}
-        >
-          <div
-            className={`absolute flex items-center px-1.5 py-0.5 rounded bg-sky-600 text-white font-mono text-[10px] font-bold shadow-lg ${
-              dragGuideState.type === "h" ? "left-3 -top-5" : "top-3 left-2"
-            }`}
-          >
-            {formatGuideMeasurement(dragGuideState.pos, dragGuideState.type === "h", rulerUnit, widthMM, heightMM, canvasWidth, canvasHeight)}
-          </div>
-        </div>
-      )}
-
       {/* 🧭 خطوط المحاذاة الذكية أثناء التحريك (Smart Snap Alignment Guides) */}
       {!printMode && activeGuides.map((guide, idx) => {
         const isCenter = Math.abs(guide.coord - 0.5) < 0.005;
@@ -609,7 +600,30 @@ export const EditorCanvas = React.memo(React.forwardRef<
         setEditingTextId={setEditingTextId}
       />
     </div>
-  );
+
+    {/* 🧭 خط السحب الإرشادي المباشر (Live Dragging Guide Line) - طافٍ بحرية خارج حدود القص ليبقى مرئياً عند السحب من المساطر */}
+    {!printMode && dragGuideState && (
+      <div
+        className={`absolute z-(--z-canvas-guides) pointer-events-none select-none ${
+          dragGuideState.type === "h"
+            ? "left-0 right-0 h-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex items-center"
+            : "top-0 bottom-0 w-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex justify-center"
+        }`}
+        style={{
+          [dragGuideState.type === "h" ? "top" : "left"]: `${dragGuideState.pos * 100}%`,
+        }}
+      >
+        <div
+          className={`absolute flex items-center px-1.5 py-0.5 rounded bg-sky-600 text-white font-mono text-[10px] font-bold shadow-lg ${
+            dragGuideState.type === "h" ? "left-3 -top-5" : "top-3 left-2"
+          }`}
+        >
+          {formatGuideMeasurement(dragGuideState.pos, dragGuideState.type === "h", rulerUnit, widthMM, heightMM, canvasWidth, canvasHeight)}
+        </div>
+      </div>
+    )}
+  </div>
+);
 
   return (
     <div className="absolute inset-0 flex flex-col bg-muted/40 overflow-hidden select-none" dir="ltr">
