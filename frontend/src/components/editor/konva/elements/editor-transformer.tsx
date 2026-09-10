@@ -4,6 +4,7 @@ import Konva from "konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { getSnapPositionsWithTargets, SnapGuide, SnapTarget } from "@/lib/canvas/snap-utils";
+import { getElementPixelVisualBox, getElementVisualBox } from "@/lib/canvas/element-geometry";
 import {
   transformerPrimary, transformerStroke,
   transformerLocked, transformerLockedStroke,
@@ -97,6 +98,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       const rotation = Math.round(node.rotation() % 360);
       const normalizedRot = rotation < 0 ? rotation + 360 : rotation;
 
+      const vBox = getElementPixelVisualBox(nodeX, nodeY, nodeW, nodeH, rotation);
+
       // حساب الأبعاد بالملم (mm) للطباعة الاحترافية
       const wMM = Math.round((nodeW / canvasWidth) * (canvasWidth / dpi) * 25.4);
       const hMM = Math.round((nodeH / canvasHeight) * (canvasHeight / dpi) * 25.4);
@@ -104,8 +107,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       if (badgeRef.current && textRef.current) {
         badgeRef.current.visible(true);
         badgeRef.current.position({
-          x: nodeX + nodeW / 2,
-          y: nodeY - (28 / stageScale)
+          x: vBox.centerX,
+          y: vBox.minY - (28 / stageScale)
         });
         textRef.current.text(`${wMM} × ${hMM} mm ${normalizedRot > 0 ? `(${normalizedRot}°)` : ""}`);
         badgeRef.current.getLayer()?.batchDraw();
@@ -247,15 +250,16 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             ];
             for (const el of sortedElements) {
               if (selectedIds.includes(el.id)) continue;
+              const vBox = getElementVisualBox(el, canvasWidth, canvasHeight);
               vTargets.push(
-                { value: el.x, origin: "element" },
-                { value: el.x + el.width / 2, origin: "element" },
-                { value: el.x + el.width, origin: "element" }
+                { value: vBox.x, origin: "element" },
+                { value: vBox.centerX, origin: "element" },
+                { value: vBox.x + vBox.width, origin: "element" }
               );
               hTargets.push(
-                { value: el.y, origin: "element" },
-                { value: el.y + el.height / 2, origin: "element" },
-                { value: el.y + el.height, origin: "element" }
+                { value: vBox.y, origin: "element" },
+                { value: vBox.centerY, origin: "element" },
+                { value: vBox.y + vBox.height, origin: "element" }
               );
             }
             if (showUserGuides && userGuides) {

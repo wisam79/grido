@@ -24,7 +24,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   snapToGrid, 
   gridSize, 
   altPressedRef, 
-  shiftPressedRef,
+  shiftPressedRef, 
   onDblClick, 
   getKonvaNode 
 }: ElementProps) {
@@ -59,13 +59,13 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       node.scale({ x: 0.8, y: 0.8 });
       node.to({
         opacity: targetOpacity,
-        scaleX: element.flipX === true ? -1 : 1,
-        scaleY: element.flipY === true ? -1 : 1,
+        scaleX: 1,
+        scaleY: 1,
         duration: 0.28,
         easing: Konva.Easings.BackEaseOut
       });
     }
-  }, [elementRef, element.opacity, element.flipX, element.flipY, editingTextId, element.id]);
+  }, [elementRef, element.opacity, editingTextId, element.id]);
   
   // Ensure font and weight variants are loaded dynamically
   useEffect(() => {
@@ -78,21 +78,16 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const lastSetHeightRef = useRef<number | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+
   useEffect(() => {
-    const textNode = textRef.current;
-    if (textNode && typeof textNode.height === "function") {
-      const actualHeight = textNode.height() / canvasHeight;
-      if (lastSetHeightRef.current !== null && Math.abs(actualHeight - lastSetHeightRef.current) < 0.001) {
-        return;
-      }
-      if (Math.abs(actualHeight - element.height) > 0.005) {
+    if (!element.curve && textRef.current) {
+      const actualHeight = Math.max(0.01, textRef.current.height() / canvasHeight);
+      if (lastSetHeightRef.current === null || Math.abs(lastSetHeightRef.current - actualHeight) > 0.001) {
         lastSetHeightRef.current = actualHeight;
         onChangeRef.current({ height: actualHeight });
       }
     }
   }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, element.height, canvasHeight, element.curve,
-      // هذه الخصائص تغيّر الالتفاف والارتفاع الفعلي أيضاً — إغفالها كان يترك
-      // height في المخزن قديماً حتى يتغير حقل آخر (إصلاح Bug#14)
       element.lineHeight, element.letterSpacing, element.textTransform, element.arabicNumerals]);
 
   const flipped = element.flipX === true;
@@ -135,9 +130,8 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const bgBorderWidth = element.textBgBorderWidth || 0;
   const bgBorderColor = element.textBgBorderColor || undefined;
 
-  const sharedX = flipped ? (element.x + element.width) * stageCanvasWidth : element.x * stageCanvasWidth;
-  const sharedY = flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight;
-  const sharedScaleY = flippedY ? -1 : 1;
+  const nodeX = element.x * stageCanvasWidth;
+  const nodeY = element.y * canvasHeight;
   const sharedOpacity = editingTextId === element.id ? 0 : element.opacity;
 
   const hasCurve = typeof element.curve === "number" && element.curve !== 0;
@@ -145,12 +139,10 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   return (
     <Group
       ref={elementRef as unknown as React.Ref<Konva.Group>}
-      x={sharedX}
-      y={sharedY}
+      x={nodeX}
+      y={nodeY}
       width={w}
       height={h}
-      scaleX={flipped ? -1 : 1}
-      scaleY={sharedScaleY}
       rotation={element.rotation || 0}
       opacity={sharedOpacity}
       visible={element.visible !== false}
@@ -167,84 +159,95 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       onDblClick={onDblClick}
       onDblTap={onDblClick}
     >
-      {/* Hit area and background badge for seamless clicking and dragging */}
-      <KonvaRect
-        x={-bgPaddingX}
-        y={-bgPaddingY}
-        width={w + bgPaddingX * 2}
-        height={h + bgPaddingY * 2}
-        cornerRadius={bgRadius}
-        fill={hasBg ? element.textBgColor : "rgba(0,0,0,0.0001)"}
-        stroke={bgBorderWidth > 0 ? bgBorderColor : undefined}
-        strokeWidth={bgBorderWidth > 0 ? bgBorderWidth : undefined}
-        perfectDrawEnabled={false}
-      />
+      <Group
+        x={w / 2}
+        y={h / 2}
+        offsetX={w / 2}
+        offsetY={h / 2}
+        scaleX={flipped ? -1 : 1}
+        scaleY={flippedY ? -1 : 1}
+        width={w}
+        height={h}
+      >
+        {/* Hit area and background badge for seamless clicking and dragging */}
+        <KonvaRect
+          x={-bgPaddingX}
+          y={-bgPaddingY}
+          width={w + bgPaddingX * 2}
+          height={h + bgPaddingY * 2}
+          cornerRadius={bgRadius}
+          fill={hasBg ? element.textBgColor : "rgba(0,0,0,0.0001)"}
+          stroke={bgBorderWidth > 0 ? bgBorderColor : undefined}
+          strokeWidth={bgBorderWidth > 0 ? bgBorderWidth : undefined}
+          perfectDrawEnabled={false}
+        />
 
-      {hasCurve ? (
-        <KonvaShape
-          ref={textRef}
-          x={0}
-          y={0}
-          width={w}
-          height={h}
-          sceneFunc={(context) => {
-            const ctx = context._context;
-            drawCurvedText(ctx, {
-              text: renderText,
-              x: 0,
-              y: 0,
-              width: w,
-              height: h,
-              fontSize: element.fontSize || 16,
-              fontFamily: element.fontFamily || "Cairo, sans-serif",
-              fontWeight: element.fontWeight || 400,
-              fontStyle: element.fontStyle || "normal",
-              color: element.color || TEXT_COLOR_DEFAULT,
-              stroke: element.strokeWidth ? (element.stroke || TEXT_COLOR_DEFAULT) : undefined,
-              strokeWidth: element.strokeWidth || 0,
-              textAlign: element.textAlign || "center",
-              curve: element.curve || 0,
-              letterSpacing: effectiveLetterSpacing,
-            });
-          }}
-          shadowColor={element.shadowColor}
-          shadowBlur={element.shadowBlur || 0}
-          shadowOffsetX={element.shadowGlow ? 0 : (element.shadowOffsetX || 0)}
-          shadowOffsetY={element.shadowGlow ? 0 : (element.shadowOffsetY || 0)}
-          shadowOpacity={element.shadowOpacity ?? 0}
-          perfectDrawEnabled={false}
-        />
-      ) : (
-        <KonvaText
-          ref={textRef}
-          x={0}
-          y={0}
-          width={w}
-          text={renderText}
-          perfectDrawEnabled={false}
-          globalCompositeOperation={(element.globalCompositeOperation as GlobalCompositeOperation | undefined) || "source-over"}
-          shadowColor={element.shadowColor}
-          shadowBlur={element.shadowBlur || 0}
-          shadowOffsetX={element.shadowGlow ? 0 : (element.shadowOffsetX || 0)}
-          shadowOffsetY={element.shadowGlow ? 0 : (element.shadowOffsetY || 0)}
-          shadowOpacity={element.shadowOpacity ?? 0}
-          fontSize={element.fontSize || 16}
-          fontStyle={[
-            element.fontStyle === "italic" ? "italic" : "",
-            element.fontWeight ? String(element.fontWeight) : "400",
-          ].filter(Boolean).join(" ")}
-          {...getFillProps(element, w, h)}
-          fontFamily={element.fontFamily || "sans-serif"}
-          align={element.textAlign || "center"}
-          lineHeight={element.lineHeight ?? 1.2}
-          letterSpacing={effectiveLetterSpacing}
-          stroke={element.strokeWidth ? (element.stroke || TEXT_COLOR_DEFAULT) : undefined}
-          strokeWidth={element.strokeWidth || undefined}
-          textDecoration={element.textDecoration || ""}
-          wrap="word"
-          ellipsis={false}
-        />
-      )}
+        {hasCurve ? (
+          <KonvaShape
+            ref={textRef}
+            x={0}
+            y={0}
+            width={w}
+            height={h}
+            sceneFunc={(context) => {
+              const ctx = context._context;
+              drawCurvedText(ctx, {
+                text: renderText,
+                x: 0,
+                y: 0,
+                width: w,
+                height: h,
+                fontSize: element.fontSize || 16,
+                fontFamily: element.fontFamily || "Cairo, sans-serif",
+                fontWeight: element.fontWeight || 400,
+                fontStyle: element.fontStyle || "normal",
+                color: element.color || TEXT_COLOR_DEFAULT,
+                stroke: element.strokeWidth ? (element.stroke || TEXT_COLOR_DEFAULT) : undefined,
+                strokeWidth: element.strokeWidth || 0,
+                textAlign: element.textAlign || "center",
+                curve: element.curve || 0,
+                letterSpacing: effectiveLetterSpacing,
+              });
+            }}
+            shadowColor={element.shadowColor}
+            shadowBlur={element.shadowBlur || 0}
+            shadowOffsetX={element.shadowGlow ? 0 : (element.shadowOffsetX || 0)}
+            shadowOffsetY={element.shadowGlow ? 0 : (element.shadowOffsetY || 0)}
+            shadowOpacity={element.shadowOpacity ?? 0}
+            perfectDrawEnabled={false}
+          />
+        ) : (
+          <KonvaText
+            ref={textRef}
+            x={0}
+            y={0}
+            width={w}
+            text={renderText}
+            perfectDrawEnabled={false}
+            globalCompositeOperation={(element.globalCompositeOperation as GlobalCompositeOperation | undefined) || "source-over"}
+            shadowColor={element.shadowColor}
+            shadowBlur={element.shadowBlur || 0}
+            shadowOffsetX={element.shadowGlow ? 0 : (element.shadowOffsetX || 0)}
+            shadowOffsetY={element.shadowGlow ? 0 : (element.shadowOffsetY || 0)}
+            shadowOpacity={element.shadowOpacity ?? 0}
+            fontSize={element.fontSize || 16}
+            fontStyle={[
+              element.fontStyle === "italic" ? "italic" : "",
+              element.fontWeight ? String(element.fontWeight) : "400",
+            ].filter(Boolean).join(" ")}
+            {...getFillProps(element, w, h)}
+            fontFamily={element.fontFamily || "sans-serif"}
+            align={element.textAlign || "center"}
+            lineHeight={element.lineHeight ?? 1.2}
+            letterSpacing={effectiveLetterSpacing}
+            stroke={element.strokeWidth ? (element.stroke || TEXT_COLOR_DEFAULT) : undefined}
+            strokeWidth={element.strokeWidth || undefined}
+            textDecoration={element.textDecoration || ""}
+            wrap="word"
+            ellipsis={false}
+          />
+        )}
+      </Group>
     </Group>
   );
 }, propsAreEqual);

@@ -26,7 +26,7 @@ export const URLImage = React.memo(function URLImage({
   snapToGrid, 
   gridSize, 
   altPressedRef, 
-  shiftPressedRef,
+  shiftPressedRef, 
   getKonvaNode 
 }: ElementProps) {
   const element = _element as ImageElement;
@@ -61,13 +61,13 @@ export const URLImage = React.memo(function URLImage({
       node.scale({ x: 0.8, y: 0.8 });
       (node as unknown as { to: (cfg: Record<string, unknown>) => void }).to({
         opacity: targetOpacity,
-        scaleX: element.flipX === true ? -1 : 1,
-        scaleY: element.flipY === true ? -1 : 1,
+        scaleX: 1,
+        scaleY: 1,
         duration: 0.28,
         easing: Konva.Easings.BackEaseOut
       });
     }
-  }, [elementRef, element.opacity, element.flipX, element.flipY]);
+  }, [elementRef, element.opacity]);
 
   const { filters, filterProps } = React.useMemo(() => {
     const res = getKonvaFilters({
@@ -90,20 +90,18 @@ export const URLImage = React.memo(function URLImage({
 
   const flipped = element.flipX === true;
   const flippedY = element.flipY === true;
-  const nodeX = flipped ? (element.x + element.width) * canvasWidth : element.x * canvasWidth;
-  const nodeY = flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight;
+  const nodeX = element.x * canvasWidth;
+  const nodeY = element.y * canvasHeight;
   const nodeW = element.width * canvasWidth;
   const nodeH = element.height * canvasHeight;
 
   return (
-      <Group
-        ref={elementRef as unknown as React.Ref<Konva.Group>}
+    <Group
+      ref={elementRef as unknown as React.Ref<Konva.Group>}
       x={nodeX}
       y={nodeY}
       width={nodeW}
       height={nodeH}
-      scaleX={flipped ? -1 : 1}
-      scaleY={flippedY ? -1 : 1}
       rotation={element.rotation || 0}
       opacity={element.opacity}
       visible={element.visible !== false}
@@ -118,49 +116,60 @@ export const URLImage = React.memo(function URLImage({
       onClick={onClick}
       onTap={onTap}
     >
-      {element.bgColor && element.bgColor !== "transparent" && (
-        <Rect
-          x={0}
-          y={0}
-          width={nodeW}
-          height={nodeH}
-          fill={element.bgColor}
-          cornerRadius={element.cornerRadius || 0}
-          listening={false}
-        />
-      )}
-      <KonvaImage
-        ref={imageNodeRef as unknown as React.RefObject<Konva.Image>}
-        image={image}
-        x={0}
-        y={0}
+      <Group
+        x={nodeW / 2}
+        y={nodeH / 2}
+        offsetX={nodeW / 2}
+        offsetY={nodeH / 2}
+        scaleX={flipped ? -1 : 1}
+        scaleY={flippedY ? -1 : 1}
         width={nodeW}
         height={nodeH}
-        perfectDrawEnabled={false}
-        shadowColor={element.shadowColor}
-        shadowBlur={element.shadowBlur || 0}
-        shadowOffsetX={element.shadowOffsetX || 0}
-        shadowOffsetY={element.shadowOffsetY || 0}
-        shadowOpacity={element.shadowOpacity ?? 0}
-        cornerRadius={element.cornerRadius || 0}
-        filters={filters}
-        brightness={filterProps.brightness}
-        contrast={filterProps.contrast}
-        blurRadius={element.blur || 0}
-        saturation={filterProps.saturation}
-        sepiaRatio={filterProps.sepiaRatio}
-      />
-      {isEnhancing && (
-        <MagicAiScanner
-          targetNodeRef={elementRef}
+      >
+        {element.bgColor && element.bgColor !== "transparent" && (
+          <Rect
+            x={0}
+            y={0}
+            width={nodeW}
+            height={nodeH}
+            fill={element.bgColor}
+            cornerRadius={element.cornerRadius || 0}
+            listening={false}
+          />
+        )}
+        <KonvaImage
+          ref={imageNodeRef as unknown as React.RefObject<Konva.Image>}
+          image={image}
           x={0}
           y={0}
           width={nodeW}
           height={nodeH}
-          rotation={0}
+          perfectDrawEnabled={false}
+          shadowColor={element.shadowColor}
+          shadowBlur={element.shadowBlur || 0}
+          shadowOffsetX={element.shadowOffsetX || 0}
+          shadowOffsetY={element.shadowOffsetY || 0}
+          shadowOpacity={element.shadowOpacity ?? 0}
           cornerRadius={element.cornerRadius || 0}
+          filters={filters}
+          brightness={filterProps.brightness}
+          contrast={filterProps.contrast}
+          blurRadius={element.blur || 0}
+          saturation={filterProps.saturation}
+          sepiaRatio={filterProps.sepiaRatio}
         />
-      )}
+        {isEnhancing && (
+          <MagicAiScanner
+            targetNodeRef={elementRef}
+            x={0}
+            y={0}
+            width={nodeW}
+            height={nodeH}
+            rotation={0}
+            cornerRadius={element.cornerRadius || 0}
+          />
+        )}
+      </Group>
     </Group>
   );
 }, propsAreEqual);

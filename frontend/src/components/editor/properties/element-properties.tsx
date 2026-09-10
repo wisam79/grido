@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alignment-icons";
 import { SliderControl, PopoverColorPicker } from "./shared-controls";
 import { scaleElementDecorations } from "@/lib/canvas/scale-decorations";
+import { rotateElementAroundCenter } from "@/lib/canvas/element-geometry";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageStyleProperties, ImageAdjustProperties } from "./panels/image-properties";
@@ -366,7 +367,15 @@ export function ElementProperties({
                 max={180}
                 step={1}
                 unit="°"
-                onChange={(v) => onUpdate(element.id, { rotation: v })}
+                onChange={(v) => {
+                  const { canvasWidth, canvasHeight } = useEditorStore.getState();
+                  const newPos = rotateElementAroundCenter(element, v, canvasWidth, canvasHeight);
+                  onUpdate(element.id, {
+                    rotation: v,
+                    x: newPos.x,
+                    y: newPos.y,
+                  });
+                }}
                 onCommit={() => useEditorStore.getState().pushHistory()}
               />
               
@@ -375,7 +384,15 @@ export function ElementProperties({
                   variant="outline"
                   size="icon"
                   onClick={() => {
-                    onUpdate(element.id, { rotation: (element.rotation + 90) % 360 });
+                    const currentRot = element.rotation || 0;
+                    const nextRot = (currentRot + 90) % 360;
+                    const { canvasWidth, canvasHeight } = useEditorStore.getState();
+                    const newPos = rotateElementAroundCenter(element, nextRot, canvasWidth, canvasHeight);
+                    onUpdate(element.id, {
+                      rotation: nextRot,
+                      x: newPos.x,
+                      y: newPos.y,
+                    });
                     useEditorStore.getState().pushHistory();
                   }}
                   title="تدوير 90 درجة"

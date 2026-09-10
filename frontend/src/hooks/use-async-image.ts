@@ -162,6 +162,9 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
 
     return () => {
       isCurrent = false;
+      // 🛡️ لا نقوم بتصفير img.onload / img.onerror أو تفريغ img.src هنا،
+      // لضمان اكتمال الوعد في pendingLoads وحفظ الصورة في الكاش العالمي (imageCache)
+      // حتى عند إلغاء تركيب المكون (unmount)، مما يمنع تسريب وعود معلقة أو تجميد التحميل.
     };
   }, [src, crossOrigin]);
 

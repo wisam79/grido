@@ -59,8 +59,8 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   const flippedX = textEl.flipX === true;
   const flippedY = textEl.flipY === true;
 
-  const leftPx = flippedX ? (textEl.x + textEl.width) * displayW : textEl.x * displayW;
-  const topPx = flippedY ? (textEl.y + textEl.height) * displayH : textEl.y * displayH;
+  const leftPx = textEl.x * displayW;
+  const topPx = textEl.y * displayH;
   const widthPx = textEl.width * displayW;
   const minHeightPx = Math.max(30, textEl.height * displayH);
 
@@ -79,7 +79,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         left: `${leftPx}px`,
         top: `${topPx}px`,
         width: `${widthPx}px`,
-        transform: `rotate(${textEl.rotation || 0}deg) scale(${flippedX ? -1 : 1}, ${flippedY ? -1 : 1})`,
+        transform: `rotate(${textEl.rotation || 0}deg)`,
         transformOrigin: "top left",
       }}
     >
@@ -87,6 +87,8 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
         ref={textareaRef}
         className="w-full bg-transparent resize-none outline-none ring-0 m-0 border-0 transition-shadow duration-150 custom-scrollbar block"
         style={{
+          transform: `scale(${flippedX ? -1 : 1}, ${flippedY ? -1 : 1})`,
+          transformOrigin: "center",
           backgroundColor: bgColor,
           borderRadius: radiusPx > 0 ? `${radiusPx}px` : "4px",
           border: textEl.textBgBorderWidth ? `${textEl.textBgBorderWidth * scaleRatio}px solid ${textEl.textBgBorderColor || textEl.color || TEXT_COLOR_DEFAULT}` : undefined,

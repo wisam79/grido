@@ -2,6 +2,7 @@ import { StateCreator } from "zustand";
 import { CanvasElement, ShapeElement, ImageElement, TextElement } from "../types";
 import { uid } from "../../utils";
 import { computeSmartGridLayout } from "../../canvas/grid-layout-math";
+import { getElementVisualBox } from "../../canvas/element-geometry";
 import { TextPresetType, TEXT_PRESETS } from "../../templates";
 
 export type { TextPresetType };
@@ -732,10 +733,13 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const units = Array.from(unitMap.values());
     const isSingleUnit = units.length === 1;
 
-    let overallMinX = Math.min(...elementsToAlign.map(e => e.x));
-    let overallMaxX = Math.max(...elementsToAlign.map(e => e.x + e.width));
-    let overallMinY = Math.min(...elementsToAlign.map(e => e.y));
-    let overallMaxY = Math.max(...elementsToAlign.map(e => e.y + e.height));
+    const { canvasWidth, canvasHeight } = state;
+    const getBox = (e: CanvasElement) => getElementVisualBox(e, canvasWidth, canvasHeight);
+
+    let overallMinX = Math.min(...elementsToAlign.map(e => getBox(e).x));
+    let overallMaxX = Math.max(...elementsToAlign.map(e => { const b = getBox(e); return b.x + b.width; }));
+    let overallMinY = Math.min(...elementsToAlign.map(e => getBox(e).y));
+    let overallMaxY = Math.max(...elementsToAlign.map(e => { const b = getBox(e); return b.y + b.height; }));
 
     if (isSingleUnit) {
       // محاذاة الوحدة الواحدة بالنسبة لحدود الكانفس الكاملة (0..1)
@@ -751,10 +755,10 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
 
     units.forEach((unitElements) => {
-      const uMinX = Math.min(...unitElements.map(e => e.x));
-      const uMaxX = Math.max(...unitElements.map(e => e.x + e.width));
-      const uMinY = Math.min(...unitElements.map(e => e.y));
-      const uMaxY = Math.max(...unitElements.map(e => e.y + e.height));
+      const uMinX = Math.min(...unitElements.map(e => getBox(e).x));
+      const uMaxX = Math.max(...unitElements.map(e => { const b = getBox(e); return b.x + b.width; }));
+      const uMinY = Math.min(...unitElements.map(e => getBox(e).y));
+      const uMaxY = Math.max(...unitElements.map(e => { const b = getBox(e); return b.y + b.height; }));
       const uWidth = uMaxX - uMinX;
       const uHeight = uMaxY - uMinY;
 
@@ -803,6 +807,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const elementsToDistribute = state.elements.filter((e: CanvasElement) => targetIds.includes(e.id) && !e.locked);
     if (elementsToDistribute.length < 3) return;
 
+    const { canvasWidth, canvasHeight } = state;
+    const getBox = (e: CanvasElement) => getElementVisualBox(e, canvasWidth, canvasHeight);
+
     // تقسيم العناصر إلى وحدات ذرية (مجموعة متماسكة واحدة أو عنصر مفرد) —
     // التوزيع الفردي كان يشتت عناصر المجموعة الواحدة بين بقية العناصر
     const unitMap = new Map<string, CanvasElement[]>();
@@ -822,13 +829,16 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       maxY: number;
     }
 
-    const units: Unit[] = Array.from(unitMap.values()).map((unitElements) => ({
-      ids: unitElements.map((e) => e.id),
-      minX: Math.min(...unitElements.map((e) => e.x)),
-      minY: Math.min(...unitElements.map((e) => e.y)),
-      maxX: Math.max(...unitElements.map((e) => e.x + e.width)),
-      maxY: Math.max(...unitElements.map((e) => e.y + e.height)),
-    }));
+    const units: Unit[] = Array.from(unitMap.values()).map((unitElements) => {
+      const boxes = unitElements.map(e => getBox(e));
+      return {
+        ids: unitElements.map((e) => e.id),
+        minX: Math.min(...boxes.map(b => b.x)),
+        minY: Math.min(...boxes.map(b => b.y)),
+        maxX: Math.max(...boxes.map(b => b.x + b.width)),
+        maxY: Math.max(...boxes.map(b => b.y + b.height)),
+      };
+    });
 
     if (units.length < 3) return;
 

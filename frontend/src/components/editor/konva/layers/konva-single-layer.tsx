@@ -144,8 +144,6 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
 
                 const sx = node.scaleX();
                 const sy = node.scaleY();
-                const isNowFlipped = sx < 0;
-                const isNowFlippedY = sy < 0;
                 const absScaleX = Math.abs(sx);
                 const absScaleY = Math.abs(sy);
 
@@ -164,21 +162,26 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                 } else {
                   node.height(newH);
                 }
-                node.scaleX(isNowFlipped ? -1 : 1);
-                node.scaleY(isNowFlippedY ? -1 : 1);
+                // الحاوية الخارجية تحتفظ دائماً بمقياس قياسي موجب 1 (Canonical Positive Scale)
+                node.scaleX(1);
+                node.scaleY(1);
 
                 const newWidth = newW / canvasWidth;
                 const newHeight = newH / canvasHeight;
                 const rawX = node.x() / canvasWidth;
                 const rawY = node.y() / canvasHeight;
 
+                // إذا قام المستخدم بسحب المقبض لما بعد الصفر يعكس حالة القلب
+                const nextFlipX = sx < 0 ? !el.flipX : (el.flipX ?? false);
+                const nextFlipY = sy < 0 ? !el.flipY : (el.flipY ?? false);
+
                 const patch: Partial<CanvasElement> = {
-                  x: isNowFlipped ? rawX - newWidth : rawX,
-                  y: isNowFlippedY ? rawY - newHeight : rawY,
+                  x: rawX,
+                  y: rawY,
                   width: newWidth,
                   rotation: node.rotation(),
-                  flipX: isNowFlipped,
-                  flipY: isNowFlippedY,
+                  flipX: nextFlipX,
+                  flipY: nextFlipY,
                 };
 
                 if (el.type === "text") {

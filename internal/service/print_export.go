@@ -178,16 +178,23 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	// بلا تضمين Base64: توفير 25-60MB نص لكل صفحة عبر جسر IPC ومنع تجميد الواجهة.
 	// iframe بـ about:blank يرث origin الأب فالمسار المطلق يعمل. شبكة الأمان في
 	// الفرونت إند (img.decode + fallback timer + PrintNative) تغطي فشل التحميل.
+	//
+	// 🛡️ احتياط: إذا لم يكن الملف موجوداً على القرص (حالة نادرة بعد الحفظ مباشرة)
+	// نضمّنه Base64 عبر إعادة ترميز dc.Image() في الدالة المنادية. لكن هنا نقرأ من
+	// القرص فقط — إذا كان موجوداً نستخدم fileURI، وإلا نقرأ الملف لتضمينه Base64.
 	imageSrcForHTML := fileURI
-	if _, err := os.Stat(absImagePath); err != nil {
-		// 🛡️ احتياط فقط: الصورة لم تُحفظ على القرص — نضمّنها Base64 لتفادي صفحة فارغة
-		slog.Warn("print image missing on disk; falling back to inline base64", "path", absImagePath)
-		if imgData, err := os.ReadFile(absImagePath); err == nil && len(imgData) > 0 {
+	if _, statErr := os.Stat(absImagePath); statErr != nil {
+		slog.Warn("print image missing on disk; HTML will use file:// URI as last resort", "path", absImagePath, "error", statErr)
+		// الملف غير موجود — نبحث في مجلد Exports البديل (print_upload_*)
+		exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+		altPath := filepath.Join(exportsDir, htmlImageName)
+		if imgData, err := os.ReadFile(altPath); err == nil && len(imgData) > 0 {
 			mimeType := "image/png"
 			if strings.HasSuffix(strings.ToLower(htmlImageName), ".jpg") || strings.HasSuffix(strings.ToLower(htmlImageName), ".jpeg") {
 				mimeType = "image/jpeg"
 			}
 			imageSrcForHTML = fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(imgData))
+			slog.Info("print image found in Exports fallback dir", "altPath", altPath)
 		}
 	}
 

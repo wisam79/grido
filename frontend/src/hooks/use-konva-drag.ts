@@ -1,6 +1,7 @@
 import React from "react";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { getSnapPositionsWithTargets, SnapTarget, SnapGuide } from "@/lib/canvas/snap-utils";
+import { getElementPixelVisualBox, getElementVisualBox } from "@/lib/canvas/element-geometry";
 import { KonvaEventObject } from "konva/lib/Node";
 import type Konva from "konva";
 
@@ -55,12 +56,13 @@ export function useKonvaDrag({
     // حواف ومراكز كافة العناصر الأخرى غير المحددة
     for (const el of currentElements) {
       if (selectedIds.includes(el.id)) continue;
-      vTargets.push({ value: el.x, origin: "element" });
-      vTargets.push({ value: el.x + el.width / 2, origin: "element" });
-      vTargets.push({ value: el.x + el.width, origin: "element" });
-      hTargets.push({ value: el.y, origin: "element" });
-      hTargets.push({ value: el.y + el.height / 2, origin: "element" });
-      hTargets.push({ value: el.y + el.height, origin: "element" });
+      const vBox = getElementVisualBox(el, canvasWidth, canvasHeight);
+      vTargets.push({ value: vBox.x, origin: "element" });
+      vTargets.push({ value: vBox.centerX, origin: "element" });
+      vTargets.push({ value: vBox.x + vBox.width, origin: "element" });
+      hTargets.push({ value: vBox.y, origin: "element" });
+      hTargets.push({ value: vBox.centerY, origin: "element" });
+      hTargets.push({ value: vBox.y + vBox.height, origin: "element" });
     }
 
     // خطوط المساطر الإرشادية للمستخدم
@@ -113,15 +115,17 @@ export function useKonvaDrag({
       }
     }
 
-    const flipped = element.flipX === true;
-    const flippedY = element.flipY === true;
     const elW = element.width * canvasWidth;
     const elH = element.height * canvasHeight;
+    const vBox = getElementPixelVisualBox(xLogical, yLogical, elW, elH, element.rotation || 0);
 
     const snapEnabled = snapToGrid !== false && !altPressedRef.current;
     if (snapEnabled) {
-      const normX = flipped ? (xLogical - elW) / canvasWidth : xLogical / canvasWidth;
-      const normY = flippedY ? (yLogical - elH) / canvasHeight : yLogical / canvasHeight;
+      const normVisualX = vBox.minX / canvasWidth;
+      const normVisualY = vBox.minY / canvasHeight;
+      const normVisualW = vBox.width / canvasWidth;
+      const normVisualH = vBox.height / canvasHeight;
+
       // عتبة 8 بكسل شاشي مستقلة عن مقياس التكبير (Screen-pixel consistent threshold)
       const thresholdX = 8 / (canvasWidth * stageScale);
       const thresholdY = 8 / (canvasHeight * stageScale);
@@ -138,10 +142,10 @@ export function useKonvaDrag({
         ],
       };
       const snapResult = getSnapPositionsWithTargets(
-        normX,
-        normY,
-        element.width,
-        element.height,
+        normVisualX,
+        normVisualY,
+        normVisualW,
+        normVisualH,
         targets.vTargets,
         targets.hTargets,
         thresholdX,
@@ -149,19 +153,20 @@ export function useKonvaDrag({
         null,
         targets.gridSnap
       );
-      const snappedLeftPx = snapResult.x * canvasWidth;
-      const snappedTopPx = snapResult.y * canvasHeight;
-      xLogical = flipped ? snappedLeftPx + elW : snappedLeftPx;
-      yLogical = flippedY ? snappedTopPx + elH : snappedTopPx;
+      const snappedVisualX = snapResult.x * canvasWidth;
+      const snappedVisualY = snapResult.y * canvasHeight;
+      xLogical = snappedVisualX - vBox.offsetX;
+      yLogical = snappedVisualY - vBox.offsetY;
     }
 
     const margin = 0.25;
-    let leftPx = flipped ? xLogical - elW : xLogical;
-    let topPx = flippedY ? yLogical - elH : yLogical;
-    leftPx = Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - elW, leftPx));
-    topPx = Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - elH, topPx));
-    xLogical = flipped ? leftPx + elW : leftPx;
-    yLogical = flippedY ? topPx + elH : topPx;
+    const currentVisualX = xLogical + vBox.offsetX;
+    const currentVisualY = yLogical + vBox.offsetY;
+    const clampedVisualX = Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - vBox.width, currentVisualX));
+    const clampedVisualY = Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - vBox.height, currentVisualY));
+    xLogical = clampedVisualX - vBox.offsetX;
+    yLogical = clampedVisualY - vBox.offsetY;
+
     return { x: xLogical * stageScale, y: yLogical * stageScale };
   };
 
@@ -186,11 +191,16 @@ export function useKonvaDrag({
           if (followerEl?.locked) return;
           const fW = (followerEl?.width ?? element.width) * canvasWidth;
           const fH = (followerEl?.height ?? element.height) * canvasHeight;
-          node.x(Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - fW, nodeStart.x + dx)));
-          node.y(Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - fH, nodeStart.y + dy)));
+          const targetNodeX = nodeStart.x + dx;
+          const targetNodeY = nodeStart.y + dy;
+          const fBox = getElementPixelVisualBox(targetNodeX, targetNodeY, fW, fH, followerEl?.rotation || 0);
+          const clampedVisualX = Math.max(-canvasWidth * margin, Math.min(canvasWidth * (1 + margin) - fBox.width, fBox.minX));
+          const clampedVisualY = Math.max(-canvasHeight * margin, Math.min(canvasHeight * (1 + margin) - fBox.height, fBox.minY));
+          node.x(clampedVisualX - fBox.offsetX);
+          node.y(clampedVisualY - fBox.offsetY);
         }
       });
-      e.target.getLayer()?.batchDraw();
+      e.target.getLayer?.()?.batchDraw?.();
     }
 
     // 2. معالجة الخطوط الإرشادية والمحاذاة المغناطيسية
@@ -205,12 +215,15 @@ export function useKonvaDrag({
 
     const stage = e.target.getStage();
     const stageScale = stage?.scaleX() || 1;
-    const flipped = element.flipX === true;
-    const flippedY = element.flipY === true;
-    const rawX = e.target.x() / canvasWidth;
-    const rawY = e.target.y() / canvasHeight;
-    const x = flipped ? rawX - element.width : rawX;
-    const y = flippedY ? rawY - element.height : rawY;
+    const elW = element.width * canvasWidth;
+    const elH = element.height * canvasHeight;
+    const vBox = getElementPixelVisualBox(e.target.x(), e.target.y(), elW, elH, element.rotation || 0);
+
+    const normVisualX = vBox.minX / canvasWidth;
+    const normVisualY = vBox.minY / canvasHeight;
+    const normVisualW = vBox.width / canvasWidth;
+    const normVisualH = vBox.height / canvasHeight;
+
     const thresholdX = 8 / (canvasWidth * stageScale);
     const thresholdY = 8 / (canvasHeight * stageScale);
     const targets = snapTargetsRef.current || {
@@ -226,10 +239,10 @@ export function useKonvaDrag({
       ],
     };
     const snapResult = getSnapPositionsWithTargets(
-      x,
-      y,
-      element.width,
-      element.height,
+      normVisualX,
+      normVisualY,
+      normVisualW,
+      normVisualH,
       targets.vTargets,
       targets.hTargets,
       thresholdX,
@@ -274,16 +287,11 @@ export function useKonvaDrag({
       const patches = movableIds.map((id) => {
         const node = getKonvaNode(id);
         if (node) {
-          const el = currentElements.find((x) => x.id === id) || element;
-          const flipped = el.flipX === true;
-          const flippedY = el.flipY === true;
-          const rawX = node.x() / canvasWidth;
-          const rawY = node.y() / canvasHeight;
           return {
             id,
             patch: {
-              x: flipped ? rawX - el.width : rawX,
-              y: flippedY ? rawY - el.height : rawY,
+              x: node.x() / canvasWidth,
+              y: node.y() / canvasHeight,
             },
           };
         }

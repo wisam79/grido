@@ -30,7 +30,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   snapToGrid, 
   gridSize, 
   altPressedRef, 
-  shiftPressedRef,
+  shiftPressedRef, 
   getKonvaNode 
 }: ElementProps) {
   const element = _element as ShapeElement;
@@ -66,13 +66,13 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
       node.scale({ x: 0.8, y: 0.8 });
       (node as unknown as { to: (cfg: Record<string, unknown>) => void }).to({
         opacity: targetOpacity,
-        scaleX: element.flipX === true ? -1 : 1,
-        scaleY: element.flipY === true ? -1 : 1,
+        scaleX: 1,
+        scaleY: 1,
         duration: 0.28,
         easing: Konva.Easings.BackEaseOut
       });
     }
-  }, [elementRef, element.opacity, element.flipX, element.flipY]);
+  }, [elementRef, element.opacity]);
 
   const commonVisualProps = {
     perfectDrawEnabled: false,
@@ -163,12 +163,10 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   return (
     <KonvaGroup
       ref={elementRef as unknown as React.Ref<Konva.Group>}
-      x={flipped ? (element.x + element.width) * canvasWidth : element.x * canvasWidth}
-      y={flippedY ? (element.y + element.height) * canvasHeight : element.y * canvasHeight}
+      x={element.x * canvasWidth}
+      y={element.y * canvasHeight}
       width={w}
       height={h}
-      scaleX={flipped ? -1 : 1}
-      scaleY={flippedY ? -1 : 1}
       rotation={element.rotation}
       opacity={element.opacity}
       visible={element.visible !== false}
@@ -183,7 +181,18 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
       onClick={onClick}
       onTap={onTap}
     >
-      {renderShapeGeometry()}
+      <KonvaGroup
+        x={w / 2}
+        y={h / 2}
+        offsetX={w / 2}
+        offsetY={h / 2}
+        scaleX={flipped ? -1 : 1}
+        scaleY={flippedY ? -1 : 1}
+        width={w}
+        height={h}
+      >
+        {renderShapeGeometry()}
+      </KonvaGroup>
     </KonvaGroup>
   );
 }, propsAreEqual);

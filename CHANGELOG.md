@@ -5,6 +5,27 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.34] - 2026-09-10
+
+### Added (Rotated Element Geometry & Visual Box Alignment)
+
+**هندسة ومحاذاة العناصر الدوارة (Element Geometry & Rotated AABB):**
+- **حساب الصندوق المحيط المرئي الحقيقي (AABB)**: إضافة وحدة `element-geometry.ts` لحساب الحواف والمحيط المرئي الفعلي للعناصر الدوارة والمقلوبة في فضاء البكسل والفضاء المطبّع (0..1).
+- **التدوير المستقر حول المركز المرئي**: تطبيق `rotateElementAroundCenter` لمنع قفز العنصر أو انزياح موضعه عند تدويره من لوحة الخصائص أو شريط الأدوات السريع.
+- **محاذاة وتوزيع العناصر الدوارة في المتجر**: تحديث `alignSelectedElements` و `distributeSelectedElements` في `element-slice.ts` للاعتماد على الصندوق المحيط المرئي بدلاً من إحداثيات Konva غير الدوارة.
+- **تموضع الشريط السريع فوق العناصر الدوارة**: معايرة إحداثيات `QuickBar` في `quick-bar-element-section.tsx` على المركز والحافة العلوية المرئية للعنصر الدوار.
+
+### Fixed (Canvas Nodes, Print Fallbacks & Security Hardening)
+
+**عقد Konva وتحويلات القلب (Canonical Konva Scale & Flip Grouping):**
+- **توحيد المقياس الخارجي الإيجابي**: تثبيت مقياس الحاوية الخارجية دائماً عند `scaleX: 1, scaleY: 1` في عقد الصور (`image-node.tsx`) والنصوص (`text-node.tsx`) والأشكال (`shape-node.tsx`)، وحصر تحويل القلب (`flipX`/`flipY`) في مجموعة فرعية داخلية مركزية.
+- **استقرار المحول (Transformer)**: منع إزاحات التكبير المعكوسة عند سحب مقبض التحجيم لما بعد الصفر.
+
+**الطباعة ومعالجة الصور الخلفية (Print & Backend):**
+- **إصلاح المسار الاحتياطي في `print_export.go`**: البحث في مجلد `Exports` البديل عند تعذر وجود الصورة المباشرة على القرص لمنع الانهيار الصامت.
+- **حماية تدفق الرفع من الملفات الخبيثة في `main.go`**: استنشاق MIME صارم (`http.DetectContentType`) على أول 512 بايت لنقطة `/api/upload-print-image` ورفض أي محتوى غير صوري بـ `400 Bad Request`.
+- **توثيق استقرار كاش الصور في `use-async-image.ts`**: توثيق عدم تصفير المستمعات عند unmount لتفادي تسريب الوعود المعلقة في `pendingLoads`.
+
 ## [v1.3.33] - 2026-09-10
 
 ### Fixed (Canvas Engine Stability & Interaction Fixes)

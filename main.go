@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"encoding/json"
@@ -185,7 +186,7 @@ func main() {
 					return
 				}
 
-			// رفع صورة الطباعة المؤقتة كتيار ثنائي (Blob) بدل تمرير DataURL
+				// رفع صورة الطباعة المؤقتة كتيار ثنائي (Blob) بدل تمرير DataURL
 				// عملاقة عبر جسر IPC — تُخزَّن في Exports باسم print_upload_* وتُخدَم
 				// لاحقاً عبر /local-image/ (المصرح بها في معالج القراءة أدناه).
 				// 🚀 W-B: يلغي اتجاه IPC الصاعد 25-60MB نص Base64 لكل طباعة.
@@ -196,8 +197,24 @@ func main() {
 						return
 					}
 
+					// 🛡️ فحص MIME فعلي على أول 512 بايت — يمنع حفظ ملفات غير صور
+					// 60MB سقفاً — صورة A3 300DPI PNG قد تتجاوز 40MB
+					limitReader := io.LimitReader(r.Body, 60*1024*1024)
+					sniffBuf := make([]byte, 512)
+					n, sniffErr := io.ReadFull(limitReader, sniffBuf)
+					if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
+						http.Error(w, "Failed to read upload body", http.StatusBadRequest)
+						return
+					}
+					sniffBuf = sniffBuf[:n]
+					detectedMime := http.DetectContentType(sniffBuf)
+					if !strings.HasPrefix(detectedMime, "image/") {
+						http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
+						return
+					}
+
 					ext := ".png"
-					if ct := r.Header.Get("Content-Type"); strings.HasPrefix(ct, "image/jpeg") {
+					if strings.HasPrefix(detectedMime, "image/jpeg") {
 						ext = ".jpg"
 					}
 					// print_ prefix يجعل الملف مرئياً لـ /local-image/ ويشمله تنظيف 24h التلقائي
@@ -212,9 +229,9 @@ func main() {
 						return
 					}
 
-					// 60MB سقفاً — صورة A3 300DPI PNG قد تتجاوز 40MB
-					limitReader := io.LimitReader(r.Body, 60*1024*1024)
-					if _, err := io.Copy(outFile, limitReader); err != nil {
+					// إعادة تجميع القارئ: البايتات المقروءة + بقية الجسم
+					combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
+					if _, err := io.Copy(outFile, combined); err != nil {
 						_ = outFile.Close()
 						http.Error(w, "Failed to write file", http.StatusInternalServerError)
 						return
@@ -297,7 +314,7 @@ func main() {
 					// يسمح بـ WebAssembly (OpenCV/MediaPipe) و Web Workers والمصادر الخارجية المصرح بها فقط
 					w.Header().Set("Content-Security-Policy",
 						"default-src 'self'; "+
-							"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; "+
+							"script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; "+
 							"style-src 'self' 'unsafe-inline'; "+
 							"img-src 'self' data: blob: https:; "+
 							"font-src 'self' data:; "+
@@ -379,7 +396,7 @@ func main() {
 			WindowIsTranslucent:               false,
 			BackdropType:                      windows.None, // إيقاف Mica لأنه مدعوم فقط في ويندوز 11 ويتسبب بتشوهات في ويندوز 10
 			DisableWindowIcon:                 false,
-			DisableFramelessWindowDecorations: false, // الحفاظ على هذه كـ false للإبقاء على ظل النافذة الافتراضي لنظام ويندوز
+			DisableFramelessWindowDecorations: false,                // الحفاظ على هذه كـ false للإبقاء على ظل النافذة الافتراضي لنظام ويندوز
 			WebviewUserDataPath:               getWebviewCacheDir(), // تعيين مجلد الكاش الآمن لـ WebView2
 			OnSuspend: func() {
 				slog.Info("Entering suspend mode...")

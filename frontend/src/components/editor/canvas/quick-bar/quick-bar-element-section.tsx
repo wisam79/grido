@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import { useEditorStore } from "@/lib/editor-store";
 import type { CanvasElement } from "@/lib/store/types";
+import { rotateElementAroundCenter } from "@/lib/canvas/element-geometry";
 import { QuickBarAiActions } from "./quick-bar-ai-actions";
 
 /**
@@ -103,7 +104,15 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             variant="ghost"
             size="sm"
             onClick={() => {
-              updateElement(element.id, { rotation: (element.rotation + 90) % 360 });
+              const currentRot = element.rotation || 0;
+              const nextRot = (currentRot + 90) % 360;
+              const { canvasWidth, canvasHeight } = useEditorStore.getState();
+              const newPos = rotateElementAroundCenter(element, nextRot, canvasWidth, canvasHeight);
+              updateElement(element.id, {
+                rotation: nextRot,
+                x: newPos.x,
+                y: newPos.y,
+              });
               useEditorStore.getState().pushHistory();
             }}
             className="h-7 w-7 p-0 rounded-md hover:bg-accent"
