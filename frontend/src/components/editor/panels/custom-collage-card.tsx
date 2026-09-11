@@ -64,7 +64,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   const [activeTab, setActiveTab] = useState<"presets" | "custom" | "freeform">("presets");
 
   // تصنيف النماذج السريعة
-  const [presetCategory, setPresetCategory] = useState<CollagePresetCategory>("combo");
+  const [presetCategory, setPresetCategory] = useState<CollagePresetCategory>("all");
 
   const [rows, setRows] = useState(1);
   const [cols, setCols] = useState(4);
@@ -197,7 +197,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     }
   }, [savedTemplates]);
 
-  // تصحيح الحدود القصوى عند تبديل المقاس
+  // تصحيح الحدود القصوى عند تبديل المقاس أو نوع الصورة
   useEffect(() => {
     const { maxRows, maxCols } = getGridLimits(photoType, canvasWidth, canvasHeight, storedDpi);
     let changed = false;
@@ -209,10 +209,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       queueMicrotask(() => {
         setRows(adjustedRows);
         setCols(adjustedCols);
-        applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
+        // يُمنع استدعاء applyCustomCollage إلا إذا كان المستخدم فعلياً في تبويب الشبكة والقالب النشط مخصص
+        if (activeTab === "custom" && isCustomActive) {
+          applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
+        }
       });
     }
-  }, [photoType, canvasWidth, canvasHeight, rows, cols, applyCustomCollage, gridAlign, storedDpi]);
+  }, [photoType, canvasWidth, canvasHeight, rows, cols, applyCustomCollage, gridAlign, storedDpi, activeTab, isCustomActive]);
 
   return (
     <div className="flex flex-col gap-2.5 font-cairo" dir="rtl">

@@ -72,8 +72,11 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
   const handleSelectTemplate = (t: CollageTemplate) => {
     const capacity = t.cells?.length ?? t.slots;
-    const filledSlots = slots.filter((s) => s.imageSrc).length;
-    const dropsImages = filledSlots > 0 && capacity < filledSlots;
+    const filledSlotsWithSrc = slots.filter((s) => s.imageSrc);
+    const uniqueImages = new Set(filledSlotsWithSrc.map((s) => s.imageSrc));
+    // إذا كانت الصور الفريدة أكثر من سعة القالب الجديد، سيتم فقدان صور فريدة حقيقية
+    // أما إذا كانت صورة واحدة مكررة أو صور فريدة تتسع بالكامل للقالب الجديد، يتم التبديل مباشرة
+    const dropsImages = uniqueImages.size > capacity;
     const hasFreeElements = mode !== "collage" && elements.length > 0;
     if (dropsImages || hasFreeElements) {
       setPendingTemplate(t);
@@ -83,7 +86,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
   };
 
   const droppedCount = pendingTemplate
-    ? Math.max(0, slots.filter((s) => s.imageSrc).length - (pendingTemplate.cells?.length ?? pendingTemplate.slots))
+    ? Math.max(0, new Set(slots.filter((s) => s.imageSrc).map((s) => s.imageSrc)).size - (pendingTemplate.cells?.length ?? pendingTemplate.slots))
     : 0;
 
   const officialTemplates = COLLAGE_TEMPLATES;

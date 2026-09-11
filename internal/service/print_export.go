@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"hash/crc32"
+	"html"
 	"image/jpeg"
 	"image/png"
 	"log/slog"
@@ -82,6 +83,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			err = jpeg.Encode(f, cmykImg, &jpeg.Options{Quality: 95})
 			f.Close()
 			if err != nil {
+				_ = os.Remove(imagePath)
 				return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
 			}
 		} else {
@@ -95,6 +97,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			err = tiff.Encode(f, cmykImg, &tiff.Options{Compression: tiff.Uncompressed})
 			f.Close()
 			if err != nil {
+				_ = os.Remove(imagePath)
 				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
 			}
 		}
@@ -174,17 +177,13 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	absImagePath := filepath.Join(outDir, htmlImageName)
 	fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(absImagePath), " ", "%20")
 
-	// 🚀 مسار الصورة المحلي يُخدم من سيرفر Wails عبر /local-image/ (main.go) —
-	// بلا تضمين Base64: توفير 25-60MB نص لكل صفحة عبر جسر IPC ومنع تجميد الواجهة.
-	// iframe بـ about:blank يرث origin الأب فالمسار المطلق يعمل. شبكة الأمان في
-	// الفرونت إند (img.decode + fallback timer + PrintNative) تغطي فشل التحميل.
-	//
-	// 🛡️ احتياط: إذا لم يكن الملف موجوداً على القرص (حالة نادرة بعد الحفظ مباشرة)
-	// نضمّنه Base64 عبر إعادة ترميز dc.Image() في الدالة المنادية. لكن هنا نقرأ من
-	// القرص فقط — إذا كان موجوداً نستخدم fileURI، وإلا نقرأ الملف لتضمينه Base64.
-	imageSrcForHTML := fileURI
+	// 🚀 مسار الصورة لـ WebView2 iframe: يُخدم من سيرفر Wails عبر /local-image/ (main.go)
+	// يتوافق مع 'self' في CSP ويمنع حجب file:// وظهور الصورة المكسورة
+	imageSrcForWebView := "/local-image/" + htmlImageName
+	imageSrcForNative := fileURI
+
 	if _, statErr := os.Stat(absImagePath); statErr != nil {
-		slog.Warn("print image missing on disk; HTML will use file:// URI as last resort", "path", absImagePath, "error", statErr)
+		slog.Warn("print image missing on disk; checking fallback in Exports", "path", absImagePath, "error", statErr)
 		// الملف غير موجود — نبحث في مجلد Exports البديل (print_upload_*)
 		exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
 		altPath := filepath.Join(exportsDir, htmlImageName)
@@ -193,23 +192,26 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			if strings.HasSuffix(strings.ToLower(htmlImageName), ".jpg") || strings.HasSuffix(strings.ToLower(htmlImageName), ".jpeg") {
 				mimeType = "image/jpeg"
 			}
-			imageSrcForHTML = fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(imgData))
+			b64 := fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(imgData))
+			imageSrcForNative = b64
+			imageSrcForWebView = b64
 			slog.Info("print image found in Exports fallback dir", "altPath", altPath)
 		}
 	}
 
-	htmlContent := buildNativePrintHTML(req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
+	htmlContent := buildNativePrintHTML(req.PaperWidthMM, req.PaperHeightMM, imageSrcForNative)
 	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
 
 	// HTML بمسار الصورة المحلي للعرض والطباعة الفورية داخل WebView2 عبر iframe
 	// (صفر Base64 عبر IPC — المسار يُخدم من /local-image/ في سيرفر Wails المحلي)
-	selfContainedHTML := buildSelfContainedHTML(req.PaperWidthMM, req.PaperHeightMM, imageSrcForHTML)
+	selfContainedHTML := buildSelfContainedHTML(req.PaperWidthMM, req.PaperHeightMM, imageSrcForWebView)
 
 	return imagePath, selfContainedHTML, nil
 }
 
 // buildNativePrintHTML يبني صفحة الطباعة لنافذة المتصفح الأصلية بمقاس ورقة دقيق بالمليمتر
 func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
+	escapedSrc := html.EscapeString(imageSrc)
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -252,11 +254,12 @@ func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
 <body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
   <img src="%s" />
 </body>
-</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, imageSrc)
+</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, escapedSrc)
 }
 
 // buildSelfContainedHTML يبني صفحة معاينة/طباعة ذاتية الاحتواء لـ WebView2 (iframe)
 func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string {
+	escapedSrc := html.EscapeString(imageSrc)
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -301,7 +304,7 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
 <body>
   <img src="%s" />
 </body>
-</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, imageSrc)
+</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, escapedSrc)
 }
 
 // setPngDPI modifies a PNG byte slice to include a pHYs chunk with the specified DPI.
@@ -379,6 +382,20 @@ func setJpegDPI(jpegData []byte, dpi int) ([]byte, error) {
 		byte(dpi >> 8), byte(dpi & 0xFF),
 		0x00, 0x00,
 	}
+
+	// Check if an APP0 segment already exists right after SOI
+	if len(jpegData) >= 6 && jpegData[2] == 0xFF && jpegData[3] == 0xE0 {
+		existingLen := int(binary.BigEndian.Uint16(jpegData[4:6]))
+		endPos := 2 + existingLen
+		if endPos <= len(jpegData) {
+			result := make([]byte, 0, len(jpegData)-existingLen+len(seg))
+			result = append(result, jpegData[:2]...)
+			result = append(result, seg...)
+			result = append(result, jpegData[endPos:]...)
+			return result, nil
+		}
+	}
+
 	result := make([]byte, 0, len(jpegData)+len(seg))
 	result = append(result, jpegData[:2]...)
 	result = append(result, seg...)

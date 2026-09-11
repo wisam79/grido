@@ -52,17 +52,32 @@ func (s *PrintService) PrintNative(filePath string) error {
 			htmlPath := filepath.Join(os.TempDir(), fmt.Sprintf("grido_print_%d.html", time.Now().UnixNano()))
 			fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(cleanPath), " ", "%20")
 			escapedURI := html.EscapeString(fileURI)
-			htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;size:auto;}html,body{margin:0;padding:0;width:100%%;height:100%%;position:relative;overflow:hidden;}img{position:absolute;top:0;left:0;width:100%%;height:100%%;object-fit:fill;margin:0;padding:0;}</style></head><body onload="setTimeout(function(){window.print();window.close();},500)"><img src="%s"/></body></html>`, escapedURI)
+			htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;size:auto;}html,body{margin:0;padding:0;width:100%%;height:100%%;position:relative;overflow:hidden;}img{position:absolute;top:0;left:0;width:100%%;height:100%%;object-fit:contain;margin:0;padding:0;}</style></head><body onload="setTimeout(function(){window.print();window.close();},500)"><img src="%s"/></body></html>`, escapedURI)
 			if err := os.WriteFile(htmlPath, []byte(htmlContent), 0644); err == nil {
 				targetPath = htmlPath
+				// تنظيف الملف المؤقت بعد إعطاء وقت كافٍ للمتصفح لتحميله وطباعته
+				go func(tmpFile string) {
+					time.Sleep(3 * time.Minute)
+					_ = os.Remove(tmpFile)
+				}(htmlPath)
 			}
 		}
 
 		// Try launching with modern Edge first (supports full CSS @page size & orientation)
-		edgePaths := []string{
-			`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`,
-			`C:\Program Files\Microsoft\Edge\Application\msedge.exe`,
+		var edgePaths []string
+		if p86 := os.Getenv("ProgramFiles(x86)"); p86 != "" {
+			edgePaths = append(edgePaths, filepath.Join(p86, "Microsoft", "Edge", "Application", "msedge.exe"))
 		}
+		if pf := os.Getenv("ProgramFiles"); pf != "" {
+			edgePaths = append(edgePaths, filepath.Join(pf, "Microsoft", "Edge", "Application", "msedge.exe"))
+		}
+		if la := os.Getenv("LocalAppData"); la != "" {
+			edgePaths = append(edgePaths, filepath.Join(la, "Microsoft", "Edge", "Application", "msedge.exe"))
+		}
+		if lp, err := exec.LookPath("msedge.exe"); err == nil {
+			edgePaths = append(edgePaths, lp)
+		}
+
 		for _, edgePath := range edgePaths {
 			if _, err := os.Stat(edgePath); err == nil {
 				cmd := exec.Command(edgePath, targetPath)

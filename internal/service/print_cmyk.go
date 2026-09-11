@@ -103,7 +103,7 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 		return
 	}
 
-	lineWidth := mmToPx(0.25, req.DPI)
+	lineWidth := mmToPx(0.20, req.DPI)
 	if lineWidth < 1.0 {
 		lineWidth = 1.0
 	}

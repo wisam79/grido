@@ -75,6 +75,7 @@ async function uploadPrintImage(blob: Blob): Promise<string> {
 export function usePrintExport(ctx: PrintExportContext) {
   const stageRef = useStageRef();
   const [isExporting, setIsExporting] = useState(false);
+  const isExportingRef = useRef(false);
 
   // مؤشر الطباعة Enter — آخر معاملات نداء الطباعة من المكوّن
   const printInvocationRef = useRef<{
@@ -411,10 +412,13 @@ export function usePrintExport(ctx: PrintExportContext) {
             iframe.contentWindow?.addEventListener("afterprint", removeIframe, { once: true });
             iframe.contentWindow?.focus();
             iframe.contentWindow?.print();
+            toast.success("تم إرسال الورقة إلى الطباعة بنجاح");
           } catch (e) {
             console.error("Browser print error:", e);
             if (result.filePath && typeof PrintNative === "function") {
-              PrintNative(result.filePath).catch(console.error);
+              PrintNative(result.filePath)
+                .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
+                .catch(console.error);
             }
           } finally {
             removeTimer = setTimeout(removeIframe, 60000);
@@ -448,7 +452,13 @@ export function usePrintExport(ctx: PrintExportContext) {
                 clearTimeout(fallbackTimer);
                 fallbackTimer = undefined;
               }
-              triggerPrint();
+              removeIframe();
+              toast.error("تعذر تحميل صورة الطباعة في المتصفح، جاري التحويل للطباعة الأصلية ...");
+              if (result.filePath && typeof PrintNative === "function") {
+                PrintNative(result.filePath)
+                  .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
+                  .catch(console.error);
+              }
             };
             fallbackTimer = setTimeout(runPrint, 10000);
           }
@@ -460,14 +470,16 @@ export function usePrintExport(ctx: PrintExportContext) {
           document.body.removeChild(iframe);
         }
         if (result.filePath && typeof PrintNative === "function") {
-          PrintNative(result.filePath).catch(console.error);
+          PrintNative(result.filePath)
+            .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
+            .catch(console.error);
         }
       }
     } else if (result.filePath && typeof PrintNative === "function") {
-      PrintNative(result.filePath).catch(console.error);
+      PrintNative(result.filePath)
+        .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
+        .catch(console.error);
     }
-
-    toast.success("تم إرسال الورقة إلى الطباعة بنجاح");
   }, []);
 
   const handlePrint = useCallback(async (
@@ -476,7 +488,8 @@ export function usePrintExport(ctx: PrintExportContext) {
     effectiveMarginMM: number,
     onDone: () => void
   ) => {
-    if (isExporting || !previewImageSrc) return;
+    if (isExportingRef.current || isExporting || !previewImageSrc) return;
+    isExportingRef.current = true;
     setIsExporting(true);
     try {
       const buildResult = mode === "collage" ? await buildItems() : await buildSingleItems();
@@ -520,6 +533,7 @@ export function usePrintExport(ctx: PrintExportContext) {
     } catch (err) {
       toast.error("حدث خطأ أثناء توليد ورقة الطباعة: " + String(err));
     } finally {
+      isExportingRef.current = false;
       setIsExporting(false);
     }
   }, [

@@ -126,6 +126,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   useEffect(() => {
     exporter.setIsExporting(false);
     if (open) {
+      setZoom(1);
       // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة.
       useEditorStore.getState().selectElement(null);
     }
@@ -174,6 +175,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         const transformers = stage.find('Transformer');
         const gridLayers = stage.find('.grid-layer');
         const columnsLayers = stage.find('.columns-layer');
+        const guideLayers = stage.find('.guides-layer, .guide-line, .user-guide-line');
         try {
           const targetWidth = 400;
           const pRatio = Math.min(1, targetWidth / stage.width());
@@ -181,6 +183,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           transformers.forEach((tr: Konva.Node) => tr.hide());
           gridLayers.forEach((gl: Konva.Node) => gl.hide());
           columnsLayers.forEach((cl: Konva.Node) => cl.hide());
+          guideLayers.forEach((gl: Konva.Node) => gl.hide());
           stage.batchDraw();
 
           const previewUrl = stage.toDataURL({
@@ -197,6 +200,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           transformers.forEach((tr: Konva.Node) => tr.show());
           gridLayers.forEach((gl: Konva.Node) => gl.show());
           columnsLayers.forEach((cl: Konva.Node) => cl.show());
+          guideLayers.forEach((gl: Konva.Node) => gl.show());
           stage.batchDraw();
         }
       }, 50);
@@ -206,7 +210,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewImageSrc("");
     }
-  }, [open, stageRef, elements, slots, backgroundColor, mode, canvasWidth, printSettings]);
+  }, [open, stageRef, elements, slots, backgroundColor, mode, canvasWidth, canvasHeight]);
 
   const spaceUsedPercent = Math.round(
     ((actualCopies * imageWidthMM * imageHeightMM) /

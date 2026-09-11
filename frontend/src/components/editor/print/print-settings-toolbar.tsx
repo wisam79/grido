@@ -20,6 +20,7 @@ import {
   Columns,
   Rows,
 } from "@phosphor-icons/react";
+import { PageOrientationIcon } from "@/components/ui/image-icons";
 import { PAPER_SIZES } from "@/lib/templates/constants";
 import type { PrintSettings } from "@/lib/store/types";
 
@@ -96,6 +97,41 @@ export function PrintSettingsToolbar({
             ))}
           </SelectContent>
         </Select>
+
+        {/* اتجاه الورقة (أفقي / رأسي) */}
+        <div className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() =>
+                  setPrintSettings({
+                    orientation:
+                      printSettings.orientation === "landscape" ? "portrait" : "landscape",
+                  })
+                }
+                className={cn(
+                  "px-2 py-1 flex items-center gap-1.5",
+                  toggleButtonClassName(true)
+                )}
+                aria-label="تبديل اتجاه الورقة"
+              >
+                <PageOrientationIcon
+                  isLandscape={printSettings.orientation === "landscape"}
+                  className="w-3.5 h-3.5 text-primary"
+                />
+                <span>{printSettings.orientation === "landscape" ? "أفقي" : "رأسي"}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="font-cairo text-xs font-semibold">
+              <span>
+                {printSettings.orientation === "landscape"
+                  ? "الاتجاه الحالي: أفقي (انقر للتحويل إلى رأسي)"
+                  : "الاتجاه الحالي: رأسي (انقر للتحويل إلى أفقي)"}
+              </span>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         {/* وضع الألوان */}
         <div className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">

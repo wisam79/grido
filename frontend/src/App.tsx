@@ -465,7 +465,7 @@ export default function App() {
           className={cn(
             "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
             rightSidebarOpen
-              ? "w-[288px] min-w-[288px] max-w-[288px] opacity-100 border-l border-sidebar-border shadow-sm"
+              ? "w-[308px] min-w-[308px] max-w-[308px] opacity-100 border-l border-sidebar-border shadow-sm"
               : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none"
           )}
         >

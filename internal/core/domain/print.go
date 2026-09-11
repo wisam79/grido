@@ -43,6 +43,8 @@ type CanvasComposition struct {
 type PrintRequest struct {
 	PaperWidthMM    float64            `json:"paperWidthMM"`
 	PaperHeightMM   float64            `json:"paperHeightMM"`
+	MarginMM        float64            `json:"marginMM,omitempty"`
+	GapMM           float64            `json:"gapMM,omitempty"`
 	DPI             int                `json:"dpi"`
 	BackgroundColor string             `json:"backgroundColor"`
 	ShowCutLines    bool               `json:"showCutLines"`

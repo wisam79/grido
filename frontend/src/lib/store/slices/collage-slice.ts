@@ -174,8 +174,16 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         }
       }
 
+      const existingSlots = get().slots || [];
+      const filledSlots = existingSlots.filter((s) => s.imageSrc);
+      const isSingleImageAllFilled =
+        filledSlots.length > 0 &&
+        filledSlots.length === existingSlots.length &&
+        new Set(filledSlots.map((s) => s.imageSrc)).size === 1;
+      const singleImgSlot = isSingleImageAllFilled ? filledSlots[0] : null;
+
       const slots: CanvasSlot[] = cells.map((c, i) => {
-        const existingSlot = get().slots[i];
+        const existingSlot = existingSlots[i] || singleImgSlot;
         return {
           id: uid(),
           cellIndex: i,

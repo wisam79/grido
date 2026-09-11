@@ -10,6 +10,7 @@ import (
 	"io"
 	"log/slog"
 	"math"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -33,17 +34,45 @@ func resolveLocalPath(src string) string {
 	if strings.HasPrefix(src, "/local-image/") {
 		filename := filepath.Base(filepath.Clean(strings.TrimPrefix(src, "/local-image/")))
 		appDir := utils.GetAppDir()
-		mediaDir := filepath.Join(appDir, "Media")
-		fullPath := filepath.Join(mediaDir, filename)
+
+		// 🔒 الملفات المؤقتة للطباعة (print_upload_* و print_*) تُخزن في Exports
+		// أما ملفات الوسائط العادية فتُخزن في Media
+		var baseDir string
+		if strings.HasPrefix(filename, "print_") {
+			baseDir = filepath.Join(appDir, "Exports")
+		} else {
+			baseDir = filepath.Join(appDir, "Media")
+		}
+		fullPath := filepath.Join(baseDir, filename)
+
+		// احتياط: إذا لم يوجد الملف في baseDir، نتحقق من المجلد البديل (Media <-> Exports)
+		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+			altBase := filepath.Join(appDir, "Media")
+			if baseDir == altBase {
+				altBase = filepath.Join(appDir, "Exports")
+			}
+			altFull := filepath.Join(altBase, filename)
+			if _, altErr := os.Stat(altFull); altErr == nil {
+				baseDir = altBase
+				fullPath = altFull
+			}
+		}
 
 		resolved, err := filepath.EvalSymlinks(fullPath)
 		if err != nil {
+			cleanFull := filepath.Clean(fullPath)
+			cleanBase := filepath.Clean(baseDir)
+			if !strings.HasPrefix(cleanFull, cleanBase+string(filepath.Separator)) && cleanFull != cleanBase {
+				slog.Warn("Blocked path traversal attempt in resolveLocalPath", "path", src)
+				return ""
+			}
 			return fullPath
 		}
-		if resolvedMediaDir, err := filepath.EvalSymlinks(mediaDir); err == nil {
-			mediaDir = resolvedMediaDir
+		if resolvedBaseDir, err := filepath.EvalSymlinks(baseDir); err == nil {
+			baseDir = resolvedBaseDir
 		}
-		if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(mediaDir)+string(filepath.Separator)) {
+		if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(baseDir)+string(filepath.Separator)) &&
+			filepath.Clean(resolved) != filepath.Clean(baseDir) {
 			slog.Warn("Blocked path traversal attempt in resolveLocalPath", "path", src)
 			return ""
 		}

@@ -76,12 +76,22 @@ export function resolveEffectiveDpi(
   for (const [pW, pH] of PAPER_SIZES_MM) {
     const expectedW = (pW * storedDpi) / 25.4;
     const expectedH = (pH * storedDpi) / 25.4;
+    // مطابقة عمودية (Portrait)
     if (
       Math.abs(W - expectedW) / expectedW < 0.02 &&
       Math.abs(H - expectedH) / expectedH < 0.02
     ) {
       const dpiFromW = (W * 25.4) / pW;
       const dpiFromH = (H * 25.4) / pH;
+      return (dpiFromW + dpiFromH) / 2;
+    }
+    // مطابقة أفقية (Landscape)
+    if (
+      Math.abs(W - expectedH) / expectedH < 0.02 &&
+      Math.abs(H - expectedW) / expectedW < 0.02
+    ) {
+      const dpiFromW = (W * 25.4) / pH;
+      const dpiFromH = (H * 25.4) / pW;
       return (dpiFromW + dpiFromH) / 2;
     }
   }

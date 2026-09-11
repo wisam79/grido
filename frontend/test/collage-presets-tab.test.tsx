@@ -15,16 +15,11 @@ describe('CollagePresetsTab Component Suite', () => {
     onExportAllClick: vi.fn(),
   };
 
-  it('renders search input and all category pills', () => {
+  it('renders search input and category selector', () => {
     render(<CollagePresetsTab {...defaultProps} />);
 
     expect(screen.getByPlaceholderText(/بحث في القوالب/)).toBeInTheDocument();
-    expect(screen.getByText('الكل')).toBeInTheDocument();
-    expect(screen.getByText('كومبو')).toBeInTheDocument();
-    expect(screen.getByText('شيت')).toBeInTheDocument();
-    expect(screen.getByText('أشرطة')).toBeInTheDocument();
-    expect(screen.getAllByText('تذكار').length).toBeGreaterThan(0);
-    expect(screen.getByText('محفوظ')).toBeInTheDocument();
+    expect(screen.getByText(/كافة قوالب الاستوديو/)).toBeInTheDocument();
   });
 
   it('filters templates when searching', () => {
@@ -38,14 +33,10 @@ describe('CollagePresetsTab Component Suite', () => {
     expect(screen.getAllByText(/جواز/).length).toBeGreaterThan(0);
   });
 
-  it('switches category on pill click', () => {
-    const onPresetCategoryChange = vi.fn();
-    render(<CollagePresetsTab {...defaultProps} onPresetCategoryChange={onPresetCategoryChange} />);
+  it('displays the selected category in select trigger', () => {
+    render(<CollagePresetsTab {...defaultProps} presetCategory="combo" />);
 
-    const comboBtn = screen.getByText('كومبو');
-    fireEvent.click(comboBtn);
-
-    expect(onPresetCategoryChange).toHaveBeenCalledWith('combo');
+    expect(screen.getByText(/أطقم تجارية \(كومبو\)/)).toBeInTheDocument();
   });
 
   it('renders empty state for saved templates when list is empty', () => {

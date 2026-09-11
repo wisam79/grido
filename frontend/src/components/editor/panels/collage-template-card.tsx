@@ -117,25 +117,25 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
       {/* Title & Info */}
       <div className="flex flex-col gap-1.5 mt-0.5 px-0.5">
         <div className={cn(
-          "text-[10px] font-bold leading-tight truncate transition-colors duration-200",
+          "text-xs font-bold leading-snug truncate transition-colors duration-200",
           isActive ? "text-primary" : "text-foreground group-hover:text-primary"
-        )}>
+        )} title={tpl.name}>
           {tpl.name}
         </div>
-        <div className="flex items-center justify-between mt-0.5 border-t border-border/20 pt-2">
+        <div className="flex items-center justify-between mt-0.5 border-t border-border/30 pt-1.5">
           <span className={cn(
-            "px-1.5 py-0.5 rounded-md font-mono text-[10px] font-bold border transition-colors",
+            "px-2 py-0.5 rounded-md font-mono text-[10.5px] font-bold border transition-colors",
             isActive
               ? "bg-primary/15 text-primary border-primary/30"
-              : "bg-muted text-muted-foreground border-border"
+              : "bg-muted text-muted-foreground border-border/60"
           )}>
             {tpl.slots} صور
           </span>
           <span className={cn(
-            "text-[8px] font-bold transition-colors",
-            isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary/80"
+            "text-[9px] font-bold transition-colors",
+            isActive ? "text-primary" : "text-muted-foreground/80 group-hover:text-primary/80"
           )}>
-            تخطيط تلقائي
+            {tpl.physicalLayout ? "مقاس قياسي" : "شبكي"}
           </span>
         </div>
       </div>

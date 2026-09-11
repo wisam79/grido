@@ -265,7 +265,13 @@ export function SheetPreview({
                       const w = el.naturalWidth;
                       const h = el.naturalHeight;
                       if (w > 0 && h > 0) {
-                        setNaturalSizes((prev) => ({ ...prev, [slot.id]: { w, h } }));
+                        setNaturalSizes((prev) => {
+                          const existing = prev[slot.id];
+                          if (existing && existing.w === w && existing.h === h) {
+                            return prev;
+                          }
+                          return { ...prev, [slot.id]: { w, h } };
+                        });
                       }
                     }}
                   />

@@ -57,7 +57,7 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 		return
 	}
 	dc.SetColor(color.RGBA{R: 120, G: 120, B: 120, A: 255})
-	lineWidth := mmToPx(0.18, req.DPI)
+	lineWidth := mmToPx(0.20, req.DPI)
 	if lineWidth < 1.0 {
 		lineWidth = 1.0
 	}
@@ -111,8 +111,8 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 		}
 
 		dc.DrawLine(x1, y1, x2, y2)
-		dc.Stroke()
 	}
+	dc.Stroke()
 }
 
 // drawItemImage يرسم صورة معالجة داخل مستطيل العنصر بالمليمتر مع القص الدائري والإطار.

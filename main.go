@@ -316,7 +316,7 @@ func main() {
 						"default-src 'self'; "+
 							"script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; "+
 							"style-src 'self' 'unsafe-inline'; "+
-							"img-src 'self' data: blob: https:; "+
+							"img-src 'self' data: blob: https: file:; "+
 							"font-src 'self' data:; "+
 							"connect-src 'self' https://*.supabase.co https://*.modal.run https://api.modal.com; "+
 							"worker-src 'self' blob:;")

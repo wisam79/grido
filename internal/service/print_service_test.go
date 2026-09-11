@@ -3,7 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/binary"
-	"grido/internal/core/domain"
+	"fmt"
 	"image"
 	"image/color"
 	"math"
@@ -11,8 +11,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/disintegration/imaging"
+
+	"grido/internal/core/domain"
+	"grido/internal/utils"
 )
 
 func TestPrintService_GeneratePrintSheet(t *testing.T) {
@@ -445,5 +449,120 @@ func TestPrintService_EmptySrcItemsSkippedWithoutComposition(t *testing.T) {
 	defer os.Remove(outPath)
 	if strings.HasSuffix(outPath, ".html") {
 		defer os.Remove(strings.TrimSuffix(outPath, ".html") + ".png")
+	}
+}
+
+func TestSetJpegDPI_ReplaceExistingAPP0(t *testing.T) {
+	// Construct a dummy JPEG with SOI + existing APP0 (72 DPI) + dummy payload + EOI
+	existingAPP0 := []byte{
+		0xFF, 0xD8, // SOI
+		0xFF, 0xE0, // APP0 marker
+		0x00, 0x10, // length = 16
+		'J', 'F', 'I', 'F', 0x00,
+		0x01, 0x01,
+		0x01, // units = DPI
+		0x00, 0x48, // X density = 72
+		0x00, 0x48, // Y density = 72
+		0x00, 0x00, // thumbnail
+		0xFF, 0xDA, // SOS dummy
+		0x12, 0x34,
+		0xFF, 0xD9, // EOI
+	}
+
+	updated, err := setJpegDPI(existingAPP0, 300)
+	if err != nil {
+		t.Fatalf("setJpegDPI failed: %v", err)
+	}
+
+	// Verify only one APP0 segment exists
+	app0Count := bytes.Count(updated, []byte{0xFF, 0xE0})
+	if app0Count != 1 {
+		t.Errorf("expected exactly 1 APP0 segment, got %d", app0Count)
+	}
+
+	// Verify new DPI is 300
+	density := binary.BigEndian.Uint16(updated[14:16])
+	if density != 300 {
+		t.Errorf("expected updated density 300 DPI, got %d", density)
+	}
+
+	// Verify trailing bytes survived
+	if !bytes.HasSuffix(updated, []byte{0xFF, 0xDA, 0x12, 0x34, 0xFF, 0xD9}) {
+		t.Errorf("expected trailing JPEG payload to be preserved")
+	}
+}
+
+func TestPrintService_HTMLDocUsesLocalImage(t *testing.T) {
+	svc := NewPrintService()
+	req := domain.PrintRequest{
+		PaperWidthMM:    100.0,
+		PaperHeightMM:   100.0,
+		DPI:             300,
+		BackgroundColor: "#FFFFFF",
+		ExportFormat:    "jpeg",
+		Items:           []domain.PrintItem{},
+	}
+
+	outPath, htmlDoc, err := svc.GeneratePrintSheet(req)
+	if err != nil {
+		t.Fatalf("GeneratePrintSheet failed: %v", err)
+	}
+	defer os.Remove(outPath)
+	if strings.HasSuffix(outPath, ".html") {
+		defer os.Remove(strings.TrimSuffix(outPath, ".html") + ".jpg")
+	}
+
+	// 🔒 The self-contained HTML for WebView2 iframe MUST use /local-image/ to avoid CSP block
+	if !strings.Contains(htmlDoc, `src="/local-image/print_`) {
+		t.Errorf("expected htmlDoc to use /local-image/print_... path for WebView2 CSP compliance, got: %s", htmlDoc)
+	}
+	if strings.Contains(htmlDoc, `src="file:///`) {
+		t.Errorf("htmlDoc must NOT contain file:/// URI which is blocked by WebView2 CSP")
+	}
+}
+
+func TestPrintService_UploadImageInExportsResolved(t *testing.T) {
+	appDir := utils.GetAppDir()
+	exportsDir := filepath.Join(appDir, "Exports")
+	_ = os.MkdirAll(exportsDir, 0755)
+
+	uploadFilename := fmt.Sprintf("print_upload_test_%d.png", time.Now().UnixNano())
+	uploadFilePath := filepath.Join(exportsDir, uploadFilename)
+
+	dummyImg := image.NewRGBA(image.Rect(0, 0, 50, 50))
+	if err := imaging.Save(dummyImg, uploadFilePath); err != nil {
+		t.Fatalf("failed to create dummy upload image in Exports: %v", err)
+	}
+	defer os.Remove(uploadFilePath)
+
+	// Item with /local-image/print_upload_... path as sent from frontend
+	itemSrc := "/local-image/" + uploadFilename
+	resolved := resolveLocalPath(itemSrc)
+	if resolved == "" {
+		t.Fatalf("resolveLocalPath blocked or failed to resolve upload image: %s", itemSrc)
+	}
+	if _, err := os.Stat(resolved); err != nil {
+		t.Fatalf("resolved path does not exist: %s (err: %v)", resolved, err)
+	}
+
+	// Verify GeneratePrintSheet succeeds with this item
+	svc := NewPrintService()
+	req := domain.PrintRequest{
+		PaperWidthMM:    100.0,
+		PaperHeightMM:   100.0,
+		DPI:             300,
+		BackgroundColor: "#FFFFFF",
+		ExportFormat:    "jpeg",
+		Items: []domain.PrintItem{
+			{ImageSrc: itemSrc, X: 10, Y: 10, W: 50, H: 50},
+		},
+	}
+	outPath, _, err := svc.GeneratePrintSheet(req)
+	if err != nil {
+		t.Fatalf("GeneratePrintSheet failed with upload image in Exports: %v", err)
+	}
+	defer os.Remove(outPath)
+	if strings.HasSuffix(outPath, ".html") {
+		defer os.Remove(strings.TrimSuffix(outPath, ".html") + ".jpg")
 	}
 }
