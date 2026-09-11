@@ -52,7 +52,7 @@ export default function App() {
   const [printOpen, setPrintOpen] = useState(false);
   const [mobileTemplatesOpen, setMobileTemplatesOpen] = useState(false);
   const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(() => (typeof window !== "undefined" ? window.innerWidth >= 1440 : true));
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
 
@@ -82,22 +82,6 @@ export default function App() {
       window.removeEventListener("grido:toggle-left-sidebar", handleToggleLeft);
       window.removeEventListener("grido:toggle-zen-mode", handleToggleZen);
     };
-  }, []);
-
-  // التكيف المتجاوب للشاشات المتوسطة (<1440px): توفير مساحة فسيحة للكانفس
-  useEffect(() => {
-    let prevWidth = window.innerWidth;
-    const handleResize = () => {
-      const w = window.innerWidth;
-      if (w < 1440 && prevWidth >= 1440) {
-        if (sidebarsRef.current.right && sidebarsRef.current.left) {
-          setRightSidebarOpen(false);
-        }
-      }
-      prevWidth = w;
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
 
