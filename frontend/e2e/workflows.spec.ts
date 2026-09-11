@@ -68,7 +68,7 @@ test.describe('Editor Core Workflows E2E', () => {
 
   test('Apply a quick collage template from the panel', async ({ page }) => {
     await page.getByRole('button', { name: 'وضع الكولاج' }).or(page.getByTitle('وضع الكولاج')).first().click();
-    const card = page.getByRole('button', { name: /4 صور متساوية/ }).first();
+    const card = page.getByRole('button', { name: /طقم سفر|طقم تقديم|شيت|4 صور/ }).first();
     await expect(card).toBeVisible();
     await card.click();
     // الكانفس يظل ظاهراً ومستقراً بعد تطبيق القالب

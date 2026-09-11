@@ -14,7 +14,7 @@ test.describe('Collage Mode and Filters E2E', () => {
     await page.getByRole('button', { name: 'وضع الكولاج' }).or(page.getByTitle('وضع الكولاج')).first().click();
 
     // لوحة القوالب تعرض بطاقات القوالب الجاهزة مباشرة (تصميم Fluent 2)
-    const gridTemplateCard = page.getByRole('button', { name: /4 صور متساوية/ }).first();
+    const gridTemplateCard = page.getByRole('button', { name: /طقم سفر|طقم تقديم|شيت|4 صور/ }).first();
     await expect(gridTemplateCard).toBeVisible();
     await gridTemplateCard.click();
 
