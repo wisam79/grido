@@ -78,30 +78,30 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
         <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
-        {/* المجموعة 6: الحفظ والتصدير والطباعة */}
-        <div className="flex items-center gap-1 bg-input border border-border p-0.5 rounded-lg shadow-2xs">
+        {/* المجموعة 6: الحفظ والتصدير والطباعة بتسلسل هرمي واضح */}
+        <div className="flex items-center gap-1 bg-muted/50 dark:bg-background/90 border border-border/60 dark:border-border p-0.5 rounded-lg shadow-2xs">
           <TooltipBtn content="حفظ المشروع (Ctrl + S)">
             <Button
               variant="ghost"
               size="sm"
               onClick={onSave}
               aria-label="حفظ المشروع"
-              className="h-8 px-3 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
+              className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
             >
-              <FloppyDisk className="w-4.5 h-4.5 group-hover:scale-105 transition-transform" weight="duotone" />
+              <FloppyDisk className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" weight="duotone" />
               <span>حفظ</span>
             </Button>
           </TooltipBtn>
 
           <TooltipBtn content="طباعة المستند (Ctrl + P)">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={onPrint}
               aria-label="طباعة المستند"
-              className="h-8 px-3 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
+              className="h-8 px-3 gap-1.5 border border-border/80 dark:border-border bg-background/80 hover:bg-accent text-foreground rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] shadow-2xs group"
             >
-              <PrintIcon className="w-4.5 h-4.5 group-hover:scale-105 transition-transform" />
+              <PrintIcon className="w-4 h-4 group-hover:scale-105 transition-transform" />
               <span>طباعة</span>
             </Button>
           </TooltipBtn>
@@ -111,9 +111,9 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               size="sm"
               onClick={onExport}
               aria-label="تصدير صورة"
-              className="h-8 px-3.5 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98]"
+              className="h-8 px-3.5 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98]"
             >
-              <Export className="w-4.5 h-4.5" weight="bold" />
+              <Export className="w-4 h-4" weight="bold" />
               <span>تصدير</span>
             </Button>
           </TooltipBtn>

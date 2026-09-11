@@ -160,6 +160,23 @@ export function useKeyboardShortcuts() {
     window.dispatchEvent(new CustomEvent("grido:toggle-left-sidebar"));
   });
 
+  // Toggle Zen Mode (Canvas focus): Tab key (outside inputs/controls)
+  useHotkeys(
+    "tab",
+    (e) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent("grido:toggle-zen-mode"));
+    },
+    {
+      ignoreEventWhen: (e) => {
+        const t = e.target as HTMLElement | null;
+        return !!t?.closest?.('input, textarea, [contenteditable="true"], [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], select');
+      },
+    }
+  );
+
   // Toggle Rulers: Ctrl+R or Cmd+R
   useHotkeys("mod+r", (e) => {
     e.preventDefault();

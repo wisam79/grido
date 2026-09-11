@@ -83,6 +83,54 @@ describe('Ruler & User Guides Integration Tests', () => {
     expect(container.querySelector('#v-ruler-cursor')).toBeInTheDocument();
   });
 
+  it('confines ruler labels strictly to canvas boundaries without negative numbers', () => {
+    // Canvas occupies x: 200..700 in an 800px wide viewport (width = 100mm)
+    const { container: hContainer } = render(
+      <HorizontalRuler
+        viewportWidth={800}
+        originX={200}
+        displayW={500}
+        mmWidth={100}
+        unit="mm"
+      />
+    );
+
+    const hTexts = Array.from(hContainer.querySelectorAll('text')).map((t) => t.textContent?.trim());
+    expect(hTexts.length).toBeGreaterThan(0);
+    // Ensure no negative numbers
+    expect(hTexts.some((txt) => txt && txt.startsWith('-'))).toBe(false);
+    // Ensure all numeric values are within 0..100
+    for (const txt of hTexts) {
+      if (txt && !isNaN(Number(txt))) {
+        const num = Number(txt);
+        expect(num).toBeGreaterThanOrEqual(0);
+        expect(num).toBeLessThanOrEqual(100);
+      }
+    }
+
+    // Vertical ruler: y: 150..550 in a 600px tall viewport (height = 80mm)
+    const { container: vContainer } = render(
+      <VerticalRuler
+        viewportHeight={600}
+        originY={150}
+        displayH={400}
+        mmHeight={80}
+        unit="mm"
+      />
+    );
+
+    const vTexts = Array.from(vContainer.querySelectorAll('text')).map((t) => t.textContent?.trim());
+    expect(vTexts.length).toBeGreaterThan(0);
+    expect(vTexts.some((txt) => txt && txt.startsWith('-'))).toBe(false);
+    for (const txt of vTexts) {
+      if (txt && !isNaN(Number(txt))) {
+        const num = Number(txt);
+        expect(num).toBeGreaterThanOrEqual(0);
+        expect(num).toBeLessThanOrEqual(80);
+      }
+    }
+  });
+
   it('calculates adaptive ruler steps accurately for all units', () => {
     // mm
     const stepsMM = getRulerSteps(5, 'mm');

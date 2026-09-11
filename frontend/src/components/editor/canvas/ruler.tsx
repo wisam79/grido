@@ -77,23 +77,35 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
     }
 
     const pixelsPerUnit = displayW / span;
-    const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerUnit, unit);
+    const { labelStep, subStep } = getRulerSteps(pixelsPerUnit, unit);
 
-    const minUnit = (0 - originX) / pixelsPerUnit;
-    const maxUnit = (viewportWidth - originX) / pixelsPerUnit;
+    const canvasMinUnit = 0;
+    const canvasMaxUnit = span;
 
-    const startStepIndex = Math.floor(minUnit / subStep);
-    const endStepIndex = Math.ceil(maxUnit / subStep);
+    const visibleMinUnit = (0 - originX) / pixelsPerUnit;
+    const visibleMaxUnit = (viewportWidth - originX) / pixelsPerUnit;
+
+    const minUnit = Math.max(canvasMinUnit, visibleMinUnit);
+    const maxUnit = Math.min(canvasMaxUnit, visibleMaxUnit);
+
+    if (minUnit > maxUnit) {
+      return { subPath: "", midPath: "", labelElements: [] };
+    }
+
+    const startStepIndex = Math.max(0, Math.floor(minUnit / subStep));
+    const endStepIndex = Math.min(Math.round(span / subStep), Math.ceil(maxUnit / subStep));
 
     let subD = "";
     let midD = "";
     const labels: React.ReactNode[] = [];
 
     const labelRatio = Math.max(1, Math.round(labelStep / subStep));
-    // فحص منتصف المسافة حسابياً بدل قسمة تقريبية — midStep/subStep = 5/2
+    const endX = originX + displayW;
 
     for (let idx = startStepIndex; idx <= endStepIndex; idx++) {
       const u = idx * subStep;
+      if (u < -1e-7 || u > span + 1e-7) continue;
+
       const x = originX + u * pixelsPerUnit;
 
       if (x < -60 || x > viewportWidth + 60) continue;
@@ -101,9 +113,9 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       const isLabel = idx % labelRatio === 0;
       const isMid = !isLabel && Math.abs(u % labelStep - labelStep / 2) < (subStep / 2) + 1e-9;
       const isZero = Math.abs(u) < 0.00001;
-      const isInsideCanvas = u >= -0.0001 && u <= span + 0.0001;
 
       if (isLabel) {
+        const isNearEnd = x + 16 > endX;
         labels.push(
           <g key={`h-lbl-${idx}`}>
             <line
@@ -112,26 +124,19 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
               x2={x}
               y2={20}
               stroke="currentColor"
-              className={
-                isZero
-                  ? "stroke-primary"
-                  : isInsideCanvas
-                  ? "stroke-ruler-tick-major"
-                  : "stroke-ruler-tick"
-              }
+              className={isZero ? "stroke-primary" : "stroke-ruler-tick-major"}
               strokeWidth={isZero ? 1.5 : 0.8}
             />
             <text
-              x={x + (isZero ? 3 : 2)}
+              x={isNearEnd ? x - 2 : x + (isZero ? 3 : 2)}
               y={8}
+              textAnchor={isNearEnd ? "end" : "start"}
               fontSize={8}
               className={cn(
                 "font-mono select-none tracking-tighter",
                 isZero
                   ? "fill-primary font-bold text-[8.5px]"
-                  : isInsideCanvas
-                  ? "fill-ruler-tick-label-active font-medium"
-                  : "fill-ruler-tick-label font-normal"
+                  : "fill-ruler-tick-label-active font-medium"
               )}
             >
               {formatRulerNumber(u, unit)}
@@ -256,23 +261,35 @@ export const VerticalRuler = React.memo(function VerticalRuler({
     }
 
     const pixelsPerUnit = displayH / span;
-    const { labelStep, subStep, midStep } = getRulerSteps(pixelsPerUnit, unit);
+    const { labelStep, subStep } = getRulerSteps(pixelsPerUnit, unit);
 
-    const minUnit = (0 - originY) / pixelsPerUnit;
-    const maxUnit = (viewportHeight - originY) / pixelsPerUnit;
+    const canvasMinUnit = 0;
+    const canvasMaxUnit = span;
 
-    const startStepIndex = Math.floor(minUnit / subStep);
-    const endStepIndex = Math.ceil(maxUnit / subStep);
+    const visibleMinUnit = (0 - originY) / pixelsPerUnit;
+    const visibleMaxUnit = (viewportHeight - originY) / pixelsPerUnit;
+
+    const minUnit = Math.max(canvasMinUnit, visibleMinUnit);
+    const maxUnit = Math.min(canvasMaxUnit, visibleMaxUnit);
+
+    if (minUnit > maxUnit) {
+      return { subPath: "", midPath: "", labelElements: [] };
+    }
+
+    const startStepIndex = Math.max(0, Math.floor(minUnit / subStep));
+    const endStepIndex = Math.min(Math.round(span / subStep), Math.ceil(maxUnit / subStep));
 
     let subD = "";
     let midD = "";
     const labels: React.ReactNode[] = [];
 
     const labelRatio = Math.max(1, Math.round(labelStep / subStep));
-    // فحص منتصف المسافة حسابياً بدل قسمة تقريبية — midStep/subStep = 5/2
+    const endY = originY + displayH;
 
     for (let idx = startStepIndex; idx <= endStepIndex; idx++) {
       const u = idx * subStep;
+      if (u < -1e-7 || u > span + 1e-7) continue;
+
       const y = originY + u * pixelsPerUnit;
 
       if (y < -60 || y > viewportHeight + 60) continue;
@@ -280,9 +297,10 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       const isLabel = idx % labelRatio === 0;
       const isMid = !isLabel && Math.abs(u % labelStep - labelStep / 2) < (subStep / 2) + 1e-9;
       const isZero = Math.abs(u) < 0.00001;
-      const isInsideCanvas = u >= -0.0001 && u <= span + 0.0001;
+      const isNearEnd = y + 8 > endY;
 
       if (isLabel) {
+        const anchor = isZero ? "end" : isNearEnd ? "start" : "middle";
         labels.push(
           <g key={`v-lbl-${idx}`}>
             <line
@@ -291,13 +309,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
               x2={20}
               y2={y}
               stroke="currentColor"
-              className={
-                isZero
-                  ? "stroke-primary"
-                  : isInsideCanvas
-                  ? "stroke-ruler-tick-major"
-                  : "stroke-ruler-tick"
-              }
+              className={isZero ? "stroke-primary" : "stroke-ruler-tick-major"}
               strokeWidth={isZero ? 1.5 : 0.8}
             />
             <text
@@ -308,12 +320,10 @@ export const VerticalRuler = React.memo(function VerticalRuler({
                 "font-mono select-none tracking-tighter",
                 isZero
                   ? "fill-primary font-bold text-[8.5px]"
-                  : isInsideCanvas
-                  ? "fill-ruler-tick-label-active font-medium"
-                  : "fill-ruler-tick-label font-normal"
+                  : "fill-ruler-tick-label-active font-medium"
               )}
               transform={`rotate(-90, 5.5, ${y})`}
-              textAnchor="middle"
+              textAnchor={anchor}
               dominantBaseline="middle"
             >
               {formatRulerNumber(u, unit)}

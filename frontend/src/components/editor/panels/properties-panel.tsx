@@ -6,7 +6,7 @@ import { ElementProperties } from "../properties/element-properties";
 import { SlotProperties } from "../properties/slot-properties";
 import { CollageSettings } from "../properties/collage-settings";
 import { PanelShell } from "./panel-shell";
-import { SlidersHorizontal, FileText, CaretLeft } from "@phosphor-icons/react";
+import { SlidersHorizontal, FileText, CaretLeft, Image as ImageIcon, TextAa, Shapes, SquaresFour } from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
 
@@ -39,6 +39,33 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
   const activeElementId = selectedId || (selectedIds.length > 0 ? selectedIds[0] : null);
   const selectedElement = mode === "single" ? elements.find((e) => e.id === activeElementId) : undefined;
   const selectedSlot = mode === "collage" ? slots.find((s) => s.id === selectedId) : undefined;
+
+  // استنباط هوية اللوح ديناميكياً وفق العنصر النشط
+  let panelIcon = <SlidersHorizontal className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+  let panelTitle = "الخصائص";
+  const panelSubtitle: string | undefined = undefined;
+
+  if (selectedElement) {
+    if (selectedElement.type === "image") {
+      panelIcon = <ImageIcon className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+      panelTitle = "خصائص الصورة";
+    } else if (selectedElement.type === "text") {
+      panelIcon = <TextAa className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+      panelTitle = "خصائص النص";
+    } else {
+      panelIcon = <Shapes className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+      panelTitle = "خصائص الشكل";
+    }
+  } else if (selectedSlot) {
+    panelIcon = <SquaresFour className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+    panelTitle = "خصائص الخلية";
+  } else if (mode === "collage") {
+    panelIcon = generalTab === "collage" ? <SquaresFour className="w-4.5 h-4.5 text-primary" weight="duotone" /> : <FileText className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+    panelTitle = generalTab === "collage" ? "إعدادات الكولاج" : "إعدادات الورقة";
+  } else {
+    panelIcon = <FileText className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+    panelTitle = "إعدادات الورقة";
+  }
 
   const handleUpdateElement = useCallback((id: string, patch: Partial<Record<string, unknown>>) => {
     const { selectedIds, updateElements, updateElement } = useEditorStore.getState();
@@ -74,8 +101,9 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
 
   return (
     <PanelShell
-      icon={<SlidersHorizontal className="w-4.5 h-4.5 text-primary" weight="duotone" />}
-      title="الخصائص"
+      icon={panelIcon}
+      title={panelTitle}
+      subtitle={panelSubtitle}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
       collapseIcon={<CaretLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all" weight="bold" />}

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { COLLAGE_TEMPLATES, CollageTemplate } from "@/lib/templates";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,

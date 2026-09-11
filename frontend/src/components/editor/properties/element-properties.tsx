@@ -87,19 +87,20 @@ export function ElementProperties({
         <Tabs value={activeTab} onValueChange={setSelectedTab} className="w-full">
             {/* أربعة مواضع ثابتة دائماً — إخفاء تبويب "الضبط" للنصوص والأشكال كان
                 يزيح التبويبات الأخرى ويكسر الذاكرة الحركية (تحسين الترتيب) */}
-            <TabsList className="grid w-full h-10 p-1 bg-muted/60 dark:bg-black/25 backdrop-blur-xl rounded-xl border border-border/80 dark:border-white/10 shadow-inner grid-cols-4 gap-1">
+            <TabsList className="grid w-full h-12 p-1 bg-muted/60 dark:bg-black/25 backdrop-blur-xl rounded-xl border border-border/80 dark:border-white/10 shadow-inner grid-cols-4 gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <TabsTrigger
                     value="style"
                     className={cn(
-                      "h-8 rounded-lg cursor-pointer transition-all duration-150 text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center relative",
+                      "h-10 rounded-lg cursor-pointer transition-all duration-150 font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex flex-col items-center justify-center gap-0.5 relative py-0.5",
                       activeTab === "style"
                         ? "bg-card text-primary shadow-xs border border-border/80 dark:border-white/15 ring-1 ring-primary/30 scale-[1.02]"
                         : "text-muted-foreground/75 hover:text-foreground hover:bg-card/50 active:scale-95"
                     )}
                   >
-                    <PaintBrush className="w-5 h-5 transition-transform" weight={activeTab === "style" ? "duotone" : "regular"} />
+                    <PaintBrush className="w-3.5 h-3.5 shrink-0 transition-transform" weight={activeTab === "style" ? "duotone" : "regular"} />
+                    <span className="text-[10px] leading-none select-none">التنسيق</span>
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التنسيق</TooltipContent>
@@ -110,9 +111,8 @@ export function ElementProperties({
                   <TabsTrigger
                     value="adjust"
                     disabled={!hasAdjustTab}
-                    title={!hasAdjustTab ? "للصور فقط" : undefined}
                     className={cn(
-                      "h-8 rounded-lg transition-all duration-150 text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center relative",
+                      "h-10 rounded-lg transition-all duration-150 font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex flex-col items-center justify-center gap-0.5 relative py-0.5",
                       !hasAdjustTab && "opacity-30 cursor-not-allowed",
                       hasAdjustTab && "cursor-pointer",
                       activeTab === "adjust"
@@ -120,11 +120,12 @@ export function ElementProperties({
                         : "text-muted-foreground/75 enabled:hover:text-foreground enabled:hover:bg-card/50 active:scale-95"
                     )}
                   >
-                    <SlidersHorizontal className="w-5 h-5 transition-transform" weight={activeTab === "adjust" ? "duotone" : "regular"} />
+                    <SlidersHorizontal className="w-3.5 h-3.5 shrink-0 transition-transform" weight={activeTab === "adjust" ? "duotone" : "regular"} />
+                    <span className="text-[10px] leading-none select-none">الألوان</span>
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-bold font-cairo">
-                  {hasAdjustTab ? "الألوان" : "للصور فقط"}
+                  {hasAdjustTab ? "الألوان وتعديلات الإضاءة" : "للصور فقط"}
                 </TooltipContent>
               </Tooltip>
 
@@ -133,16 +134,17 @@ export function ElementProperties({
                   <TabsTrigger
                     value="effects"
                     className={cn(
-                      "h-8 rounded-lg cursor-pointer transition-all duration-150 text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center relative",
+                      "h-10 rounded-lg cursor-pointer transition-all duration-150 font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex flex-col items-center justify-center gap-0.5 relative py-0.5",
                       activeTab === "effects"
                         ? "bg-card text-primary shadow-xs border border-border/80 dark:border-white/15 ring-1 ring-primary/30 scale-[1.02]"
                         : "text-muted-foreground/75 hover:text-foreground hover:bg-card/50 active:scale-95"
                     )}
                   >
-                    <Sparkle className="w-5 h-5 transition-transform" weight={activeTab === "effects" ? "duotone" : "regular"} />
+                    <Sparkle className="w-3.5 h-3.5 shrink-0 transition-transform" weight={activeTab === "effects" ? "duotone" : "regular"} />
+                    <span className="text-[10px] leading-none select-none">التأثيرات</span>
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التأثيرات</TooltipContent>
+                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">التأثيرات والظلال</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -150,16 +152,17 @@ export function ElementProperties({
                   <TabsTrigger
                     value="arrange"
                     className={cn(
-                      "h-8 rounded-lg cursor-pointer transition-all duration-150 text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center relative",
+                      "h-10 rounded-lg cursor-pointer transition-all duration-150 font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex flex-col items-center justify-center gap-0.5 relative py-0.5",
                       activeTab === "arrange"
                         ? "bg-card text-primary shadow-xs border border-border/80 dark:border-white/15 ring-1 ring-primary/30 scale-[1.02]"
                         : "text-muted-foreground/75 hover:text-foreground hover:bg-card/50 active:scale-95"
                     )}
                   >
-                    <ArrowsOutCardinal className="w-5 h-5 transition-transform" weight={activeTab === "arrange" ? "duotone" : "regular"} />
+                    <ArrowsOutCardinal className="w-3.5 h-3.5 shrink-0 transition-transform" weight={activeTab === "arrange" ? "duotone" : "regular"} />
+                    <span className="text-[10px] leading-none select-none">الترتيب</span>
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">الترتيب</TooltipContent>
+                <TooltipContent side="bottom" className="text-xs font-bold font-cairo">الترتيب والمحاذاة</TooltipContent>
               </Tooltip>
             </TabsList>
 

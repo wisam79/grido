@@ -9,7 +9,14 @@ import {
   Folders,
   Broom,
   DeviceMobileCamera,
+  CaretDown,
 } from "@phosphor-icons/react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { AddPhotoIcon } from "@/components/ui/image-icons";
 import {
   AlertDialog,
@@ -202,64 +209,94 @@ export function ToolbarFileOps() {
 
   return (
     <>
-      <div className="flex items-center gap-1 bg-muted/50 border border-border/60 p-0.5 rounded-lg shadow-2xs">
-        {/* إضافة صورة */}
-        <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleOpenFile}
-            aria-label="إضافة صورة جديدة"
-            title="إضافة صورة جديدة"
-            className="h-8 px-3 gap-2 text-foreground hover:bg-background/90 hover:text-primary font-bold rounded-md shadow-2xs active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
-          >
-            <AddPhotoIcon className="w-5 h-5 text-primary group-hover:scale-105 transition-transform" />
-            <span>إضافة صورة</span>
-          </Button>
-        </TooltipBtn>
+      <div className="flex items-center gap-1 bg-muted/50 dark:bg-background/90 border border-border/60 dark:border-border p-0.5 rounded-lg shadow-2xs">
+        {/* زر الإدراج المنقسم: فتح صورة فوري + قائمة منسدلة للدفعة والكاميرا والمشاريع */}
+        <div className="flex items-center rounded-md bg-background/60 dark:bg-muted/40 shadow-2xs border border-border/40">
+          <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleOpenFile}
+              aria-label="إضافة صورة جديدة"
+              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/90 active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
+            >
+              <AddPhotoIcon className="w-4.5 h-4.5 text-primary group-hover:scale-105 transition-transform" />
+              <span>إدراج</span>
+            </Button>
+          </TooltipBtn>
 
-        {/* إدراج دفعة صور ومعاملات */}
-        <TooltipBtn content="إدراج دفعة صور ومعاملات (Ctrl + Shift + O)">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsBatchInsertOpen(true)}
-            aria-label="إدراج دفعة صور ومعاملات"
-            title="إدراج دفعة صور ومعاملات"
-            className="h-8 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
-          >
-            <Stack className="w-5 h-5 text-muted-foreground/90 group-hover:text-foreground group-hover:scale-105 transition-all" weight="duotone" />
-            <span className="hidden sm:inline font-semibold">دفعة صور</span>
-          </Button>
-        </TooltipBtn>
+          <DropdownMenu>
+            <TooltipBtn content="المزيد من خيارات الإدراج">
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="خيارات الإدراج الإضافية"
+                  className="h-8 px-1 text-muted-foreground hover:text-foreground rounded-s-none rounded-e-md border-s border-border/40 hover:bg-background/90 active:scale-95 transition-all cursor-pointer"
+                >
+                  <CaretDown className="w-3.5 h-3.5 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipBtn>
+            <DropdownMenuContent align="start" className="w-56 font-cairo rounded-xl backdrop-blur-2xl bg-popover/95 border border-border shadow-fluent-16 p-1.5 space-y-1">
+              <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 select-none">
+                خيارات الإدراج
+              </div>
+              <DropdownMenuItem
+                onClick={() => setIsBatchInsertOpen(true)}
+                className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
+              >
+                <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Stack className="w-4 h-4" weight="duotone" />
+                </div>
+                <div className="flex flex-col min-w-0 text-start flex-1">
+                  <span className="font-bold text-foreground">دفعة صور</span>
+                  <span className="text-[10px] text-muted-foreground">إدراج لمعاملات متعددة</span>
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground/80">Ctrl+Shift+O</span>
+              </DropdownMenuItem>
 
-        {/* كاميرا الهاتف اللاسلكية */}
-        <TooltipBtn content="كاميرا الهاتف اللاسلكية (QR)">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsPhoneBridgeOpen(true)}
-            aria-label="كاميرا الهاتف اللاسلكية"
-            title="كاميرا الهاتف اللاسلكية"
-            className="h-8 px-2.5 gap-2 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
-          >
-            <DeviceMobileCamera className="w-5 h-5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
-            <span className="hidden sm:inline font-semibold">كاميرا الهاتف</span>
-          </Button>
-        </TooltipBtn>
+              <DropdownMenuItem
+                onClick={() => setIsPhoneBridgeOpen(true)}
+                className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
+              >
+                <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <DeviceMobileCamera className="w-4 h-4" weight="duotone" />
+                </div>
+                <div className="flex flex-col min-w-0 text-start flex-1">
+                  <span className="font-bold text-foreground">كاميرا الهاتف</span>
+                  <span className="text-[10px] text-muted-foreground">التقاط عبر QR اللاسلكي</span>
+                </div>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => setIsProjectsOpen(true)}
+                className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
+              >
+                <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Folders className="w-4 h-4" weight="duotone" />
+                </div>
+                <div className="flex flex-col min-w-0 text-start flex-1">
+                  <span className="font-bold text-foreground">مكتبة المشاريع</span>
+                  <span className="text-[10px] text-muted-foreground">استعراض المشاريع</span>
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground/80">Ctrl+S</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         {/* المكتبة المحلية */}
         <Suspense fallback={null}>
-          <TooltipBtn content="مكتبة المشاريع المحفوظة">
+          <TooltipBtn content="مكتبة المشاريع المحفوظة (Ctrl + S)">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsProjectsOpen(true)}
               aria-label="مكتبة المشاريع المحلية"
-              title="مكتبة المشاريع المحلية"
-              className="h-8 w-8.5 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer group"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer group"
             >
-              <Folders className="w-5 h-5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
+              <Folders className="w-4.5 h-4.5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
             </Button>
           </TooltipBtn>
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} defaultTab="list" />

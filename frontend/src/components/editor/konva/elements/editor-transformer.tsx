@@ -154,15 +154,15 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     <React.Fragment>
       <KonvaTransformer
         ref={trRef as unknown as React.Ref<Konva.Transformer>}
-        anchorSize={9}
-        anchorCornerRadius={4.5}
+        anchorSize={8}
+        anchorCornerRadius={4}
         anchorStroke={primaryColor}
-        anchorStrokeWidth={2}
+        anchorStrokeWidth={1.5}
         anchorFill={transformerAnchorFill()}
         borderStroke={primaryColor}
-        borderStrokeWidth={1.5}
+        borderStrokeWidth={1}
         borderDash={isLocked ? [5, 4] : undefined}
-        padding={6}
+        padding={3}
         keepRatio={true}
         shiftBehavior="inverted"
         ignoreStroke={true}

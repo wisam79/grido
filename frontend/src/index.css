@@ -309,6 +309,11 @@
     background: transparent !important;
   }
 
+  /* إتاحة تحديد ونسخ القيم الرقمية والأبعاد والمدخلات */
+  input, textarea, [contenteditable], [data-selectable], .font-mono, [role="alert"], [role="status"] {
+    user-select: text !important;
+  }
+
   img {
     user-drag: none;
     -webkit-user-drag: none;
@@ -684,13 +689,13 @@
   --workspace-bg: #f8fafc;
   --grid-dot: #e2e8f0;
   background-color: var(--workspace-bg);
-  background-image: radial-gradient(var(--grid-dot) 1.5px, transparent 1.5px);
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
 .dark .workspace-grid {
   --workspace-bg: var(--background);
-  --grid-dot: #262626;
+  --grid-dot: #1e1e1e;
 }
 
 /* تخصيص مظهر منتقي الألوان ليتلاءم مع هوية استوديو الهوية */

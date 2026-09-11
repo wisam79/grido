@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { 
   Toolbar, 
@@ -52,23 +52,52 @@ export default function App() {
   const [printOpen, setPrintOpen] = useState(false);
   const [mobileTemplatesOpen, setMobileTemplatesOpen] = useState(false);
   const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(() => (typeof window !== "undefined" ? window.innerWidth >= 1440 : true));
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
 
   const { theme, toggleTheme } = useTheme();
 
+  const sidebarsRef = useRef({ right: rightSidebarOpen, left: leftSidebarOpen });
+  useEffect(() => {
+    sidebarsRef.current = { right: rightSidebarOpen, left: leftSidebarOpen };
+  }, [rightSidebarOpen, leftSidebarOpen]);
+
   useEffect(() => {
     const handleToggleRight = () => setRightSidebarOpen((v) => !v);
     const handleToggleLeft = () => setLeftSidebarOpen((v) => !v);
+    const handleToggleZen = () => {
+      const { right, left } = sidebarsRef.current;
+      const anyOpen = right || left;
+      setRightSidebarOpen(!anyOpen);
+      setLeftSidebarOpen(!anyOpen);
+    };
 
     window.addEventListener("grido:toggle-right-sidebar", handleToggleRight);
     window.addEventListener("grido:toggle-left-sidebar", handleToggleLeft);
+    window.addEventListener("grido:toggle-zen-mode", handleToggleZen);
 
     return () => {
       window.removeEventListener("grido:toggle-right-sidebar", handleToggleRight);
       window.removeEventListener("grido:toggle-left-sidebar", handleToggleLeft);
+      window.removeEventListener("grido:toggle-zen-mode", handleToggleZen);
     };
+  }, []);
+
+  // التكيف المتجاوب للشاشات المتوسطة (<1440px): توفير مساحة فسيحة للكانفس
+  useEffect(() => {
+    let prevWidth = window.innerWidth;
+    const handleResize = () => {
+      const w = window.innerWidth;
+      if (w < 1440 && prevWidth >= 1440) {
+        if (sidebarsRef.current.right && sidebarsRef.current.left) {
+          setRightSidebarOpen(false);
+        }
+      }
+      prevWidth = w;
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
 
@@ -452,7 +481,7 @@ export default function App() {
           className={cn(
             "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
             rightSidebarOpen
-              ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100 border-l border-sidebar-border shadow-sm"
+              ? "w-[288px] min-w-[288px] max-w-[288px] opacity-100 border-l border-sidebar-border shadow-sm"
               : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none"
           )}
         >
@@ -471,7 +500,7 @@ export default function App() {
               <div className="absolute top-4 right-4 z-30 font-cairo animate-in fade-in slide-in-from-top-2 duration-300 no-print pointer-events-none">
                 <span className="inline-flex items-center gap-2 text-xs font-bold text-primary bg-card/90 backdrop-blur-xl h-8 px-3.5 rounded-full border border-border shadow-fluent-8">
                   <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span>جاري العمل ...</span>
+                  <span>جاري المعالجة ...</span>
                 </span>
               </div>
             )}
@@ -501,7 +530,7 @@ export default function App() {
           className={cn(
             "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
             leftSidebarOpen
-              ? "w-[335px] min-w-[335px] max-w-[335px] opacity-100 border-r border-sidebar-border shadow-sm"
+              ? "w-[296px] min-w-[296px] max-w-[296px] opacity-100 border-r border-sidebar-border shadow-sm"
               : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none"
           )}
         >

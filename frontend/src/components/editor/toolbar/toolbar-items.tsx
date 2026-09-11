@@ -312,26 +312,31 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
   if (!selectedItem || !selectedItem.imageSrc) return null;
 
   return (
-    <div className="flex items-center gap-1 font-cairo">
+    <div className="flex items-center gap-1 font-cairo bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 px-1 py-0.5 rounded-lg shadow-2xs">
+      <div className="flex items-center gap-1 text-[11px] font-bold text-primary px-1 border-e border-primary/20 select-none hidden md:flex">
+        <Sparkle className="w-3.5 h-3.5 text-primary" weight="fill" />
+        <span>ذكاء اصطناعي</span>
+      </div>
+
       {/* عزل الخلفية بالذكاء الاصطناعي - Fluent Wait UX */}
       <TooltipBtn content={isRemovingBg ? bgProgressText || "إلغاء عزل الخلفية" : "عزل الخلفية بالذكاء الاصطناعي"}>
         <Button
           variant={isRemovingBg ? "destructive" : "outline"}
           size="sm"
           className={cn(
-            "h-9 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(selectedItem)}
         >
           {isRemovingBg ? (
             <>
-              <Spinner className="w-4 h-4 shrink-0" size={16} />
+              <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
               <span>{bgProgress > 0 ? `جاري العزل ... (${bgProgress}%)` : "جاري العزل ..."}</span>
             </>
           ) : (
             <>
-              <Sparkle className="w-4.5 h-4.5 text-primary shrink-0" weight="duotone" />
+              <Sparkle className="w-4 h-4 text-primary shrink-0" weight="duotone" />
               <span>عزل الخلفية</span>
             </>
           )}
@@ -344,10 +349,10 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-2 gap-1 text-xs font-semibold border border-primary/60 dark:border-primary/60 bg-transparent hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
+            className="h-8 px-2 gap-1 text-xs font-semibold border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
             onClick={() => setRefineOpen(true)}
           >
-            <PaintBrush className="w-4.5 h-4.5 text-primary shrink-0" weight="duotone" />
+            <PaintBrush className="w-4 h-4 text-primary shrink-0" weight="duotone" />
             <span>تعديل العزل</span>
           </Button>
         </TooltipBtn>
@@ -360,7 +365,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           size="sm"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "h-9 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
             isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
@@ -368,12 +373,12 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
         >
           {isFraming ? (
             <>
-              <Spinner className="w-4 h-4 shrink-0" size={16} />
+              <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
               <span>{frameProgress > 0 ? `جاري التأطير ... (${frameProgress}%)` : "جاري التأطير ..."}</span>
             </>
           ) : (
             <>
-              <UserSquare className="w-4.5 h-4.5 text-primary shrink-0" weight="duotone" />
+              <UserSquare className="w-4 h-4 text-primary shrink-0" weight="duotone" />
               <span>تأطير الوجه</span>
             </>
           )}
@@ -387,12 +392,12 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           size="sm"
           disabled={isEnhancing || isRemovingBg || isFraming}
           className={cn(
-            "h-9 px-2.5 gap-1.5 border border-primary/60 dark:border-primary/60 bg-primary/5 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(selectedItem)}
         >
-          {isEnhancing ? <Spinner className="w-4 h-4 text-primary shrink-0" size={16} /> : <MagicWand className="w-4.5 h-4.5 text-primary shrink-0" weight="duotone" />}
+          {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-4 h-4 text-primary shrink-0" weight="duotone" />}
           <span>{isEnhancing ? (enhanceProgress > 0 ? `جاري الترميم ... (${enhanceProgress}%)` : "جاري الترميم ...") : "ترميم الوجه"}</span>
         </Button>
       </TooltipBtn>

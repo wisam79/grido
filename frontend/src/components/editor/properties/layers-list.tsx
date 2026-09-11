@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import type { TextElement, ShapeElement } from "@/lib/store/types";
+import type { TextElement, ShapeElement, ImageElement } from "@/lib/store/types";
 import { Button } from "@/components/ui/button";
 import {
   Stack,
@@ -41,6 +41,7 @@ function TooltipBtn({ content, children }: { content: string; children: React.Re
 
 interface SortableLayerItemProps {
   el: CanvasElement;
+  layerNumber: number;
   isSelected: boolean;
   toggleVisibility: (el: CanvasElement, e: React.MouseEvent) => void;
   toggleLock: (el: CanvasElement, e: React.MouseEvent) => void;
@@ -50,7 +51,7 @@ interface SortableLayerItemProps {
 }
 
 const SortableLayerItem = React.memo(
-  function SortableLayerItem({ el, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement, toggleElementSelection }: SortableLayerItemProps) {
+  function SortableLayerItem({ el, layerNumber, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement, toggleElementSelection }: SortableLayerItemProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: el.id });
 
     const style = {
@@ -86,9 +87,9 @@ const SortableLayerItem = React.memo(
             selectElement(el.id);
           }
         }}
-        className={`flex items-center justify-between p-2.5 rounded-md border text-right cursor-pointer transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none ${
+        className={`flex items-center justify-between p-2 rounded-lg border text-right cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none ${
           isSelected
-            ? "border-primary/50 bg-primary/15 text-primary shadow-xs font-bold ring-1 ring-primary/25"
+            ? "border-primary/50 bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/25"
             : "border-transparent bg-transparent hover:bg-input text-muted-foreground hover:text-foreground"
         } ${isDragging ? "shadow-md bg-card ring-1 ring-primary/30" : ""}`}
       >
@@ -99,32 +100,46 @@ const SortableLayerItem = React.memo(
             role="button"
             tabIndex={0}
             aria-label="اسحب لإعادة ترتيب الطبقة"
-            className="cursor-grab active:cursor-grabbing hover:bg-input p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
+            className="cursor-grab active:cursor-grabbing hover:bg-input p-1 rounded text-muted-foreground/60 hover:text-foreground transition-colors shrink-0"
             onClick={(e) => e.stopPropagation()}
           >
-            <DotsSixVertical className="w-4 h-4" weight="bold" />
+            <DotsSixVertical className="w-3.5 h-3.5" weight="bold" />
           </div>
-          <span className="shrink-0 text-muted-foreground/80">
-            {el.type === "image" && <Image className="w-4 h-4" weight="regular" />}
-            {el.type === "text" && <TextAa className="w-4 h-4" weight="regular" />}
-            {el.type === "shape" && <Shapes className="w-4 h-4" weight="regular" />}
-          </span>
+
+          {/* معاينة مصغرة للصورة أو أيقونة النوع */}
+          {el.type === "image" && (el as ImageElement).imageSrc ? (
+            <div className="w-6 h-6 rounded bg-muted/80 overflow-hidden shrink-0 border border-border/60 shadow-2xs">
+              <img
+                src={(el as ImageElement).imageSrc}
+                alt=""
+                className="w-full h-full object-cover select-none pointer-events-none"
+                loading="lazy"
+              />
+            </div>
+          ) : (
+            <span className="shrink-0 text-muted-foreground/80 w-6 h-6 rounded bg-muted/40 flex items-center justify-center border border-border/40">
+              {el.type === "image" && <Image className="w-3.5 h-3.5" weight="regular" />}
+              {el.type === "text" && <TextAa className="w-3.5 h-3.5" weight="bold" />}
+              {el.type === "shape" && <Shapes className="w-3.5 h-3.5" weight="regular" />}
+            </span>
+          )}
+
           <span className="text-xs font-semibold truncate max-w-[120px]">
             {el.type === "image"
-              ? "صورة"
+              ? `صورة ${String(layerNumber).padStart(2, "0")}`
               : el.type === "text"
-              ? (el as TextElement).text || "نص"
+              ? (el as TextElement).text || `نص ${String(layerNumber).padStart(2, "0")}`
               : el.shape === "rect"
-              ? "مستطيل"
+              ? `مستطيل ${String(layerNumber).padStart(2, "0")}`
               : el.shape === "ellipse"
-              ? "دائرة"
+              ? `دائرة ${String(layerNumber).padStart(2, "0")}`
               : el.shape === "star"
-              ? "نجمة"
+              ? `نجمة ${String(layerNumber).padStart(2, "0")}`
               : el.shape === "line"
-              ? "خط"
+              ? `خط ${String(layerNumber).padStart(2, "0")}`
               : el.shape === "path"
-              ? "مسار"
-              : "شكل"}
+              ? `مسار ${String(layerNumber).padStart(2, "0")}`
+              : `شكل ${String(layerNumber).padStart(2, "0")}`}
           </span>
         </div>
 
@@ -166,10 +181,12 @@ const SortableLayerItem = React.memo(
   (prevProps, nextProps) => {
     return (
       prevProps.isSelected === nextProps.isSelected &&
+      prevProps.layerNumber === nextProps.layerNumber &&
       prevProps.el.id === nextProps.el.id &&
       prevProps.el.type === nextProps.el.type &&
       prevProps.el.visible === nextProps.el.visible &&
       prevProps.el.locked === nextProps.el.locked &&
+      (prevProps.el as ImageElement).imageSrc === (nextProps.el as ImageElement).imageSrc &&
       (prevProps.el as TextElement).text === (nextProps.el as TextElement).text &&
       (prevProps.el as ShapeElement).shape === (nextProps.el as ShapeElement).shape &&
       prevProps.el.zIndex === nextProps.el.zIndex
@@ -295,11 +312,12 @@ export function LayersList() {
         <div className="space-y-2 pt-2 border-t border-border/10 animate-in fade-in duration-200">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sorted.map(el => el.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-1 max-h-[220px] overflow-y-auto pr-0.5">
-                {sorted.map((el) => (
+              <div className="space-y-1 max-h-[300px] overflow-y-auto pr-0.5">
+                {sorted.map((el, index) => (
                   <SortableLayerItem
                     key={el.id}
                     el={el}
+                    layerNumber={sorted.length - index}
                     isSelected={selectedIds.includes(el.id)}
                     toggleVisibility={toggleVisibility}
                     toggleLock={toggleLock}

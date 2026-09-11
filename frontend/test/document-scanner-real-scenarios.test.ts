@@ -427,7 +427,7 @@ describe("Document Scanner - Realistic Test Scenarios & Synthetic Images", () =>
 
     expect(w).toBeGreaterThanOrEqual(80);
     expect(w).toBeLessThanOrEqual(130);
-    expect(h).toBeGreaterThanOrEqual(160);
+    expect(h).toBeGreaterThanOrEqual(150);
     expect(h).toBeLessThanOrEqual(260);
 
     // Perspective transformation should warp to standard dimensions

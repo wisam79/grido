@@ -42,28 +42,30 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
           type="button"
           onClick={() => setActiveTab("type")}
           className={tabButtonClassName(activeTab === "type")}
+          title="الخط والنمط والقياسات"
         >
-          <TextAa className="w-3.5 h-3.5" weight={activeTab === "type" ? "bold" : "regular"} />
-          <span>الخط والنمط</span>
+          <TextAa className="w-3.5 h-3.5 shrink-0" weight={activeTab === "type" ? "bold" : "regular"} />
+          <span className="truncate">الخط</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("color")}
           className={tabButtonClassName(activeTab === "color")}
+          title="ألوان وتعبئة النص والشفافية"
         >
-          <Palette className="w-3.5 h-3.5" weight={activeTab === "color" ? "bold" : "regular"} />
-          <span>الألوان</span>
+          <Palette className="w-3.5 h-3.5 shrink-0" weight={activeTab === "color" ? "bold" : "regular"} />
+          <span className="truncate">الألوان</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("effects")}
           className={cn(tabButtonClassName(activeTab === "effects"), "relative")}
+          title="الظلال، الحدود، الشارة، والتقويس"
         >
-          <Sparkle className="w-3.5 h-3.5" weight={activeTab === "effects" ? "bold" : "regular"} />
-          {/* تمييز الاسم عن تبويب "التأثيرات والظلال" الخارجي لتفادي الالتباس */}
-          <span>الظلال والتقويس</span>
+          <Sparkle className="w-3.5 h-3.5 shrink-0" weight={activeTab === "effects" ? "bold" : "regular"} />
+          <span className="truncate">المؤثرات</span>
           {(hasBadge || hasStroke || hasShadow || hasCurve) && (
             <span className="w-1.5 h-1.5 rounded-full bg-primary absolute top-1.5 left-2" />
           )}
