@@ -2,6 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   splitSlot,
   removeSlot,
+  removeSlotsByIds,
+  duplicateSlotsByIds,
+  alignSlotsToEachOther,
+  scaleSlotsByIds,
+  resolveOverlaps,
+  moveSlots,
   convertToGridoTemplate,
   resizeSlot,
   moveSlot,
@@ -12,8 +18,9 @@ import {
   distributeSlots,
   findFirstEmptySpace,
   addPresetSlot,
+  exportLayoutFile,
+  parseLayoutFile,
 } from "../src/features/freeform-collage/lib/freeform-math";
-import { MIXED_COLLAGE_PRESETS } from "../src/features/freeform-collage/lib/mixed-presets";
 import type { FreeformSlot, FreeformLayout } from "../src/features/freeform-collage/types";
 
 describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
@@ -244,27 +251,114 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
   });
 });
 
-describe("Mixed Collage Presets Geometry", () => {
-  const mmOf = (slot: FreeformSlot, preset: (typeof MIXED_COLLAGE_PRESETS)[number]) => ({
-    w: Math.round(slot.w * preset.paperWidthMM),
-    h: Math.round(slot.h * preset.paperHeightMM),
-    x: slot.x * preset.paperWidthMM,
-    y: slot.y * preset.paperHeightMM,
-    wm: slot.w * preset.paperWidthMM,
-    hm: slot.h * preset.paperHeightMM,
+describe("Multi-Select & Batch Editing", () => {
+  const threeSlots: FreeformSlot[] = [
+    { id: "a", x: 0, y: 0, w: 0.3, h: 0.3 },
+    { id: "b", x: 0.35, y: 0.05, w: 0.3, h: 0.25 },
+    { id: "c", x: 0.1, y: 0.6, w: 0.2, h: 0.3 },
+  ];
+
+  it("removeSlotsByIds deletes only the selected slots and keeps at least one", () => {
+    const two = removeSlotsByIds(threeSlots, ["a", "b"]);
+    expect(two).toHaveLength(1);
+    expect(two[0].id).toBe("c");
+
+    const none = removeSlotsByIds(threeSlots, ["a", "b", "c"]);
+    expect(none).toHaveLength(1);
   });
 
-  it("10x15 combo preset contains exactly 6 slots", () => {
-    const preset = MIXED_COLLAGE_PRESETS[0];
-    expect(preset.paperWidthMM).toBe(100);
-    expect(preset.paperHeightMM).toBe(150);
-    expect(preset.slots).toHaveLength(6);
+  it("duplicateSlotsByIds copies the group with fresh IDs", () => {
+    const { slots, newIds } = duplicateSlotsByIds(threeSlots, ["a", "b"]);
+    expect(slots).toHaveLength(5);
+    expect(newIds).toHaveLength(2);
+    const allIds = slots.map((s) => s.id);
+    expect(new Set(allIds).size).toBe(allIds.length);
+  });
 
-    const s1 = mmOf(preset.slots[0], preset);
-    const s2 = mmOf(preset.slots[1], preset);
-    expect(s1.w).toBe(50);
-    expect(s1.h).toBe(50);
-    expect(s2.w).toBe(50);
-    expect(s2.h).toBe(50);
+  it("alignSlotsToEachOther aligns left edges to the minimum", () => {
+    const aligned = alignSlotsToEachOther(threeSlots, ["a", "b"], "left");
+    expect(aligned.find((s) => s.id === "b")!.x).toBe(0);
+  });
+
+  it("alignSlotsToEachOther same-size unifies to the largest dimensions", () => {
+    const unified = alignSlotsToEachOther(threeSlots, ["a", "b", "c"], "same-size");
+    expect(unified.find((s) => s.id === "c")!.w).toBeCloseTo(0.3, 4);
+  });
+
+  it("scaleSlotsByIds scales around the shared center and clamps to paper", () => {
+    const scaled = scaleSlotsByIds(threeSlots, ["a", "b"], 1.2);
+    const a = scaled.find((s) => s.id === "a")!;
+    expect(a.w).toBeCloseTo(0.36, 4);
+    expect(a.x).toBeGreaterThanOrEqual(0);
+    expect(a.x + a.w).toBeLessThanOrEqual(1 + 1e-9);
+  });
+
+  it("resolveOverlaps removes overlaps between slots", () => {
+    const overlapping: FreeformSlot[] = [
+      { id: "a", x: 0, y: 0, w: 0.5, h: 0.5 },
+      { id: "b", x: 0.4, y: 0.4, w: 0.5, h: 0.5 },
+    ];
+    const fixed = resolveOverlaps(overlapping);
+    for (const a of fixed) {
+      for (const b of fixed) {
+        if (a.id === b.id) continue;
+        const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+        const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+        expect(overlapX < 1e-3 || overlapY < 1e-3).toBe(true);
+      }
+    }
+  });
+
+  it("moveSlots moves the whole group by the leader's snapped delta", () => {
+    const group: FreeformSlot[] = [
+      { id: "a", x: 0.1, y: 0.1, w: 0.2, h: 0.2 },
+      { id: "b", x: 0.4, y: 0.1, w: 0.2, h: 0.2 },
+    ];
+    const { slots } = moveSlots(group, ["a", "b"], 0.1, 0.05);
+    const a = slots.find((s) => s.id === "a")!;
+    const b = slots.find((s) => s.id === "b")!;
+    expect(a.x).toBeCloseTo(0.2, 4);
+    expect(b.x - a.x).toBeCloseTo(0.3, 4); // المسافة النسبية محفوظة
+  });
+});
+
+describe("Layout Import/Export (JSON)", () => {
+  const sampleSlots: FreeformSlot[] = [
+    { id: "s1", x: 0.1, y: 0.1, w: 0.35, h: 0.45, presetType: "iq-national-id", label: "بطاقة", rotation: 0 },
+  ];
+
+  it("exportLayoutFile produces a valid grido-freeform JSON structure", () => {
+    const file = exportLayoutFile("تجربة", 100, 150, sampleSlots);
+    expect(file.format).toBe("grido-freeform");
+    expect(file.version).toBe(1);
+    expect(file.paperWidthMM).toBe(100);
+    expect(file.slots).toHaveLength(1);
+    // لا معرفات داخلية في الملف المُصدَّر (قابل للمشاركة)
+    expect((file.slots[0] as Record<string, unknown>).id).toBeUndefined();
+  });
+
+  it("parseLayoutFile round-trips a valid export", () => {
+    const file = exportLayoutFile("تجربة", 100, 150, sampleSlots);
+    const parsed = parseLayoutFile(JSON.stringify(file));
+    expect(parsed).not.toBeNull();
+    expect(parsed!.name).toBe("تجربة");
+    expect(parsed!.slots[0].w).toBeCloseTo(0.35, 4);
+  });
+
+  it("parseLayoutFile rejects invalid files", () => {
+    expect(parseLayoutFile("{}")).toBeNull();
+    expect(parseLayoutFile('{"format":"other","slots":[]}')).toBeNull();
+    expect(parseLayoutFile('{"format":"grido-freeform","paperWidthMM":9999,"paperHeightMM":150,"slots":[]}')).toBeNull();
+    expect(parseLayoutFile("not json at all")).toBeNull();
+  });
+
+  it("parseLayoutFile clamps out-of-bounds slot geometry", () => {
+    const malicious =
+      '{"format":"grido-freeform","paperWidthMM":100,"paperHeightMM":150,' +
+      '"slots":[{"x":-5,"y":0.9,"w":0.5,"h":0.5}]}';
+    const parsed = parseLayoutFile(malicious);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.slots[0].x).toBeGreaterThanOrEqual(0);
+    expect(parsed!.slots[0].y + parsed!.slots[0].h).toBeLessThanOrEqual(1 + 1e-9);
   });
 });

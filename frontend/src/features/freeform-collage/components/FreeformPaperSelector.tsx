@@ -18,7 +18,7 @@ interface PaperDimInputProps {
 }
 
 /**
- * حقل إدخال أبعاد الورقة المليمتري المتوافق مع معايير Fluent 2
+ * حقل إدخال بُعد الورقة المليمتري — متوافق مع Fluent 2
  */
 export const PaperDimInput: React.FC<PaperDimInputProps> = ({ value, onCommit, ariaLabel }) => {
   const [text, setText] = useState(String(value));
@@ -37,7 +37,7 @@ export const PaperDimInput: React.FC<PaperDimInputProps> = ({ value, onCommit, a
       dir="ltr"
       aria-label={ariaLabel}
       value={text}
-      className="h-7 text-xs rounded-md w-[54px] font-mono font-bold text-center bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all"
+      className="h-7 text-[11px] rounded-md w-[52px] font-mono font-black text-center bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all"
       onFocus={() => setFocused(true)}
       onChange={(e) => setText(e.target.value.replace(/[^\d]/g, "").slice(0, 4))}
       onBlur={() => {
@@ -76,12 +76,11 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
   return (
     <div
       className={cn(
-        "flex items-center gap-2 bg-muted/40 px-3 py-1 rounded-xl border border-border/40 text-xs font-cairo shadow-2xs fluent-specular",
+        "flex items-center gap-1.5 bg-muted/40 px-2 py-1 rounded-lg border border-border/50 text-xs font-cairo shadow-2xs",
         className
       )}
     >
       <Ruler className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
-      <span className="font-semibold text-muted-foreground shrink-0">ورق جاهز:</span>
 
       <Select
         value={currentPresetId}
@@ -94,37 +93,37 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
       >
         <SelectTrigger
           size="sm"
-          className="h-7 text-xs font-semibold rounded-md bg-background border-border/60 min-w-[140px] shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="h-7 text-[11px] font-bold rounded-md bg-background border-border/60 min-w-[110px] shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
         >
-          <SelectValue placeholder="اختر قياس..." />
+          <SelectValue placeholder="مقاس الورق..." />
         </SelectTrigger>
-        <SelectContent className="font-cairo z-(--z-print-toolbar) rounded-xl border-border/60">
-          <SelectItem value="custom" className="text-xs font-semibold rounded-md">
+        <SelectContent className="font-cairo z-(--z-print-toolbar) rounded-xl border-border/60 max-h-64">
+          <SelectItem value="custom" className="text-[11px] font-bold rounded-md">
             مخصص (أرقام)
           </SelectItem>
           {COMMON_PAPER_PRESETS.map((p) => (
-            <SelectItem key={p.id} value={p.id} className="text-xs font-semibold rounded-md">
+            <SelectItem key={p.id} value={p.id} className="text-[11px] font-bold rounded-md">
               {p.name}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
-      <div className="h-3.5 w-px bg-border/60 mx-0.5 shrink-0" />
+      <div className="w-px h-3.5 bg-border/60 shrink-0" />
 
-      <div className="flex items-center gap-1 font-mono shrink-0" dir="ltr">
+      <div className="flex items-center gap-0.5 font-mono shrink-0" dir="ltr">
         <PaperDimInput
           value={paperWidthMM}
           ariaLabel="عرض الورقة بالمليمتر"
           onCommit={(w) => onPaperDimensionsChange(w, paperHeightMM)}
         />
-        <span className="text-xs font-extrabold text-muted-foreground">×</span>
+        <span className="text-[10px] font-extrabold text-muted-foreground">×</span>
         <PaperDimInput
           value={paperHeightMM}
           ariaLabel="ارتفاع الورقة بالمليمتر"
           onCommit={(h) => onPaperDimensionsChange(paperWidthMM, h)}
         />
-        <span className="text-xs font-semibold text-muted-foreground">مم</span>
+        <span className="text-[9px] font-bold text-muted-foreground">مم</span>
       </div>
     </div>
   );

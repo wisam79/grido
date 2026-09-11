@@ -1,6 +1,7 @@
 import type {
   FreeformSlot,
   FreeformLayout,
+  FreeformLayoutFile,
   SnapLine,
   PhotoPresetType,
   SlotAlignment,
@@ -56,9 +57,12 @@ export const PHOTO_PRESET_DIMENSIONS_MM: Record<PhotoPresetType, { w: number; h:
   visa: { w: 35, h: 45 },
   "iq-national-id": { w: 35, h: 45 },
   "iq-civil-id": { w: 35, h: 45 },
+  "iq-general-id": { w: 40, h: 60 },
   "iq-transactions": { w: 30, h: 40 },
   "portrait-4x6": { w: 40, h: 60 },
   "photo-10x15": { w: 100, h: 150 },
+  wallet: { w: 54, h: 86 },
+  photobooth: { w: 45, h: 35 },
   custom: { w: 35, h: 45 },
 };
 
@@ -171,6 +175,41 @@ export function moveSlot(
 
   const updatedSlots = slots.map((s, i) => (i === idx ? { ...s, x: finalX, y: finalY } : s));
   return { slots: updatedSlots, snapLines: Array.from(uniqueSnapLinesMap.values()) };
+}
+
+/**
+ * نقل مجموعة خلايا معاً (سحب جماعي) — الخلية القائدة تلتقط المغناطيس والباقي يتبعها
+ */
+export function moveSlots(
+  slots: FreeformSlot[],
+  targetIds: string[],
+  dx: number,
+  dy: number
+): { slots: FreeformSlot[]; snapLines: SnapLine[] } {
+  if (targetIds.length === 0) return { slots, snapLines: [] };
+  if (targetIds.length === 1) return moveSlot(slots, targetIds[0], dx, dy);
+
+  // نحرك القائدة عبر moveSlot للحصول على المغناطيس ثم نطبق نفس الإزاحة على البقية
+  const leadId = targetIds[0];
+  const before = slots.find((s) => s.id === leadId);
+  const res = moveSlot(slots, leadId, dx, dy);
+  const after = res.slots.find((s) => s.id === leadId);
+  if (!before || !after) return { slots, snapLines: [] };
+
+  const shiftX = after.x - before.x;
+  const shiftY = after.y - before.y;
+
+  const movedSet = new Set(targetIds);
+  const nextSlots = res.slots.map((s) => {
+    if (s.id === leadId || !movedSet.has(s.id)) return s;
+    return {
+      ...s,
+      x: clamp(s.x + shiftX, 0, 1 - s.w),
+      y: clamp(s.y + shiftY, 0, 1 - s.h),
+    };
+  });
+
+  return { slots: nextSlots, snapLines: res.snapLines };
 }
 
 /**
@@ -549,6 +588,10 @@ export function autoPackSlots(
     return packUniform(30, 40, "iq-transactions", "معاملة");
   }
 
+  if (strategy === "wallet-max") {
+    return packUniform(54, 86, "wallet", "محفظة");
+  }
+
   if (strategy === "combo-standard") {
     const pW = 50;
     const pH = 50;
@@ -739,4 +782,264 @@ export function convertToGridoTemplate(layout: FreeformLayout): CollageTemplate 
     })),
     icon: SquaresFour,
   };
+}
+
+/* ========================================================================== */
+/*  عمليات التحديد المتعدد والتحرير الجماعي (Multi-Select & Batch Editing)      */
+/* ========================================================================== */
+
+/** حذف مجموعة خلايا محددة — يُبقي خلية واحدة على الأقل دائماً */
+export function removeSlotsByIds(slots: FreeformSlot[], ids: string[]): FreeformSlot[] {
+  if (slots.length <= ids.length) return slots.length > 1 ? slots.slice(0, 1) : slots;
+  return slots.filter((s) => !ids.includes(s.id));
+}
+
+/** مضاعفة مجموعة خلايا بإزاحة تلقائية دون تداخل مع الأصل */
+export function duplicateSlotsByIds(slots: FreeformSlot[], ids: string[]): { slots: FreeformSlot[]; newIds: string[] } {
+  const targets = slots.filter((s) => ids.includes(s.id));
+  if (targets.length === 0) return { slots, newIds: [] };
+
+  const newIds: string[] = [];
+  // نحاول أولاً بمساحة فارغة تحت كتلة النسخ كاملة، وإلا بإزاحة بسيطة
+  const minX = Math.min(...targets.map((s) => s.x));
+  const minY = Math.min(...targets.map((s) => s.y));
+  const blockW = Math.max(...targets.map((s) => s.x + s.w)) - minX;
+  const blockH = Math.max(...targets.map((s) => s.y + s.h)) - minY;
+
+  let baseX = minX + 0.03;
+  let baseY = minY + 0.03;
+  if (baseX + blockW > 1 - 1e-4 && baseY + blockH > 1 - 1e-4) {
+    baseX = Math.max(0, Math.min(minX, 1 - blockW));
+    baseY = Math.max(0, Math.min(minY, 1 - blockH));
+  } else if (baseX + blockW > 1 - 1e-4) {
+    baseX = Math.max(0, 1 - blockW);
+  } else if (baseY + blockH > 1 - 1e-4) {
+    baseY = Math.max(0, 1 - blockH);
+  }
+
+  const copies = targets.map((t) => {
+    const id = newSlotId("slot_copy");
+    newIds.push(id);
+    return {
+      ...t,
+      id,
+      x: clamp(t.x - minX + baseX, 0, 1 - t.w),
+      y: clamp(t.y - minY + baseY, 0, 1 - t.h),
+      label: t.label ? `${t.label} (نسخة)` : undefined,
+    };
+  });
+
+  return { slots: [...slots, ...copies], newIds };
+}
+
+/** تكبير/تصغير جماعي لمجموعة خلايا حول مركزها المشترك مع بقاء النِسَب */
+export function scaleSlotsByIds(
+  slots: FreeformSlot[],
+  ids: string[],
+  factor: number,
+  paperWidthMM?: number,
+  paperHeightMM?: number
+): FreeformSlot[] {
+  const targets = slots.filter((s) => ids.includes(s.id));
+  if (targets.length === 0 || factor <= 0) return slots;
+
+  const aspect = paperWidthMM && paperHeightMM && paperWidthMM > 0 && paperHeightMM > 0
+    ? paperHeightMM / paperWidthMM
+    : 1;
+
+  const cx = targets.reduce((acc, s) => acc + s.x + s.w / 2, 0) / targets.length;
+  const cy = targets.reduce((acc, s) => acc + s.y + s.h / 2, 0) / targets.length;
+
+  return slots.map((s) => {
+    if (!ids.includes(s.id)) return s;
+    const nw = clamp(s.w * factor, MIN_SIZE, 1);
+    const nh = clamp(s.h * factor, MIN_SIZE, 1);
+    const nx = clamp(cx - (cx - s.x) * factor, 0, 1 - nw);
+    const ny = clamp(cy - (cy - s.y) * factor, 0, 1 - nh);
+    void aspect;
+    return { ...s, x: Number(nx.toFixed(4)), y: Number(ny.toFixed(4)), w: Number(nw.toFixed(4)), h: Number(nh.toFixed(4)) };
+  });
+}
+
+/** محاذاة مجموعة خلايا فيما بينها (وليس مع الورقة) — محاذاة الأطراف والمراكز */
+export function alignSlotsToEachOther(
+  slots: FreeformSlot[],
+  ids: string[],
+  alignment: "left" | "right" | "top" | "bottom" | "center-h" | "center-v" | "same-size"
+): FreeformSlot[] {
+  const targets = slots.filter((s) => ids.includes(s.id));
+  if (targets.length < 2) return slots;
+
+  if (alignment === "same-size") {
+    // توحيد المقاس على أكبر خلية
+    let maxW = 0;
+    let maxH = 0;
+    for (const s of targets) {
+      if (s.w > maxW) maxW = s.w;
+      if (s.h > maxH) maxH = s.h;
+    }
+    return slots.map((s) =>
+      ids.includes(s.id)
+        ? {
+            ...s,
+            w: Math.min(maxW, 1 - s.x),
+            h: Math.min(maxH, 1 - s.y),
+          }
+        : s
+    );
+  }
+
+  const refX = Math.min(...targets.map((s) => s.x));
+  const refRight = Math.max(...targets.map((s) => s.x + s.w));
+  const refY = Math.min(...targets.map((s) => s.y));
+  const refBottom = Math.max(...targets.map((s) => s.y + s.h));
+
+  return slots.map((s) => {
+    if (!ids.includes(s.id)) return s;
+    let nx = s.x;
+    let ny = s.y;
+    if (alignment === "left") nx = refX;
+    else if (alignment === "right") nx = refRight - s.w;
+    else if (alignment === "top") ny = refY;
+    else if (alignment === "bottom") ny = refBottom - s.h;
+    else if (alignment === "center-h") {
+      const cx = targets.reduce((acc, t) => acc + t.x + t.w / 2, 0) / targets.length;
+      nx = cx - s.w / 2;
+    } else if (alignment === "center-v") {
+      const cy = targets.reduce((acc, t) => acc + t.y + t.h / 2, 0) / targets.length;
+      ny = cy - s.h / 2;
+    }
+    return {
+      ...s,
+      x: clamp(nx, 0, 1 - s.w),
+      y: clamp(ny, 0, 1 - s.h),
+    };
+  });
+}
+
+/** إزالة كافة التداخلات بين الخلايا — دفع لطيف متتالٍ حتى الاستقرار */
+export function resolveOverlaps(slots: FreeformSlot[]): FreeformSlot[] {
+  const EPS = 1e-4;
+  const current = slots.map((s) => ({ ...s }));
+  let changed = true;
+  let iterations = 0;
+
+  while (changed && iterations < 30) {
+    changed = false;
+    iterations += 1;
+
+    for (let i = 0; i < current.length; i++) {
+      for (let j = i + 1; j < current.length; j++) {
+        const a = current[i];
+        const b = current[j];
+        const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+        const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+        if (overlapX > EPS && overlapY > EPS) {
+          // ندفع على المحور الأقل تداخلاً فقط
+          if (overlapX < overlapY) {
+            const push = overlapX + 0.002;
+            if (a.x <= b.x) {
+              b.x = clamp(b.x + push, 0, 1 - b.w);
+              a.x = clamp(a.x - 0, 0, 1 - a.w);
+            } else {
+              a.x = clamp(a.x + push, 0, 1 - a.w);
+              b.x = clamp(b.x - 0, 0, 1 - b.w);
+            }
+          } else {
+            const push = overlapY + 0.002;
+            if (a.y <= b.y) {
+              b.y = clamp(b.y + push, 0, 1 - b.h);
+              a.y = clamp(a.y - 0, 0, 1 - a.h);
+            } else {
+              a.y = clamp(a.y + push, 0, 1 - a.h);
+              b.y = clamp(b.y - 0, 0, 1 - b.h);
+            }
+          }
+          changed = true;
+        }
+      }
+    }
+  }
+
+  return current.map((s) => ({ ...s, x: Number(s.x.toFixed(4)), y: Number(s.y.toFixed(4)) }));
+}
+
+/* ========================================================================== */
+/*  تصدير واستيراد تخطيط الكولاج الحر (JSON Interchange)                       */
+/* ========================================================================== */
+
+/** تحويل التخطيط الحالي إلى صيغة ملف JSON قابلة للمشاركة */
+export function exportLayoutFile(
+  name: string,
+  paperWidthMM: number,
+  paperHeightMM: number,
+  slots: FreeformSlot[]
+): FreeformLayoutFile {
+  return {
+    format: "grido-freeform",
+    version: 1,
+    name: name || "كولاج حر",
+    paperWidthMM,
+    paperHeightMM,
+    slots: slots.map((s) => ({
+      x: Number(s.x.toFixed(4)),
+      y: Number(s.y.toFixed(4)),
+      w: Number(s.w.toFixed(4)),
+      h: Number(s.h.toFixed(4)),
+      label: s.label,
+      presetType: s.presetType,
+      rotation: s.rotation ?? 0,
+    })),
+  };
+}
+
+/** التحقق من صحة ملف مستورد وإرجاع بياناته الآمنة — null إن كان الملف غير صالح */
+export function parseLayoutFile(raw: string): FreeformLayoutFile | null {
+  try {
+    const data = JSON.parse(raw) as Partial<FreeformLayoutFile>;
+    if (data.format !== "grido-freeform" || !Array.isArray(data.slots)) return null;
+    const pw = Number(data.paperWidthMM);
+    const ph = Number(data.paperHeightMM);
+    if (!Number.isFinite(pw) || !Number.isFinite(ph) || pw < 20 || ph < 20 || pw > 1000 || ph > 1000) return null;
+    if (data.slots.length === 0 || data.slots.length > 200) return null;
+
+    const slots = data.slots
+      .map((s) => ({
+        x: clamp(Number(s.x) || 0, 0, 1),
+        y: clamp(Number(s.y) || 0, 0, 1),
+        w: clamp(Number(s.w) || 0.1, MIN_SIZE, 1),
+        h: clamp(Number(s.h) || 0.1, MIN_SIZE, 1),
+        label: typeof s.label === "string" ? s.label.slice(0, 60) : undefined,
+        presetType: s.presetType,
+        rotation: (s.rotation === 90 || s.rotation === 180 || s.rotation === 270 ? s.rotation : 0) as 0 | 90 | 180 | 270,
+      }))
+      .map((s) => ({ ...s, x: Math.min(s.x, 1 - s.w), y: Math.min(s.y, 1 - s.h) }));
+
+    return {
+      format: "grido-freeform",
+      version: 1,
+      name: typeof data.name === "string" && data.name.trim() ? data.name.slice(0, 80) : "كولاج مستورد",
+      paperWidthMM: Math.round(pw),
+      paperHeightMM: Math.round(ph),
+      gapMM: Number(data.gapMM) || 0,
+      marginMM: Number(data.marginMM) || 0,
+      slots,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** توليد خلايا جديدة بمعرفات فريدة من ملف مستورد */
+export function slotsFromFile(file: FreeformLayoutFile): FreeformSlot[] {
+  return file.slots.map((s) => ({
+    id: newSlotId("slot_imp"),
+    x: s.x,
+    y: s.y,
+    w: s.w,
+    h: s.h,
+    label: s.label,
+    presetType: s.presetType,
+    rotation: s.rotation,
+  }));
 }

@@ -16,6 +16,7 @@ import {
   Ruler,
   SlidersHorizontal,
   CaretDown,
+  ArrowsOut,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import {
@@ -27,6 +28,7 @@ import {
 
 interface FreeformSlotInspectorProps {
   slot: FreeformSlot | undefined;
+  multiSelectedCount?: number;
   paperWidthMM: number;
   paperHeightMM: number;
   onUpdateSlot: (updated: Partial<FreeformSlot>) => void;
@@ -36,8 +38,50 @@ interface FreeformSlotInspectorProps {
   onAlignSlot: (alignment: SlotAlignment) => void;
 }
 
+/** حقل رقم ملمي مصمم — ملصق أيقوني مدمج + وحدة مم */
+function MmField({
+  icon,
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none" title={label}>
+        {icon}
+      </span>
+      <Input
+        type="number"
+        step={step}
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 pr-7 pl-7 text-center font-mono text-[11px] font-bold rounded-md bg-input/40 border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+        dir="ltr"
+        aria-label={label}
+      />
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground/70 pointer-events-none font-mono">
+        مم
+      </span>
+    </div>
+  );
+}
+
 export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React.memo(function FreeformSlotInspector({
   slot,
+  multiSelectedCount = 1,
   paperWidthMM,
   paperHeightMM,
   onUpdateSlot,
@@ -48,17 +92,16 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
 }) {
   if (!slot) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl bg-card/60 border border-border/70 fluent-specular shadow-2xs h-full min-h-[160px] text-muted-foreground select-none">
-        <SlidersHorizontal className="w-6 h-6 mb-1.5 opacity-40 text-primary" weight="duotone" />
-        <span className="text-xs font-bold text-foreground/80">لم يتم تحديد أي خلية</span>
-        <span className="text-[10.5px] text-muted-foreground mt-0.5">
-          انقر فوق أي خلية على مساحة العمل لتعديل أبعادها وموقعها بالمليمتر
+      <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl bg-card/60 border border-dashed border-border/70 fluent-specular shadow-2xs h-full min-h-[160px] text-muted-foreground select-none gap-1.5">
+        <SlidersHorizontal className="w-6 h-6 opacity-30 text-primary" weight="duotone" />
+        <span className="text-xs font-bold text-foreground/75">لا توجد خلية محددة</span>
+        <span className="text-[10px] leading-relaxed text-muted-foreground">
+          انقر خلية لضبط مقاسها وموقعها بالمليمتر
         </span>
       </div>
     );
   }
 
-  // حساب الأبعاد الفيزيائية الحالية بالمليمتر
   const xMM = Math.round(slot.x * paperWidthMM * 10) / 10;
   const yMM = Math.round(slot.y * paperHeightMM * 10) / 10;
   const wMM = Math.round(slot.w * paperWidthMM * 10) / 10;
@@ -95,16 +138,14 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
   const handleXChange = (valStr: string) => {
     const num = parseFloat(valStr);
     if (isNaN(num)) return;
-    const maxMM = paperWidthMM - wMM;
-    const clampedMM = Math.min(maxMM, Math.max(0, num));
+    const clampedMM = Math.min(paperWidthMM - wMM, Math.max(0, num));
     onUpdateSlot({ x: clampedMM / paperWidthMM });
   };
 
   const handleYChange = (valStr: string) => {
     const num = parseFloat(valStr);
     if (isNaN(num)) return;
-    const maxMM = paperHeightMM - hMM;
-    const clampedMM = Math.min(maxMM, Math.max(0, num));
+    const clampedMM = Math.min(paperHeightMM - hMM, Math.max(0, num));
     onUpdateSlot({ y: clampedMM / paperHeightMM });
   };
 
@@ -127,28 +168,41 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
 
   return (
     <div className="space-y-2.5 p-3 rounded-xl bg-card/75 border border-border/80 dark:border-white/10 fluent-specular shadow-2xs text-xs font-cairo" dir="rtl">
-      {/* الرأس: نوع الخلية والتسمية */}
+      {/* شريط التحديد الجماعي */}
+      {multiSelectedCount > 1 && (
+        <div className="flex items-center justify-between gap-1.5 rounded-lg bg-primary/10 border border-primary/25 px-2 py-1.5">
+          <span className="flex items-center gap-1.5 font-bold text-primary text-[10.5px]">
+            <Copy className="w-3 h-3" weight="bold" />
+            أدوات جماعية
+          </span>
+          <span className="font-mono text-[10px] font-black text-primary bg-background/70 border border-primary/20 rounded px-1.5 py-0.5" dir="ltr">
+            ×{multiSelectedCount}
+          </span>
+        </div>
+      )}
+
+      {/* الرأس: التسمية + قائمة المقاسات */}
       <div className="flex items-center justify-between gap-1.5 border-b border-border/40 pb-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
-          <span className="font-bold text-foreground truncate text-xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+          <span className="font-bold text-foreground truncate text-[11.5px]">
             {slot.label || "خلية مخصصة"}
           </span>
         </div>
 
-        {/* قائمة تغيير المقاس القياسي المباشر */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="h-6.5 px-2 text-[10.5px] gap-1 rounded-md border-border/70 hover:border-primary/40 cursor-pointer"
+              className="h-6.5 px-2 text-[10.5px] gap-1 rounded-md border-border/70 hover:border-primary/40 cursor-pointer shrink-0 font-bold"
             >
-              <span>{PHOTO_PRESET_LABELS[slot.presetType || "custom"] || "تغيير المقاس"}</span>
-              <CaretDown className="w-3 h-3 opacity-60" weight="bold" />
+              <ArrowsOut className="w-3 h-3 text-primary/70" weight="bold" />
+              {PHOTO_PRESET_LABELS[slot.presetType || "custom"]?.split(" ")[0] || "مقاس"}
+              <CaretDown className="w-2.5 h-2.5 opacity-60" weight="bold" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44 font-cairo text-xs">
+          <DropdownMenuContent align="end" className="w-44 font-cairo text-xs z-(--z-print-toolbar)">
             {Object.entries(PHOTO_PRESET_DIMENSIONS_MM).map(([key, dims]) => (
               <DropdownMenuItem
                 key={key}
@@ -157,7 +211,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
               >
                 <span>{PHOTO_PRESET_LABELS[key as PhotoPresetType]}</span>
                 <span className="font-mono text-[10px] text-muted-foreground" dir="ltr">
-                  {dims.w}×{dims.h} mm
+                  {dims.w}×{dims.h}
                 </span>
               </DropdownMenuItem>
             ))}
@@ -165,98 +219,84 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
         </DropdownMenu>
       </div>
 
-      {/* صف المقاسات: العرض والارتفاع بالمليمتر مع قفل النسبة */}
-      <div className="grid grid-cols-2 gap-2 items-center">
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-[10.5px] text-muted-foreground font-semibold">
-            <span className="flex items-center gap-1">
-              <Ruler className="w-3 h-3 text-primary/80" weight="bold" />
-              العرض (مم)
-            </span>
-          </div>
-          <Input
-            type="number"
-            step="0.5"
-            min="5"
-            max={paperWidthMM}
+      {/* الأبعاد: العرض × الارتفاع مع قفل النسبة */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-bold">
+          <span className="flex items-center gap-1">
+            <Ruler className="w-3 h-3 text-primary/70" weight="bold" />
+            الأبعاد
+          </span>
+          <button
+            type="button"
+            onClick={toggleAspectLock}
+            className={cn(
+              "cursor-pointer p-0.5 rounded transition-all",
+              slot.lockAspect ? "text-primary" : "text-muted-foreground/60 hover:text-foreground"
+            )}
+            title={slot.lockAspect ? "فك قفل النسبة" : "قفل نسبة الأبعاد"}
+          >
+            {slot.lockAspect ? (
+              <LockSimple className="w-3 h-3 text-primary" weight="fill" />
+            ) : (
+              <LockSimpleOpen className="w-3 h-3" weight="bold" />
+            )}
+          </button>
+        </div>
+        <div className="grid grid-cols-[1fr_20px_1fr] items-center gap-1.5" dir="ltr">
+          <MmField
+            icon={<Ruler className="w-3 h-3" weight="bold" />}
+            label="العرض بالمليمتر"
             value={wMM}
-            onChange={(e) => handleWidthChange(e.target.value)}
-            className="h-8 text-center font-mono text-xs rounded-md bg-input/50"
-            dir="ltr"
+            min={5}
+            max={paperWidthMM}
+            step={0.5}
+            onChange={handleWidthChange}
           />
-        </div>
-
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-[10.5px] text-muted-foreground font-semibold">
-            <span className="flex items-center gap-1">
-              <Ruler className="w-3 h-3 text-primary/80 rotate-90" weight="bold" />
-              الارتفاع (مم)
-            </span>
-            <button
-              type="button"
-              onClick={toggleAspectLock}
-              className={cn(
-                "cursor-pointer p-0.5 rounded transition-all",
-                slot.lockAspect ? "text-primary font-bold" : "text-muted-foreground/60 hover:text-foreground"
-              )}
-              title={slot.lockAspect ? "فك قفل نسبة الأبعاد" : "قفل نسبة العرض إلى الارتفاع"}
-            >
-              {slot.lockAspect ? <LockSimple className="w-3 h-3 text-primary" weight="bold" /> : <LockSimpleOpen className="w-3 h-3" weight="bold" />}
-            </button>
-          </div>
-          <Input
-            type="number"
-            step="0.5"
-            min="5"
-            max={paperHeightMM}
+          <span className="text-[10px] font-bold text-muted-foreground/60 text-center">×</span>
+          <MmField
+            icon={<Ruler className="w-3 h-3 rotate-90" weight="bold" />}
+            label="الارتفاع بالمليمتر"
             value={hMM}
-            onChange={(e) => handleHeightChange(e.target.value)}
-            className="h-8 text-center font-mono text-xs rounded-md bg-input/50"
-            dir="ltr"
+            min={5}
+            max={paperHeightMM}
+            step={0.5}
+            onChange={handleHeightChange}
           />
         </div>
       </div>
 
-      {/* صف الإحداثيات: X و Y بالمليمتر */}
-      <div className="grid grid-cols-2 gap-2 items-center">
-        <div className="space-y-1">
-          <span className="text-[10.5px] text-muted-foreground font-semibold flex items-center gap-1">
-            <Cursor className="w-3 h-3 text-muted-foreground/70" weight="bold" />
-            الموقع X (مم)
-          </span>
-          <Input
-            type="number"
-            step="0.5"
-            min="0"
-            max={paperWidthMM - wMM}
+      {/* الموقع: X , Y */}
+      <div className="space-y-1.5">
+        <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold">
+          <Cursor className="w-3 h-3 text-primary/70" weight="bold" />
+          الموقع من الزاوية (0,0)
+        </span>
+        <div className="grid grid-cols-[1fr_20px_1fr] items-center gap-1.5" dir="ltr">
+          <MmField
+            icon={<Cursor className="w-3 h-3" weight="bold" />}
+            label="الموقع X بالمليمتر"
             value={xMM}
-            onChange={(e) => handleXChange(e.target.value)}
-            className="h-8 text-center font-mono text-xs rounded-md bg-input/50"
-            dir="ltr"
+            min={0}
+            max={paperWidthMM - wMM}
+            step={0.5}
+            onChange={handleXChange}
           />
-        </div>
-
-        <div className="space-y-1">
-          <span className="text-[10.5px] text-muted-foreground font-semibold flex items-center gap-1">
-            <Cursor className="w-3 h-3 text-muted-foreground/70 rotate-90" weight="bold" />
-            الموقع Y (مم)
-          </span>
-          <Input
-            type="number"
-            step="0.5"
-            min="0"
-            max={paperHeightMM - hMM}
+          <span className="text-[10px] font-bold text-muted-foreground/60 text-center">,</span>
+          <MmField
+            icon={<Cursor className="w-3 h-3 rotate-90" weight="bold" />}
+            label="الموقع Y بالمليمتر"
             value={yMM}
-            onChange={(e) => handleYChange(e.target.value)}
-            className="h-8 text-center font-mono text-xs rounded-md bg-input/50"
-            dir="ltr"
+            min={0}
+            max={paperHeightMM - hMM}
+            step={0.5}
+            onChange={handleYChange}
           />
         </div>
       </div>
 
-      {/* صف الإجراءات السريعة والمحاذاة للخلية */}
-      <div className="flex items-center justify-between gap-1 pt-1 border-t border-border/40">
-        <div className="flex items-center gap-1">
+      {/* الإجراءات السريعة */}
+      <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-border/40">
+        <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -268,7 +308,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">تدوير الخلية 90°</TooltipContent>
+            <TooltipContent side="top">تدوير 90°</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -279,10 +319,10 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={() => onAlignSlot("top-left")}
               >
-                <span className="text-[10px] font-bold">TL</span>
+                <span className="text-[10px] font-black text-primary leading-none">TL</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">محاذاة أعلى اليسار (قص فوري)</TooltipContent>
+            <TooltipContent side="top">زاوية القص</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -296,7 +336,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 <AlignCenterHorizontal className="w-3.5 h-3.5" weight="bold" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">توسيط أفقياً</TooltipContent>
+            <TooltipContent side="top">توسيط أفقي</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -310,11 +350,11 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 <AlignCenterVertical className="w-3.5 h-3.5" weight="bold" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">توسيط عمودياً</TooltipContent>
+            <TooltipContent side="top">توسيط عمودي</TooltipContent>
           </Tooltip>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -326,7 +366,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 <Copy className="w-3.5 h-3.5" weight="bold" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">مضاعفة الخلية (Ctrl+D)</TooltipContent>
+            <TooltipContent side="top">تكرار (Ctrl+D)</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -340,7 +380,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 <Trash className="w-3.5 h-3.5" weight="bold" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">حذف الخلية (Del)</TooltipContent>
+            <TooltipContent side="top">حذف (Del)</TooltipContent>
           </Tooltip>
         </div>
       </div>

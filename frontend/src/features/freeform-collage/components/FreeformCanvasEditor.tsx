@@ -1,7 +1,7 @@
 import React, { useRef, useCallback, useState, useEffect, memo } from "react";
 import { cn } from "@/lib/utils";
 import type { FreeformSlot, SnapLine } from "../types";
-import { resizeSlot, moveSlot, type ResizeHandle } from "../lib/freeform-math";
+import { resizeSlot, moveSlot, moveSlots, type ResizeHandle } from "../lib/freeform-math";
 import { FreeformSlotCard } from "./FreeformSlotCard";
 
 interface FreeformCanvasEditorProps {
@@ -9,9 +9,12 @@ interface FreeformCanvasEditorProps {
   paperHeightMM: number;
   slots: FreeformSlot[];
   selectedSlotId: string | null;
+  multiSelectedIds?: string[];
   showCutLines?: boolean;
   enableSnapping?: boolean;
   onSelectSlot: (slotId: string | null) => void;
+  /** إضافة/إزالة خلية من التحديد المتعدد (Shift+Click) */
+  onToggleMultiSelect?: (slotId: string) => void;
   onSlotsChange: (slots: FreeformSlot[]) => void;
   onDragStart?: () => void;
   onDragEnd?: (slots: FreeformSlot[]) => void;
@@ -39,9 +42,11 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
   paperHeightMM,
   slots,
   selectedSlotId,
+  multiSelectedIds = [],
   showCutLines = false,
   enableSnapping = true,
   onSelectSlot,
+  onToggleMultiSelect,
   onSlotsChange,
   onDragStart,
   onDragEnd,
@@ -71,18 +76,25 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
 
         next = resizeSlot(st.origSlots, st.slotId, st.handle, dx, dy, aspect);
       } else if (st.mode === "move") {
+        // سحب جماعي: الخلية الأساسية + التحديد المتعدد يتحركون ككتلة واحدة
+        const groupIds = multiSelectedIds.length > 0 && multiSelectedIds.includes(st.slotId)
+          ? [st.slotId, ...multiSelectedIds.filter((id) => id !== st.slotId)]
+          : [st.slotId];
+
         if (enableSnapping) {
-          const res = moveSlot(st.origSlots, st.slotId, dx, dy);
+          const res = groupIds.length > 1
+            ? moveSlots(st.origSlots, groupIds, dx, dy)
+            : moveSlot(st.origSlots, st.slotId, dx, dy);
           next = res.slots;
           snapLines = res.snapLines;
         } else {
-          const idx = st.origSlots.findIndex((s) => s.id === st.slotId);
-          if (idx !== -1) {
-            const s = st.origSlots[idx];
-            const nx = Math.min(1 - s.w, Math.max(0, s.x + dx));
-            const ny = Math.min(1 - s.h, Math.max(0, s.y + dy));
-            next = st.origSlots.map((item, i) => (i === idx ? { ...item, x: nx, y: ny } : item));
-          }
+          const moveSet = new Set(groupIds);
+          next = st.origSlots.map((item) => {
+            if (!moveSet.has(item.id)) return item;
+            const nx = Math.min(1 - item.w, Math.max(0, item.x + dx));
+            const ny = Math.min(1 - item.h, Math.max(0, item.y + dy));
+            return { ...item, x: nx, y: ny };
+          });
         }
       }
 
@@ -92,7 +104,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
       onSlotsChange(next);
       if (mountedRef.current) setActiveSnapLines(snapLines);
     },
-    [onSlotsChange, enableSnapping, paperWidthMM, paperHeightMM]
+    [onSlotsChange, enableSnapping, paperWidthMM, paperHeightMM, multiSelectedIds]
   );
 
   useEffect(() => {
@@ -148,11 +160,18 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
 
   const onBodyPointerDown = useCallback(
     (e: React.PointerEvent, slotId: string) => {
+      // Shift + نقرة = تبديل عضوية الخلية في التحديد المتعدد
+      if (e.shiftKey && onToggleMultiSelect) {
+        e.stopPropagation();
+        e.preventDefault();
+        onToggleMultiSelect(slotId);
+        return;
+      }
       onSelectSlot(slotId);
       e.stopPropagation();
       beginDrag("move", slotId, undefined, e, e.currentTarget as HTMLElement);
     },
-    [onSelectSlot, beginDrag]
+    [onSelectSlot, onToggleMultiSelect, beginDrag]
   );
 
   const onPointerMove = useCallback(
@@ -239,40 +258,56 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
     new Set(slots.flatMap((s) => [s.x, s.x + s.w]))
   ).filter((pos) => pos > 0.005 && pos < 0.995);
 
+  // 📊 نسبة استغلال مساحة الورقة (Coverage %) — كم من الورقة تغطيه الصور فعلياً
+  const coverage = slots.length > 0
+    ? Math.round(slots.reduce((acc, s) => acc + s.w * s.h, 0) * 100)
+    : 0;
+
+  // 📏 المؤشر الحي: أبعاد الخلية الأساسية بالمليمتر أثناء السحب أو التحجيم
+  const isDragging = dragState.current !== null;
+  const liveSlot = slots.find((s) => s.id === selectedSlotId);
+  const liveBadge =
+    isDragging && liveSlot
+      ? `${Math.round(liveSlot.w * paperWidthMM * 10) / 10}×${Math.round(liveSlot.h * paperHeightMM * 10) / 10} مم @ ${Math.round(liveSlot.x * paperWidthMM * 10) / 10},${Math.round(liveSlot.y * paperHeightMM * 10) / 10}`
+      : null;
+
   return (
-    <div className="w-full flex items-center justify-center bg-muted/20 rounded-2xl relative flex-1 min-h-0 overflow-hidden p-2 border border-border/40 font-cairo select-none">
+    <div className="w-full flex items-center justify-center bg-muted/30 dark:bg-[#0a0e17] rounded-2xl relative flex-1 min-h-0 overflow-hidden p-3 border border-border/40 font-cairo select-none">
+      {/* ظل خلفي ناعم يحاكي طاولة الاستوديو */}
       <div
         ref={paperRef}
-        className="relative bg-background border-2 border-border shadow-md shadow-black/15 rounded-lg transition-colors overflow-hidden touch-none"
+        className="relative bg-white dark:bg-zinc-900 rounded-[6px] transition-shadow overflow-hidden touch-none"
         style={{
-          width: paperAspect >= 1 ? "98%" : "auto",
-          height: paperAspect < 1 ? "98%" : "auto",
+          width: paperAspect >= 1 ? "97%" : "auto",
+          height: paperAspect < 1 ? "97%" : "auto",
           maxWidth: "100%",
           maxHeight: "100%",
           aspectRatio: `${paperWidthMM} / ${paperHeightMM}`,
+          boxShadow:
+            "0 0 0 1px rgba(0,0,0,0.08), 0 6.4px 14.4px 0 rgba(0,0,0,0.13), 0 1.2px 3.6px 0 rgba(0,0,0,0.10)",
         }}
         onPointerDown={onPaperPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        {/* خطوط الشبكة المساعدة الخفيفة */}
-        <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_0.6px,transparent_0.6px)] dark:bg-[radial-gradient(#444_0.6px,transparent_0.6px)] [background-size:14px_14px] opacity-40 pointer-events-none" />
+        {/* شبكة نقاط خفيفة جداً داخل الورقة */}
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(120,130,150,0.35)_0.5px,transparent_0.5px)] dark:bg-[radial-gradient(rgba(255,255,255,0.12)_0.5px,transparent_0.5px)] [background-size:16px_16px] opacity-30 pointer-events-none" />
 
         {/* خطوط القص الإرشادية عند التفعيل */}
         {showCutLines && (
-          <div className="absolute inset-0 pointer-events-none z-25 opacity-70">
+          <div className="absolute inset-0 pointer-events-none z-25 opacity-60">
             {cutLinesHorizontal.map((pos, i) => (
               <div
                 key={`cut-h-${i}`}
-                className="absolute left-0 right-0 border-t border-dashed border-red-500/80"
+                className="absolute left-0 right-0 border-t border-dashed border-rose-500/70"
                 style={{ top: `${pos * 100}%` }}
               />
             ))}
             {cutLinesVertical.map((pos, i) => (
               <div
                 key={`cut-v-${i}`}
-                className="absolute top-0 bottom-0 border-l border-dashed border-red-500/80"
+                className="absolute top-0 bottom-0 border-l border-dashed border-rose-500/70"
                 style={{ left: `${pos * 100}%` }}
               />
             ))}
@@ -284,8 +319,8 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
           <div
             key={line.id}
             className={cn(
-              "absolute bg-pink-500 dark:bg-pink-400 z-30 pointer-events-none shadow-xs transition-opacity duration-75",
-              line.axis === "x" ? "w-0.5 top-0 bottom-0" : "h-0.5 left-0 right-0"
+              "absolute bg-fuchsia-500 dark:bg-fuchsia-400 z-30 pointer-events-none transition-opacity duration-75",
+              line.axis === "x" ? "w-px top-0 bottom-0" : "h-px left-0 right-0"
             )}
             style={{
               [line.axis === "x" ? "left" : "top"]: `${line.position * 100}%`,
@@ -293,12 +328,21 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
           />
         ))}
 
-        {/* شارة أبعاد الورقة المليمترية مع عدد الخلايا */}
-        <div className="absolute bottom-1.5 left-1.5 bg-foreground/90 text-background text-[10px] px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs border border-background/10 flex items-center gap-1.5" dir="ltr">
-          <span>{paperWidthMM} × {paperHeightMM} mm</span>
+        {/* شارة أبعاد الورقة المليمترية مع عدد الخلايا ونسبة الاستغلال */}
+        <div className="absolute bottom-1.5 left-1.5 bg-foreground/85 backdrop-blur-sm text-background text-[9.5px] px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs flex items-center gap-1.5" dir="ltr">
+          <span className="font-bold">{paperWidthMM}×{paperHeightMM}mm</span>
           <span className="opacity-40">|</span>
-          <span>{slots.length} صور</span>
+          <span>{slots.length} photos</span>
+          <span className="opacity-40">|</span>
+          <span className="font-bold">{coverage}%</span>
         </div>
+
+        {/* المؤشر الحي بالمليمتر أثناء السحب أو التحجيم */}
+        {liveBadge && (
+          <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-[9.5px] px-2 py-0.5 rounded-md font-mono z-40 pointer-events-none shadow-md animate-in fade-in duration-75" dir="ltr">
+            {liveBadge}
+          </div>
+        )}
 
         {/* بطاقات خلايا الكولاج التفاعلية */}
         {slots.map((slot, index) => (
@@ -307,6 +351,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
             slot={slot}
             index={index}
             isSelected={slot.id === selectedSlotId}
+            isMultiSelected={multiSelectedIds.includes(slot.id)}
             paperWidthMM={paperWidthMM}
             paperHeightMM={paperHeightMM}
             onBodyPointerDown={onBodyPointerDown}

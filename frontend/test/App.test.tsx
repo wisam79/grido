@@ -210,14 +210,14 @@ describe('Component Testing: UI Rendering', () => {
   it('renders the TemplatePanel correctly', async () => {
     useEditorStore.setState({ mode: 'single' });
     render(<App />);
-    expect(await screen.findByText('خلفية مساحة العمل')).toBeInTheDocument();
+    expect(await screen.findByText('الطبقات')).toBeInTheDocument();
   }, 15000);
 
   it('renders initial collage templates correctly', async () => {
     useEditorStore.setState({ mode: 'collage' });
     render(<TemplatePanel />);
 
-    expect(await screen.findByText('النماذج الجاهزة')).toBeInTheDocument();
-    expect(await screen.findByText('8 صور بطاقة وجواز')).toBeInTheDocument();
+    expect(await screen.findAllByText('القوالب')).not.toHaveLength(0);
+    expect(await screen.findByText('شيت A4 جواز')).toBeInTheDocument();
   }, 15000);
 });

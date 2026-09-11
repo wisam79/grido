@@ -7,6 +7,7 @@ export interface FreeformSlotCardProps {
   slot: FreeformSlot;
   index: number;
   isSelected: boolean;
+  isMultiSelected?: boolean;
   paperWidthMM: number;
   paperHeightMM: number;
   onBodyPointerDown: (e: React.PointerEvent, slotId: string) => void;
@@ -40,12 +41,27 @@ const HANDLES: { dir: ResizeHandle; pos: React.CSSProperties }[] = [
 ];
 
 /**
- * بطاقة خلية الكولاج التفاعلية المتوافقة مع معايير Fluent 2
+ * خيال بورتريه واقعي داخل الخلية — كما تُطبع فعلاً في الاستوديو
+ */
+function PortraitSilhouette({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 100" className={cn("w-full h-full", className)} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      {/* الرأس */}
+      <circle cx="50" cy="36" r="16" />
+      {/* الكتفان */}
+      <path d="M 18 100 C 18 74, 30 60, 50 60 C 70 60, 82 74, 82 100 Z" />
+    </svg>
+  );
+}
+
+/**
+ * بطاقة خلية الكولاج بمظهر ورقة طباعة فوتوغرافية حقيقية (Fluent 2)
  */
 export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function FreeformSlotCard({
   slot,
   index,
   isSelected,
+  isMultiSelected = false,
   paperWidthMM,
   paperHeightMM,
   onBodyPointerDown,
@@ -63,7 +79,7 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       data-slot-id={slot.id}
       role="button"
       tabIndex={0}
-      aria-label={slot.label || `خلية ${index + 1}`}
+      aria-label={slot.label || `خلية ${index + 1} — ${slotWidthMM}×${slotHeightMM} مم`}
       aria-pressed={isSelected}
       onPointerDown={(e) => onBodyPointerDown(e, slot.id)}
       onPointerMove={onPointerMove}
@@ -71,10 +87,13 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       onPointerCancel={onPointerCancel}
       onKeyDown={(e) => onKeyDown(e, slot.id)}
       className={cn(
-        "absolute rounded-md border transition-[background-color,border-color,box-shadow] cursor-move flex flex-col items-center justify-center group select-none overflow-hidden touch-none p-1",
+        "absolute rounded-[3px] cursor-move select-none overflow-hidden touch-none",
+        "transition-[border-color,background-color,box-shadow] duration-150",
         isSelected
-          ? "border-2 border-primary bg-primary/15 ring-2 ring-primary/30 z-20 shadow-md text-primary"
-          : "border-border/80 bg-muted/95 hover:bg-background text-foreground z-10 shadow-2xs fluent-specular"
+          ? "border-2 border-primary bg-primary/10 ring-2 ring-primary/25 z-20 shadow-md"
+          : isMultiSelected
+          ? "border-2 border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20 z-[15] shadow-xs"
+          : "border border-border/70 bg-muted/80 hover:border-primary/40 hover:bg-background z-10 shadow-2xs fluent-specular group/slot"
       )}
       style={{
         left: `${slot.x * 100}%`,
@@ -83,28 +102,55 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
         height: `${slot.h * 100}%`,
       }}
     >
+      {/* خيال البورتريه الفوتوغرافي — ملء الخلية */}
       <div
         className={cn(
-          "w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black shadow-xs mb-0.5 shrink-0 pointer-events-none transition-colors",
-          isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+          "absolute inset-[10%] flex items-center justify-center pointer-events-none transition-opacity duration-150",
+          isSelected
+            ? "text-primary/60"
+            : isMultiSelected
+            ? "text-primary/50"
+            : "text-muted-foreground/50 group-hover/slot:text-primary/40"
+        )}
+      >
+        <PortraitSilhouette />
+      </div>
+
+      {/* شارة الرقم — تظهر عند التحديد أو التحويم فقط */}
+      <div
+        className={cn(
+          "absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-[3px] text-[8.5px] font-black flex items-center justify-center pointer-events-none transition-all duration-150 leading-none",
+          isSelected
+            ? "bg-primary text-primary-foreground opacity-100 shadow-xs"
+            : isMultiSelected
+            ? "bg-primary/70 text-primary-foreground opacity-100"
+            : "bg-foreground/70 text-background opacity-0 group-hover/slot:opacity-100"
         )}
       >
         {index + 1}
       </div>
 
-      <span
+      {/* شارة الأبعاد بالمليمتر — أسفل الخلية عند التحويم أو التحديد */}
+      <div
         className={cn(
-          "text-[9.5px] font-bold truncate max-w-[90%] leading-tight pointer-events-none text-center",
-          isSelected ? "text-primary font-black" : "text-foreground/90"
+          "absolute bottom-0.5 left-0.5 right-0.5 flex justify-center pointer-events-none transition-opacity duration-150",
+          isSelected || isMultiSelected ? "opacity-100" : "opacity-0 group-hover/slot:opacity-100"
         )}
       >
-        {slot.label || `خلية ${index + 1}`}
-      </span>
+        <span
+          className={cn(
+            "text-[8px] font-mono font-bold px-1 py-px rounded-[3px] leading-none whitespace-nowrap",
+            isSelected
+              ? "bg-primary text-primary-foreground"
+              : "bg-foreground/80 text-background"
+          )}
+          dir="ltr"
+        >
+          {slotWidthMM}×{slotHeightMM}
+        </span>
+      </div>
 
-      <span className="text-[8.5px] font-mono font-bold opacity-80 leading-tight pointer-events-none mt-0.5" dir="ltr">
-        {slotWidthMM}×{slotHeightMM} mm
-      </span>
-
+      {/* مقابض التحجيم الثمانية — تظهر للخلية الأساسية */}
       {isSelected &&
         HANDLES.map(({ dir, pos }) => (
           <div

@@ -424,10 +424,13 @@ export function StudioCanvasColorDeck({
   color,
   onChange,
   className,
+  compact = false,
 }: {
   color: string;
   onChange: (hex: string) => void;
   className?: string;
+  /** وضع مضغوط: عينات وقطارة في سطر واحد للأدوات المدمجة */
+  compact?: boolean;
 }) {
   const isTransparent = color === "transparent";
 
@@ -459,9 +462,16 @@ export function StudioCanvasColorDeck({
   ];
 
   return (
-    <div className={cn("space-y-2.5 p-2.5 rounded-xl bg-card/60 border border-border/70 fluent-specular shadow-2xs w-full overflow-hidden", className)} dir="rtl">
+    <div
+      className={cn(
+        "space-y-2.5 p-2.5 rounded-xl bg-card/60 border border-border/70 fluent-specular shadow-2xs w-full overflow-hidden",
+        compact && "p-1.5 space-y-1.5 border-transparent bg-transparent shadow-none",
+        className
+      )}
+      dir="rtl"
+    >
       {/* شبكة العينات السريعة للألوان (8 أعمدة متناسقة بنسبة 100%) */}
-      <div className="grid grid-cols-8 gap-1.5 w-full">
+      <div className={cn("grid gap-1.5 w-full", compact ? "grid-cols-9" : "grid-cols-8")}>
         {/* زر الشفاف */}
         <button
           type="button"
@@ -532,10 +542,13 @@ export function StudioCanvasColorDeck({
         <PopoverColorPicker
           color={color}
           onChange={onChange}
-          className="flex-1 h-8.5 rounded-lg border-border/80 bg-input/50 hover:bg-input/80 hover:border-primary/40 shadow-2xs"
+          className={cn(
+            "flex-1 h-8.5 rounded-lg border-border/80 bg-input/50 hover:bg-input/80 hover:border-primary/40 shadow-2xs",
+            compact && "h-7 text-[10px]"
+          )}
           label={
-            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-              <PaintBrush className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+            <div className={cn("flex items-center gap-1.5 text-xs font-bold text-muted-foreground", compact && "text-[10px] gap-1")}>
+              <PaintBrush className={cn("text-primary shrink-0", compact ? "w-3.5 h-3.5" : "w-4 h-4")} weight="duotone" />
               <span>لون مخصص</span>
             </div>
           }
@@ -545,10 +558,13 @@ export function StudioCanvasColorDeck({
           <button
             type="button"
             onClick={handleEyeDropper}
-            className="w-8.5 h-8.5 rounded-lg border border-border/70 bg-input/80 hover:bg-accent/70 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className={cn(
+              "rounded-lg border border-border/70 bg-input/80 hover:bg-accent/70 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+              compact ? "w-7 h-7" : "w-8.5 h-8.5"
+            )}
             title="قطارة الألوان (سحب لون من الشاشة)"
           >
-            <Eyedropper className="w-4 h-4" weight="regular" />
+            <Eyedropper className={cn(compact ? "w-3.5 h-3.5" : "w-4 h-4")} weight="regular" />
           </button>
         )}
       </div>

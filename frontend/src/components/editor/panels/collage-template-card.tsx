@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { CollageTemplate } from "@/lib/templates";
-import { Trash, Image, GridFour } from "@phosphor-icons/react";
+import { Trash, Image } from "@phosphor-icons/react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,9 +39,9 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
       }}
       onClick={() => onSelect(tpl)}
       className={cn(
-        "group flex flex-col items-stretch gap-2.5 p-3 rounded-xl border transition-all duration-300 text-right relative overflow-hidden bg-card dark:bg-card shadow-2xs hover:border-primary/50 hover:shadow-md active:scale-[0.98] cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+        "group flex flex-col items-stretch gap-2.5 p-3 rounded-xl border transition-all duration-200 text-right relative overflow-hidden bg-card dark:bg-card shadow-2xs hover:border-primary/50 hover:shadow-xs hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
         isActive
-          ? "border-2 border-primary bg-primary/10 dark:bg-primary/15 shadow-xs ring-1 ring-primary/30"
+          ? "border-2 border-primary bg-primary/[0.08] dark:bg-primary/15 shadow-xs ring-1 ring-primary/30"
           : "border-border/90 hover:bg-muted/40 dark:hover:bg-secondary"
       )}
     >
@@ -131,13 +131,12 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
           )}>
             {tpl.slots} صور
           </span>
-          <div className="flex items-center gap-1">
-            <GridFour
-              className={cn("w-3 h-3", isActive ? "text-primary" : "text-muted-foreground/70")}
-              weight="duotone"
-            />
-            <span className="text-[8px] font-bold text-muted-foreground">تخطيط تلقائي</span>
-          </div>
+          <span className={cn(
+            "text-[8px] font-bold transition-colors",
+            isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary/80"
+          )}>
+            تخطيط تلقائي
+          </span>
         </div>
       </div>
     </div>

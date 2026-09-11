@@ -65,7 +65,10 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSaving(false);
-    if (!open) return;
+    if (!open) {
+      setCursorPos((p) => ({ ...p, visible: false }));
+      return;
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
@@ -513,17 +516,23 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
   return (
     <Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
       <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden fluent-specular" dir="rtl" showCloseButton={false}>
-        <DialogHeader className="p-4 border-b border-border/40 shrink-0 flex flex-row items-center justify-between">
+        <DialogHeader 
+          className="p-4 border-b border-border/40 shrink-0 flex flex-row items-center justify-between"
+          onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
+        >
           <DialogTitle className="text-sm font-bold flex items-center gap-2">
             <Sparkle className="text-primary w-6 h-6 shrink-0" weight="duotone" />
             <span>تعديل القص يدوياً</span>
           </DialogTitle>
-        <DialogCloseButton onClick={() => onOpenChange(false)} />
-      </DialogHeader>
+          <DialogCloseButton onClick={() => onOpenChange(false)} />
+        </DialogHeader>
 
         <div className="flex flex-1 overflow-hidden">
           {/* الأدوات - Sidebar */}
-          <div className="w-56 border-l rtl:border-l rtl:border-r-0 ltr:border-r border-border/40 bg-muted/10 p-4 flex flex-col gap-5 shrink-0 overflow-y-auto">
+          <div 
+            className="w-56 border-l rtl:border-l rtl:border-r-0 ltr:border-r border-border/40 bg-muted/10 p-4 flex flex-col gap-5 shrink-0 overflow-y-auto"
+            onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
+          >
             <div className="space-y-2">
               <span className="text-xs font-bold text-muted-foreground block mb-2">نوع الأداة</span>
               <Button
@@ -664,25 +673,44 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               backgroundSize: '20px 20px',
               cursor: (tool === "pan" || isSpacePressed) ? "grab" : "crosshair"
             }}
-            onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: true }))}
+            onMouseEnter={(e) => {
+              const rect = containerRef.current?.getBoundingClientRect();
+              if (rect) {
+                setCursorPos({
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top,
+                  visible: true,
+                });
+              }
+            }}
             onMouseLeave={() => {
               handlePointerUp();
               setCursorPos((p) => ({ ...p, visible: false }));
             }}
             onMouseDown={handlePointerDown}
             onMouseMove={(e) => {
-              setCursorPos({ x: e.clientX, y: e.clientY, visible: true });
+              const rect = containerRef.current?.getBoundingClientRect();
+              if (rect) {
+                setCursorPos({
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top,
+                  visible: true,
+                });
+              }
               handlePointerMove(e);
             }}
             onMouseUp={handlePointerUp}
             onTouchStart={handlePointerDown}
             onTouchMove={handlePointerMove}
-            onTouchEnd={handlePointerUp}
+            onTouchEnd={() => {
+              handlePointerUp();
+              setCursorPos((p) => ({ ...p, visible: false }));
+            }}
           >
             {/* Dynamic Brush Cursor Circle */}
             {cursorPos.visible && tool !== "pan" && tool !== "magic" && (
               <div
-                className="fixed pointer-events-none rounded-full border border-white/90 shadow-[0_0_8px_rgba(0,0,0,0.6)] z-50 -translate-x-1/2 -translate-y-1/2"
+                className="absolute pointer-events-none rounded-full border border-white/90 shadow-[0_0_8px_rgba(0,0,0,0.6)] z-20 -translate-x-1/2 -translate-y-1/2"
                 style={{
                   left: cursorPos.x,
                   top: cursorPos.y,
@@ -731,7 +759,10 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
           </div>
         </div>
 
-        <DialogFooter className="p-3 border-t border-border/40 bg-card shrink-0 flex items-center justify-between sm:justify-between">
+        <DialogFooter 
+          className="p-3 border-t border-border/40 bg-card shrink-0 flex items-center justify-between sm:justify-between"
+          onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
+        >
           <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs font-semibold h-8 px-4 rounded-md">
             <X className="w-3.5 h-3.5 ml-1 shrink-0" weight="bold" /> إلغاء
           </Button>

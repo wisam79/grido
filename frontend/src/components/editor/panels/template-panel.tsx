@@ -34,14 +34,13 @@ import {
   Image,
   User,
   Plus,
-  PaintBrush,
+  Stack,
   CaretRight,
 } from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StudioCanvasColorDeck } from "../properties/shared-controls";
 import { LayersList } from "../properties/layers-list";
-import { FluentEmptyState, FluentSection } from "@/components/ui/blocks";
+import { FluentEmptyState } from "@/components/ui/blocks";
 import { cn } from "@/lib/utils";
 
 export interface TemplatePanelProps {
@@ -56,16 +55,12 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
     slots, 
     mode, 
     elements,
-    backgroundColor,
-    setBackgroundColor,
   } = useEditorStore(useShallow((state) => ({
     setCollageTemplate: state.setCollageTemplate,
     collageTemplate: state.collageTemplate,
     slots: state.slots,
     mode: state.mode,
     elements: state.elements,
-    backgroundColor: state.backgroundColor,
-    setBackgroundColor: state.setBackgroundColor,
   })));
 
   const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
@@ -156,8 +151,25 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
   return (
     <PanelShell
-      icon={<GridFour className="w-4.5 h-4.5 text-primary" weight="duotone" />}
-      title={mode === "collage" ? "القوالب" : "المظهر والطبقات"}
+      icon={mode === "collage" ? <GridFour className="w-4.5 h-4.5 text-primary" weight="duotone" /> : <Stack className="w-4.5 h-4.5 text-primary" weight="duotone" />}
+      title={mode === "collage" ? "القوالب" : "الطبقات"}
+      subtitle={mode === "collage" ? "قوالب الكولاج والطباعة" : "إدارة وترتيب العناصر الحرة"}
+      headerExtra={
+        mode === "collage" ? (
+          <button
+            type="button"
+            onClick={() => {
+              loadTemplates();
+              setTemplatesDialogOpen(true);
+            }}
+            title="مكتبة القوالب الكاملة"
+            aria-label="مكتبة القوالب الكاملة"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+          >
+            <FolderOpen className="w-4 h-4" weight="duotone" />
+          </button>
+        ) : undefined
+      }
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
       collapseIcon={<CaretRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" weight="bold" />}
@@ -195,9 +207,9 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
       {mode === "collage" ? (
         <div className="space-y-4">
-          <CustomCollageCard 
-            onSelect={handleSelectTemplate} 
-            activeTemplateId={collageTemplate?.id} 
+          <CustomCollageCard
+            onSelect={handleSelectTemplate}
+            activeTemplateId={collageTemplate?.id}
             onSaveTemplate={handleSaveTemplate}
             savedTemplates={savedTemplates}
             onDeleteTemplate={handleDeleteTemplate}
@@ -355,19 +367,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
           </Dialog>
         </div>
       ) : (
-        <div className="space-y-4" dir="rtl">
-          <FluentSection
-            icon={<PaintBrush className="w-4 h-4 text-primary" weight="duotone" />}
-            title="خلفية مساحة العمل"
-          >
-            <StudioCanvasColorDeck
-              color={backgroundColor}
-              onChange={setBackgroundColor}
-            />
-          </FluentSection>
-
-          <Separator className="bg-border/30 my-2" />
-
+        <div className="space-y-3" dir="rtl">
           <LayersList />
         </div>
       )}
