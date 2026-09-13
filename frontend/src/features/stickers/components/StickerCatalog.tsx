@@ -41,18 +41,40 @@ const shapeLabel = (template: StickerTemplate): string =>
 
 interface TemplateCardProps {
   template: StickerTemplate;
-  miniSvg: string;
   isSelected: boolean;
   onSelect: (template: StickerTemplate) => void;
 }
 
-/* بطاقة قالب معزولة — memo تمنع إعادة رندر 55 بطاقة عند كل نقرة أو كتابة حرف */
+/* كاش عام على مستوى الموديول — يتفادى تكرار توليد SVG لنفس القوالب عبر دورات فتح النافذة */
+const PREVIEW_CACHE = new Map<string, string>();
+
+function getTemplatePreview(template: StickerTemplate): string {
+  const cached = PREVIEW_CACHE.get(template.id);
+  if (cached !== undefined) return cached;
+  try {
+    const defaultFields = Object.fromEntries(template.fields.map((f) => [f.id, f.defaultValue]));
+    const svg = template.generateSvg({
+      fields: defaultFields,
+      primaryColor: template.defaultColors.primary,
+      secondaryColor: template.defaultColors.secondary,
+      backgroundColor: template.defaultColors.background,
+      isTransparent: false,
+    });
+    PREVIEW_CACHE.set(template.id, svg);
+    return svg;
+  } catch {
+    PREVIEW_CACHE.set(template.id, "");
+    return "";
+  }
+}
+
+/* بطاقة قالب معزولة — memo مع كاش فوري و content-visibility تمنع بطء فتح النافذة */
 const TemplateGridCard = React.memo(function TemplateGridCard({
   template,
-  miniSvg,
   isSelected,
   onSelect,
 }: TemplateCardProps) {
+  const miniSvg = useMemo(() => getTemplatePreview(template), [template]);
   const mm = template.defaultMm || {
     width: 50,
     height: Math.round(50 / template.aspectRatio),
@@ -65,7 +87,7 @@ const TemplateGridCard = React.memo(function TemplateGridCard({
       aria-pressed={isSelected}
       aria-label={`قالب ${template.name} — ${mm.width} مم في ${mm.height} مم`}
       className={cn(
-        "group relative flex flex-col p-2 rounded-xl transition-all cursor-pointer text-start overflow-hidden border",
+        "group relative flex flex-col p-2 rounded-xl transition-all cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_130px]",
         isSelected
           ? "bg-primary/10 border-primary shadow-fluent-4 ring-1 ring-primary/40"
           : "bg-card/50 hover:bg-card border-border/30 hover:border-border/70 hover:shadow-2xs"
@@ -77,7 +99,7 @@ const TemplateGridCard = React.memo(function TemplateGridCard({
         </div>
       )}
 
-      <div className="w-full h-24 rounded-lg bg-background/50 border border-border/20 flex items-center justify-center p-2 overflow-hidden transition-transform duration-150 group-hover:scale-[1.02]">
+      <div className="w-full h-22 rounded-lg bg-background/50 border border-border/20 flex items-center justify-center p-1.5 overflow-hidden transition-transform duration-150 group-hover:scale-[1.02]">
         {miniSvg ? (
           <div
             className="w-full h-full flex items-center justify-center pointer-events-none drop-shadow-2xs [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
@@ -88,10 +110,10 @@ const TemplateGridCard = React.memo(function TemplateGridCard({
         )}
       </div>
 
-      <div className="mt-2 px-0.5 flex flex-col flex-1 justify-between gap-1 w-full">
+      <div className="mt-1.5 px-0.5 flex flex-col flex-1 justify-between gap-1 w-full">
         <span
           className={cn(
-            "text-xs font-bold line-clamp-2 leading-snug min-h-[2.2rem] transition-colors",
+            "text-xs font-bold line-clamp-2 leading-snug min-h-[2.1rem] transition-colors",
             isSelected ? "text-primary" : "text-foreground group-hover:text-primary"
           )}
           title={template.name}
@@ -111,10 +133,10 @@ const TemplateGridCard = React.memo(function TemplateGridCard({
 
 const TemplateListCard = React.memo(function TemplateListCard({
   template,
-  miniSvg,
   isSelected,
   onSelect,
 }: TemplateCardProps) {
+  const miniSvg = useMemo(() => getTemplatePreview(template), [template]);
   const mm = template.defaultMm || {
     width: 50,
     height: Math.round(50 / template.aspectRatio),
@@ -126,13 +148,13 @@ const TemplateListCard = React.memo(function TemplateListCard({
       onClick={() => onSelect(template)}
       aria-pressed={isSelected}
       className={cn(
-        "group relative flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer text-start border",
+        "group relative flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer text-start border [content-visibility:auto] [contain-intrinsic-size:0_70px]",
         isSelected
           ? "bg-primary/10 border-primary shadow-fluent-2 ring-1 ring-primary/40"
           : "bg-card/50 hover:bg-card border-border/30 hover:border-border/70 hover:shadow-2xs"
       )}
     >
-      <div className="w-14 h-14 rounded-lg bg-background/50 border border-border/20 flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+      <div className="w-13 h-13 rounded-lg bg-background/50 border border-border/20 flex items-center justify-center p-1 shrink-0 overflow-hidden">
         {miniSvg ? (
           <div
             className="w-full h-full flex items-center justify-center pointer-events-none drop-shadow-2xs [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
@@ -211,26 +233,6 @@ export const StickerCatalog = React.memo(function StickerCatalog({
     onSearchChange("");
   }, [onSearchChange]);
 
-  // Pre-render miniature SVGs once for instant visual catalog browsing
-  const templatePreviews = useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const t of ALL_STICKER_TEMPLATES) {
-      try {
-        const defaultFields = Object.fromEntries(t.fields.map((f) => [f.id, f.defaultValue]));
-        map[t.id] = t.generateSvg({
-          fields: defaultFields,
-          primaryColor: t.defaultColors.primary,
-          secondaryColor: t.defaultColors.secondary,
-          backgroundColor: t.defaultColors.background,
-          isTransparent: false,
-        });
-      } catch {
-        map[t.id] = "";
-      }
-    }
-    return map;
-  }, []);
-
   const filteredTemplates = useMemo(() => {
     return searchStickerTemplates(searchQuery, selectedCategory, selectedShape);
   }, [searchQuery, selectedCategory, selectedShape]);
@@ -240,7 +242,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
       {/* ── Rail: Icon Grid Categories (Single Source of Navigation) ── */}
       <nav
         aria-label="تصنيفات الملصقات"
-        className="shrink-0 w-[60px] flex flex-col items-center gap-1.5 py-2 border-e border-border/40 bg-muted/20 overflow-y-auto scrollbar-none"
+        className="shrink-0 w-[54px] flex flex-col items-center gap-1.5 py-2 border-e border-border/40 bg-muted/20 overflow-y-auto scrollbar-none"
       >
         {CATEGORY_ITEMS.map((cat) => {
           const isActive = selectedCategory === cat.id;
@@ -253,17 +255,17 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                   aria-label={cat.title}
                   aria-pressed={isActive}
                   className={cn(
-                    "relative w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0",
+                    "relative w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0",
                     isActive
                       ? "bg-primary/15 text-primary border border-primary/40 shadow-2xs"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-transparent"
                   )}
                 >
                   {isActive && (
-                    <span className="absolute -start-2.5 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-full bg-primary" />
+                    <span className="absolute -start-2 top-1/2 -translate-y-1/2 h-3.5 w-[2.5px] rounded-full bg-primary" />
                   )}
                   {cat.icon}
-                  <span className="absolute bottom-0 end-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-muted border border-border/60 text-[8px] font-mono font-bold text-muted-foreground flex items-center justify-center pointer-events-none">
+                  <span className="absolute bottom-0 end-0 min-w-3 h-3 px-0.5 rounded-full bg-muted border border-border/60 text-[7.5px] font-mono font-bold text-muted-foreground flex items-center justify-center pointer-events-none">
                     {CATEGORY_COUNTS[cat.id] || 0}
                   </span>
                 </button>
@@ -286,7 +288,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
               type="search"
               value={searchInput}
               onChange={(e) => handleSearchInput(e.target.value)}
-              placeholder="بحث في القوالب ..."
+              placeholder="بحث ..."
               aria-label="بحث في القوالب"
               className="h-8 ps-8 pe-7 text-xs rounded-md bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary text-foreground placeholder:text-muted-foreground/60"
             />
@@ -335,10 +337,11 @@ export const StickerCatalog = React.memo(function StickerCatalog({
             </div>
 
             <span
-              className="text-[11px] text-muted-foreground font-mono flex-1 text-center truncate"
+              className="text-[10px] font-mono text-muted-foreground/80 flex-1 text-center truncate"
               aria-live="polite"
+              title={`${filteredTemplates.length} قالب`}
             >
-              {filteredTemplates.length} قالب
+              {filteredTemplates.length}
             </span>
 
             <div className="flex items-center bg-muted/30 p-0.5 rounded-md border border-border/40 shrink-0 gap-0.5">
@@ -384,24 +387,22 @@ export const StickerCatalog = React.memo(function StickerCatalog({
               <p className="text-[11px] opacity-70 mt-0.5">جرّب تغيير كلمة البحث أو الشكل</p>
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-2">
               {filteredTemplates.map((template) => (
                 <TemplateGridCard
                   key={template.id}
                   template={template}
-                  miniSvg={templatePreviews[template.id]}
                   isSelected={selectedTemplateId === template.id}
                   onSelect={onSelectTemplate}
                 />
               ))}
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               {filteredTemplates.map((template) => (
                 <TemplateListCard
                   key={template.id}
                   template={template}
-                  miniSvg={templatePreviews[template.id]}
                   isSelected={selectedTemplateId === template.id}
                   onSelect={onSelectTemplate}
                 />

@@ -4,6 +4,7 @@ import {
   MagnifyingGlassMinus,
   CursorClick,
 } from "@phosphor-icons/react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { StickerTemplate, StickerParams, MockupBackground } from "../types";
 import { StickerInlineEditor, ActiveFieldState, ActiveColorState } from "./StickerInlineEditor";
@@ -271,14 +272,20 @@ export const StickerPreview = React.memo(function StickerPreview({
       <div
         ref={stageContainerRef}
         onClick={handleStageClick}
-        className="relative flex-1 min-h-0 w-full flex items-center justify-center p-10 overflow-hidden transition-all duration-300 fluent-specular"
+        className="relative flex-1 min-h-0 w-full flex items-center justify-center p-6 overflow-hidden transition-all duration-300 fluent-specular"
         style={stageBackgroundStyle}
       >
-        {/* Interaction Hint */}
-        <div className="absolute top-3 start-3 z-10 flex items-center gap-1 px-2 h-6 bg-card/75 backdrop-blur-md rounded-full border border-border/30 text-[10px] text-muted-foreground/80 pointer-events-none select-none">
-          <CursorClick className="w-3 h-3 text-primary" weight="bold" />
-          <span>انقر على أي عنصر لتعديله مباشرة</span>
-        </div>
+        {/* Interaction Hint (Icon-Driven with Tooltip) */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="absolute top-3 start-3 z-10 flex items-center justify-center w-7 h-7 bg-card/85 backdrop-blur-md rounded-full border border-border/30 text-primary cursor-help shadow-2xs">
+              <CursorClick className="w-3.5 h-3.5" weight="bold" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs font-cairo font-medium">
+            انقر لتعديل أي عنصر أو نص مباشرة
+          </TooltipContent>
+        </Tooltip>
 
         {/* Real Dimensions & DPI Spec */}
         <div className="absolute top-3 end-3 z-10 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-card/75 backdrop-blur-md border border-border/30 text-[10px] font-mono text-muted-foreground/90 select-none pointer-events-none">
@@ -294,7 +301,7 @@ export const StickerPreview = React.memo(function StickerPreview({
         >
           <div
             ref={svgHostRef}
-            className="sticker-svg-interactive w-auto h-auto flex items-center justify-center [&>svg]:max-w-[min(48vw,560px)] [&>svg]:max-h-[min(52vh,520px)] [&>svg]:w-auto [&>svg]:h-auto transition-transform"
+            className="sticker-svg-interactive w-auto h-auto flex items-center justify-center [&>svg]:max-w-[min(40vw,440px)] [&>svg]:max-h-[min(46vh,410px)] [&>svg]:w-auto [&>svg]:h-auto transition-transform"
             dangerouslySetInnerHTML={{ __html: svgString }}
           />
 
@@ -327,7 +334,7 @@ export const StickerPreview = React.memo(function StickerPreview({
           onResetField={onResetField}
         />
 
-        {/* Bottom Dock: Environment Swatches & Zoom */}
+        {/* Bottom Dock: Environment Swatches (Icon/Dot-Driven) & Zoom */}
         <div
           role="toolbar"
           aria-label="خلفية المعاينة والتكبير"
@@ -336,26 +343,30 @@ export const StickerPreview = React.memo(function StickerPreview({
           {MOCKUP_OPTIONS.map((opt) => {
             const isActive = mockupBg === opt.id;
             return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMockupBg(opt.id);
-                }}
-                aria-pressed={isActive}
-                aria-label={`خلفية: ${opt.label}`}
-                className={cn(
-                  "h-7 flex items-center gap-1.5 px-2 text-[11px] font-medium rounded-md transition-all cursor-pointer",
-                  isActive
-                    ? "bg-background text-foreground font-bold shadow-2xs border border-border/40"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                title={`خلفية: ${opt.label}`}
-              >
-                <span className={cn("w-2 h-2 rounded-full shrink-0", opt.dotClass)} />
-                {opt.label}
-              </button>
+              <Tooltip key={opt.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMockupBg(opt.id);
+                    }}
+                    aria-pressed={isActive}
+                    aria-label={`خلفية: ${opt.label}`}
+                    className={cn(
+                      "w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer",
+                      isActive
+                        ? "bg-background shadow-2xs border border-border/50 ring-1 ring-primary/40"
+                        : "hover:bg-muted/50"
+                    )}
+                  >
+                    <span className={cn("w-3.5 h-3.5 rounded-full shrink-0", opt.dotClass)} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-cairo font-medium">
+                  خلفية {opt.label}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
 

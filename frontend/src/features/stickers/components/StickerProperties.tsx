@@ -6,7 +6,6 @@ import {
   ArrowCounterClockwise,
   Scissors,
   Sparkle,
-  CursorClick,
   QrCode,
 } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
@@ -17,6 +16,7 @@ import { FluentSection, FluentSliderField, FluentSegmentedControl } from "@/comp
 import { loadGoogleFont } from "@/lib/io/fonts";
 import { cn } from "@/lib/utils";
 import { StickerTemplate, StickerParams, SheetGridConfig, StickerFinish } from "../types";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { CURATED_PALETTES, FONT_OPTIONS } from "../constants";
 
 interface StickerPropertiesProps {
@@ -170,23 +170,10 @@ export const StickerProperties = React.memo(function StickerProperties({
           </FluentSection>
         ) : null}
 
-        {/* تلميح التحرير المباشر — يظهر عندما كل الحقول قابلة للنقر */}
-        <div className="flex items-center gap-2.5 p-3 rounded-xl border border-dashed border-primary/30 bg-primary/5 select-none">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
-            <CursorClick className="w-4 h-4" weight="bold" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-foreground">عدّل مباشرة على الملصق</p>
-            <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5">
-              انقر أي نص لتعديله وأي شكل لتلوينه — استخدم Tab للتنقل بين الحقول
-            </p>
-          </div>
-        </div>
-
-        {/* 2. الألوان — مصدر واحد: أدوار + لوحات متناسقة */}
+        {/* 1. الألوان */}
         <FluentSection
           icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
-          title="الألوان والهوية"
+          title="الألوان"
           collapsible
           defaultOpen
         >
@@ -235,7 +222,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             </button>
           </div>
 
-          {/* Curated Palettes */}
+          {/* Curated Palettes (Icon/Swatch-driven with Tooltips) */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             {CURATED_PALETTES.map((palette) => {
               const isActive =
@@ -245,51 +232,54 @@ export const StickerProperties = React.memo(function StickerProperties({
                 !params.isTransparent;
 
               return (
-                <button
-                  key={palette.id}
-                  type="button"
-                  onClick={() =>
-                    onChangeParams((prev) => ({
-                      ...prev,
-                      primaryColor: palette.primary,
-                      secondaryColor: palette.secondary,
-                      backgroundColor: palette.background,
-                      isTransparent: false,
-                    }))
-                  }
-                  className={cn(
-                    "h-7 px-2 rounded-md border flex items-center gap-1.5 shrink-0 transition-all cursor-pointer text-start group",
-                    isActive
-                      ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs ring-1 ring-primary/30"
-                      : "bg-background/60 hover:bg-background border-border/40 hover:border-border/70 text-muted-foreground hover:text-foreground"
-                  )}
-                  title={`تطبيق لوحة: ${palette.name}`}
-                >
-                  <div className="flex items-center -space-x-1 rtl:space-x-reverse">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
-                      style={{ backgroundColor: palette.primary }}
-                    />
-                    <span
-                      className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
-                      style={{ backgroundColor: palette.secondary }}
-                    />
-                    <span
-                      className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
-                      style={{ backgroundColor: palette.background }}
-                    />
-                  </div>
-                  <span className="text-[11px] whitespace-nowrap">{palette.name}</span>
-                </button>
+                <Tooltip key={palette.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onChangeParams((prev) => ({
+                          ...prev,
+                          primaryColor: palette.primary,
+                          secondaryColor: palette.secondary,
+                          backgroundColor: palette.background,
+                          isTransparent: false,
+                        }))
+                      }
+                      className={cn(
+                        "h-7 px-2 rounded-md border flex items-center gap-1 shrink-0 transition-all cursor-pointer group",
+                        isActive
+                          ? "bg-primary/15 border-primary shadow-2xs ring-1 ring-primary/40"
+                          : "bg-background/60 hover:bg-background border-border/40 hover:border-border/70"
+                      )}
+                      aria-label={palette.name}
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
+                        style={{ backgroundColor: palette.primary }}
+                      />
+                      <span
+                        className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
+                        style={{ backgroundColor: palette.secondary }}
+                      />
+                      <span
+                        className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
+                        style={{ backgroundColor: palette.background }}
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs font-cairo font-medium">
+                    {palette.name}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
         </FluentSection>
 
-        {/* 3. التشطيب والخط */}
+        {/* 2. التشطيب */}
         <FluentSection
           icon={<Sparkle className="w-3.5 h-3.5" weight="duotone" />}
-          title="التشطيب والخط"
+          title="التشطيب"
           collapsible
           defaultOpen
         >
@@ -303,7 +293,7 @@ export const StickerProperties = React.memo(function StickerProperties({
           <div className="h-8 flex items-center justify-between px-2.5 rounded-md bg-card/40 border border-border/30 hover:border-border/60 transition-colors">
             <div className="flex items-center gap-1.5">
               <Scissors className="w-3.5 h-3.5 text-rose-500" />
-              <span className="text-xs font-semibold text-foreground/85">إطار القص (Die-Cut)</span>
+              <span className="text-xs font-semibold text-foreground/85">إطار القص</span>
             </div>
             <Switch
               id="diecut-toggle"
@@ -335,8 +325,8 @@ export const StickerProperties = React.memo(function StickerProperties({
 
           <FluentSliderField
             layout="inline"
-            label="حجم الخط"
-            labelWidth="w-14"
+            label="الخط"
+            labelWidth="w-10"
             value={params.fontScale ?? 1}
             min={0.8}
             max={1.3}
@@ -347,13 +337,13 @@ export const StickerProperties = React.memo(function StickerProperties({
           />
         </FluentSection>
 
-        {/* 4. شيت الطباعة */}
+        {/* 3. الشيت */}
         <FluentSection
           icon={<Printer className="w-3.5 h-3.5" weight="duotone" />}
-          title="شيت الطباعة"
+          title="الشيت"
           badge={
             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25 font-bold font-mono">
-              {gridConfig.rows * gridConfig.cols} ملصق
+              {gridConfig.rows * gridConfig.cols}
             </span>
           }
           collapsible

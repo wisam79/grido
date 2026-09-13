@@ -63,11 +63,23 @@ function TooltipBtn({ content, children }: TooltipBtnProps) {
   );
 }
 
+const preloadBarcodeDialog = () => {
+  import("../dialogs/barcode-dialog");
+};
+
 const ToolbarAddTools = React.memo(function ToolbarAddTools() {
   const [isBarcodeOpen, setIsBarcodeOpen] = React.useState(false);
   const addTextElement = useEditorStore((state) => state.addTextElement);
   const addTextPreset = useEditorStore((state) => state.addTextPreset);
   const addShapeElement = useEditorStore((state) => state.addShapeElement);
+
+  React.useEffect(() => {
+    // تحميل مسبق لنافذة الاستوديو في وقت خمول الواجهة لضمان الفتح الفوري اللحظي عند النقر
+    const timer = setTimeout(() => {
+      preloadBarcodeDialog();
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="fluent-command-group shadow-2xs">
@@ -211,6 +223,8 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           variant="ghost"
           size="sm"
           onClick={() => setIsBarcodeOpen(true)}
+          onMouseEnter={preloadBarcodeDialog}
+          onFocus={preloadBarcodeDialog}
           aria-label="استوديو الملصقات والرموز"
           className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1.5"
         >

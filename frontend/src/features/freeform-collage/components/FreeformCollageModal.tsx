@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogCloseButton,
 } from "@/components/ui/dialog";
@@ -623,23 +624,28 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[1180px] h-[93vh] max-h-[900px] overflow-hidden border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl rounded-2xl shadow-xl font-cairo flex flex-col p-4 gap-3 fluent-specular"
+        className="w-[96vw] sm:max-w-[1200px] h-[92vh] max-h-[860px] min-h-[580px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-2xl font-cairo fluent-specular transition-all duration-150 gap-0"
         dir="rtl"
       >
         {/* ═══ الرأس: أيقونة + عنوان + وصف | محدد الورقة | إغلاق ═══ */}
-        <DialogHeader className="border-b border-border/40 pb-3 shrink-0">
+        <DialogHeader className="px-6 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-primary/12 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                <SquaresFour className="w-4.5 h-4.5" weight="duotone" />
+              <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                <SquaresFour className="w-5 h-5" weight="duotone" />
               </div>
-              <div className="min-w-0">
-                <DialogTitle className="text-sm font-bold tracking-tight text-foreground truncate">
-                  محرر الكولاج الحر
-                </DialogTitle>
-                <p className="text-[10.5px] text-muted-foreground mt-0.5 truncate">
+              <div className="min-w-0 text-start">
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="text-base font-bold tracking-tight text-foreground truncate">
+                    محرر الكولاج الحر
+                  </DialogTitle>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    Freeform
+                  </span>
+                </div>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
                   ورقة فارغة بالمليمتر — صمم بحرية كاملة، Shift لتحديد متعدد
-                </p>
+                </DialogDescription>
               </div>
             </div>
 
@@ -655,7 +661,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         </DialogHeader>
 
         {/* ═══ المحتوى ═══ */}
-        <div className="flex flex-col flex-1 min-h-0 gap-2.5">
+        <div className="p-4 flex flex-col flex-1 min-h-0 gap-2.5 overflow-hidden">
           {/* شريط أدوات التحرير — أيقوني مضغوط */}
           <FreeformToolbar
             selectedSlotId={selectedSlotId}
@@ -723,7 +729,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         </div>
 
         {/* ═══ التذييل: اسم + حفظ/تصدير/استيراد | عداد + إلغاء + تطبيق ═══ */}
-        <DialogFooter className="border-t border-border/40 pt-3 flex items-center justify-between gap-3 shrink-0">
+        <DialogFooter className="px-6 py-3 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <Input
               value={layoutName}
