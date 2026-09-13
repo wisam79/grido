@@ -44,6 +44,8 @@ export function FluentSegmentedControl<T extends string = string>({
           <button
             key={opt.id}
             type="button"
+            data-tab={opt.id}
+            aria-label={typeof opt.label === "string" ? opt.label : opt.id}
             disabled={opt.disabled}
             onClick={() => onChange(opt.id)}
             className={cn(
