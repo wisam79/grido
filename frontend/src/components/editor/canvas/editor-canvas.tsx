@@ -20,6 +20,7 @@ import { useUserGuides } from "./use-user-guides";
 import { useImageDrop } from "./use-image-drop";
 import { useRulerMetricsPreview } from "./use-ruler-metrics";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { CanvasBleedGuides } from "./canvas-bleed-guides";
 
 /**
  * شريط الأدوات السريع للخانة المحددة (إزالة/استبدال الصورة).
@@ -600,6 +601,11 @@ export const EditorCanvas = React.memo(React.forwardRef<
         setEditingTextId={setEditingTextId}
       />
     </div>
+
+    {/* خطوط وهوامش النزيف والقص والأمان للمطابع (طافية حول ورقة الكانفس) */}
+    {!printMode && (
+      <CanvasBleedGuides displayW={displayW} displayH={displayH} />
+    )}
 
     {/* 🧭 خط السحب الإرشادي المباشر (Live Dragging Guide Line) - طافٍ بحرية خارج حدود القص ليبقى مرئياً عند السحب من المساطر */}
     {!printMode && dragGuideState && (

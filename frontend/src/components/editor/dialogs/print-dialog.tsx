@@ -126,6 +126,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   useEffect(() => {
     exporter.setIsExporting(false);
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setZoom(1);
       // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة.
       useEditorStore.getState().selectElement(null);
@@ -268,6 +269,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               }
               setPrintSettings({ marginMM: checked ? 0 : lastNonZeroMargin });
             }}
+            imageWidthMM={imageWidthMM}
+            imageHeightMM={imageHeightMM}
           />
 
           {/* مساحة المعاينة التفاعلية المباشرة */}

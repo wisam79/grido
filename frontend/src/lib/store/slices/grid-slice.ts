@@ -27,6 +27,10 @@ export interface GridSlice {
   userGuides: UserGuide[];
   showUserGuides: boolean;
   lockUserGuides: boolean;
+  showBleedGuides: boolean;
+  bleedMarginMM: number;
+  safeMarginMM: number;
+  cutShapeType: "rectangle" | "circle" | "rounded-rect";
 
   setShowGrid: (show: boolean) => void;
   setGridSize: (size: number) => void;
@@ -48,6 +52,10 @@ export interface GridSlice {
   clearUserGuides: () => void;
   setShowUserGuides: (show: boolean) => void;
   setLockUserGuides: (lock: boolean) => void;
+  setShowBleedGuides: (show: boolean) => void;
+  setBleedMarginMM: (mm: number) => void;
+  setSafeMarginMM: (mm: number) => void;
+  setCutShapeType: (shape: "rectangle" | "circle" | "rounded-rect") => void;
 }
 
 export const DEFAULT_GRID_STATE = {
@@ -68,6 +76,10 @@ export const DEFAULT_GRID_STATE = {
   userGuides: [] as UserGuide[],
   showUserGuides: true,
   lockUserGuides: false,
+  showBleedGuides: false,
+  bleedMarginMM: 2,
+  safeMarginMM: 2,
+  cutShapeType: "rectangle" as const,
 };
 
 let guideCounter = 0;
@@ -111,4 +123,8 @@ export const createGridSlice: StateCreator<EditorState, [], [], GridSlice> = (se
   clearUserGuides: () => set({ userGuides: [] }),
   setShowUserGuides: (showUserGuides) => set({ showUserGuides }),
   setLockUserGuides: (lockUserGuides) => set({ lockUserGuides }),
+  setShowBleedGuides: (showBleedGuides) => set({ showBleedGuides }),
+  setBleedMarginMM: (bleedMarginMM) => set({ bleedMarginMM }),
+  setSafeMarginMM: (safeMarginMM) => set({ safeMarginMM }),
+  setCutShapeType: (cutShapeType) => set({ cutShapeType }),
 });

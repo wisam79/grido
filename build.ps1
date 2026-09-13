@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-Stop-Process -Name "GridoStudio" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "GridoStudio*" -Force -ErrorAction SilentlyContinue
 Start-Sleep -Milliseconds 300
 
 Write-Host "==========================================================" -ForegroundColor Cyan
@@ -19,8 +19,10 @@ if (Test-Path $envPath) {
         if ($line -match '^SUPABASE_ANON_KEY=(.*)$') {
             $supabaseAnonKey = $matches[1].Trim()
         }
-        if ($line -match '^MODAL_AI_KEY=(.*)$') {
-            $modalAiKey = $matches[1].Trim()
+        if ($line -match '^(?:MODAL_AI_KEY|GRIDO_AI_SECRET_KEY)=(.*)$') {
+            if (-not $modalAiKey) {
+                $modalAiKey = $matches[1].Trim()
+            }
         }
     }
 }

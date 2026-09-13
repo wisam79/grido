@@ -3,10 +3,9 @@ import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import {
-  SquaresFour,
-  SlidersHorizontal,
   GridFour,
-  Sparkle,
+  Stack,
+  MagicWand,
 } from "@phosphor-icons/react";
 import { CollageTemplate } from "@/lib/templates";
 import { FreeformCollageModal } from "@/features/freeform-collage";
@@ -60,8 +59,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
   const storedDpi = printSettings?.dpi || 300;
 
-  // التبويب الرئيسي للوحة الكولاج (3 تبويبات متوازنة ورشيقة)
-  const [activeTab, setActiveTab] = useState<"presets" | "custom" | "freeform">("presets");
+  // التبويب الرئيسي للوحة الكولاج (3 تبويبات متوازنة ورشيقة — الشبكة أولاً)
+  const [activeTab, setActiveTab] = useState<"presets" | "custom" | "freeform">("custom");
 
   // تصنيف النماذج السريعة
   const [presetCategory, setPresetCategory] = useState<CollagePresetCategory>("all");
@@ -219,28 +218,28 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
   return (
     <div className="flex flex-col gap-2.5 font-cairo" dir="rtl">
-      {/* 🧭 شريط التبويبات الثلاثي الموحد والمتوازن بدون أي انضغاط */}
+      {/* 🧭 شريط التبويبات الثلاثي الموحد والمتوازن بدون أي انضغاط — الشبكة أولاً */}
       <FluentSegmentedControl
         layoutId="collage-main-tabs"
         className="shadow-2xs border-border/70 bg-card/60 backdrop-blur-xs w-full"
         options={[
           {
-            id: "presets",
-            label: "قوالب",
-            icon: <SquaresFour className="w-4 h-4 text-primary" weight="duotone" />,
-          },
-          {
             id: "custom",
             label: "شبكة",
-            icon: <SlidersHorizontal className="w-4 h-4 text-primary" weight="duotone" />,
+            icon: <GridFour className="w-4 h-4 text-primary" weight="duotone" />,
             badge: isCustomActive ? (
               <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
             ) : undefined,
           },
           {
+            id: "presets",
+            label: "قوالب",
+            icon: <Stack className="w-4 h-4 text-primary" weight="duotone" />,
+          },
+          {
             id: "freeform",
             label: "حر",
-            icon: <Sparkle className="w-4 h-4 text-primary" weight="duotone" />,
+            icon: <MagicWand className="w-4 h-4 text-primary" weight="duotone" />,
             badge: isFreeformActive ? (
               <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
             ) : undefined,
@@ -257,21 +256,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         size="sm"
       />
 
-      {/* 1️⃣ تبويب القوالب المنسقة + المحفوظات */}
-      {activeTab === "presets" && (
-        <CollagePresetsTab
-          presetCategory={presetCategory}
-          onPresetCategoryChange={setPresetCategory}
-          activeTemplateId={activeTemplateId}
-          onSelect={onSelect}
-          savedTemplates={savedTemplates}
-          onDeleteTemplate={onDeleteTemplate}
-          onImportClick={() => fileInputRef?.current?.click()}
-          onExportAllClick={handleExportAllSaved}
-        />
-      )}
-
-      {/* 2️⃣ تبويب تخصيص الشبكة الذاتي (صفوف وأعمدة ومقاسات رسمية) */}
+      {/* 1️⃣ تبويب تخصيص الشبكة الذاتي (صفوف وأعمدة ومقاسات رسمية) */}
       {activeTab === "custom" && (
         <CollageCustomGridTab
           rows={rows}
@@ -304,11 +289,25 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         />
       )}
 
+      {/* 2️⃣ تبويب القوالب المنسقة + المحفوظات */}
+      {activeTab === "presets" && (
+        <CollagePresetsTab
+          presetCategory={presetCategory}
+          onPresetCategoryChange={setPresetCategory}
+          activeTemplateId={activeTemplateId}
+          onSelect={onSelect}
+          savedTemplates={savedTemplates}
+          onDeleteTemplate={onDeleteTemplate}
+          onImportClick={() => fileInputRef?.current?.click()}
+          onExportAllClick={handleExportAllSaved}
+        />
+      )}
+
       {/* 3️⃣ تبويب الكولاج الحر بالملم */}
       {activeTab === "freeform" && (
         <div className="p-3.5 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
           <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shadow-2xs">
-            <Sparkle className="w-5 h-5" weight="duotone" />
+            <MagicWand className="w-5 h-5" weight="duotone" />
           </div>
           <span className="font-bold text-xs text-foreground">كولاج حر بالملم</span>
           <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-muted-foreground select-none">
@@ -325,7 +324,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             onClick={() => setShowFreeformModal(true)}
             className="w-full h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none mt-1"
           >
-            <Sparkle className="w-3.5 h-3.5" weight="bold" />
+            <MagicWand className="w-3.5 h-3.5" weight="bold" />
             <span>فتح المحرر</span>
           </button>
         </div>

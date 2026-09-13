@@ -40,16 +40,18 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const [bleedMM, setBleedMM] = useState(0);
   const [showCropMarks, setShowCropMarks] = useState(false);
   const stageRef = useStageRef();
-  const { template, canvasWidth, canvasHeight, mode, printSettings, slots } = useEditorStore(useShallow((state) => ({
+  const { template, canvasWidth, canvasHeight, mode, printSettings, slots, showBleedGuides, bleedMarginMM } = useEditorStore(useShallow((state) => ({
     template: state.template,
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
     mode: state.mode,
     printSettings: state.printSettings,
     slots: state.slots,
+    showBleedGuides: state.showBleedGuides,
+    bleedMarginMM: state.bleedMarginMM,
   })));
 
-  // تصفير مؤشرات التحميل عند فتح/غلق النافذة لمنع تعليق الأزرار (Fluent 2 Wait UX Invariant)
+  // تصفير مؤشرات التحميل ومزامنة هوامش النزيف للمطابع (Fluent 2 Wait UX Invariant)
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
@@ -58,8 +60,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       isCancelledRef.current = true;
     } else {
       isCancelledRef.current = false;
+      if (showBleedGuides && bleedMarginMM > 0) {
+        setBleedMM(bleedMarginMM);
+        setShowCropMarks(true);
+      }
     }
-  }, [open]);
+  }, [open, showBleedGuides, bleedMarginMM]);
 
   const handleExport = async () => {
     setLoading(true);

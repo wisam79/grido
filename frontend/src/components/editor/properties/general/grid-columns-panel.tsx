@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { GridFour, Columns } from "@phosphor-icons/react";
+import { GridFour, Columns, Crop } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import {
@@ -39,6 +39,14 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
     setColumnsMargin,
     columnsGutter,
     setColumnsGutter,
+    showBleedGuides,
+    setShowBleedGuides,
+    bleedMarginMM,
+    setBleedMarginMM,
+    safeMarginMM,
+    setSafeMarginMM,
+    cutShapeType,
+    setCutShapeType,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
     showGrid: state.showGrid,
@@ -63,33 +71,42 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
     setColumnsMargin: state.setColumnsMargin,
     columnsGutter: state.columnsGutter,
     setColumnsGutter: state.setColumnsGutter,
+    showBleedGuides: state.showBleedGuides,
+    setShowBleedGuides: state.setShowBleedGuides,
+    bleedMarginMM: state.bleedMarginMM,
+    setBleedMarginMM: state.setBleedMarginMM,
+    safeMarginMM: state.safeMarginMM,
+    setSafeMarginMM: state.setSafeMarginMM,
+    cutShapeType: state.cutShapeType,
+    setCutShapeType: state.setCutShapeType,
   })));
 
-  const [activeGridTab, setActiveGridTab] = useState<"grid" | "columns">("grid");
+  const [activeGridTab, setActiveGridTab] = useState<"grid" | "columns" | "bleed">("grid");
 
   if (mode !== "single") return null;
 
   return (
     <FluentSection
       icon={<GridFour className="w-3.5 h-3.5 text-primary" weight="duotone" />}
-      title="الشبكة والأعمدة"
+      title="الشبكة والقص"
       collapsible
       defaultOpen={true}
       action={
         <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md font-bold">
-          {showGrid || showColumns ? "نشط" : "مخفي"}
+          {showGrid || showColumns || showBleedGuides ? "نشط" : "مخفي"}
         </span>
       }
     >
       <div className="space-y-3 animate-in fade-in duration-200">
-        {/* التبديل بين الشبكة والأعمدة */}
-        <FluentSegmentedControl<"grid" | "columns">
+        {/* التبديل بين الشبكة والأعمدة وهامش النزيف */}
+        <FluentSegmentedControl<"grid" | "columns" | "bleed">
           value={activeGridTab}
           onChange={setActiveGridTab}
           size="sm"
           options={[
             { id: "grid", label: "الشبكة", icon: <GridFour className="w-3.5 h-3.5" weight="regular" /> },
             { id: "columns", label: "الأعمدة", icon: <Columns className="w-3.5 h-3.5" weight="regular" /> },
+            { id: "bleed", label: "القص والنزيف", icon: <Crop className="w-3.5 h-3.5" weight="regular" /> },
           ]}
         />
 
@@ -324,6 +341,128 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
             ) : (
               <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
                 <p className="text-[11px] leading-relaxed">الأعمدة الإرشادية معطلة حالياً. فعّلها لمساعدتك على توزيع وتنسيق العناصر بدقة.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeGridTab === "bleed" && (
+          <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
+            {/* مفتاح تفعيل خطوط النزيف والقص */}
+            <div className="flex items-center justify-between bg-muted/40 p-2 rounded-lg border border-border/40 select-none">
+              <span className="text-xs font-bold text-foreground">إظهار هوامش النزيف والقص</span>
+              <Switch
+                checked={showBleedGuides}
+                onCheckedChange={setShowBleedGuides}
+                aria-label="إظهار حدود وهوامش النزيف والقص"
+              />
+            </div>
+
+            {showBleedGuides ? (
+              <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
+                {/* شكل القص Die-cut */}
+                <div className="space-y-1" dir="rtl">
+                  <span className="text-[10px] text-muted-foreground font-bold block">شكل القص (Die-Cut)</span>
+                  <div className="grid grid-cols-3 gap-1 bg-input border border-border p-0.5 rounded-md h-8">
+                    <button
+                      type="button"
+                      onClick={() => setCutShapeType("rectangle")}
+                      className={cn(
+                        "text-[10px] font-bold rounded transition-all cursor-pointer",
+                        cutShapeType === "rectangle"
+                          ? "bg-card text-primary shadow-2xs font-bold"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      مستطيل
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCutShapeType("rounded-rect")}
+                      className={cn(
+                        "text-[10px] font-bold rounded transition-all cursor-pointer",
+                        cutShapeType === "rounded-rect"
+                          ? "bg-card text-primary shadow-2xs font-bold"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      زوايا مستديرة
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCutShapeType("circle")}
+                      className={cn(
+                        "text-[10px] font-bold rounded transition-all cursor-pointer",
+                        cutShapeType === "circle"
+                          ? "bg-card text-primary shadow-2xs font-bold"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      دائري
+                    </button>
+                  </div>
+                </div>
+
+                {/* مقاس النزيف ومقاس الأمان */}
+                <div className="grid grid-cols-2 gap-2" dir="rtl">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground font-bold block">هامش النزيف</span>
+                      <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" title="خط النزيف الخارجي" />
+                    </div>
+                    <div className="flex items-center bg-input border border-border rounded-md px-2 h-8">
+                      <input
+                        type="number"
+                        value={bleedMarginMM}
+                        min={0}
+                        max={20}
+                        step={0.5}
+                        onChange={(e) => setBleedMarginMM(Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)))}
+                        className="w-full bg-transparent border-0 p-0 text-center text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-muted-foreground font-mono select-none">مم</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground font-bold block">منطقة الأمان</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="منطقة الأمان الداخلية" />
+                    </div>
+                    <div className="flex items-center bg-input border border-border rounded-md px-2 h-8">
+                      <input
+                        type="number"
+                        value={safeMarginMM}
+                        min={0}
+                        max={20}
+                        step={0.5}
+                        onChange={(e) => setSafeMarginMM(Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)))}
+                        className="w-full bg-transparent border-0 p-0 text-center text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-muted-foreground font-mono select-none">مم</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* دليل ألوان الإرشادات */}
+                <div className="p-2.5 rounded-lg border border-border/50 bg-muted/30 space-y-1.5 text-[10px] select-none" dir="rtl">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-0.5 border-b-2 border-rose-500 border-dashed" />
+                    <span className="text-muted-foreground"><strong className="text-foreground">حد النزيف:</strong> مدّد الخلفية لخارج الورقة لمنع الحواف البيضاء.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-0.5 bg-blue-500" />
+                    <span className="text-muted-foreground"><strong className="text-foreground">خط القص:</strong> الحد الفعلي للبطاقة/الملصق النهائي.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-0.5 border-b-2 border-emerald-500 border-dashed" />
+                    <span className="text-muted-foreground"><strong className="text-foreground">منطقة الأمان:</strong> أبقِ النصوص والشعارات داخل هذا الخط.</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
+                <p className="text-[11px] leading-relaxed">خطوط النزيف والقص مفيدة لتجهيز كروت العمل والملصقات للطباعة التجارية لمنع تلف التصميم أثناء القص.</p>
               </div>
             )}
           </div>

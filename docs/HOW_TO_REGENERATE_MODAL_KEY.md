@@ -37,17 +37,18 @@ https://modal.com/
 notepad .env
 
 # استبدل السطر:
-GRIDO_AI_SECRET_KEY=grido_sec_ai_live_8f3d9b4c2e1a70562e84d9c0a1b3f5e76812c9d4a0b6f8e235d7c9a1e4f6b802
+MODAL_AI_KEY=your-old-key-here
+# أو GRIDO_AI_SECRET_KEY=...
 
 # بالمفتاح الجديد:
-GRIDO_AI_SECRET_KEY=المفتاح_الجديد_هنا
+MODAL_AI_KEY=المفتاح_الجديد_هنا
 
 # احفظ الملف
 ```
 
 ### 6️⃣ تحديث GitHub Secrets
 1. اذهب إلى: `https://github.com/wisam79/grido/settings/secrets/actions`
-2. ابحث عن `GRIDO_AI_SECRET_KEY`
+2. ابحث عن `MODAL_AI_KEY` (أو `GRIDO_AI_SECRET_KEY`)
 3. اضغط **"Update"**
 4. الصق المفتاح الجديد
 5. احفظ
@@ -72,7 +73,7 @@ wails dev
 
 ```bash
 # تأكد أن المفتاح موجود في .env
-grep "GRIDO_AI_SECRET_KEY" .env
+grep -E "MODAL_AI_KEY|GRIDO_AI_SECRET_KEY" .env
 
 # تأكد أن .env محمي في .gitignore
 grep "^\.env$" .gitignore

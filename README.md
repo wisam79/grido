@@ -35,6 +35,7 @@
 | **ترميم وتحسين AI** | خط أنابيب مزدوج: CodeFormer للوجوه + Real-ESRGAN x2 للخلفية (GPU L4 عبر Modal AI) |
 | **طباعة دقة عالية** | أوراق DPI مخصصة مع خطوط قص، حدود مستديرة، وأبعاد ملمية دقيقة (حتى 144 ميغابكسل) |
 | **قوالب جاهزة** | هويات، جوازات سفر، تأشيرات، وكولاجات قابلة للتخصيص |
+| **ملصقات وبطاقات تجارية** | مقاسات كروت وبادجات وهوامش نزيف وقص (Bleed Guides)، وتوليد رموز QR وباركود متجهة، ومونتاج ورقي ذكي |
 | **تراخيص سحابية** | مصادقة Supabase (بريد/OTP/Google) مع خطط مجانية واحترافية |
 | **خطوط عربية** | 12 عائلة خطوط عربية مدمجة تعمل أوفلاين (woff2) |
 
@@ -126,7 +127,7 @@ Grido Studio
 │   │   ├── hooks/             # Custom hooks (autosave, bg-removal, AI enhance)
 │   │   ├── lib/store/         # Zustand store — 7 slices
 │   │   └── lib/templates/     # قوالب الصور والكولاج
-│   ├── test/                  # اختبارات Vitest (55 ملفاً)
+│   ├── test/                  # اختبارات Vitest (61 ملفاً · 414 اختباراً)
 │   └── e2e/                   # اختبارات Playwright
 ├── supabase/                  # Edge functions + SQL migrations
 ├── modal_ai/                  # خادم Modal AI (CodeFormer + Real-ESRGAN)

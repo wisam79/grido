@@ -25,6 +25,7 @@ import {
   Trash,
   ArrowUUpLeft,
   ArrowUUpRight,
+  SealCheck,
 } from "@phosphor-icons/react";
 import {
   AlignLeftIcon,
@@ -42,6 +43,7 @@ import { useAiEnhance } from "@/hooks/use-ai-enhance";
 import { useFaceFrame } from "@/hooks/use-face-frame";
 
 const RefineBgDialog = React.lazy(() => import("../dialogs/refine-bg-dialog").then((m) => ({ default: m.RefineBgDialog })));
+const BarcodeDialog = React.lazy(() => import("../dialogs/barcode-dialog").then((m) => ({ default: m.BarcodeDialog })));
 
 interface TooltipBtnProps {
   content: string;
@@ -62,6 +64,7 @@ function TooltipBtn({ content, children }: TooltipBtnProps) {
 }
 
 const ToolbarAddTools = React.memo(function ToolbarAddTools() {
+  const [isBarcodeOpen, setIsBarcodeOpen] = React.useState(false);
   const addTextElement = useEditorStore((state) => state.addTextElement);
   const addTextPreset = useEditorStore((state) => state.addTextPreset);
   const addShapeElement = useEditorStore((state) => state.addShapeElement);
@@ -201,6 +204,26 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* استوديو الملصقات والرموز */}
+      <TooltipBtn content="استوديو الملصقات والشارات ورموز QR والباركود">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsBarcodeOpen(true)}
+          aria-label="استوديو الملصقات والرموز"
+          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1.5"
+        >
+          <SealCheck className="w-4 h-4 text-primary" weight="bold" />
+          <span className="text-xs font-semibold hidden xl:inline">ملصقات</span>
+        </Button>
+      </TooltipBtn>
+
+      {isBarcodeOpen && (
+        <React.Suspense fallback={null}>
+          <BarcodeDialog open={isBarcodeOpen} onOpenChange={setIsBarcodeOpen} />
+        </React.Suspense>
+      )}
     </div>
   );
 });

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { ArrowsLeftRight, CaretDown, Check, Crop } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
-import { PAPER_SIZES } from "@/lib/templates";
+import { PAPER_SIZES, CARD_AND_LABEL_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSection } from "@/components/ui/blocks";
@@ -20,6 +22,9 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     template,
     setTemplate,
     printSettings,
+    setShowBleedGuides,
+    setBleedMarginMM,
+    setCutShapeType,
   } = useEditorStore(useShallow((state) => ({
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
@@ -27,6 +32,9 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     template: state.template,
     setTemplate: state.setTemplate,
     printSettings: state.printSettings,
+    setShowBleedGuides: state.setShowBleedGuides,
+    setBleedMarginMM: state.setBleedMarginMM,
+    setCutShapeType: state.setCutShapeType,
   })));
 
   const [unit, setUnit] = useState<"px" | "mm">("px");
@@ -107,6 +115,28 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   };
 
   const handlePresetChange = (presetId: string) => {
+    const cardOrLabel = CARD_AND_LABEL_SIZES.find((p) => p.id === presetId);
+    if (cardOrLabel) {
+      const dpi = dpiVal;
+      const finalW = Math.round((cardOrLabel.widthMM * dpi) / 25.4);
+      const finalH = Math.round((cardOrLabel.heightMM * dpi) / 25.4);
+
+      setCanvasSize(finalW, finalH);
+      setShowBleedGuides(true);
+      setBleedMarginMM(cardOrLabel.defaultBleedMM || 2);
+      setCutShapeType(cardOrLabel.shape || "rectangle");
+      if (template) setTemplate(null);
+
+      if (unit === "px") {
+        setWidthVal(finalW.toString());
+        setHeightVal(finalH.toString());
+      } else {
+        setWidthVal(cardOrLabel.widthMM.toString());
+        setHeightVal(cardOrLabel.heightMM.toString());
+      }
+      return;
+    }
+
     const paper = PAPER_SIZES.find((p) => p.id === presetId);
     if (!paper) return;
 
@@ -125,6 +155,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     const finalH = Math.round(targetH);
 
     setCanvasSize(finalW, finalH);
+    setShowBleedGuides(false);
 
     if (template) {
       setTemplate({
@@ -158,13 +189,25 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     setHeightVal(temp);
   };
 
-  const activePreset = PAPER_SIZES.find((p) => {
+  const activePaperPreset = PAPER_SIZES.find((p) => {
     const dpi = dpiVal;
     return (
       (Math.round((canvasWidth / dpi) * 25.4) === p.widthMM && Math.round((canvasHeight / dpi) * 25.4) === p.heightMM) ||
       (Math.round((canvasWidth / dpi) * 25.4) === p.heightMM && Math.round((canvasHeight / dpi) * 25.4) === p.widthMM)
     );
   });
+
+  const activeCardPreset = CARD_AND_LABEL_SIZES.find((p) => {
+    const dpi = dpiVal;
+    const currentWMM = Math.round((canvasWidth / dpi) * 25.4);
+    const currentHMM = Math.round((canvasHeight / dpi) * 25.4);
+    return (
+      (Math.abs(currentWMM - p.widthMM) <= 1 && Math.abs(currentHMM - p.heightMM) <= 1) ||
+      (Math.abs(currentWMM - p.heightMM) <= 1 && Math.abs(currentHMM - p.widthMM) <= 1)
+    );
+  });
+
+  const activePreset = activeCardPreset || activePaperPreset;
   const activePresetId = activePreset ? activePreset.id : "custom";
 
   return (
@@ -195,7 +238,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 <CaretDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8" align="start">
+            <DropdownMenuContent className="w-64 font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8 max-h-[380px] overflow-y-auto" align="start">
               <DropdownMenuItem
                 onClick={() => {
                   if (template) setTemplate(null);
@@ -205,10 +248,45 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 <span>مقاس مخصص يدوي</span>
                 {activePresetId === "custom" && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
               </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>أوراق الطباعة القياسية</DropdownMenuLabel>
               {PAPER_SIZES.map((p) => {
                 const nameParts = p.name.split(" (");
                 const mainName = nameParts[0].replace(" بوصة", "″");
                 const label = `${mainName} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                return (
+                  <DropdownMenuItem
+                    key={p.id}
+                    onClick={() => handlePresetChange(p.id)}
+                    className="text-xs text-right justify-between cursor-pointer rounded-md flex items-center"
+                  >
+                    <span>{label}</span>
+                    {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                  </DropdownMenuItem>
+                );
+              })}
+
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>كروت وبطاقات العمل</DropdownMenuLabel>
+              {CARD_AND_LABEL_SIZES.filter((p) => p.category === "card").map((p) => {
+                const label = `${p.name} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                return (
+                  <DropdownMenuItem
+                    key={p.id}
+                    onClick={() => handlePresetChange(p.id)}
+                    className="text-xs text-right justify-between cursor-pointer rounded-md flex items-center"
+                  >
+                    <span>{label}</span>
+                    {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                  </DropdownMenuItem>
+                );
+              })}
+
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>ملصقات دائرية وتجارية</DropdownMenuLabel>
+              {CARD_AND_LABEL_SIZES.filter((p) => p.category !== "card").map((p) => {
+                const label = `${p.name} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
                 return (
                   <DropdownMenuItem
                     key={p.id}

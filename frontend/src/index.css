@@ -386,6 +386,50 @@
 }
 
 @layer utilities {
+  /* إخفاء شريط التمرير تماماً لمنع تشوهات Wails WebView2 */
+  .scrollbar-none,
+  .no-scrollbar {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .scrollbar-none::-webkit-scrollbar,
+  .no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  /* أنماط تفاعل الكانفس لاستوديو الملصقات */
+  .sticker-svg-interactive text,
+  .sticker-svg-interactive textPath {
+    /* هدف نقر أكبر: bounding-box يجعل النقر على الفراغ المحيط بالنص يلتقطه أيضاً */
+    pointer-events: bounding-box;
+    cursor: pointer !important;
+    transition: filter 0.12s ease;
+  }
+  .sticker-svg-interactive text:hover,
+  .sticker-svg-interactive textPath:hover {
+    filter: drop-shadow(0 0 0.6px #3b82f6) drop-shadow(0 0 2.2px rgba(59, 130, 246, 0.55));
+  }
+  .sticker-svg-interactive polygon:hover,
+  .sticker-svg-interactive circle:hover,
+  .sticker-svg-interactive rect:hover,
+  .sticker-svg-interactive path:hover,
+  .sticker-svg-interactive ellipse:hover {
+    cursor: pointer;
+  }
+  /* العنصر النشط قيد التحرير: حلقة تركيز واضحة مستقرة */
+  .sticker-svg-interactive text.is-active-edit,
+  .sticker-svg-interactive textPath.is-active-edit {
+    filter: drop-shadow(0 0 1.2px #2563eb) drop-shadow(0 0 3.5px rgba(37, 99, 235, 0.65));
+  }
+  .sticker-svg-interactive [data-color-role].is-active-edit {
+    stroke: #2563eb !important;
+    stroke-width: 3 !important;
+    stroke-dasharray: 6 4 !important;
+    paint-order: stroke fill markers;
+  }
+
   .font-cairo {
     font-family: var(--font-cairo), system-ui, sans-serif;
   }

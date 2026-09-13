@@ -15,6 +15,35 @@ export const PAPER_SIZES: PaperSize[] = [
   { id: "5x7", name: "5×7 بوصة (127×178 ملم)", widthMM: 127, heightMM: 178 },
 ];
 
+export interface CardAndLabelSize {
+  id: string;
+  name: string;
+  category: "card" | "sticker" | "tag";
+  widthMM: number;
+  heightMM: number;
+  shape?: "rectangle" | "circle" | "rounded-rect";
+  defaultBleedMM?: number;
+}
+
+export const CARD_AND_LABEL_SIZES: CardAndLabelSize[] = [
+  // كروت وبطاقات العمل
+  { id: "biz-card-ar", name: "كارت عمل قياسي (85×55 مم)", category: "card", widthMM: 85, heightMM: 55, shape: "rectangle", defaultBleedMM: 2 },
+  { id: "biz-card-us", name: "كارت عمل أمريكي (89×51 مم)", category: "card", widthMM: 89, heightMM: 51, shape: "rectangle", defaultBleedMM: 2 },
+  { id: "biz-card-sq", name: "كارت عمل مربع (65×65 مم)", category: "card", widthMM: 65, heightMM: 65, shape: "rectangle", defaultBleedMM: 2 },
+  { id: "id-badge-cr80", name: "بطاقة هوية / شارة CR80 (85.6×54 مم)", category: "card", widthMM: 85.6, heightMM: 54, shape: "rounded-rect", defaultBleedMM: 2 },
+
+  // ملصقات دائرية
+  { id: "sticker-circle-30", name: "ملصق دائري قطر 30 مم", category: "sticker", widthMM: 30, heightMM: 30, shape: "circle", defaultBleedMM: 2 },
+  { id: "sticker-circle-40", name: "ملصق دائري قطر 40 مم", category: "sticker", widthMM: 40, heightMM: 40, shape: "circle", defaultBleedMM: 2 },
+  { id: "sticker-circle-50", name: "ملصق دائري قطر 50 مم", category: "sticker", widthMM: 50, heightMM: 50, shape: "circle", defaultBleedMM: 2 },
+  { id: "sticker-circle-60", name: "ملصق دائري قطر 60 مم", category: "sticker", widthMM: 60, heightMM: 60, shape: "circle", defaultBleedMM: 2 },
+
+  // ملصقات مستطيلة وشحن وباركود
+  { id: "label-barcode-40x20", name: "ملصق باركود صغير (40×20 مم)", category: "tag", widthMM: 40, heightMM: 20, shape: "rectangle", defaultBleedMM: 1.5 },
+  { id: "label-product-50x25", name: "ملصق منتج وأسعار (50×25 مم)", category: "tag", widthMM: 50, heightMM: 25, shape: "rectangle", defaultBleedMM: 1.5 },
+  { id: "label-shipping-100x150", name: "ملصق بوليصة شحن (100×150 مم)", category: "tag", widthMM: 100, heightMM: 150, shape: "rectangle", defaultBleedMM: 2 },
+];
+
 // مرشحات الصور
 export interface ImageFilter {
   id: string;

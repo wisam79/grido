@@ -150,3 +150,111 @@ export function computeSlotAspect(
   if (slot.h <= 0 || canvasHeight <= 0) return 0;
   return (slot.w * canvasWidth) / (slot.h * canvasHeight);
 }
+
+export interface OptimalImpositionInput {
+  paperWidthMM: number;
+  paperHeightMM: number;
+  itemWidthMM: number;
+  itemHeightMM: number;
+  marginMM?: number;
+  gapMM?: number;
+  bleedMM?: number;
+}
+
+export interface OptimalImpositionResult {
+  orientation: "portrait" | "landscape";
+  rotateItem: boolean;
+  paperWidthMM: number;
+  paperHeightMM: number;
+  cols: number;
+  rows: number;
+  maxCopies: number;
+  gapMM: number;
+  marginMM: number;
+  bleedMM: number;
+  wastePercentage: number;
+}
+
+/**
+ * حساب المونتاج الأمثل للورقة (N-Up Imposition):
+ * يحسب تلقائياً الاتجاه الأنسب للورقة (طولي أو عرضي) وأقصى عدد نسخ متوافقة
+ * مع فحص إمكانية تدوير العنصر بـ 90 درجة واحتساب هامش النزيف لتقليل الهدر الورقي في المطابع.
+ */
+export function calculateOptimalSheetImposition(
+  input: OptimalImpositionInput
+): OptimalImpositionResult {
+  const margin = Math.max(0, input.marginMM ?? 5);
+  const gap = Math.max(0, input.gapMM ?? 2);
+  const bleed = Math.max(0, input.bleedMM ?? 0);
+  const rawItemW = Math.max(1, input.itemWidthMM);
+  const rawItemH = Math.max(1, input.itemHeightMM);
+
+  // إذا كان هناك هامش نزيف، فإن مساحة الكارت المطبوعة تتسع بالنزيف
+  const itemW = rawItemW + 2 * bleed;
+  const itemH = rawItemH + 2 * bleed;
+
+  const minPaper = Math.min(input.paperWidthMM, input.paperHeightMM);
+  const maxPaper = Math.max(input.paperWidthMM, input.paperHeightMM);
+
+  interface Candidate {
+    orientation: "portrait" | "landscape";
+    rotateItem: boolean;
+    paperWidthMM: number;
+    paperHeightMM: number;
+    cols: number;
+    rows: number;
+    maxCopies: number;
+  }
+
+  const evalLayout = (
+    orientation: "portrait" | "landscape",
+    rotateItem: boolean,
+    sheetW: number,
+    sheetH: number
+  ): Candidate => {
+    const effW = rotateItem ? itemH : itemW;
+    const effH = rotateItem ? itemW : itemH;
+    const availW = sheetW - 2 * margin;
+    const availH = sheetH - 2 * margin;
+    const cols = availW > 0 ? Math.floor((availW + gap) / (effW + gap)) : 0;
+    const rows = availH > 0 ? Math.floor((availH + gap) / (effH + gap)) : 0;
+    const maxCopies = Math.max(0, cols) * Math.max(0, rows);
+    return {
+      orientation,
+      rotateItem,
+      paperWidthMM: sheetW,
+      paperHeightMM: sheetH,
+      cols,
+      rows,
+      maxCopies,
+    };
+  };
+
+  const candidates: Candidate[] = [
+    evalLayout("portrait", false, minPaper, maxPaper),
+    evalLayout("portrait", true, minPaper, maxPaper),
+    evalLayout("landscape", false, maxPaper, minPaper),
+    evalLayout("landscape", true, maxPaper, minPaper),
+  ];
+
+  // ترتيب المرشحين: الأفضل هو الأعلى في عدد النسخ، وفي حال التساوي نفضل الوضع الرأسي الطبيعي دون تدوير
+  candidates.sort((a, b) => {
+    if (b.maxCopies !== a.maxCopies) return b.maxCopies - a.maxCopies;
+    if (a.rotateItem !== b.rotateItem) return a.rotateItem ? 1 : -1;
+    if (a.orientation !== b.orientation) return a.orientation === "portrait" ? -1 : 1;
+    return 0;
+  });
+
+  const best = candidates[0];
+  const totalArea = best.paperWidthMM * best.paperHeightMM;
+  const usedArea = best.maxCopies * rawItemW * rawItemH;
+  const wastePercentage = Math.max(0, Math.min(100, Math.round((1 - usedArea / totalArea) * 100)));
+
+  return {
+    ...best,
+    gapMM: gap,
+    marginMM: margin,
+    bleedMM: bleed,
+    wastePercentage,
+  };
+}

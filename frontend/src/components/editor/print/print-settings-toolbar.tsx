@@ -19,10 +19,14 @@ import {
   ArrowUpLeft,
   Columns,
   Rows,
+  Sparkle,
 } from "@phosphor-icons/react";
 import { PageOrientationIcon } from "@/components/ui/image-icons";
 import { PAPER_SIZES } from "@/lib/templates/constants";
 import type { PrintSettings } from "@/lib/store/types";
+import { calculateOptimalSheetImposition } from "@/lib/print/print-layout-math";
+import { useEditorStore } from "@/lib/editor-store";
+import { toast } from "sonner";
 
 const toggleButtonClassName = (active: boolean, primary = false) =>
   cn(
@@ -46,6 +50,8 @@ export interface PrintSettingsToolbarProps {
   grid: { safeCols: number };
   lastNonZeroMargin: number;
   onMarginlessToggle: (checked: boolean) => void;
+  imageWidthMM?: number;
+  imageHeightMM?: number;
 }
 
 /**
@@ -65,8 +71,38 @@ export function PrintSettingsToolbar({
   grid,
   lastNonZeroMargin,
   onMarginlessToggle,
+  imageWidthMM,
+  imageHeightMM,
 }: PrintSettingsToolbarProps) {
   const cutLinesActive = mode === "collage" ? collageShowCutLines : printSettings.showCutLines;
+
+  const handleAutoImpose = () => {
+    if (!imageWidthMM || !imageHeightMM) {
+      toast.error("تعذر قراءة مقاس التصميم الحالي");
+      return;
+    }
+    const { showBleedGuides, bleedMarginMM } = useEditorStore.getState();
+    const bleed = showBleedGuides && bleedMarginMM > 0 ? bleedMarginMM : 0;
+
+    const result = calculateOptimalSheetImposition({
+      paperWidthMM: printSettings.paperWidthMM || 210,
+      paperHeightMM: printSettings.paperHeightMM || 297,
+      itemWidthMM: imageWidthMM,
+      itemHeightMM: imageHeightMM,
+      marginMM: printSettings.marginMM ?? 5,
+      gapMM: printSettings.gapMM ?? 2,
+      bleedMM: bleed,
+    });
+
+    setPrintSettings({
+      orientation: result.orientation,
+      copiesPerSheet: result.maxCopies,
+      repeatMode: "all",
+      showCutLines: true,
+    });
+    const rotationNote = result.rotateItem ? " (مع تدوير التصميم 90°)" : "";
+    toast.success(`تم المونتاج التلقائي: ${result.maxCopies} نسخة (${result.cols} أعمدة × ${result.rows} صفوف)${rotationNote} - هدر ${result.wastePercentage}%`);
+  };
 
   return (
     <>
@@ -216,7 +252,7 @@ export function PrintSettingsToolbar({
 
       {/* شريط الأدوات يتم إظهاره فقط في وضع الطباعة الفردية Single Mode */}
       {mode !== "collage" && (
-        <div className="grid grid-cols-3 gap-2 select-none shrink-0">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 select-none shrink-0">
           {/* عدد النسخ في الورقة */}
           <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
             <span className="text-xs font-semibold text-muted-foreground">نسخ/ورقة</span>
@@ -297,6 +333,19 @@ export function PrintSettingsToolbar({
               </Button>
             </div>
           </div>
+
+          {/* زر المونتاج التلقائي للشيت */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAutoImpose}
+            className="h-full min-h-[34px] rounded-lg border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold gap-1.5 cursor-pointer shadow-2xs flex items-center justify-center transition-all"
+            title="حساب أقصى عدد نسخ وتدوير الورقة تلقائياً لتعبئة الشيت بالكامل"
+          >
+            <Sparkle className="w-3.5 h-3.5 shrink-0" weight="fill" />
+            <span>مونتاج تلقائي</span>
+          </Button>
         </div>
       )}
     </>

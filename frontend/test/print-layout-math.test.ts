@@ -4,6 +4,7 @@ import {
   computeSheetGrid,
   computeSlotAspect,
   computeSlotRectMM,
+  calculateOptimalSheetImposition,
 } from "../src/lib/print/print-layout-math";
 
 describe("computeSheetGrid", () => {
@@ -275,3 +276,109 @@ describe("computeSlotAspect", () => {
     expect(computeSlotAspect({ w: 0, h: 0 }, 2480, 3508)).toBe(0);
   });
 });
+
+describe("calculateOptimalSheetImposition", () => {
+  it("fits 10 business cards (85x55mm) on A4 in portrait orientation", () => {
+    const result = calculateOptimalSheetImposition({
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      itemWidthMM: 85,
+      itemHeightMM: 55,
+      marginMM: 5,
+      gapMM: 2,
+    });
+
+    expect(result.orientation).toBe("portrait");
+    expect(result.cols).toBe(2);
+    expect(result.rows).toBe(5);
+    expect(result.maxCopies).toBe(10);
+  });
+
+  it("fits round stickers (50x50mm) on A4 with 15 copies", () => {
+    const result = calculateOptimalSheetImposition({
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      itemWidthMM: 50,
+      itemHeightMM: 50,
+      marginMM: 5,
+      gapMM: 2,
+    });
+
+    expect(result.cols).toBe(3);
+    expect(result.rows).toBe(5);
+    expect(result.maxCopies).toBe(15);
+  });
+
+  it("selects landscape if it yields more copies than portrait", () => {
+    // 130mm x 50mm on 210x297 paper:
+    // Portrait (200x287): cols = floor(202/132) = 1, rows = floor(289/52) = 5 -> 5 copies
+    // Landscape (287x200): cols = floor(289/132) = 2, rows = floor(202/52) = 3 -> 6 copies
+    const result = calculateOptimalSheetImposition({
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      itemWidthMM: 130,
+      itemHeightMM: 50,
+      marginMM: 5,
+      gapMM: 2,
+    });
+
+    expect(result.orientation).toBe("landscape");
+    expect(result.cols).toBe(2);
+    expect(result.rows).toBe(3);
+    expect(result.maxCopies).toBe(6);
+  });
+
+  it("computes waste percentage within bounds", () => {
+    const result = calculateOptimalSheetImposition({
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      itemWidthMM: 85,
+      itemHeightMM: 55,
+      marginMM: 5,
+      gapMM: 2,
+    });
+
+    expect(result.wastePercentage).toBeGreaterThanOrEqual(0);
+    expect(result.wastePercentage).toBeLessThanOrEqual(100);
+  });
+
+  it("factors in bleed margin into item dimensions during imposition", () => {
+    // 85x55mm card with 2mm bleed becomes 89x59mm
+    // Without bleed: fits 10 copies in portrait (2 cols x 5 rows)
+    // With 2mm bleed:
+    // In portrait without rotation: 2 cols x 4 rows = 8 copies
+    // In landscape: 3 cols (271mm <= 287mm) x 3 rows (181mm <= 200mm) = 9 copies
+    // The optimizer correctly picks landscape with 9 copies instead of 8!
+    const resultWithBleed = calculateOptimalSheetImposition({
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      itemWidthMM: 85,
+      itemHeightMM: 55,
+      marginMM: 5,
+      gapMM: 2,
+      bleedMM: 2,
+    });
+
+    expect(resultWithBleed.bleedMM).toBe(2);
+    expect(resultWithBleed.orientation).toBe("landscape");
+    expect(resultWithBleed.cols).toBe(3);
+    expect(resultWithBleed.rows).toBe(3);
+    expect(resultWithBleed.maxCopies).toBe(9);
+  });
+
+  it("evaluates item rotation flag correctly", () => {
+    const result = calculateOptimalSheetImposition({
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      itemWidthMM: 85,
+      itemHeightMM: 55,
+      marginMM: 5,
+      gapMM: 2,
+    });
+
+    expect(typeof result.rotateItem).toBe("boolean");
+    expect(result.rotateItem).toBe(false); // Natural orientation fits 10
+  });
+});
+
+

@@ -60,7 +60,7 @@ $$\text{Pixel Position} = \text{Normalized Coordinate} \times \text{Canvas Dimen
 ### Bounding Boxes & Offsets
 - **Transformer:** Konva's `<Transformer>` anchors are customized to match Figma: circular purple anchors (`anchorSize: 10`, `anchorFill: "#4f46e5"`), locked aspect ratios, and padding.
 - **Star & Circle Origin Offsets:** Primitives (like Circles and Stars) are rendered using offsets (`offsetX = -width/2` and `offsetY = -height/2`) to align their Konva origin directly with the bounding box corners.
-- **Snap Guides:** Interactive smart-alignment lines are generated dynamically using alignment math (in `lib/snap-utils.ts`) when objects are dragged close to other elements.
+- **Snap Guides:** Interactive smart-alignment lines are generated dynamically using alignment math (in `lib/canvas/snap-utils.ts`) when objects are dragged close to other elements.
 
 ---
 
@@ -71,10 +71,10 @@ The global store is structured into **7 domain-specific slices** under `frontend
 1. **`core-slice.ts`**: Canvas dimensions, paper presets, DPI, orientation, background color, project metadata, reset/clear.
 2. **`element-slice.ts`**: Adding, updating, deleting, locking, ordering, duplicating, flipping, rotating, and aligning freeform elements (images, text, shapes).
 3. **`collage-slice.ts`**: Collage templates, slot assignment, slot image transformations (`zoom`, `dragX`, `dragY`, `flip`, `rotation`), slot sizing, and spacing.
-4. **`grid-slice.ts`**: Grid type, grid color, grid opacity, snap-to-grid, columns, gap, and margin.
+4. **`grid-slice.ts`**: Grid type, grid color, grid opacity, snap-to-grid, columns, gap, margin, and bleed/safe guidelines (`showBleedGuides`, `bleedMarginMM`, `safeMarginMM`, `cutShapeType`).
 5. **`history-slice.ts`**: State snapshots for Undo/Redo with shallow cloning (`elements.map(el => ({...el}))`) and a 30-entry cap.
 6. **`license-slice.ts`**: Supabase authentication (email/password, OTP, Google OAuth), active session, JWT token, plan type, and AI quotas.
-7. **`print-slice.ts`**: Print configuration, margins, bleed area, cut lines, copy distribution, and paper dimensions.
+7. **`print-slice.ts`**: Print configuration, margins, bleed area, cut lines, copy distribution, paper dimensions, and smart N-up sheet imposition (`calculateOptimalSheetImposition`).
 
 ### State History Queue (Undo & Redo)
 Grido manages a history queue of states to allow stepping backwards and forwards:

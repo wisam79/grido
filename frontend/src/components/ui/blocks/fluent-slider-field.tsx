@@ -17,6 +17,8 @@ export interface FluentSliderFieldProps {
   disabled?: boolean;
   className?: string;
   valueFormatter?: (val: number) => string;
+  layout?: "stacked" | "inline";
+  labelWidth?: string;
 }
 
 export const FluentSliderField = React.memo(function FluentSliderField({
@@ -34,6 +36,8 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   disabled = false,
   className,
   valueFormatter,
+  layout = "stacked",
+  labelWidth,
 }: FluentSliderFieldProps) {
   const [localValue, setLocalValue] = useState(value);
   const rafRef = useRef<number | null>(null);
@@ -125,6 +129,51 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   const displayVal = valueFormatter
     ? valueFormatter(localValue)
     : `${localValue}${unit ? ` ${unit}` : ""}`;
+
+  if (layout === "inline") {
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-2 select-none h-7",
+          disabled && "opacity-50 pointer-events-none",
+          className
+        )}
+      >
+        <div
+          id={labelId}
+          className={cn(
+            "flex items-center gap-1.5 text-xs font-semibold text-foreground/85 shrink-0 select-none",
+            labelWidth || "w-16"
+          )}
+          title={typeof label === "string" ? label : undefined}
+        >
+          {icon && <span className="text-primary shrink-0">{icon}</span>}
+          <span className="truncate">{label}</span>
+        </div>
+
+        <Slider
+          dir="ltr"
+          aria-labelledby={labelId}
+          value={[localValue]}
+          min={min}
+          max={max}
+          step={step}
+          disabled={disabled}
+          onValueChange={handleChange}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          className="py-1 flex-1"
+        />
+
+        <span
+          dir="ltr"
+          className="font-mono font-bold text-[11px] bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-foreground/90 select-none shrink-0 min-w-10 text-center"
+        >
+          {displayVal}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div
