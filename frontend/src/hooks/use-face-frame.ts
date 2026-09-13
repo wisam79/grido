@@ -225,7 +225,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
           const { pngBase64, outW, outH, detectedMs } = msg.result;
 
           try {
-            setFrameProgressText("حفظ الصورة المقتصة...");
+            setFrameProgressText("جاري حفظ الصورة المقتصة ...");
             const dataUrl = `data:image/png;base64,${pngBase64}`;
             const localPath = await SaveImageFromBase64(dataUrl);
             await preloadImageIntoCache(localPath);

@@ -286,7 +286,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
               type="search"
               value={searchInput}
               onChange={(e) => handleSearchInput(e.target.value)}
-              placeholder="بحث في القوالب..."
+              placeholder="بحث في القوالب ..."
               aria-label="بحث في القوالب"
               className="h-8 ps-8 pe-7 text-xs rounded-md bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary text-foreground placeholder:text-muted-foreground/60"
             />
@@ -295,7 +295,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                 type="button"
                 onClick={handleClearSearch}
                 aria-label="مسح البحث"
-                className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer"
+                className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-md cursor-pointer"
                 title="مسح"
               >
                 <X className="w-3.5 h-3.5" />

@@ -230,7 +230,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
         // مؤشر «العزل» يبقى ظاهراً حتى تُطبَّق النتيجة وتُفكّضغط في كاش الصور،
         // وبعدها نُسقط المؤشر في نفس الإطار — فلا تظهر «فجوة» بينه وبين الكانفس.
         try {
-          setBgProgressText("تجهيز الصورة...");
+          setBgProgressText("جاري تجهيز الصورة ...");
           const localPath = await ApplyMaskToImage(element.imageSrc || "", maskBase64, targetW, targetH);
           await preloadImageIntoCache(localPath);
 

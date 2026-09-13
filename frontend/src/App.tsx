@@ -219,19 +219,23 @@ export default function App() {
 
   if (!isLicenseActive) {
     return (
-      <LicenseLockScreen
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        isMaximized={isMaximized}
-        isFocused={isFocused}
-        onMinimize={handleMinimize}
-        onMaximize={handleMaximize}
-        onClose={handleClose}
-        onActivate={activateLicenseKey}
-        onOpenAccount={() => setAccountModalOpen(true)}
-        onLogout={logoutAccount}
-        user={user}
-      />
+      <PhosphorProvider weight="regular" size={18}>
+        <TooltipProvider delayDuration={650} skipDelayDuration={150}>
+          <LicenseLockScreen
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            isMaximized={isMaximized}
+            isFocused={isFocused}
+            onMinimize={handleMinimize}
+            onMaximize={handleMaximize}
+            onClose={handleClose}
+            onActivate={activateLicenseKey}
+            onOpenAccount={() => setAccountModalOpen(true)}
+            onLogout={logoutAccount}
+            user={user}
+          />
+        </TooltipProvider>
+      </PhosphorProvider>
     );
   }
 

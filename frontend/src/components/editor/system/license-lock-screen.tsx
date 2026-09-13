@@ -2,7 +2,7 @@ import { useState } from "react";
 import { LockSimple, Key, Moon, Sun } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/huge-icon";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { WindowControls } from "@/components/editor/system/window-controls";
 import { WindowResizeHandles } from "@/components/editor";
 import { AccountLicenseModal } from "@/components/editor";
@@ -43,11 +43,10 @@ export function LicenseLockScreen({
   const [lockLoading, setLockLoading] = useState(false);
 
   return (
-    <TooltipProvider delayDuration={650} skipDelayDuration={150}>
-      <div
-        className="h-screen flex flex-col overflow-hidden font-cairo bg-background select-none"
-        dir="rtl"
-      >
+    <div
+      className="h-screen flex flex-col overflow-hidden font-cairo bg-background select-none"
+      dir="rtl"
+    >
         {!isMaximized && <WindowResizeHandles />}
         {/* الرأس الموحد للنافذة */}
         <header
@@ -182,6 +181,5 @@ export function LicenseLockScreen({
           <AccountLicenseModal />
         </div>
       </div>
-    </TooltipProvider>
   );
 }

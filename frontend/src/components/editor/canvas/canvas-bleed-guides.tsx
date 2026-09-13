@@ -155,7 +155,10 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
           <span>أمان ({safeMarginMM}مم)</span>
         </span>
         <span className="text-muted-foreground/60">•</span>
-        <span className="text-rose-400">نزيف ({bleedMarginMM}مم)</span>
+        <span className="flex items-center gap-1 text-rose-500">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+          <span>نزيف ({bleedMarginMM}مم)</span>
+        </span>
       </div>
     </div>
   );

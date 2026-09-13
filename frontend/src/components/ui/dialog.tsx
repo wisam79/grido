@@ -38,7 +38,7 @@ const DialogCloseButton = React.forwardRef<
     ref={ref}
     data-slot="dialog-close-button"
     className={cn(
-      "rounded-lg p-1.5 text-muted-foreground/70 hover:text-foreground hover:bg-muted/80 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none cursor-pointer flex items-center justify-center shrink-0",
+      "rounded-md p-1.5 text-muted-foreground/70 hover:text-foreground hover:bg-muted/80 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none cursor-pointer flex items-center justify-center shrink-0",
       className
     )}
     {...props}

@@ -146,7 +146,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
         {/* Header */}
         <div className="flex items-center justify-between pb-2 border-b border-border/30 text-xs">
           <div className="flex items-center gap-1.5 font-bold text-foreground">
-            <span className="w-5 h-5 rounded bg-primary/10 text-primary flex items-center justify-center">
+            <span className="w-5 h-5 rounded-md bg-primary/10 text-primary flex items-center justify-center">
               <TextAa className="w-3.5 h-3.5" weight="bold" />
             </span>
             <span>{activeFieldDef?.label ?? activeField.fieldId}</span>
@@ -157,7 +157,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
               <button
                 type="button"
                 onClick={() => onResetField(activeField.fieldId)}
-                className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded cursor-pointer transition-colors"
+                className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md cursor-pointer transition-colors"
                 title="استعادة النص الافتراضي"
               >
                 <ArrowCounterClockwise className="w-3.5 h-3.5" />
@@ -166,7 +166,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
             <button
               type="button"
               onClick={onClose}
-              className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded cursor-pointer transition-colors"
+              className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md cursor-pointer transition-colors"
               title="إغلاق"
             >
               <X className="w-3.5 h-3.5" />
@@ -193,7 +193,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
               <button
                 type="button"
                 onClick={() => stepField(-1)}
-                className="p-0.5 rounded hover:bg-muted/60 hover:text-foreground cursor-pointer"
+                className="p-0.5 rounded-md hover:bg-muted/60 hover:text-foreground cursor-pointer"
                 title="الحقل السابق (Shift+Tab)"
               >
                 <CaretUp className="w-3.5 h-3.5" />
@@ -201,7 +201,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
               <button
                 type="button"
                 onClick={() => stepField(1)}
-                className="p-0.5 rounded hover:bg-muted/60 hover:text-foreground cursor-pointer"
+                className="p-0.5 rounded-md hover:bg-muted/60 hover:text-foreground cursor-pointer"
                 title="الحقل التالي (Tab)"
               >
                 <CaretDown className="w-3.5 h-3.5" />

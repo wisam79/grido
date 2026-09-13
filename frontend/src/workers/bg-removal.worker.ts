@@ -175,7 +175,7 @@ async function handleSegment(req: SegmentRequest) {
     if (isCancelled()) return;
 
     // تحويل بايتات القناع إلى Base64 بحجم كتل آمن ومضاد لفيض المكدس (Call Stack Overflow Protection)
-    postProgress(requestId, 95, "تجهيز القناع... (95%)");
+    postProgress(requestId, 95, "جاري تجهيز القناع ... (95%)");
     const CHUNK_SIZE = 0x2000; // 8192 - حجم مثالي وآمن كلياً في محركات JS
     let binary = "";
     for (let i = 0; i < maskBytes.length; i += CHUNK_SIZE) {

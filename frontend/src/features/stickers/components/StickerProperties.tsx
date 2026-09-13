@@ -49,14 +49,14 @@ function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonPr
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-lg bg-card/60 border transition-all",
+        "relative flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-md bg-card/60 border transition-all",
         disabled
           ? "opacity-35 pointer-events-none border-border/40"
           : "border-border/40 hover:border-primary/60 cursor-pointer group"
       )}
       title={`${label}: ${color}`}
     >
-      <div className="relative w-7 h-7 rounded-lg border border-black/15 shadow-2xs overflow-hidden shrink-0">
+      <div className="relative w-7 h-7 rounded-md border border-black/15 shadow-2xs overflow-hidden shrink-0">
         <span className="w-full h-full block" style={{ backgroundColor: color }} />
         <input
           type="color"
@@ -121,7 +121,7 @@ export const StickerProperties = React.memo(function StickerProperties({
           size="sm"
           onClick={onResetDefaults}
           title="استعادة كل القيم الافتراضية"
-          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer rounded hover:bg-muted/40 shrink-0"
+          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer rounded-md hover:bg-muted/40 shrink-0"
         >
           <ArrowCounterClockwise className="w-3.5 h-3.5" />
           <span>استعادة</span>
@@ -212,7 +212,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               type="button"
               onClick={() => onChangeParams((prev) => ({ ...prev, isTransparent: !prev.isTransparent }))}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-lg border transition-all cursor-pointer text-center",
+                "relative flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-md border transition-all cursor-pointer text-center",
                 params.isTransparent
                   ? "bg-primary/10 border-primary text-primary shadow-2xs font-bold ring-1 ring-primary/30"
                   : "bg-card/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-card"
@@ -221,7 +221,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             >
               <div
                 className={cn(
-                  "w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 text-sm font-bold",
+                  "w-7 h-7 rounded-md border flex items-center justify-center shrink-0 text-sm font-bold",
                   params.isTransparent
                     ? "border-primary bg-primary/20 text-primary"
                     : "border-border/50 bg-muted/40 text-muted-foreground"
@@ -300,7 +300,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             className="w-full"
           />
 
-          <div className="h-8 flex items-center justify-between px-2.5 rounded-lg bg-card/40 border border-border/30 hover:border-border/60 transition-colors">
+          <div className="h-8 flex items-center justify-between px-2.5 rounded-md bg-card/40 border border-border/30 hover:border-border/60 transition-colors">
             <div className="flex items-center gap-1.5">
               <Scissors className="w-3.5 h-3.5 text-rose-500" />
               <span className="text-xs font-semibold text-foreground/85">إطار القص (Die-Cut)</span>
@@ -360,7 +360,7 @@ export const StickerProperties = React.memo(function StickerProperties({
           defaultOpen
         >
           {/* Miniature Sheet Grid Preview */}
-          <div className="relative w-full h-24 rounded-lg bg-muted/30 border border-border/40 p-2 flex items-center justify-center overflow-hidden">
+          <div className="relative w-full h-24 rounded-md bg-muted/30 border border-border/40 p-2 flex items-center justify-center overflow-hidden">
             <div
               className="relative bg-card/95 rounded border border-border/60 shadow-xs flex items-center justify-center p-1.5 transition-all duration-200"
               style={{ width: "110px", height: "66px" }}
