@@ -7,8 +7,6 @@ import {
   DownloadSimple,
   Trash,
   Stack,
-  File,
-  Rows,
   Star,
   SquaresFour,
   List,
@@ -19,8 +17,6 @@ import { CollageTemplate, COLLAGE_TEMPLATES } from "@/lib/templates";
 import {
   CollagePresetCategory,
   ALL_STUDIO_PRESETS,
-  STUDIO_FULL_SHEET_PRESETS,
-  STUDIO_SINGLE_ROW_PRESETS,
   STUDIO_COMBO_PRESETS,
   STUDIO_KEEPSAKE_PRESETS,
   StudioPreset,
@@ -195,11 +191,9 @@ export function CollagePresetsTab({
     icon: React.ElementType;
     badgeCount?: number;
   }[] = [
-    { id: "all", label: "كافة قوالب الاستوديو", shortLabel: "الكل", icon: SquaresFour, badgeCount: ALL_STUDIO_PRESETS.length },
-    { id: "combo", label: "أطقم تجارية (كومبو)", shortLabel: "كومبو", icon: Stack, badgeCount: STUDIO_COMBO_PRESETS.length },
-    { id: "full", label: "قوالب الشيت الكامل", shortLabel: "شيت", icon: File, badgeCount: STUDIO_FULL_SHEET_PRESETS.length },
-    { id: "row", label: "أشرطة سريعة صف واحد", shortLabel: "أشرطة", icon: Rows, badgeCount: STUDIO_SINGLE_ROW_PRESETS.length },
-    { id: "keepsake", label: "كروت المحفظة والتذكار", shortLabel: "تذكار", icon: Star, badgeCount: STUDIO_KEEPSAKE_PRESETS.length },
+    { id: "all", label: "كافة الأطقم والقوالب", shortLabel: "الكل", icon: SquaresFour, badgeCount: ALL_STUDIO_PRESETS.length },
+    { id: "combo", label: "أطقم رسمية مركبة", shortLabel: "أطقم", icon: Stack, badgeCount: STUDIO_COMBO_PRESETS.length },
+    { id: "keepsake", label: "تذكار وكروت إبداعية", shortLabel: "تذكار", icon: Star, badgeCount: STUDIO_KEEPSAKE_PRESETS.length },
     { id: "saved", label: "قوالبي المحفوظة", shortLabel: "محفوظ", icon: FolderSimple, badgeCount: savedTemplates.length > 0 ? savedTemplates.length : undefined },
   ];
 
@@ -231,10 +225,6 @@ export function CollagePresetsTab({
         return ALL_STUDIO_PRESETS;
       case "combo":
         return STUDIO_COMBO_PRESETS;
-      case "full":
-        return STUDIO_FULL_SHEET_PRESETS;
-      case "row":
-        return STUDIO_SINGLE_ROW_PRESETS;
       case "keepsake":
         return STUDIO_KEEPSAKE_PRESETS;
       default:
@@ -244,10 +234,8 @@ export function CollagePresetsTab({
 
   // أقسام القوالب عند اختيار "الكل" لتنظيم بصري مريح
   const groupedSections: { title: string; icon: React.ElementType; presets: StudioPreset[] }[] = useMemo(() => [
-    { title: "أطقم تجارية مركبة", icon: Stack, presets: STUDIO_COMBO_PRESETS },
-    { title: "قوالب الشيت الكامل", icon: File, presets: STUDIO_FULL_SHEET_PRESETS },
-    { title: "أشرطة سريعة صف واحد", icon: Rows, presets: STUDIO_SINGLE_ROW_PRESETS },
-    { title: "كروت المحفظة والتذكار", icon: Star, presets: STUDIO_KEEPSAKE_PRESETS },
+    { title: "أطقم تجارية رسمية (مقاسات متعددة)", icon: Stack, presets: STUDIO_COMBO_PRESETS },
+    { title: "تذكار وكروت إبداعية", icon: Star, presets: STUDIO_KEEPSAKE_PRESETS },
   ], []);
 
   // دالة مشتركة لتطبيق القالب

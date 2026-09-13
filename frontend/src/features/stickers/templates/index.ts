@@ -1,4 +1,5 @@
-import { StickerCategory, StickerCategoryInfo, StickerShape, StickerTemplate } from "../types";
+import { StickerCategory, StickerCategoryGroupId, StickerCategoryInfo, StickerShape, StickerTemplate } from "../types";
+import { CATEGORY_ITEMS } from "../constants";
 import { BADGE_TEMPLATES } from "./badges";
 import { SHIPPING_TEMPLATES } from "./shipping";
 import { PACKAGING_TEMPLATES } from "./packaging";
@@ -145,12 +146,23 @@ export function getStickerTemplatesByCategory(category: StickerCategory): Sticke
 
 export function searchStickerTemplates(
   query: string,
-  category?: StickerCategory | "all",
+  category?: StickerCategoryGroupId | StickerCategory | "all",
   shape?: StickerShape | "all"
 ): StickerTemplate[] {
   const q = query.trim().toLowerCase();
+
+  let targetCategories: StickerCategory[] | null = null;
+  if (category && category !== "all") {
+    const group = CATEGORY_ITEMS.find((c) => c.id === category);
+    if (group?.categories) {
+      targetCategories = group.categories;
+    } else {
+      targetCategories = [category as StickerCategory];
+    }
+  }
+
   return ALL_STICKER_TEMPLATES.filter((template) => {
-    if (category && category !== "all" && template.category !== category) return false;
+    if (targetCategories && !targetCategories.includes(template.category)) return false;
     if (shape && shape !== "all" && getTemplateShape(template) !== shape) return false;
     if (!q) return true;
     return (

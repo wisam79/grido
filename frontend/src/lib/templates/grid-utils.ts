@@ -194,6 +194,103 @@ function getMixedCells(
   return cells;
 }
 
+function getTravelerCells(
+  paperW: number,
+  paperH: number,
+  gapMM: number,
+  align: string = "center",
+  marginMM: number = 4
+) {
+  const marginX = marginMM;
+  const marginY = marginMM;
+  const availW = paperW - 2 * marginX;
+  const availH = paperH - 2 * marginY;
+
+  const topW = 2 * 50 + gapMM;
+  const topH = 50;
+  const bottomW = 2 * 35 + gapMM;
+  const bottomH = 2 * 45 + gapMM;
+
+  const totalW_raw = Math.max(topW, bottomW);
+  const totalH_raw = topH + gapMM + bottomH;
+
+  let scale = 1;
+  if (totalW_raw > availW || totalH_raw > availH) {
+    scale = Math.min(availW / totalW_raw, availH / totalH_raw);
+  }
+
+  const final50 = 50 * scale;
+  const final35 = 35 * scale;
+  const final45 = 45 * scale;
+  const finalGap = gapMM * scale;
+
+  const finalTopW = 2 * final50 + finalGap;
+  const finalTopH = final50;
+  const finalBottomW = 2 * final35 + finalGap;
+  const finalBottomH = 2 * final45 + finalGap;
+
+  const gridW = Math.max(finalTopW, finalBottomW);
+  const gridH = finalTopH + finalGap + finalBottomH;
+
+  let startX = (paperW - gridW) / 2;
+  let startY = (paperH - gridH) / 2;
+
+  if (align === "top-left") {
+    startX = marginX;
+    startY = marginY;
+  } else if (align === "top-center") {
+    startX = (paperW - gridW) / 2;
+    startY = marginY;
+  } else if (align === "top-right") {
+    startX = paperW - marginX - gridW;
+    startY = marginY;
+  } else if (align === "center-left") {
+    startX = marginX;
+    startY = (paperH - gridH) / 2;
+  } else if (align === "center-right") {
+    startX = paperW - marginX - gridW;
+    startY = (paperH - gridH) / 2;
+  } else if (align === "bottom-left") {
+    startX = marginX;
+    startY = paperH - marginY - gridH;
+  } else if (align === "bottom-center") {
+    startX = (paperW - gridW) / 2;
+    startY = paperH - marginY - gridH;
+  } else if (align === "bottom-right") {
+    startX = paperW - marginX - gridW;
+    startY = paperH - marginY - gridH;
+  }
+
+  const cells = [];
+
+  // Top row: 2 slots of 50x50 mm (centered horizontally relative to gridW)
+  const topOffsetX = (gridW - finalTopW) / 2;
+  for (let c = 0; c < 2; c++) {
+    cells.push({
+      x: (startX + topOffsetX + c * (final50 + finalGap)) / paperW,
+      y: startY / paperH,
+      w: final50 / paperW,
+      h: final50 / paperH,
+    });
+  }
+
+  // Bottom 2x2 grid of 35x45 mm (4 slots, centered horizontally relative to gridW)
+  const bottomOffsetX = (gridW - finalBottomW) / 2;
+  const bottomStartY = startY + finalTopH + finalGap;
+  for (let r = 0; r < 2; r++) {
+    for (let c = 0; c < 2; c++) {
+      cells.push({
+        x: (startX + bottomOffsetX + c * (final35 + finalGap)) / paperW,
+        y: (bottomStartY + r * (final45 + finalGap)) / paperH,
+        w: final35 / paperW,
+        h: final45 / paperH,
+      });
+    }
+  }
+
+  return cells;
+}
+
 export function computeDynamicCollageCells(
   template: CollageTemplate,
   canvasW: number,
@@ -213,6 +310,10 @@ export function computeDynamicCollageCells(
 
   if (type === "iq-mixed") {
     return getMixedCells(paperW_mm, paperH_mm, gap, align, margin);
+  }
+
+  if (type === "combo-traveler") {
+    return getTravelerCells(paperW_mm, paperH_mm, gap, align, margin);
   }
 
   let wMM = 35;

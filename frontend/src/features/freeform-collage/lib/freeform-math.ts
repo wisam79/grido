@@ -213,7 +213,268 @@ export function moveSlots(
 }
 
 /**
- * تحجيم الخلية بمقابض 8 اتجاهات مع قفل اختياري لنسبة الأبعاد
+ * تحجيم الخلية بمقابض 8 اتجاهات مع قفل اختياري لنسبة الأبعاد والمحاذاة المغناطيسية
+ */
+export function resizeSlotWithSnap(
+  slots: FreeformSlot[],
+  targetId: string,
+  handle: ResizeHandle,
+  dx: number,
+  dy: number,
+  aspectRatio?: number,
+  enableSnapping: boolean = false
+): { slots: FreeformSlot[]; snapLines: SnapLine[] } {
+  const idx = slots.findIndex((s) => s.id === targetId);
+  if (idx === -1) return { slots, snapLines: [] };
+  const slot = slots[idx];
+
+  const origL = slot.x;
+  const origT = slot.y;
+  const origR = slot.x + slot.w;
+  const origB = slot.y + slot.h;
+
+  let left = origL;
+  let top = origT;
+  let right = origR;
+  let bottom = origB;
+
+  const others = slots.filter((_, i) => i !== idx);
+  const snapLines: SnapLine[] = [];
+  const SNAP_THRESHOLD = 0.012;
+
+  // 1. معالجة الحواف الأفقية (e و w)
+  if (handle.includes("w")) {
+    let targetLeft = clamp(origL + dx, 0, origR - MIN_SIZE);
+
+    if (enableSnapping) {
+      const candidates = [0, 0.5];
+      for (const o of others) {
+        candidates.push(o.x, o.x + o.w);
+      }
+      let best = targetLeft;
+      let bestDelta = SNAP_THRESHOLD;
+      let snappedLine: number | null = null;
+      for (const c of candidates) {
+        const delta = Math.abs(c - targetLeft);
+        if (delta < bestDelta && c <= origR - MIN_SIZE && c >= 0) {
+          best = c;
+          bestDelta = delta;
+          snappedLine = c;
+        }
+      }
+      targetLeft = best;
+      if (snappedLine !== null) {
+        snapLines.push({ id: `snap-w-${snappedLine.toFixed(4)}`, axis: "x", position: snappedLine });
+      }
+    }
+
+    if (targetLeft < origL) {
+      // توسع نحو اليسار: نتحقق من العقبات الواقعة إلى يسار الخلية حصراً والتي تتقاطع رأسياً
+      const obstacles = others.filter((o) => {
+        const isToLeft = o.x + o.w <= origL + 1e-4;
+        const yOverlap = Math.max(origT, o.y) < Math.min(origB, o.y + o.h) - 1e-4;
+        return isToLeft && yOverlap;
+      });
+
+      if (obstacles.length > 0) {
+        const maxObstacleRight = Math.max(...obstacles.map((o) => o.x + o.w));
+        left = clamp(Math.max(targetLeft, maxObstacleRight), 0, origR - MIN_SIZE);
+      } else {
+        left = targetLeft;
+      }
+    } else {
+      // تصغير: يتحرك الضلع الأيسر بسلاسة بدون أي قفز أو قيود اصطدامية
+      left = targetLeft;
+    }
+  }
+
+  if (handle.includes("e")) {
+    let targetRight = clamp(origR + dx, origL + MIN_SIZE, 1);
+
+    if (enableSnapping) {
+      const candidates = [0.5, 1];
+      for (const o of others) {
+        candidates.push(o.x, o.x + o.w);
+      }
+      let best = targetRight;
+      let bestDelta = SNAP_THRESHOLD;
+      let snappedLine: number | null = null;
+      for (const c of candidates) {
+        const delta = Math.abs(c - targetRight);
+        if (delta < bestDelta && c >= origL + MIN_SIZE && c <= 1) {
+          best = c;
+          bestDelta = delta;
+          snappedLine = c;
+        }
+      }
+      targetRight = best;
+      if (snappedLine !== null) {
+        snapLines.push({ id: `snap-e-${snappedLine.toFixed(4)}`, axis: "x", position: snappedLine });
+      }
+    }
+
+    if (targetRight > origR) {
+      // توسع نحو اليمين: نتحقق من العقبات الواقعة إلى يمين الخلية حصراً وتتقاطع رأسياً
+      const obstacles = others.filter((o) => {
+        const isToRight = o.x >= origR - 1e-4;
+        const yOverlap = Math.max(origT, o.y) < Math.min(origB, o.y + o.h) - 1e-4;
+        return isToRight && yOverlap;
+      });
+
+      if (obstacles.length > 0) {
+        const minObstacleLeft = Math.min(...obstacles.map((o) => o.x));
+        right = clamp(Math.min(targetRight, minObstacleLeft), origL + MIN_SIZE, 1);
+      } else {
+        right = targetRight;
+      }
+    } else {
+      // تصغير: يتحرك الضلع الأيمن بسلاسة بدون أي قفز أو قيود اصطدامية
+      right = targetRight;
+    }
+  }
+
+  // 2. معالجة الحواف الرأسية (n و s)
+  if (handle.includes("n")) {
+    let targetTop = clamp(origT + dy, 0, origB - MIN_SIZE);
+
+    if (enableSnapping) {
+      const candidates = [0, 0.5];
+      for (const o of others) {
+        candidates.push(o.y, o.y + o.h);
+      }
+      let best = targetTop;
+      let bestDelta = SNAP_THRESHOLD;
+      let snappedLine: number | null = null;
+      for (const c of candidates) {
+        const delta = Math.abs(c - targetTop);
+        if (delta < bestDelta && c <= origB - MIN_SIZE && c >= 0) {
+          best = c;
+          bestDelta = delta;
+          snappedLine = c;
+        }
+      }
+      targetTop = best;
+      if (snappedLine !== null) {
+        snapLines.push({ id: `snap-n-${snappedLine.toFixed(4)}`, axis: "y", position: snappedLine });
+      }
+    }
+
+    if (targetTop < origT) {
+      // توسع نحو الأعلى: نتحقق من العقبات الواقعة فوق الخلية وتتقاطع أفقياً
+      const obstacles = others.filter((o) => {
+        const isAbove = o.y + o.h <= origT + 1e-4;
+        const xOverlap = Math.max(origL, o.x) < Math.min(origR, o.x + o.w) - 1e-4;
+        return isAbove && xOverlap;
+      });
+
+      if (obstacles.length > 0) {
+        const maxObstacleBottom = Math.max(...obstacles.map((o) => o.y + o.h));
+        top = clamp(Math.max(targetTop, maxObstacleBottom), 0, origB - MIN_SIZE);
+      } else {
+        top = targetTop;
+      }
+    } else {
+      // تصغير: يتحرك الضلع العلوي بسلاسة
+      top = targetTop;
+    }
+  }
+
+  if (handle.includes("s")) {
+    let targetBottom = clamp(origB + dy, origT + MIN_SIZE, 1);
+
+    if (enableSnapping) {
+      const candidates = [0.5, 1];
+      for (const o of others) {
+        candidates.push(o.y, o.y + o.h);
+      }
+      let best = targetBottom;
+      let bestDelta = SNAP_THRESHOLD;
+      let snappedLine: number | null = null;
+      for (const c of candidates) {
+        const delta = Math.abs(c - targetBottom);
+        if (delta < bestDelta && c >= origT + MIN_SIZE && c <= 1) {
+          best = c;
+          bestDelta = delta;
+          snappedLine = c;
+        }
+      }
+      targetBottom = best;
+      if (snappedLine !== null) {
+        snapLines.push({ id: `snap-s-${snappedLine.toFixed(4)}`, axis: "y", position: snappedLine });
+      }
+    }
+
+    if (targetBottom > origB) {
+      // توسع نحو الأسفل: نتحقق من العقبات الواقعة أسفل الخلية وتتقاطع أفقياً
+      const obstacles = others.filter((o) => {
+        const isBelow = o.y >= origB - 1e-4;
+        const xOverlap = Math.max(origL, o.x) < Math.min(origR, o.x + o.w) - 1e-4;
+        return isBelow && xOverlap;
+      });
+
+      if (obstacles.length > 0) {
+        const minObstacleTop = Math.min(...obstacles.map((o) => o.y));
+        bottom = clamp(Math.min(targetBottom, minObstacleTop), origT + MIN_SIZE, 1);
+      } else {
+        bottom = targetBottom;
+      }
+    } else {
+      // تصغير: يتحرك الضلع السفلي بسلاسة
+      bottom = targetBottom;
+    }
+  }
+
+  let w = right - left;
+  let h = bottom - top;
+
+  // 3. قفل نسبة الأبعاد (Aspect Ratio Lock)
+  if (aspectRatio && aspectRatio > 0) {
+    if (handle.includes("e") || handle.includes("w")) {
+      const desiredH = clamp(w / aspectRatio, MIN_SIZE, 1 - top);
+      h = desiredH;
+      if (handle.includes("n")) {
+        top = Math.max(0, bottom - h);
+      } else {
+        bottom = Math.min(1, top + h);
+      }
+    } else {
+      const desiredW = clamp(h * aspectRatio, MIN_SIZE, 1 - left);
+      w = desiredW;
+      if (handle.includes("w")) {
+        left = Math.max(0, right - w);
+      } else {
+        right = Math.min(1, left + w);
+      }
+    }
+  }
+
+  const finalX = clamp(left, 0, 1 - MIN_SIZE);
+  const finalY = clamp(top, 0, 1 - MIN_SIZE);
+  const finalW = clamp(right - finalX, MIN_SIZE, 1 - finalX);
+  const finalH = clamp(bottom - finalY, MIN_SIZE, 1 - finalY);
+
+  const uniqueSnapLinesMap = new Map<string, SnapLine>();
+  for (const line of snapLines) {
+    uniqueSnapLinesMap.set(`${line.axis}:${line.position.toFixed(4)}`, line);
+  }
+
+  const updatedSlots = slots.map((s, i) =>
+    i === idx
+      ? {
+          ...s,
+          x: finalX,
+          y: finalY,
+          w: finalW,
+          h: finalH,
+        }
+      : s
+  );
+
+  return { slots: updatedSlots, snapLines: Array.from(uniqueSnapLinesMap.values()) };
+}
+
+/**
+ * تحجيم الخلية بمقابض 8 اتجاهات (توافقية كاملة مع واجهات الاستدعاء السابقة)
  */
 export function resizeSlot(
   slots: FreeformSlot[],
@@ -223,121 +484,7 @@ export function resizeSlot(
   dy: number,
   aspectRatio?: number
 ): FreeformSlot[] {
-  const idx = slots.findIndex((s) => s.id === targetId);
-  if (idx === -1) return slots;
-  const slot = slots[idx];
-
-  let left = slot.x;
-  let top = slot.y;
-  let right = slot.x + slot.w;
-  let bottom = slot.y + slot.h;
-
-  if (handle.includes("w")) {
-    left = clamp(slot.x + dx, 0, right - MIN_SIZE);
-  }
-  if (handle.includes("e")) {
-    right = clamp(slot.x + slot.w + dx, left + MIN_SIZE, 1);
-  }
-  if (handle.includes("n")) {
-    top = clamp(slot.y + dy, 0, bottom - MIN_SIZE);
-  }
-  if (handle.includes("s")) {
-    bottom = clamp(slot.y + slot.h + dy, top + MIN_SIZE, 1);
-  }
-
-  let w = right - left;
-  let h = bottom - top;
-
-  if (aspectRatio && aspectRatio > 0) {
-    if (handle.includes("e") || handle.includes("w")) {
-      h = clamp(w / aspectRatio, MIN_SIZE, 1 - top);
-    } else {
-      w = clamp(h * aspectRatio, MIN_SIZE, 1 - left);
-    }
-  }
-
-  const newRect = { x: left, y: top, w, h };
-  const adjusted = pushOutOfOthers(slots, idx, handle, newRect);
-
-  return slots.map((s, i) =>
-    i === idx
-      ? {
-          ...s,
-          x: adjusted.x,
-          y: adjusted.y,
-          w: adjusted.w,
-          h: adjusted.h,
-        }
-      : s
-  );
-}
-
-function pushOutOfOthers(
-  slots: FreeformSlot[],
-  editingIdx: number,
-  handle: ResizeHandle,
-  rect: { x: number; y: number; w: number; h: number }
-): { x: number; y: number; w: number; h: number } {
-  const others = slots.filter((_, i) => i !== editingIdx);
-  let { x, y, w, h } = rect;
-  let right = x + w;
-  let bottom = y + h;
-
-  const EPS = 1e-6;
-  const overlaps = (o: FreeformSlot): boolean =>
-    x + EPS < o.x + o.w &&
-    o.x + EPS < right &&
-    y + EPS < o.y + o.h &&
-    o.y + EPS < bottom;
-
-  for (let iter = 0; iter < 5; iter++) {
-    let changed = false;
-
-    for (const o of others) {
-      if (!overlaps(o)) continue;
-
-      if (handle.includes("w")) {
-        const nx = Math.min(o.x + o.w, right - MIN_SIZE);
-        if (nx > x + EPS) {
-          x = nx;
-          w = right - x;
-          changed = true;
-        }
-      } else if (handle.includes("e")) {
-        const nr = Math.max(o.x, x + MIN_SIZE);
-        if (nr < right - EPS) {
-          right = nr;
-          w = right - x;
-          changed = true;
-        }
-      }
-
-      if (handle.includes("n")) {
-        const ny = Math.min(o.y + o.h, bottom - MIN_SIZE);
-        if (ny > y + EPS) {
-          y = ny;
-          h = bottom - y;
-          changed = true;
-        }
-      } else if (handle.includes("s")) {
-        const nb = Math.max(o.y, y + MIN_SIZE);
-        if (nb < bottom - EPS) {
-          bottom = nb;
-          h = bottom - y;
-          changed = true;
-        }
-      }
-    }
-
-    if (!changed) break;
-  }
-
-  x = clamp(x, 0, 1 - MIN_SIZE);
-  y = clamp(y, 0, 1 - MIN_SIZE);
-  w = clamp(w, MIN_SIZE, 1 - x);
-  h = clamp(h, MIN_SIZE, 1 - y);
-
-  return { x, y, w, h };
+  return resizeSlotWithSnap(slots, targetId, handle, dx, dy, aspectRatio, false).slots;
 }
 
 /**

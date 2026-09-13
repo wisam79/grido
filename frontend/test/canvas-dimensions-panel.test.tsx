@@ -32,8 +32,8 @@ describe('CanvasDimensionsPanel Component Tests', () => {
       </TooltipProvider>
     );
 
-    const swapBtn = screen.getByTitle('تبديل الاتجاه (أفقي/عمودي)');
-    fireEvent.click(swapBtn);
+    const landscapeBtn = screen.getByTitle('اتجاه أفقي');
+    fireEvent.click(landscapeBtn);
 
     expect(useEditorStore.getState().canvasWidth).toBe(3508);
     expect(useEditorStore.getState().canvasHeight).toBe(2480);

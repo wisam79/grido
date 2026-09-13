@@ -12,6 +12,15 @@ export type StickerCategory =
   | "kids"
   | "seasonal";
 
+export type StickerCategoryGroupId =
+  | "all"
+  | "commercial"
+  | "packaging"
+  | "codes"
+  | "stores"
+  | "occasions"
+  | "safety";
+
 export type StickerShape = "circle" | "rect" | "square";
 
 export interface StickerCategoryInfo {

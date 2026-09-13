@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
@@ -20,8 +20,6 @@ import {
   NormalizedCell,
 } from "./collage/collage-grid-math";
 import {
-  STUDIO_SINGLE_ROW_PRESETS,
-  STUDIO_FULL_SHEET_PRESETS,
   STUDIO_COMBO_PRESETS,
   STUDIO_KEEPSAKE_PRESETS,
   CollagePresetCategory,
@@ -35,7 +33,6 @@ interface CustomCollageCardProps {
   onSaveTemplate: (name: string, cells: NormalizedCell[]) => void;
   savedTemplates?: CollageTemplate[];
   onDeleteTemplate?: (id: string, e: React.MouseEvent) => void;
-  onOpenTemplatesDialog?: () => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
@@ -74,9 +71,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   const isCustomActive = activeTemplateId === "collage-custom";
   const isFreeformActive = typeof activeTemplateId === "string" && activeTemplateId.startsWith("freeform-");
 
-  // تحديث التبويب النشط وفئة القالب تلقائياً
-  const [prevTemplateId, setPrevTemplateId] = useState<string | null | undefined>(null);
-  if (activeTemplateId !== prevTemplateId) {
+  // تحديث التبويب النشط وفئة القالب تلقائياً عند تغيير القالب لاحقاً من قبل المستخدم
+  // مع الحفاظ الإجباري على "الشبكة" (custom) كتبويب افتراضي عند فتح التطبيق
+  const isInitialMount = useRef(true);
+  const [prevTemplateId, setPrevTemplateId] = useState<string | null | undefined>(activeTemplateId);
+  if (isInitialMount.current) {
+    isInitialMount.current = false;
+  } else if (activeTemplateId !== prevTemplateId) {
     setPrevTemplateId(activeTemplateId);
     if (activeTemplateId) {
       if (isCustomActive) {
@@ -89,12 +90,6 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       } else if (STUDIO_COMBO_PRESETS.some((p) => p.id === activeTemplateId)) {
         setActiveTab("presets");
         setPresetCategory("combo");
-      } else if (STUDIO_FULL_SHEET_PRESETS.some((p) => p.id === activeTemplateId)) {
-        setActiveTab("presets");
-        setPresetCategory("full");
-      } else if (STUDIO_SINGLE_ROW_PRESETS.some((p) => p.id === activeTemplateId)) {
-        setActiveTab("presets");
-        setPresetCategory("row");
       } else if (STUDIO_KEEPSAKE_PRESETS.some((p) => p.id === activeTemplateId)) {
         setActiveTab("presets");
         setPresetCategory("keepsake");

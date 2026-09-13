@@ -47,7 +47,8 @@ export interface CollageTemplate {
       | "passport"
       | "visa"
       | "id"
-      | "iq-mixed";
+      | "iq-mixed"
+      | "combo-traveler";
     rows: number;
     cols: number;
     align?:

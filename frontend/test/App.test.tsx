@@ -1,4 +1,4 @@
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import App from '../src/App';
 import { TemplatePanel } from '../src/components/editor';
@@ -218,6 +218,12 @@ describe('Component Testing: UI Rendering', () => {
     render(<TemplatePanel />);
 
     expect(await screen.findAllByText('القوالب')).not.toHaveLength(0);
-    expect(await screen.findByText('شيت A4 جواز')).toBeInTheDocument();
+    // التحقق من أن تبويب الشبكة هو التبويب الافتراضي عند فتح التطبيق
+    expect(await screen.findByText('أبعاد الشبكة')).toBeInTheDocument();
+
+    // التبديل إلى تبويب القوالب
+    const presetsTab = await screen.findByText('قوالب');
+    fireEvent.click(presetsTab);
+    expect(await screen.findByText('طقم سفر')).toBeInTheDocument();
   }, 15000);
 });

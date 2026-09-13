@@ -311,6 +311,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
       { x: 0.51, y: 0.675, w: 0.465, h: 0.29, presetType: "visa", label: "فيزا 3.5×4.5" },
     ],
     icon: SquaresFour,
+    physicalLayout: { type: "combo-traveler", rows: 3, cols: 2, align: "center" },
   },
   {
     id: "collage-combo-student",

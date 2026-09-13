@@ -1,46 +1,69 @@
 import React from "react";
 import {
-  SealCheck,
   Package,
-  Tag,
   Barcode,
   Sparkle,
   Warning,
-  ShareNetwork,
   SquaresFour,
   Circle,
   Rectangle,
   Square,
   Heart,
   Coffee,
-  Star,
-  Sun,
-  Flower,
 } from "@phosphor-icons/react";
 import { ARABIC_FONTS } from "@/lib/io/fonts";
-import { StickerCategory, StickerShape } from "./types";
+import { StickerCategory, StickerCategoryGroupId, StickerShape } from "./types";
 
 export interface StickerCategoryItem {
-  id: StickerCategory | "all";
+  id: StickerCategoryGroupId | StickerCategory | "all";
   title: string;
   icon: React.ReactNode;
+  categories?: StickerCategory[];
 }
 
-/** المصدر الوحيد لترتيب وأيقونات التصنيفات (لا يوجد شريط تصنيفات آخر) */
+/** قائمة التصنيفات المدمجة والمركزة */
 export const CATEGORY_ITEMS: StickerCategoryItem[] = [
-  { id: "all", title: "الكل", icon: <SquaresFour className="w-4 h-4" /> },
-  { id: "badges", title: "شارات وأختام", icon: <SealCheck className="w-4 h-4" weight="duotone" /> },
-  { id: "retail", title: "عروض وتجارة", icon: <Sparkle className="w-4 h-4" weight="duotone" /> },
-  { id: "shipping", title: "شحن وتوصيل", icon: <Package className="w-4 h-4" weight="duotone" /> },
-  { id: "packaging", title: "تغليف وهوية", icon: <Tag className="w-4 h-4" weight="duotone" /> },
-  { id: "safety", title: "تحذير وأمان", icon: <Warning className="w-4 h-4" weight="duotone" /> },
-  { id: "barcodes", title: "باركود وQR", icon: <Barcode className="w-4 h-4" weight="duotone" /> },
-  { id: "social", title: "تواصل ومواقع", icon: <ShareNetwork className="w-4 h-4" weight="duotone" /> },
-  { id: "greeting", title: "تهاني وشكر", icon: <Heart className="w-4 h-4" weight="duotone" /> },
-  { id: "cafe", title: "كافيهات ومخابز", icon: <Coffee className="w-4 h-4" weight="duotone" /> },
-  { id: "beauty", title: "تجميل وعناية", icon: <Flower className="w-4 h-4" weight="duotone" /> },
-  { id: "kids", title: "أطفال وحفلات", icon: <Star className="w-4 h-4" weight="duotone" /> },
-  { id: "seasonal", title: "مواسم وأعياد", icon: <Sun className="w-4 h-4" weight="duotone" /> },
+  {
+    id: "all",
+    title: "الكل",
+    icon: <SquaresFour className="w-4 h-4" />,
+  },
+  {
+    id: "commercial",
+    title: "تجاري",
+    icon: <Sparkle className="w-4 h-4" weight="duotone" />,
+    categories: ["badges", "retail"],
+  },
+  {
+    id: "packaging",
+    title: "شحن وتغليف",
+    icon: <Package className="w-4 h-4" weight="duotone" />,
+    categories: ["shipping", "packaging"],
+  },
+  {
+    id: "codes",
+    title: "رموز وتواصل",
+    icon: <Barcode className="w-4 h-4" weight="duotone" />,
+    categories: ["barcodes", "social"],
+  },
+  {
+    id: "stores",
+    title: "كافيه ومتاجر",
+    icon: <Coffee className="w-4 h-4" weight="duotone" />,
+    categories: ["cafe", "beauty"],
+  },
+  {
+    id: "occasions",
+    title: "مناسبات",
+    icon: <Heart className="w-4 h-4" weight="duotone" />,
+    categories: ["greeting", "kids", "seasonal"],
+  },
+  {
+    id: "safety",
+    title: "سلامة",
+    icon: <Warning className="w-4 h-4" weight="duotone" />,
+    categories: ["safety"],
+  },
 ];
 
 export interface StickerShapeFilterItem {

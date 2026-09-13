@@ -1,7 +1,7 @@
 import React, { useRef, useCallback, useState, useEffect, memo } from "react";
 import { cn } from "@/lib/utils";
 import type { FreeformSlot, SnapLine } from "../types";
-import { resizeSlot, moveSlot, moveSlots, type ResizeHandle } from "../lib/freeform-math";
+import { resizeSlotWithSnap, moveSlot, moveSlots, type ResizeHandle } from "../lib/freeform-math";
 import { FreeformSlotCard } from "./FreeformSlotCard";
 
 interface FreeformCanvasEditorProps {
@@ -74,7 +74,17 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
           ? (targetSlot.w * paperWidthMM) / (targetSlot.h * paperHeightMM)
           : undefined;
 
-        next = resizeSlot(st.origSlots, st.slotId, st.handle, dx, dy, aspect);
+        const res = resizeSlotWithSnap(
+          st.origSlots,
+          st.slotId,
+          st.handle,
+          dx,
+          dy,
+          aspect,
+          enableSnapping
+        );
+        next = res.slots;
+        snapLines = res.snapLines;
       } else if (st.mode === "move") {
         // سحب جماعي: الخلية الأساسية + التحديد المتعدد يتحركون ككتلة واحدة
         const groupIds = multiSelectedIds.length > 0 && multiSelectedIds.includes(st.slotId)

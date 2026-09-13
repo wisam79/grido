@@ -296,7 +296,7 @@ export const StickerPreview = React.memo(function StickerPreview({
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-xs font-cairo font-medium">
-            انقر لتعديل أي عنصر أو نص مباشرة
+            تعديل مباشر
           </TooltipContent>
         </Tooltip>
 

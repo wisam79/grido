@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
-import { COLLAGE_TEMPLATES, CollageTemplate } from "@/lib/templates";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogCloseButton,
-} from "@/components/ui/dialog";
+import { CollageTemplate } from "@/lib/templates";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,24 +15,15 @@ import {
 import { GetCustomTemplates, SaveCustomTemplate, DeleteCustomTemplate } from "../../../../wailsjs/go/main/App";
 import type { NormalizedCell } from "./collage/collage-grid-math";
 import { toErrorMessage } from "@/lib/wails-error";
-import { CollageTemplateCard } from "./collage-template-card";
 import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
 import {
   GridFour,
-  FolderOpen,
-  FileText,
-  Image,
-  User,
-  Plus,
   Stack,
   CaretRight,
 } from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayersList } from "../properties/layers-list";
-import { FluentEmptyState } from "@/components/ui/blocks";
-import { cn } from "@/lib/utils";
 
 export interface TemplatePanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
@@ -63,8 +46,6 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
   })));
 
   const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
-  const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
-  const [officialFilter, setOfficialFilter] = useState<"all" | "id_passport" | "docs" | "grid">("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // حوار تأكيد عند تبديل القالب إذا كان سيُسقط صوراً موجودة أو عناصر الوضع الحر (P2-14)
@@ -88,22 +69,6 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
   const droppedCount = pendingTemplate
     ? Math.max(0, new Set(slots.filter((s) => s.imageSrc).map((s) => s.imageSrc)).size - (pendingTemplate.cells?.length ?? pendingTemplate.slots))
     : 0;
-
-  const officialTemplates = COLLAGE_TEMPLATES;
-
-  const filteredOfficialTemplates = officialTemplates.filter((tpl) => {
-    if (officialFilter === "all") return true;
-    if (officialFilter === "id_passport") {
-      return tpl.id.includes("national") || tpl.id.includes("civil") || tpl.id.includes("passport");
-    }
-    if (officialFilter === "docs") {
-      return tpl.id.includes("general") || tpl.id.includes("pension") || tpl.id.includes("mixed");
-    }
-    if (officialFilter === "grid") {
-      return !tpl.physicalLayout || (!tpl.id.includes("iq-") && !tpl.id.includes("passport"));
-    }
-    return true;
-  });
 
   const loadTemplates = useCallback(async () => {
     try {
@@ -156,22 +121,6 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
       icon={mode === "collage" ? <GridFour className="w-4.5 h-4.5 text-primary" weight="duotone" /> : <Stack className="w-4.5 h-4.5 text-primary" weight="duotone" />}
       title={mode === "collage" ? "القوالب" : "الطبقات"}
       subtitle={mode === "collage" ? "قوالب الكولاج والطباعة" : "إدارة وترتيب العناصر الحرة"}
-      headerExtra={
-        mode === "collage" ? (
-          <button
-            type="button"
-            onClick={() => {
-              loadTemplates();
-              setTemplatesDialogOpen(true);
-            }}
-            title="مكتبة القوالب الكاملة"
-            aria-label="مكتبة القوالب الكاملة"
-            className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-          >
-            <FolderOpen className="w-4 h-4" weight="duotone" />
-          </button>
-        ) : undefined
-      }
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
       collapseIcon={<CaretRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" weight="bold" />}
@@ -215,158 +164,8 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
             onSaveTemplate={handleSaveTemplate}
             savedTemplates={savedTemplates}
             onDeleteTemplate={handleDeleteTemplate}
-            onOpenTemplatesDialog={() => {
-              loadTemplates();
-              setTemplatesDialogOpen(true);
-            }}
             fileInputRef={fileInputRef}
           />
-
-          {/* Dialog for Full Official & Custom Templates Browser */}
-          <Dialog open={templatesDialogOpen} onOpenChange={setTemplatesDialogOpen}>
-              <DialogContent showCloseButton={false} className="max-w-2xl font-cairo rounded-2xl border border-border bg-card fluent-specular p-5 sm:p-6" dir="rtl">
-                <DialogHeader className="border-b border-border/40 pb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <FolderOpen className="w-5 h-5 text-primary shrink-0" weight="duotone" />
-                      <div className="min-w-0">
-                        <DialogTitle className="text-right text-base font-bold truncate">
-                          مكتبة قوالب الكولاج والطباعة
-                        </DialogTitle>
-                        <DialogDescription className="text-right text-xs text-muted-foreground mt-0.5 truncate">
-                          اختر من نماذج الطباعة الرسمية أو قوالبك المحفوظة
-                        </DialogDescription>
-                      </div>
-                    </div>
-                    <DialogCloseButton />
-                  </div>
-                </DialogHeader>
-
-                <Tabs defaultValue="official" className="w-full mt-2">
-                  <TabsList className="grid w-full grid-cols-2 bg-input p-1 rounded-xl h-8 border border-border">
-                    <TabsTrigger value="official" className="rounded-lg font-bold text-xs cursor-pointer py-1 flex items-center justify-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5" weight="duotone" />
-                      <span>نماذج الطباعة الرسمية</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="saved" className="rounded-lg font-bold text-xs cursor-pointer py-1 flex items-center justify-center gap-1.5">
-                      <Image className="w-3.5 h-3.5" weight="duotone" />
-                      <span>قوالبي المحفوظة</span>
-                      {savedTemplates.length > 0 && (
-                        <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-bold">
-                          {savedTemplates.length}
-                        </span>
-                      )}
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="official" className="mt-3 focus-visible:outline-hidden">
-                    {/* فلاتر الفئات بالأيقونات */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-none">
-                      {[
-                        { id: "all", label: "الكل", icon: GridFour },
-                        { id: "id_passport", label: "هوية وجواز", icon: User },
-                        { id: "docs", label: "وثائق ومعاملات", icon: FileText },
-                        { id: "grid", label: "شبكات كولاج", icon: Image },
-                      ].map((cat) => {
-                        const isCatActive = officialFilter === cat.id;
-                        const IconComponent = cat.icon;
-                        return (
-                          <button
-                            key={cat.id}
-                            type="button"
-                            onClick={() => setOfficialFilter(cat.id as "all" | "id_passport" | "docs" | "grid")}
-                            className={cn(
-                              "h-7 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none shrink-0",
-                              isCatActive
-                                ? "bg-primary text-primary-foreground border-primary shadow-2xs"
-                                : "bg-input hover:bg-muted/70 text-muted-foreground hover:text-foreground border-border/70"
-                            )}
-                          >
-                            <IconComponent
-                              className={cn("w-3.5 h-3.5", isCatActive ? "text-primary-foreground" : "text-primary")}
-                              weight={isCatActive ? "fill" : "duotone"}
-                            />
-                            <span>{cat.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
-                      {filteredOfficialTemplates.map((tpl) => (
-                        <div key={tpl.id} role="presentation" onClick={() => setTemplatesDialogOpen(false)}>
-                          <CollageTemplateCard
-                            tpl={tpl}
-                            onSelect={handleSelectTemplate}
-                            isActive={collageTemplate?.id === tpl.id}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="saved" className="mt-4 focus-visible:outline-hidden">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs font-bold text-foreground/80">القوالب المحفوظة</span>
-                      <div className="flex gap-2">
-                        <button 
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="h-7 px-2.5 text-xs font-bold rounded-md border border-border bg-input hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
-                        >
-                          استيراد
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (savedTemplates.length === 0) return toast.info("لا توجد قوالب لتصديرها");
-                            try {
-                              const exportData = savedTemplates.map(t => ({ name: t.name, cells: t.cells }));
-                              const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement("a");
-                              a.href = url;
-                              a.download = `grido-templates-${Date.now()}.json`;
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                              URL.revokeObjectURL(url);
-                              toast.success("تم تصدير القوالب بنجاح");
-                            } catch (e) {
-                              toast.error("حدث خطأ أثناء التصدير");
-                            }
-                          }}
-                          className="h-7 px-2.5 text-xs font-bold rounded-md border border-border/80 bg-muted/40 hover:bg-muted/70 text-foreground cursor-pointer flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none shadow-2xs"
-                        >
-                          تصدير الكل
-                        </button>
-                      </div>
-                    </div>
-
-                    {savedTemplates.length === 0 ? (
-                      <FluentEmptyState
-                        icon={<Plus className="w-8 h-8 text-primary" weight="duotone" />}
-                        title="لا توجد قوالب مخصصة محفوظة"
-                        description="قم بتخصيص شبكة كولاج من اللوحة وحفظها لتظهر هنا للوصول السريع."
-                      />
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
-                        {savedTemplates.map((tpl) => (
-                          <div key={tpl.id} role="presentation" onClick={() => setTemplatesDialogOpen(false)}>
-                            <CollageTemplateCard
-                              tpl={tpl}
-                              onSelect={handleSelectTemplate}
-                              isActive={collageTemplate?.id === tpl.id}
-                              onDelete={(e) => handleDeleteTemplate(tpl.id, e)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
-              </DialogContent>
-          </Dialog>
         </div>
       ) : (
         <div className="space-y-3" dir="rtl">

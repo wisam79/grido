@@ -19,7 +19,7 @@ describe('CollagePresetsTab Component Suite', () => {
     render(<CollagePresetsTab {...defaultProps} />);
 
     expect(screen.getByPlaceholderText(/بحث في القوالب/)).toBeInTheDocument();
-    expect(screen.getByText(/كافة قوالب الاستوديو/)).toBeInTheDocument();
+    expect(screen.getByText(/كافة الأطقم والقوالب/)).toBeInTheDocument();
   });
 
   it('filters templates when searching', () => {
@@ -36,7 +36,7 @@ describe('CollagePresetsTab Component Suite', () => {
   it('displays the selected category in select trigger', () => {
     render(<CollagePresetsTab {...defaultProps} presetCategory="combo" />);
 
-    expect(screen.getByText(/أطقم تجارية \(كومبو\)/)).toBeInTheDocument();
+    expect(screen.getByText(/أطقم رسمية مركبة/)).toBeInTheDocument();
   });
 
   it('renders empty state for saved templates when list is empty', () => {

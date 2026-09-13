@@ -10,6 +10,7 @@ import {
   moveSlots,
   convertToGridoTemplate,
   resizeSlot,
+  resizeSlotWithSnap,
   moveSlot,
   rotateSlot,
   duplicateSlot,
@@ -228,6 +229,47 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
     ];
     const resized = resizeSlot(slots, "slot1", "e", 0.3, 0);
     expect(resized[0].x + resized[0].w).toBeLessThanOrEqual(0.5 + 1e-9);
+  });
+
+  it("resizeSlot shrinks smoothly without jumping or collapsing when touching or overlapping another slot", () => {
+    // حالة العيب المبلغ عنه: خلية تتلامس أو تتداخل مع خلية أخرى، ومحاولة تصغير الحافة
+    const slots: FreeformSlot[] = [
+      { id: "slot1", x: 0.1, y: 0.1, w: 0.4, h: 0.4 },
+      { id: "slot2", x: 0.05, y: 0.1, w: 0.2, h: 0.4 },
+    ];
+    // تصغير الحافة الشرقية (e) بمقدار 0.05
+    const resizedE = resizeSlot(slots, "slot1", "e", -0.05, 0);
+    expect(resizedE[0].x).toBe(0.1);
+    expect(resizedE[0].w).toBeCloseTo(0.35, 4);
+
+    // تصغير الحافة الغربية (w) بمقدار 0.05
+    const overlappingRight: FreeformSlot[] = [
+      { id: "slot1", x: 0.2, y: 0.2, w: 0.5, h: 0.5 },
+      { id: "slot2", x: 0.5, y: 0.2, w: 0.3, h: 0.5 },
+    ];
+    const resizedW = resizeSlot(overlappingRight, "slot1", "w", 0.05, 0);
+    expect(resizedW[0].x).toBeCloseTo(0.25, 4);
+    expect(resizedW[0].w).toBeCloseTo(0.45, 4);
+
+    // تصغير الحافة الجنوبية (s) بمقدار 0.05
+    const overlappingTop: FreeformSlot[] = [
+      { id: "slot1", x: 0.2, y: 0.2, w: 0.5, h: 0.5 },
+      { id: "slot2", x: 0.2, y: 0.1, w: 0.5, h: 0.3 },
+    ];
+    const resizedS = resizeSlot(overlappingTop, "slot1", "s", 0, -0.05);
+    expect(resizedS[0].y).toBe(0.2);
+    expect(resizedS[0].h).toBeCloseTo(0.45, 4);
+  });
+
+  it("resizeSlotWithSnap generates magnetic snap lines during resize", () => {
+    const slots: FreeformSlot[] = [
+      { id: "slot1", x: 0.1, y: 0.1, w: 0.39, h: 0.3 },
+    ];
+    // سحب الحافة اليمنى نحو منتصف الورقة 0.5
+    const { slots: resized, snapLines } = resizeSlotWithSnap(slots, "slot1", "e", 0.008, 0, undefined, true);
+    expect(resized[0].x + resized[0].w).toBeCloseTo(0.5, 4);
+    const centerLine = snapLines.find((l) => l.position === 0.5 && l.axis === "x");
+    expect(centerLine).toBeDefined();
   });
 
   it("duplicateSlot generates unique IDs even across rapid duplicates", () => {

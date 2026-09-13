@@ -8,6 +8,8 @@ import {
   FilePng,
   FileSvg,
   CaretDown,
+  ArrowRight,
+  Sparkle,
 } from "@phosphor-icons/react";
 import {
   Dialog,
@@ -31,7 +33,7 @@ import { wailsIsDesktop } from "@/lib/wails-env";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 import { toast } from "sonner";
-import { StickerCategory, StickerShape, StickerTemplate, StickerParams, SheetGridConfig } from "../types";
+import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate, StickerParams, SheetGridConfig } from "../types";
 import { ALL_STICKER_TEMPLATES } from "../templates";
 import { findHiddenFieldIds } from "../templates/svg-elements";
 import { renderSvgToPngDataUrl, downloadFile } from "../lib/svg-rasterizer";
@@ -44,7 +46,7 @@ import { StickerPreview } from "./StickerPreview";
 export interface StickerStudioDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialCategory?: StickerCategory | "all";
+  initialCategory?: StickerCategoryGroupId | StickerCategory | "all";
 }
 
 function buildDefaultParams(template: StickerTemplate): StickerParams {
@@ -56,6 +58,8 @@ function buildDefaultParams(template: StickerTemplate): StickerParams {
     isTransparent: false,
     fontFamily: "Cairo",
     fontScale: 1,
+    finish: "standard",
+    dieCutBorder: true,
   };
 }
 
@@ -64,7 +68,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   onOpenChange,
   initialCategory = "all",
 }: StickerStudioDialogProps) {
-  const [selectedCategory, setSelectedCategory] = useState<StickerCategory | "all">(initialCategory);
+  // Stage state: "gallery" for picking templates, "customize" for fine-tuning & inserting
+  const [view, setView] = useState<"gallery" | "customize">("gallery");
+
+  const [selectedCategory, setSelectedCategory] = useState<StickerCategoryGroupId | StickerCategory | "all">(initialCategory);
   const [selectedShape, setSelectedShape] = useState<StickerShape | "all">("all");
   const [selectedTemplate, setSelectedTemplate] = useState<StickerTemplate>(() => {
     if (initialCategory !== "all") {
@@ -86,23 +93,28 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
 
   const [params, setParams] = useState<StickerParams>(() => buildDefaultParams(selectedTemplate));
 
-  // Reset loading state on dialog close (rule: Modal loading state cleanup)
+  // Reset loading state and restore gallery on dialog close (rule: Modal loading state cleanup)
   useEffect(() => {
     if (!open) {
       setIsInserting(false);
       setIsGeneratingSheet(false);
       setBusyExport(false);
+      setView("gallery");
     }
   }, [open]);
 
-  // اختيار قالب: يحدّث الحقول من افتراضيات القالب الجديد فقط —
-  // لا تبديل تلقائي عند تغيير التصنيف (المستخدم هو من يقرر أي قالب يعمل عليه)
+  // اختيار قالب: يحدّث الحقول من افتراضيات القالب الجديد وينتقل مباشرة لوضع التخصيص
   const handleSelectTemplate = useCallback((template: StickerTemplate) => {
     setSelectedTemplate(template);
     setParams(buildDefaultParams(template));
+    setView("customize");
   }, []);
 
-  const handleChangeCategory = useCallback((cat: StickerCategory | "all") => {
+  const handleBackToGallery = useCallback(() => {
+    setView("gallery");
+  }, []);
+
+  const handleChangeCategory = useCallback((cat: StickerCategoryGroupId | StickerCategory | "all") => {
     setSelectedCategory(cat);
   }, []);
 
@@ -125,7 +137,6 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     }
   }, [selectedTemplate, params]);
 
-  // كشف الحقول بلا عنصر مرئي قابل للنقر (كرابط QR) — تبقى وحدها في نموذج المفتش
   const hiddenFieldIds = useMemo(
     () => findHiddenFieldIds(svgString, selectedTemplate.fields.map((f) => f.id)),
     [svgString, selectedTemplate.fields]
@@ -286,34 +297,69 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     }
   }, [svgString, selectedTemplate.aspectRatio, params.fontFamily]);
 
+  const templateMm = selectedTemplate.defaultMm || {
+    width: 50,
+    height: Math.round(50 / selectedTemplate.aspectRatio),
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[95vw] sm:max-w-[1260px] h-[88vh] max-h-[780px] min-h-[560px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-2xl font-cairo fluent-specular transition-all duration-150 gap-0"
+        className="w-[94vw] sm:max-w-[920px] h-[640px] max-h-[88vh] min-h-[520px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-2xl font-cairo fluent-specular transition-all duration-200 gap-0"
         dir="rtl"
       >
-        {/* Header: Standard Dialog Title Bar */}
-        <DialogHeader className="px-6 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
+        {/* ── Title Bar Header (Adapts to Active Stage) ── */}
+        <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                <SealCheck className="w-5 h-5 text-primary" weight="duotone" />
-              </div>
-              <div className="min-w-0 text-start">
-                <div className="flex items-center gap-2">
-                  <DialogTitle className="text-base font-bold text-foreground truncate">
-                    استوديو الملصقات
-                  </DialogTitle>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                    Sticker Studio
-                  </span>
+            {view === "gallery" ? (
+              /* Gallery Header */
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                  <SealCheck className="w-4.5 h-4.5 text-primary" weight="duotone" />
                 </div>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  تصميم وتخصيص ملصقات وشعارات تجارية متجهة بدقة فائقة
-                </DialogDescription>
+                <div className="flex items-center gap-2 min-w-0">
+                  <DialogTitle className="text-sm font-bold text-foreground truncate">
+                    الملصقات
+                  </DialogTitle>
+                  <span className="text-[11px] font-mono font-bold px-2 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {ALL_STICKER_TEMPLATES.length}
+                  </span>
+                  <DialogDescription className="sr-only">
+                    معرض ملصقات وشارات Grido Studio
+                  </DialogDescription>
+                </div>
               </div>
-            </div>
+            ) : (
+              /* Customize Header with Back Button */
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBackToGallery}
+                  className="h-8 px-2 text-xs font-bold gap-1 rounded-md hover:bg-muted text-foreground cursor-pointer shrink-0 border border-border/40 hover:border-border/70"
+                  title="العودة للمعرض"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  <span>المعرض</span>
+                </Button>
+
+                <div className="w-px h-4 bg-border/60 shrink-0" />
+
+                <div className="flex items-center gap-2 min-w-0">
+                  <DialogTitle className="text-sm font-bold text-foreground truncate">
+                    {selectedTemplate.name}
+                  </DialogTitle>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
+                    {templateMm.width}×{templateMm.height} مم
+                  </span>
+                  <DialogDescription className="sr-only">
+                    تخصيص ملصق {selectedTemplate.name}
+                  </DialogDescription>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-2.5 shrink-0">
               <DialogCloseButton />
@@ -321,10 +367,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
           </div>
         </DialogHeader>
 
-        {/* 3 Areas: Library (RTL right) | Immersive Preview (center) | Inspector (RTL left) */}
-        <div className="flex flex-row flex-1 min-h-0 overflow-hidden">
-          {/* Library: Icon Rail + Templates Column */}
-          <div className="w-[325px] xl:w-[335px] shrink-0 h-full flex flex-col overflow-hidden border-e border-border/40">
+        {/* ── Dialog Body: Gallery vs Customize ── */}
+        {view === "gallery" ? (
+          /* View 1: Spacious Gallery */
+          <div className="flex-1 min-h-0 overflow-hidden">
             <StickerCatalog
               selectedCategory={selectedCategory}
               selectedShape={selectedShape}
@@ -336,139 +382,169 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
               onSearchChange={setSearchQuery}
             />
           </div>
-
-          {/* Immersive Preview */}
-          <div className="flex-1 min-w-[300px] h-full flex flex-col overflow-hidden border-e border-border/40">
-            <StickerPreview
-              template={selectedTemplate}
-              params={params}
-              svgString={svgString}
-              onChangeField={handleChangeField}
-              onChangeColor={handleChangeColor}
-              onResetField={handleResetField}
-            />
-          </div>
-
-          {/* Inspector */}
-          <div className="w-[295px] xl:w-[305px] shrink-0 h-full flex flex-col overflow-hidden">
-            <StickerProperties
-              template={selectedTemplate}
-              params={params}
-              onChangeParams={setParams}
-              onResetDefaults={handleResetDefaults}
-              gridConfig={gridConfig}
-              onChangeGridConfig={setGridConfig}
-              hiddenFieldIds={hiddenFieldIds}
-            />
-          </div>
-        </div>
-
-        {/* Footer: Standard Dialog Action Bar */}
-        <DialogFooter className="px-6 py-3 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
-          {/* RTL Start: Template info & Auxiliary tools */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-              <span className="truncate max-w-[200px] font-semibold text-foreground">
-                {selectedTemplate.name}
-              </span>
-              <span className="text-border/60">•</span>
-              <span className="shrink-0">{selectedTemplate.fields.length} حقول</span>
+        ) : (
+          /* View 2: Focused 2-Column Customizer */
+          <div className="flex flex-row flex-1 min-h-0 overflow-hidden">
+            {/* Right Side (RTL Start): Live Vector Preview */}
+            <div className="flex-1 min-w-[340px] h-full flex flex-col overflow-hidden border-e border-border/40">
+              <StickerPreview
+                template={selectedTemplate}
+                params={params}
+                svgString={svgString}
+                onChangeField={handleChangeField}
+                onChangeColor={handleChangeColor}
+                onResetField={handleResetField}
+              />
             </div>
 
-            <div className="h-4 w-px bg-border/60 mx-0.5 shrink-0" />
+            {/* Left Side (RTL End): Streamlined Inspector */}
+            <div className="w-[330px] xl:w-[350px] shrink-0 h-full flex flex-col overflow-hidden">
+              <StickerProperties
+                template={selectedTemplate}
+                params={params}
+                onChangeParams={setParams}
+                onResetDefaults={handleResetDefaults}
+                gridConfig={gridConfig}
+                onChangeGridConfig={setGridConfig}
+                hiddenFieldIds={hiddenFieldIds}
+              />
+            </div>
+          </div>
+        )}
 
-            {/* Sheet Insert */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleInsertSheet}
-              disabled={isInserting || isGeneratingSheet}
-              className="h-8 px-3 rounded-md text-xs font-semibold gap-1.5 border-border/60 hover:bg-muted cursor-pointer shrink-0"
-              title={`إدراج شيت طباعة مكرر (${gridConfig.rows}×${gridConfig.cols} ملصقات)`}
-            >
-              {isGeneratingSheet ? (
-                <>
-                  <Spinner className="w-3.5 h-3.5 animate-spin" />
-                  <span>جاري التوليد ...</span>
-                </>
-              ) : (
-                <>
-                  <GridFour className="w-3.5 h-3.5 text-primary" weight="bold" />
-                  <span>شيت ({gridConfig.rows * gridConfig.cols})</span>
-                </>
-              )}
-            </Button>
+        {/* ── Footer: Action Bar (Adapts to Active Stage) ── */}
+        <DialogFooter className="px-5 py-2.5 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
+          {view === "gallery" ? (
+            /* Gallery Footer */
+            <>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                <SealCheck className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                <span className="text-foreground font-bold truncate">{selectedTemplate.name}</span>
+                <span className="text-border/60">•</span>
+                <span className="font-mono text-[11px]">{templateMm.width}×{templateMm.height} مم</span>
+              </div>
 
-            {/* Export Dropdown */}
-            <DropdownMenu dir="rtl">
-              <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-2 shrink-0">
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  disabled={isInserting || isGeneratingSheet || busyExport}
-                  className="h-8 px-2.5 text-xs font-semibold gap-1.5 rounded-md hover:bg-muted/60 cursor-pointer text-muted-foreground hover:text-foreground shrink-0"
+                  onClick={() => onOpenChange(false)}
+                  className="h-8 px-3.5 text-xs font-semibold rounded-md cursor-pointer"
                 >
-                  {busyExport ? (
-                    <Spinner className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <DownloadSimple className="w-3.5 h-3.5" />
-                  )}
-                  <span>{busyExport ? "جاري التصدير ..." : "تصدير"}</span>
-                  {!busyExport && <CaretDown className="w-3 h-3 text-muted-foreground" />}
+                  إلغاء
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48 text-xs font-cairo">
-                <DropdownMenuItem onClick={handleDownloadPng} className="cursor-pointer gap-2">
-                  <FilePng className="w-4 h-4 text-primary" weight="duotone" />
-                  <span>صورة PNG (300 DPI)</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDownloadSvg} className="cursor-pointer gap-2">
-                  <FileSvg className="w-4 h-4 text-emerald-500" weight="duotone" />
-                  <span>ملف متجهي SVG</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCopyImage} className="cursor-pointer gap-2">
-                  <Copy className="w-4 h-4 text-amber-500" weight="duotone" />
-                  <span>نسخ للحافظة</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
 
-          {/* RTL End: Standard Cancel & Insert Buttons */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              disabled={isInserting || isGeneratingSheet}
-              className="h-8 px-4 text-xs font-semibold rounded-md cursor-pointer"
-            >
-              إلغاء
-            </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setView("customize")}
+                  className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all"
+                >
+                  <span>تخصيص</span>
+                  <Sparkle className="w-3.5 h-3.5" weight="bold" />
+                </Button>
+              </div>
+            </>
+          ) : (
+            /* Customize Footer */
+            <>
+              {/* Auxiliary Tools & Export */}
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Export Dropdown */}
+                <DropdownMenu dir="rtl">
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isInserting || isGeneratingSheet || busyExport}
+                      className="h-8 px-2.5 text-xs font-semibold gap-1.5 rounded-md hover:bg-muted cursor-pointer text-muted-foreground hover:text-foreground shrink-0 border-border/60"
+                    >
+                      {busyExport ? (
+                        <Spinner className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <DownloadSimple className="w-3.5 h-3.5" />
+                      )}
+                      <span>{busyExport ? "جاري التصدير ..." : "تصدير"}</span>
+                      {!busyExport && <CaretDown className="w-3 h-3 text-muted-foreground" />}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-44 text-xs font-cairo">
+                    <DropdownMenuItem onClick={handleDownloadPng} className="cursor-pointer gap-2">
+                      <FilePng className="w-4 h-4 text-primary" weight="duotone" />
+                      <span>صورة PNG</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDownloadSvg} className="cursor-pointer gap-2">
+                      <FileSvg className="w-4 h-4 text-emerald-500" weight="duotone" />
+                      <span>ملف SVG</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCopyImage} className="cursor-pointer gap-2">
+                      <Copy className="w-4 h-4 text-amber-500" weight="duotone" />
+                      <span>نسخ</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleInsertSingle}
-              disabled={isInserting || isGeneratingSheet}
-              className="h-8 px-5 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all min-w-[110px]"
-            >
-              {isInserting ? (
-                <>
-                  <Spinner className="w-3.5 h-3.5 animate-spin" />
-                  <span>جاري الإدراج ...</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5" weight="bold" />
-                  <span>إدراج في الكانفس</span>
-                </>
-              )}
-            </Button>
-          </div>
+                {/* Sheet Insert Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleInsertSheet}
+                  disabled={isInserting || isGeneratingSheet || busyExport}
+                  className="h-8 px-2.5 rounded-md text-xs font-semibold gap-1.5 border-border/60 hover:bg-muted cursor-pointer shrink-0"
+                  title={`إدراج شيت (${gridConfig.rows}×${gridConfig.cols})`}
+                >
+                  {isGeneratingSheet ? (
+                    <>
+                      <Spinner className="w-3.5 h-3.5 animate-spin" />
+                      <span>جاري التوليد ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <GridFour className="w-3.5 h-3.5 text-primary" weight="bold" />
+                      <span>شيت ({gridConfig.rows * gridConfig.cols})</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Actions: Cancel & Hero Insert */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isInserting || isGeneratingSheet || busyExport}
+                  className="h-8 px-3.5 text-xs font-semibold rounded-md cursor-pointer"
+                >
+                  إلغاء
+                </Button>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleInsertSingle}
+                  disabled={isInserting || isGeneratingSheet || busyExport}
+                  className="h-8 px-5 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all min-w-[90px]"
+                >
+                  {isInserting ? (
+                    <>
+                      <Spinner className="w-3.5 h-3.5 animate-spin" />
+                      <span>جاري الإدراج ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" weight="bold" />
+                      <span>إدراج</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
