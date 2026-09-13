@@ -42,7 +42,7 @@ if (-not $appVersion) {
     $appVersion = (git describe --tags --always 2>$null)
 }
 if (-not $appVersion) {
-    $appVersion = "v1.3.36"
+    $appVersion = "v1.3.37"
 }
 
 Write-Host " [2/3] Building Wails Desktop App & NSIS Installer ($appVersion)..." -ForegroundColor Green

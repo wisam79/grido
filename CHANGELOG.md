@@ -4,6 +4,27 @@ All notable changes to Grido Studio are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [v1.3.37] - 2026-09-13
+
+### Added (Sticker Studio, Commercial Imposition & Bleed Guides)
+
+**استوديو تصميم وقوالب الملصقات (Sticker Studio):**
+- **كتالوج قوالب الملصقات التفاعلي**: إضافة استوديو متكامل لتصميم وتخصيص الملصقات مع 11 قالب ملصقات احترافي يدعم نصوص وألوان قابلة للتخصيص وقص حر ومحدد (Die-Cut).
+- **محرر الملصقات الفوري (Inline Sticker Editor)**: تحرير النصوص والعناوين والتنقل بين الحقول بسلاسة بواسطة لوحة المفاتيح واختصارات Tab.
+- **لوحة خصائص الملصقات**: تخصيص الأدوار اللونية، الشفافية، إطارات القص، ومعاينة شبكة الشيت المصغرة.
+
+**هندسة الطباعة التجارية وأدلة الهوامش (Commercial Imposition & Bleed Guides):**
+- **أدلة هوامش الأمان والنزيف**: إضافة خطوط إرشادية بصرية لهوامش الأمان والنزيف على الكانفس مع شارة توضيحية رقمية بالملم ونقاط دلالية متناسقة.
+- **توزيع الشيت الأمثل (Optimal Imposition)**: خوارزميات توزيع وطباعة تجارية متطورة للأوراق والألواح لتقليل الفاقد الورقي.
+
+### Fixed (Fluent 2 Design Standard Compliance & UI Invariants)
+
+**التوافق الشامل مع معايير Fluent 2 (UI/UX Compliance):**
+- **حلقات التركيز المزدوجة وهرمية الاستدارة**: تطبيق معايير Fluent 2 على زر إغلاق النوافذ الموحد (`DialogCloseButton`) واستخدام `rounded-md` لكافة عناصر التحكم الدقيقة.
+- **توحيد مزود التلميحات العالمي**: إزالة أي مزود `TooltipProvider` محلي وضمان وجود مزود عالمي واحد يغطي التطبيق وشاشة التراخيص.
+- **معايير صياغة نصوص تجربة الانتظار**: توحيد صياغة كافة العمليات الجارية إلى الصيغة المضارعة القياسية (`جاري ...`) مع مسافة ونقاط حذف غير قابلة للكسر.
+
 ## [v1.3.36] - 2026-09-11
 
 ### Added (Collage Studio Presets Architecture & Print Fidelity Pipeline)
