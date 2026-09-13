@@ -112,7 +112,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
 
   const svgString = useMemo(() => {
     try {
-      return selectedTemplate.generateSvg(params);
+      const rawFamily = params.fontFamily || "Cairo";
+      const cleanFamily = rawFamily.replace(/['"]/g, "").trim();
+      const safeFamily = cleanFamily.includes(" ") ? `'${cleanFamily}'` : cleanFamily;
+      return selectedTemplate.generateSvg({
+        ...params,
+        fontFamily: safeFamily,
+      });
     } catch (err) {
       console.error("Failed to generate SVG:", err);
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><text x="200" y="200" text-anchor="middle">Error</text></svg>`;

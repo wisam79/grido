@@ -179,15 +179,15 @@ export function PopoverColorPicker({
           disabled={disabled}
           className={cn(
             swatchOnly
-              ? "w-8 h-8 rounded-lg border border-border/80 dark:border-white/10 p-0.5 bg-input/40 hover:bg-input hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-              : "flex items-center justify-between gap-2 px-3 h-8.5 rounded-lg border border-border/80 dark:border-white/10 bg-input/40 hover:bg-input/80 hover:border-primary/45 transition-all cursor-pointer shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+              ? "w-8 h-8 rounded-md border border-border/80 dark:border-white/10 p-0.5 bg-input/40 hover:bg-input hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              : "flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border bg-input/50 hover:bg-input hover:border-primary/45 transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
             className
           )}
           title="تغيير اللون"
         >
           {swatchOnly ? (
             <div
-              className="w-full h-full rounded-md border border-black/15 dark:border-white/20 shadow-2xs relative overflow-hidden transition-all before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
+              className="w-full h-full rounded border border-black/15 dark:border-white/20 shadow-2xs relative overflow-hidden transition-all before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
               style={{ backgroundColor: color === "transparent" ? previewWhite() : color }}
             >
               {color === "transparent" && (
@@ -202,21 +202,26 @@ export function PopoverColorPicker({
             </div>
           ) : (
             <>
-              {label && <div className="text-xs font-semibold text-muted-foreground shrink-0">{label}</div>}
+              {label && <div className="text-xs font-semibold text-foreground/90 shrink-0">{label}</div>}
               
-              <div
-                className="w-5.5 h-5.5 rounded-md border border-black/15 dark:border-white/20 shrink-0 relative overflow-hidden shadow-2xs before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
-                style={{ backgroundColor: color === "transparent" ? previewWhite() : color }}
-              >
-                {color === "transparent" && (
-                  <div 
-                    className="w-full h-full"
-                    style={{
-                      backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
-                      backgroundSize: "4px 4px"
-                    }}
-                  />
-                )}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[11px] font-mono font-bold text-muted-foreground tracking-tight select-none" dir="ltr">
+                  {color === "transparent" ? "شفاف" : color.toUpperCase()}
+                </span>
+                <div
+                  className="w-5 h-5 rounded border border-black/15 dark:border-white/20 shrink-0 relative overflow-hidden shadow-2xs before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
+                  style={{ backgroundColor: color === "transparent" ? previewWhite() : color }}
+                >
+                  {color === "transparent" && (
+                    <div 
+                      className="w-full h-full"
+                      style={{
+                        backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
+                        backgroundSize: "4px 4px"
+                      }}
+                    />
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -464,8 +469,8 @@ export function StudioCanvasColorDeck({
   return (
     <div
       className={cn(
-        "space-y-2.5 p-2.5 rounded-xl bg-card/60 border border-border/70 fluent-specular shadow-2xs w-full overflow-hidden",
-        compact && "p-1.5 space-y-1.5 border-transparent bg-transparent shadow-none",
+        "space-y-2 w-full",
+        compact && "space-y-1.5",
         className
       )}
       dir="rtl"
@@ -480,7 +485,7 @@ export function StudioCanvasColorDeck({
             useEditorStore.getState().pushHistory();
           }}
           className={cn(
-            "aspect-square w-full rounded-lg border transition-all cursor-pointer relative overflow-hidden shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none flex items-center justify-center",
+            "aspect-square w-full rounded-md border transition-all cursor-pointer relative overflow-hidden shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none flex items-center justify-center",
             isTransparent
               ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10"
               : "border-border/60 hover:border-border"
@@ -513,7 +518,7 @@ export function StudioCanvasColorDeck({
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "aspect-square w-full rounded-lg border transition-all cursor-pointer shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative flex items-center justify-center overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
+                "aspect-square w-full rounded-md border transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative flex items-center justify-center overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
                 isSelected
                   ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10"
                   : "border-black/10 dark:border-white/15 hover:border-foreground/40"
@@ -543,12 +548,12 @@ export function StudioCanvasColorDeck({
           color={color}
           onChange={onChange}
           className={cn(
-            "flex-1 h-8.5 rounded-lg border-border/80 bg-input/50 hover:bg-input/80 hover:border-primary/40 shadow-2xs",
+            "flex-1 h-8 rounded-md border-border bg-input hover:bg-input/80 hover:border-primary/40 shadow-2xs",
             compact && "h-7 text-[10px]"
           )}
           label={
-            <div className={cn("flex items-center gap-1.5 text-xs font-bold text-muted-foreground", compact && "text-[10px] gap-1")}>
-              <PaintBrush className={cn("text-primary shrink-0", compact ? "w-3.5 h-3.5" : "w-4 h-4")} weight="duotone" />
+            <div className={cn("flex items-center gap-1.5 text-xs font-semibold text-foreground/90", compact && "text-[10px] gap-1")}>
+              <PaintBrush className={cn("text-primary shrink-0", compact ? "w-3.5 h-3.5" : "w-3.5 h-3.5")} weight="duotone" />
               <span>لون مخصص</span>
             </div>
           }
@@ -559,10 +564,11 @@ export function StudioCanvasColorDeck({
             type="button"
             onClick={handleEyeDropper}
             className={cn(
-              "rounded-lg border border-border/70 bg-input/80 hover:bg-accent/70 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              compact ? "w-7 h-7" : "w-8.5 h-8.5"
+              "w-8 h-8 rounded-md border border-border bg-input hover:bg-accent/70 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+              compact && "w-7 h-7"
             )}
             title="قطارة الألوان (سحب لون من الشاشة)"
+            aria-label="قطارة الألوان"
           >
             <Eyedropper className={cn(compact ? "w-3.5 h-3.5" : "w-4 h-4")} weight="regular" />
           </button>

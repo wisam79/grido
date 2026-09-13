@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  TextAa,
   Palette,
   Printer,
   ArrowCounterClockwise,
@@ -13,11 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { FluentSection, FluentSliderField, FluentSegmentedControl } from "@/components/ui/blocks";
-import { loadGoogleFont } from "@/lib/io/fonts";
 import { cn } from "@/lib/utils";
 import { StickerTemplate, StickerParams, SheetGridConfig, StickerFinish } from "../types";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { CURATED_PALETTES, FONT_OPTIONS } from "../constants";
+import { CURATED_PALETTES } from "../constants";
+import { StickerFontSelector } from "./StickerFontSelector";
 
 interface StickerPropertiesProps {
   template: StickerTemplate;
@@ -302,26 +301,13 @@ export const StickerProperties = React.memo(function StickerProperties({
             />
           </div>
 
-          {/* Font Family — مصدر وحيد هنا فقط، مع تحميل الخط عند الطلب */}
-          <div className="flex items-center gap-2">
-            <TextAa className="w-3.5 h-3.5 text-primary shrink-0" />
-            <select
-              value={params.fontFamily || "Cairo"}
-              onChange={(e) => {
-                const family = e.target.value;
-                loadGoogleFont(family);
-                onChangeParams((prev) => ({ ...prev, fontFamily: family }));
-              }}
-              className="h-8 flex-1 text-xs rounded-md bg-card/60 border border-border/50 focus:ring-1 focus:ring-primary outline-none text-foreground cursor-pointer px-2"
-              title="نوع الخط"
-            >
-              {FONT_OPTIONS.map((f) => (
-                <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Font Family — مكوّن اختيار الخط القياسي مع البحث والمعاينة الحية */}
+          <StickerFontSelector
+            value={params.fontFamily || "Cairo"}
+            onChange={(family) => {
+              onChangeParams((prev) => ({ ...prev, fontFamily: family }));
+            }}
+          />
 
           <FluentSliderField
             layout="inline"

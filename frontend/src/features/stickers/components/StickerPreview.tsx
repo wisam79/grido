@@ -57,6 +57,19 @@ export const StickerPreview = React.memo(function StickerPreview({
     setActiveColor(null);
   }, [template.id]);
 
+  // ضمان تحديث تموضع ونصوص الـ SVG فور اكتمال تنزيل أي خط ويب
+  useEffect(() => {
+    if (typeof document === "undefined" || !document.fonts) return;
+    const handleFontsDone = () => {
+      const host = svgHostRef.current;
+      if (host) {
+        host.style.transform = "translateZ(0)";
+      }
+    };
+    document.fonts.addEventListener("loadingdone", handleFontsDone);
+    return () => document.fonts.removeEventListener("loadingdone", handleFontsDone);
+  }, []);
+
   /** تمييز عنصر SVG واحد كنشط (نص أو شكل) وإزالة التمييز عن السابق */
   const markActiveElement = useCallback((el: SVGElement | null) => {
     const host = svgHostRef.current;

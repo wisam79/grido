@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowsLeftRight, CaretDown, Check, Crop } from "@phosphor-icons/react";
+import { CaretDown, Check, Crop } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES, CARD_AND_LABEL_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -40,112 +40,137 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   const [unit, setUnit] = useState<"px" | "mm">("px");
   const [widthVal, setWidthVal] = useState(canvasWidth.toString());
   const [heightVal, setHeightVal] = useState(canvasHeight.toString());
-  const [dpiVal, setDpiVal] = useState(template?.dpi || printSettings.dpi || 300);
 
-  const currentDpi = template?.dpi || printSettings.dpi || 300;
+  const currentDpi = template?.dpi || printSettings?.dpi || 300;
 
   useEffect(() => {
     const nextWidthVal =
       unit === "px"
         ? canvasWidth.toString()
-        : Math.round((canvasWidth / currentDpi) * 25.4).toString();
+        : Number(((canvasWidth / currentDpi) * 25.4).toFixed(1)).toString();
     const nextHeightVal =
       unit === "px"
         ? canvasHeight.toString()
-        : Math.round((canvasHeight / currentDpi) * 25.4).toString();
+        : Number(((canvasHeight / currentDpi) * 25.4).toFixed(1)).toString();
 
     const rafId = requestAnimationFrame(() => {
       setWidthVal(nextWidthVal);
       setHeightVal(nextHeightVal);
-      setDpiVal(currentDpi);
     });
 
     return () => cancelAnimationFrame(rafId);
   }, [canvasWidth, canvasHeight, unit, currentDpi]);
 
-  const MIN_PX = 1;
+  const MIN_PX = 10;
   const MAX_PX = 20000;
 
   const handleWidthChange = (val: string) => {
-    setWidthVal(val);
+    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+      setWidthVal(val);
+    }
   };
 
   const handleWidthCommit = () => {
     const num = parseFloat(widthVal);
     if (isNaN(num) || num <= 0) {
-      setWidthVal(canvasWidth.toString());
+      setWidthVal(
+        unit === "px"
+          ? canvasWidth.toString()
+          : Number(((canvasWidth / currentDpi) * 25.4).toFixed(1)).toString()
+      );
       return;
     }
     if (unit === "px") {
       const px = Math.max(MIN_PX, Math.min(MAX_PX, Math.round(num)));
       setWidthVal(px.toString());
-      setCanvasSize(px, canvasHeight);
-      if (template) setTemplate(null);
+      if (px !== canvasWidth) {
+        setCanvasSize(px, canvasHeight);
+        if (template) setTemplate(null);
+      }
     } else {
-      const mm = Math.min(num, 2000);
-      setWidthVal(mm.toString());
-      const px = Math.round((mm * dpiVal) / 25.4);
-      setCanvasSize(Math.max(MIN_PX, px), canvasHeight);
-      if (template) setTemplate(null);
+      const mm = Math.min(Math.max(1, num), 3000);
+      const px = Math.max(MIN_PX, Math.min(MAX_PX, Math.round((mm * currentDpi) / 25.4)));
+      setWidthVal(num.toString());
+      if (px !== canvasWidth) {
+        setCanvasSize(px, canvasHeight);
+        if (template) setTemplate(null);
+      }
     }
   };
 
   const handleHeightChange = (val: string) => {
-    setHeightVal(val);
+    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+      setHeightVal(val);
+    }
   };
 
   const handleHeightCommit = () => {
     const num = parseFloat(heightVal);
     if (isNaN(num) || num <= 0) {
-      setHeightVal(canvasHeight.toString());
+      setHeightVal(
+        unit === "px"
+          ? canvasHeight.toString()
+          : Number(((canvasHeight / currentDpi) * 25.4).toFixed(1)).toString()
+      );
       return;
     }
     if (unit === "px") {
       const px = Math.max(MIN_PX, Math.min(MAX_PX, Math.round(num)));
       setHeightVal(px.toString());
-      setCanvasSize(canvasWidth, px);
-      if (template) setTemplate(null);
+      if (px !== canvasHeight) {
+        setCanvasSize(canvasWidth, px);
+        if (template) setTemplate(null);
+      }
     } else {
-      const mm = Math.min(num, 2000);
-      setHeightVal(mm.toString());
-      const px = Math.round((mm * dpiVal) / 25.4);
-      setCanvasSize(canvasWidth, Math.max(MIN_PX, px));
-      if (template) setTemplate(null);
+      const mm = Math.min(Math.max(1, num), 3000);
+      const px = Math.max(MIN_PX, Math.min(MAX_PX, Math.round((mm * currentDpi) / 25.4)));
+      setHeightVal(num.toString());
+      if (px !== canvasHeight) {
+        setCanvasSize(canvasWidth, px);
+        if (template) setTemplate(null);
+      }
     }
   };
 
   const handlePresetChange = (presetId: string) => {
+    if (presetId === "custom") {
+      if (template) setTemplate(null);
+      return;
+    }
+
     const cardOrLabel = CARD_AND_LABEL_SIZES.find((p) => p.id === presetId);
     if (cardOrLabel) {
-      const dpi = dpiVal;
-      const finalW = Math.round((cardOrLabel.widthMM * dpi) / 25.4);
-      const finalH = Math.round((cardOrLabel.heightMM * dpi) / 25.4);
+      const dpi = currentDpi;
+      let targetW = (cardOrLabel.widthMM * dpi) / 25.4;
+      let targetH = (cardOrLabel.heightMM * dpi) / 25.4;
+
+      const isCurrentLandscape = canvasWidth > canvasHeight;
+      if (isCurrentLandscape && targetW < targetH) {
+        const temp = targetW;
+        targetW = targetH;
+        targetH = temp;
+      }
+
+      const finalW = Math.round(targetW);
+      const finalH = Math.round(targetH);
 
       setCanvasSize(finalW, finalH);
       setShowBleedGuides(true);
       setBleedMarginMM(cardOrLabel.defaultBleedMM || 2);
       setCutShapeType(cardOrLabel.shape || "rectangle");
       if (template) setTemplate(null);
-
-      if (unit === "px") {
-        setWidthVal(finalW.toString());
-        setHeightVal(finalH.toString());
-      } else {
-        setWidthVal(cardOrLabel.widthMM.toString());
-        setHeightVal(cardOrLabel.heightMM.toString());
-      }
       return;
     }
 
     const paper = PAPER_SIZES.find((p) => p.id === presetId);
     if (!paper) return;
 
-    const dpi = dpiVal;
+    const dpi = currentDpi;
     let targetW = (paper.widthMM * dpi) / 25.4;
     let targetH = (paper.heightMM * dpi) / 25.4;
 
     const isCurrentLandscape = canvasWidth > canvasHeight;
-    if (isCurrentLandscape) {
+    if (isCurrentLandscape && targetW < targetH) {
       const temp = targetW;
       targetW = targetH;
       targetH = temp;
@@ -165,45 +190,36 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         dpi,
       });
     }
-
-    if (unit === "px") {
-      setWidthVal(finalW.toString());
-      setHeightVal(finalH.toString());
-    } else {
-      if (isCurrentLandscape) {
-        setWidthVal(paper.heightMM.toString());
-        setHeightVal(paper.widthMM.toString());
-      } else {
-        setWidthVal(paper.widthMM.toString());
-        setHeightVal(paper.heightMM.toString());
-      }
-    }
   };
 
   const handleSwapDimensions = () => {
     setCanvasSize(canvasHeight, canvasWidth);
-    if (template) setTemplate(null);
-
-    const temp = widthVal;
-    setWidthVal(heightVal);
-    setHeightVal(temp);
+    if (template) {
+      setTemplate({
+        ...template,
+        width: canvasHeight,
+        height: canvasWidth,
+      });
+    }
   };
 
   const activePaperPreset = PAPER_SIZES.find((p) => {
-    const dpi = dpiVal;
+    const dpi = currentDpi;
+    const currentWMM = (canvasWidth / dpi) * 25.4;
+    const currentHMM = (canvasHeight / dpi) * 25.4;
     return (
-      (Math.round((canvasWidth / dpi) * 25.4) === p.widthMM && Math.round((canvasHeight / dpi) * 25.4) === p.heightMM) ||
-      (Math.round((canvasWidth / dpi) * 25.4) === p.heightMM && Math.round((canvasHeight / dpi) * 25.4) === p.widthMM)
+      (Math.abs(currentWMM - p.widthMM) <= 1.5 && Math.abs(currentHMM - p.heightMM) <= 1.5) ||
+      (Math.abs(currentWMM - p.heightMM) <= 1.5 && Math.abs(currentHMM - p.widthMM) <= 1.5)
     );
   });
 
   const activeCardPreset = CARD_AND_LABEL_SIZES.find((p) => {
-    const dpi = dpiVal;
-    const currentWMM = Math.round((canvasWidth / dpi) * 25.4);
-    const currentHMM = Math.round((canvasHeight / dpi) * 25.4);
+    const dpi = currentDpi;
+    const currentWMM = (canvasWidth / dpi) * 25.4;
+    const currentHMM = (canvasHeight / dpi) * 25.4;
     return (
-      (Math.abs(currentWMM - p.widthMM) <= 1 && Math.abs(currentHMM - p.heightMM) <= 1) ||
-      (Math.abs(currentWMM - p.heightMM) <= 1 && Math.abs(currentHMM - p.widthMM) <= 1)
+      (Math.abs(currentWMM - p.widthMM) <= 1.5 && Math.abs(currentHMM - p.heightMM) <= 1.5) ||
+      (Math.abs(currentWMM - p.heightMM) <= 1.5 && Math.abs(currentHMM - p.widthMM) <= 1.5)
     );
   });
 
@@ -217,22 +233,27 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       collapsible
       defaultOpen={true}
       action={
-        <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md font-bold" dir="ltr">
-          {canvasWidth} × {canvasHeight}
+        <span 
+          className="text-[10px] text-muted-foreground font-mono bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md font-bold shrink-0 select-none" 
+          dir="ltr"
+        >
+          {unit === "px" 
+            ? `${canvasWidth} × ${canvasHeight}` 
+            : `${Number(((canvasWidth / currentDpi) * 25.4).toFixed(1))} × ${Number(((canvasHeight / currentDpi) * 25.4).toFixed(1))} mm`}
         </span>
       }
     >
       <div className="space-y-2.5 animate-in fade-in duration-200">
         {/* سطر اختيار القالب الجاهز + تبديل الوحدة */}
-        <div className="flex items-center gap-1.5" dir="rtl">
+        <div className="flex items-center gap-1.5 w-full min-w-0" dir="rtl">
           {/* القائمة المنسدلة للمقاسات الجاهزة */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex-1 flex items-center justify-between gap-2 px-2.5 h-8 rounded-md bg-input border border-border hover:border-primary/50 text-foreground text-xs font-semibold transition-all cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                className="flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-input border border-border hover:border-primary/50 text-foreground text-xs font-semibold transition-all cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none overflow-hidden"
               >
-                <span className="truncate">
+                <span className="truncate text-right">
                   {activePreset ? activePreset.name.split(" (")[0] : "مقاس مخصص"}
                 </span>
                 <CaretDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
@@ -254,7 +275,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               {PAPER_SIZES.map((p) => {
                 const nameParts = p.name.split(" (");
                 const mainName = nameParts[0].replace(" بوصة", "″");
-                const label = `${mainName} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                const label = `${mainName} (${unit === "px" ? `${Math.round((p.widthMM * currentDpi) / 25.4)}×${Math.round((p.heightMM * currentDpi) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
                 return (
                   <DropdownMenuItem
                     key={p.id}
@@ -270,7 +291,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               <DropdownMenuSeparator />
               <DropdownMenuLabel>كروت وبطاقات العمل</DropdownMenuLabel>
               {CARD_AND_LABEL_SIZES.filter((p) => p.category === "card").map((p) => {
-                const label = `${p.name} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                const label = `${p.name} (${unit === "px" ? `${Math.round((p.widthMM * currentDpi) / 25.4)}×${Math.round((p.heightMM * currentDpi) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
                 return (
                   <DropdownMenuItem
                     key={p.id}
@@ -286,7 +307,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               <DropdownMenuSeparator />
               <DropdownMenuLabel>ملصقات دائرية وتجارية</DropdownMenuLabel>
               {CARD_AND_LABEL_SIZES.filter((p) => p.category !== "card").map((p) => {
-                const label = `${p.name} (${unit === "px" ? `${Math.round((p.widthMM * dpiVal) / 25.4)}×${Math.round((p.heightMM * dpiVal) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                const label = `${p.name} (${unit === "px" ? `${Math.round((p.widthMM * currentDpi) / 25.4)}×${Math.round((p.heightMM * currentDpi) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
                 return (
                   <DropdownMenuItem
                     key={p.id}
@@ -302,12 +323,12 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           </DropdownMenu>
 
           {/* تبديل الوحدة بكسل / ملم */}
-          <div className="flex bg-input border border-border rounded-md p-0.5 h-8 shrink-0">
+          <div className="flex bg-input border border-border rounded-md p-0.5 h-8 shrink-0 select-none">
             <button
               type="button"
               onClick={() => setUnit("px")}
               className={cn(
-                "px-2.5 h-full rounded text-xs font-bold transition-all cursor-pointer select-none",
+                "px-2.5 h-full rounded text-xs font-bold transition-all cursor-pointer",
                 unit === "px" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -317,7 +338,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => setUnit("mm")}
               className={cn(
-                "px-2.5 h-full rounded text-xs font-bold transition-all cursor-pointer select-none",
+                "px-2.5 h-full rounded text-xs font-bold transition-all cursor-pointer",
                 unit === "mm" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -326,53 +347,95 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           </div>
         </div>
 
-        {/* سطر الأبعاد W و H وزر التبديل (نمط Figma النظيف) */}
-        <div className="flex items-center gap-1.5" dir="rtl">
-          {/* العرض W */}
-          <div 
-            className="flex-1 flex items-center bg-input border border-border hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-inner"
-            title="العرض (Width)"
-          >
-            <span className="text-[10px] font-bold text-muted-foreground/70 select-none w-3 text-center">W</span>
-            <input
-              type="number"
-              aria-label="عرض مساحة العمل"
-              value={widthVal}
-              onChange={(e) => handleWidthChange(e.target.value)}
-              onBlur={handleWidthCommit}
-              onKeyDown={(e) => e.key === "Enter" && handleWidthCommit()}
-              className="w-full bg-transparent border-0 p-0 text-center text-xs font-mono focus:ring-0 focus:outline-hidden text-foreground font-bold"
-            />
-            <span className="text-[10px] text-muted-foreground/60 select-none font-mono">{unit}</span>
+        {/* سطر الأبعاد: العرض والارتفاع كأعمدة مستقلة واضحة بدون تداخل أو خروج عن الحدود */}
+        <div className="grid grid-cols-2 gap-2" dir="rtl">
+          {/* حقل العرض */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-0.5 select-none">
+              <span>العرض</span>
+              <span className="font-mono text-[10px] text-muted-foreground/70">{unit}</span>
+            </div>
+            <div 
+              className="flex items-center bg-input border border-border hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2.5 h-8 shadow-2xs transition-all"
+              dir="ltr"
+            >
+              <input
+                type="text"
+                inputMode="decimal"
+                aria-label="عرض مساحة العمل"
+                value={widthVal}
+                onChange={(e) => handleWidthChange(e.target.value)}
+                onBlur={handleWidthCommit}
+                onKeyDown={(e) => e.key === "Enter" && handleWidthCommit()}
+                className="w-full bg-transparent border-0 p-0 text-center font-mono text-xs font-bold text-foreground focus:ring-0 focus:outline-none select-all"
+              />
+            </div>
           </div>
 
-          {/* زر تبديل الاتجاه والتدوير */}
-          <button
-            type="button"
-            onClick={handleSwapDimensions}
-            title="تبديل الاتجاه (أفقي/عمودي)"
-            aria-label="تبديل الاتجاه (أفقي/عمودي)"
-            className="w-8 h-8 rounded-md bg-input hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center justify-center border border-border hover:border-primary/40 cursor-pointer shadow-2xs active:scale-90 transition-all shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none"
-          >
-            <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
-          </button>
+          {/* حقل الارتفاع */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-0.5 select-none">
+              <span>الارتفاع</span>
+              <span className="font-mono text-[10px] text-muted-foreground/70">{unit}</span>
+            </div>
+            <div 
+              className="flex items-center bg-input border border-border hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2.5 h-8 shadow-2xs transition-all"
+              dir="ltr"
+            >
+              <input
+                type="text"
+                inputMode="decimal"
+                aria-label="ارتفاع مساحة العمل"
+                value={heightVal}
+                onChange={(e) => handleHeightChange(e.target.value)}
+                onBlur={handleHeightCommit}
+                onKeyDown={(e) => e.key === "Enter" && handleHeightCommit()}
+                className="w-full bg-transparent border-0 p-0 text-center font-mono text-xs font-bold text-foreground focus:ring-0 focus:outline-none select-all"
+              />
+            </div>
+          </div>
+        </div>
 
-          {/* الارتفاع H */}
-          <div 
-            className="flex-1 flex items-center bg-input border border-border hover:border-primary/45 rounded-md px-2 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-1 focus-within:ring-offset-background shadow-inner"
-            title="الارتفاع (Height)"
-          >
-            <span className="text-[10px] font-bold text-muted-foreground/70 select-none w-3 text-center">H</span>
-            <input
-              type="number"
-              aria-label="ارتفاع مساحة العمل"
-              value={heightVal}
-              onChange={(e) => handleHeightChange(e.target.value)}
-              onBlur={handleHeightCommit}
-              onKeyDown={(e) => e.key === "Enter" && handleHeightCommit()}
-              className="w-full bg-transparent border-0 p-0 text-center text-xs font-mono focus:ring-0 focus:outline-hidden text-foreground font-bold"
-            />
-            <span className="text-[10px] text-muted-foreground/60 select-none font-mono">{unit}</span>
+        {/* محدد الاتجاه: عمودي / أفقي */}
+        <div className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8 select-none" dir="rtl">
+          <span className="text-[11px] font-bold text-muted-foreground">الاتجاه</span>
+          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded">
+            <button
+              type="button"
+              onClick={() => {
+                if (canvasWidth > canvasHeight) {
+                  handleSwapDimensions();
+                }
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 h-6 text-[11px] font-bold rounded transition-all cursor-pointer",
+                canvasWidth <= canvasHeight
+                  ? "bg-card text-primary shadow-2xs font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="اتجاه رأسي (عمودي)"
+            >
+              <span className="w-2.5 h-3.5 border-[1.5px] border-current rounded-xs inline-block shrink-0" />
+              <span>عمودي</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (canvasWidth < canvasHeight) {
+                  handleSwapDimensions();
+                }
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 h-6 text-[11px] font-bold rounded transition-all cursor-pointer",
+                canvasWidth > canvasHeight
+                  ? "bg-card text-primary shadow-2xs font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="اتجاه أفقي"
+            >
+              <span className="w-3.5 h-2.5 border-[1.5px] border-current rounded-xs inline-block shrink-0" />
+              <span>أفقي</span>
+            </button>
           </div>
         </div>
       </div>
