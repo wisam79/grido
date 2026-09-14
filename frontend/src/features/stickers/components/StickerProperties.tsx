@@ -181,57 +181,39 @@ export const StickerProperties = React.memo(function StickerProperties({
         </div>
 
         {/* Fluent Segmented Tabs: Design vs Sheet vs Presets */}
-        <div className="grid grid-cols-3 gap-1 p-0.5 rounded-lg bg-muted/40 border border-border/40">
-          <button
-            type="button"
-            onClick={() => setActiveTab("design")}
-            className={cn(
-              "h-7 rounded-md text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-              activeTab === "design"
-                ? "bg-background text-foreground shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" weight={activeTab === "design" ? "bold" : "regular"} />
-            <span>التصميم</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("sheet")}
-            className={cn(
-              "h-7 rounded-md text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-              activeTab === "sheet"
-                ? "bg-background text-foreground shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Printer className="w-3.5 h-3.5" weight={activeTab === "sheet" ? "bold" : "regular"} />
-            <span>الشيت</span>
-            <span className="text-[9px] font-mono px-1 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
-              {gridConfig.rows * gridConfig.cols}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("presets")}
-            className={cn(
-              "h-7 rounded-md text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-              activeTab === "presets"
-                ? "bg-background text-foreground shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <BookmarkSimple className="w-3.5 h-3.5" weight={activeTab === "presets" ? "bold" : "regular"} />
-            <span>قوالبي</span>
-            {templatePresets.length > 0 && (
-              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
-                {templatePresets.length}
-              </span>
-            )}
-          </button>
-        </div>
+        <FluentSegmentedControl<"design" | "sheet" | "presets">
+          layoutId="sticker-properties-tabs"
+          value={activeTab}
+          onChange={setActiveTab}
+          size="sm"
+          options={[
+            {
+              id: "design",
+              label: "التصميم",
+              icon: <SlidersHorizontal className="w-3.5 h-3.5" weight={activeTab === "design" ? "bold" : "regular"} />,
+            },
+            {
+              id: "sheet",
+              label: "الشيت",
+              icon: <Printer className="w-3.5 h-3.5" weight={activeTab === "sheet" ? "bold" : "regular"} />,
+              badge: (
+                <span className="text-[9px] font-mono px-1 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
+                  {gridConfig.rows * gridConfig.cols}
+                </span>
+              ),
+            },
+            {
+              id: "presets",
+              label: "قوالبي",
+              icon: <BookmarkSimple className="w-3.5 h-3.5" weight={activeTab === "presets" ? "bold" : "regular"} />,
+              badge: templatePresets.length > 0 ? (
+                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                  {templatePresets.length}
+                </span>
+              ) : undefined,
+            },
+          ]}
+        />
       </div>
 
       {/* ── Tab Content ── */}

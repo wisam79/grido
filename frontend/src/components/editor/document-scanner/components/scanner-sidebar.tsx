@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { FluentSegmentedControl } from "@/components/ui/blocks";
 import {
   FileText,
   Sparkle,
@@ -89,43 +90,31 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
         </div>
 
         {/* التبديل بين المفرد (الافتراضي) والمتعدد (الثانوي) */}
-        <div className="grid grid-cols-2 p-1 bg-background/80 dark:bg-background/40 rounded-lg border border-border/40 gap-1">
-          <button
-            type="button"
-            onClick={() => {
-              onModeChange?.("single");
-              onAutoDetect("single");
-            }}
-            disabled={isDetecting}
-            className={cn(
-              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              detectionMode === "single"
-                ? "bg-primary text-primary-foreground shadow-2xs"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-            )}
-          >
-            <Sparkle size={13} weight={detectionMode === "single" ? "fill" : "bold"} className="shrink-0" />
-            <span>مسح مفرد</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              onModeChange?.("multi");
-              onAutoDetect("multi");
-            }}
-            disabled={isDetecting}
-            className={cn(
-              "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              detectionMode === "multi"
-                ? "bg-primary text-primary-foreground shadow-2xs"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-            )}
-          >
-            <SquaresFour size={13} weight={detectionMode === "multi" ? "fill" : "bold"} className="shrink-0" />
-            <span>مسح متعدد</span>
-          </button>
-        </div>
+        <FluentSegmentedControl<"single" | "multi">
+          layoutId="scanner-detection-mode-pill"
+          value={detectionMode === "multi" ? "multi" : "single"}
+          onChange={(newMode) => {
+            onModeChange?.(newMode);
+            onAutoDetect(newMode);
+          }}
+          size="sm"
+          options={[
+            {
+              id: "single",
+              label: "مفرد",
+              icon: <Sparkle size={13} weight={detectionMode === "single" ? "fill" : "bold"} className="shrink-0" />,
+              tooltip: "مسح مستند مفرد",
+              disabled: isDetecting,
+            },
+            {
+              id: "multi",
+              label: "متعدد",
+              icon: <SquaresFour size={13} weight={detectionMode === "multi" ? "fill" : "bold"} className="shrink-0" />,
+              tooltip: "مسح بطاقات ومستندات متعددة",
+              disabled: isDetecting,
+            },
+          ]}
+        />
 
         {/* أزرار الإجراء السريعة للكشف */}
         <div className="pt-1">

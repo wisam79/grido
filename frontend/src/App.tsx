@@ -17,6 +17,7 @@ import { GetStartupFile } from "../wailsjs/go/main/App";
 
 const ExportDialog = lazy(() => import("@/components/editor/dialogs/export-dialog").then(module => ({ default: module.ExportDialog })));
 const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog").then(module => ({ default: module.PrintDialog })));
+import { FluentSegmentedControl } from "@/components/ui/blocks";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -273,52 +274,28 @@ export default function App() {
           </div>
 
           {/* وضع العمل - Fluent 2 Segmented Control */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 bg-input p-1 rounded-xl border border-border z-10 title-bar-controls shadow-inner" dir="rtl">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMode("collage")}
-              aria-label="وضع الكولاج"
-              className={cn(
-                "h-8 px-3.5 rounded-md cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-all duration-150 select-none",
-                mode === "collage"
-                  ? "text-primary font-black"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {mode === "collage" && (
-                <motion.div
-                  layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-card border border-border rounded-md shadow-xs -z-10"
-                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                />
-              )}
-              <SquaresFour className="w-4 h-4" weight={mode === "collage" ? "fill" : "regular"} />
-              <span className="leading-none font-bold">كولاج</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMode("single")}
-              aria-label="وضع التعديل الحر"
-              className={cn(
-                "h-8 px-3.5 rounded-md cursor-pointer gap-2 flex items-center justify-center font-cairo text-xs z-10 relative transition-all duration-150 select-none",
-                mode === "single"
-                  ? "text-primary font-black"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {mode === "single" && (
-                <motion.div
-                  layoutId="active-mode-pill"
-                  className="absolute inset-0 bg-card border border-border rounded-md shadow-xs -z-10"
-                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                />
-              )}
-              <Image className="w-4 h-4" weight={mode === "single" ? "fill" : "regular"} />
-              <span className="leading-none font-bold">تعديل حر</span>
-            </Button>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 title-bar-controls" dir="rtl">
+            <FluentSegmentedControl<"collage" | "single">
+              layoutId="header-active-mode-pill"
+              value={mode}
+              onChange={setMode}
+              size="md"
+              fullWidth={false}
+              options={[
+                {
+                  id: "collage",
+                  label: "كولاج",
+                  icon: <SquaresFour className="w-4 h-4" weight={mode === "collage" ? "fill" : "regular"} />,
+                  tooltip: "وضع الكولاج والشبكات",
+                },
+                {
+                  id: "single",
+                  label: "تعديل حر",
+                  icon: <Image className="w-4 h-4" weight={mode === "single" ? "fill" : "regular"} />,
+                  tooltip: "وضع التعديل والتصميم الحر",
+                },
+              ]}
+            />
           </div>
 
           <div className="flex items-center gap-1.5 title-bar-controls">
@@ -373,14 +350,14 @@ export default function App() {
                       ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
                       : "text-muted-foreground hover:bg-muted/80"
                   )}
-                  aria-label={rightSidebarOpen ? "إخفاء لوحة القوالب" : "إظهار لوحة القوالب"}
+                  aria-label={rightSidebarOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}
                 >
                   <SidebarSimple className="w-4 h-4" weight={rightSidebarOpen ? "fill" : "regular"} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
                 <div className="flex items-center gap-1.5">
-                  <span>{rightSidebarOpen ? "إخفاء لوحة القوالب" : "إظهار لوحة القوالب"}</span>
+                  <span>{rightSidebarOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}</span>
                   <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+B</kbd>
                 </div>
               </TooltipContent>
@@ -417,7 +394,7 @@ export default function App() {
               onClick={() => setMobileTemplatesOpen(true)}
             >
               <SidebarSimple className="w-4 h-4" />
-              <span className="text-xs font-semibold">القوالب</span>
+              <span className="text-xs font-semibold">{mode === "collage" ? "القوالب" : "التصميم"}</span>
             </Button>
             <Button
               variant="ghost"

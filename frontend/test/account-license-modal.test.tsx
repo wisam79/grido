@@ -35,7 +35,7 @@ describe('AccountLicenseModal Component Tests', () => {
   it('renders modal title and auth tab by default when user is null', () => {
     render(<AccountLicenseModal />);
     expect(screen.getByText('الحساب والترخيص')).toBeInTheDocument();
-    expect(screen.getByText('تسجيل الحساب')).toBeInTheDocument();
+    expect(screen.getByText('الحساب')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('name@example.com')).toBeInTheDocument();
   });
 

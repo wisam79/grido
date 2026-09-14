@@ -11,7 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { FluentSegmentedControl } from "@/components/ui/blocks";
 import { useEditorStore } from "@/lib/editor-store";
 import { serializeEditorState, projectFileToDomainProject, domainProjectToProjectFile } from "@/lib/io/project-serializer";
 import { SaveProject, GetAllProjects, DeleteProject } from "../../../../wailsjs/go/handlers/ProjectHandler";
@@ -312,20 +313,38 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4 font-cairo">
-            <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="save" className="flex items-center gap-1.5 justify-center">
-                <FloppyDisk className="w-3.5 h-3.5 shrink-0" />
-                <span>حفظ المشروع</span>
-              </TabsTrigger>
-              <TabsTrigger value="list" className="flex items-center gap-1.5 justify-center" onClick={fetchProjects}>
-                <FolderOpen className="w-3.5 h-3.5 shrink-0" />
-                <span>المشاريع</span>
-              </TabsTrigger>
-              <TabsTrigger value="backup" className="flex items-center gap-1.5 justify-center">
-                <Database className="w-3.5 h-3.5 shrink-0" />
-                <span>نسخ احتياطي</span>
-              </TabsTrigger>
-            </TabsList>
+            <FluentSegmentedControl<"save" | "list" | "backup">
+              layoutId="projects-dialog-tabs"
+              value={activeTab as "save" | "list" | "backup"}
+              onChange={(nextTab) => {
+                setActiveTab(nextTab);
+                if (nextTab === "list") {
+                  fetchProjects();
+                }
+              }}
+              size="md"
+              className="mb-4"
+              options={[
+                {
+                  id: "save",
+                  label: "حفظ",
+                  icon: <FloppyDisk className="w-3.5 h-3.5 shrink-0" />,
+                  tooltip: "حفظ المشروع الحالي",
+                },
+                {
+                  id: "list",
+                  label: "المشاريع",
+                  icon: <FolderOpen className="w-3.5 h-3.5 shrink-0" />,
+                  tooltip: "مكتبة المشاريع المحفوظة",
+                },
+                {
+                  id: "backup",
+                  label: "النسخ",
+                  icon: <Database className="w-3.5 h-3.5 shrink-0" />,
+                  tooltip: "النسخ الاحتياطي والأرشفة",
+                },
+              ]}
+            />
 
             <TabsContent value="save" className="space-y-4 py-2">
               <div className="space-y-2">

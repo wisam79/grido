@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { TextAa, Palette, Sparkle } from "@phosphor-icons/react";
+import { FluentSegmentedControl } from "@/components/ui/blocks";
 
 // Sub-components
 import { TextTypeTab } from "./text/text-type-tab";
@@ -54,50 +54,37 @@ export function TextProperties({ element, onUpdate, onNavigateTab, standalone = 
   const hasBadge = !!element.textBgColor && element.textBgColor !== "transparent";
   const hasCurve = typeof element.curve === "number" && element.curve !== 0;
 
-  const tabButtonClassName = (active: boolean) =>
-    cn(
-      "h-8 px-2 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
-      active
-        ? "bg-background text-primary shadow-xs font-extrabold border border-border/80 ring-1 ring-primary/20"
-        : "text-muted-foreground hover:text-foreground hover:bg-background/40 active:scale-95"
-    );
-
   return (
     <div className="space-y-2.5 font-cairo animate-in fade-in duration-200 w-full min-w-0">
-      <div className="grid grid-cols-3 gap-1 bg-muted/60 dark:bg-muted/30 p-1 rounded-lg border border-border/40 font-cairo shadow-2xs">
-        <button
-          type="button"
-          onClick={() => setActiveTab("type")}
-          className={tabButtonClassName(activeTab === "type")}
-          title="الخط والنمط والقياسات"
-        >
-          <TextAa className="w-3.5 h-3.5 shrink-0" weight={activeTab === "type" ? "bold" : "regular"} />
-          <span className="truncate">الخط</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("color")}
-          className={tabButtonClassName(activeTab === "color")}
-          title="ألوان وتعبئة النص والشفافية"
-        >
-          <Palette className="w-3.5 h-3.5 shrink-0" weight={activeTab === "color" ? "bold" : "regular"} />
-          <span className="truncate">الألوان</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("effects")}
-          className={cn(tabButtonClassName(activeTab === "effects"), "relative")}
-          title="الظلال، الحدود، الشارة، والتقويس"
-        >
-          <Sparkle className="w-3.5 h-3.5 shrink-0" weight={activeTab === "effects" ? "bold" : "regular"} />
-          <span className="truncate">المؤثرات</span>
-          {(hasBadge || hasStroke || hasShadow || hasCurve) && (
-            <span className="w-1.5 h-1.5 rounded-full bg-primary absolute top-1.5 left-2" />
-          )}
-        </button>
-      </div>
+      <FluentSegmentedControl<TextSubTab>
+        layoutId="text-subtabs-pill"
+        value={activeTab}
+        onChange={setActiveTab}
+        size="sm"
+        options={[
+          {
+            id: "type",
+            label: "الخط",
+            icon: <TextAa className="w-3.5 h-3.5 shrink-0" weight={activeTab === "type" ? "bold" : "regular"} />,
+            tooltip: "الخط والنمط والقياسات",
+          },
+          {
+            id: "color",
+            label: "الألوان",
+            icon: <Palette className="w-3.5 h-3.5 shrink-0" weight={activeTab === "color" ? "bold" : "regular"} />,
+            tooltip: "ألوان وتعبئة النص والشفافية",
+          },
+          {
+            id: "effects",
+            label: "المؤثرات",
+            icon: <Sparkle className="w-3.5 h-3.5 shrink-0" weight={activeTab === "effects" ? "bold" : "regular"} />,
+            tooltip: "الظلال، الحدود، الشارة، والتقويس",
+            badge: (hasBadge || hasStroke || hasShadow || hasCurve) ? (
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            ) : undefined,
+          },
+        ]}
+      />
 
       {activeTab === "type" && <TextTypeTab element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />}
       {activeTab === "color" && <TextColorTab element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />}

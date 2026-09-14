@@ -21,7 +21,7 @@ import {
   STUDIO_KEEPSAKE_PRESETS,
   StudioPreset,
 } from "./collage-preset-data";
-import { FluentEmptyState } from "@/components/ui/blocks";
+import { FluentEmptyState, FluentSegmentedControl } from "@/components/ui/blocks";
 import {
   Select,
   SelectContent,
@@ -424,34 +424,26 @@ export function CollagePresetsTab({
           </div>
 
           {/* زر التبديل بين نمط القائمة العريضة ونمط الشبكة */}
-          <div className="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/70 shrink-0 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              title="عرض قائمة مفصلة (مظهر كامل وعريض)"
-              className={cn(
-                "w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer",
-                viewMode === "list"
-                  ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-              )}
-            >
-              <List className="w-4 h-4" weight={viewMode === "list" ? "bold" : "regular"} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              title="عرض شبكي مصغر (بطاقات ثنائية)"
-              className={cn(
-                "w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer",
-                viewMode === "grid"
-                  ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-              )}
-            >
-              <SquaresFour className="w-4 h-4" weight={viewMode === "grid" ? "bold" : "regular"} />
-            </button>
-          </div>
+          <FluentSegmentedControl<"list" | "grid">
+            layoutId="presets-view-mode-pill"
+            value={viewMode}
+            onChange={setViewMode}
+            size="sm"
+            fullWidth={false}
+            className="shrink-0 shadow-2xs"
+            options={[
+              {
+                id: "list",
+                icon: <List className="w-4 h-4" weight={viewMode === "list" ? "bold" : "regular"} />,
+                tooltip: "عرض قائمة مفصلة (مظهر كامل وعريض)",
+              },
+              {
+                id: "grid",
+                icon: <SquaresFour className="w-4 h-4" weight={viewMode === "grid" ? "bold" : "regular"} />,
+                tooltip: "عرض شبكي مصغر (بطاقات ثنائية)",
+              },
+            ]}
+          />
         </div>
       )}
 

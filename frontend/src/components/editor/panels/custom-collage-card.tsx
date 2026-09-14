@@ -212,7 +212,6 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       {/* 🧭 شريط التبويبات الثلاثي الموحد والمتوازن بدون أي انضغاط — الشبكة أولاً */}
       <FluentSegmentedControl
         layoutId="collage-main-tabs"
-        className="shadow-2xs border-border/70 bg-card/60 backdrop-blur-xs w-full"
         options={[
           {
             id: "custom",

@@ -7,7 +7,8 @@ import {
   DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { FluentSegmentedControl } from "@/components/ui/blocks";
 import { Badge } from "@/components/ui/badge";
 import {
   ShieldCheck,
@@ -202,22 +203,26 @@ export function AccountLicenseModal() {
 
         {/* 🔹 3. هيكل التبويبات والمحتوى الأساسي (Tabs & Core Deck) */}
         <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "auth" | "license")} className="w-full mt-3.5">
-          <TabsList className="grid w-full grid-cols-2 bg-muted/70 p-1 rounded-xl h-9 border border-border/40">
-            <TabsTrigger
-              value="auth"
-              className="text-xs h-7 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs font-bold cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center gap-1.5 transition-all"
-            >
-              <User className="w-3.5 h-3.5" weight="bold" />
-              <span>تسجيل الحساب</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="license"
-              className="text-xs h-7 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs font-bold cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none flex items-center justify-center gap-1.5 transition-all"
-            >
-              <Key className="w-3.5 h-3.5" weight="bold" />
-              <span>مفتاح الترخيص</span>
-            </TabsTrigger>
-          </TabsList>
+          <FluentSegmentedControl<"auth" | "license">
+            layoutId="account-license-modal-tabs"
+            value={activeTab}
+            onChange={setActiveTab}
+            size="md"
+            options={[
+              {
+                id: "auth",
+                label: "الحساب",
+                icon: <User className="w-3.5 h-3.5" weight="bold" />,
+                tooltip: "تسجيل الدخول أو إنشاء حساب",
+              },
+              {
+                id: "license",
+                label: "الترخيص",
+                icon: <Key className="w-3.5 h-3.5" weight="bold" />,
+                tooltip: "مفتاح ترخيص البرنامج",
+              },
+            ]}
+          />
 
           {/* 🔑 تبويب الدخول/التسجيل */}
           <TabsContent value="auth" className="mt-3.5 space-y-3.5 animate-in fade-in-50 duration-150">

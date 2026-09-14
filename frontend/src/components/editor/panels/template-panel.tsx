@@ -19,11 +19,11 @@ import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
 import {
   GridFour,
-  Stack,
   CaretRight,
+  Sparkle,
 } from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
-import { LayersList } from "../properties/layers-list";
+import { FreeformStudioPanel } from "./freeform";
 
 export interface TemplatePanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
@@ -118,11 +118,11 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
   return (
     <PanelShell
-      icon={mode === "collage" ? <GridFour className="w-4.5 h-4.5 text-primary" weight="duotone" /> : <Stack className="w-4.5 h-4.5 text-primary" weight="duotone" />}
-      title={mode === "collage" ? "القوالب" : "الطبقات"}
-      subtitle={mode === "collage" ? "قوالب الكولاج والطباعة" : "إدارة وترتيب العناصر الحرة"}
+      icon={mode === "collage" ? <GridFour className="w-4.5 h-4.5 text-primary" weight="duotone" /> : <Sparkle className="w-4.5 h-4.5 text-primary" weight="duotone" />}
+      title={mode === "collage" ? "القوالب" : "استوديو التصميم"}
+      subtitle={mode === "collage" ? "قوالب الكولاج والطباعة" : "الطبقات والعناصر والمقاسات"}
       onCollapse={onCollapse}
-      collapseTitle="إخفاء لوحة القوالب (Ctrl+B)"
+      collapseTitle={mode === "collage" ? "إخفاء لوحة القوالب (Ctrl+B)" : "إخفاء استوديو التصميم (Ctrl+B)"}
       collapseIcon={<CaretRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" weight="bold" />}
       className="bg-transparent select-none"
     >
@@ -168,9 +168,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
           />
         </div>
       ) : (
-        <div className="space-y-3" dir="rtl">
-          <LayersList />
-        </div>
+        <FreeformStudioPanel />
       )}
 
       {/* Confirmation Dialog when switching templates with existing photos */}
