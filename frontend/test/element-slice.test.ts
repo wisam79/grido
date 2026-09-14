@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore } from '../src/lib/editor-store';
-import type { TextElement } from '../src/lib/store/types';
+import type { TextElement, ShapeElement } from '../src/lib/store/types';
+import {
+  VECTOR_SHAPES,
+  SHAPE_PATH_TRIANGLE,
+  SHAPE_PATH_HEART,
+  SHAPE_PATH_DIAMOND,
+  getShapePath,
+} from '../src/lib/io/svg-paths';
 
 describe('ElementSlice Unit Tests', () => {
   beforeEach(() => {
@@ -23,6 +30,26 @@ describe('ElementSlice Unit Tests', () => {
 
     expect(elements.length).toBe(1);
     expect(elements[0].type).toBe('shape');
+  });
+
+  it('adds vector path shapes (triangle, heart, diamond) with svgPath and viewBox correctly', () => {
+    expect(VECTOR_SHAPES.length).toBeGreaterThanOrEqual(6);
+    expect(getShapePath('triangle')).toBe(SHAPE_PATH_TRIANGLE);
+
+    useEditorStore.getState().addShapeElement('path', SHAPE_PATH_TRIANGLE);
+    let el = useEditorStore.getState().elements[0] as ShapeElement;
+    expect(el.shape).toBe('path');
+    expect(el.svgPath).toBe(SHAPE_PATH_TRIANGLE);
+
+    useEditorStore.getState().addShapeElement('path', SHAPE_PATH_HEART);
+    el = useEditorStore.getState().elements[1] as ShapeElement;
+    expect(el.shape).toBe('path');
+    expect(el.svgPath).toBe(SHAPE_PATH_HEART);
+
+    useEditorStore.getState().addShapeElement('path', SHAPE_PATH_DIAMOND);
+    el = useEditorStore.getState().elements[2] as ShapeElement;
+    expect(el.shape).toBe('path');
+    expect(el.svgPath).toBe(SHAPE_PATH_DIAMOND);
   });
 
   it('updates element properties', () => {

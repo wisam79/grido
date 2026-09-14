@@ -458,7 +458,7 @@ export default function App() {
           setPrintOpen(true);
         }}
         onExport={() => setExportOpen(true)}
-        onSave={() => window.dispatchEvent(new CustomEvent("grido:open-projects-dialog"))}
+        onSave={() => window.dispatchEvent(new CustomEvent("grido:open-projects-dialog", { detail: { tab: "save" } }))}
       />
 
       {/* المحتوى الرئيسي */}

@@ -10,6 +10,7 @@ import {
   Square,
   Heart,
   Coffee,
+  FrameCorners,
 } from "@phosphor-icons/react";
 import { ARABIC_FONTS } from "@/lib/io/fonts";
 import { StickerCategory, StickerCategoryGroupId, StickerShape } from "./types";
@@ -27,6 +28,12 @@ export const CATEGORY_ITEMS: StickerCategoryItem[] = [
     id: "all",
     title: "الكل",
     icon: <SquaresFour className="w-4 h-4" />,
+  },
+  {
+    id: "frames",
+    title: "إطارات وبراويز",
+    icon: <FrameCorners className="w-4 h-4" weight="duotone" />,
+    categories: ["frames"],
   },
   {
     id: "commercial",
@@ -143,6 +150,20 @@ export const CURATED_PALETTES: StickerCuratedPalette[] = [
     primary: "#db2777",
     secondary: "#8b5cf6",
     background: "#fdf4ff",
+  },
+  {
+    id: "emerald",
+    name: "زمردي ملكي",
+    primary: "#064e3b",
+    secondary: "#10b981",
+    background: "#f0fdf4",
+  },
+  {
+    id: "rosegold",
+    name: "وردي وذهبي",
+    primary: "#831843",
+    secondary: "#f59e0b",
+    background: "#fff1f2",
   },
 ];
 

@@ -124,39 +124,6 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       if (mode === "collage" && (!s.slots || s.slots.length === 0)) {
         nextState.slots = buildSlots();
         nextState.elements = []; // مسح عناصر التعديل الحر عند العودة للكولاج
-      } else if (mode === "collage" && s.slots && s.slots.length > 0) {
-        // خانات قديمة بأبعاد ورقة سابقة (الوضع الحر) — نكتشف الفارق بالهامش
-        // المسموح ونعيد البناء ديناميكياً وإلا ظهرت الخلايا مشوهة هندسياً.
-        // نحافظ على الصور المعبأة عبر إعادة ربطها بالخلايا الجديدة بالترتيب.
-        const sample = s.slots[0];
-        const canvasAspect = (s.canvasWidth || 2480) / (s.canvasHeight || 3508);
-        const slotsAspect = sample.w > 0 && sample.h > 0 ? sample.w / sample.h : 1;
-        if (Math.abs(slotsAspect - canvasAspect) / Math.max(canvasAspect, 0.001) > 0.05) {
-          const previousSlots = s.slots;
-          const freshSlots = buildSlots();
-          if (freshSlots) {
-            nextState.slots = freshSlots.map((fresh, i) => {
-              const prev = previousSlots[i];
-              if (!prev) return fresh;
-              return {
-                ...fresh,
-                imageSrc: prev.imageSrc,
-                filter: prev.filter,
-                brightness: prev.brightness,
-                contrast: prev.contrast,
-                saturation: prev.saturation,
-                zoom: prev.zoom,
-                dragX: prev.dragX,
-                dragY: prev.dragY,
-                flipX: prev.flipX,
-                flipY: prev.flipY,
-                rotation: prev.rotation,
-                originalImageSrc: prev.originalImageSrc,
-                bgColor: prev.bgColor,
-              };
-            });
-          }
-        }
       }
 
       return nextState;

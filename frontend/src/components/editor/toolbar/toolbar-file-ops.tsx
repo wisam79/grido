@@ -58,6 +58,7 @@ function TooltipBtn({ content, children }: TooltipBtnProps) {
 export function ToolbarFileOps() {
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+  const [projectsTab, setProjectsTab] = useState<"save" | "list">("save");
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [isBatchInsertOpen, setIsBatchInsertOpen] = useState(false);
   const [isPhoneBridgeOpen, setIsPhoneBridgeOpen] = useState(false);
@@ -82,7 +83,12 @@ export function ToolbarFileOps() {
   );
 
   useEffect(() => {
-    const openProjects = () => setIsProjectsOpen(true);
+    const openProjects = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ tab?: "save" | "list" }> | undefined;
+      const targetTab = customEvent?.detail?.tab || "save";
+      setProjectsTab(targetTab);
+      setIsProjectsOpen(true);
+    };
     const openBatch = () => setIsBatchInsertOpen(true);
     const openPhoneBridge = () => setIsPhoneBridgeOpen(true);
     window.addEventListener("grido:open-projects-dialog", openProjects);
@@ -288,18 +294,21 @@ export function ToolbarFileOps() {
 
         {/* المكتبة المحلية */}
         <Suspense fallback={null}>
-          <TooltipBtn content="مكتبة المشاريع المحفوظة (Ctrl + S)">
+          <TooltipBtn content="مكتبة المشاريع المحفوظة">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsProjectsOpen(true)}
+              onClick={() => {
+                setProjectsTab("list");
+                setIsProjectsOpen(true);
+              }}
               aria-label="مكتبة المشاريع المحلية"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer group"
             >
               <Folders className="w-4.5 h-4.5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
             </Button>
           </TooltipBtn>
-          <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} defaultTab="list" />
+          <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} defaultTab={projectsTab} />
         </Suspense>
 
         {/* نافذة الإدراج المتعدد الذكي */}

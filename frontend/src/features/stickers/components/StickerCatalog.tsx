@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { MagnifyingGlass, X, Check, SquaresFour } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate } from "../types";
@@ -43,6 +44,9 @@ interface TemplateCardProps {
   template: StickerTemplate;
   isSelected: boolean;
   onSelect: (template: StickerTemplate) => void;
+  isFocused?: boolean;
+  onFocus?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
 }
 
 /* كاش عام على مستوى الموديول — يتفادى تكرار توليد SVG لنفس القوالب عبر دورات فتح النافذة */
@@ -68,13 +72,51 @@ function getTemplatePreview(template: StickerTemplate): string {
   }
 }
 
-/* بطاقة قالب المعرض — مريحة بصرياً، خفيفة مع كاش فوري */
+/* بطاقة قالب المعرض — مريحة بصرياً، خفيفة مع كاش فوري وتحميل كسول ذكي */
 const GalleryCard = React.memo(function GalleryCard({
   template,
   isSelected,
   onSelect,
+  isFocused = false,
+  onFocus,
+  onKeyDown,
 }: TemplateCardProps) {
-  const miniSvg = useMemo(() => getTemplatePreview(template), [template]);
+  const cardRef = useRef<HTMLButtonElement>(null);
+  const [inView, setInView] = useState(() => PREVIEW_CACHE.has(template.id));
+
+  useEffect(() => {
+    if (inView) return;
+    const el = cardRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "250px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [inView]);
+
+  useEffect(() => {
+    if (isFocused && cardRef.current) {
+      cardRef.current.focus({ preventScroll: false });
+    }
+  }, [isFocused]);
+
+  const miniSvg = useMemo(() => {
+    if (!inView) return "";
+    return getTemplatePreview(template);
+  }, [inView, template]);
+
   const mm = template.defaultMm || {
     width: 50,
     height: Math.round(50 / template.aspectRatio),
@@ -82,12 +124,16 @@ const GalleryCard = React.memo(function GalleryCard({
 
   return (
     <button
+      ref={cardRef}
       type="button"
+      tabIndex={isFocused ? 0 : -1}
       onClick={() => onSelect(template)}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
       aria-pressed={isSelected}
       aria-label={`قالب ${template.name} — ${mm.width}×${mm.height} مم`}
       className={cn(
-        "group relative flex flex-col p-2.5 rounded-xl transition-all cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px]",
+        "group relative flex flex-col p-2.5 rounded-xl transition-all cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         isSelected
           ? "bg-primary/10 border-primary shadow-fluent-4 ring-1 ring-primary/50"
           : "bg-card/60 hover:bg-card border-border/40 hover:border-primary/50 hover:shadow-fluent-2 hover:-translate-y-0.5"
@@ -108,7 +154,10 @@ const GalleryCard = React.memo(function GalleryCard({
             dangerouslySetInnerHTML={{ __html: miniSvg }}
           />
         ) : (
-          <span className="w-7 h-7 rounded-full" style={{ backgroundColor: template.defaultColors.primary }} />
+          <span
+            className="w-7 h-7 rounded-full border border-border/30 opacity-60 transition-opacity"
+            style={{ backgroundColor: template.defaultColors.primary }}
+          />
         )}
       </div>
 
@@ -147,6 +196,21 @@ export const StickerCatalog = React.memo(function StickerCatalog({
   // البحث المحلي مع Throttling لمنع التهنيج
   const [searchInput, setSearchInput] = useState(searchQuery);
   const debounceRef = useRef<number | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const filteredTemplates = useMemo(() => {
+    return searchStickerTemplates(searchQuery, selectedCategory, selectedShape);
+  }, [searchQuery, selectedCategory, selectedShape]);
+
+  // مؤشر العنصر النشط للتنقل بلوحة المفاتيح
+  const [focusedIndex, setFocusedIndex] = useState<number>(0);
+
+  // إعادة ضبط التمرير والمؤشر لأعلى القائمة عند تغيير التصنيف أو البحث أو الشكل
+  useEffect(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    setFocusedIndex(0);
+  }, [selectedCategory, selectedShape, searchQuery]);
 
   useEffect(() => {
     setSearchInput(searchQuery);
@@ -173,9 +237,53 @@ export const StickerCatalog = React.memo(function StickerCatalog({
     onSearchChange("");
   }, [onSearchChange]);
 
-  const filteredTemplates = useMemo(() => {
-    return searchStickerTemplates(searchQuery, selectedCategory, selectedShape);
-  }, [searchQuery, selectedCategory, selectedShape]);
+  // اختصار لوحة المفاتيح: / أو Ctrl+F للتركيز على البحث
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if (
+        (e.key === "/" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f")) &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKey);
+    return () => window.removeEventListener("keydown", handleGlobalKey);
+  }, []);
+
+  const handleCardKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+      const count = filteredTemplates.length;
+      if (count === 0) return;
+
+      // RTL: ArrowLeft يتحرك للأمام، ArrowRight يتحرك للخلف
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setFocusedIndex(Math.min(count - 1, index + 1));
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setFocusedIndex(Math.max(0, index - 1));
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const cols = window.innerWidth >= 768 ? 4 : window.innerWidth >= 640 ? 3 : 2;
+        setFocusedIndex(Math.min(count - 1, index + cols));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const cols = window.innerWidth >= 768 ? 4 : window.innerWidth >= 640 ? 3 : 2;
+        setFocusedIndex(Math.max(0, index - cols));
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setFocusedIndex(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setFocusedIndex(count - 1);
+      }
+    },
+    [filteredTemplates]
+  );
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background/20 select-none">
@@ -223,10 +331,17 @@ export const StickerCatalog = React.memo(function StickerCatalog({
           <div className="relative flex-1 max-w-xs">
             <MagnifyingGlass className="absolute start-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 pointer-events-none" />
             <Input
+              ref={searchInputRef}
               type="search"
               value={searchInput}
               onChange={(e) => handleSearchInput(e.target.value)}
-              placeholder="بحث ..."
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && searchInput) {
+                  e.stopPropagation();
+                  handleClearSearch();
+                }
+              }}
+              placeholder="بحث (اضغط / للتركيز) ..."
               aria-label="بحث"
               className="h-8 ps-8 pe-7 text-xs rounded-md bg-card/80 border-border/50 focus-visible:ring-1 focus-visible:ring-primary text-foreground placeholder:text-muted-foreground/60"
             />
@@ -290,23 +405,41 @@ export const StickerCatalog = React.memo(function StickerCatalog({
 
       {/* ── Main Gallery Grid ── */}
       <div
+        ref={scrollContainerRef}
         className="flex-1 overflow-y-auto scrollbar-none p-4"
         role="listbox"
         aria-label="قوالب الملصقات"
       >
         {filteredTemplates.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center p-4 text-muted-foreground">
-            <SquaresFour className="w-8 h-8 opacity-40 mb-1.5" />
-            <p className="text-xs font-semibold">لا توجد نتائج</p>
+          <div className="flex flex-col items-center justify-center h-64 text-center p-4 text-muted-foreground space-y-2">
+            <SquaresFour className="w-8 h-8 opacity-40 mb-1" />
+            <p className="text-xs font-semibold text-foreground/80">لا توجد نتائج مطابقة</p>
+            <p className="text-[11px] text-muted-foreground">جرب البحث بكلمات أخرى أو تصفية تصنيف مختلف</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                handleClearSearch();
+                onSelectCategory("all");
+                onSelectShape("all");
+              }}
+              className="h-7 text-xs px-3 mt-1 rounded-md"
+            >
+              عرض كافة الملصقات
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {filteredTemplates.map((template) => (
+            {filteredTemplates.map((template, idx) => (
               <GalleryCard
                 key={template.id}
                 template={template}
                 isSelected={selectedTemplateId === template.id}
                 onSelect={onSelectTemplate}
+                isFocused={focusedIndex === idx}
+                onFocus={() => setFocusedIndex(idx)}
+                onKeyDown={(e) => handleCardKeyDown(e, idx)}
               />
             ))}
           </div>
@@ -317,3 +450,4 @@ export const StickerCatalog = React.memo(function StickerCatalog({
 });
 
 StickerCatalog.displayName = "StickerCatalog";
+

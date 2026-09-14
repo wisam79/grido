@@ -7,11 +7,20 @@ import {
   getTemplateShape,
 } from "@/features/stickers";
 import { findHiddenFieldIds } from "@/features/stickers";
+import {
+  saveStickerPreset,
+  loadStickerPresets,
+  deleteStickerPreset,
+  getPresetsForTemplate,
+  STICKER_PRESETS_STORAGE_KEY,
+} from "@/features/stickers/lib/preset-utils";
+import { copySvgCodeToClipboard } from "@/features/stickers/lib/clipboard-utils";
 
 describe("Modular Stickers Architecture (features/stickers)", () => {
-  it("should have all 7 categories configured with metadata", () => {
-    expect(STICKER_CATEGORIES).toHaveLength(12);
+  it("should have all categories configured with metadata", () => {
+    expect(STICKER_CATEGORIES).toHaveLength(13);
     const catIds = STICKER_CATEGORIES.map((c) => c.id);
+    expect(catIds).toContain("frames");
     expect(catIds).toContain("badges");
     expect(catIds).toContain("retail");
     expect(catIds).toContain("shipping");
@@ -27,7 +36,8 @@ describe("Modular Stickers Architecture (features/stickers)", () => {
   });
 
   it("should provide rich collection of sticker templates across all categories", () => {
-    expect(ALL_STICKER_TEMPLATES.length).toBeGreaterThanOrEqual(25);
+    expect(ALL_STICKER_TEMPLATES.length).toBeGreaterThanOrEqual(60);
+    const frameTemplates = ALL_STICKER_TEMPLATES.filter((t) => t.category === "frames");
     const badgeTemplates = ALL_STICKER_TEMPLATES.filter((t) => t.category === "badges");
     const retailTemplates = ALL_STICKER_TEMPLATES.filter((t) => t.category === "retail");
     const shippingTemplates = ALL_STICKER_TEMPLATES.filter((t) => t.category === "shipping");
@@ -36,17 +46,18 @@ describe("Modular Stickers Architecture (features/stickers)", () => {
     const barcodeTemplates = ALL_STICKER_TEMPLATES.filter((t) => t.category === "barcodes");
     const socialTemplates = ALL_STICKER_TEMPLATES.filter((t) => t.category === "social");
 
-    expect(badgeTemplates.length).toBeGreaterThanOrEqual(5);
-    expect(retailTemplates.length).toBeGreaterThanOrEqual(4);
+    expect(frameTemplates.length).toBeGreaterThanOrEqual(14);
+    expect(badgeTemplates.length).toBeGreaterThanOrEqual(6);
+    expect(retailTemplates.length).toBeGreaterThanOrEqual(6);
     expect(shippingTemplates.length).toBeGreaterThanOrEqual(4);
-    expect(packagingTemplates.length).toBeGreaterThanOrEqual(4);
-    expect(safetyTemplates.length).toBeGreaterThanOrEqual(3);
+    expect(packagingTemplates.length).toBeGreaterThanOrEqual(6);
+    expect(safetyTemplates.length).toBeGreaterThanOrEqual(5);
     expect(barcodeTemplates.length).toBeGreaterThanOrEqual(3);
     expect(socialTemplates.length).toBeGreaterThanOrEqual(2);
   });
 
   it("should provide diverse lifestyle sticker categories with designed templates", () => {
-    expect(ALL_STICKER_TEMPLATES.length).toBeGreaterThanOrEqual(40);
+    expect(ALL_STICKER_TEMPLATES.length).toBeGreaterThanOrEqual(50);
 
     const greeting = ALL_STICKER_TEMPLATES.filter((t) => t.category === "greeting");
     const cafe = ALL_STICKER_TEMPLATES.filter((t) => t.category === "cafe");
@@ -54,11 +65,11 @@ describe("Modular Stickers Architecture (features/stickers)", () => {
     const kids = ALL_STICKER_TEMPLATES.filter((t) => t.category === "kids");
     const seasonal = ALL_STICKER_TEMPLATES.filter((t) => t.category === "seasonal");
 
-    expect(greeting.length).toBeGreaterThanOrEqual(3);
-    expect(cafe.length).toBeGreaterThanOrEqual(3);
+    expect(greeting.length).toBeGreaterThanOrEqual(6);
+    expect(cafe.length).toBeGreaterThanOrEqual(6);
     expect(beauty.length).toBeGreaterThanOrEqual(3);
-    expect(kids.length).toBeGreaterThanOrEqual(3);
-    expect(seasonal.length).toBeGreaterThanOrEqual(3);
+    expect(kids.length).toBeGreaterThanOrEqual(5);
+    expect(seasonal.length).toBeGreaterThanOrEqual(4);
 
     // كل قالب جديد يجب أن يحمل عناصر تصميم ثرية وبيانات نصية قابلة للتعديل
     const lifestyle = [...greeting, ...cafe, ...beauty, ...kids, ...seasonal];
@@ -75,11 +86,23 @@ describe("Modular Stickers Architecture (features/stickers)", () => {
     const coffee = searchStickerTemplates("قهوة");
     expect(coffee.some((t) => t.id === "cafe_freshly_brewed")).toBe(true);
 
-    const ramadan = searchStickerTemplates("رمضان");
-    expect(ramadan.some((t) => t.id === "seasonal_ramadan_crescent")).toBe(true);
+    const pizza = searchStickerTemplates("بيتزا");
+    expect(pizza.some((t) => t.id === "food_hot_pizza")).toBe(true);
 
-    const organic = searchStickerTemplates("طبيعي");
-    expect(organic.some((t) => t.id === "beauty_organic_leaf")).toBe(true);
+    const shawarma = searchStickerTemplates("شاورما");
+    expect(shawarma.some((t) => t.id === "food_shawarma_grill")).toBe(true);
+
+    const honey = searchStickerTemplates("عسل");
+    expect(honey.some((t) => t.id === "food_natural_honey")).toBe(true);
+
+    const eid = searchStickerTemplates("عيد");
+    expect(eid.some((t) => t.id === "greeting_eid_mubarak")).toBe(true);
+
+    const diploma = searchStickerTemplates("دبلوم");
+    expect(diploma.some((t) => t.id === "frame_diploma_scroll")).toBe(true);
+
+    const rx = searchStickerTemplates("صيدلية");
+    expect(rx.some((t) => t.id === "medical_rx_pharmacy")).toBe(true);
   });
 
   it("should let click-editing cover every visible field — hidden fields are only encoded data", () => {
@@ -266,6 +289,43 @@ describe("Modular Stickers Architecture (features/stickers)", () => {
       expect(allText).not.toContain(".sa\"");
     });
   });
+
+  it("should save, load, filter, and delete user sticker presets in localStorage", () => {
+    localStorage.removeItem(STICKER_PRESETS_STORAGE_KEY);
+    expect(loadStickerPresets()).toEqual([]);
+
+    const sampleParams = {
+      fields: { title: "متجر السعادة", subtitle: "عروض خاصة" },
+      primaryColor: "#FF0000",
+      secondaryColor: "#00FF00",
+      backgroundColor: "#FFFFFF",
+      isTransparent: false,
+    };
+
+    const saved = saveStickerPreset("قالب تجريبي 1", "retail_was_now", sampleParams);
+    expect(saved.id).toBeDefined();
+    expect(saved.name).toBe("قالب تجريبي 1");
+
+    const loaded = loadStickerPresets();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].name).toBe("قالب تجريبي 1");
+
+    const filtered = getPresetsForTemplate(loaded, "retail_was_now");
+    expect(filtered).toHaveLength(1);
+
+    const otherTemplate = getPresetsForTemplate(loaded, "other_template");
+    expect(otherTemplate).toHaveLength(0);
+
+    const afterDelete = deleteStickerPreset(saved.id);
+    expect(afterDelete).toHaveLength(0);
+    expect(loadStickerPresets()).toHaveLength(0);
+  });
+
+  it("should handle copySvgCodeToClipboard gracefully", async () => {
+    const ok = await copySvgCodeToClipboard("<svg></svg>");
+    expect(typeof ok).toBe("boolean");
+  });
 });
+
 
 

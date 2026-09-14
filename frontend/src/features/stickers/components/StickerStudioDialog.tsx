@@ -10,6 +10,7 @@ import {
   CaretDown,
   ArrowRight,
   Sparkle,
+  Code,
 } from "@phosphor-icons/react";
 import {
   Dialog,
@@ -37,7 +38,7 @@ import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate,
 import { ALL_STICKER_TEMPLATES } from "../templates";
 import { findHiddenFieldIds } from "../templates/svg-elements";
 import { renderSvgToPngDataUrl, downloadFile } from "../lib/svg-rasterizer";
-import { copyPngDataUrlToClipboard } from "../lib/clipboard-utils";
+import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from "../lib/clipboard-utils";
 import { generateStickerSheet } from "../lib/sheet-generator";
 import { StickerCatalog } from "./StickerCatalog";
 import { StickerProperties } from "./StickerProperties";
@@ -123,6 +124,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   }, [selectedTemplate]);
 
   const svgString = useMemo(() => {
+    if (view === "gallery") return "";
     try {
       const rawFamily = params.fontFamily || "Cairo";
       const cleanFamily = rawFamily.replace(/['"]/g, "").trim();
@@ -135,11 +137,11 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       console.error("Failed to generate SVG:", err);
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><text x="200" y="200" text-anchor="middle">Error</text></svg>`;
     }
-  }, [selectedTemplate, params]);
+  }, [view, selectedTemplate, params]);
 
   const hiddenFieldIds = useMemo(
-    () => findHiddenFieldIds(svgString, selectedTemplate.fields.map((f) => f.id)),
-    [svgString, selectedTemplate.fields]
+    () => (view === "customize" ? findHiddenFieldIds(svgString, selectedTemplate.fields.map((f) => f.id)) : []),
+    [view, svgString, selectedTemplate.fields]
   );
 
   const handleInsertToCanvas = useCallback(async (pngDataUrl: string) => {
@@ -287,7 +289,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       if (ok) {
         toast.success("تم نسخ صورة الملصق للحافظة");
       } else {
-        await navigator.clipboard.writeText(svgString);
+        await copySvgCodeToClipboard(svgString);
         toast.success("تم نسخ كود SVG للحافظة");
       }
     } catch {
@@ -296,6 +298,20 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       setBusyExport(false);
     }
   }, [svgString, selectedTemplate.aspectRatio, params.fontFamily]);
+
+  const handleCopySvgCode = useCallback(async () => {
+    try {
+      const ok = await copySvgCodeToClipboard(svgString);
+      if (ok) {
+        toast.success("تم نسخ كود SVG المتجه إلى الحافظة");
+      } else {
+        toast.error("تعذر نسخ كود SVG");
+      }
+    } catch {
+      toast.error("فشل نسخ كود SVG");
+    }
+  }, [svgString]);
+
 
   const templateMm = selectedTemplate.defaultMm || {
     width: 50,
@@ -481,7 +497,11 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleCopyImage} className="cursor-pointer gap-2">
                       <Copy className="w-4 h-4 text-amber-500" weight="duotone" />
-                      <span>نسخ</span>
+                      <span>نسخ صورة</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCopySvgCode} className="cursor-pointer gap-2">
+                      <Code className="w-4 h-4 text-indigo-500" weight="duotone" />
+                      <span>نسخ كود SVG</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

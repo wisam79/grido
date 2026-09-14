@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Palette,
   Printer,
@@ -7,17 +7,29 @@ import {
   Sparkle,
   TextT,
   SlidersHorizontal,
+  BookmarkSimple,
+  FloppyDisk,
+  Trash,
+  Check,
+  Plus,
 } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { FluentSection, FluentSliderField, FluentSegmentedControl } from "@/components/ui/blocks";
 import { cn } from "@/lib/utils";
-import { StickerTemplate, StickerParams, SheetGridConfig, StickerFinish } from "../types";
+import { StickerTemplate, StickerParams, SheetGridConfig, StickerFinish, StickerUserPreset } from "../types";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { CURATED_PALETTES } from "../constants";
 import { StickerFontSelector } from "./StickerFontSelector";
+import {
+  loadStickerPresets,
+  saveStickerPreset,
+  deleteStickerPreset,
+  getPresetsForTemplate,
+} from "../lib/preset-utils";
 
 export interface StickerPropertiesProps {
   template: StickerTemplate;
@@ -66,6 +78,9 @@ function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonPr
         />
       </div>
       <span className="text-[10px] font-semibold text-foreground/80">{label}</span>
+      <span className="text-[9px] font-mono text-muted-foreground/75 truncate max-w-full uppercase">
+        {color}
+      </span>
     </div>
   );
 }
@@ -78,7 +93,38 @@ export const StickerProperties = React.memo(function StickerProperties({
   gridConfig,
   onChangeGridConfig,
 }: StickerPropertiesProps) {
-  const [activeTab, setActiveTab] = useState<"design" | "sheet">("design");
+  const [activeTab, setActiveTab] = useState<"design" | "sheet" | "presets">("design");
+  const [presets, setPresets] = useState<StickerUserPreset[]>(() => loadStickerPresets());
+  const [newPresetName, setNewPresetName] = useState("");
+
+  const templatePresets = useMemo(
+    () => getPresetsForTemplate(presets, template.id),
+    [presets, template.id]
+  );
+
+  const handleSavePreset = () => {
+    const trimmed = newPresetName.trim();
+    if (!trimmed) {
+      toast.error("يرجى كتابة اسم للقالب");
+      return;
+    }
+    const saved = saveStickerPreset(trimmed, template.id, params);
+    setPresets((prev) => [saved, ...prev.filter((p) => p.id !== saved.id)]);
+    setNewPresetName("");
+    toast.success(`تم حفظ القالب "${saved.name}" بنجاح`);
+  };
+
+  const handleDeletePreset = (id: string, name: string) => {
+    const remaining = deleteStickerPreset(id);
+    setPresets(remaining);
+    toast.success(`تم حذف القالب "${name}"`);
+  };
+
+  const handleApplyPreset = (preset: StickerUserPreset) => {
+    onChangeParams(() => ({ ...preset.params }));
+    toast.success(`تم تطبيق القالب "${preset.name}"`);
+    setActiveTab("design");
+  };
 
   const handleFieldChange = (fieldId: string, value: string) => {
     onChangeParams((prev) => ({
@@ -134,8 +180,8 @@ export const StickerProperties = React.memo(function StickerProperties({
           </Tooltip>
         </div>
 
-        {/* Fluent Segmented Tabs: Design vs Sheet */}
-        <div className="grid grid-cols-2 gap-1 p-0.5 rounded-lg bg-muted/40 border border-border/40">
+        {/* Fluent Segmented Tabs: Design vs Sheet vs Presets */}
+        <div className="grid grid-cols-3 gap-1 p-0.5 rounded-lg bg-muted/40 border border-border/40">
           <button
             type="button"
             onClick={() => setActiveTab("design")}
@@ -165,6 +211,25 @@ export const StickerProperties = React.memo(function StickerProperties({
             <span className="text-[9px] font-mono px-1 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
               {gridConfig.rows * gridConfig.cols}
             </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("presets")}
+            className={cn(
+              "h-7 rounded-md text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+              activeTab === "presets"
+                ? "bg-background text-foreground shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <BookmarkSimple className="w-3.5 h-3.5" weight={activeTab === "presets" ? "bold" : "regular"} />
+            <span>قوالبي</span>
+            {templatePresets.length > 0 && (
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                {templatePresets.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -377,7 +442,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               </div>
             </FluentSection>
           </>
-        ) : (
+        ) : activeTab === "sheet" ? (
           /* ── شيت الطباعة Tab ── */
           <div className="space-y-3">
             {/* Miniature Sheet Grid Preview */}
@@ -470,6 +535,131 @@ export const StickerProperties = React.memo(function StickerProperties({
                 unit="مم"
                 onChange={(val) => onChangeGridConfig((prev) => ({ ...prev, spacingMm: val }))}
               />
+            </div>
+          </div>
+        ) : (
+          /* ── 3. تبويب قوالبي المحفوظة (Presets Tab) ── */
+          <div className="space-y-3">
+            {/* حفظ التخصيص الحالي */}
+            <div className="p-3 rounded-xl bg-card/60 border border-border/40 space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                <FloppyDisk className="w-4 h-4 text-primary" weight="duotone" />
+                <span>حفظ التخصيص الحالي</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                احفظ النصوص والألوان والخط لهذا الملصق لاسترجاعها لاحقاً بضغطة زر.
+              </p>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="text"
+                  value={newPresetName}
+                  onChange={(e) => setNewPresetName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSavePreset();
+                  }}
+                  placeholder="اسم القالب (مثال: متجر الهدى)"
+                  className="h-8 text-xs font-medium rounded-md flex-1 bg-background/80"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleSavePreset}
+                  className="h-8 px-3 rounded-md text-xs font-bold gap-1 cursor-pointer shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="w-3.5 h-3.5" weight="bold" />
+                  <span>حفظ</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* قائمة القوالب المحفوظة */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-0.5">
+                <span className="text-xs font-bold text-foreground">
+                  القوالب المحفوظة ({templatePresets.length})
+                </span>
+                {presets.length > templatePresets.length && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {presets.length} قالب إجمالي
+                  </span>
+                )}
+              </div>
+
+              {templatePresets.length > 0 ? (
+                <div className="space-y-2">
+                  {templatePresets.map((preset) => (
+                    <div
+                      key={preset.id}
+                      className="p-2.5 rounded-xl bg-card/60 hover:bg-card border border-border/40 hover:border-primary/40 transition-all space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-foreground truncate" title={preset.name}>
+                          {preset.name}
+                        </span>
+
+                        {/* Color Dots */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span
+                            className="w-3 h-3 rounded-full border border-black/10 shadow-2xs"
+                            style={{ backgroundColor: preset.params.primaryColor }}
+                            title={`الرئيسي: ${preset.params.primaryColor}`}
+                          />
+                          <span
+                            className="w-3 h-3 rounded-full border border-black/10 shadow-2xs"
+                            style={{ backgroundColor: preset.params.secondaryColor }}
+                            title={`الثانوي: ${preset.params.secondaryColor}`}
+                          />
+                          <span
+                            className="w-3 h-3 rounded-full border border-black/10 shadow-2xs"
+                            style={{ backgroundColor: preset.params.backgroundColor }}
+                            title={`الخلفية: ${preset.params.backgroundColor}`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/20">
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          {new Date(preset.createdAt).toLocaleDateString("ar-EG", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeletePreset(preset.id, preset.name)}
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer"
+                            title="حذف القالب"
+                          >
+                            <Trash className="w-3.5 h-3.5" />
+                          </Button>
+
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleApplyPreset(preset)}
+                            className="h-7 px-3 text-xs font-bold rounded-md cursor-pointer bg-primary/15 text-primary hover:bg-primary hover:text-primary-foreground transition-all gap-1"
+                          >
+                            <Check className="w-3.5 h-3.5" weight="bold" />
+                            <span>تطبيق</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl bg-card/30 border border-dashed border-border/50 text-center space-y-1.5">
+                  <BookmarkSimple className="w-7 h-7 mx-auto text-muted-foreground/60" weight="duotone" />
+                  <p className="text-xs font-semibold text-foreground/80">لا توجد قوالب محفوظة بعد</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    اكتب اسماً في الأعلى واضغط "حفظ" للرجوع لتخصيصاتك ونصوصك لاحقاً بضغطة واحدة.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

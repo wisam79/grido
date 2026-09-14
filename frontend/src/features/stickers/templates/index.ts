@@ -12,6 +12,8 @@ import { CAFE_TEMPLATES } from "./cafe";
 import { BEAUTY_TEMPLATES } from "./beauty";
 import { KIDS_TEMPLATES } from "./kids";
 import { SEASONAL_TEMPLATES } from "./seasonal";
+import { FRAME_TEMPLATES } from "./frames";
+import { ADDON_TEMPLATES } from "./addons";
 
 export * from "./badges";
 export * from "./shipping";
@@ -25,9 +27,18 @@ export * from "./cafe";
 export * from "./beauty";
 export * from "./kids";
 export * from "./seasonal";
+export * from "./frames";
+export * from "./addons";
 export * from "./svg-elements";
 
 export const STICKER_CATEGORIES: StickerCategoryInfo[] = [
+  {
+    id: "frames",
+    title: "إطارات",
+    titleEn: "Frames",
+    iconName: "FrameCorners",
+    description: "إطارات وبراويز زخرفية جاهزة للصور والشهادات",
+  },
   {
     id: "badges",
     title: "أختام",
@@ -115,6 +126,8 @@ export const STICKER_CATEGORIES: StickerCategoryInfo[] = [
 ];
 
 export const ALL_STICKER_TEMPLATES: StickerTemplate[] = [
+  ...FRAME_TEMPLATES,
+  ...ADDON_TEMPLATES,
   ...BADGE_TEMPLATES,
   ...RETAIL_TEMPLATES,
   ...SHIPPING_TEMPLATES,

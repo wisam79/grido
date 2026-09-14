@@ -15,6 +15,8 @@ import {
   Image,
   Images,
   FolderOpen,
+  Folders,
+  FloppyDisk,
   Export,
   Printer,
   Broom,
@@ -34,6 +36,7 @@ import {
   Scissors,
   ShieldCheck,
   Sparkle,
+  SealCheck,
   Question,
   Info,
   DeviceMobileCamera,
@@ -54,6 +57,7 @@ export function DesktopMenuBar() {
     selectedId,
     selectedIds,
     duplicateElement,
+    duplicateElements,
     removeElement,
     removeElements,
     selectAllElements,
@@ -85,6 +89,7 @@ export function DesktopMenuBar() {
       selectedId: state.selectedId,
       selectedIds: state.selectedIds,
       duplicateElement: state.duplicateElement,
+      duplicateElements: state.duplicateElements,
       removeElement: state.removeElement,
       removeElements: state.removeElements,
       selectAllElements: state.selectAllElements,
@@ -210,14 +215,22 @@ export function DesktopMenuBar() {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
-            onClick={() => window.dispatchEvent(new CustomEvent("grido:open-projects-dialog"))}
+            onClick={() => window.dispatchEvent(new CustomEvent("grido:open-projects-dialog", { detail: { tab: "save" } }))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <FolderOpen className="w-4.5 h-4.5 text-primary" />
-              <span className="font-medium">المشاريع...</span>
+              <FloppyDisk className="w-4.5 h-4.5 text-primary" weight="duotone" />
+              <span className="font-medium">حفظ المشروع...</span>
             </div>
             <DropdownMenuShortcut>Ctrl+S</DropdownMenuShortcut>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => window.dispatchEvent(new CustomEvent("grido:open-projects-dialog", { detail: { tab: "list" } }))}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+          >
+            <Folders className="w-4.5 h-4.5 text-muted-foreground" />
+            <span className="font-medium">مكتبة المشاريع...</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -287,7 +300,12 @@ export function DesktopMenuBar() {
           <DropdownMenuItem
             disabled={!hasSelection}
             onClick={() => {
-              if (selectedId) duplicateElement(selectedId);
+              if (selectedIds.length > 0) {
+                if (selectedIds.length === 1) duplicateElement(selectedIds[0]);
+                else duplicateElements(selectedIds);
+              } else if (selectedId) {
+                duplicateElement(selectedId);
+              }
             }}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
@@ -525,6 +543,17 @@ export function DesktopMenuBar() {
               <span className="font-medium">معالجة الدفعات</span>
             </div>
             <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">AI Pro</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => window.dispatchEvent(new CustomEvent("grido:open-stickers-dialog"))}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2.5">
+              <SealCheck className="w-4.5 h-4.5 text-primary" weight="duotone" />
+              <span className="font-medium">استوديو الملصقات</span>
+            </div>
+            <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">جديد</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

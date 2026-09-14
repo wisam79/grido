@@ -26,7 +26,31 @@ import {
   ArrowUUpLeft,
   ArrowUUpRight,
   SealCheck,
+  CalendarBlank,
+  Camera,
+  Tag,
+  Copyright,
+  Crown,
+  Lightning,
+  Stamp,
+  Cube,
+  FrameCorners,
+  Note,
+  Triangle,
+  Heart,
+  Diamond,
+  Hexagon,
+  Shield,
+  ArrowRight,
 } from "@phosphor-icons/react";
+import {
+  SHAPE_PATH_TRIANGLE,
+  SHAPE_PATH_HEART,
+  SHAPE_PATH_DIAMOND,
+  SHAPE_PATH_HEXAGON,
+  SHAPE_PATH_SHIELD,
+  SHAPE_PATH_ARROW,
+} from "@/lib/io/svg-paths";
 import {
   AlignLeftIcon,
   AlignCenterHorizontalIcon,
@@ -69,7 +93,6 @@ const preloadBarcodeDialog = () => {
 
 const ToolbarAddTools = React.memo(function ToolbarAddTools() {
   const [isBarcodeOpen, setIsBarcodeOpen] = React.useState(false);
-  const addTextElement = useEditorStore((state) => state.addTextElement);
   const addTextPreset = useEditorStore((state) => state.addTextPreset);
   const addShapeElement = useEditorStore((state) => state.addShapeElement);
 
@@ -78,7 +101,17 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
     const timer = setTimeout(() => {
       preloadBarcodeDialog();
     }, 1500);
-    return () => clearTimeout(timer);
+
+    const openHandler = () => {
+      preloadBarcodeDialog();
+      setIsBarcodeOpen(true);
+    };
+    window.addEventListener("grido:open-stickers-dialog", openHandler);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("grido:open-stickers-dialog", openHandler);
+    };
   }, []);
 
   return (
@@ -98,9 +131,9 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             </Button>
           </DropdownMenuTrigger>
         </TooltipBtn>
-        <DropdownMenuContent align="start" className="w-56 font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
-          <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
-            قوالب النصوص
+        <DropdownMenuContent align="start" className="w-64 max-h-[460px] overflow-y-auto font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
+          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+            نصوص قياسية
           </div>
 
           <DropdownMenuItem
@@ -108,8 +141,8 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <TextHOne className="w-4.5 h-4.5" weight="bold" />
+              <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <TextHOne className="w-4 h-4" weight="bold" />
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-bold text-foreground truncate">عنوان رئيسي</span>
@@ -126,8 +159,8 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary/80 flex items-center justify-center shrink-0">
-                <TextHTwo className="w-4.5 h-4.5" weight="bold" />
+              <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary/80 flex items-center justify-center shrink-0">
+                <TextHTwo className="w-4 h-4" weight="bold" />
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">عنوان فرعي</span>
@@ -144,8 +177,8 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
-                <FileText className="w-4.5 h-4.5" />
+              <div className="w-7 h-7 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4" />
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-normal text-foreground truncate">نص عادي</span>
@@ -154,6 +187,198 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             </div>
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
               18px
+            </span>
+          </DropdownMenuItem>
+
+          <Separator className="my-1 bg-border/50" />
+
+          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+            توثيق واستوديو
+          </div>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("studio-date")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                <CalendarBlank className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">تاريخ اليوم</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">تاريخ تلقائي منسق</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+              تلقائي
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("photographer-tag")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-sky-500/10 text-sky-500 flex items-center justify-center shrink-0">
+                <Camera className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">توقيع المصور</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">حقوق وتوثيق العمل</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 shrink-0">
+              حقوق
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("badge")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                <Tag className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">شارة مميزة</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">كبسولة ملونة بخلفية</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+              شارة
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("watermark")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-slate-500/10 text-slate-500 flex items-center justify-center shrink-0">
+                <Copyright className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">علامة مائية</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">حماية مائلة شفافة</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 shrink-0">
+              مسودة
+            </span>
+          </DropdownMenuItem>
+
+          <Separator className="my-1 bg-border/50" />
+
+          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+            تأثيرات فنية
+          </div>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("gold-luxury")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                <Crown className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">ذهب ملكي</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">تدرج ذهبي وظلال فخمة</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+              Luxury
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("neon-glow")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center shrink-0">
+                <Lightning className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">نيون متوهج</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">إضاءة إشعاعية ساطعة</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
+              Neon
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("stamp-circle")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+                <Stamp className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">ختم مقوس</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">نص دائري معتمد</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-600 dark:text-red-400 shrink-0">
+              ختم
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("3d-title")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                <Cube className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">عنوان 3D</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">ظلال إسقاطية مجسمة</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+              3D
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("outline-modern")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0">
+                <FrameCorners className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">نص مفرغ</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">حدود عصرية بدون ملء</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400 shrink-0">
+              Outline
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => addTextPreset("caption-card")}
+            className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-500 flex items-center justify-center shrink-0">
+                <Note className="w-4 h-4" weight="bold" />
+              </div>
+              <div className="flex flex-col min-w-0 text-start">
+                <span className="font-semibold text-foreground truncate">بطاقة ملاحظة</span>
+                <span className="text-[10px] text-muted-foreground/80 truncate">نص داخل صندوق مؤطر</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
+              بطاقة
             </span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -174,16 +399,16 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             </Button>
           </DropdownMenuTrigger>
         </TooltipBtn>
-        <DropdownMenuContent align="start" className="w-44 font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
-          <div className="px-2.5 py-1 text-xs font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
-            الأشكال
+        <DropdownMenuContent align="start" className="w-48 max-h-[460px] overflow-y-auto font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
+          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+            أشكال هندسية
           </div>
           <DropdownMenuItem
             onClick={() => addShapeElement("rect")}
             className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
           >
-            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Square className="w-4.5 h-4.5" />
+            <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Square className="w-4 h-4" />
             </div>
             <span className="font-semibold text-foreground">مستطيل</span>
           </DropdownMenuItem>
@@ -191,41 +416,101 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             onClick={() => addShapeElement("ellipse")}
             className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-indigo-500/10 transition-colors"
           >
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-500 flex items-center justify-center shrink-0">
-              <Circle className="w-4.5 h-4.5" />
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/15 text-indigo-500 flex items-center justify-center shrink-0">
+              <Circle className="w-4 h-4" />
             </div>
             <span className="font-semibold text-foreground">دائرة</span>
           </DropdownMenuItem>
           <DropdownMenuItem
+            onClick={() => addShapeElement("path", SHAPE_PATH_TRIANGLE)}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-emerald-500/10 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0">
+              <Triangle className="w-4 h-4" weight="fill" />
+            </div>
+            <span className="font-semibold text-foreground">مثلث</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => addShapeElement("path", SHAPE_PATH_DIAMOND)}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-cyan-500/10 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-lg bg-cyan-500/15 text-cyan-500 flex items-center justify-center shrink-0">
+              <Diamond className="w-4 h-4" weight="fill" />
+            </div>
+            <span className="font-semibold text-foreground">معين</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => addShapeElement("path", SHAPE_PATH_HEXAGON)}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-violet-500/10 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-lg bg-violet-500/15 text-violet-500 flex items-center justify-center shrink-0">
+              <Hexagon className="w-4 h-4" weight="fill" />
+            </div>
+            <span className="font-semibold text-foreground">سداسي</span>
+          </DropdownMenuItem>
+
+          <Separator className="my-1 bg-border/50" />
+
+          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+            رموز وتأطير
+          </div>
+          <DropdownMenuItem
             onClick={() => addShapeElement("star")}
             className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-amber-500/10 transition-colors"
           >
-            <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
-              <Star className="w-4.5 h-4.5" />
+            <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+              <Star className="w-4 h-4" weight="fill" />
             </div>
             <span className="font-semibold text-foreground">نجمة</span>
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => addShapeElement("line")}
+            onClick={() => addShapeElement("path", SHAPE_PATH_HEART)}
             className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-rose-500/10 transition-colors"
           >
-            <div className="w-8 h-8 rounded-lg bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
-              <LineSegment className="w-4.5 h-4.5" />
+            <div className="w-7 h-7 rounded-lg bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
+              <Heart className="w-4 h-4" weight="fill" />
+            </div>
+            <span className="font-semibold text-foreground">قلب</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => addShapeElement("path", SHAPE_PATH_SHIELD)}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-blue-500/10 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0">
+              <Shield className="w-4 h-4" weight="fill" />
+            </div>
+            <span className="font-semibold text-foreground">درع</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => addShapeElement("path", SHAPE_PATH_ARROW)}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-teal-500/10 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-lg bg-teal-500/15 text-teal-500 flex items-center justify-center shrink-0">
+              <ArrowRight className="w-4 h-4" weight="bold" />
+            </div>
+            <span className="font-semibold text-foreground">سهم</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => addShapeElement("line")}
+            className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-orange-500/10 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-lg bg-orange-500/15 text-orange-500 flex items-center justify-center shrink-0">
+              <LineSegment className="w-4 h-4" />
             </div>
             <span className="font-semibold text-foreground">خط</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* استوديو الملصقات والرموز */}
-      <TooltipBtn content="استوديو الملصقات والشارات ورموز QR والباركود">
+      {/* استوديو الملصقات والإطارات */}
+      <TooltipBtn content="استوديو الملصقات والإطارات والرموز">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsBarcodeOpen(true)}
           onMouseEnter={preloadBarcodeDialog}
           onFocus={preloadBarcodeDialog}
-          aria-label="استوديو الملصقات والرموز"
+          aria-label="استوديو الملصقات والإطارات"
           className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1.5"
         >
           <SealCheck className="w-4 h-4 text-primary" weight="bold" />
@@ -463,7 +748,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
     canGroup,
     canUngroup
   } = useEditorStore(useShallow((state) => {
-    const hasSel = !!state.selectedId;
+    const hasSel = !!state.selectedId || state.selectedIds.length > 0;
     const selectedEl = state.elements.find((e) => e.id === state.selectedId);
     const selectedSlot = state.slots?.find((s) => s.id === state.selectedId);
     const isImg = (selectedEl && selectedEl.type === "image") ||

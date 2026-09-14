@@ -100,22 +100,20 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   // مزامنة حالة عناصر التحكم المحلية مع القالب النشط حالياً على الكانفس
   useEffect(() => {
     if (!collageTemplate) return;
-    queueMicrotask(() => {
-      if (collageTemplate.physicalLayout) {
-        const pl = collageTemplate.physicalLayout;
-        if (pl.rows) setRows(pl.rows);
-        if (pl.cols) setCols(pl.cols);
-        if (pl.type) setPhotoType(pl.type as PhotoGridType);
-        if (pl.align) setGridAlign(pl.align as GridAlignment);
-      } else if (collageTemplate.cells && collageTemplate.cells.length > 0) {
-        const count = collageTemplate.cells.length;
-        if (count === 4) { setRows(2); setCols(2); }
-        else if (count === 6) { setRows(2); setCols(3); }
-        else if (count === 8) { setRows(2); setCols(4); }
-        else if (count === 9) { setRows(3); setCols(3); }
-        else if (count === 12) { setRows(3); setCols(4); }
-      }
-    });
+    if (collageTemplate.physicalLayout) {
+      const pl = collageTemplate.physicalLayout;
+      if (pl.rows) setRows(pl.rows);
+      if (pl.cols) setCols(pl.cols);
+      if (pl.type) setPhotoType(pl.type as PhotoGridType);
+      if (pl.align) setGridAlign(pl.align as GridAlignment);
+    } else if (collageTemplate.cells && collageTemplate.cells.length > 0) {
+      const count = collageTemplate.cells.length;
+      if (count === 4) { setRows(2); setCols(2); }
+      else if (count === 6) { setRows(2); setCols(3); }
+      else if (count === 8) { setRows(2); setCols(4); }
+      else if (count === 9) { setRows(3); setCols(3); }
+      else if (count === 12) { setRows(3); setCols(4); }
+    }
   }, [collageTemplate]);
 
   const applyCustomCollage = useCallback(
@@ -200,14 +198,12 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     if (rows > maxRows) { adjustedRows = maxRows; changed = true; }
     if (cols > maxCols) { adjustedCols = maxCols; changed = true; }
     if (changed) {
-      queueMicrotask(() => {
-        setRows(adjustedRows);
-        setCols(adjustedCols);
-        // يُمنع استدعاء applyCustomCollage إلا إذا كان المستخدم فعلياً في تبويب الشبكة والقالب النشط مخصص
-        if (activeTab === "custom" && isCustomActive) {
-          applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
-        }
-      });
+      setRows(adjustedRows);
+      setCols(adjustedCols);
+      // يُمنع استدعاء applyCustomCollage إلا إذا كان المستخدم فعلياً في تبويب الشبكة والقالب النشط مخصص
+      if (activeTab === "custom" && isCustomActive) {
+        applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
+      }
     }
   }, [photoType, canvasWidth, canvasHeight, rows, cols, applyCustomCollage, gridAlign, storedDpi, activeTab, isCustomActive]);
 

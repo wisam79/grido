@@ -10,7 +10,8 @@ export type StickerCategory =
   | "cafe"
   | "beauty"
   | "kids"
-  | "seasonal";
+  | "seasonal"
+  | "frames";
 
 export type StickerCategoryGroupId =
   | "all"
@@ -19,7 +20,8 @@ export type StickerCategoryGroupId =
   | "codes"
   | "stores"
   | "occasions"
-  | "safety";
+  | "safety"
+  | "frames";
 
 export type StickerShape = "circle" | "rect" | "square";
 
@@ -90,3 +92,11 @@ export interface SheetGridConfig {
 }
 
 export type MockupBackground = "checker" | "white" | "cardboard" | "dark";
+
+export interface StickerUserPreset {
+  id: string;
+  name: string;
+  templateId: string;
+  params: StickerParams;
+  createdAt: number;
+}

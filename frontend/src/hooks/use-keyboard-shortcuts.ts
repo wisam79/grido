@@ -121,7 +121,7 @@ export function useKeyboardShortcuts() {
   // Save: Ctrl+S or Cmd+S — فتح مكتبة المشاريع للحفظ
   useHotkeys("mod+s", (e) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("grido:open-projects-dialog"));
+    window.dispatchEvent(new CustomEvent("grido:open-projects-dialog", { detail: { tab: "save" } }));
   });
 
   // Export: Ctrl+E or Cmd+E — كانت معلنة في الحوار وشريط الأدوات بلا مستمع (إصلاح Bug#7)

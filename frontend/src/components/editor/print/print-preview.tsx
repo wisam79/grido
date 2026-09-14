@@ -77,8 +77,12 @@ export function SheetPreview({
       return {
         width: `${boxWpct}%`,
         height: `${boxHpct}%`,
-        transform: `scale(${zoomVal}) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1}) rotate(${slot.rotation || 0}deg) translate(-50%, -50%)`,
-        stylePos: { left: "50%", top: "50%" },
+        transform: `scale(${zoomVal}) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1}) rotate(${slot.rotation || 0}deg)`,
+        stylePos: {
+          position: "absolute" as const,
+          left: `${(100 - boxWpct) / 2}%`,
+          top: `${(100 - boxHpct) / 2}%`,
+        },
       };
     }
 
@@ -251,8 +255,8 @@ export function SheetPreview({
                   >
                     <img
                       src={activeSrc}
-                    alt=""
-                    className="w-full h-full object-cover"
+                      alt=""
+                      className={cn("w-full h-full object-cover", slotTransform.stylePos?.position === "absolute" && "absolute")}
                     style={{
                       ...(slotTransform.stylePos || { left: 0, top: 0 }),
                       width: slotTransform.width,

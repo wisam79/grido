@@ -297,10 +297,12 @@ export function useScannerDetection(
     [detectionMode, runDetection]
   );
 
-  // 🔒 تنظيف الحالات عند الإغلاق
+  // 🔒 تنظيف الحالات عند الإغلاق وإلغاء أي كشف جارٍ (Fluent 2 Wait UX Invariant)
   useEffect(() => {
     if (!open) {
+      activeReqIdRef.current += 1;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reset detection state on close
+      setIsDetecting(false);
       setDetectedDocs([]);
       setSelectedDocIds([]);
       setActiveDocIndex(0);

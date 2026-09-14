@@ -69,7 +69,7 @@ function getElementIcon(el: CanvasElement, isSelected = false) {
 interface LayerRowProps {
   el: CanvasElement;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (e: React.MouseEvent | React.KeyboardEvent) => void;
   onToggleVisibility: () => void;
   onToggleLock: () => void;
   onDelete: () => void;
@@ -108,7 +108,7 @@ const LayerRow = React.memo(function LayerRow({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onSelect();
+          onSelect(e);
         }
       }}
       onDragStart={(e) => onDragStart(e, el.id)}
@@ -238,6 +238,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
     selectedId,
     selectedIds,
     selectElement,
+    toggleElementSelection,
     updateElement,
     removeElement,
     duplicateElement,
@@ -248,6 +249,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       selectedId: state.selectedId,
       selectedIds: state.selectedIds,
       selectElement: state.selectElement,
+      toggleElementSelection: state.toggleElementSelection,
       updateElement: state.updateElement,
       removeElement: state.removeElement,
       duplicateElement: state.duplicateElement,
@@ -364,7 +366,13 @@ export const LayersPanel = React.memo(function LayersPanel() {
               key={el.id}
               el={el}
               isSelected={selectedIds.includes(el.id) || selectedId === el.id}
-              onSelect={() => selectElement(el.id)}
+              onSelect={(e) => {
+                if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                  toggleElementSelection(el.id);
+                } else {
+                  selectElement(el.id);
+                }
+              }}
               onToggleVisibility={() => handleToggleVisibility(el.id, el.visible)}
               onToggleLock={() => handleToggleLock(el.id, el.locked)}
               onDelete={() => removeElement(el.id)}

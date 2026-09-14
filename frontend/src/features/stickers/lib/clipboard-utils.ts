@@ -19,3 +19,19 @@ export async function copyPngDataUrlToClipboard(pngDataUrl: string): Promise<boo
     return false;
   }
 }
+
+/**
+ * Copies raw SVG vector markup code directly to clipboard as text.
+ */
+export async function copySvgCodeToClipboard(svgString: string): Promise<boolean> {
+  try {
+    if (!navigator.clipboard?.writeText) {
+      return false;
+    }
+    await navigator.clipboard.writeText(svgString);
+    return true;
+  } catch (err) {
+    console.error("Failed to copy SVG text to clipboard:", err);
+    return false;
+  }
+}

@@ -173,12 +173,25 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       setIsSavingTemplate(false);
       dragStartSlotsRef.current = null;
       clipboardRef.current = null;
-      setPaperWidthMM(100);
-      setPaperHeightMM(150);
+      const store = useEditorStore.getState();
+      const ps = store.printSettings;
+      const dpi = ps?.dpi || 300;
+      let initW = ps?.paperWidthMM;
+      let initH = ps?.paperHeightMM;
+      if (!initW || !initH) {
+        initW = Math.round(((store.canvasWidth || 2480) * 25.4) / dpi);
+        initH = Math.round(((store.canvasHeight || 3508) * 25.4) / dpi);
+      }
+      const isLandscape = ps?.orientation === "landscape";
+      const resolvedW = Math.max(10, isLandscape ? Math.max(initW, initH) : Math.min(initW, initH));
+      const resolvedH = Math.max(10, isLandscape ? Math.min(initW, initH) : Math.max(initW, initH));
+
+      setPaperWidthMM(resolvedW);
+      setPaperHeightMM(resolvedH);
       setLayoutName("كولاج حر مخصص");
       setMultiSelectedIds([]);
 
-      const blank = createBlankSheet(100, 150);
+      const blank = createBlankSheet(resolvedW, resolvedH);
       setHistoryState({
         past: [],
         present: blank,
