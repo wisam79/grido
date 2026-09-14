@@ -7,6 +7,7 @@ import { computeSheetGrid, computeSlotRectMM } from "@/lib/print/print-layout-ma
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
 import { VECTOR_SHAPES } from "@/lib/io/svg-paths";
 import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
+import { ensureTextStrokeFilter } from "@/lib/canvas/text-stroke-filter";
 import {
   gradientStart,
   gradientEnd,
@@ -642,10 +643,12 @@ export async function exportCanvas(
           const startY = h / 2 - ((wrappedLines.length - 1) * lineHeight) / 2;
           const textX = el.textAlign === "left" ? 0 : el.textAlign === "right" ? w : w / 2;
           const strokeW = el.strokeWidth || 0;
+          let strokeFilterId = "";
           if (strokeW > 0) {
-            ctx.strokeStyle = el.stroke || TEXT_COLOR_DEFAULT;
-            ctx.lineWidth = strokeW;
-            ctx.lineJoin = "round";
+            strokeFilterId = ensureTextStrokeFilter(strokeW, el.stroke || TEXT_COLOR_DEFAULT);
+            if (strokeFilterId) {
+              ctx.filter = `url(#${strokeFilterId})`;
+            }
           }
 
           const deco = el.textDecoration || "none";
@@ -654,10 +657,10 @@ export async function exportCanvas(
           // لكل سطر كان مضاعفاً تكاليف الرسم في النصوص متعددة الأسطر
           const decoSegments: { x: number; y: number; w: number }[] = [];
 
+          // رسم أسطر النص (يتم تطبيق الحدود النظيفة الموحدة عبر الفلتر بدون تقطيع الوصلات)
           wrappedLines.forEach((line, i) => {
             const lineY = startY + i * lineHeight;
             ctx.fillText(line, textX, lineY);
-            if (strokeW > 0) ctx.strokeText(line, textX, lineY);
 
             if (deco !== "none" && line.trim()) {
               const lineW = ctx.measureText(line).width;
@@ -671,6 +674,10 @@ export async function exportCanvas(
               decoSegments.push({ x: fromX, y: decoY, w: lineW });
             }
           });
+
+          if (strokeFilterId) {
+            ctx.filter = "none";
+          }
 
           if (decoSegments.length > 0) {
             ctx.save();

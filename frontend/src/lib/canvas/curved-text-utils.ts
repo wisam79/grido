@@ -2,6 +2,7 @@
  * Utility for drawing curved text along an arc on standard HTML5 Canvas 2D / Konva
  */
 import { TEXT_COLOR_DEFAULT } from "./canvas-colors";
+import { ensureTextStrokeFilter } from "./text-stroke-filter";
 
 export interface CurvedTextOptions {
   text: string;
@@ -95,6 +96,13 @@ export function drawCurvedText(
   }
 
   let currentAngle = startAngle;
+  interface CharTransform {
+    char: string;
+    charX: number;
+    charY: number;
+    rotation: number;
+  }
+  const charTransforms: CharTransform[] = [];
 
   for (let i = 0; i < numChars; i++) {
     const char = text[i];
@@ -106,31 +114,36 @@ export function drawCurvedText(
 
     const charX = centerX + Math.cos(midAngle) * radius;
     const charY = centerY + Math.sin(midAngle) * radius;
-
-    ctx.save();
-    ctx.translate(charX, charY);
-
-    // Tangent rotation
     const rotation = isUpward ? midAngle + Math.PI / 2 : midAngle - Math.PI / 2;
-    ctx.rotate(rotation);
 
-    if (stroke && strokeWidth > 0) {
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = strokeWidth;
-      ctx.lineJoin = "round";
-      ctx.strokeText(char, 0, 0);
-    }
-
-    ctx.fillStyle = color;
-    ctx.fillText(char, 0, 0);
-
-    ctx.restore();
+    charTransforms.push({ char, charX, charY, rotation });
 
     if (isUpward) {
       currentAngle += charAngle;
     } else {
       currentAngle -= charAngle;
     }
+  }
+
+  // تطبيق الحدود الموحدة عبر فلتر التمدد لمنع تشوه تقاطعات الحروف
+  const filterId = stroke && strokeWidth > 0 ? ensureTextStrokeFilter(strokeWidth, stroke) : "";
+  if (filterId) {
+    ctx.filter = `url(#${filterId})`;
+  }
+
+  // رسم تعبئة النص فوق الخلفية مع الحدود الموحدة
+  ctx.fillStyle = color;
+  for (let i = 0; i < charTransforms.length; i++) {
+    const { char, charX, charY, rotation } = charTransforms[i];
+    ctx.save();
+    ctx.translate(charX, charY);
+    ctx.rotate(rotation);
+    ctx.fillText(char, 0, 0);
+    ctx.restore();
+  }
+
+  if (filterId) {
+    ctx.filter = "none";
   }
 
   ctx.restore();

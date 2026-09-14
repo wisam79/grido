@@ -8,6 +8,7 @@ import { ElementProps, propsAreEqual } from "./types";
 import { getFillProps } from "./fill-utils";
 import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
 import { loadGoogleFont } from "@/lib/io/fonts";
+import { ensureTextStrokeFilter } from "@/lib/canvas/text-stroke-filter";
 
 export const KonvaTextElement = React.memo(function KonvaTextElement({ 
   element: _element, 
@@ -135,6 +136,9 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const sharedOpacity = editingTextId === element.id ? 0 : element.opacity;
 
   const hasCurve = typeof element.curve === "number" && element.curve !== 0;
+  const strokeW = element.strokeWidth || 0;
+  const strokeColor = element.stroke || TEXT_COLOR_DEFAULT;
+  const strokeFilterId = strokeW > 0 ? ensureTextStrokeFilter(strokeW, strokeColor) : "";
 
   return (
     <Group
@@ -240,8 +244,13 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
             align={element.textAlign || "center"}
             lineHeight={element.lineHeight ?? 1.2}
             letterSpacing={effectiveLetterSpacing}
-            stroke={element.strokeWidth ? (element.stroke || TEXT_COLOR_DEFAULT) : undefined}
-            strokeWidth={element.strokeWidth || undefined}
+            sceneFunc={strokeFilterId ? (context, shape) => {
+              const ctx = context._context;
+              ctx.save();
+              ctx.filter = `url(#${strokeFilterId})`;
+              Konva.Text.prototype._sceneFunc.call(shape, context);
+              ctx.restore();
+            } : undefined}
             textDecoration={element.textDecoration || ""}
             wrap="word"
             ellipsis={false}

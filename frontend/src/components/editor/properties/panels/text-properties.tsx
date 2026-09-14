@@ -7,16 +7,48 @@ import { TextAa, Palette, Sparkle } from "@phosphor-icons/react";
 import { TextTypeTab } from "./text/text-type-tab";
 import { TextColorTab } from "./text/text-color-tab";
 import { TextEffectsTab } from "./text/text-effects-tab";
+import { TextTabProps } from "./text/text-tab-types";
 
-interface TextPropertiesProps {
-  element: TextElement;
-  onUpdate: (id: string, patch: Partial<TextElement>) => void;
+export interface TextPropertiesProps extends TextTabProps {
+  standalone?: boolean;
 }
 
 type TextSubTab = "type" | "color" | "effects";
 
-export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
+/**
+ * تبويب التنسيق للنصوص (TextStyleProperties):
+ * يركز حصراً على الخط والنمط والقياسات والمحاذاة
+ */
+export function TextStyleProperties({ element, onUpdate, onNavigateTab }: TextPropertiesProps) {
+  return <TextTypeTab element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />;
+}
+
+/**
+ * تبويب الألوان للنصوص (TextColorProperties):
+ * استوديو متكامل لتعبئة النصوص (تدرجات كاملة/مصمت)، ألوان الحدود، ألوان الشارة، والشفافية
+ */
+export function TextColorProperties({ element, onUpdate, onNavigateTab }: TextPropertiesProps) {
+  return <TextColorTab element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />;
+}
+
+/**
+ * تبويب المؤثرات للنصوص (TextEffectsProperties):
+ * الظلال والقوالب 3D، التقويس، وتنسيق أبعاد الشارة
+ */
+export function TextEffectsProperties({ element, onUpdate, onNavigateTab }: TextPropertiesProps) {
+  return <TextEffectsTab element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />;
+}
+
+/**
+ * المكون العام للنصوص:
+ * يُستخدم عند الحاجة إلى شريط التبويبات الثلاثي المستقل أو للتوافق السابق
+ */
+export function TextProperties({ element, onUpdate, onNavigateTab, standalone = false }: TextPropertiesProps) {
   const [activeTab, setActiveTab] = useState<TextSubTab>("type");
+
+  if (!standalone) {
+    return <TextStyleProperties element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />;
+  }
 
   const hasStroke = (element.strokeWidth ?? 0) > 0;
   const hasShadow = (element.shadowBlur ?? 0) > 0 || (element.shadowOpacity ?? 0) > 0;
@@ -33,10 +65,6 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
 
   return (
     <div className="space-y-2.5 font-cairo animate-in fade-in duration-200 w-full min-w-0">
-
-      {/* ───────────────────────────────────────────────────────────── */}
-      {/* شريط التبويبات الثلاثي (Fluent 2 Segmented Tabs) */}
-      {/* ───────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-1 bg-muted/60 dark:bg-muted/30 p-1 rounded-lg border border-border/40 font-cairo shadow-2xs">
         <button
           type="button"
@@ -72,9 +100,9 @@ export function TextProperties({ element, onUpdate }: TextPropertiesProps) {
         </button>
       </div>
 
-      {activeTab === "type" && <TextTypeTab element={element} onUpdate={onUpdate} />}
-      {activeTab === "color" && <TextColorTab element={element} onUpdate={onUpdate} />}
-      {activeTab === "effects" && <TextEffectsTab element={element} onUpdate={onUpdate} />}
+      {activeTab === "type" && <TextTypeTab element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />}
+      {activeTab === "color" && <TextColorTab element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />}
+      {activeTab === "effects" && <TextEffectsTab element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { TextElement } from "@/lib/editor-store";
 export interface TextTabProps {
   element: TextElement;
   onUpdate: (id: string, patch: Partial<TextElement>) => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export const WEIGHT_OPTIONS = [

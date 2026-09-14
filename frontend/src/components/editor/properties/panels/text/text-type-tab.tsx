@@ -18,8 +18,10 @@ import {
   ArrowsInLineHorizontal,
   ArrowsInLineVertical,
   ArrowsHorizontal,
+  Palette,
 } from "@phosphor-icons/react";
 import { Slider } from "@/components/ui/slider";
+import { PopoverColorPicker } from "../../shared-controls";
 import { TextFontSelector } from "./text-font-selector";
 import { loadGoogleFont } from "@/lib/io/fonts";
 import { TextTabProps, WEIGHT_OPTIONS } from "./text-tab-types";
@@ -56,7 +58,7 @@ const LETTER_SPACING_OPTIONS = [
 const selectClassName =
   "w-full h-8 bg-input hover:bg-background border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-inner";
 
-export function TextTypeTab({ element, onUpdate }: TextTabProps) {
+export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) {
   const isBold = (element.fontWeight || 400) >= 700;
   const isItalic = element.fontStyle === "italic";
   const isUnderline = element.textDecoration === "underline";
@@ -240,6 +242,33 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
             onPointerUp={() => useEditorStore.getState().pushHistory()}
             className="py-0.5"
           />
+        </div>
+
+        {/* لون النص السريع مع إمكانية الانتقال للاستوديو الكامل */}
+        <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg border border-border/40">
+          <span className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+            <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
+            <span>لون النص</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <PopoverColorPicker
+              color={element.color || "#000000"}
+              onChange={(col) => {
+                onUpdate(element.id, { color: col });
+                useEditorStore.getState().pushHistory();
+              }}
+              swatchOnly
+            />
+            {onNavigateTab && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab("adjust")}
+                className="text-[10.5px] text-primary font-bold hover:underline cursor-pointer transition-colors"
+              >
+                تخصيص كامل ←
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
