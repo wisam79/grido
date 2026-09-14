@@ -75,3 +75,15 @@ export const previewChecker = () => css("--canvas-preview-checker", "#80808033")
 // ── Text Element Fallbacks ───────────────────────────────────────────────────
 /** اللون الافتراضي لعنصر النص (محتوى المستخدم – ليس UI) */
 export const TEXT_COLOR_DEFAULT = "#000000";
+
+// ── Preset Studio Palette (Used in Color Studios & Property Panels) ─────────
+export const STUDIO_PALETTE = [
+  { label: "أبيض", color: "#ffffff" },
+  { label: "أسود", color: "#000000" },
+  { label: "أزرق", color: "#2563eb" },
+  { label: "ذهبي", color: "#d97706" },
+  { label: "زمردي", color: "#059669" },
+  { label: "أحمر", color: "#dc2626" },
+  { label: "بنفسجي", color: "#7c3aed" },
+  { label: "رمادي", color: "#4b5563" },
+];

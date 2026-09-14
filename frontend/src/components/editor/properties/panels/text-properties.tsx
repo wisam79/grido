@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { TextElement } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import { TextAa, Palette, Sparkle } from "@phosphor-icons/react";
 

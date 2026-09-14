@@ -5,18 +5,8 @@ import { GradientPicker } from "../../gradient-picker";
 import { gradientAngleFromPoints, gradientPointsFromAngle } from "../../gradient-utils";
 import { PopoverColorPicker, SliderControl } from "../../shared-controls";
 import { Label } from "@/components/ui/label";
+import { STUDIO_PALETTE } from "@/lib/canvas/canvas-colors";
 import type { TextTabProps } from "./text-tab-types";
-
-export const STUDIO_PALETTE = [
-  { label: "أبيض", color: "#ffffff" },
-  { label: "أسود", color: "#000000" },
-  { label: "أزرق", color: "#2563eb" },
-  { label: "ذهبي", color: "#d97706" },
-  { label: "زمردي", color: "#059669" },
-  { label: "أحمر", color: "#dc2626" },
-  { label: "بنفسجي", color: "#7c3aed" },
-  { label: "رمادي", color: "#4b5563" },
-];
 
 export function TextColorTab({ element, onUpdate }: TextTabProps) {
   const currentOpacity = Math.round((element.opacity ?? 1) * 100);

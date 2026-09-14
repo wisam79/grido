@@ -5,23 +5,13 @@ import { SliderControl, PopoverColorPicker } from "../shared-controls";
 import { GradientPicker } from "../gradient-picker";
 import { gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-utils";
 import { cn } from "@/lib/utils";
+import { STUDIO_PALETTE } from "@/lib/canvas/canvas-colors";
 
 export interface ShapePropertiesProps {
   element: ShapeElement;
   onUpdate: (id: string, patch: Partial<ShapeElement>) => void;
   onNavigateTab?: (tab: string) => void;
 }
-
-export const STUDIO_PALETTE = [
-  { label: "أبيض", color: "#ffffff" },
-  { label: "أسود", color: "#000000" },
-  { label: "أزرق", color: "#2563eb" },
-  { label: "ذهبي", color: "#d97706" },
-  { label: "زمردي", color: "#059669" },
-  { label: "أحمر", color: "#dc2626" },
-  { label: "بنفسجي", color: "#7c3aed" },
-  { label: "رمادي", color: "#4b5563" },
-];
 
 /**
  * تبويب التنسيق للأشكال (Shape Style Properties):

@@ -10,7 +10,6 @@ import {
   FlipVertical,
   Square,
   PaintBrush,
-  SlidersHorizontal,
   ArrowsOutCardinal,
   LockSimple,
   Drop,
