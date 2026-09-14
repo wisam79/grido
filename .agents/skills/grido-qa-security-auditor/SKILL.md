@@ -45,10 +45,14 @@ description: دليل الجودة والأمان والاختبار وتولي�
 # 1. اختبارات Go Backend
 go test ./internal/...
 
-# 2. اختبارات React Frontend (Vitest)
+# 2. اختبارات جودة وتوافقية واجهة React (TypeScript & Lint)
+cd frontend && npm run typecheck
+cd frontend && npm run lint
+
+# 3. اختبارات React Frontend التلقائية (Vitest)
 cd frontend && npm run test
 
-# 3. فحص البناء النهائي والأنواع (TypeScript & Vite)
+# 4. فحص البناء النهائي والأنواع (TypeScript & Vite)
 cd frontend && npm run build
 ```
 
@@ -62,8 +66,10 @@ cd frontend && npm run build
 
 عند التوجيه لرفع إصدار جديد للتطبيق (`vX.Y.Z`):
 
-1. **تحديث السكريبت المحلي:** تحديث القيمة الاحتياطية لـ `$appVersion` في `build.ps1` إلى `vX.Y.Z`.
-2. **الحفظ والإيداع:** تنفيذ `git add .` ثم `git commit -m "release: vX.Y.Z - ..."`.
-3. **إنشاء الوسم:** تشغيل `git tag -a vX.Y.Z -m "Release vX.Y.Z: ..."`.
-4. **الدفع لبدء البناء السحابي:** تشغيل `git push origin main --tags`.
-5. **النتيجة:** يقوم سيرفر GitHub Actions تلقائياً ببدء بناء النسخة وتوليد `GridoStudio-installer.exe` ونشرها في صفحة Releases على GitHub.
+1. **الفحص المسبق الصارم (Pre-flight Quality Check):** تشغيل `npm run lint` و `npm run typecheck` في مجلد `frontend`، والتأكد من عدم وجود أي خطأ أو تحذير (`0 errors, 0 warnings`) قبل الشروع في الترفيع.
+2. **تحديث السكريبت المحلي:** تحديث القيمة الاحتياطية لـ `$appVersion` في `build.ps1` إلى `vX.Y.Z`.
+3. **الحفظ والإيداع:** تنفيذ `git add .` ثم `git commit -m "release: vX.Y.Z - ..."`.
+4. **إنشاء الوسم:** تشغيل `git tag -a vX.Y.Z -m "Release vX.Y.Z: ..."`.
+5. **الدفع لبدء البناء السحابي:** تشغيل `git push origin main --tags`.
+6. **النتيجة:** يقوم سيرفر GitHub Actions تلقائياً ببدء بناء النسخة وتوليد `GridoStudio-installer.exe` ونشرها في صفحة Releases على GitHub.
+
