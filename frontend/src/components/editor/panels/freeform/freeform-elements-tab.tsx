@@ -186,7 +186,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
 
                     {isBusy && (
                       <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center rounded-lg">
-                        <span className="text-[10px] font-bold text-primary animate-pulse">جاري الإدراج...</span>
+                        <span className="text-[10px] font-bold text-primary animate-pulse">جاري الإدراج ...</span>
                       </div>
                     )}
                   </div>
