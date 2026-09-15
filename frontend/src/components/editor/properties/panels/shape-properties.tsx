@@ -80,7 +80,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             min={0}
             max={50}
             step={1}
-            unit=""
+            unit="px"
             onChange={(v) => onUpdate(element.id, { radius: v })}
             onCommit={() => useEditorStore.getState().pushHistory()}
           />

@@ -22,6 +22,7 @@ import {
   ArrowClockwise,
   X,
   Scan,
+  Square,
 } from "@phosphor-icons/react";
 import { SliderControl } from "../shared-controls";
 import { cn } from "@/lib/utils";
@@ -47,117 +48,136 @@ export function ImageAdjustProperties({
   onUpdate, 
   showReset = true 
 }: ImagePropertiesProps & { showReset?: boolean }) {
-  return (
-    <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3">
-      {!showReset && (
-        <Label className="text-xs font-bold text-foreground/80 block border-b border-border/40 pb-1.5 mb-1">
-          تعديل الألوان
-        </Label>
-      )}
+  const currentOpacity = Math.round((element.opacity ?? 1) * 100);
 
-      {/* قوالب تدرج لوني سريعة للاستوديوهات */}
-      <div className="space-y-1.5 pb-2 border-b border-border/20">
-        <span className="text-[10px] font-bold text-muted-foreground block">قوالب ألوان الاستوديو</span>
-        <div className="grid grid-cols-2 gap-1.5">
-          {[
-            { label: "استوديو دافئ", b: 104, c: 106, s: 108 },
-            { label: "جواز سفر حيوي", b: 108, c: 115, s: 118 },
-            { label: "إشراق ناعم", b: 110, c: 95, s: 102 },
-            { label: "أبيض وأسود", b: 105, c: 120, s: 0 },
-          ].map((preset) => (
-            <Button
-              key={preset.label}
-              variant="outline"
-              size="sm"
-              className="h-7 text-[10px] font-semibold rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-              onClick={() => {
-                onUpdate(element.id, {
-                  brightness: preset.b,
-                  contrast: preset.c,
-                  saturation: preset.s,
-                });
-                useEditorStore.getState().pushHistory();
-              }}
-            >
-              {preset.label}
-            </Button>
-          ))}
+  return (
+    <div className="space-y-3 animate-in fade-in duration-200">
+      {/* بطاقة 1: تعديل الألوان */}
+      <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3">
+        <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5 mb-1">
+          <Palette className="w-4 h-4 text-primary" weight="duotone" />
+          <span>تعديل الألوان</span>
+        </Label>
+
+        {/* قوالب تدرج لوني سريعة للاستوديوهات */}
+        <div className="space-y-1.5 pb-2 border-b border-border/20">
+          <span className="text-[10px] font-bold text-muted-foreground block">قوالب ألوان الاستوديو</span>
+          <div className="grid grid-cols-2 gap-1.5">
+            {[
+              { label: "استوديو دافئ", b: 104, c: 106, s: 108 },
+              { label: "جواز سفر حيوي", b: 108, c: 115, s: 118 },
+              { label: "إشراق ناعم", b: 110, c: 95, s: 102 },
+              { label: "أبيض وأسود", b: 105, c: 120, s: 0 },
+            ].map((preset) => (
+              <Button
+                key={preset.label}
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] font-semibold rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                onClick={() => {
+                  onUpdate(element.id, {
+                    brightness: preset.b,
+                    contrast: preset.c,
+                    saturation: preset.s,
+                  });
+                  useEditorStore.getState().pushHistory();
+                }}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
         </div>
+
+        <SliderControl
+          label="السطوع"
+          icon={<Sun className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          value={element.brightness ?? 100}
+          min={0}
+          max={200}
+          step={1}
+          unit="%"
+          onChange={(v) => onUpdate(element.id, { brightness: v })}
+          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+        />
+        <SliderControl
+          label="التباين"
+          icon={<CircleHalfTilt className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          value={element.contrast ?? 100}
+          min={0}
+          max={200}
+          step={1}
+          unit="%"
+          onChange={(v) => onUpdate(element.id, { contrast: v })}
+          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+        />
+        <SliderControl
+          label="التشبع"
+          icon={<Drop className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          value={element.saturation ?? 100}
+          min={0}
+          max={200}
+          step={1}
+          unit="%"
+          onChange={(v) => onUpdate(element.id, { saturation: v })}
+          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+        />
+        <SliderControl
+          label="الضبابية"
+          icon={<EyeSlash className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          value={element.blur ?? 0}
+          min={0}
+          max={20}
+          step={1}
+          unit="px"
+          onChange={(v) => onUpdate(element.id, { blur: v })}
+          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+        />
+
+        {showReset && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full h-8 text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 rounded-md border border-border/40 hover:bg-muted"
+            onClick={() => {
+              onUpdate(element.id, {
+                filter: "none",
+                brightness: 100,
+                contrast: 100,
+                saturation: 100,
+                blur: 0,
+              });
+              useEditorStore.getState().pushHistory();
+            }}
+          >
+            <ArrowClockwise className="w-3.5 h-3.5" weight="regular" />
+            <span>إعادة تعيين الألوان</span>
+          </Button>
+        )}
       </div>
 
-      <SliderControl
-        label="السطوع"
-        icon={<Sun className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
-        value={element.brightness ?? 100}
-        min={0}
-        max={200}
-        step={1}
-        unit="%"
-        onChange={(v) => onUpdate(element.id, { brightness: v })}
-        onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
-        onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
-        onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-      />
-      <SliderControl
-        label="التباين"
-        icon={<CircleHalfTilt className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
-        value={element.contrast ?? 100}
-        min={0}
-        max={200}
-        step={1}
-        unit="%"
-        onChange={(v) => onUpdate(element.id, { contrast: v })}
-        onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
-        onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
-        onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-      />
-      <SliderControl
-        label="التشبع"
-        icon={<Drop className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
-        value={element.saturation ?? 100}
-        min={0}
-        max={200}
-        step={1}
-        unit="%"
-        onChange={(v) => onUpdate(element.id, { saturation: v })}
-        onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
-        onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
-        onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-      />
-      <SliderControl
-        label="الضبابية"
-        icon={<EyeSlash className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
-        value={element.blur ?? 0}
-        min={0}
-        max={20}
-        step={1}
-        unit="px"
-        onChange={(v) => onUpdate(element.id, { blur: v })}
-        onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
-        onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
-        onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-      />
-
-      {showReset && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full h-8 text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 rounded-md border border-border/40 hover:bg-muted"
-          onClick={() => {
-            onUpdate(element.id, {
-              filter: "none",
-              brightness: 100,
-              contrast: 100,
-              saturation: 100,
-              blur: 0,
-            });
-            useEditorStore.getState().pushHistory();
-          }}
-        >
-          <ArrowClockwise className="w-3.5 h-3.5" weight="regular" />
-          <span>إعادة تعيين الألوان</span>
-        </Button>
-      )}
+      {/* بطاقة 2: الشفافية العامة */}
+      <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-2.5">
+        <SliderControl
+          label="شفافية الصورة"
+          icon={<Eye className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          value={currentOpacity}
+          min={0}
+          max={100}
+          step={1}
+          unit="%"
+          onChange={(v) => onUpdate(element.id, { opacity: v / 100 })}
+          onCommit={() => useEditorStore.getState().pushHistory()}
+        />
+      </div>
     </div>
   );
 }
@@ -602,6 +622,21 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             </Button>
           </div>
         )}
+      </div>
+
+      {/* 🎴 بطاقة 4: استدارة الحواف */}
+      <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
+        <SliderControl
+          label="استدارة الزوايا"
+          icon={<Square className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          value={element.cornerRadius || 0}
+          min={0}
+          max={200}
+          step={1}
+          unit="px"
+          onChange={(v) => onUpdate(element.id, { cornerRadius: v })}
+          onCommit={() => useEditorStore.getState().pushHistory()}
+        />
       </div>
 
       {element.imageSrc && cropOpen && (

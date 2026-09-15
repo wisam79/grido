@@ -1,6 +1,6 @@
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
-import { Palette, Sparkle, Square, ArrowCounterClockwise } from "@phosphor-icons/react";
+import { Palette, Sparkle, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { Slider } from "@/components/ui/slider";
 import { PopoverColorPicker } from "../../shared-controls";
 import type { TextTabProps } from "./text-tab-types";
@@ -30,7 +30,6 @@ const toggleButtonClassName = (active: boolean) =>
   );
 
 export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
-  const hasStroke = (element.strokeWidth ?? 0) > 0;
   const hasShadow = (element.shadowBlur ?? 0) > 0 || (element.shadowOpacity ?? 0) > 0;
   const hasBadge = !!element.textBgColor && element.textBgColor !== "transparent";
   const hasCurve = typeof element.curve === "number" && element.curve !== 0;
@@ -137,63 +136,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
         )}
       </div>
 
-      {/* 🎴 بطاقة 2: الإطار والحدود */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-            <Square className="w-3.5 h-3.5 text-primary" weight="duotone" />
-            <span>الإطار والحدود</span>
-          </span>
-
-          <div className="flex items-center gap-1.5">
-            {hasStroke && (
-              <PopoverColorPicker
-                color={element.stroke || "#000000"}
-                onChange={(val: string) => {
-                  onUpdate(element.id, { stroke: val });
-                  useEditorStore.getState().pushHistory();
-                }}
-                swatchOnly
-              />
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                if (hasStroke) {
-                  onUpdate(element.id, { strokeWidth: 0 });
-                } else {
-                  onUpdate(element.id, { stroke: element.stroke || "#000000", strokeWidth: 2 });
-                }
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(hasStroke)}
-            >
-              {hasStroke ? "مفعّل" : "إضافة"}
-            </button>
-          </div>
-        </div>
-
-        {hasStroke && (
-          <div className="space-y-1 pt-2 border-t border-border/30 animate-in fade-in duration-150">
-            <div className="flex justify-between items-center text-[10px]">
-              <span className="text-muted-foreground font-semibold">السمك</span>
-              <span className="font-mono font-bold text-foreground">{element.strokeWidth ?? 2}px</span>
-            </div>
-            <Slider
-              value={[element.strokeWidth ?? 2]}
-              min={0.5}
-              max={20}
-              step={0.5}
-              onValueChange={(val) => onUpdate(element.id, { strokeWidth: val[0] })}
-              onPointerUp={() => useEditorStore.getState().pushHistory()}
-              className="py-0.5"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* 🎴 بطاقة 3: الظل والتوهج */}
+      {/* 🎴 بطاقة 2: الظل والتوهج */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">

@@ -8,7 +8,6 @@ import {
   ArrowClockwise,
   FlipHorizontal,
   FlipVertical,
-  Square,
   PaintBrush,
   ArrowsOutCardinal,
   LockSimple,
@@ -130,10 +129,7 @@ export function ElementProperties({
 
           <TabsContent value="adjust" className="mt-3.5 space-y-3.5">
             {element.type === "image" && (
-              <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
-                <Label className="text-xs font-bold text-foreground/80 block border-b border-border/20 pb-1.5 mb-1">تعديل الألوان</Label>
-                <ImageAdjustProperties element={element} onUpdate={onUpdate} showReset={true} />
-              </div>
+              <ImageAdjustProperties element={element} onUpdate={onUpdate} showReset={true} />
             )}
             {element.type === "text" && (
               <TextColorProperties element={element} onUpdate={onUpdate} onNavigateTab={setSelectedTab} />
@@ -147,94 +143,71 @@ export function ElementProperties({
             {element.type === "text" ? (
               <TextEffectsProperties element={element} onUpdate={onUpdate} onNavigateTab={setSelectedTab} />
             ) : (
-              <>
-                {/* بطاقة 1: الظل والإضاءة */}
-                <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
-                  <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                    <Sparkle className="w-3.5 h-3.5 text-primary" weight="duotone" />
-                    <span>الظل والوهج</span>
-                  </Label>
-                  
-                  <div className="flex items-center justify-between gap-4" title="لون الظل">
-                    <span className="text-xs font-semibold text-muted-foreground">لون الظل</span>
-                    <PopoverColorPicker
-                      color={element.shadowColor || "#000000"}
-                      onChange={(val) => onUpdate(element.id, { shadowColor: val })}
-                      swatchOnly
-                      className="w-8 h-8"
-                    />
-                  </div>
-
-                  <SliderControl
-                    label="الشفافية"
-                    icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
-                    value={Math.round((element.shadowOpacity ?? 0) * 100)}
-                    min={0}
-                    max={100}
-                    step={1}
-                    unit="%"
-                    onChange={(v) => onUpdate(element.id, { shadowOpacity: v / 100 })}
-                    onCommit={() => useEditorStore.getState().pushHistory()}
-                  />
-                  
-                  <SliderControl
-                    label="التمويه"
-                    icon={<Drop className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
-                    value={element.shadowBlur || 0}
-                    min={0}
-                    max={50}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => onUpdate(element.id, { shadowBlur: v })}
-                    onCommit={() => useEditorStore.getState().pushHistory()}
-                  />
-
-                  <SliderControl
-                    label="إزاحة أفقية"
-                    icon={<ArrowsOutCardinal className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
-                    value={element.shadowOffsetX || 0}
-                    min={-50}
-                    max={50}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => onUpdate(element.id, { shadowOffsetX: v })}
-                    onCommit={() => useEditorStore.getState().pushHistory()}
-                  />
-
-                  <SliderControl
-                    label="إزاحة عمودية"
-                    icon={<ArrowsOutCardinal className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
-                    value={element.shadowOffsetY || 0}
-                    min={-50}
-                    max={50}
-                    step={1}
-                    unit="px"
-                    onChange={(v) => onUpdate(element.id, { shadowOffsetY: v })}
-                    onCommit={() => useEditorStore.getState().pushHistory()}
+              /* بطاقة: الظل والوهج */
+              <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
+                <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
+                  <Sparkle className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                  <span>الظل والوهج</span>
+                </Label>
+                
+                <div className="flex items-center justify-between gap-4" title="لون الظل">
+                  <span className="text-xs font-semibold text-muted-foreground">لون الظل</span>
+                  <PopoverColorPicker
+                    color={element.shadowColor || "#000000"}
+                    onChange={(val) => onUpdate(element.id, { shadowColor: val })}
+                    swatchOnly
+                    className="w-8 h-8"
                   />
                 </div>
 
-                {/* بطاقة 2: استدارة الحواف */}
-                {(element.type === "image" || element.type === "shape") && (
-                  <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
-                    <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
-                      <Square className="w-3.5 h-3.5 text-primary" weight="duotone" />
-                      <span>استدارة الحواف</span>
-                    </Label>
-                    <SliderControl
-                      label="قطر الزاوية"
-                      icon={<Square className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
-                      value={element.cornerRadius || 0}
-                      min={0}
-                      max={200}
-                      step={1}
-                      unit="px"
-                      onChange={(v) => onUpdate(element.id, { cornerRadius: v })}
-                      onCommit={() => useEditorStore.getState().pushHistory()}
-                    />
-                  </div>
-                )}
-              </>
+                <SliderControl
+                  label="الشفافية"
+                  icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+                  value={Math.round((element.shadowOpacity ?? 0) * 100)}
+                  min={0}
+                  max={100}
+                  step={1}
+                  unit="%"
+                  onChange={(v) => onUpdate(element.id, { shadowOpacity: v / 100 })}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
+                />
+                
+                <SliderControl
+                  label="التمويه"
+                  icon={<Drop className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+                  value={element.shadowBlur || 0}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit="px"
+                  onChange={(v) => onUpdate(element.id, { shadowBlur: v })}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
+                />
+
+                <SliderControl
+                  label="إزاحة أفقية"
+                  icon={<ArrowsOutCardinal className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+                  value={element.shadowOffsetX || 0}
+                  min={-50}
+                  max={50}
+                  step={1}
+                  unit="px"
+                  onChange={(v) => onUpdate(element.id, { shadowOffsetX: v })}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
+                />
+
+                <SliderControl
+                  label="إزاحة عمودية"
+                  icon={<ArrowsOutCardinal className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+                  value={element.shadowOffsetY || 0}
+                  min={-50}
+                  max={50}
+                  step={1}
+                  unit="px"
+                  onChange={(v) => onUpdate(element.id, { shadowOffsetY: v })}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
+                />
+              </div>
             )}
           </TabsContent>
 
@@ -404,11 +377,11 @@ export function ElementProperties({
               </div>
             </div>
 
-            {/* بطاقة 2: التدوير والشفافية */}
+            {/* بطاقة 2: التدوير والقلب */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
               <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
                 <ArrowClockwise className="w-3.5 h-3.5 text-primary" weight="duotone" />
-                <span>التدوير والشفافية</span>
+                <span>التدوير والقلب</span>
               </Label>
 
               <SliderControl
@@ -483,18 +456,6 @@ export function ElementProperties({
                   <FlipVertical className="w-3.5 h-3.5 text-muted-foreground" weight={element.flipY ? "fill" : "regular"} />
                 </Button>
               </div>
-
-              <SliderControl
-                label="الشفافية"
-                icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
-                value={Math.round(element.opacity * 100)}
-                min={0}
-                max={100}
-                step={1}
-                unit="%"
-                onChange={(v) => onUpdate(element.id, { opacity: v / 100 })}
-                onCommit={() => useEditorStore.getState().pushHistory()}
-              />
             </div>
           </TabsContent>
           </Tabs>
