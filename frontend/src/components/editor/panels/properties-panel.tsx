@@ -129,6 +129,7 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
             {mode === "collage" ? (
               <>
                 <FluentSegmentedControl<"collage" | "canvas">
+                  layoutId="properties-general-tabs"
                   value={generalTab}
                   onChange={setGeneralTab}
                   size="sm"

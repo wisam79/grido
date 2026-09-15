@@ -340,7 +340,7 @@ export function PrintSettingsToolbar({
             variant="outline"
             size="sm"
             onClick={handleAutoImpose}
-            className="h-full min-h-[34px] rounded-lg border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold gap-1.5 cursor-pointer shadow-2xs flex items-center justify-center transition-all"
+            className="h-full min-h-[34px] rounded-md border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold gap-1.5 cursor-pointer shadow-2xs flex items-center justify-center transition-all"
             title="حساب أقصى عدد نسخ وتدوير الورقة تلقائياً لتعبئة الشيت بالكامل"
           >
             <Sparkle className="w-3.5 h-3.5 shrink-0" weight="fill" />

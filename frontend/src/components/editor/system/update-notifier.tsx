@@ -258,7 +258,7 @@ export function UpdateNotifier() {
               {!error ? (
                 <Button
                   onClick={handleStartUpdate}
-                  className="flex-1 h-9 text-xs font-bold gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm fluent-hover-lift cursor-pointer"
+                  className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm fluent-hover-lift cursor-pointer"
                 >
                   <DownloadSimple className="w-4 h-4" weight="bold" />
                   تثبيت التحديث الآن
@@ -274,7 +274,7 @@ export function UpdateNotifier() {
                       window.open(url, "_blank");
                     }
                   }}
-                  className="flex-1 h-9 text-xs font-bold gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm cursor-pointer"
+                  className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm cursor-pointer"
                 >
                   <Globe className="w-4 h-4" weight="bold" />
                   تحميل مباشر من الموقع
@@ -283,7 +283,7 @@ export function UpdateNotifier() {
               <Button
                 variant="outline"
                 onClick={() => setIsOpen(false)}
-                className="h-9 px-4 text-xs font-semibold rounded-lg hover:bg-muted/80 cursor-pointer"
+                className="h-9 px-4 text-xs font-semibold rounded-md hover:bg-muted/80 cursor-pointer"
               >
                 إغلاق
               </Button>

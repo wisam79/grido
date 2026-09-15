@@ -172,7 +172,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
                   type="button"
                   disabled={isBusy}
                   onClick={() => handleInsertSticker(tmpl)}
-                  className="group relative bg-card hover:bg-accent/40 border border-border/60 hover:border-primary/50 p-2.5 rounded-xl shadow-2xs transition-all duration-150 flex flex-col items-center justify-between text-center cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50"
+                  className="group relative bg-card hover:bg-accent/40 border border-border/60 hover:border-primary/50 p-2.5 rounded-xl shadow-2xs transition-all duration-150 flex flex-col items-center justify-between text-center cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50"
                 >
                   <div className="w-full aspect-square flex items-center justify-center p-1 relative overflow-hidden">
                     {svg ? (
@@ -205,7 +205,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
             variant="outline"
             size="sm"
             onClick={handleOpenFullStickerStudio}
-            className="w-full h-8 text-xs font-bold border-dashed border-border/80 hover:border-primary/60 hover:bg-primary/5 text-primary gap-1.5 rounded-xl cursor-pointer"
+            className="w-full h-8 text-xs font-bold border-dashed border-border/80 hover:border-primary/60 hover:bg-primary/5 text-primary gap-1.5 rounded-md cursor-pointer"
           >
             <Sparkle className="w-3.5 h-3.5" weight="fill" />
             <span>تصفح وتخصيص استوديو الملصقات بالكامل</span>
@@ -226,7 +226,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
                 key={shape.id}
                 type="button"
                 onClick={() => handleAddShape(shape)}
-                className="group flex items-center gap-2.5 p-2 bg-card hover:bg-accent/40 border border-border/60 hover:border-primary/50 rounded-xl transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                className="group flex items-center gap-2.5 p-2 bg-card hover:bg-accent/40 border border-border/60 hover:border-primary/50 rounded-xl transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
@@ -269,7 +269,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
                 key={preset.id}
                 type="button"
                 onClick={() => handleAddText(preset)}
-                className="group w-full flex items-center justify-between p-2.5 bg-card hover:bg-accent/40 border border-border/60 hover:border-primary/50 rounded-xl transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                className="group w-full flex items-center justify-between p-2.5 bg-card hover:bg-accent/40 border border-border/60 hover:border-primary/50 rounded-xl transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div

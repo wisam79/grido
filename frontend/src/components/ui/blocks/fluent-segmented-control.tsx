@@ -32,9 +32,12 @@ export function FluentSegmentedControl<T extends string = string>({
   stacked = false,
   fullWidth = true,
   className,
-  layoutId = "fluent-segmented-pill",
+  layoutId,
   dir = "rtl",
 }: FluentSegmentedControlProps<T>) {
+  const autoId = React.useId();
+  const effectiveLayoutId = layoutId || `fluent-segmented-${autoId}`;
+
   return (
     <div
       role="tablist"
@@ -75,7 +78,7 @@ export function FluentSegmentedControl<T extends string = string>({
             onClick={() => onChange(opt.id)}
             className={cn(
               "relative flex items-center justify-center font-cairo cursor-pointer rounded-md transition-all duration-150 z-10 select-none min-w-0 overflow-hidden",
-              "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+              "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               fullWidth ? "flex-1" : "shrink-0",
               stacked
                 ? "flex-col gap-0.5 h-10 px-1 text-[10.5px] leading-tight"
@@ -92,7 +95,7 @@ export function FluentSegmentedControl<T extends string = string>({
           >
             {isActive && (
               <motion.div
-                layoutId={layoutId}
+                layoutId={effectiveLayoutId}
                 className="absolute inset-0 bg-card border border-border/80 dark:border-white/15 rounded-md shadow-xs -z-10"
                 transition={{ type: "spring", stiffness: 500, damping: 35 }}
               />

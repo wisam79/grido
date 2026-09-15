@@ -403,6 +403,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               {/* Finish Options */}
               <div className="pt-1 border-t border-border/30">
                 <FluentSegmentedControl
+                  layoutId="sticker-finish-tabs"
                   value={params.finish || "standard"}
                   onChange={(finish) => onChangeParams((prev) => ({ ...prev, finish: finish as StickerFinish }))}
                   options={FINISH_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}

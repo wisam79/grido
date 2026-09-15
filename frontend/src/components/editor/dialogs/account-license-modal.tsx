@@ -173,7 +173,7 @@ export function AccountLicenseModal() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  className="h-6.5 px-2 text-[10px] font-bold cursor-pointer rounded-md"
+                  className="h-7 px-2 text-[10px] font-bold cursor-pointer rounded-md"
                   onClick={confirmLogout}
                 >
                   تأكيد الخروج
@@ -181,7 +181,7 @@ export function AccountLicenseModal() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6.5 px-1.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer rounded-md"
+                  className="h-7 px-1.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer rounded-md"
                   onClick={() => setShowLogoutConfirm(false)}
                 >
                   إلغاء
@@ -191,7 +191,7 @@ export function AccountLicenseModal() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2 cursor-pointer rounded-lg font-semibold shrink-0"
+                className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2 cursor-pointer rounded-md font-semibold shrink-0"
                 onClick={() => setShowLogoutConfirm(true)}
               >
                 <SignOut className="w-3.5 h-3.5 shrink-0" weight="bold" />

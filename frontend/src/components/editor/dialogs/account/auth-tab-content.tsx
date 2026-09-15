@@ -66,7 +66,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           <Input
             type="email"
             placeholder="name@example.com"
-            className="pr-9 h-9 text-xs rounded-lg"
+            className="pr-9 h-9 text-xs rounded-md"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -81,7 +81,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             type="text"
             placeholder="123456"
             maxLength={6}
-            className="pr-9 h-9 text-xs tracking-widest text-center font-mono rounded-lg"
+            className="pr-9 h-9 text-xs tracking-widest text-center font-mono rounded-md"
             required
             value={recoveryOtp}
             onChange={(e) => setRecoveryOtp(e.target.value)}
@@ -99,7 +99,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           <Input
             type="password"
             placeholder="••••••••"
-            className="pr-9 h-9 text-xs rounded-lg"
+            className="pr-9 h-9 text-xs rounded-md"
             required
             minLength={6}
             value={newPassword}
@@ -109,7 +109,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
       </div>
       <Button
         type="submit"
-        className="w-full h-9 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-pointer"
+        className="w-full h-9 text-xs font-bold rounded-md shadow-sm gap-1.5 cursor-pointer"
         disabled={loading}
       >
         {loading ? (
@@ -141,7 +141,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
         type="button"
         onClick={handleGoogleLogin}
         variant="outline"
-        className="w-full h-9 text-xs font-bold gap-2.5 border-border/80 dark:border-white/15 bg-background hover:bg-muted/70 dark:bg-card/80 dark:hover:bg-accent rounded-lg shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+        className="w-full h-9 text-xs font-bold gap-2.5 border-border/80 dark:border-white/15 bg-background hover:bg-muted/70 dark:bg-card/80 dark:hover:bg-accent rounded-md shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         disabled={loading || loadingGoogle}
       >
         {loadingGoogle ? (
@@ -181,7 +181,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 type="text"
                 placeholder="123456"
                 maxLength={6}
-                className="pr-9 h-9 text-xs tracking-widest text-center font-mono rounded-lg"
+                className="pr-9 h-9 text-xs tracking-widest text-center font-mono rounded-md"
                 required
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value)}
@@ -194,7 +194,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
 
             <Button
               type="submit"
-              className="w-full h-9 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-pointer"
+              className="w-full h-9 text-xs font-bold rounded-md shadow-sm gap-1.5 cursor-pointer"
               disabled={loading}
             >
               {loading ? (
@@ -246,7 +246,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                   <User className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                   <Input
                     placeholder="الاسم"
-                    className="pr-9 h-9 text-xs rounded-lg"
+                    className="pr-9 h-9 text-xs rounded-md"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -262,7 +262,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 <Input
                   type="email"
                   placeholder="name@example.com"
-                  className="pr-9 h-9 text-xs rounded-lg"
+                  className="pr-9 h-9 text-xs rounded-md"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -289,7 +289,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 <Input
                   type="password"
                   placeholder="••••••••"
-                  className="pr-9 h-9 text-xs rounded-lg"
+                  className="pr-9 h-9 text-xs rounded-md"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -299,7 +299,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
 
             <Button
               type="submit"
-              className="w-full h-9 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-pointer"
+              className="w-full h-9 text-xs font-bold rounded-md shadow-sm gap-1.5 cursor-pointer"
               disabled={loading || loadingGoogle}
             >
               {loading ? (

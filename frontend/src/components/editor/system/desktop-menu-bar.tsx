@@ -182,7 +182,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <Image className="w-4.5 h-4.5 text-muted-foreground" />
-            <span className="font-medium">فتح صورة...</span>
+            <span className="font-medium">فتح صورة</span>
             <DropdownMenuShortcut>Ctrl+O</DropdownMenuShortcut>
           </DropdownMenuItem>
 
@@ -191,7 +191,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <Images className="w-4.5 h-4.5 text-muted-foreground" />
-            <span className="font-medium">إدراج دفعة...</span>
+            <span className="font-medium">إدراج دفعة</span>
             <DropdownMenuShortcut>Ctrl+Shift+O</DropdownMenuShortcut>
           </DropdownMenuItem>
 
@@ -200,7 +200,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <DeviceMobileCamera className="w-4.5 h-4.5 text-primary" weight="duotone" />
-            <span className="font-medium">كاميرا الهاتف (QR)...</span>
+            <span className="font-medium">كاميرا الهاتف</span>
           </DropdownMenuItem>
 
 
@@ -209,7 +209,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <FolderOpen className="w-4.5 h-4.5 text-muted-foreground" />
-            <span className="font-medium">استيراد مجلد...</span>
+            <span className="font-medium">استيراد مجلد</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -220,7 +220,7 @@ export function DesktopMenuBar() {
           >
             <div className="flex items-center gap-2.5">
               <FloppyDisk className="w-4.5 h-4.5 text-primary" weight="duotone" />
-              <span className="font-medium">حفظ المشروع...</span>
+              <span className="font-medium">حفظ المشروع</span>
             </div>
             <DropdownMenuShortcut>Ctrl+S</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -230,7 +230,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <Folders className="w-4.5 h-4.5 text-muted-foreground" />
-            <span className="font-medium">مكتبة المشاريع...</span>
+            <span className="font-medium">مكتبة المشاريع</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -238,7 +238,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <Export className="w-4.5 h-4.5 text-muted-foreground" />
-            <span className="font-medium">تصدير...</span>
+            <span className="font-medium">تصدير</span>
             <DropdownMenuShortcut>Ctrl+E</DropdownMenuShortcut>
           </DropdownMenuItem>
 
@@ -247,7 +247,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <Printer className="w-4.5 h-4.5 text-muted-foreground" />
-            <span className="font-medium">طباعة...</span>
+            <span className="font-medium">طباعة</span>
             <DropdownMenuShortcut>Ctrl+P</DropdownMenuShortcut>
           </DropdownMenuItem>
 

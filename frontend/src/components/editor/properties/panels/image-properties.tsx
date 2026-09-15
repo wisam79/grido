@@ -311,7 +311,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 variant={isRemovingBg ? "destructive" : "outline"}
                 title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية"}
                 className={cn(
-                  "h-9 flex items-center justify-center gap-2 rounded-lg border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
+                  "h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
                   isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
                 )}
                 onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
@@ -337,7 +337,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 title={`ترميم الوجه ورفع الدقة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit})`}
                 disabled={isEnhancing || isRemovingBg}
                 className={cn(
-                  "h-9 flex items-center justify-center gap-2 rounded-lg border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
+                  "h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
                   (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
                 )}
                 onClick={() => handleEnhance(element)}
@@ -362,7 +362,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 variant={isFraming ? "destructive" : "outline"}
                 title={isFraming ? "إلغاء ضبط الوجه" : "تأطير الوجه تلقائياً"}
                 className={cn(
-                  "h-9 flex items-center justify-center gap-2 rounded-lg border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
+                  "h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
                   isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
                 )}
                 onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
@@ -386,7 +386,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <Button
                 variant="outline"
                 title="مسح وتقويم المستند"
-                className="h-9 flex items-center justify-center gap-2 rounded-lg border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]"
+                className="h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]"
                 onClick={() => setScannerOpen(true)}
               >
                 <Scan className="w-4 h-4 text-primary shrink-0" weight="duotone" />

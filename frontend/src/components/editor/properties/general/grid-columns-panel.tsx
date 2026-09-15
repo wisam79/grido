@@ -100,6 +100,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
       <div className="space-y-3 animate-in fade-in duration-200">
         {/* التبديل بين الشبكة والأعمدة وهامش النزيف */}
         <FluentSegmentedControl<"grid" | "columns" | "bleed">
+          layoutId="grid-columns-view-tabs"
           value={activeGridTab}
           onChange={setActiveGridTab}
           size="sm"

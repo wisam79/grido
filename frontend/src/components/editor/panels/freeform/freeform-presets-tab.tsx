@@ -102,7 +102,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
           <button
             type="button"
             onClick={handleToggleOrientation}
-            className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors cursor-pointer bg-muted/60 hover:bg-muted px-2 py-1 rounded-md"
+            className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors cursor-pointer bg-muted/60 hover:bg-muted px-2 py-1 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="تبديل الاتجاه بين أفقي وعمودي"
           >
             <ArrowsClockwise className="w-3.5 h-3.5" />
@@ -139,7 +139,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
                     type="button"
                     onClick={() => handleSelectPreset(preset)}
                     className={cn(
-                      "w-full flex items-center justify-between p-2 rounded-xl border text-right transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none select-none",
+                      "w-full flex items-center justify-between p-2 rounded-xl border text-right transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none select-none",
                       active
                         ? "bg-primary/10 border-primary/50 text-primary shadow-xs font-bold ring-1 ring-primary/20"
                         : "bg-card hover:bg-accent/40 border-border/60 hover:border-primary/40 text-foreground"

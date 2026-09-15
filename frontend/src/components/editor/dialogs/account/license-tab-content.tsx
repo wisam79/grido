@@ -112,7 +112,7 @@ export function LicenseTabContent({
               <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
               <Input
                 placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
-                className="pr-9 h-9 text-xs font-mono uppercase rounded-lg tracking-wider"
+                className="pr-9 h-9 text-xs font-mono uppercase rounded-md tracking-wider"
                 required
                 value={licenseKey}
                 onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
@@ -122,7 +122,7 @@ export function LicenseTabContent({
 
           <Button
             type="submit"
-            className="w-full h-9 text-xs font-bold rounded-lg shadow-sm gap-1.5 cursor-pointer"
+            className="w-full h-9 text-xs font-bold rounded-md shadow-sm gap-1.5 cursor-pointer"
             disabled={loading}
           >
             {loading ? (
