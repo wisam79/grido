@@ -10,8 +10,8 @@ test.describe('Background Removal Smoke Test', () => {
   test('Upload image and expose background removal controls', async ({ page }) => {
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'وضع التعديل الحر' }).or(page.getByTitle('وضع التعديل الحر')).click();
-    await page.getByRole('button', { name: /إضافة صورة|رفع صورة/ }).or(page.getByTitle(/صورة جديدة/)).first().click();
+    await page.getByRole('tab', { name: 'تعديل حر' }).click();
+    await page.getByRole('button', { name: 'إضافة صورة جديدة' }).click();
 
     await expect(page.getByRole('button', { name: 'عزل الخلفية' }).first()).toBeVisible();
   });

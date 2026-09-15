@@ -128,7 +128,6 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 	mux.HandleFunc("/ping", s.handlePing)
 	mux.HandleFunc("/manifest.json", s.handleManifest)
 
-
 	s.server = &http.Server{
 		Handler:      mux,
 		ReadTimeout:  30 * time.Second,
@@ -136,8 +135,9 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 	}
 
 	srv := s.server
+	listenURL := s.url // capture before goroutine: Stop() may clear s.url under s.mu concurrently
 	go func() {
-		slog.Info("Phone bridge server listening", "url", s.url)
+		slog.Info("Phone bridge server listening", "url", listenURL)
 		if serveErr := srv.Serve(listener); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
 			slog.Error("Phone bridge server stopped unexpectedly", "error", serveErr)
 		}

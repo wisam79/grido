@@ -12,15 +12,15 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
 
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
 
-    await page.getByRole('button', { name: 'وضع التعديل الحر' }).or(page.getByTitle('وضع التعديل الحر')).click();
-    await page.getByRole('button', { name: /إضافة صورة|رفع صورة/ }).or(page.getByTitle(/صورة جديدة/)).first().click();
+    await page.getByRole('tab', { name: 'تعديل حر' }).click();
+    await page.getByRole('button', { name: 'إضافة صورة جديدة' }).click();
 
     await expect(page.getByRole('button', { name: 'عزل الخلفية' }).first()).toBeVisible();
 
     await page.getByRole('button', { name: /مكتبة المشاريع/ }).or(page.getByTitle('مكتبة المشاريع المحلية')).click();
     await expect(page.getByRole('dialog', { name: /مكتبة المشاريع/ })).toBeVisible();
 
-    await page.getByRole('tab', { name: /حفظ المشروع/ }).click();
+    await page.getByRole('tab', { name: /حفظ/ }).click();
     await page.fill('#proj-name', 'مشروع اختباري');
 
     await page.getByRole('button', { name: /حفظ المشروع|حفظ في قاعدة البيانات/ }).click();
