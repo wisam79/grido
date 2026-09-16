@@ -131,6 +131,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       setZoom(1);
       // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة.
       useEditorStore.getState().selectElement(null);
+    } else {
+      // ضمان تحرير أي قفل لـ pointer-events عند إغلاق النافذة
+      if (typeof document !== "undefined" && document.body) {
+        document.body.style.pointerEvents = "auto";
+      }
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -138,7 +143,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (isExporting) return; // منع الهروب أثناء توليد الورقة
+        exporter.setIsExporting(false);
+        if (typeof document !== "undefined" && document.body) {
+          document.body.style.pointerEvents = "auto";
+        }
         onOpenChange(false);
       } else if (e.key === "Enter" && !isExporting && previewImageSrc) {
         // لا نطلق الطباعة إذا كان التركيز داخل عنصر إدخال — Enter له معناه الخاص هناك
@@ -226,7 +234,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next && isExporting) return;
+        if (!next) {
+          exporter.setIsExporting(false);
+          if (typeof document !== "undefined" && document.body) {
+            document.body.style.pointerEvents = "auto";
+          }
+        }
         onOpenChange(next);
       }}
     >
@@ -243,7 +256,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 اختر مقاس الورقة ونمط الألوان، ثم اضبط الهوامش وخطوط القص
               </DialogDescription>
             </div>
-            <DialogCloseButton />
+            <DialogCloseButton onClick={() => onOpenChange(false)} />
           </div>
         </DialogHeader>
 
@@ -363,8 +376,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         <DialogFooter className="px-5 py-3 border-t border-border/40 bg-card flex items-center justify-end gap-2 shrink-0">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isExporting}
+            onClick={() => {
+              exporter.setIsExporting(false);
+              if (typeof document !== "undefined" && document.body) {
+                document.body.style.pointerEvents = "auto";
+              }
+              onOpenChange(false);
+            }}
             className="h-8 px-4 text-xs font-semibold cursor-pointer"
           >
             إلغاء

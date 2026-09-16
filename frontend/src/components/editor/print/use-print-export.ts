@@ -402,6 +402,12 @@ export function usePrintExport(ctx: PrintExportContext) {
           if (document.body.contains(iframe)) {
             document.body.removeChild(iframe);
           }
+          if (typeof document !== "undefined" && document.body) {
+            document.body.style.pointerEvents = "auto";
+          }
+          if (typeof window !== "undefined") {
+            window.focus();
+          }
         };
 
         let hasPrinted = false;
@@ -415,13 +421,14 @@ export function usePrintExport(ctx: PrintExportContext) {
             toast.success("تم إرسال الورقة إلى الطباعة بنجاح");
           } catch (e) {
             console.error("Browser print error:", e);
+            removeIframe();
             if (result.filePath && typeof PrintNative === "function") {
               PrintNative(result.filePath)
                 .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
                 .catch(console.error);
             }
           } finally {
-            removeTimer = setTimeout(removeIframe, 60000);
+            removeTimer = setTimeout(removeIframe, 15000);
           }
         };
 
@@ -528,8 +535,25 @@ export function usePrintExport(ctx: PrintExportContext) {
         composition: buildResult.composition,
       }));
 
-      showPrintResult(result);
+      if (!result.success) {
+        toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
+        return;
+      }
+
+      // 1. إغلاق نافذة إعدادات الطباعة أولاً لضمان عدم بقائها عالقة خلف حوار الطباعة
+      isExportingRef.current = false;
+      setIsExporting(false);
       onDone();
+
+      // ضمان استعادة تفاعل الصفحة فوراً
+      if (typeof document !== "undefined" && document.body) {
+        document.body.style.pointerEvents = "auto";
+      }
+
+      // 2. إطلاق حوار الطباعة بعد مهلة وجيزة (100ms) للسماح لـ Radix Dialog بالتفكيك النظيف
+      setTimeout(() => {
+        showPrintResult(result);
+      }, 100);
     } catch (err) {
       toast.error("حدث خطأ أثناء توليد ورقة الطباعة: " + String(err));
     } finally {
