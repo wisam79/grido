@@ -51,7 +51,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
       },
       {
         id: "social",
-        label: "وسائط وشاشات",
+        label: "وسائط وشاشات — للشاشة فقط",
         icon: <DeviceMobile className="w-4 h-4 text-primary" weight="duotone" />,
         presets: CANVAS_SIZE_PRESETS.filter((p) => p.category === "social"),
       },

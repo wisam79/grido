@@ -322,7 +322,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[94vw] sm:max-w-[920px] h-[640px] max-h-[88vh] min-h-[520px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-2xl font-cairo fluent-specular transition-all duration-200 gap-0"
+        className="w-[94vw] sm:max-w-[920px] h-[640px] max-h-[88vh] min-h-[520px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular transition-all duration-200 gap-0"
         dir="rtl"
       >
         {/* ── Title Bar Header (Adapts to Active Stage) ── */}
@@ -332,7 +332,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
               /* Gallery Header */
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                  <SealCheck className="w-4.5 h-4.5 text-primary" weight="duotone" />
+                  <SealCheck className="w-4 h-4 text-primary" weight="duotone" />
                 </div>
                 <div className="flex items-center gap-2 min-w-0">
                   <DialogTitle className="text-sm font-bold text-foreground truncate">

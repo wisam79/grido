@@ -41,8 +41,11 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
   isLoading: boolean;
   setIsLoading: (v: boolean) => void;
 }) {
-  const slots = useEditorStore((s) => s.slots);
-  const selectedId = useEditorStore((s) => s.selectedId);
+  // اشتراك بالخانة المحددة فقط (مرجع مستقر) بدل مصفوفة slots الكاملة —
+  // أي updateSlot لخانة أخرى كان يعيد رندر هذا الشريط (مثل زوم العجلة)
+  const selectedSlot = useEditorStore((s) =>
+    s.mode !== "collage" ? null : (s.slots.find((sl) => sl.id === s.selectedId) ?? null)
+  );
   const updateSlot = useEditorStore((s) => s.updateSlot);
   const setSlotImage = useEditorStore((s) => s.setSlotImage);
   const canvasWidth = useEditorStore((s) => s.canvasWidth);
@@ -53,7 +56,6 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
 
   if (mode !== "collage" || printMode) return null;
 
-  const selectedSlot = slots.find((s) => s.id === selectedId);
   if (!selectedSlot || !selectedSlot.imageSrc) return null;
 
   const scale = displayW / canvasWidth;
@@ -80,7 +82,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
       }}
     >
       {/* شريط الإجراءات السريعة العائم فوق الخلية المحددة */}
-      <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-card/90 dark:bg-sidebar/90 backdrop-blur-md p-0.5 rounded-lg border border-border/80 shadow-md pointer-events-auto transition-all select-none fluent-specular">
+      <div className="absolute top-1.5 end-1.5 flex items-center gap-0.5 bg-card/95 backdrop-blur-xl p-0.5 rounded-lg border border-border/80 dark:border-white/10 shadow-fluent-8 pointer-events-auto transition-all select-none fluent-specular">
         <Tooltip>
           <TooltipTrigger asChild>
             <button
@@ -448,7 +450,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       <div
         ref={innerRef}
         id="canvas-area"
-        className="relative w-full h-full rounded-sm overflow-hidden border border-black/10 dark:border-white/10 transition-shadow duration-300 shadow-md shadow-black/15 hover:shadow-lg hover:shadow-black/20 fluent-specular"
+        className="relative w-full h-full rounded-md overflow-hidden border border-black/10 dark:border-white/10 transition-shadow duration-300 shadow-fluent-8 fluent-specular"
         style={{
           width: displayW,
           height: displayH,
@@ -472,7 +474,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       role="presentation"
     >
       {isLoading && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md rounded-sm gap-2">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center fluent-smoke-backdrop rounded-md gap-2">
           <Spinner className="w-8 h-8 text-primary" size={32} />
           <span className="text-xs font-bold text-white font-cairo">جاري المعالجة ...</span>
         </div>
@@ -548,17 +550,17 @@ export const EditorCanvas = React.memo(React.forwardRef<
             <div
               className={`transition-all ${
                 lockUserGuides
-                  ? "bg-amber-500/70 shadow-[0_0_2px_rgba(245,158,11,0.3)]"
-                  : "bg-sky-500 shadow-[0_0_3px_rgba(14,165,233,0.4)]"
+                  ? "bg-amber-500/70"
+                  : "bg-primary"
               } ${
                 isH ? "w-full h-[1px] group-hover:h-[2px]" : "h-full w-[1px] group-hover:w-[2px]"
               }`}
             />
             {/* شارة القياس عند التحويم */}
             <div
-              className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded ${
-                lockUserGuides ? "bg-amber-600" : "bg-sky-600"
-              } text-white font-mono text-[10px] font-bold shadow-md z-50 pointer-events-none ${
+              className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded-md ${
+                lockUserGuides ? "bg-amber-600" : "bg-primary"
+              } text-white font-mono text-[10px] font-bold shadow-fluent-8 z-50 pointer-events-none ${
                 isH ? "left-3 -top-5" : "top-3 left-2"
               }`}
             >
@@ -612,15 +614,15 @@ export const EditorCanvas = React.memo(React.forwardRef<
       <div
         className={`absolute z-(--z-canvas-guides) pointer-events-none select-none ${
           dragGuideState.type === "h"
-            ? "left-0 right-0 h-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex items-center"
-            : "top-0 bottom-0 w-[1px] bg-sky-400 shadow-[0_0_3px_rgba(56,189,248,0.5)] flex justify-center"
+            ? "left-0 right-0 h-[1px] bg-primary flex items-center"
+            : "top-0 bottom-0 w-[1px] bg-primary flex justify-center"
         }`}
         style={{
           [dragGuideState.type === "h" ? "top" : "left"]: `${dragGuideState.pos * 100}%`,
         }}
       >
         <div
-          className={`absolute flex items-center px-1.5 py-0.5 rounded bg-sky-600 text-white font-mono text-[10px] font-bold shadow-lg ${
+          className={`absolute flex items-center px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground font-mono text-[10px] font-bold shadow-fluent-8 ${
             dragGuideState.type === "h" ? "left-3 -top-5" : "top-3 left-2"
           }`}
         >

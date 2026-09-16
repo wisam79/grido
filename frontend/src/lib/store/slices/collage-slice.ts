@@ -29,6 +29,7 @@ export interface CollageSlice {
   setCollageTemplate: (template: CollageTemplate | null) => void;
   setSlotImage: (slotId: string, src: string) => void;
   updateSlot: (slotId: string, patch: Partial<CanvasSlot>) => void;
+  updateSlotsBatch: (slotIds: string[], patch: Partial<CanvasSlot>) => void;
   clearSlots: () => void;
   fillAllSlots: (src: string, sourceSlotId?: string) => void;
   fillRowSlots: (slotId: string, src: string) => void;
@@ -325,6 +326,15 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   updateSlot: (slotId, patch) => {
     set((state) => ({
       slots: state.slots.map((sl: CanvasSlot) => (sl.id === slotId ? { ...sl, ...patch } : sl)),
+    }));
+  },
+
+  // تحديث دُفعي: set واحد لكل الخلايا بدل N إشعارات ستور (ألوان الخلفية الشاملة)
+  updateSlotsBatch: (slotIds, patch) => {
+    if (slotIds.length === 0) return;
+    const idSet = new Set(slotIds);
+    set((state) => ({
+      slots: state.slots.map((sl: CanvasSlot) => (idSet.has(sl.id) ? { ...sl, ...patch } : sl)),
     }));
   },
 

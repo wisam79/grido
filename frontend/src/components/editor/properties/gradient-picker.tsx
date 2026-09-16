@@ -110,7 +110,7 @@ export const GradientPicker = ({
             type="button"
             onClick={() => onChangeType(t)}
             className={cn(
-              "flex-1 h-6.5 rounded-md transition-all cursor-pointer flex items-center justify-center text-[10px] font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+              "flex-1 h-6 rounded-md transition-all cursor-pointer flex items-center justify-center text-[10px] font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
               fillType === t
                 ? "bg-card text-foreground shadow-2xs font-extrabold border border-border/30"
                 : "text-muted-foreground hover:text-foreground"
@@ -153,7 +153,7 @@ export const GradientPicker = ({
             {/* إطار المعاينة الاحترافي مع بريق زجاجي علوي */}
             <div className="p-[1.5px] rounded-lg bg-gradient-to-b from-black/20 to-black/5 dark:from-white/25 dark:to-white/5 shadow-xs">
               <div
-                className="w-full h-5 rounded-[6px] relative overflow-hidden shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.45),inset_0_-1px_1.5px_rgba(0,0,0,0.25)] before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/35 before:to-transparent before:pointer-events-none"
+                className="w-full h-5 rounded-md relative overflow-hidden shadow-inner before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/35 before:to-transparent before:pointer-events-none"
                 style={{ background: liveGradientCss }}
               />
             </div>
@@ -163,11 +163,11 @@ export const GradientPicker = ({
           <div className="grid grid-cols-2 gap-2 w-full">
             <div className="flex items-center justify-between bg-background/40 px-2.5 py-1.5 rounded-lg border border-border/40 min-w-0">
               <span className="text-[10.5px] text-muted-foreground font-bold">البداية:</span>
-              <PopoverColorPicker color={stop1} onChange={handleStop1Change} swatchOnly className="w-7.5 h-7.5" />
+              <PopoverColorPicker color={stop1} onChange={handleStop1Change} swatchOnly className="w-8 h-8" />
             </div>
             <div className="flex items-center justify-between bg-background/40 px-2.5 py-1.5 rounded-lg border border-border/40 min-w-0">
               <span className="text-[10.5px] text-muted-foreground font-bold">النهاية:</span>
-              <PopoverColorPicker color={stop2} onChange={handleStop2Change} swatchOnly className="w-7.5 h-7.5" />
+              <PopoverColorPicker color={stop2} onChange={handleStop2Change} swatchOnly className="w-8 h-8" />
             </div>
           </div>
 
@@ -284,11 +284,11 @@ export const GradientPicker = ({
                       >
                         {/* جسم الكبسولة الملون مع حواف ناعمة وبريق زجاجي خفيف */}
                         <div
-                          className="w-full h-full rounded-[5.5px] relative overflow-hidden flex items-center justify-center shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.4),inset_0_-1px_1px_rgba(0,0,0,0.25)] before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/35 before:to-transparent before:pointer-events-none"
+                          className="w-full h-full rounded-md relative overflow-hidden flex items-center justify-center shadow-inner before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/35 before:to-transparent before:pointer-events-none"
                           style={{ background: bgCss }}
                         >
                           {isSelected && (
-                            <div className="w-3.5 h-3.5 rounded-full bg-black/55 backdrop-blur-xs flex items-center justify-center text-white border border-white/70 shadow-xs z-10 animate-in zoom-in-75 duration-150">
+                            <div className="w-3.5 h-3.5 rounded-full fluent-smoke-backdrop flex items-center justify-center text-white border border-white/70 shadow-xs z-10 animate-in zoom-in-75 duration-150">
                               <Check className="w-2.5 h-2.5" weight="bold" />
                             </div>
                           )}

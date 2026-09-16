@@ -260,8 +260,9 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 	// 2. Bound payload size (LimitReader for Unbounded IO rule)
 	r.Body = http.MaxBytesReader(w, r.Body, MaxUploadSize)
 
-	// 3. Parse multipart form
-	if err := r.ParseMultipartForm(MaxUploadSize); err != nil {
+	// 3. Parse multipart form — 10MB في RAM والباقي لملفات مؤقتة تلقائياً
+	// (الحد الكلي ما زال MaxUploadSize عبر MaxBytesReader أعلاه)
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		http.Error(w, "File payload too large or invalid multipart form", http.StatusBadRequest)
 		return
 	}

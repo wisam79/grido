@@ -8,7 +8,7 @@ export interface PrintIconProps extends React.SVGProps<SVGSVGElement> {
  * أيقونة الطباعة الاحترافية المصممة بمعايير Microsoft Fluent 2 & Apple Design
  * شبكة 20x20 متطابقة مع أشرطة الأدوات
  */
-export function PrintIcon({ className = "w-4.5 h-4.5", ...props }: PrintIconProps) {
+export function PrintIcon({ className = "w-4 h-4", ...props }: PrintIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"

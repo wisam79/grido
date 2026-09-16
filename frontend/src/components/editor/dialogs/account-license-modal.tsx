@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -101,23 +102,23 @@ export function AccountLicenseModal() {
     <Dialog open={accountModalOpen} onOpenChange={handleModalOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[95vw] sm:max-w-[460px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl rounded-2xl p-5 sm:p-6 dir-rtl fluent-specular overflow-hidden"
+        className="w-[95vw] sm:max-w-[460px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl p-5 sm:p-6 fluent-specular overflow-hidden"
         dir="rtl"
       >
         {/* 🔹 1. رأس النافذة المتناسق مع زر الإغلاق المدمج */}
-        <DialogHeader className="text-right border-b border-border/40 pb-3.5 space-y-0">
+        <DialogHeader className="text-start border-b border-border/40 pb-3.5 space-y-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-xs shrink-0">
-                <ShieldCheck className="w-5.5 h-5.5" weight="duotone" />
+                <ShieldCheck className="w-5 h-5" weight="duotone" />
               </div>
               <div className="min-w-0">
                 <DialogTitle className="text-base font-bold text-foreground tracking-tight truncate">
                   الحساب والترخيص
                 </DialogTitle>
-                <p className="text-xs text-muted-foreground/80 mt-0.5 truncate">
+                <DialogDescription className="text-xs text-muted-foreground/80 mt-0.5 truncate">
                   {user && user.token ? "إدارة اشتراكك وحسابك السحابي" : "سجل دخولك لتفعيل ميزات الذكاء الاصطناعي والمزامنة"}
-                </p>
+                </DialogDescription>
               </div>
             </div>
 
@@ -134,7 +135,7 @@ export function AccountLicenseModal() {
                     ) : (
                       <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        PRO احترافي
+                        احترافي
                       </span>
                     )
                   ) : (
@@ -158,7 +159,7 @@ export function AccountLicenseModal() {
               <div className="w-8 h-8 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold text-xs flex items-center justify-center shrink-0">
                 {(user.name || user.email || "U").charAt(0).toUpperCase()}
               </div>
-              <div className="min-w-0 text-right">
+              <div className="min-w-0 text-start">
                 <span className="text-xs font-bold text-foreground block truncate">
                   {user.name || "مستخدم مسجل"}
                 </span>
@@ -231,7 +232,9 @@ export function AccountLicenseModal() {
 
           {/* 🏷️ تبويب تفعيل الترخيص */}
           <TabsContent value="license" className="mt-3.5 space-y-3.5 animate-in fade-in-50 duration-150">
+            {/* key يعيد تركيب النموذج عند كل فتح — يصفّر حالات التحميل العالقة إن أُغلقت النافذة أثناء طلب جارٍ */}
             <LicenseTabContent
+              key={String(accountModalOpen)}
               user={user}
               licenseActive={active}
               onActivate={async (key) => {

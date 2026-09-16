@@ -130,7 +130,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
         align="start"
         sideOffset={6}
         collisionPadding={12}
-        className="w-[285px] bg-card/95 backdrop-blur-2xl border border-border/80 rounded-xl shadow-2xl z-50 p-2.5 space-y-2 font-cairo fluent-specular"
+        className="w-[285px] bg-card/95 backdrop-blur-2xl border border-border/80 rounded-xl shadow-fluent-28 z-50 p-2.5 space-y-2 font-cairo fluent-specular"
         dir="rtl"
       >
         {/* مربع البحث */}

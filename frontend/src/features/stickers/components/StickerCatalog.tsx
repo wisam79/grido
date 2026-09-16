@@ -141,7 +141,7 @@ const GalleryCard = React.memo(function GalleryCard({
     >
       {/* Selection Check Badge */}
       {isSelected && (
-        <div className="absolute top-2 end-2 z-10 w-4.5 h-4.5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
+        <div className="absolute top-2 end-2 z-10 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
           <Check className="w-3 h-3 font-bold" />
         </div>
       )}
@@ -302,7 +302,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                 onClick={() => onSelectCategory(cat.id)}
                 aria-pressed={isActive}
                 className={cn(
-                  "h-7.5 px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0",
+                  "h-8 px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-xs font-bold"
                     : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40"
@@ -376,7 +376,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                         aria-checked={isActive}
                         aria-label={shape.label}
                         className={cn(
-                          "w-7 h-6.5 rounded-[4px] flex items-center justify-center transition-all cursor-pointer",
+                          "w-7 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer",
                           isActive
                             ? "bg-background text-foreground shadow-2xs font-bold"
                             : "text-muted-foreground hover:text-foreground hover:bg-background/40"

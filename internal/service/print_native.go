@@ -8,8 +8,37 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
+
+// منظف مركزي لملفات HTML المؤقتة — كان كل طباعة تطلق goroutine نائمة 3 دقائق
+// (100 طبعة دفعية = 100 نائمة) وتتراكم الملفات لو قُتل التطبيق قبل الاستيقاظ
+var printTempJanitorOnce sync.Once
+
+func schedulePrintTempCleanup() {
+	printTempJanitorOnce.Do(func() {
+		go func() {
+			ticker := time.NewTicker(5 * time.Minute)
+			defer ticker.Stop()
+			for range ticker.C {
+				entries, err := os.ReadDir(os.TempDir())
+				if err != nil {
+					continue
+				}
+				cutoff := time.Now().Add(-5 * time.Minute)
+				for _, e := range entries {
+					if e.IsDir() || !strings.HasPrefix(e.Name(), "grido_print_") || !strings.HasSuffix(e.Name(), ".html") {
+						continue
+					}
+					if info, err := e.Info(); err == nil && info.ModTime().Before(cutoff) {
+						_ = os.Remove(filepath.Join(os.TempDir(), e.Name()))
+					}
+				}
+			}
+		}()
+	})
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // print_native.go — إطلاق نافذة الطباعة الأصلية لنظام التشغيل
@@ -55,11 +84,9 @@ func (s *PrintService) PrintNative(filePath string) error {
 			htmlContent := fmt.Sprintf(`<!DOCTYPE html><html><head><style>@page{margin:0;size:auto;}html,body{margin:0;padding:0;width:100%%;height:100%%;position:relative;overflow:hidden;}img{position:absolute;top:0;left:0;width:100%%;height:100%%;object-fit:contain;margin:0;padding:0;}</style></head><body onload="setTimeout(function(){window.print();window.close();},500)"><img src="%s"/></body></html>`, escapedURI)
 			if err := os.WriteFile(htmlPath, []byte(htmlContent), 0644); err == nil {
 				targetPath = htmlPath
-				// تنظيف الملف المؤقت بعد إعطاء وقت كافٍ للمتصفح لتحميله وطباعته
-				go func(tmpFile string) {
-					time.Sleep(3 * time.Minute)
-					_ = os.Remove(tmpFile)
-				}(htmlPath)
+				// المنظف المركزي يزيل الملفات الأقدم من 5 دقائق (بما فيها بقايا
+				// جلسات سابقة قُتلت قبل التنظيف) — عامل واحد بدل نائم لكل طباعة
+				schedulePrintTempCleanup()
 			}
 		}
 

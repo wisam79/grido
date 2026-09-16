@@ -92,8 +92,15 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 				}
 			}
 		} else {
-			if _, err := os.Stat(filePath); err != nil {
+			info, err := os.Stat(filePath)
+			if err != nil {
 				return 0, 0, fmt.Errorf("image file does not exist: %s", filepath.Base(filePath))
+			}
+			// فحص مباشر للحجم: ملف وُضع يدوياً في Media/Exports كان يتجاوز
+			// سقوف الإدخال (50/60MB) ويدخل imaging.Open مباشرة
+			const maxPrintInputBytes = int64(60 * 1024 * 1024)
+			if info.Size() > maxPrintInputBytes {
+				return 0, 0, fmt.Errorf("image file too large: %s (%d bytes max)", filepath.Base(filePath), maxPrintInputBytes)
 			}
 		}
 	}

@@ -47,7 +47,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
   return (
     <>
       <div className="flex items-center gap-1 text-xs font-bold px-1.5 text-primary">
-        <Stack className="w-4.5 h-4.5" weight="regular" />
+        <Stack className="w-4 h-4" weight="regular" />
         <span>{selectedIds.length} عناصر</span>
       </div>
 
@@ -63,7 +63,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
               onClick={() => alignSelectedElements(key as never)}
               className="h-7 w-7 p-0 rounded-md hover:bg-accent"
             >
-              <Icon className="w-4.5 h-4.5" />
+              <Icon className="w-4 h-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">{label}</TooltipContent>
@@ -83,7 +83,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
                 onClick={() => distributeSelectedElements("horizontal")}
                 className="h-7 w-7 p-0 rounded-md hover:bg-accent"
               >
-                <ArrowsHorizontal className="w-4.5 h-4.5" weight="bold" />
+                <ArrowsHorizontal className="w-4 h-4" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">توزيع أفقي متساوٍ</TooltipContent>
@@ -97,7 +97,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
                 onClick={() => distributeSelectedElements("vertical")}
                 className="h-7 w-7 p-0 rounded-md hover:bg-accent"
               >
-                <ArrowsVertical className="w-4.5 h-4.5" weight="bold" />
+                <ArrowsVertical className="w-4 h-4" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">توزيع عمودي متساوٍ</TooltipContent>
@@ -116,10 +116,10 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
             onClick={groupSelectedElements}
             className="h-7 w-7 p-0 rounded-md hover:bg-accent"
           >
-            <BoundingBox className="w-4.5 h-4.5" weight="bold" />
+            <BoundingBox className="w-4 h-4" weight="bold" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">تجميع العناصر (Group)</TooltipContent>
+        <TooltipContent side="bottom">تجميع العناصر</TooltipContent>
       </Tooltip>
 
       {/* تكرار */}
@@ -131,7 +131,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
             onClick={() => duplicateElements(selectedIds)}
             className="h-7 w-7 p-0 rounded-md hover:bg-accent"
           >
-            <Copy className="w-4.5 h-4.5" weight="regular" />
+            <Copy className="w-4 h-4" weight="regular" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">تكرار العناصر</TooltipContent>
@@ -146,7 +146,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
             onClick={() => removeElements(selectedIds)}
             className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
           >
-            <Trash className="w-4.5 h-4.5" weight="regular" />
+            <Trash className="w-4 h-4" weight="regular" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">حذف العناصر</TooltipContent>

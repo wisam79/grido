@@ -84,31 +84,16 @@ export function useRulerMetricsPreview(
     };
   }, [updateRulerPositions, containerRef, innerRef]);
 
+  // قياس واحد بعد استقرار التخطيط — كان rAF→rAF→setTimeout(40) زائداً عن الحاجة
   useEffect(() => {
-    let timerId: ReturnType<typeof setTimeout> | null = null;
-    const id1 = requestAnimationFrame(() => {
+    const id = requestAnimationFrame(() => {
       updateRulerPositions();
-      const id2 = requestAnimationFrame(() => {
-        updateRulerPositions();
-      });
-      timerId = setTimeout(updateRulerPositions, 40);
-      return () => cancelAnimationFrame(id2);
     });
-    return () => {
-      cancelAnimationFrame(id1);
-      if (timerId) clearTimeout(timerId);
-    };
+    return () => cancelAnimationFrame(id);
   }, [updateRulerPositions, canvasZoom, mode, containerSize]);
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const handleScroll = () => {
-      updateRulerPositions();
-    };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [updateRulerPositions, containerRef]);
+  // ملاحظة: مستمع scroll مسجل مرة واحدة مع rAF throttle في الأثر أعلاه (handleLayout)،
+  // فلا نسجل مستمعاً ثانياً هنا لتفادي getBoundingClientRect مكرراً لكل scroll.
 
   const handleWorkspaceMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!showRuler || printMode) return;

@@ -27,14 +27,14 @@
 لكي يعمل سيرفر Modal AI بشكل صحيح كحارس أمن، يجب أن يحتوي على المتغيرات البيئية (Secrets) التالية:
 - SUPABASE_URL: رابط مشروع سوبابيز (مثل https://xxxx.supabase.co)
 - SUPABASE_ANON_KEY: المفتاح العام (Anon Key) للتخاطب مع الـ API
+- `grido-ai-secret` و `supabase-auth`: أسرار Modal الفعلية المستخدمة في `modal_ai/upscaler.py:61`.
 
 ## لماذا هذا التصميم؟
 1. **السرعة:** لا توجد طبقات بروكسي إضافية تنسخ بيانات الصورة الضخمة (Base64) وتستهلك ذاكرة (RAM).
 2. **استقرار الأداء:** معالجات الذكاء الاصطناعي تحتاج لوقت تنفيذ طويل (Long-Running Tasks). توجيهها لمودال مباشرة يلغي قيود الوقت المفروضة على Serverless Functions في سوبابيز.
-3. **أمان 100%:** لا حاجة لتضمين مفتاح Modal السري داخل تطبيق سطح المكتب (EXE) حيث يمكن للهاكر استخراجه. الاعتماد كلياً على Supabase JWT يجعل كل مستخدم مسؤولاً عن حصته فقط.
+3. **الأمان:** المسار الأساسي يعتمد على Supabase JWT لكل مستخدم. ملاحظة: مفتاح Modal الاحتياطي ما زال يُحقن في الثنائية عبر `ldflags` (`build.ps1:49` و `release.yml:122`) — قابل للاستخراج بـ `strings`، ويُنصح بإزالته والاعتماد على JWT فقط.
 4. **تتبع التكاليف:** الإدارة المركزية لحساب تكلفة كل عملية معالجة (GPU Time) عبر تسجيل الثواني المستغرقة بدقة في قاعدة بيانات Supabase.
 
 ## صلاحيات قواعد البيانات وملفات الـ Migrations
-- تم إنشاء ملف Migration رسمي جديد باسم `supabase/migrations/20260729000000_fix_is_admin_permissions.sql`.
-- يضمن هذا الملف إعطاء صلاحيات `GRANT EXECUTE` لكل من `is_admin()` ودالة `check_and_record_ai_usage()` لجميع الأدوار (`authenticated`, `anon`, `service_role`).
-- يمنع هذا التعديل أخطاء الفحص `42501 permission denied` ويضمن تعرف PostgREST على دالة الـ RPC بنجاح عبر الاتصال المباشر.
+- تاريخياً: `supabase/migrations/20260729000000_fix_is_admin_permissions.sql` وسّع `GRANT EXECUTE` لـ `is_admin()` و `check_and_record_ai_usage()` إلى (`authenticated`, `anon`, `service_role`).
+- الحالي (الحاكم): `supabase/migrations/20260907000000_grant_rpc_permissions.sql:5-20` يمنح `activate_license` و `check_and_record_ai_usage` إلى `authenticated` و `service_role` فقط (بدون `anon`) مع `NOTIFY pgrst, 'reload schema'`.

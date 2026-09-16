@@ -32,7 +32,7 @@ describe('BatchInsertDialog Component Tests', () => {
   it('renders empty queue state when open with no images', () => {
     renderWithProviders(<BatchInsertDialog open={true} onOpenChange={vi.fn()} />);
 
-    expect(screen.getByText('إدراج دفعة صور ومعاملات (Batch Studio)')).toBeInTheDocument();
+    expect(screen.getByText('إدراج دفعة')).toBeInTheDocument();
     expect(screen.getByText('قائمة الصور فارغة')).toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe('BatchInsertDialog Component Tests', () => {
       <BatchInsertDialog open={true} onOpenChange={handleOpenChange} />
     );
 
-    const addFilesBtn = screen.getByText('إضافة صور...');
+    const addFilesBtn = screen.getByText('إدراج صور...');
     fireEvent.click(addFilesBtn);
 
     await waitFor(() => {

@@ -294,7 +294,7 @@ export function PrintSettingsToolbar({
                       type="button"
                       onClick={() => setPrintSettings({ repeatMode: id })}
                       className={cn(
-                        "h-6 w-6 rounded-xs flex items-center justify-center",
+                        "h-6 w-6 rounded-md flex items-center justify-center",
                         toggleButtonClassName((printSettings.repeatMode ?? "all") === id)
                       )}
                       aria-label={label}

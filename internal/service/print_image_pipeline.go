@@ -209,6 +209,85 @@ type processedCache struct {
 	group  singleflight.Group
 }
 
+// كاش خام مشترك عبر طلبات الطباعة — طباعتان متتاليتان لنفس الصور كانتا
+// تعيدان فك الترميز كاملاً (الكاش السابق يُبنى ويُرمى لكل طلب).
+// مفاتيح base64 مُعنونة بالمحتوى فآمنة، ومسارات الملفات تُتحقق بالحجم+الزمن.
+type sharedRawEntry struct {
+	img     image.Image
+	size    int64
+	modTime time.Time
+	access  time.Time
+}
+
+var sharedRawCache = struct {
+	sync.RWMutex
+	images map[string]sharedRawEntry
+}{images: make(map[string]sharedRawEntry)}
+
+const sharedRawCacheMax = 16
+const sharedRawCacheTTL = 5 * time.Minute
+const sharedRawCacheMaxPixels = int64(25_000_000) // لا نخزن خاماً فوق ~100MB
+
+func getSharedRaw(cacheKey, filePath string) image.Image {
+	if !strings.HasPrefix(filePath, "data:image/") {
+		info, err := os.Stat(filePath)
+		if err != nil {
+			return nil
+		}
+		sharedRawCache.RLock()
+		e, ok := sharedRawCache.images[cacheKey]
+		sharedRawCache.RUnlock()
+		if !ok || e.size != info.Size() || !e.modTime.Equal(info.ModTime()) || time.Since(e.access) > sharedRawCacheTTL {
+			return nil
+		}
+	} else {
+		sharedRawCache.RLock()
+		e, ok := sharedRawCache.images[cacheKey]
+		sharedRawCache.RUnlock()
+		if !ok || time.Since(e.access) > sharedRawCacheTTL {
+			return nil
+		}
+	}
+	sharedRawCache.Lock()
+	if cur, ok := sharedRawCache.images[cacheKey]; ok {
+		cur.access = time.Now()
+		sharedRawCache.images[cacheKey] = cur
+		sharedRawCache.Unlock()
+		return cur.img
+	}
+	sharedRawCache.Unlock()
+	return nil
+}
+
+func putSharedRaw(cacheKey, filePath string, img image.Image) {
+	var size int64 = -1
+	var mod time.Time
+	if !strings.HasPrefix(filePath, "data:image/") {
+		info, err := os.Stat(filePath)
+		if err != nil {
+			return
+		}
+		size, mod = info.Size(), info.ModTime()
+	}
+	if b := img.Bounds(); int64(b.Dx())*int64(b.Dy()) > sharedRawCacheMaxPixels {
+		return
+	}
+	sharedRawCache.Lock()
+	defer sharedRawCache.Unlock()
+	if _, ok := sharedRawCache.images[cacheKey]; !ok && len(sharedRawCache.images) >= sharedRawCacheMax {
+		var oldest string
+		var oldestT time.Time
+		first := true
+		for k, e := range sharedRawCache.images {
+			if first || e.access.Before(oldestT) {
+				oldest, oldestT, first = k, e.access, false
+			}
+		}
+		delete(sharedRawCache.images, oldest)
+	}
+	sharedRawCache.images[cacheKey] = sharedRawEntry{img: img, size: size, modTime: mod, access: time.Now()}
+}
+
 // computeImageCacheKey يحسب مفتاح كاش للصورة (مع تجنب Hash كامل لـ Base64 الضخمة)
 func computeImageCacheKey(filePath string) string {
 	if strings.HasPrefix(filePath, "data:image/") {
@@ -234,6 +313,15 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 		return cachedRaw, nil
 	}
 	imgCache.mu.RUnlock()
+
+	// إصابة عبر الطلبات قبل فك الترميز — تُزرع أيضاً في كاش الطلب الحالي
+	if shared := getSharedRaw(cacheKey, filePath); shared != nil {
+		imgCache.mu.Lock()
+		imgCache.images[cacheKey] = shared
+		imgCache.access[cacheKey] = time.Now()
+		imgCache.mu.Unlock()
+		return shared, nil
+	}
 
 	res, err, _ := imgCache.group.Do(cacheKey, func() (interface{}, error) {
 		imgCache.mu.RLock()
@@ -296,7 +384,9 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 	if err != nil {
 		return nil, err
 	}
-	return res.(image.Image), nil
+	img := res.(image.Image)
+	putSharedRaw(cacheKey, filePath, img)
+	return img, nil
 }
 
 // isQuarterRotation يعيد true عندما يكون التدوير 90° أو 270° (mod 360)

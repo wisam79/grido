@@ -26,7 +26,7 @@ function DocumentPresetGraphic({ type, active }: { type: string; active: boolean
 
   if (type === "stretch") {
     return (
-      <div className={cn("w-5 h-5 rounded-xs border border-dashed flex items-center justify-center transition-all", activeBorder)}>
+      <div className={cn("w-5 h-5 rounded-md border border-dashed flex items-center justify-center transition-all", activeBorder)}>
         <span className="text-[10px] font-mono font-black leading-none">⤢</span>
       </div>
     );
@@ -34,13 +34,13 @@ function DocumentPresetGraphic({ type, active }: { type: string; active: boolean
 
   // تمثيل نسبي دقيق لشكل وأبعاد كل وثيقة رسمية
   const ratioStyles: Record<string, string> = {
-    visa: "w-5 h-5 rounded-xs", // مربع 1:1
-    "iq-national-id": "w-4.5 h-6 rounded-xs", // 35:45 عمودي
-    "iq-civil-id": "w-4.5 h-5.5 rounded-xs", // 32:40 عمودي
-    "iq-general-id": "w-4 h-6 rounded-xs", // 40:60 عمودي مستطيل
-    "iq-transactions": "w-4 h-5 rounded-xs", // 30:40 مدمج
+    visa: "w-5 h-5 rounded-md", // مربع 1:1
+    "iq-national-id": "w-4 h-6 rounded-md", // 35:45 عمودي
+    "iq-civil-id": "w-4 h-6 rounded-md", // 32:40 عمودي
+    "iq-general-id": "w-4 h-6 rounded-md", // 40:60 عمودي مستطيل
+    "iq-transactions": "w-4 h-5 rounded-md", // 30:40 مدمج
   };
-  const styleClass = ratioStyles[type] || "w-4.5 h-5.5 rounded-xs";
+  const styleClass = ratioStyles[type] || "w-4 h-6 rounded-md";
 
   return (
     <div className={cn(styleClass, "border flex flex-col items-center justify-center p-0.5 transition-all relative overflow-hidden", activeBorder)}>
@@ -385,7 +385,7 @@ export function CollageCustomGridTab({
               title="مصفوفة نقاط ارتكاز الصور على الورقة"
             >
               {/* إطار الهامش الداخلي للورقة لتعزيز الإدراك البصري */}
-              <div className="absolute inset-2 pointer-events-none border border-dashed border-border/60 rounded-xs" />
+              <div className="absolute inset-2 pointer-events-none border border-dashed border-border/60 rounded-md" />
 
               {ALIGNMENT_MATRIX.map((row) =>
                 row.map((alignId) => {
@@ -398,7 +398,7 @@ export function CollageCustomGridTab({
                       aria-pressed={isActive}
                       onClick={() => onGridAlignChange(alignId)}
                       title={ALIGNMENT_LABELS[alignId]}
-                      className="relative z-10 flex items-center justify-center rounded-xs transition-all cursor-pointer group hover:bg-primary/10"
+                      className="relative z-10 flex items-center justify-center rounded-md transition-all cursor-pointer group hover:bg-primary/10"
                     >
                       <span
                         className={cn(
@@ -442,7 +442,7 @@ export function CollageCustomGridTab({
                 </div>
                 <span
                   className={cn(
-                    "text-[9.5px] px-1.5 py-0.5 rounded-sm border shrink-0 font-medium",
+                    "text-[9.5px] px-1.5 py-0.5 rounded-md border shrink-0 font-medium",
                     gridAlign === "top-left"
                       ? "bg-primary/15 text-primary border-primary/30 font-bold"
                       : "bg-muted/50 text-muted-foreground border-border/40"
@@ -478,7 +478,7 @@ export function CollageCustomGridTab({
                 </div>
                 <span
                   className={cn(
-                    "text-[9.5px] px-1.5 py-0.5 rounded-sm border shrink-0 font-medium",
+                    "text-[9.5px] px-1.5 py-0.5 rounded-md border shrink-0 font-medium",
                     gridAlign === "center"
                       ? "bg-primary/15 text-primary border-primary/30 font-bold"
                       : "bg-muted/50 text-muted-foreground border-border/40"

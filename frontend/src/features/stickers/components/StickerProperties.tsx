@@ -414,7 +414,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               {/* Die-cut Cutline Toggle */}
               <div className="h-8 flex items-center justify-between px-2.5 rounded-md bg-card/40 border border-border/30 hover:border-border/60 transition-colors">
                 <div className="flex items-center gap-1.5">
-                  <Scissors className="w-3.5 h-3.5 text-rose-500" />
+                  <Scissors className="w-3.5 h-3.5 text-destructive" />
                   <span className="text-xs font-semibold text-foreground/85">إطار القص</span>
                 </div>
                 <Switch
@@ -446,7 +446,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                       key={idx}
                       className={cn(
                         "w-full h-full max-w-[14px] max-h-[14px] mx-auto border transition-all duration-150 shadow-2xs",
-                        template.shape === "circle" ? "rounded-full" : template.shape === "rect" ? "rounded-[1px]" : "rounded-xs"
+                        template.shape === "circle" ? "rounded-full" : template.shape === "rect" ? "rounded-[1px]" : "rounded-md"
                       )}
                       style={{
                         backgroundColor: params.primaryColor,

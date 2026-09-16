@@ -163,6 +163,7 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
       ref={menuRef}
       role="menu"
       tabIndex={-1}
+      dir="rtl"
       aria-label="قائمة السياق الموحدة"
       className="fixed z-(--z-menu) w-[200px] bg-popover backdrop-blur-2xl border border-border rounded-xl p-1 text-xs font-cairo overflow-hidden select-none animate-in fade-in-80 zoom-in-95 duration-150 outline-none space-y-1 shadow-fluent-28 fluent-specular"
       style={{

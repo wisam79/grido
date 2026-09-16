@@ -93,4 +93,8 @@ export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth, filter
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [hasFilters, recache]);
+
+  // يُعاد للمستدعي لإعادة الكاش صراحةً بعد استقرار التحجيم (onTransformEnd)
+  // بدل تضمين الأبعاد في filterKey الذي كان يعيد الكاش المكلف أثناء كل تحجيم
+  return recache;
 }

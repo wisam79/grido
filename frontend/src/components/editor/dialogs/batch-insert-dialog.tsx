@@ -291,7 +291,7 @@ export function BatchInsertDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-2xl font-cairo fluent-specular transition-all duration-150 gap-0"
+        className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular transition-all duration-150 gap-0"
         dir="rtl"
       >
         {/* Header */}
@@ -301,10 +301,10 @@ export function BatchInsertDialog({
               <Images className="text-primary w-6 h-6 shrink-0" weight="duotone" />
               <div className="min-w-0">
                 <DialogTitle className="text-base font-bold text-foreground truncate">
-                  إدراج دفعة صور ومعاملات (Batch Studio)
+                  إدراج دفعة
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  توزيع شبكي ذكي، استيراد مجلدات، وتكرار نسخ المعاملات دفعة واحدة
+                  إدراج وتوزيع صور متعددة
                 </DialogDescription>
               </div>
             </div>
@@ -336,7 +336,7 @@ export function BatchInsertDialog({
               className="h-8 rounded-md gap-1.5 text-xs font-medium border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
             >
               <Plus className="w-3.5 h-3.5 shrink-0" weight="bold" />
-              إضافة صور...
+              إدراج صور...
             </Button>
 
             <Button
@@ -347,19 +347,19 @@ export function BatchInsertDialog({
               className="h-8 rounded-md gap-1.5 text-xs font-medium border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
             >
               <FolderOpen className="w-3.5 h-3.5 shrink-0" weight="bold" />
-              استيراد مجلد كامل...
+              إدراج مجلد...
             </Button>
           </div>
 
           {images.length > 0 && (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground ml-2">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground ms-2">
                 <span>نسخ موحدة:</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleSetAllCopies(2)}
-                  className="h-6 px-2 text-xs rounded-md"
+                  className="h-7 px-2 text-xs rounded-md"
                 >
                   ×2
                 </Button>
@@ -367,7 +367,7 @@ export function BatchInsertDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleSetAllCopies(4)}
-                  className="h-6 px-2 text-xs rounded-md"
+                  className="h-7 px-2 text-xs rounded-md"
                 >
                   ×4
                 </Button>
@@ -375,7 +375,7 @@ export function BatchInsertDialog({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleSetAllCopies(8)}
-                  className="h-6 px-2 text-xs rounded-md"
+                  className="h-7 px-2 text-xs rounded-md"
                 >
                   ×8
                 </Button>
@@ -389,7 +389,7 @@ export function BatchInsertDialog({
                 className="h-8 rounded-md gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
                 <Trash className="w-3.5 h-3.5 shrink-0" />
-                تفريغ القائمة
+                مسح القائمة
               </Button>
             </div>
           )}
@@ -406,7 +406,7 @@ export function BatchInsertDialog({
                 </div>
                 <h4 className="text-sm font-bold text-foreground">قائمة الصور فارغة</h4>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs leading-relaxed">
-                  انقر على "إضافة صور" أو "استيراد مجلد" للبدء في تجميع وتوزيع الصور
+                  انقر على "إدراج صور" أو "إدراج مجلد" للبدء
                 </p>
                 <div className="flex items-center gap-2 mt-4">
                   <Button size="sm" onClick={handleAddFiles} className="h-8 gap-1.5 text-xs rounded-md">
@@ -431,7 +431,7 @@ export function BatchInsertDialog({
                         alt={`عنصر ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />
-                      <span className="absolute bottom-0.5 right-0.5 text-[10px] font-bold px-1 rounded bg-black/60 text-white backdrop-blur-xs">
+                      <span className="absolute bottom-0.5 end-0.5 text-[10px] font-bold px-1 rounded-md bg-black/60 text-white">
                         #{idx + 1}
                       </span>
                     </div>

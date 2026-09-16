@@ -143,7 +143,7 @@ export function CollageSettings() {
                       onClick={() => { setCollageStrokeColor(hex); commitColorLater(); }}
                       title={label}
                       className={cn(
-                        "w-5.5 h-5.5 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-115 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                        "w-5.5 h-6 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-115 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                         isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-xs"
                       )}
                       style={{ backgroundColor: hex }}

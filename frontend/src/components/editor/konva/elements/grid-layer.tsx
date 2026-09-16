@@ -25,6 +25,11 @@ export const GridLayer = React.memo(function GridLayer({
   const numH = Math.ceil(canvasHeight / gridSize);
   const numW = Math.ceil(canvasWidth / gridSize);
 
+  // سقف كثافة يحمي من انفجار O(W×H) عند gridSize صغير جداً — تُدمج الخلايا بدل رسمها كلها
+  const MAX_GRID_CELLS = 20000;
+  const totalCells = numH * numW;
+  const densityStep = totalCells > MAX_GRID_CELLS ? Math.ceil(Math.sqrt(totalCells / MAX_GRID_CELLS)) : 1;
+
   return (
     <Layer listening={false} name="grid-layer" hitStrokeWidth={0}>
       <Shape
@@ -36,12 +41,12 @@ export const GridLayer = React.memo(function GridLayer({
 
             // الخطوط الفرعية — مسار واحد فقط
             context.beginPath();
-            for (let i = 0; i <= numH; i++) {
+            for (let i = 0; i <= numH; i += densityStep) {
               if (gridSubdivisions > 0 && i % gridSubdivisions === 0) continue;
               context.moveTo(0, i * gridSize);
               context.lineTo(canvasWidth, i * gridSize);
             }
-            for (let j = 0; j <= numW; j++) {
+            for (let j = 0; j <= numW; j += densityStep) {
               if (gridSubdivisions > 0 && j % gridSubdivisions === 0) continue;
               context.moveTo(j * gridSize, 0);
               context.lineTo(j * gridSize, canvasHeight);
@@ -69,8 +74,8 @@ export const GridLayer = React.memo(function GridLayer({
 
             // النقاط الفرعية — مسار واحد فقط
             context.beginPath();
-            for (let i = 0; i <= numH; i++) {
-              for (let j = 0; j <= numW; j++) {
+            for (let i = 0; i <= numH; i += densityStep) {
+              for (let j = 0; j <= numW; j += densityStep) {
                 const isMajor = gridSubdivisions > 0 && (i % gridSubdivisions === 0 || j % gridSubdivisions === 0);
                 if (isMajor) continue;
                 const x = j * gridSize;

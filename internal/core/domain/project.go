@@ -36,7 +36,7 @@ type Project struct {
 	CollageStrokeWidth    int       `json:"collageStrokeWidth"`
 	CollageStrokeColor    string    `json:"collageStrokeColor"`
 	CreatedAt           time.Time `json:"-"` // مخفي من Wails bindings لتفادي خطأ time.Time
-	UpdatedAt           time.Time `json:"-"`
+	UpdatedAt           time.Time `json:"-" gorm:"index"` // فهرس لترتيب FindAll (updated_at desc) بدل المسح الكامل
 	CreatedAtStr        string    `gorm:"-" json:"createdAt"` // حقل محسوب للتسلسل
 	UpdatedAtStr        string    `gorm:"-" json:"updatedAt"`
 }

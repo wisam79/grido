@@ -105,7 +105,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
   const toggleButtonClassName = (active: boolean) =>
     cn(
-      "w-7.5 h-7.5 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+      "w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
       active
         ? "bg-background text-primary shadow-xs font-extrabold"
         : "hover:bg-background/60 text-muted-foreground hover:text-foreground"

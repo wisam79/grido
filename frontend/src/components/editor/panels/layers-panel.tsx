@@ -30,12 +30,13 @@ import {
  *   - حذف ونسخ العنصر
  * ──────────────────────────────────────────────────────── */
 
-function getElementLabel(el: CanvasElement): string {
+function getElementLabel(el: CanvasElement, layerNumber?: number): string {
+  const suffix = layerNumber !== undefined ? ` ${String(layerNumber).padStart(2, "0")}` : "";
   switch (el.type) {
     case "image":
-      return "صورة";
+      return `صورة${suffix}`;
     case "text":
-      return el.text?.slice(0, 18) || "نص";
+      return el.text?.slice(0, 18) || `نص${suffix}`;
     case "shape": {
       const shapeLabels: Record<string, string> = {
         rect: "مستطيل",
@@ -45,10 +46,10 @@ function getElementLabel(el: CanvasElement): string {
         star: "نجمة",
         path: "مسار",
       };
-      return shapeLabels[(el as ShapeElement).shape] || "شكل";
+      return `${shapeLabels[(el as ShapeElement).shape] || "شكل"}${suffix}`;
     }
     default:
-      return "عنصر";
+      return `عنصر${suffix}`;
   }
 }
 
@@ -68,6 +69,7 @@ function getElementIcon(el: CanvasElement, isSelected = false) {
 
 interface LayerRowProps {
   el: CanvasElement;
+  layerNumber: number;
   isSelected: boolean;
   onSelect: (e: React.MouseEvent | React.KeyboardEvent) => void;
   onToggleVisibility: () => void;
@@ -84,6 +86,7 @@ interface LayerRowProps {
 
 const LayerRow = React.memo(function LayerRow({
   el,
+  layerNumber,
   isSelected,
   onSelect,
   onToggleVisibility,
@@ -156,7 +159,7 @@ const LayerRow = React.memo(function LayerRow({
         )}
         dir="auto"
       >
-        {getElementLabel(el)}
+        {getElementLabel(el, layerNumber)}
       </span>
 
       {/* أزرار التحكم — تظهر عند Hover أو التحديد */}
@@ -361,10 +364,11 @@ export const LayersPanel = React.memo(function LayersPanel() {
             </p>
           </div>
         ) : (
-          sortedElements.map((el) => (
+          sortedElements.map((el, index) => (
             <LayerRow
               key={el.id}
               el={el}
+              layerNumber={sortedElements.length - index}
               isSelected={selectedIds.includes(el.id) || selectedId === el.id}
               onSelect={(e) => {
                 if (e.ctrlKey || e.metaKey || e.shiftKey) {

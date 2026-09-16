@@ -64,7 +64,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             onClick={() => bringToFront(element.id)}
             className="h-7 w-7 p-0 rounded-md hover:bg-accent"
           >
-            <ArrowUp className="w-4.5 h-4.5" weight="bold" />
+            <ArrowUp className="w-4 h-4" weight="bold" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">إحضار للأمام</TooltipContent>
@@ -78,7 +78,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             onClick={() => sendToBack(element.id)}
             className="h-7 w-7 p-0 rounded-md hover:bg-accent"
           >
-            <ArrowDown className="w-4.5 h-4.5" weight="bold" />
+            <ArrowDown className="w-4 h-4" weight="bold" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">إرسال للخلف</TooltipContent>
@@ -92,7 +92,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             onClick={() => duplicateElement(element.id)}
             className="h-7 w-7 p-0 rounded-md hover:bg-accent"
           >
-            <Copy className="w-4.5 h-4.5" weight="regular" />
+            <Copy className="w-4 h-4" weight="regular" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">تكرار العنصر</TooltipContent>
@@ -117,7 +117,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             }}
             className="h-7 w-7 p-0 rounded-md hover:bg-accent"
           >
-            <ArrowClockwise className="w-4.5 h-4.5" weight="bold" />
+            <ArrowClockwise className="w-4 h-4" weight="bold" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
@@ -134,7 +134,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             }}
             className={cn("h-7 w-7 p-0 rounded-md hover:bg-accent", element.flipX && "bg-primary/10 text-primary")}
           >
-            <FlipHorizontal className="w-4.5 h-4.5" weight={element.flipX ? "fill" : "bold"} />
+            <FlipHorizontal className="w-4 h-4" weight={element.flipX ? "fill" : "bold"} />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">قلب أفقي</TooltipContent>
@@ -177,7 +177,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                     }}
                     className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                   >
-                    <ArrowCounterClockwise className="w-4.5 h-4.5" weight="regular" />
+                    <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">استعادة الصورة الأصلية</TooltipContent>
@@ -199,7 +199,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                     }}
                     className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
                   >
-                    <Eye className="w-4.5 h-4.5" weight="regular" />
+                    <Eye className="w-4 h-4" weight="regular" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">اضغط مطولاً لمعاينة الأصل</TooltipContent>
@@ -219,7 +219,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
             onClick={() => removeElement(element.id)}
             className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
           >
-            <Trash className="w-4.5 h-4.5" weight="regular" />
+            <Trash className="w-4 h-4" weight="regular" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">حذف العنصر</TooltipContent>

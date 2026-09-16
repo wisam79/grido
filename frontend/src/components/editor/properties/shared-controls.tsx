@@ -320,7 +320,7 @@ export function ColorWheelPicker({
             onChange("transparent");
           }}
           className={cn(
-            "w-8.5 h-8.5 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+            "w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
             isTransparent
               ? "border-primary bg-primary/10 text-primary font-bold shadow-xs ring-2 ring-primary/30"
               : "border-border/60 bg-input/80 text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -334,7 +334,7 @@ export function ColorWheelPicker({
           <button
             type="button"
             onClick={handleEyeDropper}
-            className="w-8.5 h-8.5 rounded-lg border border-border/60 bg-input/80 hover:bg-accent text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+            className="w-8 h-8 rounded-lg border border-border/60 bg-input/80 hover:bg-accent text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             title="سحب لون من الشاشة (قطارة)"
           >
             <Eyedropper className="w-4 h-4" weight="regular" />
@@ -359,7 +359,7 @@ export function ColorWheelPicker({
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" /> : <Copy className="w-3.5 h-3.5" weight="regular" />}
           </button>
           <div
-            className="w-4.5 h-4.5 rounded-md border border-black/15 dark:border-white/20 shadow-2xs shrink-0 relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
+            className="w-4 h-4 rounded-md border border-black/15 dark:border-white/20 shadow-2xs shrink-0 relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
             style={{
               backgroundColor: displayColor,
             }}

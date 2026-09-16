@@ -394,6 +394,13 @@ func (s *MediaService) ProcessDirectoryImages(dirPath string) ([]string, error) 
 		return []string{}, nil
 	}
 
+	// سقف الدفعة: مجلد بآلاف الصور كان يطفح طابور goroutines ونتائج RAM —
+	// SetLimit يقيد التنفيذ لكن كل المهام + fsync تُحجز مسبقاً
+	const maxDirectoryBatch = 500
+	if len(imagePaths) > maxDirectoryBatch {
+		return nil, fmt.Errorf("too many images in directory: %d (max %d)", len(imagePaths), maxDirectoryBatch)
+	}
+
 	return s.ProcessMultipleOpenedFiles(imagePaths)
 }
 

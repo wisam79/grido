@@ -58,6 +58,8 @@ app = modal.App("grido-ai-upscaler")
     image=image,
     gpu="L4",
     scaledown_window=2,
+    timeout=600,
+    max_containers=2,
     secrets=[modal.Secret.from_name("grido-ai-secret"), modal.Secret.from_name("supabase-auth")]
 )
 class ImageEnhancer:
@@ -117,7 +119,7 @@ class ImageEnhancer:
         # 2. إعداد نموذج CodeFormer محلياً من القرص
         self.net = ARCH_REGISTRY.get('CodeFormer')(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, 
                                                 connect_list=['32', '64', '128', '256']).to(self.device)
-        checkpoint = torch.load('/root/CodeFormer/weights/CodeFormer/codeformer.pth')['params_ema']
+        checkpoint = torch.load('/root/CodeFormer/weights/CodeFormer/codeformer.pth', weights_only=True)['params_ema']
         self.net.load_state_dict(checkpoint)
         self.net.eval()
 
@@ -224,10 +226,19 @@ class ImageEnhancer:
 
             if "," in image_b64:
                 image_b64 = image_b64.split(",")[1]
-                
+
+            # سقف الدخل قبل الفك: base64 بلا حد كان يُفك كاملاً في RAM/VRAM قبل التقليص
+            # 20MB base64 ≈ 15MB خام — كافٍ لصور الهوية (العميل يقلص مسبقاً)
+            if len(image_b64) > 20 * 1024 * 1024:
+                return Response(content='{"error": "الصورة كبيرة جداً (الحد 20MB)"}', media_type="application/json", status_code=413)
+
             image_bytes = base64.b64decode(image_b64)
+            if len(image_bytes) > 15 * 1024 * 1024:
+                del image_bytes
+                return Response(content='{"error": "الصورة كبيرة جداً بعد الفك (الحد 15MB)"}', media_type="application/json", status_code=413)
             np_arr = np.frombuffer(image_bytes, np.uint8)
             img_bgr = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            del image_bytes, np_arr
             
             if img_bgr is None:
                 return Response(content='{"error": "فشل قراءة الصورة"}', media_type="application/json", status_code=400)
@@ -287,6 +298,11 @@ class ImageEnhancer:
                 restored_face = (restored_face.astype(np.float32) * 0.65 + cropped_face.astype(np.float32) * 0.35).astype(np.uint8)
 
                 face_helper.add_restored_face(restored_face, cropped_face)
+
+                # تحرير موترات الوجه فوراً بدل تكديس cropped+restored لكل الوجوه حتى نهاية الحلقة
+                del cropped_face_t, restored_face
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
 
             # upsample the background using FP16 Autocast for speed and VRAM savings
             with torch.autocast(device_type='cuda', dtype=torch.float16):
@@ -353,7 +369,7 @@ class ImageEnhancer:
             
         except Exception as e:
             print("Error during Dual enhancement:", str(e))
-            return Response(content=f'{{"error": "{str(e)}"}}', media_type="application/json", status_code=500)
+            return Response(content='{"error": "فشل ترميم الصورة (500)"}', media_type="application/json", status_code=500)
         finally:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()

@@ -277,7 +277,7 @@ export function DocumentScannerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-[1140px] w-[94vw] h-[86vh] max-h-[900px] overflow-hidden flex flex-col rounded-2xl border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl p-4 sm:p-5 shadow-2xl transition-all duration-150 fluent-specular gap-3 font-cairo"
+        className="sm:max-w-[1140px] w-[94vw] h-[86vh] max-h-[900px] overflow-hidden flex flex-col rounded-2xl border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl p-4 sm:p-5 shadow-fluent-28 transition-all duration-150 fluent-specular gap-3 font-cairo"
         dir="rtl"
       >
         {/* 🔹 رأس النافذة الأنيق مع زر الإغلاق وشارة النمط */}
@@ -318,7 +318,7 @@ export function DocumentScannerDialog({
           >
             {/* Top Floating Status Badge */}
             <div className="absolute top-3 inset-x-0 mx-auto w-fit z-20 pointer-events-none">
-              <div className="px-3.5 py-1 rounded-full bg-card/90 dark:bg-card/80 border border-border/70 text-xs font-semibold text-foreground shadow-md backdrop-blur-md flex items-center gap-2">
+              <div className="px-3.5 py-1 rounded-full bg-card/90 dark:bg-card/80 border border-border/70 text-xs font-semibold text-foreground shadow-fluent-8 backdrop-blur-md flex items-center gap-2">
                 {isDetecting ? (
                   <>
                     <ArrowClockwise size={13} weight="bold" className="text-primary shrink-0 animate-spin" />
@@ -339,7 +339,7 @@ export function DocumentScannerDialog({
                 ) : (
                   <>
                     <Sparkle size={13} weight="duotone" className="text-primary shrink-0" />
-                    <span>اسحب الدبابيس لضبط الحدود، أو اضغط "+ إضافة" لإضافة بطاقة ثانية</span>
+                    <span>اسحب الدبابيس لضبط الحدود</span>
                   </>
                 )}
               </div>
@@ -349,7 +349,7 @@ export function DocumentScannerDialog({
               <img
                 src={processor.previewSrc}
                 alt="المستند المستعدل"
-                className="max-h-full max-w-full object-contain rounded-xl shadow-md shadow-black/20 border border-border/30 animate-in fade-in-50 duration-200"
+                className="max-h-full max-w-full object-contain rounded-xl shadow-fluent-8 shadow-black/20 border border-border/30 animate-in fade-in-50 duration-200"
               />
             ) : (
               <canvas
@@ -368,7 +368,7 @@ export function DocumentScannerDialog({
             {/* Loupe Glass Magnifier */}
             <div
               className={cn(
-                "absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-zinc-950/95 shadow-lg z-50 overflow-hidden ring-4 ring-primary/20",
+                "absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-muted shadow-fluent-16 z-50 overflow-hidden ring-4 ring-primary/20",
                 loupePos && activeCorner !== null ? "opacity-100 scale-100" : "opacity-0 scale-90"
               )}
               style={{
@@ -456,7 +456,7 @@ export function DocumentScannerDialog({
                 disabled={processor.isExporting}
               >
                 {processor.isExporting ? <Spinner className="w-3.5 h-3.5 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
-                <span>{processor.isExporting ? "جاري التصدير ..." : `إدراج (${selectedDocIds.length})`}</span>
+                <span>{processor.isExporting ? "جاري الإدراج ..." : `إدراج (${selectedDocIds.length})`}</span>
               </Button>
             )}
 
@@ -467,7 +467,7 @@ export function DocumentScannerDialog({
               className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98] disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               {processor.isExporting ? <Spinner className="w-3.5 h-3.5 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
-              <span>{processor.isExporting ? "جاري المعالجة ..." : detectedDocs.length > 1 ? "إدراج النشط" : "تطبيق"}</span>
+              <span>{processor.isExporting ? "جاري الإدراج ..." : detectedDocs.length > 1 ? "إدراج النشط" : "تطبيق"}</span>
             </Button>
           </div>
         </DialogFooter>

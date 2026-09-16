@@ -142,7 +142,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card backdrop-blur-2xl p-3.5 shadow-xl transition-all duration-150 fluent-specular" dir="rtl">
+      <DialogContent showCloseButton={false} className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card/95 backdrop-blur-2xl p-5 sm:p-6 shadow-fluent-28 transition-all duration-150 fluent-specular" dir="rtl">
         {/* هيدر النافذة */}
         <DialogHeader className="pb-2.5 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -162,7 +162,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
         {/* محتوى النافذة الرئيسي - يستغل 100% من المساحة المتاحة */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-3 py-1.5 min-h-0 h-full">
           {/* منطقة الكانفس الخاصة بالقص - التوسع الديناميكي الكامل */}
-          <div className="flex-1 bg-zinc-950/90 dark:bg-black/80 rounded-xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/40 relative shadow-inner p-1.5">
+          <div className="flex-1 bg-muted rounded-xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/40 relative shadow-inner p-1.5">
             {open && (
               <Cropper
                 src={currentSrc}

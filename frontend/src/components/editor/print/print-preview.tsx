@@ -329,7 +329,7 @@ export function SheetPreview({
           />
         ) : (
           <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-[10px] text-muted-foreground font-cairo">
-            جاري التحميل ...
+            جاري تجهيز المعاينة ...
           </div>
         )}
       </div>

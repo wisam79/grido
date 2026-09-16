@@ -150,7 +150,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
     setIsRemovingBg(false);
     setBgProgress(0);
     setBgProgressText("");
-    toast.info("تم إيقاف العملية.");
+    toast.info("تم إلغاء العملية.");
   };
 
   const handleRemoveBg = async (element: BgRemovalElement) => {
@@ -172,7 +172,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
 
     // القفل على مستوى الوحدة — أي مثيل Hook آخر يرى العملية الجارية
     if (busyRequestId !== 0) {
-      toast.warning("هناك عملية إزالة خلفية قيد التنفيذ حالياً. يرجى الانتظار.");
+      toast.warning("جاري العزل ...");
       return;
     }
 

@@ -7,7 +7,7 @@ export interface AlignmentIconProps extends React.SVGProps<SVGSVGElement> {
 /**
  * أيقونة المحاذاة لليسار - بمعايير Figma & Fluent 2 الاحترافية
  */
-export function AlignLeftIcon({ className = "w-4.5 h-4.5", ...props }: AlignmentIconProps) {
+export function AlignLeftIcon({ className = "w-4 h-4", ...props }: AlignmentIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -29,7 +29,7 @@ export function AlignLeftIcon({ className = "w-4.5 h-4.5", ...props }: Alignment
 /**
  * أيقونة المحاذاة للوسط أفقياً
  */
-export function AlignCenterHorizontalIcon({ className = "w-4.5 h-4.5", ...props }: AlignmentIconProps) {
+export function AlignCenterHorizontalIcon({ className = "w-4 h-4", ...props }: AlignmentIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -51,7 +51,7 @@ export function AlignCenterHorizontalIcon({ className = "w-4.5 h-4.5", ...props 
 /**
  * أيقونة المحاذاة لليمين
  */
-export function AlignRightIcon({ className = "w-4.5 h-4.5", ...props }: AlignmentIconProps) {
+export function AlignRightIcon({ className = "w-4 h-4", ...props }: AlignmentIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -73,7 +73,7 @@ export function AlignRightIcon({ className = "w-4.5 h-4.5", ...props }: Alignmen
 /**
  * أيقونة المحاذاة للأعلى
  */
-export function AlignTopIcon({ className = "w-4.5 h-4.5", ...props }: AlignmentIconProps) {
+export function AlignTopIcon({ className = "w-4 h-4", ...props }: AlignmentIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -95,7 +95,7 @@ export function AlignTopIcon({ className = "w-4.5 h-4.5", ...props }: AlignmentI
 /**
  * أيقونة المحاذاة للمنتصف عمودياً
  */
-export function AlignCenterVerticalIcon({ className = "w-4.5 h-4.5", ...props }: AlignmentIconProps) {
+export function AlignCenterVerticalIcon({ className = "w-4 h-4", ...props }: AlignmentIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -117,7 +117,7 @@ export function AlignCenterVerticalIcon({ className = "w-4.5 h-4.5", ...props }:
 /**
  * أيقونة المحاذاة للأسفل
  */
-export function AlignBottomIcon({ className = "w-4.5 h-4.5", ...props }: AlignmentIconProps) {
+export function AlignBottomIcon({ className = "w-4 h-4", ...props }: AlignmentIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"

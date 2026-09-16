@@ -113,7 +113,7 @@ export function useAuthForms(onAuthenticated: () => void) {
         }
       }
     } catch (err) {
-      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشلت العملية، يرجى التحقق من المدخلات.");
+      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشلت العملية، تحقق من البيانات المدخلة.");
 
       if (errMsg.includes("تأكيد") || errMsg.includes("Email not confirmed") || errMsg.includes("pending_otp")) {
         setShowOtp(true);

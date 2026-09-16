@@ -37,7 +37,7 @@
 | **قوالب جاهزة** | هويات، جوازات سفر، تأشيرات، وكولاجات قابلة للتخصيص |
 | **ملصقات وبطاقات تجارية** | مقاسات كروت وبادجات وهوامش نزيف وقص (Bleed Guides)، وتوليد رموز QR وباركود متجهة، ومونتاج ورقي ذكي |
 | **تراخيص سحابية** | مصادقة Supabase (بريد/OTP/Google) مع خطط مجانية واحترافية |
-| **خطوط عربية** | 12 عائلة خطوط عربية مدمجة تعمل أوفلاين (woff2) |
+| **خطوط عربية** | 30 عائلة خطوط عربية (16 منها تعمل أوفلاين) |
 
 ---
 
@@ -127,7 +127,7 @@ Grido Studio
 │   │   ├── hooks/             # Custom hooks (autosave, bg-removal, AI enhance)
 │   │   ├── lib/store/         # Zustand store — 7 slices
 │   │   └── lib/templates/     # قوالب الصور والكولاج
-│   ├── test/                  # اختبارات Vitest (61 ملفاً · 414 اختباراً)
+│   ├── test/                  # اختبارات Vitest (62 ملف اختبار — يُتحقق من العدد عبر npm run test)
 │   └── e2e/                   # اختبارات Playwright
 ├── supabase/                  # Edge functions + SQL migrations
 ├── modal_ai/                  # خادم Modal AI (CodeFormer + Real-ESRGAN)
@@ -165,7 +165,7 @@ go test ./internal/...
 cd frontend
 npm run test            # Vitest
 npm run test:coverage   # مع تقرير التغطية
-npm run test:e2e        # Playwright (chromium + firefox)
+npm run test:e2e        # Playwright (محلياً chromium + firefox، وفي CI chromium فقط)
 npm run typecheck       # فحص الأنواع
 npm run lint            # ESLint (صفر تحذيرات)
 ```

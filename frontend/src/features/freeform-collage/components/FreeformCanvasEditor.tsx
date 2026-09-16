@@ -282,19 +282,17 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
       : null;
 
   return (
-    <div className="w-full flex items-center justify-center bg-muted/30 dark:bg-[#0a0e17] rounded-2xl relative flex-1 min-h-0 overflow-hidden p-3 border border-border/40 font-cairo select-none">
+    <div className="w-full flex items-center justify-center bg-muted/30 rounded-2xl relative flex-1 min-h-0 overflow-hidden p-3 border border-border/40 font-cairo select-none">
       {/* ظل خلفي ناعم يحاكي طاولة الاستوديو */}
       <div
         ref={paperRef}
-        className="relative bg-white dark:bg-zinc-900 rounded-[6px] transition-shadow overflow-hidden touch-none"
+        className="relative bg-white dark:bg-card rounded-md transition-shadow overflow-hidden touch-none shadow-fluent-8 border border-border/40"
         style={{
           width: paperAspect >= 1 ? "97%" : "auto",
           height: paperAspect < 1 ? "97%" : "auto",
           maxWidth: "100%",
           maxHeight: "100%",
           aspectRatio: `${paperWidthMM} / ${paperHeightMM}`,
-          boxShadow:
-            "0 0 0 1px rgba(0,0,0,0.08), 0 6.4px 14.4px 0 rgba(0,0,0,0.13), 0 1.2px 3.6px 0 rgba(0,0,0,0.10)",
         }}
         onPointerDown={onPaperPointerDown}
         onPointerMove={onPointerMove}
@@ -310,14 +308,14 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
             {cutLinesHorizontal.map((pos, i) => (
               <div
                 key={`cut-h-${i}`}
-                className="absolute left-0 right-0 border-t border-dashed border-rose-500/70"
+                className="absolute left-0 right-0 border-t border-dashed border-destructive"
                 style={{ top: `${pos * 100}%` }}
               />
             ))}
             {cutLinesVertical.map((pos, i) => (
               <div
                 key={`cut-v-${i}`}
-                className="absolute top-0 bottom-0 border-l border-dashed border-rose-500/70"
+                className="absolute top-0 bottom-0 border-s border-dashed border-destructive"
                 style={{ left: `${pos * 100}%` }}
               />
             ))}
@@ -329,7 +327,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
           <div
             key={line.id}
             className={cn(
-              "absolute bg-fuchsia-500 dark:bg-fuchsia-400 z-30 pointer-events-none transition-opacity duration-75",
+              "absolute bg-primary z-30 pointer-events-none transition-opacity duration-75",
               line.axis === "x" ? "w-px top-0 bottom-0" : "h-px left-0 right-0"
             )}
             style={{
@@ -342,14 +340,14 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
         <div className="absolute bottom-1.5 left-1.5 bg-foreground/85 backdrop-blur-sm text-background text-[9.5px] px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs flex items-center gap-1.5" dir="ltr">
           <span className="font-bold">{paperWidthMM}×{paperHeightMM}mm</span>
           <span className="opacity-40">|</span>
-          <span>{slots.length} photos</span>
+          <span>{slots.length} صور</span>
           <span className="opacity-40">|</span>
           <span className="font-bold">{coverage}%</span>
         </div>
 
         {/* المؤشر الحي بالمليمتر أثناء السحب أو التحجيم */}
         {liveBadge && (
-          <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-[9.5px] px-2 py-0.5 rounded-md font-mono z-40 pointer-events-none shadow-md animate-in fade-in duration-75" dir="ltr">
+          <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-[9.5px] px-2 py-0.5 rounded-md font-mono z-40 pointer-events-none shadow-fluent-8 animate-in fade-in duration-75" dir="ltr">
             {liveBadge}
           </div>
         )}

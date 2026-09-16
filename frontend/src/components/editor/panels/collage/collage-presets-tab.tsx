@@ -54,10 +54,10 @@ function StudioPaperThumbnail({
     <div className="flex items-center justify-center select-none shrink-0" aria-hidden="true">
       <div
         className={cn(
-          "rounded-[4px] relative transition-all duration-200 p-0.5 flex items-center justify-center overflow-hidden",
+          "rounded-md relative transition-all duration-200 p-0.5 flex items-center justify-center overflow-hidden",
           active
-            ? "bg-white dark:bg-zinc-900 border-2 border-primary shadow-[0_0_10px_rgba(var(--primary-rgb,37,99,235),0.3)] ring-1 ring-primary/40"
-            : "bg-white dark:bg-zinc-900/90 border border-border/80 shadow-2xs group-hover:border-primary/50 group-hover:shadow-xs"
+            ? "bg-white dark:bg-card border-2 border-primary shadow-fluent-8 ring-1 ring-primary/40"
+            : "bg-white dark:bg-card border border-border/80 shadow-2xs group-hover:border-primary/50 group-hover:shadow-xs"
         )}
         style={{ width: paperW, height: paperH }}
         dir="ltr"
@@ -110,7 +110,7 @@ function StudioPaperThumbnail({
                     "transition-colors duration-150",
                     active
                       ? "fill-primary/[0.14] stroke-primary/80 stroke-[1.2]"
-                      : "fill-slate-100/90 dark:fill-zinc-800/80 stroke-slate-300/80 dark:stroke-zinc-700/80 stroke-[0.8]"
+                      : "fill-muted stroke-border stroke-[0.8]"
                   )}
                 />
 
@@ -121,7 +121,7 @@ function StudioPaperThumbnail({
                       "transition-opacity duration-150",
                       active
                         ? "fill-primary/70"
-                        : "fill-slate-400/80 dark:fill-zinc-500/80"
+                        : "fill-muted-foreground/60"
                     )}
                   >
                     <circle cx={cx} cy={cy - headRadius * 0.65} r={headRadius} />
@@ -137,7 +137,7 @@ function StudioPaperThumbnail({
                     className={cn(
                       active
                         ? "fill-primary/70"
-                        : "fill-slate-400/80 dark:fill-zinc-500/80"
+                        : "fill-muted-foreground/60 dark:fill-muted-foreground/60"
                     )}
                   >
                     <circle cx={cx - 10} cy={cy - 6} r={headRadius * 0.8} />
@@ -537,7 +537,7 @@ export function CollagePresetsTab({
               <button
                 type="button"
                 onClick={onImportClick}
-                className="mt-1 h-7.5 px-3 rounded-lg bg-muted/60 hover:bg-muted text-foreground border border-border/60 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-2xs"
+                className="mt-1 h-8 px-3 rounded-lg bg-muted/60 hover:bg-muted text-foreground border border-border/60 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-2xs"
               >
                 <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
                 <span>استيراد قالب JSON</span>
@@ -556,7 +556,7 @@ export function CollagePresetsTab({
                   <button
                     type="button"
                     onClick={onImportClick}
-                    className="h-6.5 px-2 text-[10px] font-bold rounded-md bg-muted/60 hover:bg-muted text-foreground border border-border/60 transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
+                    className="h-6 px-2 text-[10px] font-bold rounded-md bg-muted/60 hover:bg-muted text-foreground border border-border/60 transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
                     title="استيراد قوالب من ملف"
                   >
                     <UploadSimple className="w-3 h-3 text-primary" weight="bold" />
@@ -567,7 +567,7 @@ export function CollagePresetsTab({
                   <button
                     type="button"
                     onClick={onExportAllClick}
-                    className="h-6.5 px-2 text-[10px] font-bold rounded-md bg-muted/60 hover:bg-muted text-foreground border border-border/60 transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
+                    className="h-6 px-2 text-[10px] font-bold rounded-md bg-muted/60 hover:bg-muted text-foreground border border-border/60 transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
                     title="تصدير كافة القوالب المحفوظة"
                   >
                     <DownloadSimple className="w-3 h-3 text-primary" weight="bold" />
@@ -625,7 +625,7 @@ export function CollagePresetsTab({
                         onClick={(e) => onDeleteTemplate(t.id, e)}
                         title="حذف القالب"
                         aria-label="حذف القالب"
-                        className="w-6.5 h-6.5 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                        className="w-6.5 h-6 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                       >
                         <Trash className="w-3.5 h-3.5" weight="regular" />
                       </button>

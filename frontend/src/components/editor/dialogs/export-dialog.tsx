@@ -296,8 +296,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               </div>
             )}
 
-            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
-              <Warning className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
+            <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
+              <Warning className="text-amber-500 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
               <span className="leading-tight font-medium">تصدير الصورة بنظام الألوان القياسي RGB للطباعة الرقمية.</span>
             </div>
 

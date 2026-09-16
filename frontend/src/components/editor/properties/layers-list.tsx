@@ -12,6 +12,7 @@ import {
   Shapes,
   Image,
   Trash,
+  Copy,
   DotsSixVertical,
   CaretDown,
 } from "@phosphor-icons/react";
@@ -46,12 +47,13 @@ interface SortableLayerItemProps {
   toggleVisibility: (el: CanvasElement, e: React.MouseEvent) => void;
   toggleLock: (el: CanvasElement, e: React.MouseEvent) => void;
   deleteLayer: (id: string, e: React.MouseEvent) => void;
+  duplicateLayer: (id: string, e: React.MouseEvent) => void;
   selectElement: (id: string) => void;
   toggleElementSelection: (id: string) => void;
 }
 
 const SortableLayerItem = React.memo(
-  function SortableLayerItem({ el, layerNumber, isSelected, toggleVisibility, toggleLock, deleteLayer, selectElement, toggleElementSelection }: SortableLayerItemProps) {
+  function SortableLayerItem({ el, layerNumber, isSelected, toggleVisibility, toggleLock, deleteLayer, duplicateLayer, selectElement, toggleElementSelection }: SortableLayerItemProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: el.id });
 
     const style = {
@@ -87,11 +89,11 @@ const SortableLayerItem = React.memo(
             selectElement(el.id);
           }
         }}
-        className={`flex items-center justify-between p-2 rounded-lg border text-right cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none ${
+        className={`flex items-center justify-between p-2 rounded-lg border text-start cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none ${
           isSelected
             ? "border-primary/50 bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/25"
             : "border-transparent bg-transparent hover:bg-input text-muted-foreground hover:text-foreground"
-        } ${isDragging ? "shadow-md bg-card ring-1 ring-primary/30" : ""}`}
+        } ${isDragging ? "shadow-fluent-8 bg-card ring-1 ring-primary/30" : ""}`}
       >
         <div className="flex items-center gap-2 min-w-0">
           <div
@@ -164,11 +166,21 @@ const SortableLayerItem = React.memo(
               {isVisible ? <Eye className="w-3.5 h-3.5" weight="regular" /> : <EyeSlash className="w-3.5 h-3.5" weight="regular" />}
             </Button>
           </TooltipBtn>
+          <TooltipBtn content="تكرار الطبقة">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-7 h-7 rounded-md hover:bg-input text-muted-foreground/50 hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+              onClick={(e) => duplicateLayer(el.id, e)}
+            >
+              <Copy className="w-3.5 h-3.5" weight="regular" />
+            </Button>
+          </TooltipBtn>
           <TooltipBtn content="حذف الطبقة">
             <Button
               variant="ghost"
               size="icon"
-              className="w-7 h-7 rounded-md hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-500 transition-colors focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="w-7 h-7 rounded-md hover:bg-destructive/10 text-muted-foreground/50 hover:text-destructive transition-colors focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-1 focus-visible:outline-none"
               onClick={(e) => deleteLayer(el.id, e)}
             >
               <Trash className="w-3.5 h-3.5" weight="regular" />
@@ -195,7 +207,7 @@ const SortableLayerItem = React.memo(
 );
 
 export function LayersList() {
-  const { elements, selectedId, selectedIds, selectElement, updateElement, updateElements, removeElement, pushHistory, toggleElementSelection } = useEditorStore(useShallow((state) => ({
+  const { elements, selectedId, selectedIds, selectElement, updateElement, updateElements, removeElement, duplicateElement, pushHistory, toggleElementSelection } = useEditorStore(useShallow((state) => ({
     elements: state.elements,
     selectedId: state.selectedId,
     selectedIds: state.selectedIds,
@@ -203,6 +215,7 @@ export function LayersList() {
     updateElement: state.updateElement,
     updateElements: state.updateElements,
     removeElement: state.removeElement,
+    duplicateElement: state.duplicateElement,
     pushHistory: state.pushHistory,
     toggleElementSelection: state.toggleElementSelection,
   })));
@@ -235,6 +248,11 @@ export function LayersList() {
     removeElement(id);
   }, [removeElement]);
 
+  const duplicateLayer = useCallback((id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    duplicateElement(id);
+  }, [duplicateElement]);
+
   const handleSelectElement = useCallback((id: string) => {
     selectElement(id);
   }, [selectElement]);
@@ -247,11 +265,11 @@ export function LayersList() {
     return (
       <div className="bg-input/40 border border-dashed border-border rounded-xl p-5 text-center select-none flex flex-col items-center justify-center space-y-2 animate-in fade-in duration-300">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-xs">
-          <Stack className="w-4.5 h-4.5 opacity-80" weight="duotone" />
+          <Stack className="w-4 h-4 opacity-80" weight="duotone" />
         </div>
         <div className="space-y-1">
-          <p className="text-xs font-bold text-foreground/80">لوحة الطبقات فارغة</p>
-          <p className="text-[10px] text-muted-foreground max-w-[170px] leading-normal mx-auto text-center" dir="rtl">أضف صوراً أو نصوصاً أو أشكالاً للتحكم بترتيبها من هنا</p>
+          <p className="text-xs font-bold text-foreground/80">لا توجد عناصر بعد</p>
+          <p className="text-[10px] text-muted-foreground max-w-[170px] leading-normal mx-auto text-center" dir="rtl">أضف صوراً أو نصوصاً أو أشكالاً من شريط الأدوات</p>
         </div>
       </div>
     );
@@ -297,7 +315,7 @@ export function LayersList() {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between w-full text-right cursor-pointer select-none"
+        className="flex items-center justify-between w-full text-start cursor-pointer select-none"
       >
         <div className="flex items-center gap-1.5">
           <CaretDown className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !expanded && "-rotate-90")} weight="bold" />
@@ -312,7 +330,7 @@ export function LayersList() {
         <div className="space-y-2 pt-2 border-t border-border/10 animate-in fade-in duration-200">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sorted.map(el => el.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-1 max-h-[300px] overflow-y-auto pr-0.5">
+              <div className="space-y-1 max-h-[300px] overflow-y-auto pe-0.5">
                 {sorted.map((el, index) => (
                   <SortableLayerItem
                     key={el.id}
@@ -322,6 +340,7 @@ export function LayersList() {
                     toggleVisibility={toggleVisibility}
                     toggleLock={toggleLock}
                     deleteLayer={deleteLayer}
+                    duplicateLayer={duplicateLayer}
                     selectElement={handleSelectElement}
                     toggleElementSelection={handleToggleSelection}
                   />

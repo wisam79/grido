@@ -18,11 +18,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       dir="rtl"
       className="toaster group"
       icons={{
-        success: <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" weight="duotone" />,
-        error: <XCircle className="w-4 h-4 text-rose-500 shrink-0" weight="duotone" />,
+        success: <CheckCircle className="w-4 h-4 text-primary shrink-0" weight="duotone" />,
+        error: <XCircle className="w-4 h-4 text-destructive shrink-0" weight="duotone" />,
         warning: <WarningCircle className="w-4 h-4 text-amber-500 shrink-0" weight="duotone" />,
-        info: <Info className="w-4 h-4 text-blue-500 shrink-0" weight="duotone" />,
-        loading: <Spinner size={16} className="w-4 h-4 text-indigo-500" />,
+        info: <Info className="w-4 h-4 text-primary shrink-0" weight="duotone" />,
+        loading: <Spinner size={16} className="w-4 h-4 text-primary" />,
       }}
       toastOptions={{
         classNames: {

@@ -81,14 +81,14 @@ export function UpdateNotifier() {
   const performCheck = useCallback(async (isManual = false) => {
     try {
       if (isManual) {
-        toast.info("جاري التحقق من وجود تحديثات جديدة ...");
+        toast.info("جاري التحقق من التحديثات ...");
       }
       const info = await CheckForUpdate();
       if (info && info.has_update) {
         setUpdateInfo(info);
         setIsOpen(true);
       } else if (isManual) {
-        toast.success("أنت تستخدم أحدث إصدار من التطبيق حالياً.");
+        toast.success("أنت على أحدث إصدار");
       }
     } catch (err) {
       console.warn("Failed to check for updates:", err);
@@ -155,11 +155,11 @@ export function UpdateNotifier() {
     <Dialog open={isOpen} onOpenChange={(open) => { if (isDownloading) return; handleOpenChange(open); }}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl rounded-2xl p-5 dir-rtl fluent-acrylic fluent-specular font-cairo"
+        className="max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl p-5 fluent-acrylic fluent-specular font-cairo"
         dir="rtl"
       >
         {/* الهيدر مع شارة التحديث الفاخرة وزر الإغلاق في شريط العنوان */}
-        <DialogHeader className="space-y-1 text-right pb-2">
+        <DialogHeader className="space-y-1 text-start pb-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shadow-xs shrink-0">
@@ -170,7 +170,7 @@ export function UpdateNotifier() {
                   تحديث جديد متوفر
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  يتوفر إصدار أحدث جاهز للتحميل والتثبيت التلقائي
+                  إصدار جديد جاهز للتثبيت
                 </DialogDescription>
               </div>
             </div>
@@ -237,7 +237,7 @@ export function UpdateNotifier() {
                 />
               </div>
               <p className="text-[10px] text-muted-foreground text-center">
-                سيتم إغلاق التطبيق وتطبيق التحديث تلقائياً ثم إعادة فتحه.
+                سيُعاد تشغيل التطبيق تلقائياً
               </p>
             </div>
           )}
@@ -291,7 +291,7 @@ export function UpdateNotifier() {
           ) : (
             <div className="flex items-center justify-center w-full py-1 text-xs text-muted-foreground gap-2 font-medium">
               <Spinner className="w-4 h-4 text-primary" size={16} />
-              <span>جاري المعالجة، الرجاء الانتظار ...</span>
+              <span>جاري المعالجة ...</span>
             </div>
           )}
         </div>

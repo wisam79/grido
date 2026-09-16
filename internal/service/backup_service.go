@@ -3,6 +3,8 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"grido/internal/core/domain"
 )
 
@@ -38,7 +40,8 @@ func (s *BackupService) ImportBackup(jsonData string, mode string) error {
 	}
 
 	var projects []domain.Project
-	if err := json.Unmarshal([]byte(jsonData), &projects); err != nil {
+	// فك متدفق فوق نفس السلسلة — Unmarshal([]byte(...)) كان ينسخ 50MB كاملة
+	if err := json.NewDecoder(strings.NewReader(jsonData)).Decode(&projects); err != nil {
 		return fmt.Errorf("failed to parse backup JSON data: %w", err)
 	}
 

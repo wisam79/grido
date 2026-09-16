@@ -153,7 +153,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
             </QuickActionBtn>
 
             <QuickActionBtn
-              content="تكرار العناصر المحددة (Ctrl+D)"
+              content="تكرار العناصر المحددة"
               onClick={() => duplicateElements(selectedIds)}
               disabled={!hasSelection}
             >
@@ -161,11 +161,11 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
             </QuickActionBtn>
 
             <QuickActionBtn
-              content="حذف العناصر المحددة (Delete)"
+              content="حذف العناصر المحددة"
               onClick={() => removeElements(selectedIds)}
               disabled={!hasSelection}
             >
-              <Trash className="w-3.5 h-3.5 text-rose-500" />
+              <Trash className="w-3.5 h-3.5 text-destructive" />
             </QuickActionBtn>
           </div>
         </div>

@@ -9,6 +9,7 @@ import (
 	"html"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"log/slog"
 	"math"
 	"os"
@@ -32,7 +33,48 @@ var exportsCleanup atomic.Bool
 //
 // يدعم: PNG/JPEG (sRGB) و TIFF/JPEG (CMYK) + معاينة HTML مضمّنة Base64،
 // حقن pHYs في PNG و JFIF APP0 في JPEG ليُحترم المقاس الفيزيائي عند الطباعة.
+//
+// الأداء والسلامة: الترميز يتدفق للقرص مباشرة (DPI يُحقن أثناء الكتابة بلا
+// نسخة بايت ثانية)، TIFF مضغوط Deflate، والكتابة ذرية (.tmp + Sync + Rename).
 // ─────────────────────────────────────────────────────────────────────────────
+
+// maxTIFFPixels سقف TIFF (CMYK غير مضغوط سابقاً): فوقه يُرفض بطلب JPEG/DPI أقل
+// بدل OOM (50MP ≈ 200MB RGBA + نسخ الترميز).
+const maxTIFFPixels = 50_000_000
+
+// maxFallbackEmbedBytes سقف تضمين Base64 الاحتياطي في HTML (M6).
+const maxFallbackEmbedBytes = 60 * 1024 * 1024
+
+// openAtomicFile ينشئ ملفاً مؤقتاً بجانب الهدف — commit() يزامن وينقل ذرياً.
+func openAtomicFile(finalPath string) (f *os.File, commit func() error, err error) {
+	tmp := finalPath + ".tmp"
+	f, err = os.Create(tmp)
+	if err != nil {
+		return nil, nil, err
+	}
+	commit = func() error {
+		if err := f.Sync(); err != nil {
+			f.Close()
+			os.Remove(tmp)
+			return err
+		}
+		if err := f.Close(); err != nil {
+			os.Remove(tmp)
+			return err
+		}
+		if err := os.Rename(tmp, finalPath); err != nil {
+			os.Remove(tmp)
+			return err
+		}
+		return nil
+	}
+	return f, commit, nil
+}
+
+func abortAtomicFile(f *os.File, finalPath string) {
+	_ = f.Close()
+	_ = os.Remove(finalPath + ".tmp")
+}
 
 func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (string, string, error) {
 	appDir := utils.GetAppDir()
@@ -76,29 +118,35 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		if strings.EqualFold(req.ExportFormat, "jpeg") || strings.EqualFold(req.ExportFormat, "jpg") {
 			imageName = baseName + ".jpg"
 			imagePath = filepath.Join(outDir, imageName)
-			f, err := os.Create(imagePath)
+			f, commit, err := openAtomicFile(imagePath)
 			if err != nil {
 				return "", "", fmt.Errorf("create cmyk jpeg: %w", err)
 			}
-			err = jpeg.Encode(f, cmykImg, &jpeg.Options{Quality: 95})
-			f.Close()
-			if err != nil {
-				_ = os.Remove(imagePath)
+			if err := jpeg.Encode(f, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
+				abortAtomicFile(f, imagePath)
 				return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
 			}
+			if err := commit(); err != nil {
+				return "", "", fmt.Errorf("commit cmyk jpeg: %w", err)
+			}
 		} else {
-			// Default format for CMYK is TIFF
+			// Default format for CMYK is TIFF — مضغوط Deflate (غير المضغوط كان
+			// يضاعف الذاكرة والقرص) مع سقف 50MP بدل OOM على اللوحات الكبيرة
+			if pixels := int64(cmykImg.Bounds().Dx()) * int64(cmykImg.Bounds().Dy()); pixels > maxTIFFPixels {
+				return "", "", fmt.Errorf("cmyk tiff too large (%d MP): use JPEG or lower DPI (max %d MP)", pixels/1000000, maxTIFFPixels/1000000)
+			}
 			imageName = baseName + ".tif"
 			imagePath = filepath.Join(outDir, imageName)
-			f, err := os.Create(imagePath)
+			f, commit, err := openAtomicFile(imagePath)
 			if err != nil {
 				return "", "", fmt.Errorf("create cmyk tiff: %w", err)
 			}
-			err = tiff.Encode(f, cmykImg, &tiff.Options{Compression: tiff.Uncompressed})
-			f.Close()
-			if err != nil {
-				_ = os.Remove(imagePath)
+			if err := tiff.Encode(f, cmykImg, &tiff.Options{Compression: tiff.Deflate, Predictor: true}); err != nil {
+				abortAtomicFile(f, imagePath)
 				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
+			}
+			if err := commit(); err != nil {
+				return "", "", fmt.Errorf("commit cmyk tiff: %w", err)
 			}
 		}
 
@@ -108,11 +156,17 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		var buf bytes.Buffer
 		enc := &png.Encoder{CompressionLevel: png.BestSpeed}
 		if err := enc.Encode(&buf, dc.Image()); err == nil {
-			pngData := buf.Bytes()
-			if updatedData, err := setPngDPI(pngData, req.DPI); err == nil {
-				pngData = updatedData
+			// DPI يُحقن أثناء التدفق للقرص — بلا نسخة بايت ثانية لصورة كاملة
+			if f, commit, err := openAtomicFile(htmlImagePath); err == nil {
+				if werr := streamPNGWithDPI(f, buf.Bytes(), req.DPI); werr != nil {
+					abortAtomicFile(f, htmlImagePath)
+					htmlImageName = imageName
+				} else if cerr := commit(); cerr != nil {
+					htmlImageName = imageName
+				}
+			} else {
+				htmlImageName = imageName
 			}
-			_ = os.WriteFile(htmlImagePath, pngData, 0644)
 		} else {
 			htmlImageName = imageName
 		}
@@ -123,27 +177,23 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			imageName = baseName + ".jpg"
 			htmlImageName = imageName
 			imagePath = filepath.Join(outDir, imageName)
-			f, err := os.Create(imagePath)
+			var buf bytes.Buffer
+			if err := jpeg.Encode(&buf, dc.Image(), &jpeg.Options{Quality: 95}); err != nil {
+				return "", "", err
+			}
+			// JFIF يُحقن أثناء التدفق للقرص ذرياً — بلا نسخة بايت ثانية
+			f, commit, err := openAtomicFile(imagePath)
 			if err != nil {
 				return "", "", fmt.Errorf("create jpeg: %w", err)
 			}
-			var buf bytes.Buffer
-			err = jpeg.Encode(&buf, dc.Image(), &jpeg.Options{Quality: 95})
-			if err != nil {
-				f.Close()
+			// streamJPEGWithDPI تكتب الخام عند تعذر الحقن — الخطأ هنا يعني عطل قرص فقط
+			if werr := streamJPEGWithDPI(f, buf.Bytes(), req.DPI); werr != nil {
+				abortAtomicFile(f, imagePath)
+				return "", "", werr
+			}
+			if err := commit(); err != nil {
 				return "", "", err
 			}
-			jpegData := buf.Bytes()
-			if updatedData, err := setJpegDPI(jpegData, req.DPI); err == nil {
-				jpegData = updatedData
-			} else {
-				slog.Warn("Failed to set JPEG DPI", "error", err)
-			}
-			if _, err = f.Write(jpegData); err != nil {
-				f.Close()
-				return "", "", err
-			}
-			f.Close()
 		} else {
 			// sRGB PNG (السلوك الافتراضي)
 			imageName = baseName + ".png"
@@ -151,20 +201,21 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			imagePath = filepath.Join(outDir, imageName)
 			var buf bytes.Buffer
 			enc := &png.Encoder{CompressionLevel: png.BestSpeed}
-			err := enc.Encode(&buf, dc.Image())
-			if err != nil {
+			if err := enc.Encode(&buf, dc.Image()); err != nil {
 				return "", "", err
 			}
 
-			pngData := buf.Bytes()
-			if updatedData, err := setPngDPI(pngData, req.DPI); err == nil {
-				pngData = updatedData
-			} else {
-				slog.Warn("Failed to set PNG DPI", "error", err)
-			}
-
-			err = os.WriteFile(imagePath, pngData, 0644)
+			// pHYs تُحقن أثناء التدفق للقرص ذرياً — بلا نسخة بايت ثانية
+			f, commit, err := openAtomicFile(imagePath)
 			if err != nil {
+				return "", "", fmt.Errorf("create png: %w", err)
+			}
+			// streamPNGWithDPI تكتب الخام عند تعذر الحقن — الخطأ هنا يعني عطل قرص فقط
+			if werr := streamPNGWithDPI(f, buf.Bytes(), req.DPI); werr != nil {
+				abortAtomicFile(f, imagePath)
+				return "", "", werr
+			}
+			if err := commit(); err != nil {
 				return "", "", err
 			}
 		}
@@ -187,20 +238,31 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		// الملف غير موجود — نبحث في مجلد Exports البديل (print_upload_*)
 		exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
 		altPath := filepath.Join(exportsDir, htmlImageName)
-		if imgData, err := os.ReadFile(altPath); err == nil && len(imgData) > 0 {
-			mimeType := "image/png"
-			if strings.HasSuffix(strings.ToLower(htmlImageName), ".jpg") || strings.HasSuffix(strings.ToLower(htmlImageName), ".jpeg") {
-				mimeType = "image/jpeg"
+		// سقف التضمين: فوقه نُبقي مسار الملف بدل مضاعفة الصورة كاملة في HTML
+		if info, statErr := os.Stat(altPath); statErr == nil && info.Size() > 0 && info.Size() <= maxFallbackEmbedBytes {
+			if imgData, err := os.ReadFile(altPath); err == nil && len(imgData) > 0 {
+				mimeType := "image/png"
+				if strings.HasSuffix(strings.ToLower(htmlImageName), ".jpg") || strings.HasSuffix(strings.ToLower(htmlImageName), ".jpeg") {
+					mimeType = "image/jpeg"
+				}
+				b64 := fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(imgData))
+				imageSrcForNative = b64
+				imageSrcForWebView = b64
+				slog.Info("print image found in Exports fallback dir", "altPath", altPath)
 			}
-			b64 := fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(imgData))
-			imageSrcForNative = b64
-			imageSrcForWebView = b64
-			slog.Info("print image found in Exports fallback dir", "altPath", altPath)
 		}
 	}
 
 	htmlContent := buildNativePrintHTML(req.PaperWidthMM, req.PaperHeightMM, imageSrcForNative)
-	_ = os.WriteFile(htmlPath, []byte(htmlContent), 0644)
+	if hf, hcommit, herr := openAtomicFile(htmlPath); herr == nil {
+		if _, werr := io.WriteString(hf, htmlContent); werr != nil {
+			abortAtomicFile(hf, htmlPath)
+		} else if cerr := hcommit(); cerr != nil {
+			slog.Warn("Failed to commit print HTML", "error", cerr)
+		}
+	} else {
+		slog.Warn("Failed to create print HTML", "error", herr)
+	}
 
 	// HTML بمسار الصورة المحلي للعرض والطباعة الفورية داخل WebView2 عبر iframe
 	// (صفر Base64 عبر IPC — المسار يُخدم من /local-image/ في سيرفر Wails المحلي)
@@ -313,11 +375,22 @@ func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
 		return nil, fmt.Errorf("invalid PNG data")
 	}
 
-	sig := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
-	if !bytes.Equal(pngData[:8], sig) {
-		return nil, fmt.Errorf("not a valid PNG")
+	insertPos, skipEnd, err := pngDPIInsertPos(pngData)
+	if err != nil {
+		return nil, err
 	}
+	physChunk := buildPhysChunk(dpi)
 
+	result := make([]byte, 0, len(pngData)-(skipEnd-insertPos)+len(physChunk))
+	result = append(result, pngData[:insertPos]...)
+	result = append(result, physChunk...)
+	result = append(result, pngData[skipEnd:]...)
+
+	return result, nil
+}
+
+// buildPhysChunk يبني قطعة pHYs (21 بايت) بالـ DPI المطلوب.
+func buildPhysChunk(dpi int) []byte {
 	ppm := uint32(math.Round(float64(dpi) / 0.0254))
 
 	physType := []byte("pHYs")
@@ -333,46 +406,77 @@ func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
 
 	crc := crc32.ChecksumIEEE(append(physType, physData...))
 	binary.BigEndian.PutUint32(physChunk[17:21], crc)
+	return physChunk
+}
+
+// streamPNGWithDPI يكتب PNG مع pHYs مباشرة للكاتب — 3 كتابات جزئية بلا نسخة بايت ثانية.
+func streamPNGWithDPI(w io.Writer, pngData []byte, dpi int) error {
+	insertPos, skipEnd, err := pngDPIInsertPos(pngData)
+	if err != nil {
+		return err
+	}
+	physChunk := buildPhysChunk(dpi)
+	for _, part := range [][]byte{pngData[:insertPos], physChunk, pngData[skipEnd:]} {
+		if _, err := w.Write(part); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// pngDPIInsertPos يعيد موضع الإدراج بعد IHDR ونهاية التخطي (يتجاوز pHYs موجودة).
+func pngDPIInsertPos(pngData []byte) (insertPos, skipEnd int, err error) {
+	if len(pngData) < 33 {
+		return 0, 0, fmt.Errorf("invalid PNG data")
+	}
+
+	sig := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+	if !bytes.Equal(pngData[:8], sig) {
+		return 0, 0, fmt.Errorf("not a valid PNG")
+	}
 
 	chunkLen := binary.BigEndian.Uint32(pngData[8:12])
 	if string(pngData[12:16]) != "IHDR" {
-		return nil, fmt.Errorf("first chunk is not IHDR")
+		return 0, 0, fmt.Errorf("first chunk is not IHDR")
 	}
-	insertPos := 8 + 4 + 4 + int(chunkLen) + 4 // sig + length + type + data + CRC
+	insertPos = 8 + 4 + 4 + int(chunkLen) + 4
 	if insertPos > len(pngData) {
-		return nil, fmt.Errorf("corrupt PNG data: insert position out of bounds")
+		return 0, 0, fmt.Errorf("corrupt PNG data: insert position out of bounds")
 	}
 
-	// Check if pHYs already exists right after IHDR
+	skipEnd = insertPos
 	if insertPos+8 <= len(pngData) && string(pngData[insertPos+4:insertPos+8]) == "pHYs" {
-		// Replace existing pHYs chunk
 		existingChunkLen := int(binary.BigEndian.Uint32(pngData[insertPos : insertPos+4]))
 		nextChunkPos := insertPos + 4 + 4 + existingChunkLen + 4
-
-		result := make([]byte, 0, len(pngData)-existingChunkLen+len(physChunk))
-		result = append(result, pngData[:insertPos]...)
-		result = append(result, physChunk...)
-		result = append(result, pngData[nextChunkPos:]...)
-		return result, nil
+		if nextChunkPos < insertPos || nextChunkPos > len(pngData) {
+			return 0, 0, fmt.Errorf("corrupt PNG data: bad pHYs length")
+		}
+		skipEnd = nextChunkPos
 	}
-
-	result := make([]byte, 0, len(pngData)+len(physChunk))
-	result = append(result, pngData[:insertPos]...)
-	result = append(result, physChunk...)
-	result = append(result, pngData[insertPos:]...)
-
-	return result, nil
+	return insertPos, skipEnd, nil
 }
 
 // setJpegDPI injects a JFIF APP0 segment with the given DPI right after the SOI marker.
 // ترميز JPEG في مكتبة Go القياسية لا يكتب قطعة JFIF — نضيفها يدوياً
 // حتى تحترم برامج التخطيط والطابعات مقاس الصورة الفيزيائي
 func setJpegDPI(jpegData []byte, dpi int) ([]byte, error) {
-	if len(jpegData) < 2 || jpegData[0] != 0xFF || jpegData[1] != 0xD8 {
-		return nil, fmt.Errorf("not a valid JPEG")
+	restStart, err := jpegDPIRestStart(jpegData)
+	if err != nil {
+		return nil, err
 	}
-	// APP0: marker(2) + len=16(2) + "JFIF\0"(5) + version 1.01(2) + units=1(1) + Xdensity(2) + Ydensity(2) + thumbnail 0×0(2)
-	seg := []byte{
+	seg := buildJFIFSegment(dpi)
+
+	result := make([]byte, 0, len(jpegData)-(restStart-2)+len(seg))
+	result = append(result, jpegData[:2]...)
+	result = append(result, seg...)
+	result = append(result, jpegData[restStart:]...)
+	return result, nil
+}
+
+// buildJFIFSegment يبني قطعة APP0 (18 بايت) بالـ DPI المطلوب.
+// APP0: marker(2) + len=16(2) + "JFIF\0"(5) + version 1.01(2) + units=1(1) + Xdensity(2) + Ydensity(2) + thumbnail 0×0(2)
+func buildJFIFSegment(dpi int) []byte {
+	return []byte{
 		0xFF, 0xE0,
 		0x00, 0x10,
 		'J', 'F', 'I', 'F', 0x00,
@@ -382,23 +486,34 @@ func setJpegDPI(jpegData []byte, dpi int) ([]byte, error) {
 		byte(dpi >> 8), byte(dpi & 0xFF),
 		0x00, 0x00,
 	}
+}
 
-	// Check if an APP0 segment already exists right after SOI
+// jpegDPIRestStart يعيد بداية البقية بعد SOI (يتجاوز APP0 موجودة لاستبدالها).
+func jpegDPIRestStart(jpegData []byte) (int, error) {
+	if len(jpegData) < 2 || jpegData[0] != 0xFF || jpegData[1] != 0xD8 {
+		return 0, fmt.Errorf("not a valid JPEG")
+	}
 	if len(jpegData) >= 6 && jpegData[2] == 0xFF && jpegData[3] == 0xE0 {
 		existingLen := int(binary.BigEndian.Uint16(jpegData[4:6]))
 		endPos := 2 + existingLen
 		if endPos <= len(jpegData) {
-			result := make([]byte, 0, len(jpegData)-existingLen+len(seg))
-			result = append(result, jpegData[:2]...)
-			result = append(result, seg...)
-			result = append(result, jpegData[endPos:]...)
-			return result, nil
+			return endPos, nil
 		}
 	}
+	return 2, nil
+}
 
-	result := make([]byte, 0, len(jpegData)+len(seg))
-	result = append(result, jpegData[:2]...)
-	result = append(result, seg...)
-	result = append(result, jpegData[2:]...)
-	return result, nil
+// streamJPEGWithDPI يكتب JPEG مع JFIF مباشرة للكاتب — 3 كتابات جزئية بلا نسخة بايت ثانية.
+func streamJPEGWithDPI(w io.Writer, jpegData []byte, dpi int) error {
+	restStart, err := jpegDPIRestStart(jpegData)
+	if err != nil {
+		return err
+	}
+	seg := buildJFIFSegment(dpi)
+	for _, part := range [][]byte{jpegData[:2], seg, jpegData[restStart:]} {
+		if _, err := w.Write(part); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -193,7 +193,7 @@ export default function App() {
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.35, ease: [0.1, 0.9, 0.2, 1] }}
-            className="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-2xl flex items-center justify-center mb-5 border border-primary/20 shadow-lg shadow-primary/10"
+            className="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-2xl flex items-center justify-center mb-5 border border-primary/20 shadow-fluent-16 shadow-primary/10"
           >
             <Spinner className="w-8 h-8 text-primary" size={32} />
           </motion.div>
@@ -309,9 +309,9 @@ export default function App() {
                   aria-label="الحساب والتراخيص"
                 >
                   {isLicenseActive ? (
-                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-500" weight="duotone" />
+                    <ShieldCheck className="w-4 h-4 text-emerald-500" weight="duotone" />
                   ) : (
-                    <User className="w-4.5 h-4.5 text-muted-foreground" />
+                    <User className="w-4 h-4 text-muted-foreground" />
                   )}
                   {user?.plan === "trial" && (
                     <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />

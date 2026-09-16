@@ -31,8 +31,8 @@ export function TextColorProperties({ element, onUpdate, onNavigateTab }: TextPr
 }
 
 /**
- * تبويب المؤثرات للنصوص (TextEffectsProperties):
- * الظلال والقوالب 3D، التقويس، وتنسيق أبعاد الشارة
+ * تبويب التأثيرات للنصوص (TextEffectsProperties):
+ * الظلال والقوالب المجسمة، التقويس، وتنسيق أبعاد الشارة
  */
 export function TextEffectsProperties({ element, onUpdate, onNavigateTab }: TextPropertiesProps) {
   return <TextEffectsTab element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />;
@@ -76,7 +76,7 @@ export function TextProperties({ element, onUpdate, onNavigateTab, standalone = 
           },
           {
             id: "effects",
-            label: "المؤثرات",
+            label: "التأثيرات",
             icon: <Sparkle className="w-3.5 h-3.5 shrink-0" weight={activeTab === "effects" ? "bold" : "regular"} />,
             tooltip: "الظلال، الحدود، الشارة، والتقويس",
             badge: (hasBadge || hasStroke || hasShadow || hasCurve) ? (

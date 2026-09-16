@@ -415,7 +415,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               )}
               title="اتجاه رأسي (عمودي)"
             >
-              <span className="w-2.5 h-3.5 border-[1.5px] border-current rounded-xs inline-block shrink-0" />
+              <span className="w-2.5 h-3.5 border-[1.5px] border-current rounded-md inline-block shrink-0" />
               <span>عمودي</span>
             </button>
             <button
@@ -433,7 +433,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               )}
               title="اتجاه أفقي"
             >
-              <span className="w-3.5 h-2.5 border-[1.5px] border-current rounded-xs inline-block shrink-0" />
+              <span className="w-3.5 h-2.5 border-[1.5px] border-current rounded-md inline-block shrink-0" />
               <span>أفقي</span>
             </button>
           </div>

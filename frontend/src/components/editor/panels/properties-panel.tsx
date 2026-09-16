@@ -41,29 +41,29 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
   const selectedSlot = mode === "collage" ? slots.find((s) => s.id === selectedId) : undefined;
 
   // استنباط هوية اللوح ديناميكياً وفق العنصر النشط
-  let panelIcon = <SlidersHorizontal className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+  let panelIcon = <SlidersHorizontal className="w-4 h-4 text-primary" weight="duotone" />;
   let panelTitle = "الخصائص";
   const panelSubtitle: string | undefined = undefined;
 
   if (selectedElement) {
     if (selectedElement.type === "image") {
-      panelIcon = <ImageIcon className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+      panelIcon = <ImageIcon className="w-4 h-4 text-primary" weight="duotone" />;
       panelTitle = "خصائص الصورة";
     } else if (selectedElement.type === "text") {
-      panelIcon = <TextAa className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+      panelIcon = <TextAa className="w-4 h-4 text-primary" weight="duotone" />;
       panelTitle = "خصائص النص";
     } else {
-      panelIcon = <Shapes className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+      panelIcon = <Shapes className="w-4 h-4 text-primary" weight="duotone" />;
       panelTitle = "خصائص الشكل";
     }
   } else if (selectedSlot) {
-    panelIcon = <SquaresFour className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+    panelIcon = <SquaresFour className="w-4 h-4 text-primary" weight="duotone" />;
     panelTitle = "خصائص الخلية";
   } else if (mode === "collage") {
-    panelIcon = generalTab === "collage" ? <SquaresFour className="w-4.5 h-4.5 text-primary" weight="duotone" /> : <FileText className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+    panelIcon = generalTab === "collage" ? <SquaresFour className="w-4 h-4 text-primary" weight="duotone" /> : <FileText className="w-4 h-4 text-primary" weight="duotone" />;
     panelTitle = generalTab === "collage" ? "إعدادات الكولاج" : "إعدادات الورقة";
   } else {
-    panelIcon = <FileText className="w-4.5 h-4.5 text-primary" weight="duotone" />;
+    panelIcon = <FileText className="w-4 h-4 text-primary" weight="duotone" />;
     panelTitle = "إعدادات الورقة";
   }
 

@@ -50,14 +50,14 @@ export const QuickBarAiActions = React.memo(function QuickBarAiActions({
             onClick={onRemoveBg}
             className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
           >
-            {isRemovingBg ? <Spinner className="w-4.5 h-4.5" size={14} /> : <Sparkle className="w-4.5 h-4.5" weight="duotone" />}
+            {isRemovingBg ? <Spinner className="w-4 h-4" size={14} /> : <Sparkle className="w-4 h-4" weight="duotone" />}
             <span>{isRemovingBg ? (bgProgress > 0 ? `جاري العزل ... (${Math.round(bgProgress)}%)` : "جاري العزل ...") : "عزل الخلفية"}</span>
             {!licenseActive ? (
-              <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded-sm tracking-wider uppercase">
-                PRO
+              <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded-md tracking-wider uppercase">
+                احترافي
               </span>
             ) : (
-              <span className="text-[8px] bg-primary/20 border border-primary/40 text-primary px-1 py-0.5 rounded-sm font-bold font-mono">
+              <span className="text-[8px] bg-primary/20 border border-primary/40 text-primary px-1 py-0.5 rounded-md font-bold font-mono">
                 AI
               </span>
             )}
@@ -76,7 +76,7 @@ export const QuickBarAiActions = React.memo(function QuickBarAiActions({
             onClick={isFraming ? onCancelFrame : onFrameFace}
             className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
           >
-            {isFraming ? <Spinner className="w-4.5 h-4.5" size={14} /> : <UserFocus className="w-4.5 h-4.5" weight="duotone" />}
+            {isFraming ? <Spinner className="w-4 h-4" size={14} /> : <UserFocus className="w-4 h-4" weight="duotone" />}
             <span>{isFraming ? "جاري الضبط ..." : "ضبط الوجه"}</span>
           </Button>
         </TooltipTrigger>
@@ -93,7 +93,7 @@ export const QuickBarAiActions = React.memo(function QuickBarAiActions({
             onClick={onEnhance}
             className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 text-primary font-bold text-xs"
           >
-            {isEnhancing ? <Spinner className="w-4.5 h-4.5" size={14} /> : <MagicWand className="w-4.5 h-4.5" weight="duotone" />}
+            {isEnhancing ? <Spinner className="w-4 h-4" size={14} /> : <MagicWand className="w-4 h-4" weight="duotone" />}
             <span>{isEnhancing ? "جاري الترميم ..." : `ترميم الوجه (${remainingQuota}/${dailyLimit})`}</span>
           </Button>
         </TooltipTrigger>

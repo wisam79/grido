@@ -5,6 +5,8 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> **تصحيح توثيقي (سبتمبر 2026 — مثبت من الكود):** إدخال `v1.2.11` ادعى أن `build.ps1` يفشل عند غياب `MODAL_AI_KEY`، لكن `build.ps1:22-26,49` يبني بمفتاح فارغ دون فشل. يُترك الإدخال الأصلي لسجل التاريخ، والصحيح هو السلوك الحالي في `build.ps1`.
+
 ## [v1.3.39] - 2026-09-14
 
 ### Added (Sticker & Frame Studio Expansion, Presets & Vector Export)

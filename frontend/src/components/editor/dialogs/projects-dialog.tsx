@@ -5,7 +5,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
+  DialogFooter,
   DialogCloseButton,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -300,14 +302,18 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-        <DialogContent showCloseButton={false} className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-xl rounded-2xl p-5 font-cairo fluent-specular" dir="rtl">
+        <DialogContent showCloseButton={false} className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl p-5 sm:p-6 font-cairo fluent-specular" dir="rtl">
           <DialogHeader className="border-b border-border/40 pb-3">
             <div className="flex items-center justify-between gap-2">
-              <DialogTitle className="flex items-center gap-2 text-foreground font-cairo text-base font-bold">
-                <FolderOpen className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-                <span>مكتبة المشاريع</span>
-                <span className="sr-only"> المحلية</span>
-              </DialogTitle>
+              <div className="min-w-0">
+                <DialogTitle className="flex items-center gap-2 text-foreground font-cairo text-base font-bold">
+                  <FolderOpen className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+                  <span>مكتبة المشاريع</span>
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  حفظ واستعراض المشاريع المحلية
+                </DialogDescription>
+              </div>
               <DialogCloseButton />
             </div>
           </DialogHeader>
@@ -525,17 +531,17 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                   </label>
                 </div>
 
-                <div className="p-3 border rounded-xl bg-red-500/5 border-red-500/20 flex items-center justify-between">
+                <div className="p-3 border rounded-xl bg-destructive/5 border-destructive/20 flex items-center justify-between">
                   <div>
-                    <h4 className="text-xs font-bold text-red-600 dark:text-red-400">تهيئة مكتبة المشاريع</h4>
-                    <p className="text-xs text-red-500/70">حذف جميع المشاريع المحفوظة نهائياً</p>
+                    <h4 className="text-xs font-bold text-destructive">تهيئة مكتبة المشاريع</h4>
+                    <p className="text-xs text-muted-foreground">حذف جميع المشاريع المحفوظة نهائياً</p>
                   </div>
                   <Button 
                     variant="destructive" 
                     size="sm" 
                     onClick={() => setResetConfirmOpen(true)}
                     disabled={backupActionLoading}
-                    className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-xs"
+                    className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
                   >
                     <Trash className="w-3.5 h-3.5 shrink-0" weight="bold" />
                     <span>حذف الكل</span>
@@ -547,16 +553,16 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
         </DialogContent>
 
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-          <AlertDialogContent dir="rtl">
+          <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl">
             <AlertDialogHeader>
-              <AlertDialogTitle className="font-cairo text-right">حذف المشروع</AlertDialogTitle>
-              <AlertDialogDescription className="font-cairo text-right text-xs">
-                هل أنت متأكد من رغبتك في حذف هذا المشروع نهائياً؟ لا يمكن التراجع عن هذا الإجراء.
+              <AlertDialogTitle className="font-cairo text-start">حذف المشروع</AlertDialogTitle>
+              <AlertDialogDescription className="font-cairo text-start text-xs">
+                سيتم حذف المشروع نهائياً. هل تريد المتابعة؟
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="font-cairo">
               <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">إلغاء</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs">
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs">
                 حذف
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -566,19 +572,24 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
 
       {/* تأكيد الاستيراد وخيارات الدمج/الاستبدال */}
       <Dialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
-        <DialogContent showCloseButton={false} className="sm:max-w-[400px] p-5 rounded-2xl" dir="rtl">
+        <DialogContent showCloseButton={false} className="sm:max-w-[400px] p-5 sm:p-6 rounded-2xl bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28" dir="rtl">
           <DialogHeader className="border-b border-border/40 pb-2.5">
             <div className="flex items-center justify-between gap-2">
-              <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
-                <UploadSimple className="text-primary w-4 h-4 shrink-0" weight="duotone" />
-                <span>استيراد المشاريع</span>
-              </DialogTitle>
+              <div className="min-w-0">
+                <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
+                  <UploadSimple className="text-primary w-4 h-4 shrink-0" weight="duotone" />
+                  <span>استيراد المشاريع</span>
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  اختر طريقة الاستيراد المناسبة
+                </DialogDescription>
+              </div>
               <DialogCloseButton />
             </div>
           </DialogHeader>
           <div className="space-y-4 py-2 font-cairo">
             <p className="text-xs text-muted-foreground">
-              تم التحقق من ملف النسخة الاحتياطية بنجاح. يرجى اختيار طريقة الاستيراد:
+              تم التحقق من ملف النسخة الاحتياطية. اختر طريقة الاستيراد:
             </p>
             <RadioGroup 
               value={importMode} 
@@ -588,19 +599,19 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
               <div className="flex items-center space-x-reverse space-x-2 border border-border/60 rounded-xl p-3 hover:bg-accent/40 cursor-pointer fluent-specular transition-colors">
                 <RadioGroupItem value="merge" id="r-merge" />
                 <Label htmlFor="r-merge" className="cursor-pointer flex-1 space-y-0.5">
-                  <div className="font-semibold text-xs text-foreground">دمج المشاريع (Merge)</div>
+                  <div className="font-semibold text-xs text-foreground">دمج المشاريع</div>
                   <div className="text-[10px] text-muted-foreground">إضافة المشاريع الجديدة وتحديث المشاريع المتشابهة بالمعرف</div>
                 </Label>
               </div>
-              <div className="flex items-center space-x-reverse space-x-2 border rounded-xl p-3 hover:bg-accent/40 cursor-pointer border-red-500/20 hover:border-red-500/30 transition-colors">
+              <div className="flex items-center space-x-reverse space-x-2 border rounded-xl p-3 hover:bg-accent/40 cursor-pointer border-destructive/20 hover:border-destructive/30 transition-colors">
                 <RadioGroupItem value="overwrite" id="r-overwrite" />
                 <Label htmlFor="r-overwrite" className="cursor-pointer flex-1 space-y-0.5">
-                  <div className="font-semibold text-xs text-red-600 dark:text-red-400">استبدال بالكامل (Overwrite)</div>
+                  <div className="font-semibold text-xs text-destructive">استبدال بالكامل</div>
                   <div className="text-[10px] text-muted-foreground">مسح كافة المشاريع الحالية واستبدالها بمحتويات ملف النسخة الاحتياطية</div>
                 </Label>
               </div>
             </RadioGroup>
-            <div className="flex justify-end gap-2 pt-2">
+            <DialogFooter className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" onClick={() => setImportConfirmOpen(false)} className="h-8 px-4 text-xs font-semibold rounded-md">
                 إلغاء
               </Button>
@@ -614,28 +625,28 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                   "استيراد"
                 )}
               </Button>
-            </div>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* تأكيد التهيئة ومسح قاعدة البيانات */}
       <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-cairo text-right flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-bold">
+            <AlertDialogTitle className="font-cairo text-start flex items-center gap-2 text-destructive text-sm font-bold">
               <Warning className="w-4 h-4 shrink-0" weight="duotone" />
-              <span>تحذير: تهيئة مكتبة المشاريع</span>
+              <span>تهيئة مكتبة المشاريع</span>
             </AlertDialogTitle>
-            <AlertDialogDescription className="font-cairo text-right text-xs">
-              أنت على وشك حذف جميع المشاريع المحفوظة محلياً بشكل نهائي من قاعدة البيانات. لا يمكن التراجع عن هذا الإجراء أبداً. ننصح بتصدير نسخة احتياطية أولاً.
+            <AlertDialogDescription className="font-cairo text-start text-xs">
+              سيتم حذف جميع المشاريع نهائياً. هل تريد المتابعة؟
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="font-cairo">
             <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">إلغاء</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmReset} 
-              className="bg-red-600 hover:bg-red-700 text-white font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
             >
               حذف الكل
             </AlertDialogAction>

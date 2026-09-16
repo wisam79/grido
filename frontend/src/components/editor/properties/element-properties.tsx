@@ -229,7 +229,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("left")}
                       className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignLeftIcon className="w-4.5 h-4.5" />
+                      <AlignLeftIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليسار</TooltipContent>
@@ -243,7 +243,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("center")}
                       className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignCenterHorizontalIcon className="w-4.5 h-4.5" />
+                      <AlignCenterHorizontalIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للوسط أفقياً</TooltipContent>
@@ -257,7 +257,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("right")}
                       className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignRightIcon className="w-4.5 h-4.5" />
+                      <AlignRightIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة لليمين</TooltipContent>
@@ -273,7 +273,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("top")}
                       className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignTopIcon className="w-4.5 h-4.5" />
+                      <AlignTopIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأعلى</TooltipContent>
@@ -287,7 +287,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("middle")}
                       className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignCenterVerticalIcon className="w-4.5 h-4.5" />
+                      <AlignCenterVerticalIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للمنتصف عمودياً</TooltipContent>
@@ -301,7 +301,7 @@ export function ElementProperties({
                       onClick={() => alignSelectedElements("bottom")}
                       className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
                     >
-                      <AlignBottomIcon className="w-4.5 h-4.5" />
+                      <AlignBottomIcon className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-cairo">محاذاة للأسفل</TooltipContent>

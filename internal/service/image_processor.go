@@ -113,18 +113,22 @@ func BlurGray(src *image.Gray) *image.Gray {
 }
 
 func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW int, maskH int) (string, error) {
-	maskBytes, err := base64.StdEncoding.DecodeString(maskBase64)
-	if err != nil {
-		return "", fmt.Errorf("decode mask base64: %w", err)
-	}
-
 	// 🛡️ رفض أبعاد قناع غير منطقية أو فيض حسابي (maskW*maskH)
 	if maskW <= 0 || maskH <= 0 {
 		return "", fmt.Errorf("invalid mask dimensions: %dx%d", maskW, maskH)
 	}
-	const maxMaskPixels = 200 * 1024 * 1024 // 200 ميغابكسل كحد أقصى
+	// 32MP كحد أقصى (≈128MB NRGBA) — كان 200MP أي ~800MB مع 3 نسخ متزامنة
+	const maxMaskPixels = int64(32 * 1024 * 1024)
 	if int64(maskW)*int64(maskH) > maxMaskPixels {
 		return "", fmt.Errorf("mask dimensions too large: %dx%d", maskW, maskH)
+	}
+	// فحص طول السلسلة قبل التخصيص: base64 ≈ 4/3 الخام — يمنع فك 100MB في الذاكرة
+	if int64(len(maskBase64)) > maxMaskPixels*4/3+16 {
+		return "", fmt.Errorf("mask payload too large: %d bytes", len(maskBase64))
+	}
+	maskBytes, err := base64.StdEncoding.DecodeString(maskBase64)
+	if err != nil {
+		return "", fmt.Errorf("decode mask base64: %w", err)
 	}
 
 	var srcImg image.Image
@@ -179,6 +183,12 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 	srcBounds := srcImg.Bounds()
 	srcW, srcH := srcBounds.Dx(), srcBounds.Dy()
 
+	// سقف المصدر قبل أي نسخة: يمنع تضخيم 3x (Clone + Resize + مخرج) لصور ضخمة
+	const maxSourcePixels = int64(50 * 1024 * 1024)
+	if int64(srcW)*int64(srcH) > maxSourcePixels {
+		return "", fmt.Errorf("source image too large: %dx%d", srcW, srcH)
+	}
+
 	var finalMask *image.Gray = maskImg
 	if maskW != srcW || maskH != srcH {
 		finalMask = ResizeGrayLinear(maskImg, srcW, srcH)
@@ -191,29 +201,26 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 	}
 	srcImg = nil
 
-	outImg := image.NewNRGBA(image.Rect(0, 0, srcW, srcH))
-
-	srcPix := srcNRGBA.Pix
+	// كتابة موضعية في نفس المخزن بدل مخرج ثالث بحجم المصدر (القراءة تسبق
+	// الكتابة لكل بكسل فالمشاركة آمنة) — يوفر نسخة NRGBA كاملة
+	pix := srcNRGBA.Pix
 	maskPix := finalMask.Pix
-	outPix := outImg.Pix
 
 	for y := 0; y < srcH; y++ {
 		srcRowOffset := y * srcNRGBA.Stride
 		maskRowOffset := y * finalMask.Stride
-		outRowOffset := y * outImg.Stride
 
 		for x := 0; x < srcW; x++ {
 			srcIdx := srcRowOffset + x*4
-			outIdx := outRowOffset + x*4
 			maskIdx := maskRowOffset + x
 
 			rawAlpha := float64(maskPix[maskIdx])
 
 			// ✂️ منحنى تشذيب وتنعيم حواف القناع ومكافحة الهالة البيضاء حول الشعر (Alpha Remapping & Edge Defringe)
 			var alpha uint8
-			r := srcPix[srcIdx]
-			g := srcPix[srcIdx+1]
-			b := srcPix[srcIdx+2]
+			r := pix[srcIdx]
+			g := pix[srcIdx+1]
+			b := pix[srcIdx+2]
 
 			if rawAlpha < 65 {
 				alpha = 0
@@ -249,10 +256,10 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 				}
 			}
 
-			outPix[outIdx] = r
-			outPix[outIdx+1] = g
-			outPix[outIdx+2] = b
-			outPix[outIdx+3] = alpha
+			pix[srcIdx] = r
+			pix[srcIdx+1] = g
+			pix[srcIdx+2] = b
+			pix[srcIdx+3] = alpha
 		}
 	}
 
@@ -269,7 +276,7 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 	}
 
 	encoder := png.Encoder{CompressionLevel: png.BestSpeed}
-	if err := encoder.Encode(f, outImg); err != nil {
+	if err := encoder.Encode(f, srcNRGBA); err != nil {
 		_ = f.Close()
 		return "", fmt.Errorf("encode final image: %w", err)
 	}

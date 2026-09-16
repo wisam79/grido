@@ -44,7 +44,7 @@ export const CanvasPaper = React.memo(
               }
             : undefined
         }
-        className="relative rounded-sm overflow-hidden border border-black/10 dark:border-white/10 transition-shadow duration-300 shadow-md shadow-black/15 hover:shadow-lg hover:shadow-black/20 fluent-specular select-none"
+        className="relative rounded-md overflow-hidden border border-black/10 dark:border-white/10 transition-shadow duration-300 shadow-fluent-8 fluent-specular select-none"
         style={{
           width: displayW,
           height: displayH,
@@ -65,7 +65,7 @@ export const CanvasPaper = React.memo(
         onMouseLeave={onMouseLeave}
       >
         {isLoading && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md rounded-sm gap-2">
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center fluent-smoke-backdrop rounded-md gap-2">
             <Spinner className="w-8 h-8 text-primary" size={32} />
             <span className="text-xs font-bold text-white font-cairo">
               جاري المعالجة ...

@@ -118,7 +118,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
 
   return (
     <PanelShell
-      icon={mode === "collage" ? <GridFour className="w-4.5 h-4.5 text-primary" weight="duotone" /> : <Sparkle className="w-4.5 h-4.5 text-primary" weight="duotone" />}
+      icon={mode === "collage" ? <GridFour className="w-4 h-4 text-primary" weight="duotone" /> : <Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
       title={mode === "collage" ? "القوالب" : "استوديو التصميم"}
       subtitle={mode === "collage" ? "قوالب الكولاج والطباعة" : "الطبقات والعناصر والمقاسات"}
       onCollapse={onCollapse}
@@ -150,7 +150,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
             toast.success(`تم استيراد ${imported} قالب بنجاح`);
             loadTemplates();
           } catch (err) {
-            toast.error("ملف غير صالح للاستيراد");
+            toast.error(toErrorMessage(err, "ملف غير صالح للاستيراد"));
           }
           e.target.value = "";
         }}
@@ -175,14 +175,14 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
       <AlertDialog open={pendingTemplate !== null} onOpenChange={(open) => { if (!open) setPendingTemplate(null); }}>
         <AlertDialogContent dir="rtl" className="font-cairo rounded-2xl border fluent-specular">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-right text-base font-bold">
+            <AlertDialogTitle className="text-start text-base font-bold">
               {droppedCount > 0 ? "تبديل قالب الكولاج" : "الانتقال إلى وضع الكولاج"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-right text-xs text-muted-foreground leading-relaxed">
+            <AlertDialogDescription className="text-start text-xs text-muted-foreground leading-relaxed">
               {droppedCount > 0 && mode === "collage"
-                ? `سيتم إسقاط ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} موجودة لا تتسع للقالب الجديد. هل تريد المتابعة؟`
+                ? `سيتم حذف ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} موجودة لا تتسع للقالب الجديد. هل تريد المتابعة؟`
                 : droppedCount > 0
-                  ? `سيتم إسقاط ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} موجودة ومسح عناصر الوضع الحر الحالية. هل تريد المتابعة؟`
+                  ? `سيتم حذف ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} موجودة ومسح عناصر الوضع الحر الحالية. هل تريد المتابعة؟`
                   : "سيتم مسح عناصر الوضع الحر الحالية عند التحويل إلى وضع الكولاج. هل تريد المتابعة؟"}
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -83,10 +83,24 @@ export const URLImage = React.memo(function URLImage({
   }, [element.filter, element.brightness, element.contrast, element.saturation, element.blur]);
 
   const imageNodeRef = React.useRef<import("@/hooks/use-filter-cache").CacheableKonvaNode | null>(null);
-  const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}_${element.width}_${element.height}`;
+  // الأبعاد خارج المفتاح عمداً: التحجيم يعيد الكاش المكلف في كل إطار،
+  // ويُعاد بناؤه صراحةً بعد استقرار التحويل (onTransformEnd) والتصدير يرفع الدقة بنفسه
+  const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}`;
   const hasFilters = filters.length > 0;
 
-  useFilterCache({ nodeRef: imageNodeRef, image, hasFilters, canvasWidth, filterKey });
+  const recacheFilters = useFilterCache({ nodeRef: imageNodeRef, image, hasFilters, canvasWidth, filterKey });
+
+  // إعادة الكاش بعد استقرار التحجيم فقط (الستور يُكتب عند onTransformEnd لا أثناءه،
+  // فيطلق هذا الأثر مرة واحدة بدل كل إطار تحجيم)
+  const prevDimsRef = React.useRef(`${element.width}x${element.height}`);
+  React.useEffect(() => {
+    const key = `${element.width}x${element.height}`;
+    if (prevDimsRef.current === key) return;
+    prevDimsRef.current = key;
+    if (!hasFilters) return;
+    const t = setTimeout(() => recacheFilters(), 250);
+    return () => clearTimeout(t);
+  }, [element.width, element.height, hasFilters, recacheFilters]);
 
   const flipped = element.flipX === true;
   const flippedY = element.flipY === true;

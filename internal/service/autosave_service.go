@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -77,7 +78,8 @@ func (s *AutosaveService) SaveAutoSave(jsonData string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create tmp autosave file: %w", err)
 	}
-	if _, err := f.Write([]byte(jsonData)); err != nil {
+	// WriteString مباشرة — []byte(jsonData) كان ينسخ حتى 100MB كاملة
+	if _, err := io.WriteString(f, jsonData); err != nil {
 		f.Close()
 		return fmt.Errorf("failed to write tmp autosave file: %w", err)
 	}

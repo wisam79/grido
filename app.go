@@ -174,6 +174,11 @@ func (a *App) CleanUnusedMediaNow() (map[string]interface{}, error) {
 
 
 func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayName string, pattern string) (string, error) {
+	// فحص الحجم قبل الفك: السلسلة base64 ≈ 4/3 الخام — يمنع تخصيص 50MB+ عبثاً
+	if int64(len(base64Data)) > int64(service.MaxFileSize)*4/3+16 {
+		return "", fmt.Errorf("file size too large: payload %d bytes (max %d raw)", len(base64Data), service.MaxFileSize)
+	}
+
 	var decoded []byte
 	var err error
 
@@ -204,8 +209,29 @@ func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayN
 		return "", nil
 	}
 
-	if err := os.WriteFile(filePath, decoded, 0o644); err != nil {
+	// كتابة ذرية (.tmp + Sync + Rename) بدل WriteFile المباشر — تمنع ملفاً تالفاً عند الانقطاع
+	tmpPath := filePath + ".tmp"
+	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+	if err != nil {
+		return "", fmt.Errorf("create file: %w", err)
+	}
+	if _, err := f.Write(decoded); err != nil {
+		_ = f.Close()
+		_ = os.Remove(tmpPath)
 		return "", fmt.Errorf("write file: %w", err)
+	}
+	if err := f.Sync(); err != nil {
+		_ = f.Close()
+		_ = os.Remove(tmpPath)
+		return "", fmt.Errorf("sync file: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(tmpPath)
+		return "", fmt.Errorf("close file: %w", err)
+	}
+	if err := os.Rename(tmpPath, filePath); err != nil {
+		_ = os.Remove(tmpPath)
+		return "", fmt.Errorf("commit file: %w", err)
 	}
 
 	return "success", nil

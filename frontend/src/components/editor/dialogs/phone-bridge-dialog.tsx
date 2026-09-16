@@ -120,7 +120,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[480px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-2xl font-cairo fluent-specular gap-0"
+        className="w-[96vw] sm:max-w-[480px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular gap-0"
         dir="rtl"
       >
         {/* Title Bar with Close Button */}
@@ -135,7 +135,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                   جسر كاميرا الهاتف
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  التقاط الصور من هاتفك مباشرة وإسقاطها فوراً في مساحة العمل
+                  التقاط الصور من هاتفك مباشرة إلى مساحة العمل
                 </DialogDescription>
               </div>
             </div>
@@ -172,7 +172,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           {!isLoading && !error && bridgeInfo && (
             <>
               {/* QR Code Container (High-contrast for easy phone camera scanning) */}
-              <div className="relative group p-4 bg-white rounded-2xl shadow-md border border-border/40 flex items-center justify-center">
+              <div className="relative group p-4 bg-card dark:bg-white rounded-2xl shadow-fluent-8 border border-border/40 flex items-center justify-center">
                 <QRCodeSVG
                   value={bridgeInfo.url}
                   size={190}
@@ -255,7 +255,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         </div>
 
         {/* Modal Footer */}
-        <DialogFooter className="px-6 py-3 border-t border-border/40 bg-muted/20 flex items-center justify-between gap-2">
+        <DialogFooter className="px-6 py-3 border-t border-border/40 bg-muted/20 flex items-center justify-end gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -273,7 +273,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
             onClick={() => onOpenChange(false)}
             className="h-8 rounded-md text-xs font-semibold px-4"
           >
-            إغلاق
+            إلغاء
           </Button>
         </DialogFooter>
       </DialogContent>

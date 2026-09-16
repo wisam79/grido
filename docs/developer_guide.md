@@ -126,7 +126,7 @@ To verify all application layers compile and operate successfully:
 #### 1. Backend Tests (Go)
 Checks SQLite queries, backup logs, and project services.
 ```bash
-go test ./...
+go test ./internal/...
 ```
 
 #### 2. Frontend Unit Tests (Vitest)

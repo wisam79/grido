@@ -164,7 +164,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
     setIsFraming(false);
     setFrameProgress(0);
     setFrameProgressText("");
-    toast.info("تم إيقاف العملية.");
+    toast.info("تم إلغاء العملية.");
   };
 
   const handleFrameFace = async (target: FramingTarget) => {
@@ -172,7 +172,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
     if (!imageSrc) return;
 
     if (busyFrameRequestId !== 0) {
-      toast.warning("هناك عملية ضبط وجه قيد التنفيذ حالياً. يرجى الانتظار.");
+      toast.warning("جاري التأطير ...");
       return;
     }
 

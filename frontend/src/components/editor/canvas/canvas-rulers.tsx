@@ -124,7 +124,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
 
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold">
-              الخطوط الإرشادية (Guides)
+              الخطوط الإرشادية
             </DropdownMenuLabel>
 
             {onToggleShowGuides && (

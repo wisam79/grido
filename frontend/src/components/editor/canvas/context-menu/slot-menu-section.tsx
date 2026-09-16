@@ -180,7 +180,7 @@ export function SlotMenuSection({
           onClick={() => handleActionWithHistory(() => updateSlot(targetId, { imageSrc: undefined, originalImageSrc: undefined }))}
         >
           <Broom className="w-3.5 h-3.5 text-destructive shrink-0" weight="regular" />
-          <span className="truncate">تفريغ الخلية</span>
+          <span className="truncate">إزالة الصورة</span>
         </button>
       </div>
 

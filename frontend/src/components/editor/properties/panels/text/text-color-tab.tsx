@@ -79,7 +79,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
                     title={c.label}
                   >
                     <div
-                      className="w-3.5 h-3.5 rounded-sm border border-black/15 dark:border-white/20 shrink-0 flex items-center justify-center shadow-2xs relative overflow-hidden"
+                      className="w-3.5 h-3.5 rounded-md border border-black/15 dark:border-white/20 shrink-0 flex items-center justify-center shadow-2xs relative overflow-hidden"
                       style={{ backgroundColor: c.color }}
                     >
                       {isCurrent && (
@@ -125,7 +125,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "h-6.5 px-2 rounded-md border text-[10px] font-bold transition-all cursor-pointer shadow-2xs active:scale-95",
+                "h-6 px-2 rounded-md border text-[10px] font-bold transition-all cursor-pointer shadow-2xs active:scale-95",
                 hasStroke
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-background hover:bg-muted text-muted-foreground border-border/60"
@@ -151,7 +151,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
                       useEditorStore.getState().pushHistory();
                     }}
                     className={cn(
-                      "h-6.5 rounded-md border p-0.5 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1",
+                      "h-6 rounded-md border p-0.5 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1",
                       isSelected ? "border-primary ring-1 ring-primary bg-primary/10" : "border-border/50 bg-background/50"
                     )}
                     title={c.label}

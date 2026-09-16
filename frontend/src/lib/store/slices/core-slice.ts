@@ -124,6 +124,45 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       if (mode === "collage" && (!s.slots || s.slots.length === 0)) {
         nextState.slots = buildSlots();
         nextState.elements = []; // مسح عناصر التعديل الحر عند العودة للكولاج
+      } else if (mode === "collage") {
+        // القوالب الفيزيائية (physicalLayout) تُحسب خلاياها من أبعاد الكانفس
+        // الحالية — خانات مبنية لمقاس قديم تبقى مشوهة عند العودة من الوضع الحر
+        // بعد تغيير المقاس، لذا نعيد موازنتها مع الحفاظ على الصور والتحويلات
+        const template = s.collageTemplate || COLLAGE_TEMPLATES[0];
+        if (template.physicalLayout) {
+          const currentWidth = s.canvasWidth || 2480;
+          const currentHeight = s.canvasHeight || 3508;
+          const storedDpi = s.printSettings?.dpi || 300;
+          const dpi = getEffectiveDpi(currentWidth, currentHeight, storedDpi);
+          const dynamicCells = computeDynamicCollageCells(
+            template,
+            currentWidth,
+            currentHeight,
+            dpi,
+            s.collageGap || 0,
+            s.collageMargin || 0
+          );
+          if (dynamicCells && dynamicCells.length === s.slots.length) {
+            const stale = dynamicCells.some((c, i) => {
+              const sl = s.slots[i];
+              return Math.abs(sl.x - c.x) > 1e-6 || Math.abs(sl.y - c.y) > 1e-6 ||
+                Math.abs(sl.w - c.w) > 1e-6 || Math.abs(sl.h - c.h) > 1e-6;
+            });
+            if (stale) {
+              nextState.slots = dynamicCells.map((c, i) => ({
+                ...s.slots[i],
+                cellIndex: i,
+                x: c.x,
+                y: c.y,
+                w: c.w,
+                h: c.h,
+              }));
+            }
+          } else if (dynamicCells) {
+            nextState.slots = buildSlots();
+            nextState.elements = [];
+          }
+        }
       }
 
       return nextState;

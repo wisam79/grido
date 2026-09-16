@@ -131,6 +131,20 @@ const isSameSnapshot = (a: HistoryEntry, b: HistoryEntry): boolean => {
     return x === y;
   };
 
+  // مقارنة ضحلة للكائنات بدل JSON.stringify: الستور immutable بالـ spread
+  // فاختلاف المرجع مع تساوي الحقول الضحلة نادر — والتحفظ هنا آمن (لقطة زائدة فقط)
+  const shallowEqualObjects = (x: object, y: object): boolean => {
+    if (x === y) return true;
+    const kx = Object.keys(x);
+    if (kx.length !== Object.keys(y).length) return false;
+    const rx = x as Record<string, unknown>;
+    const ry = y as Record<string, unknown>;
+    for (const k of kx) {
+      if (rx[k] !== ry[k]) return false;
+    }
+    return true;
+  };
+
   // مقارنة عناصر حقل بحقل — مراجع السلاسل المشتركة (imageSrc نفس المرجع بين
   // لقطتين متتاليتين) تُقارن بـ === فوري دون مسح المحتوى
   for (let i = 0; i < a.elements.length; i++) {
@@ -144,7 +158,8 @@ const isSameSnapshot = (a: HistoryEntry, b: HistoryEntry): boolean => {
       const va = ea[k];
       const vb = eb[k];
       if (typeof va === "object" && va !== null) {
-        if (JSON.stringify(va) !== JSON.stringify(vb)) return false;
+        if (typeof vb !== "object" || vb === null) return false;
+        if (!shallowEqualObjects(va, vb)) return false;
       } else if (!valuesEqual(va, vb)) {
         return false;
       }
@@ -162,7 +177,8 @@ const isSameSnapshot = (a: HistoryEntry, b: HistoryEntry): boolean => {
       const va = sa[k];
       const vb = sb[k];
       if (typeof va === "object" && va !== null) {
-        if (JSON.stringify(va) !== JSON.stringify(vb)) return false;
+        if (typeof vb !== "object" || vb === null) return false;
+        if (!shallowEqualObjects(va, vb)) return false;
       } else if (!valuesEqual(va, vb)) {
         return false;
       }
@@ -194,6 +210,16 @@ const estimateEntryBytes = (entry: HistoryEntry): number => {
   return total;
 };
 
+// اللقطات immutable بعد دفعها فسعة التقدير تُحفظ بأمان دون تغيير شكل HistoryEntry
+const entryBytesCache = new WeakMap<HistoryEntry, number>();
+const cachedEntryBytes = (entry: HistoryEntry): number => {
+  const hit = entryBytesCache.get(entry);
+  if (hit !== undefined) return hit;
+  const v = estimateEntryBytes(entry);
+  entryBytesCache.set(entry, v);
+  return v;
+};
+
 export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice> = (set, get) => ({
   ...DEFAULT_HISTORY_STATE,
 
@@ -217,12 +243,14 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
 
     newHistory.push(snapshot);
 
-    // سقف العدد أولاً، ثم سقف الحجم بإسقاط الأقدم حتى يهبط الاستهلاك تحت الحد
+    // سقف العدد أولاً، ثم سقف الحجم بإسقاط الأقدم حتى يهبط الاستهلاك تحت الحد.
+    // التقدير مُخزن مؤقتاً (WeakMap) لأن اللقطات immutable بعد الدفع — كان يُعاد
+    // حسابه لـ 30 لقطة في كل pushHistory
     if (newHistory.length > HISTORY_MAX_ENTRIES) newHistory.shift();
-    let totalBytes = newHistory.reduce((sum, e) => sum + estimateEntryBytes(e), 0);
+    let totalBytes = newHistory.reduce((sum, e) => sum + cachedEntryBytes(e), 0);
     while (newHistory.length > 1 && totalBytes > HISTORY_MAX_BYTES) {
       const dropped = newHistory.shift();
-      if (dropped) totalBytes -= estimateEntryBytes(dropped);
+      if (dropped) totalBytes -= cachedEntryBytes(dropped);
     }
     set({ history: newHistory, historyIndex: newHistory.length - 1 });
   },

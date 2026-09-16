@@ -42,7 +42,7 @@ describe('PhoneBridgeDialog Component Tests', () => {
     renderWithProviders(<PhoneBridgeDialog open={true} onOpenChange={vi.fn()} />);
 
     expect(screen.getByText('جسر كاميرا الهاتف')).toBeInTheDocument();
-    expect(screen.getByText('التقاط الصور من هاتفك مباشرة وإسقاطها فوراً في مساحة العمل')).toBeInTheDocument();
+    expect(screen.getByText('التقاط الصور من هاتفك مباشرة إلى مساحة العمل')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(AppWails.StartPhoneBridge).toHaveBeenCalled();

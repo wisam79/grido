@@ -57,7 +57,7 @@ export function LicenseLockScreen({
         >
           <div className="flex items-center justify-between px-4 py-1.5 relative">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-destructive shrink-0 animate-pulse" />
               <h1 className="text-xs font-bold text-foreground/80">
                 Grido Studio | تفعيل الترخيص
               </h1>
@@ -93,9 +93,9 @@ export function LicenseLockScreen({
         </header>
 
         {/* شاشة التفعيل المركزية */}
-        <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-right p-6">
-          <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-xl space-y-6 text-center fluent-specular">
-            <div className="inline-flex p-4 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 animate-pulse">
+        <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-start p-6">
+          <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-fluent-28 space-y-6 text-center fluent-specular">
+            <div className="inline-flex p-4 bg-destructive/10 text-destructive rounded-full border border-destructive/20 animate-pulse">
               <LockSimple className="w-10 h-10" weight="duotone" />
             </div>
 
@@ -118,7 +118,7 @@ export function LicenseLockScreen({
               } finally {
                 setLockLoading(false);
               }
-            }} className="space-y-4 text-right">
+            }} className="space-y-4 text-start">
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <label htmlFor="license-key-input" className="text-xs font-semibold text-foreground">مفتاح الترخيص</label>
@@ -141,7 +141,7 @@ export function LicenseLockScreen({
                   </button>
                 </div>
                 <div className="relative">
-                  <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4" />
+                  <Key className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4" />
                   <input
                     id="license-key-input"
                     type="text"
@@ -149,7 +149,7 @@ export function LicenseLockScreen({
                     placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
                     value={lockKey}
                     onChange={(e) => setLockKey(e.target.value.toUpperCase())}
-                    className="w-full pr-9 pl-4 h-8 text-xs border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase text-foreground"
+                    className="w-full ps-9 pe-4 h-8 text-xs border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase text-foreground"
                   />
                 </div>
               </div>
@@ -171,8 +171,8 @@ export function LicenseLockScreen({
                 إدارة الحساب
               </Button>
 
-              {user && user.token && (
-                <Button variant="ghost" className="w-full text-xs text-red-500 hover:bg-red-500/5 h-8 rounded-md cursor-pointer" onClick={onLogout}>
+                {user && user.token && (
+                <Button variant="ghost" className="w-full text-xs text-destructive hover:bg-destructive/10 h-8 rounded-md cursor-pointer" onClick={onLogout}>
                   تسجيل الخروج
                 </Button>
               )}

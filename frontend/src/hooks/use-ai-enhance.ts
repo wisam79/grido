@@ -134,7 +134,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
     }
 
     if (useAiEnhanceState.getState().isEnhancing) {
-      toast.warning("هناك عملية ترميم جارية بالفعل، يرجى الانتظار ...");
+      toast.warning("جاري الترميم ...");
       return;
     }
 
@@ -149,7 +149,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
     setIsEnhancing(true);
     useRenderQuality.getState().setEnhancingElementId(element.id);
     setEnhanceProgress(10);
-    setEnhanceProgressText("جاري تجهيز الصورة وتحسين أبعاد الرفع ...");
+    setEnhanceProgressText("جاري تجهيز الصورة ...");
 
     let progressTimer: ReturnType<typeof setInterval> | null = null;
     // لا يدعم ربط Wails الإلغاء الفعلي — نستبدل AbortController الوهمي بمهلة
@@ -161,14 +161,12 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
       const base64Image = await prepareImageForAiUpload(element.imageSrc, 2048, 0.92);
 
       const loadingMessages = [
-        "جاري إيقاظ خوادم الذكاء الاصطناعي ...",
-        "جاري تهيئة معالجات الرسوميات (GPU) ...",
-        "جاري تحميل نماذج الترميم المتقدمة ...",
-        "جاري معالجة تفاصيل الوجه والملامح ...",
-        "جاري تحليل البيانات واستعادة البيكسلات المفقودة ...",
-        "جاري إزالة التشويش وتوضيح الخلفية ...",
-        "جاري وضع اللمسات الأخيرة وتحسين الجودة ...",
-        "جاري إنهاء العملية، شكراً لصبرك ..."
+        "جاري تجهيز النموذج ...",
+        "جاري تجهيز الصورة ...",
+        "جاري الترميم ...",
+        "جاري معالجة التفاصيل ...",
+        "جاري تحسين الجودة ...",
+        "جاري الإنهاء ..."
       ];
 
       setEnhanceProgress(15);
@@ -207,7 +205,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
 
       if (result.image) {
         setEnhanceProgress(95);
-        setEnhanceProgressText("جاري حفظ الصورة المحسنة محلياً ...");
+        setEnhanceProgressText("جاري حفظ الصورة ...");
         const localPath = await SaveImageFromBase64(result.image);
 
         const patch: Partial<Record<string, unknown>> = { imageSrc: localPath };

@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogCloseButton,
 } from "@/components/ui/dialog";
@@ -229,7 +230,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         onOpenChange(next);
       }}
     >
-      <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border bg-card rounded-2xl shadow-xl p-0 gap-0 fluent-specular" dir="rtl">
+      <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border bg-card rounded-2xl shadow-fluent-16 p-0 gap-0 fluent-specular" dir="rtl">
         {/* رأس النافذة */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
           <div className="flex items-center justify-between gap-3">
@@ -238,9 +239,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <Printer className="text-primary w-6 h-6 shrink-0" weight="duotone" />
                 <span>إعدادات الطباعة</span>
               </DialogTitle>
-              <p className="text-xs font-medium text-muted-foreground mt-0.5 truncate">
+              <DialogDescription className="text-xs font-medium text-muted-foreground mt-0.5 truncate">
                 اختر مقاس الورقة ونمط الألوان، ثم اضبط الهوامش وخطوط القص
-              </p>
+              </DialogDescription>
             </div>
             <DialogCloseButton />
           </div>
@@ -278,7 +279,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* شريط عنوان وتكبير المعاينة */}
             <div className="flex items-center justify-between px-3.5 py-2 border-b border-print-header-border bg-print-header backdrop-blur-md select-none z-10">
               <span className="text-xs font-bold text-print-header-title flex items-center gap-2">
-                <span className={cn("w-2 h-2 rounded-full", isOverflowing ? "bg-red-500 animate-ping" : "bg-emerald-400")} />
+                <span className={cn("w-2 h-2 rounded-full", isOverflowing ? "bg-destructive animate-ping" : "bg-primary")} />
                 معاينة الورقة المطبوعة
               </span>
 
@@ -288,7 +289,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setZoom(1)}
-                  className="h-6 px-2 text-xs text-print-header-muted hover:text-white hover:bg-print-zoom-capsule cursor-pointer font-medium"
+                  className="h-7 px-2 text-xs text-print-header-muted hover:text-white hover:bg-print-zoom-capsule cursor-pointer font-medium"
                 >
                   إعادة ضبط
                 </Button>
@@ -309,7 +310,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* لوحة الورقة البيضاء الممركزة داخل مساحة العمل */}
             <div className="flex-1 overflow-auto p-6 flex items-center justify-center select-none workspace-grid relative">
               <div
-                className="bg-white rounded-xs relative border border-print-paper-border shadow-md shadow-black/20 transition-all duration-200"
+                className="bg-white rounded-md relative border border-print-paper-border shadow-fluent-8 transition-all duration-200"
                 style={{
                   width: paperWidth * scaleFactor * zoom,
                   height: paperHeight * scaleFactor * zoom,
@@ -317,7 +318,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               >
                 {/* حدود الهامش الداخلي */}
                 <div
-                  className={cn("absolute border border-dashed pointer-events-none transition-colors", isOverflowing ? "border-red-400/80" : "border-print-margin-line")}
+                  className={cn("absolute border border-dashed pointer-events-none transition-colors", isOverflowing ? "border-destructive" : "border-print-margin-line")}
                   style={{
                     left: effectiveMarginMM * scaleFactor * zoom,
                     top: effectiveMarginMM * scaleFactor * zoom,
@@ -325,7 +326,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     bottom: effectiveMarginMM * scaleFactor * zoom,
                   }}
                 />
-                <div className="absolute inset-0 overflow-hidden rounded-xs">
+                <div className="absolute inset-0 overflow-hidden rounded-md">
                   <SheetPreview
                     grid={grid}
                     count={actualCopies}

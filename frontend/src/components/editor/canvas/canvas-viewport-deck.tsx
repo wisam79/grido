@@ -132,7 +132,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <span>{isLandscape ? "الاتجاه الحالي: أفقي (انقر للتحويل إلى رأسي)" : "الاتجاه الحالي: رأسي (انقر للتحويل إلى أفقي)"}</span>
             </TooltipContent>
           </Tooltip>
@@ -158,7 +158,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               <Ruler className="w-4 h-4" weight={showRuler ? "duotone" : "regular"} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
             <div className="flex items-center gap-1.5">
               <span>{showRuler ? "إخفاء المساطر" : "إظهار المساطر"}</span>
               <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+R</kbd>
@@ -183,7 +183,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               <GridFour className="w-4 h-4" weight={showGrid ? "duotone" : "regular"} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
             <div className="flex items-center gap-1.5">
               <span>{showGrid ? "إخفاء شبكة المحاذاة" : "إظهار شبكة المحاذاة"}</span>
               <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+'</kbd>
@@ -208,7 +208,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               <Magnet className="w-4 h-4" weight={snapToGrid ? "duotone" : "regular"} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
             {snapToGrid ? "إيقاف الالتصاق المغناطيسي والمحاذاة الذكية" : "تفعيل الالتصاق المغناطيسي والمحاذاة الذكية"}
           </TooltipContent>
         </Tooltip>
@@ -230,7 +230,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               <Columns className="w-4 h-4" weight={showUserGuides ? "duotone" : "regular"} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
             <div className="flex items-center gap-1.5">
               <span>{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
               <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+;</kbd>
@@ -256,7 +256,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 <Scissors className="w-4 h-4" weight={collageShowCutLines ? "duotone" : "regular"} />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               {collageShowCutLines ? "إخفاء علامات وخطوط قص الصور" : "إظهار علامات وخطوط قص الصور للطباعة"}
             </TooltipContent>
           </Tooltip>
@@ -280,7 +280,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 {isZenMode ? <EyeSlash className="w-4 h-4" weight="fill" /> : <Eye className="w-4 h-4" weight="regular" />}
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               {isZenMode ? "استعادة الألواح الجانبية" : "وضع التركيز (إخفاء الألواح الجانبية)"}
             </TooltipContent>
           </Tooltip>
@@ -305,7 +305,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 <MagnifyingGlassMinus className="w-4 h-4" weight="regular" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>تصغير</span>
                 <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+-</kbd>
@@ -325,7 +325,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 {Math.round(canvasZoom * 100)}%
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>ملاءمة الورقة للشاشة (100%)</span>
                 <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
@@ -345,7 +345,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 <MagnifyingGlassPlus className="w-4 h-4" weight="regular" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>تكبير</span>
                 <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl++</kbd>
@@ -365,7 +365,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 <ArrowsOut className="w-4 h-4" weight="regular" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>ملاءمة الورقة للشاشة</span>
                 <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
@@ -387,7 +387,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 <Keyboard className="w-4 h-4" weight="regular" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-md">
+            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>اختصارات لوحة المفاتيح</span>
                 <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+/</kbd>

@@ -74,8 +74,8 @@ describe('LayersPanel Component Tests', () => {
     renderWithProviders(<LayersPanel />);
 
     expect(screen.getByText('عنوان التصميم')).toBeInTheDocument();
-    expect(screen.getByText('مستطيل')).toBeInTheDocument();
-    expect(screen.getByText('صورة')).toBeInTheDocument();
+    expect(screen.getByText('مستطيل 03')).toBeInTheDocument();
+    expect(screen.getByText('صورة 01')).toBeInTheDocument();
   });
 
   it('selects an element on click', () => {
@@ -101,7 +101,7 @@ describe('LayersPanel Component Tests', () => {
 
     renderWithProviders(<LayersPanel />);
 
-    const item = screen.getByText('صورة');
+    const item = screen.getByText('صورة 01');
     fireEvent.click(item);
 
     expect(useEditorStore.getState().selectedId).toBe('el-img');

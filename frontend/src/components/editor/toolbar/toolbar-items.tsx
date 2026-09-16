@@ -118,7 +118,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
     <div className="fluent-command-group shadow-2xs">
       {/* نص مع قوالب جاهزة */}
       <DropdownMenu>
-        <TooltipBtn content="إضافة نص أو قالب خطوط">
+        <TooltipBtn content="إضافة نص">
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
@@ -255,15 +255,15 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-slate-500/10 text-slate-500 flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
                 <Copyright className="w-4 h-4" weight="bold" />
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">علامة مائية</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">حماية مائلة شفافة</span>
+                <span className="text-[10px] text-muted-foreground truncate">حماية مائلة شفافة</span>
               </div>
             </div>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 shrink-0">
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
               مسودة
             </span>
           </DropdownMenuItem>
@@ -288,7 +288,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
             </div>
             <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-              Luxury
+              فاخر
             </span>
           </DropdownMenuItem>
 
@@ -305,8 +305,8 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
                 <span className="text-[10px] text-muted-foreground/80 truncate">إضاءة إشعاعية ساطعة</span>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
-              Neon
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
+              نيون
             </span>
           </DropdownMenuItem>
 
@@ -315,15 +315,15 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             className="flex items-center justify-between gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-accent/80 transition-colors"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
                 <Stamp className="w-4 h-4" weight="bold" />
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">ختم مقوس</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">نص دائري معتمد</span>
+                <span className="text-[10px] text-muted-foreground truncate">نص دائري معتمد</span>
               </div>
             </div>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-600 dark:text-red-400 shrink-0">
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive shrink-0">
               ختم
             </span>
           </DropdownMenuItem>
@@ -337,12 +337,12 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
                 <Cube className="w-4 h-4" weight="bold" />
               </div>
               <div className="flex flex-col min-w-0 text-start">
-                <span className="font-semibold text-foreground truncate">عنوان 3D</span>
+                <span className="font-semibold text-foreground truncate">عنوان مجسّم</span>
                 <span className="text-[10px] text-muted-foreground/80 truncate">ظلال إسقاطية مجسمة</span>
               </div>
             </div>
             <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
-              3D
+              مجسّم
             </span>
           </DropdownMenuItem>
 
@@ -360,7 +360,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
             </div>
             <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400 shrink-0">
-              Outline
+              مفرّغ
             </span>
           </DropdownMenuItem>
 
@@ -467,7 +467,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             onClick={() => addShapeElement("path", SHAPE_PATH_HEART)}
             className="flex items-center gap-2.5 p-2 text-xs rounded-xl cursor-pointer hover:bg-rose-500/10 transition-colors"
           >
-            <div className="w-7 h-7 rounded-lg bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-rose-500/15 text-destructive flex items-center justify-center shrink-0">
               <Heart className="w-4 h-4" weight="fill" />
             </div>
             <span className="font-semibold text-foreground">قلب</span>
@@ -503,14 +503,14 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
       </DropdownMenu>
 
       {/* استوديو الملصقات والإطارات */}
-      <TooltipBtn content="استوديو الملصقات والإطارات والرموز">
+      <TooltipBtn content="الملصقات">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsBarcodeOpen(true)}
           onMouseEnter={preloadBarcodeDialog}
           onFocus={preloadBarcodeDialog}
-          aria-label="استوديو الملصقات والإطارات"
+          aria-label="الملصقات"
           className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1.5"
         >
           <SealCheck className="w-4 h-4 text-primary" weight="bold" />
@@ -548,21 +548,21 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
 
   return (
     <Popover>
-      <TooltipBtn content="المرشحات الجاهزة (الفلاتر)">
+      <TooltipBtn content="المرشحات">
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
-            aria-label="المرشحات الجاهزة"
+            aria-label="المرشحات"
             className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
           >
-            <FadersHorizontal className="w-4.5 h-4.5" />
+            <FadersHorizontal className="w-4 h-4" />
           </Button>
         </PopoverTrigger>
       </TooltipBtn>
-      <PopoverContent align="start" className="w-80 p-3 font-cairo bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 rounded-xl shadow-xl fluent-specular z-50">
-        <div className="text-xs font-bold mb-2 text-foreground/80 text-right" dir="rtl">
-          المرشحات الجاهزة
+      <PopoverContent align="start" dir="rtl" className="w-80 p-3 font-cairo bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 fluent-specular z-50">
+        <div className="text-xs font-bold mb-2 text-foreground/80 text-start" dir="rtl">
+          المرشحات
         </div>
         <div className="grid grid-cols-4 gap-1.5" dir="rtl">
           {IMAGE_FILTERS.map((f) => {
@@ -641,12 +641,12 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
       </div>
 
       {/* عزل الخلفية بالذكاء الاصطناعي - Fluent Wait UX */}
-      <TooltipBtn content={isRemovingBg ? bgProgressText || "إلغاء عزل الخلفية" : "عزل الخلفية بالذكاء الاصطناعي"}>
+      <TooltipBtn content={isRemovingBg ? bgProgressText || "إلغاء عزل الخلفية" : "عزل الخلفية"}>
         <Button
           variant={isRemovingBg ? "destructive" : "outline"}
           size="sm"
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-9 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(selectedItem)}
@@ -671,7 +671,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-2 gap-1 text-xs font-semibold border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
+            className="h-9 px-2 gap-1 text-xs font-semibold border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
             onClick={() => setRefineOpen(true)}
           >
             <PaintBrush className="w-4 h-4 text-primary shrink-0" weight="duotone" />
@@ -681,13 +681,13 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
       )}
 
       {/* ضبط وتأطير الوجه تلقائياً */}
-      <TooltipBtn content={isFraming ? frameProgressText || "إلغاء التأطير" : "كشف وتأطير الوجه تلقائياً وفق معايير الهوية"}>
+      <TooltipBtn content={isFraming ? frameProgressText || "إلغاء التأطير" : "تأطير الوجه"}>
         <Button
           variant={isFraming ? "destructive" : "outline"}
           size="sm"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-9 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
             isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
@@ -708,13 +708,13 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
       </TooltipBtn>
 
       {/* تحسين الجودة وترميم الوجه */}
-      <TooltipBtn content="ترميم الوجه ورفع دقة الصورة بالذكاء الاصطناعي">
+      <TooltipBtn content="ترميم الوجه">
         <Button
           variant="outline"
           size="sm"
           disabled={isEnhancing || isRemovingBg || isFraming}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-9 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(selectedItem)}
@@ -812,7 +812,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
       )}
 
       {canGroup && (
-        <TooltipBtn content="تجميع العناصر المحددة (Group)">
+        <TooltipBtn content="تجميع العناصر المحددة">
           <Button
             variant="ghost"
             size="sm"
@@ -826,13 +826,13 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
       )}
 
       {canUngroup && (
-        <TooltipBtn content="فك تجميع العناصر (Ungroup)">
+        <TooltipBtn content="فك تجميع العناصر">
           <Button
             variant="ghost"
             size="sm"
             onClick={ungroupSelectedElements}
             aria-label="فك التجميع"
-            className="h-8 px-3 text-warning hover:text-warning hover:bg-warning/5 rounded-md transition-all cursor-pointer"
+            className="h-8 px-3 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition-all cursor-pointer"
           >
             <LinkBreak className="w-5 h-5" />
           </Button>
@@ -854,17 +854,17 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
             <CaretDown className="w-3.5 h-3.5 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-40 font-cairo rounded-xl backdrop-blur-xl fluent-specular p-1 space-y-0.5">
+        <DropdownMenuContent align="start" className="w-40 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular p-1 space-y-0.5">
           <DropdownMenuItem onClick={() => alignElement("left")} className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground">
-            <AlignLeftIcon className="w-4.5 h-4.5 text-primary" />
+            <AlignLeftIcon className="w-4 h-4 text-primary" />
             <span className="font-semibold">محاذاة لليسار</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => alignElement("center")} className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground">
-            <AlignCenterHorizontalIcon className="w-4.5 h-4.5 text-primary" />
+            <AlignCenterHorizontalIcon className="w-4 h-4 text-primary" />
             <span className="font-semibold">توسيط أفقي</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => alignElement("right")} className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground">
-            <AlignRightIcon className="w-4.5 h-4.5 text-primary" />
+            <AlignRightIcon className="w-4 h-4 text-primary" />
             <span className="font-semibold">محاذاة لليمين</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -873,7 +873,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
       <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
       {/* حذف */}
-      <TooltipBtn content="حذف (Delete)">
+      <TooltipBtn content="حذف">
         <Button
           variant="ghost"
           size="sm"
@@ -905,7 +905,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
 
   return (
     <div className="fluent-command-group shadow-2xs">
-      <TooltipBtn content="تراجع (Ctrl+Z)">
+      <TooltipBtn content="تراجع">
         <Button
           variant="ghost"
           size="sm"
@@ -917,7 +917,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           <ArrowUUpLeft className="w-5 h-5" />
         </Button>
       </TooltipBtn>
-      <TooltipBtn content="إعادة (Ctrl+Y)">
+      <TooltipBtn content="إعادة">
         <Button
           variant="ghost"
           size="sm"

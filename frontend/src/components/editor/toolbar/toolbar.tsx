@@ -49,7 +49,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   }, []);
 
   return (
-    <div className="relative h-12 shrink-0 border-b border-border bg-sidebar/95 backdrop-blur-xl select-none no-print font-cairo">
+    <div dir="rtl" className="relative h-12 shrink-0 border-b border-border bg-sidebar/95 backdrop-blur-xl select-none no-print font-cairo">
       <div
         ref={scrollRef}
         className="h-full flex items-center gap-2 px-3 overflow-x-auto scrollbar-none flex-nowrap"
@@ -123,13 +123,13 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
       {/* تدرجات الحواف — pointer-events-none حتى لا تحجب النقر */}
       {fadeLeft && (
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 w-8 z-10"
+          className="pointer-events-none absolute inset-y-0 start-0 w-8 z-10"
           style={{ background: "linear-gradient(to right, var(--sidebar), transparent)" }}
         />
       )}
       {fadeRight && (
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-8 z-10"
+          className="pointer-events-none absolute inset-y-0 end-0 w-8 z-10"
           style={{ background: "linear-gradient(to left, var(--sidebar), transparent)" }}
         />
       )}

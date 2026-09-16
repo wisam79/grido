@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   previewWhite, previewBlack, previewBlue, previewChecker,
 } from "@/lib/canvas/canvas-colors";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogCloseButton } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogCloseButton } from "@/components/ui/dialog";
 import { FluentSliderField } from "@/components/ui/blocks";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/huge-icon";
@@ -15,7 +15,6 @@ import {
   MagnifyingGlassMinus,
   ArrowCounterClockwise,
   FloppyDisk,
-  X,
   PaintBucket,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -515,16 +514,21 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
   return (
     <Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
-      <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden fluent-specular" dir="rtl" showCloseButton={false}>
+      <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 overflow-hidden fluent-specular" dir="rtl" showCloseButton={false}>
         <DialogHeader 
           className="p-4 border-b border-border/40 shrink-0 flex flex-row items-center justify-between"
           onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
         >
-          <DialogTitle className="text-sm font-bold flex items-center gap-2">
-            <Sparkle className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-            <span>تعديل القص يدوياً</span>
-          </DialogTitle>
-          <DialogCloseButton onClick={() => onOpenChange(false)} />
+          <div className="min-w-0">
+            <DialogTitle className="text-sm font-bold flex items-center gap-2">
+              <Sparkle className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+              <span>تعديل القص يدوياً</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              امسح أو استعد أجزاء الخلفية يدوياً
+            </DialogDescription>
+          </div>
+          <DialogCloseButton />
         </DialogHeader>
 
         <div className="flex flex-1 overflow-hidden">
@@ -723,7 +727,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
             {/* Background container for inspection */}
             <div 
-              className="relative shadow-md shadow-black/20 transition-transform duration-75 ease-out"
+              className="relative shadow-fluent-8 shadow-black/20 transition-transform duration-75 ease-out"
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
                 transformOrigin: 'center center',
@@ -760,11 +764,11 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
         </div>
 
         <DialogFooter 
-          className="p-3 border-t border-border/40 bg-card shrink-0 flex items-center justify-between sm:justify-between"
+          className="p-3 border-t border-border/40 bg-card shrink-0 flex items-center justify-end gap-2"
           onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
         >
           <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs font-semibold h-8 px-4 rounded-md">
-            <X className="w-3.5 h-3.5 ml-1 shrink-0" weight="bold" /> إلغاء
+            إلغاء
           </Button>
           <Button onClick={handleSave} disabled={isSaving} className="text-xs font-semibold h-8 px-5 rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5">
             {isSaving ? (
@@ -774,8 +778,8 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               </>
             ) : (
               <>
+                <FloppyDisk className="w-3.5 h-3.5 shrink-0" weight="bold" />
                 <span>حفظ</span>
-                <FloppyDisk className="w-3.5 h-3.5 mr-1 shrink-0" weight="bold" />
               </>
             )}
           </Button>

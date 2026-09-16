@@ -41,13 +41,32 @@ interface TooltipBtnProps {
   children: React.ReactElement;
 }
 
+// معالجة متوازية مقيدة التزامن — تمنع تجميد الزر أثناء حفظ/قياس دفعات الصور
+// (التسلسل الكامل كان يفك ترميز كل صورة واحدة تلو الأخرى)
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 function TooltipBtn({ content, children }: TooltipBtnProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent
         side="bottom"
-        className="font-cairo text-xs py-1.5 px-3 bg-primary text-primary-foreground border-0 shadow-md rounded-md font-medium"
+        className="font-cairo text-xs py-1.5 px-3 bg-primary text-primary-foreground border-0 shadow-fluent-8 rounded-md font-medium"
       >
         {content}
       </TooltipContent>
@@ -118,19 +137,17 @@ export function ToolbarFileOps() {
         if (freshMode === "collage") {
           let localPaths: string[] = [];
           if (isWailsDesktop) {
-            for (const b64 of b64s) {
+            localPaths = await mapWithConcurrency(b64s, 4, async (b64) => {
               if (b64.startsWith("data:image/")) {
                 try {
                   const localPath = await SaveImageFromBase64(b64);
-                  if (localPath) localPaths.push(localPath);
+                  if (localPath) return localPath;
                 } catch (e) {
                   console.error("Failed to save image locally:", e);
-                  localPaths.push(b64);
                 }
-              } else {
-                localPaths.push(b64);
               }
-            }
+              return b64;
+            });
           } else {
             localPaths = b64s;
           }
@@ -164,10 +181,10 @@ export function ToolbarFileOps() {
             }
             const aspect = await resolveImageAspectRatio(finalSrc);
             freshState.addImageElement(finalSrc, aspect);
-            toast.success("تمت إضافة الصورة إلى مساحة العمل");
+            toast.success("تم إدراج الصورة في مساحة العمل");
           } else {
-            const items: { src: string; aspectRatio: number }[] = [];
-            for (const b64 of b64s) {
+            // حفظ وقياس متوازي (4 خيوط) بدل التسلسل الذي يجمد الزر مع الدفعات الكبيرة
+            const items = await mapWithConcurrency(b64s, 4, async (b64) => {
               let finalSrc = b64;
               if (isWailsDesktop && b64.startsWith("data:image/")) {
                 try {
@@ -178,8 +195,8 @@ export function ToolbarFileOps() {
                 }
               }
               const aspect = await resolveImageAspectRatio(finalSrc);
-              items.push({ src: finalSrc, aspectRatio: aspect });
-            }
+              return { src: finalSrc, aspectRatio: aspect };
+            });
             freshState.addImageElementsBatch(items);
             toast.success(`تم إدراج وتوزيع ${items.length} صورة بنجاح`);
           }
@@ -218,21 +235,21 @@ export function ToolbarFileOps() {
       <div className="flex items-center gap-1 bg-muted/50 dark:bg-background/90 border border-border/60 dark:border-border p-0.5 rounded-lg shadow-2xs">
         {/* زر الإدراج المنقسم: فتح صورة فوري + قائمة منسدلة للدفعة والكاميرا والمشاريع */}
         <div className="flex items-center rounded-md bg-background/60 dark:bg-muted/40 shadow-2xs border border-border/40">
-          <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
+          <TooltipBtn content="إدراج صورة جديدة">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleOpenFile}
-              aria-label="إضافة صورة جديدة"
+              aria-label="إدراج صورة جديدة"
               className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/90 active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
             >
-              <AddPhotoIcon className="w-4.5 h-4.5 text-primary group-hover:scale-105 transition-transform" />
+              <AddPhotoIcon className="w-4 h-4 text-primary group-hover:scale-105 transition-transform" />
               <span>إدراج</span>
             </Button>
           </TooltipBtn>
 
           <DropdownMenu>
-            <TooltipBtn content="المزيد من خيارات الإدراج">
+            <TooltipBtn content="خيارات الإدراج">
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
@@ -244,7 +261,7 @@ export function ToolbarFileOps() {
                 </Button>
               </DropdownMenuTrigger>
             </TooltipBtn>
-            <DropdownMenuContent align="start" className="w-56 font-cairo rounded-xl backdrop-blur-2xl bg-popover/95 border border-border shadow-fluent-16 p-1.5 space-y-1">
+            <DropdownMenuContent align="start" className="w-56 font-cairo [direction:rtl] rounded-xl backdrop-blur-2xl bg-popover/95 border border-border shadow-fluent-16 p-1.5 space-y-1">
               <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 select-none">
                 خيارات الإدراج
               </div>
@@ -257,7 +274,7 @@ export function ToolbarFileOps() {
                 </div>
                 <div className="flex flex-col min-w-0 text-start flex-1">
                   <span className="font-bold text-foreground">دفعة صور</span>
-                  <span className="text-[10px] text-muted-foreground">إدراج لمعاملات متعددة</span>
+                  <span className="text-[10px] text-muted-foreground">إدراج معاملات متعددة</span>
                 </div>
                 <span className="text-[10px] font-mono text-muted-foreground/80">Ctrl+Shift+O</span>
               </DropdownMenuItem>
@@ -284,7 +301,7 @@ export function ToolbarFileOps() {
                 </div>
                 <div className="flex flex-col min-w-0 text-start flex-1">
                   <span className="font-bold text-foreground">مكتبة المشاريع</span>
-                  <span className="text-[10px] text-muted-foreground">استعراض المشاريع</span>
+                  <span className="text-[10px] text-muted-foreground">استعراض وحفظ المشاريع</span>
                 </div>
                 <span className="text-[10px] font-mono text-muted-foreground/80">Ctrl+S</span>
               </DropdownMenuItem>
@@ -294,7 +311,7 @@ export function ToolbarFileOps() {
 
         {/* المكتبة المحلية */}
         <Suspense fallback={null}>
-          <TooltipBtn content="مكتبة المشاريع المحفوظة">
+          <TooltipBtn content="مكتبة المشاريع">
             <Button
               variant="ghost"
               size="icon"
@@ -302,10 +319,10 @@ export function ToolbarFileOps() {
                 setProjectsTab("list");
                 setIsProjectsOpen(true);
               }}
-              aria-label="مكتبة المشاريع المحلية"
+              aria-label="مكتبة المشاريع"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer group"
             >
-              <Folders className="w-4.5 h-4.5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
+              <Folders className="w-4 h-4 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
             </Button>
           </TooltipBtn>
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} defaultTab={projectsTab} />
@@ -319,33 +336,33 @@ export function ToolbarFileOps() {
       </div>
 
       {/* جديد / مسح مساحة العمل */}
-      <TooltipBtn content="مسح مساحة العمل والبدء من جديد">
+      <TooltipBtn content="مسح مساحة العمل">
         <Button
           variant="ghost"
           size="icon"
           onClick={handleClearCanvas}
-          aria-label="جديد (مسح مساحة العمل)"
-          className="h-8 w-8.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer group"
+          aria-label="مسح مساحة العمل"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer group"
         >
           <Broom className="w-5 h-5 text-muted-foreground/90 group-hover:text-destructive group-hover:scale-105 transition-all" weight="duotone" />
         </Button>
       </TooltipBtn>
 
       <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
-        <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 fluent-specular shadow-xl">
+        <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 fluent-specular shadow-fluent-28 bg-card/95 backdrop-blur-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-cairo text-right">مسح مساحة العمل</AlertDialogTitle>
-            <AlertDialogDescription className="font-cairo text-right">
-              هل أنت متأكد من مسح جميع العناصر والبدء من جديد؟ لا يمكن التراجع عن هذا الإجراء.
+            <AlertDialogTitle className="font-cairo text-start">مسح مساحة العمل</AlertDialogTitle>
+            <AlertDialogDescription className="font-cairo text-start">
+              سيتم مسح مساحة العمل نهائياً. هل تريد المتابعة؟
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="font-cairo">
             <AlertDialogCancel className="font-cairo h-8 rounded-md">إلغاء</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmClearCanvas}
-              className="bg-destructive hover:bg-destructive/90 text-white font-cairo h-8 rounded-md"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 rounded-md"
             >
-              مسح بالكامل
+              مسح
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

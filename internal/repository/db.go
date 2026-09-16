@@ -15,6 +15,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -67,11 +68,10 @@ func InitDB() (*gorm.DB, error) {
 
 	// SQLite serializes writes even in WAL mode. Allowing unlimited connections
 	// causes "database is locked" errors when the background cleanup goroutine,
-	// project saves, and license checks write concurrently. A single writer
-	// connection with a pool of idle readers avoids lock contention while still
-	// permitting concurrent reads under WAL.
+	// project saves, and license checks write concurrently. A single connection
+	// avoids lock contention (MaxIdle لا يجوز أن يتجاوز MaxOpen — كان 2 وهو مضلل).
 	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(2)
+	sqlDB.SetMaxIdleConns(1)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
 	// إضافة healthcheck دوري للاتصال بقاعدة البيانات مع إمكانية التوقف النظيف
@@ -276,10 +276,9 @@ func (r *projectRepositoryImpl) ImportProjects(projects []domain.Project, overwr
 			return nil
 		}
 
-		for _, p := range projects {
-			if err := tx.Save(&p).Error; err != nil {
-				return err
-			}
+		// دمج دُفعي واحد (upsert) بدل حفظ صف-صف — نفس نمط overwrite أعلاه
+		if len(projects) > 0 {
+			return tx.Clauses(clause.OnConflict{UpdateAll: true}).CreateInBatches(&projects, 50).Error
 		}
 		return nil
 	})

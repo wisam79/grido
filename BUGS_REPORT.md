@@ -5,6 +5,12 @@
 **نطاق التدقيق:** المشروع بالكامل من A إلى Z (Go Backend, Konva Canvas, Zustand State, Microsoft Fluent 2 UI/UX, Build & Cloud AI)  
 **المنهجية:** تدقيق متعدد الوكلاء (Multi-Agent Swarm Audit) شمل 5 وكلاء متخصصين بموجب قواعد `AGENTS.md` ومهارات المشروع الثمانية.
 
+> **تصحيح تحقق الكود (سبتمبر 2026 — مثبت من الملفات التنفيذية):**
+> - `[BUG-CRIT-01]` الخصم المزدوج **مُصلح**: `internal/service/ai_service.go:340` يستدعي RPC بـ `check_only=true` فقط، والتسجيل الفعلي في `modal_ai/upscaler.py:311-344`.
+> - `[BUG-HIGH-04]` ابتلاع فساد `autosave.json` **مُصلح**: `internal/repository/db.go:398-411` يرجع خطأً ويوقف التنظيف.
+> - ادعاء غياب `-s -w` **غير صحيح حالياً**: موجود في `build.ps1:49` و `release.yml:122`.
+> - شرط SignPath **مُصحح الآن** (`release.yml:152,168` يستخدم `secrets.` مباشرة): التوقيع اختياري ويُتخطى تلقائياً عند غياب الشهادة — المالك أكد عدم امتلاك شهادة، فالإصدارات الحالية غير موقعة (مقصود، مع تحذيرات SmartScreen المتوقعة).
+
 ---
 
 ## 📑 الفهرس (Table of Contents)

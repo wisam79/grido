@@ -180,7 +180,7 @@ export function SlotProperties({
 
   const renderAutoFillToggle = () => (
     <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
-      <div className="flex items-center gap-1.5 text-right">
+      <div className="flex items-center gap-1.5 text-start">
         <Copy className="w-4 h-4 text-primary shrink-0" weight="regular" />
         <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية عند الرفع</span>
       </div>
@@ -202,7 +202,7 @@ export function SlotProperties({
           <div className="flex items-baseline gap-1 font-mono" dir="ltr">
             <span className="text-sm font-bold text-primary">{widthMM} × {heightMM}</span>
             <span className="text-[10px] font-semibold text-primary/80">mm</span>
-            <span className="text-[10px] text-muted-foreground/70 ml-1">({dpi} DPI)</span>
+            <span className="text-[10px] text-muted-foreground/70 ms-1">({dpi} DPI)</span>
           </div>
         </div>
 
@@ -215,7 +215,7 @@ export function SlotProperties({
           className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all text-xs"
           onClick={handleOpenFile}
         >
-          <ImageSquare className="w-4.5 h-4.5 text-primary" weight="regular" />
+          <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
           <span>رفع صورة للخلية</span>
         </Button>
         {lastEditedImage && (
@@ -225,7 +225,7 @@ export function SlotProperties({
             className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer text-xs"
             onClick={handleUseLastImage}
           >
-            <Copy className="w-4.5 h-4.5 text-primary" weight="regular" />
+            <Copy className="w-4 h-4 text-primary" weight="regular" />
             <span>تعبئة بآخر صورة معدلة</span>
           </Button>
         )}
@@ -238,7 +238,7 @@ export function SlotProperties({
   }
 
   return (
-    <div className="space-y-3 font-cairo select-none h-full flex flex-col overflow-y-auto pr-0.5 pb-4">
+    <div className="space-y-3 font-cairo select-none h-full flex flex-col overflow-y-auto pe-0.5 pb-4">
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular space-y-2.5">
         <div className="flex items-center justify-between border-b border-border/20 pb-2">
           <span className="text-xs font-semibold text-muted-foreground">أبعاد الطباعة</span>
@@ -257,7 +257,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={handleOpenFile}
           >
-            <ImageSquare className="w-4.5 h-4.5 text-primary" weight="regular" />
+            <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
             <span>تغيير الصورة</span>
           </Button>
           <Button
@@ -266,7 +266,7 @@ export function SlotProperties({
             className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={() => setCropOpen(true)}
           >
-            <Crop className="w-4.5 h-4.5 text-primary" weight="regular" />
+            <Crop className="w-4 h-4 text-primary" weight="regular" />
             <span>قص وتدوير</span>
           </Button>
         </div>
@@ -289,7 +289,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipHorizontal className="w-4.5 h-4.5" weight={slot.flipX ? "fill" : "regular"} />
+                <FlipHorizontal className="w-4 h-4" weight={slot.flipX ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">قلب أفقي</TooltipContent>
@@ -309,7 +309,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipVertical className="w-4.5 h-4.5" weight={slot.flipY ? "fill" : "regular"} />
+                <FlipVertical className="w-4 h-4" weight={slot.flipY ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">قلب عمودي</TooltipContent>
@@ -328,7 +328,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <ArrowClockwise className="w-4.5 h-4.5" weight="regular" />
+                <ArrowClockwise className="w-4 h-4" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">تدوير 90°</TooltipContent>
@@ -346,7 +346,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <ArrowCounterClockwise className="w-4.5 h-4.5" weight="regular" />
+                <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">إعادة تعيين الاتجاه</TooltipContent>
@@ -432,7 +432,7 @@ export function SlotProperties({
                   }
                 }}
               >
-                <Sparkle className="w-4.5 h-4.5 text-primary shrink-0" weight="regular" />
+                <Sparkle className="w-4 h-4 text-primary shrink-0" weight="regular" />
                 <span>الفارغة</span>
               </Button>
             </TooltipTrigger>
@@ -446,7 +446,7 @@ export function SlotProperties({
                 className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillAll}
               >
-                <GridFour className="w-4.5 h-4.5 text-primary shrink-0" weight="regular" />
+                <GridFour className="w-4 h-4 text-primary shrink-0" weight="regular" />
                 <span>الكل</span>
               </Button>
             </TooltipTrigger>
@@ -466,7 +466,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Crosshair className="w-4.5 h-4.5 text-primary" weight="regular" />
+                <Crosshair className="w-4 h-4 text-primary" weight="regular" />
                 <span>توسيط الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -484,7 +484,7 @@ export function SlotProperties({
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <Trash className="w-4.5 h-4.5" weight="regular" />
+                <Trash className="w-4 h-4" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">إفراغ الخلية</TooltipContent>
@@ -497,17 +497,17 @@ export function SlotProperties({
       {/* 3.5 كرت لون خلفية صورة الهوية المعزولة */}
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/90">
-          <Palette className="w-4.5 h-4.5 text-primary" weight="duotone" />
+          <Palette className="w-4 h-4 text-primary" weight="duotone" />
           <span>خلفية الصورة</span>
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
             { id: "trans", label: "شفاف", val: "transparent" },
-            { id: "white", label: "أبيض للجوازات", val: "#ffffff" },
-            { id: "blue", label: "أزرق رسمي", val: "#1d4ed8" },
-            { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
-            { id: "gray", label: "رمادي", val: "#e5e7eb" },
+            { id: "white", label: "أبيض للجوازات", val: "#FFFFFF" },
+            { id: "blue", label: "أزرق رسمي", val: "#2563EB" },
+            { id: "lblue", label: "أزرق فاتح", val: "#38BDF8" },
+            { id: "gray", label: "رمادي استوديو", val: "#F4F4F5" },
           ].map((colorItem) => {
             const currBg = slot.bgColor || "transparent";
             const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
@@ -519,16 +519,17 @@ export function SlotProperties({
                 onClick={() => {
                   const freshStore = useEditorStore.getState();
                   if (autoFill) {
-                    freshStore.slots.forEach((s) => {
-                      freshStore.updateSlot(s.id, { bgColor: colorItem.val });
-                    });
+                    freshStore.updateSlotsBatch(
+                      freshStore.slots.map((s) => s.id),
+                      { bgColor: colorItem.val }
+                    );
                   } else {
                     onUpdate(slot.id, { bgColor: colorItem.val });
                   }
                   freshStore.pushHistory();
                 }}
                 className={cn(
-                  "w-7.5 h-7.5 rounded-lg border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
+                  "w-8 h-8 rounded-lg border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
                   isActive
                     ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10"
                     : "border-black/10 dark:border-white/15 hover:border-foreground/40"
@@ -541,7 +542,7 @@ export function SlotProperties({
                 }}
               >
                 {isActive && (
-                  <Check className={cn("w-3.5 h-3.5 z-10 drop-shadow-xs", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} weight="bold" />
+                  <Check className={cn("w-3.5 h-3.5 z-10 drop-shadow-xs", colorItem.val === "#FFFFFF" || colorItem.val === "#F4F4F5" ? "text-slate-900" : "text-white")} weight="bold" />
                 )}
               </button>
             );
@@ -553,16 +554,17 @@ export function SlotProperties({
             onChange={(val: string) => {
               const freshStore = useEditorStore.getState();
               if (autoFill) {
-                freshStore.slots.forEach((s) => {
-                  freshStore.updateSlot(s.id, { bgColor: val });
-                });
+                freshStore.updateSlotsBatch(
+                  freshStore.slots.map((s) => s.id),
+                  { bgColor: val }
+                );
               } else {
                 onUpdate(slot.id, { bgColor: val });
               }
               freshStore.pushHistory();
             }}
             swatchOnly
-            className="w-7.5 h-7.5"
+            className="w-8 h-8"
           />
         </div>
       </div>

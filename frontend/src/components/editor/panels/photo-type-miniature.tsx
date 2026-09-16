@@ -13,10 +13,10 @@ export function PhotoTypeMiniature({ type, active }: { type: string; active: boo
       ) : (
         <div className={cn(
           "rounded-[1px] border border-dashed transition-all duration-200",
-          type === "visa" ? "w-4.5 h-4.5" : 
-          type === "iq-general-id" ? "w-3.5 h-5.5" :
-          type === "iq-national-id" ? "w-4 h-5.5" :
-          type === "iq-civil-id" ? "w-4 h-5" : "w-4 h-4.5",
+          type === "visa" ? "w-4 h-4" : 
+          type === "iq-general-id" ? "w-3.5 h-6" :
+          type === "iq-national-id" ? "w-4 h-6" :
+          type === "iq-civil-id" ? "w-4 h-5" : "w-4 h-4",
           active ? "border-primary/80 bg-primary/30" : "border-muted-foreground/50 bg-muted/40"
         )} />
       )}

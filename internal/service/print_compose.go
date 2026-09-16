@@ -5,9 +5,11 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"runtime"
 	"strings"
 
 	"github.com/fogleman/gg"
+	"golang.org/x/sync/errgroup"
 
 	"grido/internal/core/domain"
 )
@@ -196,30 +198,55 @@ func (s *PrintService) composeCanvas(
 	dc.SetColor(parseColor(comp.BackgroundColor))
 	dc.Clear()
 
-	for _, item := range comp.Items {
-		if item.ImageSrc == "" {
+	// المرحلة 1 — تحميل ومعالجة متوازية (مقيدة بعدد الأنوية) بدل التسلسل.
+	// الرسم يبقى تسلسلياً لأن gg.Context ليس آمناً للتزامن.
+	type preparedItem struct {
+		item         domain.PrintItem
+		processedImg image.Image
+	}
+	prepared := make([]*preparedItem, len(comp.Items))
+	var g errgroup.Group
+	maxConcurrency := runtime.NumCPU()
+	if maxConcurrency < 2 {
+		maxConcurrency = 2
+	}
+	g.SetLimit(maxConcurrency)
+	for i, item := range comp.Items {
+		if item.ImageSrc == "" || item.W <= 0 || item.H <= 0 {
 			continue
 		}
-		if item.W <= 0 || item.H <= 0 {
+		i, item := i, item
+		g.Go(func() error {
+			filePath := resolveLocalPath(item.ImageSrc)
+			cacheKey := computeImageCacheKey(filePath)
+			img, err := loadRawImage(filePath, cacheKey, imgCache)
+			if err != nil {
+				return err
+			}
+
+			targetW := int(math.Round(item.W * scaleX))
+			targetH := int(math.Round(item.H * scaleY))
+			if targetW < 1 {
+				targetW = 1
+			}
+			if targetH < 1 {
+				targetH = 1
+			}
+			prepared[i] = &preparedItem{item: item, processedImg: applyImageProcessing(img, item, targetW, targetH)}
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	// المرحلة 2 — رسم تسلسلي بالترتيب الأصلي
+	for _, p := range prepared {
+		if p == nil {
 			continue
 		}
-
-		filePath := resolveLocalPath(item.ImageSrc)
-		cacheKey := computeImageCacheKey(filePath)
-		img, err := loadRawImage(filePath, cacheKey, imgCache)
-		if err != nil {
-			return nil, err
-		}
-
-		targetW := int(math.Round(item.W * scaleX))
-		targetH := int(math.Round(item.H * scaleY))
-		if targetW < 1 {
-			targetW = 1
-		}
-		if targetH < 1 {
-			targetH = 1
-		}
-		processedImg := applyImageProcessing(img, item, targetW, targetH)
+		item := p.item
+		processedImg := p.processedImg
 
 		xPx := float64(int(math.Round(item.X * scaleX)))
 		yPx := float64(int(math.Round(item.Y * scaleY)))

@@ -195,7 +195,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
             <Button
               variant="outline"
               size="sm"
-              className="h-6.5 px-2 text-[10.5px] gap-1 rounded-md border-border/70 hover:border-primary/40 cursor-pointer shrink-0 font-bold"
+              className="h-6 px-2 text-[10.5px] gap-1 rounded-md border-border/70 hover:border-primary/40 cursor-pointer shrink-0 font-bold"
             >
               <ArrowsOut className="w-3 h-3 text-primary/70" weight="bold" />
               {PHOTO_PRESET_LABELS[slot.presetType || "custom"]?.split(" ")[0] || "مقاس"}

@@ -203,8 +203,8 @@ describe('Component Testing: UI Rendering', () => {
   it('renders the initial header and toolbar correctly', async () => {
     render(<App />);
     expect(await screen.findByText('GRIDO')).toBeInTheDocument();
-    expect(await screen.findByLabelText('إضافة صورة جديدة')).toBeInTheDocument();
-    expect(await screen.findByLabelText('مكتبة المشاريع المحلية')).toBeInTheDocument();
+    expect(await screen.findByLabelText('إدراج صورة جديدة')).toBeInTheDocument();
+    expect(await screen.findByLabelText('مكتبة المشاريع')).toBeInTheDocument();
   }, 15000);
 
   it('renders the TemplatePanel correctly', async () => {

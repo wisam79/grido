@@ -53,7 +53,7 @@ export function CanvasMenuSection({
           })}
         >
           <ImageSquare className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
-          <span className="truncate">إضافة صورة</span>
+          <span className="truncate">إدراج صورة</span>
         </button>
 
         <button
