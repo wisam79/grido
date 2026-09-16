@@ -147,22 +147,13 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                 const absScaleX = Math.abs(sx);
                 const absScaleY = Math.abs(sy);
 
-                const baseW = (typeof node.width === "function" && node.width() > 0) ? node.width() : el.width * canvasWidth;
-                const baseH = (typeof node.height === "function" && node.height() > 0) ? node.height() : el.height * canvasHeight;
+                const baseW = el.width * canvasWidth;
+                const baseH = el.height * canvasHeight;
 
                 const newW = Math.max(10, baseW * absScaleX);
                 const newH = Math.max(10, baseH * absScaleY);
 
-                node.width(newW);
-                if (el.type === "text") {
-                  // node هنا Group (حاوية عنصر النص) — لا يمتلك fontSize.
-                  // نبحث عن عقدة النص الابن المباشرة لتطبيق القياس عليها
-                  const textChild = (node as Konva.Group).findOne<Konva.Text>((n: Konva.Node) => n.getClassName?.() === "Text");
-                  textChild?.fontSize(Math.max(6, Math.round((el.fontSize || 16) * absScaleY)));
-                } else {
-                  node.height(newH);
-                }
-                // الحاوية الخارجية تحتفظ دائماً بمقياس قياسي موجب 1 (Canonical Positive Scale)
+                // إعادة مقياس العقدة القياسي إلى 1 لتكون الأبعاد الفعلية هي المرجع
                 node.scaleX(1);
                 node.scaleY(1);
 
@@ -179,20 +170,20 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                   x: rawX,
                   y: rawY,
                   width: newWidth,
+                  height: newHeight,
                   rotation: node.rotation(),
                   flipX: nextFlipX,
                   flipY: nextFlipY,
                 };
 
                 if (el.type === "text") {
-                  patch.height = node.height() / canvasHeight;
-                  (patch as Partial<Record<string, unknown>>).fontSize = Math.max(6, Math.round((el.fontSize || 16) * absScaleY));
-                } else {
-                  patch.height = newH / canvasHeight;
+                  (patch as Partial<Record<string, unknown>>).fontSize = Math.max(
+                    6,
+                    Math.round((el.fontSize || 16) * absScaleY)
+                  );
                 }
 
-                // 🛡️ الزخارف (حد/ظل/استدارة) تُقيَّس بنسبة التحجيم نفسها عبر
-                // مساعد مشترك تستخدمه أيضاً حقول W/H الرقمية في لوحة الخصائص
+                // 🛡️ الزخارف (حد/ظل/استدارة) تُقيَّس بنسبة التحجيم نفسها
                 Object.assign(patch, scaleElementDecorations(el, absScaleX, absScaleY));
 
                 return { id, patch };
@@ -202,16 +193,9 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
             useEditorStore.getState().updateElements(patches);
             useEditorStore.getState().pushHistory();
 
-            requestAnimationFrame(() => {
-              if (trRef.current && selectedIds.length > 0) {
-                const updatedNodes = selectedIds
-                  .map((sid) => elementsRefs.current[sid])
-                  .filter(Boolean);
-                trRef.current.nodes(updatedNodes);
-                trRef.current.forceUpdate();
-                trRef.current.getLayer()?.batchDraw();
-              }
-            });
+            trRef.current?.nodes(nodes);
+            trRef.current?.forceUpdate();
+            trRef.current?.getLayer()?.batchDraw();
           }}
         />
       )}

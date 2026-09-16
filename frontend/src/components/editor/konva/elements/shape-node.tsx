@@ -167,6 +167,8 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
       y={element.y * canvasHeight}
       width={w}
       height={h}
+      scaleX={1}
+      scaleY={1}
       rotation={element.rotation}
       opacity={element.opacity}
       visible={element.visible !== false}

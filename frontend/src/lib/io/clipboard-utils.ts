@@ -1,6 +1,6 @@
 import { useEditorStore } from "@/lib/editor-store";
 import { CanvasElement } from "@/lib/store/types";
-import { SaveImageFromBase64 } from "../../../wailsjs/go/main/App";
+import { SaveImageFromBase64, GetClipboardText, SetClipboardText } from "../../../wailsjs/go/main/App";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 
 /**
@@ -11,30 +11,41 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
   const state = useEditorStore.getState();
 
   // 1. محاولة القراءة من حافظة الويندوز/النظام أولاً (System Clipboard)
+  let text: string | null = null;
   try {
     if (navigator.clipboard && typeof navigator.clipboard.readText === "function") {
-      const text = await navigator.clipboard.readText();
-      if (text && text.trim()) {
-        if (text.startsWith("GRIDO_ELEMENTS:")) {
-          try {
-            const rawJson = text.replace("GRIDO_ELEMENTS:", "");
-            const parsedElements: CanvasElement[] = JSON.parse(rawJson);
-            if (Array.isArray(parsedElements) && parsedElements.length > 0) {
-              state.pasteCopiedElements(parsedElements);
-              return true;
-            }
-          } catch (err) {
-            console.error("Failed to parse GRIDO_ELEMENTS from clipboard:", err);
-          }
-        } else if (state.mode !== "collage") {
-          // نص خارجي من متصفح/ورد/مفكرة
-          state.addTextElement(text);
-          return true;
-        }
-      }
+      text = await navigator.clipboard.readText();
     }
   } catch (err) {
-    console.warn("System clipboard text read not permitted or failed:", err);
+    console.warn("System clipboard text read not permitted, falling back to Wails:", err);
+  }
+
+  // استخدام بديل Wails الأصلي إذا تعذرت القراءة عبر المتصفح
+  if ((!text || !text.trim()) && typeof GetClipboardText === "function") {
+    try {
+      text = await GetClipboardText();
+    } catch {
+      // تجاهل في حالة عدم توفر الواجهة
+    }
+  }
+
+  if (text && text.trim()) {
+    if (text.startsWith("GRIDO_ELEMENTS:")) {
+      try {
+        const rawJson = text.replace("GRIDO_ELEMENTS:", "");
+        const parsedElements: CanvasElement[] = JSON.parse(rawJson);
+        if (Array.isArray(parsedElements) && parsedElements.length > 0) {
+          state.pasteCopiedElements(parsedElements);
+          return true;
+        }
+      } catch (err) {
+        console.error("Failed to parse GRIDO_ELEMENTS from clipboard:", err);
+      }
+    } else if (state.mode !== "collage") {
+      // نص خارجي من متصفح/ورد/مفكرة
+      state.addTextElement(text);
+      return true;
+    }
   }
 
   // 2. فحص الصور المنسوخة في حافظة النظام
@@ -91,3 +102,52 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
 
   return false;
 }
+
+/**
+ * Copies a PNG base64 Data URL directly to clipboard as an Image Blob.
+ */
+export async function copyPngDataUrlToClipboard(pngDataUrl: string): Promise<boolean> {
+  try {
+    if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+      return false;
+    }
+    const res = await fetch(pngDataUrl);
+    const blob = await res.blob();
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        [blob.type]: blob,
+      }),
+    ]);
+    return true;
+  } catch (err) {
+    console.error("Failed to copy image blob to clipboard:", err);
+    return false;
+  }
+}
+
+/**
+ * Copies raw SVG vector markup code directly to clipboard as text.
+ */
+export async function copySvgCodeToClipboard(svgString: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(svgString);
+      return true;
+    }
+  } catch (err) {
+    console.warn("navigator.clipboard.writeText failed, falling back to Wails:", err);
+  }
+
+  // استخدام بديل Wails الأصلي
+  if (typeof SetClipboardText === "function") {
+    try {
+      await SetClipboardText(svgString);
+      return true;
+    } catch (wErr) {
+      console.error("Wails SetClipboardText failed:", wErr);
+    }
+  }
+
+  return false;
+}
+

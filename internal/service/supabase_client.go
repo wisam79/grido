@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -99,15 +100,21 @@ func (s *LicenseService) ensureProfileViaRPC(token string) (*SupabaseProfile, er
 }
 
 func (s *LicenseService) fetchProfile(token, userID string) (*SupabaseProfile, error) {
+	return s.fetchProfileWithPolicy(context.Background(), token, userID, RetryPolicy{MaxAttempts: 1})
+}
+
+// fetchProfileWithPolicy يجلب الملف الشخصي وفق سياسة إعادة المحاولة المعطاة
+// (الطلب GET قابل للإعادة دائماً).
+func (s *LicenseService) fetchProfileWithPolicy(ctx context.Context, token, userID string, policy RetryPolicy) (*SupabaseProfile, error) {
 	encodedUserID := url.QueryEscape(userID)
-	req, err := http.NewRequest("GET", SupabaseURL+"/rest/v1/profiles?select=*&id=eq."+encodedUserID, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", SupabaseURL+"/rest/v1/profiles?select=*&id=eq."+encodedUserID, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	resp, err := sharedClient.Do(req)
+	resp, err := httpDoWithRetry(ctx, sharedClient, req, policy)
 	if err != nil {
 		return nil, err
 	}
@@ -169,21 +176,17 @@ func (s *LicenseService) fetchOAuthUserDetails(accessToken string) (userID, emai
 	return supabaseUser.ID, supabaseUser.Email, supabaseUser.UserMeta.Name, nil
 }
 
-// fetchProfileWithRetry يحاول جلب بيانات الحساب الشخصي مع إعادة المحاولة
+// fetchProfileWithRetry يجلب الملف الشخصي مع إعادة المحاولة وفق السياسة
+// الموحّدة (http_retry.go): أخطاء عابرة فقط، بلا طمس السبب الأصلي.
 func (s *LicenseService) fetchProfileWithRetry(token, userID string, maxRetries int) (*SupabaseProfile, error) {
-	var prof *SupabaseProfile
-	var err error
-	for i := 0; i < maxRetries; i++ {
-		prof, err = s.fetchProfile(token, userID)
-		if err == nil {
-			break
-		}
-		if i < maxRetries-1 {
-			time.Sleep(time.Duration(200*(i+1)) * time.Millisecond)
-		}
+	policy := defaultRetryPolicy()
+	if maxRetries > 0 {
+		policy.MaxAttempts = maxRetries
 	}
-	if prof == nil {
-		return nil, errors.New("فشل جلب بيانات الحساب الشخصي من السيرفر")
+
+	prof, err := s.fetchProfileWithPolicy(context.Background(), token, userID, policy)
+	if err != nil {
+		return nil, fmt.Errorf("فشل جلب بيانات الحساب الشخصي من السيرفر: %w", err)
 	}
 	return prof, nil
 }

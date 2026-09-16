@@ -13,7 +13,8 @@ import {
   DesktopMenuBar,
 } from "@/components/editor";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { GetStartupFile } from "../wailsjs/go/main/App";
+import { GetStartupFile, ProcessLocalImageFile } from "../wailsjs/go/main/App";
+import { EventsOn, EventsOff } from "../wailsjs/runtime/runtime";
 
 const ExportDialog = lazy(() => import("@/components/editor/dialogs/export-dialog").then(module => ({ default: module.ExportDialog })));
 const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog").then(module => ({ default: module.PrintDialog })));
@@ -182,6 +183,76 @@ export default function App() {
       window.removeEventListener("grido:open-print-dialog", openPrint);
     };
   }, []);
+
+  // ⚡ الاستماع لأحداث محرك Wails وقت التشغيل (Runtime Events):
+  // 1. فتح ملف عبر سطر الأوامر أو مثيل ثانٍ للتطبيق (file-opened)
+  // 2. السحب والإفلات المباشر للملفات من سطح المكتب (native-file-drop)
+  // 3. استئناف النظام من وضع السكون (app:resume)
+  useEffect(() => {
+    let unbindFileOpened: (() => void) | undefined;
+    let unbindFileDrop: (() => void) | undefined;
+    let unbindResume: (() => void) | undefined;
+
+    if (typeof EventsOn === "function") {
+      try {
+        unbindFileOpened = EventsOn("file-opened", async (filePath: string) => {
+          if (!filePath) return;
+          try {
+            const src = typeof ProcessLocalImageFile === "function"
+              ? await ProcessLocalImageFile(filePath)
+              : filePath;
+            if (src) {
+              const img = new window.Image();
+              img.onload = () => {
+                const aspect = (img.naturalWidth && img.naturalHeight) ? img.naturalWidth / img.naturalHeight : 1;
+                const store = useEditorStore.getState();
+                store.setMode("single");
+                store.addImageElement(src, aspect);
+              };
+              img.src = src;
+            }
+          } catch (err) {
+            console.error("Failed to open file from Wails event:", err);
+          }
+        });
+
+        unbindFileDrop = EventsOn("native-file-drop", (data: { x: number; y: number; images: string[] }) => {
+          if (!data || !data.images || data.images.length === 0) return;
+          const store = useEditorStore.getState();
+          data.images.forEach((src) => {
+            const img = new window.Image();
+            img.onload = () => {
+              const aspect = (img.naturalWidth && img.naturalHeight) ? img.naturalWidth / img.naturalHeight : 1;
+              store.addImageElement(src, aspect);
+            };
+            img.src = src;
+          });
+        });
+
+        unbindResume = EventsOn("app:resume", () => {
+          void checkLicenseStatus();
+        });
+      } catch (err) {
+        console.warn("Wails runtime EventsOn not available in this environment:", err);
+      }
+    }
+
+    return () => {
+      unbindFileOpened?.();
+      unbindFileDrop?.();
+      unbindResume?.();
+      if (typeof EventsOff === "function") {
+        try {
+          EventsOff("file-opened");
+          EventsOff("native-file-drop");
+          EventsOff("app:resume");
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, [checkLicenseStatus]);
+
 
   const isModalOpen = exportOpen || printOpen || mobileTemplatesOpen || mobilePropsOpen;
 

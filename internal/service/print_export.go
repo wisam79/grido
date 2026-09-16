@@ -45,37 +45,6 @@ const maxTIFFPixels = 50_000_000
 // maxFallbackEmbedBytes سقف تضمين Base64 الاحتياطي في HTML (M6).
 const maxFallbackEmbedBytes = 60 * 1024 * 1024
 
-// openAtomicFile ينشئ ملفاً مؤقتاً بجانب الهدف — commit() يزامن وينقل ذرياً.
-func openAtomicFile(finalPath string) (f *os.File, commit func() error, err error) {
-	tmp := finalPath + ".tmp"
-	f, err = os.Create(tmp)
-	if err != nil {
-		return nil, nil, err
-	}
-	commit = func() error {
-		if err := f.Sync(); err != nil {
-			f.Close()
-			os.Remove(tmp)
-			return err
-		}
-		if err := f.Close(); err != nil {
-			os.Remove(tmp)
-			return err
-		}
-		if err := os.Rename(tmp, finalPath); err != nil {
-			os.Remove(tmp)
-			return err
-		}
-		return nil
-	}
-	return f, commit, nil
-}
-
-func abortAtomicFile(f *os.File, finalPath string) {
-	_ = f.Close()
-	_ = os.Remove(finalPath + ".tmp")
-}
-
 func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (string, string, error) {
 	appDir := utils.GetAppDir()
 	outDir := filepath.Join(appDir, "Exports")
@@ -118,15 +87,15 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		if strings.EqualFold(req.ExportFormat, "jpeg") || strings.EqualFold(req.ExportFormat, "jpg") {
 			imageName = baseName + ".jpg"
 			imagePath = filepath.Join(outDir, imageName)
-			f, commit, err := openAtomicFile(imagePath)
+			af, err := utils.CreateAtomic(imagePath, 0o644)
 			if err != nil {
 				return "", "", fmt.Errorf("create cmyk jpeg: %w", err)
 			}
-			if err := jpeg.Encode(f, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
-				abortAtomicFile(f, imagePath)
+			defer af.Abort()
+			if err := jpeg.Encode(af, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
 				return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
 			}
-			if err := commit(); err != nil {
+			if err := af.Commit(); err != nil {
 				return "", "", fmt.Errorf("commit cmyk jpeg: %w", err)
 			}
 		} else {
@@ -137,15 +106,15 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			}
 			imageName = baseName + ".tif"
 			imagePath = filepath.Join(outDir, imageName)
-			f, commit, err := openAtomicFile(imagePath)
+			af, err := utils.CreateAtomic(imagePath, 0o644)
 			if err != nil {
 				return "", "", fmt.Errorf("create cmyk tiff: %w", err)
 			}
-			if err := tiff.Encode(f, cmykImg, &tiff.Options{Compression: tiff.Deflate, Predictor: true}); err != nil {
-				abortAtomicFile(f, imagePath)
+			defer af.Abort()
+			if err := tiff.Encode(af, cmykImg, &tiff.Options{Compression: tiff.Deflate, Predictor: true}); err != nil {
 				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
 			}
-			if err := commit(); err != nil {
+			if err := af.Commit(); err != nil {
 				return "", "", fmt.Errorf("commit cmyk tiff: %w", err)
 			}
 		}
@@ -157,11 +126,11 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		enc := &png.Encoder{CompressionLevel: png.BestSpeed}
 		if err := enc.Encode(&buf, dc.Image()); err == nil {
 			// DPI يُحقن أثناء التدفق للقرص — بلا نسخة بايت ثانية لصورة كاملة
-			if f, commit, err := openAtomicFile(htmlImagePath); err == nil {
-				if werr := streamPNGWithDPI(f, buf.Bytes(), req.DPI); werr != nil {
-					abortAtomicFile(f, htmlImagePath)
+			if af, err := utils.CreateAtomic(htmlImagePath, 0o644); err == nil {
+				if werr := streamPNGWithDPI(af, buf.Bytes(), req.DPI); werr != nil {
+					af.Abort()
 					htmlImageName = imageName
-				} else if cerr := commit(); cerr != nil {
+				} else if cerr := af.Commit(); cerr != nil {
 					htmlImageName = imageName
 				}
 			} else {
@@ -182,16 +151,16 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 				return "", "", err
 			}
 			// JFIF يُحقن أثناء التدفق للقرص ذرياً — بلا نسخة بايت ثانية
-			f, commit, err := openAtomicFile(imagePath)
+			af, err := utils.CreateAtomic(imagePath, 0o644)
 			if err != nil {
 				return "", "", fmt.Errorf("create jpeg: %w", err)
 			}
+			defer af.Abort()
 			// streamJPEGWithDPI تكتب الخام عند تعذر الحقن — الخطأ هنا يعني عطل قرص فقط
-			if werr := streamJPEGWithDPI(f, buf.Bytes(), req.DPI); werr != nil {
-				abortAtomicFile(f, imagePath)
+			if werr := streamJPEGWithDPI(af, buf.Bytes(), req.DPI); werr != nil {
 				return "", "", werr
 			}
-			if err := commit(); err != nil {
+			if err := af.Commit(); err != nil {
 				return "", "", err
 			}
 		} else {
@@ -206,16 +175,16 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			}
 
 			// pHYs تُحقن أثناء التدفق للقرص ذرياً — بلا نسخة بايت ثانية
-			f, commit, err := openAtomicFile(imagePath)
+			af, err := utils.CreateAtomic(imagePath, 0o644)
 			if err != nil {
 				return "", "", fmt.Errorf("create png: %w", err)
 			}
+			defer af.Abort()
 			// streamPNGWithDPI تكتب الخام عند تعذر الحقن — الخطأ هنا يعني عطل قرص فقط
-			if werr := streamPNGWithDPI(f, buf.Bytes(), req.DPI); werr != nil {
-				abortAtomicFile(f, imagePath)
+			if werr := streamPNGWithDPI(af, buf.Bytes(), req.DPI); werr != nil {
 				return "", "", werr
 			}
-			if err := commit(); err != nil {
+			if err := af.Commit(); err != nil {
 				return "", "", err
 			}
 		}
@@ -254,10 +223,10 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	}
 
 	htmlContent := buildNativePrintHTML(req.PaperWidthMM, req.PaperHeightMM, imageSrcForNative)
-	if hf, hcommit, herr := openAtomicFile(htmlPath); herr == nil {
-		if _, werr := io.WriteString(hf, htmlContent); werr != nil {
-			abortAtomicFile(hf, htmlPath)
-		} else if cerr := hcommit(); cerr != nil {
+	if hf, herr := utils.CreateAtomic(htmlPath, 0o644); herr == nil {
+		if _, werr := hf.WriteString(htmlContent); werr != nil {
+			hf.Abort()
+		} else if cerr := hf.Commit(); cerr != nil {
 			slog.Warn("Failed to commit print HTML", "error", cerr)
 		}
 	} else {

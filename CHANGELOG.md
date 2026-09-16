@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **تصحيح توثيقي (سبتمبر 2026 — مثبت من الكود):** إدخال `v1.2.11` ادعى أن `build.ps1` يفشل عند غياب `MODAL_AI_KEY`، لكن `build.ps1:22-26,49` يبني بمفتاح فارغ دون فشل. يُترك الإدخال الأصلي لسجل التاريخ، والصحيح هو السلوك الحالي في `build.ps1`.
 
+## [MAINT] - 2026-09-16
+
+### Removed (Engine Wheel-Reinvention Deduplication — MAINT-03/04/06)
+
+- **12 موضعاً لكتابة tmp+fsync+rename يدوياً** وُحِّدت في `internal/utils/atomicfile.go` (`CreateAtomic`/`Commit`/`Abort`/`AtomicWriteFile`) — مع إبقاء المسار التدفّقي للتصدير الكبير.
+- **طبقة فتح المتصفح (rundll32/xdg-open/open)**: حذف 3 ملفات build-tag واستبدالها بـ `runtime.BrowserOpenURL` القياسي في Wails v2 خلف منفذ محقون قابل للاختبار.
+
+### Added (Engine Wheel-Reinvention Deduplication — MAINT-05/07/08)
+
+- **`internal/service/http_retry.go`**: مساعد إعادة محاولة موحّد (`httpDoWithRetry`) — backoff أُسّي مع jitter ±20%، احترام `Retry-After`، نوم واعٍ بالسياق، ولا إعادة على 4xx (عدا 408/429)؛ ترحيل `supabase_client.go` و`license_service.go` إليه.
+- **`frontend/src/lib/clamp.ts`**: وحدة `clamp` موحّدة صفرية الاعتماديات (آمنة لاستيراد Web Workers) — حذف 3 نسخ محلية.
+- **عملاء HTTP مشتركة في `ai_service.go`** (`aiSupabaseClient`/`aiUsageClient`/`aiEnhanceClient`) بدل إنشاء عميل لكل نداء.
+- **8 اختبارات للكتابة الأذرعية + 12 اختباراً للـ retry + 5 لمنفذ المتصفح** (الإجمالي الجديد ~25 اختباراً).
+
+### Documentation (MAINT-09)
+
+- وسوم "📍 حالة البند (2026-09-16)" في `docs/reviews/comprehensive-app-review.md` تفرّق بين المقترحات التاريخية وما نُفِّذ فعلاً (`http_retry.go`، عملاء HTTP المشتركة، `AIRateLimiter`).
+- سجل جلسة كامل في `docs/features-tracker.md` §0.5.
+
+
+
 ## [v1.3.39] - 2026-09-14
 
 ### Added (Sticker & Frame Studio Expansion, Presets & Vector Export)

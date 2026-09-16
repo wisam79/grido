@@ -10,6 +10,7 @@ import type {
 } from "../types";
 import { SquaresFour } from "@phosphor-icons/react";
 import type { CollageTemplate } from "@/lib/templates";
+import { clamp } from "@/lib/clamp";
 export { PHOTO_PRESET_LABELS } from "./mixed-presets";
 import { PHOTO_PRESET_LABELS } from "./mixed-presets";
 
@@ -30,22 +31,11 @@ const SNAP_STEP = 0.025; // 2.5% المغناطيس
 const SNAP_TOLERANCE = SNAP_STEP / 2; // 1.25% — نصف الخطوة
 const CENTER_SNAP_TOLERANCE = 0.02; // منتصف الورقة
 
-function clamp(v: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, v));
-}
-
-let fallbackIdCounter = 0;
-
 /**
- * توليد معرّف فريد للخلايا الجديدة (UUID آمن مع بديل محلي)
+ * توليد معرّف فريد للخلايا الجديدة عبر crypto.randomUUID القياسي
  */
 export function newSlotId(prefix: string = "slot"): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return `${prefix}_` + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-  }
-  fallbackIdCounter += 1;
-  const randomPart = Math.random().toString(36).slice(2, 8);
-  return `${prefix}_` + Date.now().toString(36) + fallbackIdCounter.toString(36) + randomPart;
+  return `${prefix}_` + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
 }
 
 /**

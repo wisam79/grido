@@ -468,3 +468,38 @@ func TestMediaService_ProcessDirectoryImages_FiltersNonImages(t *testing.T) {
 		t.Errorf("expected 2 images processed from directory, got %d", len(results))
 	}
 }
+
+func TestMediaService_GetBatchImageDimensions(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	svc := NewMediaService()
+	mediaDir := svc.GetMediaDir()
+
+	decoded, _ := base64.StdEncoding.DecodeString(validPNGBase64)
+	_ = os.WriteFile(filepath.Join(mediaDir, "img_batch_1.png"), decoded, 0644)
+	_ = os.WriteFile(filepath.Join(mediaDir, "img_batch_2.png"), decoded, 0644)
+
+	batch := svc.GetBatchImageDimensions([]string{
+		"/local-image/img_batch_1.png",
+		"/local-image/img_batch_2.png",
+		"/local-image/nonexistent.png",
+	})
+
+	if len(batch) != 2 {
+		t.Errorf("expected 2 valid batch entries, got %d", len(batch))
+	}
+
+	for _, k := range []string{"/local-image/img_batch_1.png", "/local-image/img_batch_2.png"} {
+		dims, ok := batch[k]
+		if !ok {
+			t.Errorf("missing key %s in batch result", k)
+		}
+		if dims.Width != 1 || dims.Height != 1 {
+			t.Errorf("expected 1x1 dimensions, got %dx%d", dims.Width, dims.Height)
+		}
+		if dims.IsRotated {
+			t.Errorf("expected isRotated=false for standard PNG, got true")
+		}
+	}
+}

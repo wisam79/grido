@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"grido/internal/core/domain"
 	"grido/internal/utils"
@@ -29,10 +32,35 @@ import (
 
 type LicenseService struct {
 	repo domain.LicenseRepository
+	// browserOpen يفتح رابط تفويض OAuth في المتصفح الافتراضي. يُحقن من
+	// App.startup عبر SetContext (runtime.BrowserOpenURL القياسي في Wails v2)،
+	// وقابل للاستبدال داخل الاختبارات.
+	browserOpen func(url string) error
 }
 
 func NewLicenseService(repo domain.LicenseRepository) *LicenseService {
 	return &LicenseService{repo: repo}
+}
+
+// SetContext يربط سياق Wails لفتح المتصفح بالطريقة القياسية (Wails Runtime)
+// بدل تنفيذ أوامر نظام يدوية (rundll32 / xdg-open / open) — كانت ثلاث نسخ
+// build-tag تعيد اختراع ما يوفره runtime.BrowserOpenURL أصلاً.
+func (s *LicenseService) SetContext(ctx context.Context) {
+	if s == nil || ctx == nil {
+		return
+	}
+	s.browserOpen = func(url string) error {
+		wailsruntime.BrowserOpenURL(ctx, url)
+		return nil
+	}
+}
+
+// openBrowserURL يفتح الرابط عبر المنفذ المحقون (يبقى قابلاً للاختبار).
+func (s *LicenseService) openBrowserURL(target string) error {
+	if s == nil || s.browserOpen == nil {
+		return errors.New("browser opener is not configured")
+	}
+	return s.browserOpen(target)
 }
 
 // SupabaseURL and SupabaseAnonKey are injected at build time via:
@@ -243,30 +271,23 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 		return err
 	}
 
-	var resp *http.Response
-	var lastErr error
-
-	// Retry up to 3 times with backoff for network adapter recovery after PC sleep/idle
-	for attempt := 0; attempt < 3; attempt++ {
-		if attempt > 0 {
-			time.Sleep(time.Duration(attempt*500) * time.Millisecond)
-		}
-
-		req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=refresh_token", bytes.NewBuffer(payload))
-		if err != nil {
-			return err
-		}
-		req.Header.Set("apikey", SupabaseAnonKey)
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, lastErr = sharedClient.Do(req)
-		if lastErr == nil {
-			break
-		}
+	req, err := http.NewRequest("POST", SupabaseURL+"/auth/v1/token?grant_type=refresh_token", bytes.NewBuffer(payload))
+	if err != nil {
+		return err
 	}
+	req.Header.Set("apikey", SupabaseAnonKey)
+	req.Header.Set("Content-Type", "application/json")
 
-	if lastErr != nil {
-		return lastErr
+	// سياسة موحّدة (http_retry.go) مع RetryOnStatus=false: يُعاد المحاولة على
+	// أخطاء النقل فقط — الخادم قد يكون نفّذ تدوير التوكن فعلاً ثم فشل الرد،
+	// فإعادة إرسال POST للتدوير تُبطل التوكن الجديد وهو خطأ أمني/وظيفي.
+	resp, err := httpDoWithRetry(context.Background(), sharedClient, req, RetryPolicy{
+		MaxAttempts:   3,
+		BaseDelay:     500 * time.Millisecond,
+		RetryOnStatus: false,
+	})
+	if err != nil {
+		return err
 	}
 	defer resp.Body.Close()
 

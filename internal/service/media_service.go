@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/base64"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"image"
@@ -31,14 +32,114 @@ const MaxFileSize = 50 * 1024 * 1024 // 50MB
 var ErrInvalidBase64 = errors.New("invalid base64 payload")
 
 type ImageDimensions struct {
-	Width  int `json:"width"`
-	Height int `json:"height"`
+	Width       int  `json:"width"`
+	Height      int  `json:"height"`
+	Orientation int  `json:"orientation"`
+	IsRotated   bool `json:"isRotated"`
 }
 
 type MediaService struct{}
 
 func NewMediaService() *MediaService {
 	return &MediaService{}
+}
+
+// readExifOrientation يستخرج وسم اتجاه الكاميرا (EXIF Orientation 1..8) من صور JPEG
+// بسرعة فائقة عبر فحص الترويسة فقط دون فك تشفير البكسلات — يدفع العبء عن V8 والمتصفح
+func readExifOrientation(r io.ReadSeeker) int {
+	if _, err := r.Seek(0, io.SeekStart); err != nil {
+		return 1
+	}
+
+	var header [2]byte
+	if _, err := io.ReadFull(r, header[:]); err != nil || header[0] != 0xFF || header[1] != 0xD8 {
+		return 1 // ليس JPEG
+	}
+
+	for {
+		var marker [2]byte
+		if _, err := io.ReadFull(r, marker[:]); err != nil {
+			return 1
+		}
+		if marker[0] != 0xFF {
+			return 1
+		}
+
+		for marker[1] == 0xFF {
+			if _, err := io.ReadFull(r, marker[1:]); err != nil {
+				return 1
+			}
+		}
+
+		if marker[1] == 0xDA || marker[1] == 0xD9 { // SOS أو EOI
+			return 1
+		}
+
+		var lengthBytes [2]byte
+		if _, err := io.ReadFull(r, lengthBytes[:]); err != nil {
+			return 1
+		}
+		length := int(binary.BigEndian.Uint16(lengthBytes[:]))
+		if length < 2 {
+			return 1
+		}
+
+		if marker[1] == 0xE1 { // APP1 (EXIF)
+			data := make([]byte, length-2)
+			if _, err := io.ReadFull(r, data); err != nil {
+				return 1
+			}
+			if len(data) >= 14 && string(data[:6]) == "Exif\x00\x00" {
+				tiffData := data[6:]
+				var byteOrder binary.ByteOrder
+				if string(tiffData[:2]) == "II" {
+					byteOrder = binary.LittleEndian
+				} else if string(tiffData[:2]) == "MM" {
+					byteOrder = binary.BigEndian
+				} else {
+					return 1
+				}
+
+				if byteOrder.Uint16(tiffData[2:4]) != 42 {
+					return 1
+				}
+
+				firstIFDOffset := int(byteOrder.Uint32(tiffData[4:8]))
+				if firstIFDOffset < 8 || firstIFDOffset >= len(tiffData) {
+					return 1
+				}
+
+				entriesOffset := firstIFDOffset
+				if entriesOffset+2 > len(tiffData) {
+					return 1
+				}
+				numEntries := int(byteOrder.Uint16(tiffData[entriesOffset : entriesOffset+2]))
+				entriesOffset += 2
+
+				for i := 0; i < numEntries; i++ {
+					entryStart := entriesOffset + i*12
+					if entryStart+12 > len(tiffData) {
+						break
+					}
+					tag := byteOrder.Uint16(tiffData[entryStart : entryStart+2])
+					if tag == 0x0112 { // Orientation Tag
+						format := byteOrder.Uint16(tiffData[entryStart+2 : entryStart+4])
+						if format == 3 { // SHORT
+							orientation := int(byteOrder.Uint16(tiffData[entryStart+8 : entryStart+10]))
+							if orientation >= 1 && orientation <= 8 {
+								return orientation
+							}
+						}
+					}
+				}
+			}
+			return 1
+		}
+
+		if _, err := r.Seek(int64(length-2), io.SeekCurrent); err != nil {
+			return 1
+		}
+	}
 }
 
 func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, error) {
@@ -76,7 +177,28 @@ func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, er
 	if err != nil {
 		return ImageDimensions{}, fmt.Errorf("decode image config: %w", err)
 	}
-	return ImageDimensions{Width: cfg.Width, Height: cfg.Height}, nil
+
+	orientation := readExifOrientation(f)
+	isRotated := orientation >= 5 && orientation <= 8
+
+	return ImageDimensions{
+		Width:       cfg.Width,
+		Height:      cfg.Height,
+		Orientation: orientation,
+		IsRotated:   isRotated,
+	}, nil
+}
+
+// GetBatchImageDimensions يسترجع أبعاد وتوجيه مجموعة صور دفعة واحدة وبسرعة فائقة
+func (s *MediaService) GetBatchImageDimensions(localPaths []string) map[string]ImageDimensions {
+	res := make(map[string]ImageDimensions)
+	for _, p := range localPaths {
+		dims, err := s.GetImageDimensions(p)
+		if err == nil {
+			res[p] = dims
+		}
+	}
+	return res
 }
 
 func (s *MediaService) GetMediaDir() string {
@@ -165,29 +287,18 @@ func (s *MediaService) ProcessOpenedFile(filePath string) (string, error) {
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
 
-	// كتابة ذرية: ملف مؤقت + fsync + rename — النسخ المباشر كان يترك
+	// كتابة ذرية موحّدة: ملف مؤقت + fsync + rename — النسخ المباشر كان يترك
 	// ملفاً تالفاً/0 بايت عند انقطاع مفاجئ أثناء النقل
-	tmpPath := newPath + ".tmp"
-	defer func() {
-		_ = os.Remove(tmpPath)
-	}()
-	tmpFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	af, err := utils.CreateAtomic(newPath, 0o644)
 	if err != nil {
 		return "", fmt.Errorf("create temp file: %w", err)
 	}
+	defer af.Abort()
 
-	if _, err := io.Copy(tmpFile, srcFile); err != nil {
-		tmpFile.Close()
+	if _, err := io.Copy(af, srcFile); err != nil {
 		return "", fmt.Errorf("copy file: %w", err)
 	}
-	if err := tmpFile.Sync(); err != nil {
-		tmpFile.Close()
-		return "", fmt.Errorf("sync temp file: %w", err)
-	}
-	if err := tmpFile.Close(); err != nil {
-		return "", fmt.Errorf("close temp file: %w", err)
-	}
-	if err := os.Rename(tmpPath, newPath); err != nil {
+	if err := af.Commit(); err != nil {
 		return "", fmt.Errorf("finalize media file: %w", err)
 	}
 
@@ -267,9 +378,10 @@ func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string,
 			// يضمن التفرد (وهو أيضاً ما يحفظ ترتيب النتائج مطابقاً لترتيب التحديد)
 			newName := fmt.Sprintf("img_%d_%d%s", time.Now().UnixNano(), i, ext)
 			newPath := filepath.Join(mediaDir, newName)
-			tmpPath := newPath + ".tmp"
 
-			destFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			// كتابة ذرية موحّدة (utils.AtomicFile) — الاسم فريد لكل عنصر
+			// فيبقى كاتب واحد لكل مسار هدف حتى مع التوازي
+			af, err := utils.CreateAtomic(newPath, 0o644)
 			if err != nil {
 				mu.Lock()
 				skippedNames = append(skippedNames, filepath.Base(filePath))
@@ -278,25 +390,22 @@ func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string,
 				return nil
 			}
 
-			_, copyErr := io.Copy(destFile, srcFile)
-			syncErr := destFile.Sync()
-			closeErr := destFile.Close()
+			_, copyErr := io.Copy(af, srcFile)
 
-			if copyErr != nil || syncErr != nil || closeErr != nil {
-				_ = os.Remove(tmpPath)
+			if copyErr != nil {
+				af.Abort()
 				mu.Lock()
 				skippedNames = append(skippedNames, filepath.Base(filePath))
 				mu.Unlock()
-				slog.Warn("Skipped file in multi-select: write/sync error", "file", filepath.Base(filePath), "copyErr", copyErr, "syncErr", syncErr, "closeErr", closeErr)
+				slog.Warn("Skipped file in multi-select: write error", "file", filepath.Base(filePath), "copyErr", copyErr)
 				return nil
 			}
 
-			if err := os.Rename(tmpPath, newPath); err != nil {
-				_ = os.Remove(tmpPath)
+			if err := af.Commit(); err != nil {
 				mu.Lock()
 				skippedNames = append(skippedNames, filepath.Base(filePath))
 				mu.Unlock()
-				slog.Warn("Skipped file in multi-select: rename error", "file", filepath.Base(filePath), "error", err)
+				slog.Warn("Skipped file in multi-select: commit error", "file", filepath.Base(filePath), "error", err)
 				return nil
 			}
 
@@ -334,29 +443,10 @@ func (s *MediaService) SaveImageFromBase64(base64Data string) (string, error) {
 	ext := s.GetExtensionFromMime(mimeType)
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
-	tmpPath := newPath + ".tmp"
-	defer func() {
-		_ = os.Remove(tmpPath)
-	}()
 
-	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return "", fmt.Errorf("open tmp file: %w", err)
-	}
-	if _, err := f.Write(decoded); err != nil {
-		_ = f.Close()
-		return "", fmt.Errorf("write tmp file: %w", err)
-	}
-	if err := f.Sync(); err != nil {
-		_ = f.Close()
-		return "", fmt.Errorf("sync tmp file: %w", err)
-	}
-	if err := f.Close(); err != nil {
-		return "", fmt.Errorf("close tmp file: %w", err)
-	}
-
-	if err := os.Rename(tmpPath, newPath); err != nil {
-		return "", fmt.Errorf("rename file: %w", err)
+	// كتابة ذرية موحّدة (utils.AtomicWriteFile)
+	if err := utils.AtomicWriteFile(newPath, decoded, 0o644); err != nil {
+		return "", fmt.Errorf("save decoded image: %w", err)
 	}
 
 	return "/local-image/" + newName, nil

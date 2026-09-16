@@ -13,15 +13,12 @@ import { getExifOrientation } from "../io/exif-utils";
 export async function resolveImageAspectRatio(src: string): Promise<number> {
   if (!src) return 1;
 
-  // 1. استخدام Go Backend السريع للصور المحلية (/local-image/) مع فحص EXIF
+  // 1. استخدام Go Backend السريع للصور المحلية (/local-image/) مع قراءة EXIF في Go مباشرة
   if (typeof GetImageDimensions === "function" && src.startsWith("/local-image/")) {
     try {
-      const [dims, exif] = await Promise.all([
-        GetImageDimensions(src),
-        getExifOrientation(src),
-      ]);
+      const dims = await GetImageDimensions(src);
       if (dims && dims.width > 0 && dims.height > 0) {
-        if (exif.isQuarterRotated) {
+        if (dims.isRotated) {
           return dims.height / dims.width;
         }
         return dims.width / dims.height;

@@ -54,24 +54,9 @@ func (s *AiLogsService) SaveAiUsageLogs(jsonData string) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 
-	path := s.getFilePath()
-	tmpPath := path + ".tmp"
-
-	defer os.Remove(tmpPath)
-
-	f, err := os.Create(tmpPath)
-	if err != nil {
-		return fmt.Errorf("failed to create tmp AI logs file: %w", err)
+	// كتابة ذرية موحّدة (utils.AtomicWriteFile)
+	if err := utils.AtomicWriteFile(s.getFilePath(), []byte(jsonData), 0o644); err != nil {
+		return fmt.Errorf("failed to save AI usage logs: %w", err)
 	}
-	if _, err := f.Write([]byte(jsonData)); err != nil {
-		f.Close()
-		return fmt.Errorf("failed to write tmp AI logs file: %w", err)
-	}
-	if err := f.Sync(); err != nil {
-		f.Close()
-		return fmt.Errorf("failed to sync tmp AI logs file: %w", err)
-	}
-	f.Close()
-
-	return os.Rename(tmpPath, path)
+	return nil
 }

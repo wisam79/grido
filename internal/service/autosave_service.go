@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -70,26 +69,22 @@ func (s *AutosaveService) SaveAutoSave(jsonData string) error {
 	defer s.writeMu.Unlock()
 
 	path := s.GetSavePath()
-	tmpPath := path + ".tmp"
 
-	defer os.Remove(tmpPath)
-
-	f, err := os.Create(tmpPath)
+	// كتابة ذرية موحّدة (utils.AtomicFile) — WriteString مباشرة بلا نسخ
+	// []byte(jsonData) حتى 100MB كاملة
+	af, err := utils.CreateAtomic(path, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to create tmp autosave file: %w", err)
 	}
-	// WriteString مباشرة — []byte(jsonData) كان ينسخ حتى 100MB كاملة
-	if _, err := io.WriteString(f, jsonData); err != nil {
-		f.Close()
+	defer af.Abort()
+
+	if _, err := af.WriteString(jsonData); err != nil {
 		return fmt.Errorf("failed to write tmp autosave file: %w", err)
 	}
-	if err := f.Sync(); err != nil {
-		f.Close()
-		return fmt.Errorf("failed to sync tmp autosave file: %w", err)
+	if err := af.Commit(); err != nil {
+		return fmt.Errorf("failed to commit autosave file: %w", err)
 	}
-	f.Close()
-
-	return os.Rename(tmpPath, path)
+	return nil
 }
 
 func (s *AutosaveService) ClearAutoSave() error {

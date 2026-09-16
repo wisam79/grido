@@ -237,6 +237,55 @@ export function useKeyboardShortcuts() {
         return;
       }
 
+      // Alt + ArrowUp / ArrowDown = Smooth scaling of selected element (توسيع / تقليص ناعم للعنصر)
+      if (selectedIds.length > 0 && e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        e.preventDefault();
+        const { elements, updateElements, updateElement } = useEditorStore.getState();
+        const isGrow = e.key === "ArrowUp";
+        const factor = e.shiftKey ? (isGrow ? 1.05 : 0.95) : (isGrow ? 1.015 : 0.985);
+
+        const patches = selectedIds
+          .map((id) => {
+            const el = elements.find((x) => x.id === id);
+            if (!el || el.locked) return null;
+
+            const newW = Math.max(0.01, Math.min(2.0, el.width * factor));
+            const newH = Math.max(0.01, Math.min(2.0, el.height * factor));
+            const dw = newW - el.width;
+            const dh = newH - el.height;
+
+            // الحفاظ على مركز العنصر ثابتاً أثناء التكبير/التصغير
+            const patch: Partial<CanvasElement> = {
+              width: newW,
+              height: newH,
+              x: el.x - dw / 2,
+              y: el.y - dh / 2,
+            };
+
+            if (el.type === "text" && typeof (el as { fontSize?: number }).fontSize === "number") {
+              (patch as Record<string, unknown>).fontSize = Math.max(6, Math.round((el as { fontSize: number }).fontSize * factor));
+            }
+
+            return { id, patch };
+          })
+          .filter(Boolean) as { id: string; patch: Partial<CanvasElement> }[];
+
+        if (patches.length > 0) {
+          if (patches.length === 1) {
+            updateElement(patches[0].id, patches[0].patch);
+          } else {
+            updateElements(patches);
+          }
+
+          if (nudgeTimeout) clearTimeout(nudgeTimeout);
+          nudgeTimeout = setTimeout(() => {
+            useEditorStore.getState().pushHistory();
+            nudgeTimeout = null;
+          }, 400);
+        }
+        return;
+      }
+
       // Arrow Keys = Nudging selected elements
       if (selectedIds.length > 0 && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         e.preventDefault();

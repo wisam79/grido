@@ -1141,6 +1141,13 @@ func (s *LicenseService) doRequestWithRetry(req *http.Request, maxRetries int) (
 }
 ```
 
+> **📍 حالة البند (تحديث 2026-09-16):** نُفِّذت الفكرة موحّدة في
+> `internal/service/http_retry.go` عبر `httpDoWithRetry` — مع تحسينات عن
+> المقترح أعلاه: احترام `Retry-After`، jitter ±20%، نوم واعٍ بالسياق
+> (`ctx.Done()`)، إعادة فقط للطلبات القابلة للإعادة (GET/HEAD أو طلب له
+> `GetBody`)، ولا إعادة على 4xx (عدا 408/429). الكود أعلاه اقتراح تاريخي —
+> لا تنفّذه كما هو؛ استخدم `httpDoWithRetry`.
+
 
 ---
 
@@ -1202,6 +1209,12 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 }
 ```
 
+> **📍 حالة البند (تحديث 2026-09-16):** لا يوجد ملف `rate_limiter.go` — الكود
+> أعلاه اقتراح لم يُنفَّذ بعد ويبقى مفتوحاً على مستوى مصادقة الحساب. أما
+> تحديد المعدل للاستخدام اليومي للذكاء الاصطناعي فيوجد فعلاً عبر
+> `AIRateLimiter` في `ai_service.go` (حصص لكل جهاز مع استمرارية على القرص)،
+> وهو غطّى هذا البند جزئياً بنطاق أوسع من المقترح.
+
 ---
 
 ### 3. timeout ثابت لجميع الطلبات
@@ -1231,6 +1244,11 @@ func (a *App) RemoveBackground(src string) (string, error) {
     // استخدام long client
 }
 ```
+
+> **📍 حالة البند (تحديث 2026-09-16):** نُفِّذ عملياً في `ai_service.go`
+> بثلاثة عملاء مشتركة على مستوى الحزمة: `aiSupabaseClient` (10s)،
+> `aiUsageClient` (15s)، `aiEnhanceClient` (3m) — بدلاً من إنشاء عميل جديد
+> داخل كل نداء (كان يقطع اتصالات keep-alive مع كل طلب).
 
 ---
 

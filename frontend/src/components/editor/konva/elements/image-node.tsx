@@ -97,8 +97,10 @@ export const URLImage = React.memo(function URLImage({
     const key = `${element.width}x${element.height}`;
     if (prevDimsRef.current === key) return;
     prevDimsRef.current = key;
+    // تفريغ الكاش فورياً لمنع رسم البيت ماب القديم بأبعاد قديمة
+    imageNodeRef.current?.clearCache?.();
     if (!hasFilters) return;
-    const t = setTimeout(() => recacheFilters(), 250);
+    const t = setTimeout(() => recacheFilters(), 100);
     return () => clearTimeout(t);
   }, [element.width, element.height, hasFilters, recacheFilters]);
 
@@ -116,6 +118,8 @@ export const URLImage = React.memo(function URLImage({
       y={nodeY}
       width={nodeW}
       height={nodeH}
+      scaleX={1}
+      scaleY={1}
       rotation={element.rotation || 0}
       opacity={element.opacity}
       visible={element.visible !== false}

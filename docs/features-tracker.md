@@ -9,6 +9,26 @@
 
 ---
 
+## 0.5 سجل جلسة إزالة ازدواجية "اختراع العجلة" في المحرك (16 سبتمبر 2026)
+
+**المرجع:** `docs/plans/wheel-deduplication-plan.md` (MAINT-03…09) — **التحقق (go build ✅ / go vet ✅ / go test: root+utils+handlers+repository+service ✅ / typecheck ✅ / lint ⏳ / vitest ⏳):**
+
+| البند | التحديث | الحالة |
+| --- | --- | --- |
+| MAINT-03 | **وحدة الكتابة الأذرعية الموحدة `internal/utils/atomicfile.go`** (`CreateAtomic/Commit/Abort/AtomicWriteFile`) مع 8 اختبارات جديدة. | ✅ |
+| MAINT-04 | **ترحيل 12 موضعاً** كانت تعيد كتابة نمط tmp+fsync+rename يدوياً (autosave، وسائط، معالج صور، جسر الجوال، تصدير الطباعة، حالة النافذة، app/main، سجلات AI، حد الاستخدام). | ✅ |
+| MAINT-05 | **توحيد إعادة المحاولة في `internal/service/http_retry.go`** (`httpDoWithRetry` مع jitter وRetry-After ووعي بالسياق) — ترحيل `supabase_client.go` و`license_service.go` إليه. | ✅ |
+| MAINT-06 | **إزالة طبقة فتح المتصفح يدوية (3 ملفات build-tag)** — استُبدلت بـ `runtime.BrowserOpenURL` خلف منفذ محقون قابل للاختبار في `LicenseService` + فصل دالة نقية `buildOAuthAuthorizeURL`. | ✅ |
+| MAINT-07 | **توحيد `clamp` في واجهة `frontend/src/lib/clamp.ts`** (وحدة صفرية اعتماديات لسلامة Web Workers) وحذف 3 نسخ محلية (freeform-math، face-frame-utils، FreeformCollageModal). | ✅ |
+| MAINT-08 | **ثلاثة عملاء HTTP مشتركة في `ai_service.go`** بدل إنشاء عميل جديد داخل كل نداء (كان يقطع اتصالات keep-alive). | ✅ |
+| MAINT-09 | **تصحيح التوثيق المضلّل**: وسوم "حالة البند" في `docs/reviews/comprehensive-app-review.md` تفرّق بين المقترح التاريخي والمنفَّذ (`http_retry.go`، عملاء HTTP المشتركة، `AIRateLimiter`). | ✅ |
+
+**عجلات أُبقيت عمداً (قرارات معتمدة في الخطة §0.1):** `print-layout-math.ts`، `SepiaBlend`، `history-slice.ts` (Undo/Redo مخصص)، حقن DPI في `print_export.go`، `updater.go`، `AIRateLimiter` — حلول قياسية صحيحة لنطاقها.
+
+---
+
+---
+
 ## 0.4 سجل جلسة برنامج التميز للواجهة (9 سبتمبر 2026)
 
 **المرجع:** `docs/plans/ui-excellence-plan.md` (المراحل 1+2+4 كاملة، المرحلة 3 على الملفات الثلاثة الأكبر)

@@ -34,14 +34,6 @@ func main() {
 	// 🪵 تهيئة نظام التسجيل الموحد الوحيد (lumberjack + slog) — ملف واحد داخل logs/
 	service.InitLogger()
 
-	// 🔒 قفل تشغيل مثيل واحد فقط للتطبيق لمنع مشاكل تعارض الملفات
-	cleanup, err := checkSingleInstance()
-	if err != nil {
-		slog.Error("Grido Studio is already running. Exiting...")
-		os.Exit(1)
-	}
-	defer cleanup()
-
 	// 🗄️ تهيئة قاعدة بيانات SQLite المحلية
 	db, err := repository.InitDB()
 	if err != nil {
@@ -84,6 +76,7 @@ func main() {
 	}
 
 	app := NewApp(repository.NewCustomTemplateRepository(db))
+	app.licenseSvc = licenseSvc // لربط سياق Wails بفتح متصفح OAuth في startup
 
 	// 🖼️ دعم خيار "فتح باستخدام" وسحب الملفات على أيقونة التطبيق (CLI file open)
 	if len(os.Args) > 1 {
@@ -108,6 +101,31 @@ func main() {
 		MinWidth:    900,
 		MinHeight:   600,
 		StartHidden: true, // إخفاء النافذة أثناء التحميل الأولي لتفادي الوميض
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId: "grido-studio-single-instance-lock-v1",
+			OnSecondInstanceLaunch: func(secondInstanceData options.SecondInstanceData) {
+				wailsruntime.WindowUnminimise(app.ctx)
+				wailsruntime.WindowShow(app.ctx)
+				if len(secondInstanceData.Args) > 0 {
+					for _, arg := range secondInstanceData.Args {
+						if strings.HasPrefix(arg, "-") {
+							continue
+						}
+						if fi, err := os.Stat(arg); err == nil && !fi.IsDir() {
+							ext := strings.ToLower(filepath.Ext(arg))
+							switch ext {
+							case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
+								wailsruntime.EventsEmit(app.ctx, "file-opened", arg)
+							}
+						}
+					}
+				}
+			},
+		},
+		DragAndDrop: &options.DragAndDrop{
+			EnableFileDrop:     true,
+			DisableWebViewDrop: false,
+		},
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -152,31 +170,19 @@ func main() {
 						}
 					}
 
-					tmpPath := fmt.Sprintf("%s.%d.tmp", filePath, time.Now().UnixNano())
-					defer os.Remove(tmpPath)
-
-					outFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+					af, err := utils.CreateAtomic(filePath, 0o644)
 					if err != nil {
 						http.Error(w, "Failed to create file: "+err.Error(), http.StatusInternalServerError)
 						return
 					}
+					defer af.Abort()
 
 					limitReader := io.LimitReader(r.Body, service.MaxFileSize)
-					if _, err := io.Copy(outFile, limitReader); err != nil {
-						_ = outFile.Close()
+					if _, err := io.Copy(af, limitReader); err != nil {
 						http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
 						return
 					}
-					if err := outFile.Sync(); err != nil {
-						_ = outFile.Close()
-						http.Error(w, "Failed to sync file: "+err.Error(), http.StatusInternalServerError)
-						return
-					}
-					if err := outFile.Close(); err != nil {
-						http.Error(w, "Failed to close file: "+err.Error(), http.StatusInternalServerError)
-						return
-					}
-					if err := os.Rename(tmpPath, filePath); err != nil {
+					if err := af.Commit(); err != nil {
 						http.Error(w, "Failed to finalize file: "+err.Error(), http.StatusInternalServerError)
 						return
 					}
@@ -221,31 +227,20 @@ func main() {
 					filename := fmt.Sprintf("print_upload_%d%s", time.Now().UnixNano(), ext)
 					absPath := filepath.Join(exportsDir, filename)
 
-					tmpPath := absPath + ".tmp"
-					defer os.Remove(tmpPath)
-					outFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-					if err != nil {
+					af, afErr := utils.CreateAtomic(absPath, 0o644)
+					if afErr != nil {
 						http.Error(w, "Failed to create file", http.StatusInternalServerError)
 						return
 					}
+					defer af.Abort()
 
 					// إعادة تجميع القارئ: البايتات المقروءة + بقية الجسم
 					combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
-					if _, err := io.Copy(outFile, combined); err != nil {
-						_ = outFile.Close()
+					if _, err := io.Copy(af, combined); err != nil {
 						http.Error(w, "Failed to write file", http.StatusInternalServerError)
 						return
 					}
-					if err := outFile.Sync(); err != nil {
-						_ = outFile.Close()
-						http.Error(w, "Failed to sync file", http.StatusInternalServerError)
-						return
-					}
-					if err := outFile.Close(); err != nil {
-						http.Error(w, "Failed to close file", http.StatusInternalServerError)
-						return
-					}
-					if err := os.Rename(tmpPath, absPath); err != nil {
+					if err := af.Commit(); err != nil {
 						http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
 						return
 					}
@@ -257,6 +252,60 @@ func main() {
 					})
 					return
 				}
+
+				// 🚀 مسار البث الثنائي المباشر لرفع الصور (Direct Binary Media Upload):
+				// يستقبل ملفات الصور كـ Binary Stream ويكتبها مباشرة في مجلد Media
+				// دون تشفير Base64 المرهق للـ V8 Heap وذاكرة JavaScript.
+				if r.Method == http.MethodPost && r.URL.Path == "/api/upload-media" {
+					mediaDir := app.mediaSvc.GetMediaDir()
+					if err := os.MkdirAll(mediaDir, 0o755); err != nil {
+						http.Error(w, "Failed to create media dir", http.StatusInternalServerError)
+						return
+					}
+
+					limitReader := io.LimitReader(r.Body, service.MaxFileSize)
+					sniffBuf := make([]byte, 512)
+					n, sniffErr := io.ReadFull(limitReader, sniffBuf)
+					if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
+						http.Error(w, "Failed to read upload body", http.StatusBadRequest)
+						return
+					}
+					sniffBuf = sniffBuf[:n]
+					detectedMime := http.DetectContentType(sniffBuf)
+					if !strings.HasPrefix(detectedMime, "image/") {
+						http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
+						return
+					}
+
+					ext := app.mediaSvc.GetExtensionFromMime(detectedMime)
+					filename := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
+					absPath := filepath.Join(mediaDir, filename)
+
+					af, afErr := utils.CreateAtomic(absPath, 0o644)
+					if afErr != nil {
+						http.Error(w, "Failed to create file", http.StatusInternalServerError)
+						return
+					}
+					defer af.Abort()
+
+					combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
+					if _, err := io.Copy(af, combined); err != nil {
+						http.Error(w, "Failed to write file", http.StatusInternalServerError)
+						return
+					}
+					if err := af.Commit(); err != nil {
+						http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.NewEncoder(w).Encode(map[string]string{
+						"status":   "success",
+						"imageSrc": "/local-image/" + filename,
+					})
+					return
+				}
+
 
 				if strings.HasPrefix(r.URL.Path, "/local-image/") {
 					filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
@@ -398,13 +447,19 @@ func main() {
 			DisableWindowIcon:                 false,
 			DisableFramelessWindowDecorations: false,                // الحفاظ على هذه كـ false للإبقاء على ظل النافذة الافتراضي لنظام ويندوز
 			WebviewUserDataPath:               getWebviewCacheDir(), // تعيين مجلد الكاش الآمن لـ WebView2
+			DLLSearchPaths: windows.DLLSearchSafeCurrentDirs |
+				windows.DLLSearchSystem32 |
+				windows.DLLSearchApplicationDir, // 🛡️ منع هجمات حقن الـ DLL في ويندوز
+			IsZoomControlEnabled: false, // 🔍 منع تكبير المتصفح الافتراضي لكي لا يتعارض مع تكبير الكانفاس
+			DisablePinchZoom:     true,  // 🤏 منع تقريب المتصفح بالإيماءات للإبقاء على تحكم الكانفاس
+			ResizeDebounceMS:     10,    // ⚡ سلاسة استجابة النافذة أثناء السحب وإعادة التحجيم
 			OnSuspend: func() {
 				slog.Info("Entering suspend mode...")
-				// ملاحظة: لا نغلق قاعدة البيانات لأن الـ Repository يحتفظ بمرجع قديم
-				// SQLite يتعامل مع وضع السكون بأمان بدون تدخل
+				wailsruntime.EventsEmit(app.ctx, "app:suspend")
 			},
 			OnResume: func() {
 				slog.Info("Resuming from suspend...")
+				wailsruntime.EventsEmit(app.ctx, "app:resume")
 			},
 		},
 	})

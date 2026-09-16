@@ -147,6 +147,8 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       y={nodeY}
       width={w}
       height={h}
+      scaleX={1}
+      scaleY={1}
       rotation={element.rotation || 0}
       opacity={sharedOpacity}
       visible={element.visible !== false}

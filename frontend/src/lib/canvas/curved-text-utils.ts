@@ -1,5 +1,6 @@
 /**
  * Utility for drawing curved text along an arc on standard HTML5 Canvas 2D / Konva
+ * Supports connected Arabic ligatures (via contextual shaping) and RTL flow.
  */
 import { TEXT_COLOR_DEFAULT } from "./canvas-colors";
 import { ensureTextStrokeFilter } from "./text-stroke-filter";
@@ -22,6 +23,135 @@ export interface CurvedTextOptions {
   letterSpacing?: number;
 }
 
+// Arabic contextual shapes: [isolated, initial, medial, final]
+const ARABIC_FORMS_MAP: Record<string, (string | null)[]> = {
+  "\u0621": ["\uFE80"], // Hamza
+  "\u0622": ["\uFE81", null, null, "\uFE82"], // Alef with madda
+  "\u0623": ["\uFE83", null, null, "\uFE84"], // Alef with hamza above
+  "\u0624": ["\uFE85", null, null, "\uFE86"], // Waw with hamza
+  "\u0625": ["\uFE87", null, null, "\uFE88"], // Alef with hamza below
+  "\u0626": ["\uFE89", "\uFE8B", "\uFE8C", "\uFE8A"], // Yeh with hamza
+  "\u0627": ["\uFE8D", null, null, "\uFE8E"], // Alef
+  "\u0628": ["\uFE8F", "\uFE91", "\uFE92", "\uFE90"], // Beh
+  "\u0629": ["\uFE93", null, null, "\uFE94"], // Teh marbuta
+  "\u062A": ["\uFE95", "\uFE97", "\uFE98", "\uFE96"], // Teh
+  "\u062B": ["\uFE99", "\uFE9B", "\uFE9C", "\uFE9A"], // Theh
+  "\u062C": ["\uFE9D", "\uFE9F", "\uFEA0", "\uFE9E"], // Jeem
+  "\u062D": ["\uFEA1", "\uFEA3", "\uFEA4", "\uFEA2"], // Hah
+  "\u062E": ["\uFEA5", "\uFEA7", "\uFEA8", "\uFEA6"], // Khah
+  "\u062F": ["\uFEA9", null, null, "\uFEAA"], // Dal
+  "\u0630": ["\uFEAB", null, null, "\uFEAC"], // Thal
+  "\u0631": ["\uFEAD", null, null, "\uFEAE"], // Reh
+  "\u0632": ["\uFEAF", null, null, "\uFEB0"], // Zain
+  "\u0633": ["\uFEB1", "\uFEB3", "\uFEB4", "\uFEB2"], // Seen
+  "\u0634": ["\uFEB5", "\uFEB7", "\uFEB8", "\uFEB6"], // Sheen
+  "\u0635": ["\uFEB9", "\uFEBB", "\uFEBC", "\uFEBA"], // Sad
+  "\u0636": ["\uFEBD", "\uFEBF", "\uFEC0", "\uFEBE"], // Dad
+  "\u0637": ["\uFEC1", "\uFEC3", "\uFEC4", "\uFEC2"], // Tah
+  "\u0638": ["\uFEC5", "\uFEC7", "\uFEC8", "\uFEC6"], // Zah
+  "\u0639": ["\uFEC9", "\uFECB", "\uFECC", "\uFECA"], // Ain
+  "\u063A": ["\uFECD", "\uFECF", "\uFED0", "\uFECE"], // Ghain
+  "\u0641": ["\uFED1", "\uFED3", "\uFED4", "\uFED2"], // Feh
+  "\u0642": ["\uFED5", "\uFED7", "\uFED8", "\uFED6"], // Qaf
+  "\u0643": ["\uFED9", "\uFEDB", "\uFEDC", "\uFEDA"], // Kaf
+  "\u0644": ["\uFEDD", "\uFEDF", "\uFEE0", "\uFEDE"], // Lam
+  "\u0645": ["\uFEE1", "\uFEE3", "\uFEE4", "\uFEE2"], // Meem
+  "\u0646": ["\uFEE5", "\uFEE7", "\uFEE8", "\uFEE6"], // Noon
+  "\u0647": ["\uFEE9", "\uFEEB", "\uFEEC", "\uFEEA"], // Heh
+  "\u0648": ["\uFEED", null, null, "\uFEEE"], // Waw
+  "\u0649": ["\uFEEF", null, null, "\uFEF0"], // Alef Maksura
+  "\u064A": ["\uFEF1", "\uFEF3", "\uFEF4", "\uFEF2"], // Yeh
+  "\u067E": ["\uFB56", "\uFB58", "\uFB59", "\uFB57"], // Peh
+  "\u0686": ["\uFB7A", "\uFB7C", "\uFB7D", "\uFB7B"], // Tcheh
+  "\u0698": ["\uFB8A", null, null, "\uFB8B"], // Jeh
+  "\u06AF": ["\uFB92", "\uFB94", "\uFB95", "\uFB93"], // Gaf
+};
+
+// Lam-Alef ligatures: [isolated, final]
+const LAM_ALEF_MAP: Record<string, [string, string]> = {
+  "\u0622": ["\uFEF5", "\uFEF6"], // l + madda
+  "\u0623": ["\uFEF7", "\uFEF8"], // l + hamza above
+  "\u0625": ["\uFEF9", "\uFEFA"], // l + hamza below
+  "\u0627": ["\uFEFB", "\uFEFC"], // l + alef
+};
+
+// Strips diacritics for shape matching while preserving them on the glyph
+const TASHKEEL_REGEX = /[\u064B-\u065F\u0670]/g;
+
+function shapeArabicGraphemes(text: string): string[] {
+  const chars = Array.from(text);
+  const out: string[] = [];
+
+  for (let i = 0; i < chars.length; i++) {
+    const rawCluster = chars[i];
+    const baseChar = rawCluster.replace(TASHKEEL_REGEX, "");
+    const diacritics = rawCluster.slice(baseChar.length);
+
+    // Look behind & ahead ignoring spaces/diacritics
+    let prevChar: string | null = null;
+    for (let p = i - 1; p >= 0; p--) {
+      const b = chars[p].replace(TASHKEEL_REGEX, "");
+      if (b !== " ") { prevChar = b; break; }
+      break; // Space breaks connection
+    }
+
+    let nextChar: string | null = null;
+    for (let n = i + 1; n < chars.length; n++) {
+      const b = chars[n].replace(TASHKEEL_REGEX, "");
+      if (b !== " ") { nextChar = b; break; }
+      break; // Space breaks connection
+    }
+
+    // Check Lam-Alef ligature
+    if (baseChar === "\u0644" && nextChar && LAM_ALEF_MAP[nextChar]) {
+      const prevShapes = prevChar && ARABIC_FORMS_MAP[prevChar];
+      const prevConnects = prevShapes && (prevShapes[1] || prevShapes[2]);
+      const shapedLigature = prevConnects ? LAM_ALEF_MAP[nextChar][1] : LAM_ALEF_MAP[nextChar][0];
+      out.push(shapedLigature + diacritics);
+      i++; // Skip alef
+      continue;
+    }
+
+    const forms = ARABIC_FORMS_MAP[baseChar];
+    if (!forms) {
+      out.push(rawCluster);
+      continue;
+    }
+
+    const prevShapes = prevChar && ARABIC_FORMS_MAP[prevChar];
+    const prevConnects = prevShapes && (prevShapes[1] || prevShapes[2]);
+    const nextShapes = nextChar && ARABIC_FORMS_MAP[nextChar];
+    const nextConnects = nextShapes && (nextShapes[0] || nextShapes[3]);
+
+    let shaped: string;
+    if (prevConnects && nextConnects && forms[2]) {
+      shaped = forms[2]!; // Medial
+    } else if (prevConnects && forms[3]) {
+      shaped = forms[3]!; // Final
+    } else if (nextConnects && forms[1]) {
+      shaped = forms[1]!; // Initial
+    } else {
+      shaped = forms[0] || baseChar; // Isolated
+    }
+
+    out.push(shaped + diacritics);
+  }
+
+  return out;
+}
+
+function extractGraphemes(text: string): string[] {
+  if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+    try {
+      const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+      return Array.from(segmenter.segment(text)).map((s) => s.segment);
+    } catch {
+      // fallback
+    }
+  }
+  return Array.from(text);
+}
+
 export function drawCurvedText(
   ctx: CanvasRenderingContext2D,
   options: CurvedTextOptions
@@ -37,7 +167,6 @@ export function drawCurvedText(
     color = TEXT_COLOR_DEFAULT,
     stroke,
     strokeWidth = 0,
-    textAlign = "center",
     curve,
     letterSpacing = 0,
   } = options;
@@ -50,8 +179,12 @@ export function drawCurvedText(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  const numChars = text.length;
-  if (numChars === 0) {
+  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+
+  // Use shaped graphemes for Arabic, standard graphemes for Latin/other
+  const glyphs = isArabic ? shapeArabicGraphemes(text) : extractGraphemes(text);
+  const numGlyphs = glyphs.length;
+  if (numGlyphs === 0) {
     ctx.restore();
     return;
   }
@@ -68,13 +201,15 @@ export function drawCurvedText(
   const maxRadius = width * 3.5;
   const radius = maxRadius - curvatureRatio * (maxRadius - minRadius);
 
-  // Measure character widths
-  const charWidths: number[] = [];
+  // Measure glyph widths (in Arabic, reduce letter spacing slightly to ensure connecting ligatures touch)
+  const glyphWidths: number[] = [];
   let totalTextWidth = 0;
-  for (let i = 0; i < numChars; i++) {
-    const charW = ctx.measureText(text[i]).width + letterSpacing;
-    charWidths.push(charW);
-    totalTextWidth += charW;
+  const effectiveSpacing = isArabic ? Math.min(0, letterSpacing) : letterSpacing;
+
+  for (let i = 0; i < numGlyphs; i++) {
+    const glyphW = ctx.measureText(glyphs[i]).width + effectiveSpacing;
+    glyphWidths.push(glyphW);
+    totalTextWidth += glyphW;
   }
 
   // Calculate total angular span
@@ -85,17 +220,24 @@ export function drawCurvedText(
   const centerX = width / 2;
   const centerY = isUpward ? height / 2 + radius - fontSize / 2 : height / 2 - radius + fontSize / 2;
 
-  // Start angle
-  let startAngle: number;
-  if (isUpward) {
-    // Top of circle is -PI/2
-    startAngle = -Math.PI / 2 - (angularSpan / 2);
+  // Start angle & step direction:
+  // For LTR (Latin): starts from Left side, advances towards Right
+  // For RTL (Arabic): starts from Right side, advances towards Left so it reads right-to-left naturally!
+  let currentAngle: number;
+  if (isArabic) {
+    if (isUpward) {
+      currentAngle = -Math.PI / 2 + (angularSpan / 2); // Start top-right
+    } else {
+      currentAngle = Math.PI / 2 - (angularSpan / 2); // Start bottom-right
+    }
   } else {
-    // Bottom of circle is PI/2
-    startAngle = Math.PI / 2 + (angularSpan / 2);
+    if (isUpward) {
+      currentAngle = -Math.PI / 2 - (angularSpan / 2); // Start top-left
+    } else {
+      currentAngle = Math.PI / 2 + (angularSpan / 2); // Start bottom-left
+    }
   }
 
-  let currentAngle = startAngle;
   interface CharTransform {
     char: string;
     charX: number;
@@ -104,13 +246,19 @@ export function drawCurvedText(
   }
   const charTransforms: CharTransform[] = [];
 
-  for (let i = 0; i < numChars; i++) {
-    const char = text[i];
-    const charW = charWidths[i];
-    const charAngle = charW / radius;
+  for (let i = 0; i < numGlyphs; i++) {
+    const char = glyphs[i];
+    const glyphW = glyphWidths[i];
+    const charAngle = glyphW / radius;
 
-    // Center of this character on the arc
-    const midAngle = isUpward ? currentAngle + charAngle / 2 : currentAngle - charAngle / 2;
+    let midAngle: number;
+    if (isArabic) {
+      // Step leftward
+      midAngle = isUpward ? currentAngle - charAngle / 2 : currentAngle + charAngle / 2;
+    } else {
+      // Step rightward
+      midAngle = isUpward ? currentAngle + charAngle / 2 : currentAngle - charAngle / 2;
+    }
 
     const charX = centerX + Math.cos(midAngle) * radius;
     const charY = centerY + Math.sin(midAngle) * radius;
@@ -118,10 +266,18 @@ export function drawCurvedText(
 
     charTransforms.push({ char, charX, charY, rotation });
 
-    if (isUpward) {
-      currentAngle += charAngle;
+    if (isArabic) {
+      if (isUpward) {
+        currentAngle -= charAngle;
+      } else {
+        currentAngle += charAngle;
+      }
     } else {
-      currentAngle -= charAngle;
+      if (isUpward) {
+        currentAngle += charAngle;
+      } else {
+        currentAngle -= charAngle;
+      }
     }
   }
 

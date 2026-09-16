@@ -56,3 +56,9 @@ package-lock.json
 .kilocode/
 .kilo/
 .gemini/
+.agents/explorer_*
+.agents/orchestrator_*
+.agents/sentinel/
+.agents/spec_miner_*
+ORIGINAL_REQUEST.md
+.agents/ORIGINAL_REQUEST.md

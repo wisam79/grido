@@ -1,37 +1,4 @@
 /**
- * Copies a PNG base64 Data URL directly to clipboard as an Image Blob.
+ * Re-export consolidated clipboard utilities from canonical lib/io/clipboard-utils
  */
-export async function copyPngDataUrlToClipboard(pngDataUrl: string): Promise<boolean> {
-  try {
-    if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
-      return false;
-    }
-    const res = await fetch(pngDataUrl);
-    const blob = await res.blob();
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        [blob.type]: blob,
-      }),
-    ]);
-    return true;
-  } catch (err) {
-    console.error("Failed to copy image blob to clipboard:", err);
-    return false;
-  }
-}
-
-/**
- * Copies raw SVG vector markup code directly to clipboard as text.
- */
-export async function copySvgCodeToClipboard(svgString: string): Promise<boolean> {
-  try {
-    if (!navigator.clipboard?.writeText) {
-      return false;
-    }
-    await navigator.clipboard.writeText(svgString);
-    return true;
-  } catch (err) {
-    console.error("Failed to copy SVG text to clipboard:", err);
-    return false;
-  }
-}
+export { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from "@/lib/io/clipboard-utils";

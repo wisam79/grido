@@ -172,4 +172,23 @@ describe("useKeyboardShortcuts - Keyboard Shortcuts Hook Tests", () => {
     document.body.removeChild(input);
     undoSpy.mockRestore();
   });
+
+  it("should smoothly scale selected element on Alt+ArrowUp and Alt+ArrowDown", async () => {
+    const updateElementSpy = vi.spyOn(useEditorStore.getState(), "updateElement");
+
+    useEditorStore.getState().addTextElement("Scale me");
+    const element = useEditorStore.getState().elements[0];
+    useEditorStore.getState().selectElement(element.id);
+
+    renderHook(() => useKeyboardShortcuts());
+
+    // Alt+ArrowUp -> enlarges element width & height smoothly by 1.5%
+    await user.keyboard("{Alt>}{ArrowUp}{/Alt}");
+    expect(updateElementSpy).toHaveBeenCalled();
+    const calledPatch = updateElementSpy.mock.calls[0][1];
+    expect(calledPatch.width).toBeGreaterThan(element.width);
+    expect(calledPatch.height).toBeGreaterThan(element.height);
+
+    updateElementSpy.mockRestore();
+  });
 });

@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/disintegration/imaging"
+
+	"grido/internal/utils"
 )
 
 type ImageProcessorService struct {
@@ -59,54 +61,6 @@ func ResizeGrayLinear(src *image.Gray, w, h int) *image.Gray {
 
 			val := (1-dy)*((1-dx)*val00+dx*val10) + dy*((1-dx)*val01+dx*val11)
 			dst.Pix[dstStride+x] = uint8(val)
-		}
-	}
-	return dst
-}
-
-func BlurGray(src *image.Gray) *image.Gray {
-	w, h := src.Bounds().Dx(), src.Bounds().Dy()
-	dst := image.NewGray(image.Rect(0, 0, w, h))
-
-	for y := 0; y < h; y++ {
-		yStride := y * src.Stride
-		dstStride := y * dst.Stride
-
-		ym1 := (y - 1)
-		if ym1 < 0 {
-			ym1 = 0
-		}
-		ym1Stride := ym1 * src.Stride
-
-		yp1 := (y + 1)
-		if yp1 >= h {
-			yp1 = h - 1
-		}
-		yp1Stride := yp1 * src.Stride
-
-		for x := 0; x < w; x++ {
-			xm1 := x - 1
-			if xm1 < 0 {
-				xm1 = 0
-			}
-			xp1 := x + 1
-			if xp1 >= w {
-				xp1 = w - 1
-			}
-
-			sum := uint32(src.Pix[yStride+x]) * 4
-
-			sum += uint32(src.Pix[yStride+xm1]) * 2
-			sum += uint32(src.Pix[yStride+xp1]) * 2
-			sum += uint32(src.Pix[ym1Stride+x]) * 2
-			sum += uint32(src.Pix[yp1Stride+x]) * 2
-
-			sum += uint32(src.Pix[ym1Stride+xm1])
-			sum += uint32(src.Pix[ym1Stride+xp1])
-			sum += uint32(src.Pix[yp1Stride+xm1])
-			sum += uint32(src.Pix[yp1Stride+xp1])
-
-			dst.Pix[dstStride+x] = uint8(sum >> 4)
 		}
 	}
 	return dst
@@ -265,30 +219,19 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 
 	newName := fmt.Sprintf("img_%d.png", time.Now().UnixNano())
 	newPath := filepath.Join(mediaDir, newName)
-	tmpPath := newPath + ".tmp"
-	defer func() {
-		_ = os.Remove(tmpPath)
-	}()
 
-	f, err := os.Create(tmpPath)
+	// كتابة ذرية موحّدة (utils.AtomicFile) — الترميز يتدفق للقرص مباشرة
+	af, err := utils.CreateAtomic(newPath, 0o644)
 	if err != nil {
 		return "", fmt.Errorf("create file for saving: %w", err)
 	}
+	defer af.Abort()
 
 	encoder := png.Encoder{CompressionLevel: png.BestSpeed}
-	if err := encoder.Encode(f, srcNRGBA); err != nil {
-		_ = f.Close()
+	if err := encoder.Encode(af, srcNRGBA); err != nil {
 		return "", fmt.Errorf("encode final image: %w", err)
 	}
-	if err := f.Sync(); err != nil {
-		_ = f.Close()
-		return "", fmt.Errorf("sync final image: %w", err)
-	}
-	if err := f.Close(); err != nil {
-		return "", fmt.Errorf("close final image: %w", err)
-	}
-
-	if err := os.Rename(tmpPath, newPath); err != nil {
+	if err := af.Commit(); err != nil {
 		return "", fmt.Errorf("save final image: %w", err)
 	}
 

@@ -3,8 +3,8 @@ import { Transformer as KonvaTransformer, Group, Rect, Text } from "react-konva"
 import Konva from "konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { getSnapPositionsWithTargets, SnapGuide, SnapTarget } from "@/lib/canvas/snap-utils";
-import { getElementPixelVisualBox, getElementVisualBox } from "@/lib/canvas/element-geometry";
+import type { SnapGuide } from "@/lib/canvas/snap-utils";
+import { getElementPixelVisualBox } from "@/lib/canvas/element-geometry";
 import {
   transformerPrimary, transformerStroke,
   transformerLocked, transformerLockedStroke,
@@ -24,21 +24,6 @@ interface EditorTransformerProps {
   altPressedRef?: React.MutableRefObject<boolean>;
 }
 
-// تحويل أسماء مقابض Konva إلى اتجاهات البوصلة المستخدمة في محرك المحاذاة
-const anchorToCompass = (anchor: string): string => {
-  switch (anchor) {
-    case "top-left": return "nw";
-    case "top-center": return "n";
-    case "top-right": return "ne";
-    case "middle-left": return "w";
-    case "middle-right": return "e";
-    case "bottom-left": return "sw";
-    case "bottom-center": return "s";
-    case "bottom-right": return "se";
-    default: return "";
-  }
-};
-
 export const EditorTransformer = React.memo(function EditorTransformer({
   trRef,
   selectedIds,
@@ -52,6 +37,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   altPressedRef,
 }: EditorTransformerProps) {
   const badgeRef = React.useRef<Konva.Group | null>(null);
+  const badgeBgRef = React.useRef<Konva.Rect | null>(null);
   const textRef = React.useRef<Konva.Text | null>(null);
 
   const printSettings = useEditorStore((state) => state.printSettings);
@@ -59,26 +45,6 @@ export const EditorTransformer = React.memo(function EditorTransformer({
 
   // فحص هل العنصر المحدد مقفل (Locked)
   const isLocked = selectedIds.length === 1 && sortedElements.find((e) => e.id === selectedIds[0])?.locked;
-
-  // 🧲 حالة المحاذاة المغناطيسية أثناء التحجيم (Resize Snapping)
-  // معايرة ذاتية: نربط فضاء صناديق Konva بالفضاء المنطقي من أول استدعاء boundBoxFunc
-  const resizeSnapRef = React.useRef<{
-    vTargets: SnapTarget[];
-    hTargets: SnapTarget[];
-    gridSnap?: { stepX: number; stepY: number };
-    oldBox: { x: number; y: number; width: number; height: number };
-    L0: number; T0: number; R0: number; B0: number;
-    unitX: number; unitY: number;
-  } | null>(null);
-  const prevResizeGuidesRef = React.useRef<SnapGuide[]>([]);
-
-  const resetResizeSnap = React.useCallback(() => {
-    resizeSnapRef.current = null;
-    if (prevResizeGuidesRef.current.length > 0) {
-      prevResizeGuidesRef.current = [];
-      setActiveGuides?.([]);
-    }
-  }, [setActiveGuides]);
 
   useEffect(() => {
     const transformer = trRef.current;
@@ -104,19 +70,40 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       const wMM = Math.round((nodeW / canvasWidth) * (canvasWidth / dpi) * 25.4);
       const hMM = Math.round((nodeH / canvasHeight) * (canvasHeight / dpi) * 25.4);
 
-      if (badgeRef.current && textRef.current) {
-        badgeRef.current.visible(true);
+      const rotStr = normalizedRot > 0 ? ` • ${normalizedRot}°` : "";
+      const textContent = `${wMM} × ${hMM} mm${rotStr}`;
+
+      if (badgeRef.current && textRef.current && badgeBgRef.current) {
+        // حساب العرض الكافي للنص مع مسافة حشو 20px
+        const badgeW = Math.max(124, textContent.length * 7.5 + 22);
+
+        if (textRef.current.text() !== textContent) {
+          textRef.current.text(textContent);
+          textRef.current.width(badgeW);
+          textRef.current.x(-badgeW / 2);
+          badgeBgRef.current.width(badgeW);
+          badgeBgRef.current.x(-badgeW / 2);
+        }
+
+        // تموضع ذكي متكيف: إذا كان العنصر في قمة الكانفس، تنقلب الشارة لأسفله
+        const badgeOffset = 32 / stageScale;
+        const targetY = vBox.minY - badgeOffset >= 0
+          ? vBox.minY - badgeOffset
+          : vBox.maxY + (12 / stageScale);
+
         badgeRef.current.position({
           x: vBox.centerX,
-          y: vBox.minY - (28 / stageScale)
+          y: targetY,
         });
-        textRef.current.text(`${wMM} × ${hMM} mm ${normalizedRot > 0 ? `(${normalizedRot}°)` : ""}`);
+
+        if (!badgeRef.current.visible()) {
+          badgeRef.current.visible(true);
+        }
         badgeRef.current.getLayer()?.batchDraw();
       }
     };
 
     const handleTransformStart = () => {
-      resizeSnapRef.current = null; // يُعاد بناؤه عند أول boundBoxFunc (يحتاج oldBox للمعايرة)
       updateInfo();
     };
 
@@ -132,7 +119,6 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         badgeRef.current.visible(false);
         badgeRef.current.getLayer()?.batchDraw();
       }
-      resetResizeSnap();
     };
 
     transformer.on("transformstart dragstart", handleTransformStart);
@@ -144,9 +130,9 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       transformer.off("transform dragmove", handleTransform);
       transformer.off("transformend dragend", handleTransformEndInternal);
     };
-  }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, resetResizeSnap, altPressedRef]);
+  }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, altPressedRef]);
 
-  // تخصيص مظهر المحابث (Anchors) بنمط Figma المحترف
+  // تخصيص مظهر المحابث (Anchors) بنمط Fluent 2 المحترف مع ظلال ناعمة
   const primaryColor = isLocked ? transformerLocked() : transformerPrimary();
   const strokeColor  = isLocked ? transformerLockedStroke() : transformerStroke();
 
@@ -154,20 +140,22 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     <React.Fragment>
       <KonvaTransformer
         ref={trRef as unknown as React.Ref<Konva.Transformer>}
-        anchorSize={8}
-        anchorCornerRadius={4}
+        anchorSize={10}
+        anchorCornerRadius={3.5}
         anchorStroke={primaryColor}
         anchorStrokeWidth={1.5}
         anchorFill={transformerAnchorFill()}
         borderStroke={primaryColor}
-        borderStrokeWidth={1}
-        borderDash={isLocked ? [5, 4] : undefined}
+        borderStrokeWidth={1.5}
+        borderDash={isLocked ? [6, 4] : undefined}
         padding={3}
         keepRatio={true}
         shiftBehavior="inverted"
         ignoreStroke={true}
+        rotateLineVisible={true}
+        rotateAnchorOffset={26}
+        rotationSnapTolerance={5}
         rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
-        rotateAnchorOffset={28}
         enabledAnchors={
           isLocked
             ? []
@@ -176,204 +164,73 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             : ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"]
         }
         anchorStyleFunc={(anchor: Konva.Rect) => {
-          // مقابض الحواف الحانبية بنمط Figma (حبوب مستطيلة خفيفة)
-          if (anchor.hasName("middle-left") || anchor.hasName("middle-right")) {
-            anchor.cornerRadius(2);
-            anchor.width(4);
-            anchor.height(14);
-            anchor.offsetY(7);
-            anchor.offsetX(2);
+          // تأثير العمق والظل ثلاثي الأبعاد لنظام Fluent 2 على كافة المقابض
+          anchor.shadowColor("rgba(0, 0, 0, 0.22)");
+          anchor.shadowBlur(4);
+          anchor.shadowOffset({ x: 0, y: 1 });
+          anchor.shadowOpacity(0.7);
+
+          if (
+            anchor.hasName("top-left") ||
+            anchor.hasName("top-right") ||
+            anchor.hasName("bottom-left") ||
+            anchor.hasName("bottom-right")
+          ) {
+            // مقابض الزوايا الفاخرة: Squircle أنيق بمقاس 10px واستدارة 3.5px
+            anchor.width(10);
+            anchor.height(10);
+            anchor.offsetX(5);
+            anchor.offsetY(5);
+            anchor.cornerRadius(3.5);
+            anchor.fill(transformerAnchorFill());
+            anchor.stroke(primaryColor);
+            anchor.strokeWidth(1.5);
+          } else if (anchor.hasName("middle-left") || anchor.hasName("middle-right")) {
+            // مقابض الحواف العمودية: كبسولات نحيفة وأنيقة
+            anchor.cornerRadius(2.5);
+            anchor.width(5);
+            anchor.height(16);
+            anchor.offsetX(2.5);
+            anchor.offsetY(8);
+            anchor.fill(transformerAnchorFill());
+            anchor.stroke(primaryColor);
+            anchor.strokeWidth(1.5);
           } else if (anchor.hasName("top-center") || anchor.hasName("bottom-center")) {
-            anchor.cornerRadius(2);
-            anchor.width(14);
-            anchor.height(4);
-            anchor.offsetX(7);
-            anchor.offsetY(2);
+            // مقابض الحواف الأفقية: كبسولات نحيفة وأنيقة
+            anchor.cornerRadius(2.5);
+            anchor.width(16);
+            anchor.height(5);
+            anchor.offsetX(8);
+            anchor.offsetY(2.5);
+            anchor.fill(transformerAnchorFill());
+            anchor.stroke(primaryColor);
+            anchor.strokeWidth(1.5);
           } else if (anchor.hasName("rotater") || (anchor.name && anchor.name().includes("rotater"))) {
-            anchor.width(12);
-            anchor.height(12);
-            anchor.offsetX(6);
-            anchor.offsetY(6);
-            anchor.cornerRadius(6);
+            // مقبض التدوير الدائري الاحترافي
+            anchor.width(14);
+            anchor.height(14);
+            anchor.offsetX(7);
+            anchor.offsetY(7);
+            anchor.cornerRadius(7);
             anchor.fill(primaryColor);
             anchor.stroke(transformerAnchorFill());
             anchor.strokeWidth(2);
+            anchor.shadowBlur(6);
+            anchor.shadowOffset({ x: 0, y: 2 });
+            anchor.shadowOpacity(0.75);
           }
         }}
         boundBoxFunc={(oldBox, newBox) => {
-          if (Math.abs(newBox.width) < 2 && Math.abs(newBox.height) < 2) {
+          // النمط القياسي لـ Konva: حماية الحد الأدنى للمقاس دون تشويه الصندوق أو النسبة
+          if (Math.abs(newBox.width) < 10 || Math.abs(newBox.height) < 10) {
             return oldBox;
           }
-
-          // 🧲 محاذاة مغناطيسية أثناء التحجيم (عنصر واحد، بلا دوران)
-          const { snapToGrid, userGuides, showUserGuides, showGrid, gridSize } = useEditorStore.getState();
-          if (snapToGrid === false) {
-            if (setActiveGuides && prevResizeGuidesRef.current.length > 0) {
-              prevResizeGuidesRef.current = [];
-              setActiveGuides([]);
-            }
-            return newBox;
-          }
-
-          const transformer = trRef.current;
-          const node = transformer?.nodes()?.[0];
-          if (!transformer || !node || selectedIds.length !== 1) return newBox;
-          const anchor = transformer.getActiveAnchor();
-          if (anchor === "rotater" || !anchor) return newBox;
-          const handle = anchorToCompass(anchor);
-          if (!handle) return newBox;
-
-          const rotation = Math.abs(node.rotation() % 360);
-          if (rotation > 0.5 && rotation < 359.5) return newBox;
-
-          // معايرة كسولة من أول صندوق: ربط فضاء الصناديق بالفضاء المنطقي
-          if (!resizeSnapRef.current) {
-            const absSX = Math.abs(node.scaleX()) || 1;
-            const absSY = Math.abs(node.scaleY()) || 1;
-            const W0 = node.width() * absSX;
-            const H0 = node.height() * absSY;
-            if (W0 <= 0 || H0 <= 0 || oldBox.width === 0 || oldBox.height === 0) return newBox;
-            const isFlipped = (node.scaleX() ?? 1) < 0;
-            const isFlippedY = (node.scaleY() ?? 1) < 0;
-            const L0 = isFlipped ? node.x() - W0 : node.x();
-            const T0 = isFlippedY ? node.y() - H0 : node.y();
-
-            const vTargets: SnapTarget[] = [
-              { value: 0, origin: "canvas" },
-              { value: 0.5, origin: "canvas" },
-              { value: 1, origin: "canvas" },
-            ];
-            const hTargets: SnapTarget[] = [
-              { value: 0, origin: "canvas" },
-              { value: 0.5, origin: "canvas" },
-              { value: 1, origin: "canvas" },
-            ];
-            for (const el of sortedElements) {
-              if (selectedIds.includes(el.id)) continue;
-              const vBox = getElementVisualBox(el, canvasWidth, canvasHeight);
-              vTargets.push(
-                { value: vBox.x, origin: "element" },
-                { value: vBox.centerX, origin: "element" },
-                { value: vBox.x + vBox.width, origin: "element" }
-              );
-              hTargets.push(
-                { value: vBox.y, origin: "element" },
-                { value: vBox.centerY, origin: "element" },
-                { value: vBox.y + vBox.height, origin: "element" }
-              );
-            }
-            if (showUserGuides && userGuides) {
-              for (const g of userGuides) {
-                if (g.type === "v") vTargets.push({ value: g.pos, origin: "user-guide" });
-                if (g.type === "h") hTargets.push({ value: g.pos, origin: "user-guide" });
-              }
-            }
-            // ⚡ محاذاة الشبكة تُحسب رياضياً O(1) في getSnapPositionsWithTargets —
-            // كان هنا حقن مئات الخطوط في مصفوفات البحث الخطي أثناء التحجيم
-            const gridSnap = showGrid && gridSize > 0 && canvasWidth > 0 && canvasHeight > 0
-              ? { stepX: gridSize / canvasWidth, stepY: gridSize / canvasHeight }
-              : undefined;
-
-            resizeSnapRef.current = {
-              vTargets,
-              hTargets,
-              gridSnap,
-              oldBox: { ...oldBox },
-              L0,
-              T0,
-              R0: L0 + W0,
-              B0: T0 + H0,
-              unitX: oldBox.width / W0,
-              unitY: oldBox.height / H0,
-            };
-          }
-
-          const snap = resizeSnapRef.current;
-          const { oldBox: cBox, L0, T0, R0, B0, unitX, unitY } = snap;
-
-          // تحويل حواف الصندوق الجديد إلى الفضاء المنطقي (0-1 نسبي)
-          const relL = (L0 + (newBox.x - cBox.x) / unitX) / canvasWidth;
-          const relT = (T0 + (newBox.y - cBox.y) / unitY) / canvasHeight;
-          const relR = (R0 + (newBox.x + newBox.width - cBox.x - cBox.width) / unitX) / canvasWidth;
-          const relB = (B0 + (newBox.y + newBox.height - cBox.y - cBox.height) / unitY) / canvasHeight;
-
-          const thresholdX = 8 / (canvasWidth * stageScale);
-          const thresholdY = 8 / (canvasHeight * stageScale);
-
-          const result = getSnapPositionsWithTargets(
-            relL, relT, relR - relL, relB - relT,
-            snap.vTargets, snap.hTargets,
-            thresholdX, thresholdY,
-            handle,
-            snap.gridSnap
-          );
-
-          // إعادة الحواف المنحازة إلى فضاء الصندوق (كل حافة تُعاير على حدة)
-          const snappedL = result.x;
-          const snappedR = result.x + result.w;
-          const snappedT = result.y;
-          const snappedB = result.y + result.h;
-
-          let boxL = cBox.x + (snappedL * canvasWidth - L0) * unitX;
-          let boxR = cBox.x + cBox.width + (snappedR * canvasWidth - R0) * unitX;
-          let boxT = cBox.y + (snappedT * canvasHeight - T0) * unitY;
-          let boxB = cBox.y + cBox.height + (snappedB * canvasHeight - B0) * unitY;
-
-          // 🛡️ الحفاظ على نسبة العرض للارتفاع عند التحجيم من الزوايا بمحاذاة مغناطيسية
-          const isCorner = handle === "nw" || handle === "ne" || handle === "se" || handle === "sw";
-          const oldAspect = Math.abs(oldBox.width / (oldBox.height || 1));
-          const inputAspect = Math.abs(newBox.width / (newBox.height || 1));
-          const shouldPreserveRatio = isCorner && Math.abs(inputAspect - oldAspect) < 0.05 && oldAspect > 0.001;
-
-          if (shouldPreserveRatio) {
-            const relW = relR - relL;
-            const relH = relB - relT;
-            const snappedHoriz = Math.abs(result.w - relW) > 0.0001 || Math.abs(result.x - relL) > 0.0001;
-            const snappedVert = Math.abs(result.h - relH) > 0.0001 || Math.abs(result.y - relT) > 0.0001;
-
-            let finalW = boxR - boxL;
-            let finalH = boxB - boxT;
-
-            if (snappedHoriz && !snappedVert) {
-              finalH = finalW / oldAspect;
-              if (handle.includes("n")) boxT = boxB - finalH;
-              else boxB = boxT + finalH;
-            } else if (snappedVert && !snappedHoriz) {
-              finalW = finalH * oldAspect;
-              if (handle.includes("w")) boxL = boxR - finalW;
-              else boxR = boxL + finalW;
-            } else if (snappedHoriz && snappedVert) {
-              const diffX = Math.abs(result.w - relW);
-              const diffY = Math.abs(result.h - relH);
-              if (diffX <= diffY) {
-                finalH = finalW / oldAspect;
-                if (handle.includes("n")) boxT = boxB - finalH;
-                else boxB = boxT + finalH;
-              } else {
-                finalW = finalH * oldAspect;
-                if (handle.includes("w")) boxL = boxR - finalW;
-                else boxR = boxL + finalW;
-              }
-            }
-          }
-
-          if (setActiveGuides) {
-            const prev = prevResizeGuidesRef.current;
-            const next = result.guides;
-            const equal = prev.length === next.length &&
-              prev.every((g, i) => g.type === next[i].type && Math.abs(g.coord - next[i].coord) < 0.0001);
-            if (!equal) {
-              prevResizeGuidesRef.current = next;
-              setActiveGuides(next);
-            }
-          }
-
-          return { ...newBox, x: boxL, y: boxT, width: boxR - boxL, height: boxB - boxT };
+          return newBox;
         }}
         onTransformEnd={onTransformEnd}
       />
 
-      {/* شريط الأبعاد والزاوية الحية (Figma-Style Dimension Badge) - مخفي افتراضياً ويظهر عند التعديل فقط */}
+      {/* شريط الأبعاد والزاوية الحية الفاخر بنظام Fluent Acrylic */}
       <Group 
         ref={badgeRef}
         visible={false}
@@ -382,25 +239,28 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         listening={false}
       >
         <Rect
-          x={-60}
+          ref={badgeBgRef}
+          x={-62}
           y={0}
-          width={120}
-          height={22}
+          width={124}
+          height={24}
           fill={transformerBadgeBg()}
-          cornerRadius={6}
-          shadowColor="rgba(0,0,0,0.5)"
-          shadowBlur={6}
-          shadowOpacity={0.3}
-          shadowOffsetY={2}
+          stroke="rgba(255, 255, 255, 0.22)"
+          strokeWidth={1}
+          cornerRadius={7}
+          shadowColor="rgba(0, 0, 0, 0.45)"
+          shadowBlur={10}
+          shadowOpacity={0.28}
+          shadowOffsetY={3}
         />
         <Text
           ref={textRef}
-          x={-60}
-          y={5}
-          width={120}
+          x={-62}
+          y={6}
+          width={124}
           text=""
           fontSize={11}
-          fontFamily="Cairo, sans-serif"
+          fontFamily="Inter, Cairo, system-ui, sans-serif"
           fontStyle="bold"
           fill={transformerBadgeText()}
           align="center"

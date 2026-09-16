@@ -20,6 +20,8 @@ import (
 	"time"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"grido/internal/utils"
 )
 
 //go:embed embedded/phone_camera_page.html
@@ -302,42 +304,24 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 	ext := s.mediaSvc.GetExtensionFromMime(detectedMime)
 	filename := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	finalPath := filepath.Join(mediaDir, filename)
-	tmpPath := finalPath + ".tmp"
 
-	defer func() {
-		_ = os.Remove(tmpPath) // Cleanup abandoned tmp file rule
-	}()
-
-	tmpFile, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	// كتابة ذرية موحّدة (utils.AtomicFile): ملف مؤقت + fsync + rename
+	af, err := utils.CreateAtomic(finalPath, 0o644)
 	if err != nil {
 		slog.Error("Failed to create temporary upload file", "error", err)
 		http.Error(w, "Internal server error creating file", http.StatusInternalServerError)
 		return
 	}
+	defer af.Abort()
 
-	if _, err := io.Copy(tmpFile, file); err != nil {
-		_ = tmpFile.Close()
+	if _, err := io.Copy(af, file); err != nil {
 		slog.Error("Failed to write temporary upload file", "error", err)
 		http.Error(w, "Failed writing file data", http.StatusInternalServerError)
 		return
 	}
 
-	// Fsync before rename rule
-	if err := tmpFile.Sync(); err != nil {
-		_ = tmpFile.Close()
-		slog.Error("Failed to sync file buffer to disk", "error", err)
-		http.Error(w, "Disk sync error", http.StatusInternalServerError)
-		return
-	}
-
-	if err := tmpFile.Close(); err != nil {
-		slog.Error("Failed to close temporary file", "error", err)
-		http.Error(w, "File close error", http.StatusInternalServerError)
-		return
-	}
-
-	if err := os.Rename(tmpPath, finalPath); err != nil {
-		slog.Error("Failed to atomically rename temporary file", "error", err)
+	if err := af.Commit(); err != nil {
+		slog.Error("Failed to commit uploaded file", "error", err)
 		http.Error(w, "Atomic rename error", http.StatusInternalServerError)
 		return
 	}

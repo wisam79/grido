@@ -25,21 +25,6 @@ func TestResizeGrayLinear(t *testing.T) {
 	}
 }
 
-func TestBlurGray(t *testing.T) {
-	src := image.NewGray(image.Rect(0, 0, 5, 5))
-	src.SetGray(2, 2, color.Gray{Y: 255})
-
-	blurred := BlurGray(src)
-	if blurred.Bounds().Dx() != 5 || blurred.Bounds().Dy() != 5 {
-		t.Fatalf("expected blurred dimensions 5x5, got %dx%d", blurred.Bounds().Dx(), blurred.Bounds().Dy())
-	}
-
-	valCenter := blurred.GrayAt(2, 2).Y
-	if valCenter == 0 || valCenter == 255 {
-		t.Errorf("expected center pixel to be smoothed, got %d", valCenter)
-	}
-}
-
 func TestImageProcessor_ApplyMaskToImage_DimensionsValidation(t *testing.T) {
 	mediaSvc := NewMediaService()
 	procSvc := NewImageProcessorService(mediaSvc)

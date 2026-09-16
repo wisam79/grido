@@ -18,6 +18,18 @@ import (
 	"grido/internal/utils"
 )
 
+// عملاء HTTP مشتركة على مستوى الحزمة — كانت تُنشأ داخل كل نداء (اختراع عجلة
+// بلا داعٍ: يؤدي إلى تسريب اتصالات keep-alive عند إغلاق العميل بعد كل طلب).
+// مهلة كل عميل تبقى مطابقة للموضع الأصلي الذي كان ينشئه.
+var (
+	// aiSupabaseClient لفحوصات المستخدم/الخطة من Supabase (كان 10s)
+	aiSupabaseClient = &http.Client{Timeout: 10 * time.Second}
+	// aiUsageClient لفحص حصة الاستخدام اليومية (كان 15s)
+	aiUsageClient = &http.Client{Timeout: 15 * time.Second}
+	// aiEnhanceClient لتحسين الصور عبر خادم Modal — عملية ثقيلة (كان 3m)
+	aiEnhanceClient = &http.Client{Timeout: 3 * time.Minute}
+)
+
 
 type AIRateEntry struct {
 	Count    int    `json:"count"`
@@ -70,30 +82,9 @@ func (l *AIRateLimiter) saveLocked() {
 	if err != nil {
 		return
 	}
-	tmpPath := p + ".tmp"
-	defer os.Remove(tmpPath)
-
-	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
-	if err != nil {
-		slog.Warn("Failed to open tmp file for ai rate limits", "error", err)
-		return
-	}
-	if _, err := f.Write(data); err != nil {
-		_ = f.Close()
-		slog.Warn("Failed to write ai rate limits", "error", err)
-		return
-	}
-	if err := f.Sync(); err != nil {
-		_ = f.Close()
-		slog.Warn("Failed to sync ai rate limits", "error", err)
-		return
-	}
-	if err := f.Close(); err != nil {
-		slog.Warn("Failed to close ai rate limits tmp file", "error", err)
-		return
-	}
-	if err := os.Rename(tmpPath, p); err != nil {
-		slog.Warn("Failed to rename ai rate limits file", "error", err)
+	// كتابة ذرية موحّدة — الخطأ تحذير فقط (لا يُفشل حجز الحصة)
+	if err := utils.AtomicWriteFile(p, data, 0o644); err != nil {
+		slog.Warn("Failed to persist ai rate limits", "error", err)
 	}
 }
 
@@ -198,7 +189,7 @@ func resolveDailyLimitForToken(tokenHash string, token string) int {
 
 // fetchSupabaseUserInfo يجلب معرّف المستخدم وخطته من Supabase عبر JWT المستخدم
 func fetchSupabaseUserInfo(token string) (userID string, plan string, err error) {
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := aiSupabaseClient
 
 	userReq, err := http.NewRequest("GET", SupabaseURL+"/auth/v1/user", nil)
 	if err != nil {
@@ -275,7 +266,7 @@ func callAIUsageRPC(token string, userID string, imageBytes int64, checkOnly boo
 	req.Header.Set("apikey", SupabaseAnonKey)
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	client := &http.Client{Timeout: 15 * time.Second}
+	client := aiUsageClient
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -365,7 +356,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("User-Agent", "GridoStudio-Desktop/"+AppVersion)
 
-	client := &http.Client{Timeout: 3 * time.Minute}
+	client := aiEnhanceClient
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("خطأ في الاتصال بخادم الذكاء الاصطناعي: %w", err)

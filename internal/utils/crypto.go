@@ -25,31 +25,11 @@ import (
 	"grido/internal/core/domain"
 )
 
-// writeSecureFile writes data to a temporary file first and renames it atomically
-// to prevent file corruption in case of unexpected crashes.
+// writeSecureFile يكتب الملف بكتابة أذرعية موحّدة (utils.AtomicWriteFile)
+// بصلاحيات 0600 — الملفات المشفّرة والترخيص لا يجب أن تكون قابلة للقراءة
+// من مستخدمين آخرين على الجهاز.
 func writeSecureFile(path string, data []byte) error {
-	tmpPath := path + ".tmp"
-	defer func() {
-		_ = os.Remove(tmpPath)
-	}()
-
-	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-	}
-	if _, err := f.Write(data); err != nil {
-		f.Close()
-		return err
-	}
-	if err := f.Sync(); err != nil {
-		f.Close()
-		return err
-	}
-	if err := f.Close(); err != nil {
-		return err
-	}
-
-	return os.Rename(tmpPath, path)
+	return AtomicWriteFile(path, data, 0o600)
 }
 
 // derivedKeyCache يخزن المفاتيح المشتقة لكل عملية لمنع إعادة اشتقاق PBKDF2

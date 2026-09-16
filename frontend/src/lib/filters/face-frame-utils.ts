@@ -11,6 +11,8 @@
  * 4. التوازن البصري لحجم الكتفين وياقة الملابس (Collar & Shoulder Visual Balance).
  */
 
+import { clamp } from "@/lib/clamp";
+
 export interface DetailedFaceBox {
   /** نقطة منتصف العينين — normalized x */
   eyeCenterX: number;
@@ -48,10 +50,6 @@ export const ICAO_BASE_EYE_LEVEL = 0.38;
 
 /** أقصى تكبير مسموح (2.5×) لحماية جودة الطباعة */
 export const MAX_ZOOM = 2.5;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 /**
  * تدوير نقطة (x, y) في الفضاء الفيزيائي المصحح بنسبة أبعاد الصورة

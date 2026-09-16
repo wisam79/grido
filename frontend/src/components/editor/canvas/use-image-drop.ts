@@ -37,6 +37,30 @@ export function useImageDrop(
             return null;
           }
           try {
+            // 🚀 محاولة البث الثنائي المباشر إلى Go عبر /api/upload-media (صفر Base64، صفر ضغط على الذاكرة)
+            if (
+              typeof window !== "undefined" &&
+              window.location?.origin &&
+              !window.location.origin.startsWith("file:") &&
+              typeof fetch === "function"
+            ) {
+              try {
+                const resp = await fetch(`${window.location.origin}/api/upload-media`, {
+                  method: "POST",
+                  body: file,
+                });
+                if (resp.ok) {
+                  const resJson = (await resp.json().catch(() => null)) as { status?: string; imageSrc?: string } | null;
+                  if (resJson?.status === "success" && resJson.imageSrc) {
+                    return resJson.imageSrc;
+                  }
+                }
+              } catch {
+                // Fallback إلى SaveImageFromBase64 أدناه
+              }
+            }
+
+            // المسار الاحتياطي: تحويل إلى DataURL ثم SaveImageFromBase64
             const dataUrl = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => resolve(reader.result as string);

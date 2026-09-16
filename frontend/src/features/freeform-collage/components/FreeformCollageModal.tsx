@@ -24,6 +24,7 @@ import type {
   AutoPackStrategy,
 } from "../types";
 import { PHOTO_PRESET_LABELS } from "../lib/mixed-presets";
+import { clamp } from "@/lib/clamp";
 import {
   splitSlot,
   removeSlot,
@@ -45,9 +46,6 @@ import {
   newSlotId,
 } from "../lib/freeform-math";
 
-function clampNum(v: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, v));
-}
 import { FreeformToolbar } from "./FreeformToolbar";
 import { FreeformCanvasEditor } from "./FreeformCanvasEditor";
 import { FreeformPaperSelector } from "./FreeformPaperSelector";
@@ -336,8 +334,8 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       const copies = clip.map((s) => ({
         ...s,
         id: newSlotId("slot_paste"),
-        x: clampNum(s.x + 0.03, 0, 1 - s.w),
-        y: clampNum(s.y + 0.03, 0, 1 - s.h),
+        x: clamp(s.x + 0.03, 0, 1 - s.w),
+        y: clamp(s.y + 0.03, 0, 1 - s.h),
         label: s.label ? `${s.label} (نسخة)` : undefined,
       }));
       updateSlotsWithHistory([...slotsRef.current, ...copies]);

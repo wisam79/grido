@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -23,6 +22,7 @@ type App struct {
 	imageProc      *service.ImageProcessorService
 	autosaveSvc    *service.AutosaveService
 	aiLogsSvc      *service.AiLogsService
+	licenseSvc     *service.LicenseService
 	startupFile    string
 }
 
@@ -42,9 +42,41 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.phoneBridgeSvc.SetContext(ctx)
+	// ربط سياق Wails بخدمة الترخيص ليفتح رابط Google OAuth عبر
+	// runtime.BrowserOpenURL القياسي بدل أوامر نظام يدوية
+	if a.licenseSvc != nil {
+		a.licenseSvc.SetContext(ctx)
+	}
 	service.InitLogger() // محمي بـ once — لا يعيد التهيئة إذا استدعي من main سابقاً
 	// تنظيف ملفات التحديث المهجورة في الخلفية فور بدء التشغيل
 	go service.CleanupTempUpdates()
+
+	// 📂 استقبال السحب والإفلات المباشر للملفات من نظام التشغيل (Native File Drop)
+	// يعالج مسارات الصور على القرص مباشرة في Go دون تشفير Base64 الثقيل في JavaScript
+	runtime.OnFileDrop(ctx, func(x, y int, paths []string) {
+		if len(paths) == 0 {
+			return
+		}
+		var validPaths []string
+		for _, p := range paths {
+			ext := strings.ToLower(filepath.Ext(p))
+			switch ext {
+			case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
+				validPaths = append(validPaths, p)
+			}
+		}
+		if len(validPaths) == 0 {
+			return
+		}
+		processed, err := a.mediaSvc.ProcessMultipleOpenedFiles(validPaths)
+		if err == nil && len(processed) > 0 {
+			runtime.EventsEmit(ctx, "native-file-drop", map[string]any{
+				"x":      x,
+				"y":      y,
+				"images": processed,
+			})
+		}
+	})
 }
 
 func (a *App) shutdown(_ context.Context) {
@@ -209,28 +241,9 @@ func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayN
 		return "", nil
 	}
 
-	// كتابة ذرية (.tmp + Sync + Rename) بدل WriteFile المباشر — تمنع ملفاً تالفاً عند الانقطاع
-	tmpPath := filePath + ".tmp"
-	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
-	if err != nil {
-		return "", fmt.Errorf("create file: %w", err)
-	}
-	if _, err := f.Write(decoded); err != nil {
-		_ = f.Close()
-		_ = os.Remove(tmpPath)
-		return "", fmt.Errorf("write file: %w", err)
-	}
-	if err := f.Sync(); err != nil {
-		_ = f.Close()
-		_ = os.Remove(tmpPath)
-		return "", fmt.Errorf("sync file: %w", err)
-	}
-	if err := f.Close(); err != nil {
-		_ = os.Remove(tmpPath)
-		return "", fmt.Errorf("close file: %w", err)
-	}
-	if err := os.Rename(tmpPath, filePath); err != nil {
-		_ = os.Remove(tmpPath)
+	// كتابة ذرية موحّدة (utils.AtomicWriteFile) بدل WriteFile المباشر —
+	// تمنع ملفاً تالفاً عند الانقطاع
+	if err := utils.AtomicWriteFile(filePath, decoded, 0o644); err != nil {
 		return "", fmt.Errorf("commit file: %w", err)
 	}
 
@@ -317,4 +330,31 @@ func (a *App) StopPhoneBridge() error {
 func (a *App) GetPhoneBridgeStatus() *service.BridgeStatus {
 	return a.phoneBridgeSvc.GetStatus()
 }
+
+// ProcessLocalImageFile يعالج ملف صورة محلي على القرص ويجهزه للاستخدام
+func (a *App) ProcessLocalImageFile(filePath string) (string, error) {
+	return a.mediaSvc.ProcessOpenedFile(filePath)
+}
+
+// GetClipboardText يسترجع النص من الحافظة عبر محرك Wails الأصلي
+func (a *App) GetClipboardText() (string, error) {
+	return runtime.ClipboardGetText(a.ctx)
+}
+
+// SetClipboardText يحفظ نصاً في الحافظة عبر محرك Wails الأصلي
+func (a *App) SetClipboardText(text string) error {
+	return runtime.ClipboardSetText(a.ctx, text)
+}
+
+// GetScreensInfo يسترجع بيانات جميع الشاشات المتصلة بالنظام
+func (a *App) GetScreensInfo() ([]runtime.Screen, error) {
+	return runtime.ScreenGetAll(a.ctx)
+}
+
+// GetBatchImageDimensions يسترجع أبعاد وتوجيه قائمة صور دفعة واحدة
+func (a *App) GetBatchImageDimensions(localPaths []string) map[string]service.ImageDimensions {
+	return a.mediaSvc.GetBatchImageDimensions(localPaths)
+}
+
+
 

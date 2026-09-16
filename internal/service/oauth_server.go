@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"grido/internal/core/domain"
-	"grido/internal/utils"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -25,6 +24,12 @@ import (
 // يفتح مستمعاً على منفذ عشوائي لكل محاولة دخول، يقدّم صفحة رد مضمّنة
 // تتبادل الرمز عبر /exchange مع تحقق صارم من state و Origin.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// buildOAuthAuthorizeURL يبني رابط تفويض Supabase (Google) مع إعادة التوجيه إلى
+// الخادم المحلي — دالة نقية قابلة للاختبار بلا شبكة ولا متصفح.
+func buildOAuthAuthorizeURL(callbackURL string) string {
+	return fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=%s", SupabaseURL, url.QueryEscape(callbackURL))
+}
 
 const oauthCallbackHTMLTemplate = `
 <!DOCTYPE html>
@@ -237,8 +242,12 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	// ويحاول GoTrue قراءتها كـ flow_state UUID من قاعدة البيانات → يفشل بـ
 	// "OAuth state not found or expired". الحماية تبقى محلية بالكامل:
 	// منفذ عشوائي لكل محاولة + state مضمّن في صفحة الرد ويتحقق منه /exchange.
-	authURL := fmt.Sprintf("%s/auth/v1/authorize?provider=google&redirect_to=%s", SupabaseURL, url.QueryEscape(callbackURL))
-	_ = utils.OpenBrowser(authURL)
+	authURL := buildOAuthAuthorizeURL(callbackURL)
+	// الفتح يتم عبر المنفذ المحقون (Wails runtime.BrowserOpenURL في التطبيق،
+	// stub في الاختبارات). فشل الفتح لا يُلغي انتظار المصادقة.
+	if err := s.openBrowserURL(authURL); err != nil {
+		slog.Warn("Failed to open browser for Google OAuth", "error", err)
+	}
 
 	// 🔒 تحسين timeout handling مع إغلاق صحيح للـ server
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
