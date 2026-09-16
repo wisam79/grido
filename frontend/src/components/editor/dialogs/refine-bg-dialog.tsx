@@ -93,7 +93,6 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       }
     };
 
-    const container = containerRef.current;
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const zoomFactor = 0.08;
@@ -106,6 +105,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+    const container = containerRef.current;
     if (container) {
       container.addEventListener("wheel", handleWheel, { passive: false });
     }

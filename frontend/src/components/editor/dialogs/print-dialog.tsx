@@ -134,10 +134,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     } else {
       // ضمان تحرير أي قفل لـ pointer-events عند إغلاق النافذة
       if (typeof document !== "undefined" && document.body) {
-        document.body.style.pointerEvents = "auto";
+        document.body.style.pointerEvents = "";
       }
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const hasContent = mode === "collage" ? slots.some((s) => Boolean(s.imageSrc)) : elements.length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -145,10 +147,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       if (e.key === "Escape") {
         exporter.setIsExporting(false);
         if (typeof document !== "undefined" && document.body) {
-          document.body.style.pointerEvents = "auto";
+          document.body.style.pointerEvents = "";
         }
         onOpenChange(false);
-      } else if (e.key === "Enter" && !isExporting && previewImageSrc) {
+      } else if (e.key === "Enter" && !isExporting && hasContent) {
         // لا نطلق الطباعة إذا كان التركيز داخل عنصر إدخال — Enter له معناه الخاص هناك
         const t = e.target as HTMLElement | null;
         if (t?.closest?.('input, select, textarea, button, [role="combobox"]')) return;
@@ -158,7 +160,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, isExporting, previewImageSrc, onOpenChange, exporter]);
+  }, [open, isExporting, hasContent, onOpenChange, exporter]);
 
   // مزامنة مؤشر الطباعة Enter مع أحدث حالة (المزامنة الداخلية داخل الـ hook)
   exporter.setPrintInvocation({
@@ -169,57 +171,82 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   });
 
   useEffect(() => {
-    if (open && mode === "collage") {
-      queueMicrotask(() => {
-        setPreviewImageSrc("collage-active");
-      });
-      return;
-    }
-    if (open && stageRef.current && mode === "single") {
-      // علم الإلغاء: الحوار قد يُقفل خلال مهلة الـ 50ms — ننهي المهمة بصمت حينها
-      let cancelled = false;
-      const timer = setTimeout(() => {
-        if (cancelled) return;
-        const stage = stageRef.current;
-        if (!stage) return;
-        const transformers = stage.find('Transformer');
-        const gridLayers = stage.find('.grid-layer');
-        const columnsLayers = stage.find('.columns-layer');
-        const guideLayers = stage.find('.guides-layer, .guide-line, .user-guide-line');
-        try {
-          const targetWidth = 400;
-          const pRatio = Math.min(1, targetWidth / stage.width());
-
-          transformers.forEach((tr: Konva.Node) => tr.hide());
-          gridLayers.forEach((gl: Konva.Node) => gl.hide());
-          columnsLayers.forEach((cl: Konva.Node) => cl.hide());
-          guideLayers.forEach((gl: Konva.Node) => gl.hide());
-          stage.batchDraw();
-
-          const previewUrl = stage.toDataURL({
-            pixelRatio: pRatio,
-            mimeType: "image/jpeg",
-            quality: 0.8,
-          });
-
-          if (cancelled) return;
-          setPreviewImageSrc(previewUrl);
-        } catch (err) {
-          console.error("Failed to generate print preview image:", err);
-        } finally {
-          transformers.forEach((tr: Konva.Node) => tr.show());
-          gridLayers.forEach((gl: Konva.Node) => gl.show());
-          columnsLayers.forEach((cl: Konva.Node) => cl.show());
-          guideLayers.forEach((gl: Konva.Node) => gl.show());
-          stage.batchDraw();
-        }
-      }, 50);
-      return () => { cancelled = true; clearTimeout(timer); };
-    } else if (!open) {
-      // صفّر المعاينة فور القفل
+    if (!open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewImageSrc("");
+      return;
     }
+
+    if (mode === "collage") {
+      setPreviewImageSrc("collage-active");
+      return;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const generatePreview = () => {
+      if (cancelled) return;
+      const stage = stageRef.current;
+      if (!stage || stage.width() <= 0) {
+        if (attempts < 8) {
+          attempts++;
+          retryTimer = setTimeout(generatePreview, 80);
+        } else {
+          const firstImg = elements.find((el): el is import("@/lib/store/types").ImageElement => el.type === "image" && Boolean(el.imageSrc));
+          if (firstImg?.imageSrc) {
+            setPreviewImageSrc(firstImg.imageSrc);
+          }
+        }
+        return;
+      }
+
+      const transformers = stage.find('Transformer');
+      const gridLayers = stage.find('.grid-layer');
+      const columnsLayers = stage.find('.columns-layer');
+      const guideLayers = stage.find('.guides-layer, .guide-line, .user-guide-line');
+      try {
+        const targetWidth = 400;
+        const pRatio = Math.min(1, targetWidth / Math.max(stage.width(), 1));
+
+        transformers.forEach((tr: Konva.Node) => tr.hide());
+        gridLayers.forEach((gl: Konva.Node) => gl.hide());
+        columnsLayers.forEach((cl: Konva.Node) => cl.hide());
+        guideLayers.forEach((gl: Konva.Node) => gl.hide());
+        stage.batchDraw();
+
+        const previewUrl = stage.toDataURL({
+          pixelRatio: pRatio,
+          mimeType: "image/jpeg",
+          quality: 0.8,
+        });
+
+        if (cancelled) return;
+        if (previewUrl) {
+          setPreviewImageSrc(previewUrl);
+        }
+      } catch (err) {
+        console.error("Failed to generate print preview image:", err);
+        const firstImg = elements.find((el): el is import("@/lib/store/types").ImageElement => el.type === "image" && Boolean(el.imageSrc));
+        if (firstImg?.imageSrc) {
+          setPreviewImageSrc(firstImg.imageSrc);
+        }
+      } finally {
+        transformers.forEach((tr: Konva.Node) => tr.show());
+        gridLayers.forEach((gl: Konva.Node) => gl.show());
+        columnsLayers.forEach((cl: Konva.Node) => cl.show());
+        guideLayers.forEach((gl: Konva.Node) => gl.show());
+        stage.batchDraw();
+      }
+    };
+
+    const timer = setTimeout(generatePreview, 30);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, [open, stageRef, elements, slots, backgroundColor, mode, canvasWidth, canvasHeight]);
 
   const spaceUsedPercent = Math.round(
@@ -237,7 +264,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         if (!next) {
           exporter.setIsExporting(false);
           if (typeof document !== "undefined" && document.body) {
-            document.body.style.pointerEvents = "auto";
+            document.body.style.pointerEvents = "";
           }
         }
         onOpenChange(next);
@@ -276,7 +303,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             }}
             actualCopies={actualCopies}
             grid={grid}
-            lastNonZeroMargin={lastNonZeroMargin}
             onMarginlessToggle={(checked) => {
               if (checked && printSettings.marginMM > 0) {
                 setLastNonZeroMargin(printSettings.marginMM);
@@ -379,7 +405,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             onClick={() => {
               exporter.setIsExporting(false);
               if (typeof document !== "undefined" && document.body) {
-                document.body.style.pointerEvents = "auto";
+                document.body.style.pointerEvents = "";
               }
               onOpenChange(false);
             }}
@@ -390,7 +416,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           <Button
             onClick={() => exporter.handlePrint(colorSpace, previewImageSrc, effectiveMarginMM, () => onOpenChange(false))}
             className="h-8 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all duration-150 cursor-pointer rounded-md shadow-xs"
-            disabled={isExporting || !previewImageSrc}
+            disabled={isExporting || !hasContent}
           >
             {isExporting ? (
               <><Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التصدير ...</span></>

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SidebarSimple } from "@phosphor-icons/react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -44,6 +45,19 @@ export const PanelShell = React.memo(function PanelShell({
   className,
   bodyClassName,
 }: PanelShellProps) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [canScroll, setCanScroll] = useState(false);
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const update = () => setCanScroll(el.scrollHeight > el.clientHeight + 4);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <div className={cn("flex flex-col h-full min-h-0", className)}>
       {/* الرأس */}
@@ -65,23 +79,31 @@ export const PanelShell = React.memo(function PanelShell({
         {headerExtra && <div className="shrink-0">{headerExtra}</div>}
 
         {onCollapse && (
-          <button
-            type="button"
-            onClick={onCollapse}
-            title={collapseTitle}
-            aria-label={collapseTitle}
-            className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
-          >
-            {collapseIcon || <SidebarSimple className="w-4 h-4" weight="regular" />}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onCollapse}
+                aria-label={collapseTitle}
+                className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
+              >
+                {collapseIcon || <SidebarSimple className="w-4 h-4" weight="regular" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="font-cairo text-xs font-semibold">
+              {collapseTitle}
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
 
       <Separator className="bg-border/50 shrink-0" />
 
       {/* الجسم القابل للتمرير مع تلاشي علوي خفيف يدل على قابلية التمرير */}
-      <div className="flex-1 min-h-0 relative panel-scroll-host">
-        <div className="absolute inset-x-0 top-0 h-2 pointer-events-none z-10 bg-gradient-to-b from-background/70 to-transparent panel-scroll-hint" />
+      <div ref={bodyRef} className="flex-1 min-h-0 relative panel-scroll-host">
+        {canScroll && (
+          <div className="absolute inset-x-0 top-0 h-2 pointer-events-none z-10 bg-gradient-to-b from-background/70 to-transparent panel-scroll-hint" />
+        )}
         <ScrollArea className="h-full">
           <div className={cn("p-3 pb-8 font-cairo", bodyClassName)}>
             {children}

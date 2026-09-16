@@ -367,10 +367,10 @@ export function ColorWheelPicker({
             {isTransparent && (
               <div 
                 className="absolute inset-0"
-                style={{
-                  backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
-                  backgroundSize: "4px 4px"
-                }}
+                  style={{
+                    backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
+                    backgroundSize: "4px 4px"
+                  }}
               />
             )}
           </div>
@@ -476,7 +476,7 @@ export function StudioCanvasColorDeck({
       dir="rtl"
     >
       {/* شبكة العينات السريعة للألوان (8 أعمدة متناسقة بنسبة 100%) */}
-      <div className={cn("grid gap-1.5 w-full", compact ? "grid-cols-9" : "grid-cols-8")}>
+      <div className={cn("grid gap-1.5 w-full", compact ? "grid-cols-8" : "grid-cols-8")}>
         {/* زر الشفاف */}
         <button
           type="button"

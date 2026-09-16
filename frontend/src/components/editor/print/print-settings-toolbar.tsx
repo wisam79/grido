@@ -28,14 +28,12 @@ import { calculateOptimalSheetImposition } from "@/lib/print/print-layout-math";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 
-const toggleButtonClassName = (active: boolean, primary = false) =>
+const toggleButtonClassName = (active: boolean) =>
   cn(
     "rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
     active
-      ? primary
-        ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-        : "bg-background text-foreground shadow-2xs font-bold"
-      : "text-muted-foreground hover:text-foreground"
+      ? "bg-primary text-primary-foreground shadow-2xs font-bold"
+      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
   );
 
 export interface PrintSettingsToolbarProps {
@@ -47,8 +45,7 @@ export interface PrintSettingsToolbarProps {
   collageShowCutLines: boolean;
   onCutLinesChange: (checked: boolean) => void;
   actualCopies: number;
-  grid: { safeCols: number };
-  lastNonZeroMargin: number;
+  grid: { safeCols: number; actualRows?: number };
   onMarginlessToggle: (checked: boolean) => void;
   imageWidthMM?: number;
   imageHeightMM?: number;
@@ -69,12 +66,13 @@ export function PrintSettingsToolbar({
   onCutLinesChange,
   actualCopies,
   grid,
-  lastNonZeroMargin,
   onMarginlessToggle,
   imageWidthMM,
   imageHeightMM,
 }: PrintSettingsToolbarProps) {
   const cutLinesActive = mode === "collage" ? collageShowCutLines : printSettings.showCutLines;
+
+  const maxCopiesPerSheet = Math.max(1, (grid.safeCols ?? 1) * (grid.actualRows ?? 10));
 
   const handleAutoImpose = () => {
     if (!imageWidthMM || !imageHeightMM) {
@@ -148,7 +146,7 @@ export function PrintSettingsToolbar({
                 }
                 className={cn(
                   "px-2 py-1 flex items-center gap-1.5",
-                  toggleButtonClassName(true)
+                  "rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none bg-primary text-primary-foreground shadow-2xs font-bold"
                 )}
                 aria-label="تبديل اتجاه الورقة"
               >
@@ -170,10 +168,11 @@ export function PrintSettingsToolbar({
         </div>
 
         {/* وضع الألوان */}
-        <div className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
+        <div role="group" aria-label="وضع الألوان" className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
           <button
             type="button"
             onClick={() => onColorSpaceChange("sRGB")}
+            aria-pressed={colorSpace === "sRGB"}
             className={cn("px-2.5 py-1", toggleButtonClassName(colorSpace === "sRGB"))}
           >
             sRGB
@@ -181,35 +180,52 @@ export function PrintSettingsToolbar({
           <button
             type="button"
             onClick={() => onColorSpaceChange("CMYK")}
-            className={cn("px-2.5 py-1", toggleButtonClassName(colorSpace === "CMYK", true))}
+            aria-pressed={colorSpace === "CMYK"}
+            className={cn("px-2.5 py-1", toggleButtonClassName(colorSpace === "CMYK"))}
           >
             CMYK
           </button>
         </div>
 
         {/* محاذاة الشبكة (أعلى اليسار للقص / توسيط) */}
-        <div className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
-          <button
-            type="button"
-            onClick={() => setPrintSettings({ gridAlign: "top-left" })}
-            title="محاذاة زاوية الورقة (أعلى اليسار / للقص السريع)"
-            className={cn(
-              "px-2 py-1 flex items-center gap-1",
-              toggleButtonClassName((printSettings.gridAlign || "top-left") === "top-left")
-            )}
-          >
-            <ArrowUpLeft className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" />
-            <span>أعلى اليسار</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPrintSettings({ gridAlign: "center" })}
-            title="توسيط الشبكة في منتصف الورقة"
-            className={cn("px-2 py-1 flex items-center gap-1", toggleButtonClassName(printSettings.gridAlign === "center", true))}
-          >
-            <Crosshair className="w-3.5 h-3.5 shrink-0" weight="bold" />
-            <span>توسيط</span>
-          </button>
+        <div role="group" aria-label="محاذاة الشبكة" className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setPrintSettings({ gridAlign: "top-left" })}
+                aria-pressed={(printSettings.gridAlign || "top-left") === "top-left"}
+                aria-label="محاذاة زاوية الورقة"
+                className={cn(
+                  "px-2 py-1 flex items-center gap-1",
+                  toggleButtonClassName((printSettings.gridAlign || "top-left") === "top-left")
+                )}
+              >
+                <ArrowUpLeft className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                <span>أعلى اليسار</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="font-cairo text-xs font-semibold">
+              محاذاة زاوية الورقة (أعلى اليسار / للقص السريع)
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setPrintSettings({ gridAlign: "center" })}
+                aria-pressed={printSettings.gridAlign === "center"}
+                aria-label="توسيط الشبكة"
+                className={cn("px-2 py-1 flex items-center gap-1", toggleButtonClassName(printSettings.gridAlign === "center"))}
+              >
+                <Crosshair className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                <span>توسيط</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="font-cairo text-xs font-semibold">
+              توسيط الشبكة في منتصف الورقة
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         {/* طباعة بدون هوامش */}
@@ -236,16 +252,22 @@ export function PrintSettingsToolbar({
             <span>خطوط القص</span>
           </Label>
           {cutLinesActive && (
-            <select
-              aria-label="نمط خطوط القص"
+            <Select
               value={printSettings.cutLineStyle || "dashed"}
-              onChange={(e) => setPrintSettings({ cutLineStyle: e.target.value as PrintSettings["cutLineStyle"] })}
-              className="bg-background text-xs font-semibold border border-border/50 rounded-md px-1.5 py-0.5 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+              onValueChange={(val) => setPrintSettings({ cutLineStyle: val as PrintSettings["cutLineStyle"] })}
             >
-              <option value="dashed">متقطع</option>
-              <option value="dotted">منقط</option>
-              <option value="solid">متصل</option>
-            </select>
+              <SelectTrigger
+                aria-label="نمط خطوط القص"
+                className="h-6 w-[84px] px-2 py-0 text-[11px] font-semibold bg-background border-border/50 shadow-none focus:ring-1 focus:ring-primary/40"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
+                <SelectItem value="dashed" className="text-xs font-semibold cursor-pointer">متقطع</SelectItem>
+                <SelectItem value="dotted" className="text-xs font-semibold cursor-pointer">منقط</SelectItem>
+                <SelectItem value="solid" className="text-xs font-semibold cursor-pointer">متصل</SelectItem>
+              </SelectContent>
+            </Select>
           )}
         </div>
       </div>
@@ -265,13 +287,16 @@ export function PrintSettingsToolbar({
               >
                 <Minus className="w-3 h-3 shrink-0" weight="bold" />
               </Button>
-              <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
-                {actualCopies}
+              <span
+                className="text-xs font-mono font-bold w-6 text-center text-foreground"
+                title={`المطبوع فعلياً على الورقة: ${actualCopies}`}
+              >
+                {printSettings.copiesPerSheet ?? 1}
               </span>
               <Button
                 variant="ghost" size="sm"
                 className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
-                disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= (grid.safeCols * 10)}
+                disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= maxCopiesPerSheet}
                 onClick={() => setPrintSettings({ copiesPerSheet: (printSettings.copiesPerSheet ?? 1) + 1 })}
               >
                 <Plus className="w-3 h-3 shrink-0" weight="bold" />
@@ -282,7 +307,7 @@ export function PrintSettingsToolbar({
           {/* نمط التكرار */}
           <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
             <span className="text-xs font-semibold text-muted-foreground">التكرار</span>
-            <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30">
+            <div role="group" aria-label="نمط التكرار" className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30">
               {([
                 { id: "all", icon: SquaresFour, label: "تعبئة تلقائية" },
                 { id: "row", icon: Rows, label: "صف واحد" },
@@ -293,6 +318,7 @@ export function PrintSettingsToolbar({
                     <button
                       type="button"
                       onClick={() => setPrintSettings({ repeatMode: id })}
+                      aria-pressed={(printSettings.repeatMode ?? "all") === id}
                       className={cn(
                         "h-6 w-6 rounded-md flex items-center justify-center",
                         toggleButtonClassName((printSettings.repeatMode ?? "all") === id)
@@ -340,7 +366,7 @@ export function PrintSettingsToolbar({
             variant="outline"
             size="sm"
             onClick={handleAutoImpose}
-            className="h-full min-h-[34px] rounded-md border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold gap-1.5 cursor-pointer shadow-2xs flex items-center justify-center transition-all"
+            className="min-h-[34px] rounded-md border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold gap-1.5 cursor-pointer shadow-2xs flex items-center justify-center transition-all"
             title="حساب أقصى عدد نسخ وتدوير الورقة تلقائياً لتعبئة الشيت بالكامل"
           >
             <Sparkle className="w-3.5 h-3.5 shrink-0" weight="fill" />

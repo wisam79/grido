@@ -162,6 +162,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         }
       } finally {
         setLoading(false);
+        if (typeof document !== "undefined" && document.body) {
+          document.body.style.pointerEvents = "";
+        }
       }
     }, 50);
   };
@@ -173,6 +176,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         // منع الإغلاق (Escape/خلفية) أثناء التصدير — كان يُصفّر الحالة ويسمح
         // بتصدير متزامن ثانٍ (إصلاح Bug#9)
         if (!next && loading) return;
+        if (!next && typeof document !== "undefined" && document.body) {
+          document.body.style.pointerEvents = "";
+        }
         onOpenChange(next);
       }}
     >

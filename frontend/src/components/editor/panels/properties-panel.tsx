@@ -22,7 +22,6 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
     slots,
     selectedId,
     selectedIds,
-    updateElement,
     updateSlot,
   } = useEditorStore(useShallow((state) => ({
     mode: state.mode,
@@ -30,7 +29,6 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
     slots: state.slots,
     selectedId: state.selectedId,
     selectedIds: state.selectedIds,
-    updateElement: state.updateElement,
     updateSlot: state.updateSlot,
   })));
 
@@ -43,7 +41,6 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
   // استنباط هوية اللوح ديناميكياً وفق العنصر النشط
   let panelIcon = <SlidersHorizontal className="w-4 h-4 text-primary" weight="duotone" />;
   let panelTitle = "الخصائص";
-  const panelSubtitle: string | undefined = undefined;
 
   if (selectedElement) {
     if (selectedElement.type === "image") {
@@ -103,7 +100,6 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
     <PanelShell
       icon={panelIcon}
       title={panelTitle}
-      subtitle={panelSubtitle}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
       collapseIcon={<CaretLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all" weight="bold" />}

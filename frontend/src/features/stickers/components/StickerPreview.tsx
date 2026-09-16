@@ -5,7 +5,7 @@ import {
   CursorClick,
 } from "@phosphor-icons/react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeSvgMarkupCached } from "@/lib/utils";
 import { StickerTemplate, StickerParams, MockupBackground } from "../types";
 import { StickerInlineEditor, ActiveFieldState, ActiveColorState } from "./StickerInlineEditor";
 
@@ -344,7 +344,7 @@ export const StickerPreview = React.memo(function StickerPreview({
           <div
             ref={svgHostRef}
             className="sticker-svg-interactive w-auto h-auto flex items-center justify-center [&>svg]:max-w-[min(40vw,440px)] [&>svg]:max-h-[min(46vh,410px)] [&>svg]:w-auto [&>svg]:h-auto transition-transform"
-            dangerouslySetInnerHTML={{ __html: svgString }}
+            dangerouslySetInnerHTML={{ __html: sanitizeSvgMarkupCached(svgString) }}
           />
 
           {/* Glossy Sheen Overlay */}

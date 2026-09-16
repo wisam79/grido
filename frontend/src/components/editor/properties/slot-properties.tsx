@@ -33,9 +33,6 @@ import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { SliderControl, PopoverColorPicker } from "./shared-controls";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import { useBgRemoval } from "@/hooks/use-bg-removal";
-import { useAiEnhance } from "@/hooks/use-ai-enhance";
-import { useFaceFrame } from "@/hooks/use-face-frame";
 import { Switch } from "@/components/ui/switch";
 import { checkerColor } from "@/lib/canvas/canvas-colors";
 import {
@@ -46,7 +43,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const CropDialog = lazy(() => import("../dialogs/crop-dialog").then((module) => ({ default: module.CropDialog })));
-const RefineBgDialog = lazy(() => import("../dialogs/refine-bg-dialog").then((module) => ({ default: module.RefineBgDialog })));
 
 export function SlotProperties({
   slot,
@@ -81,41 +77,11 @@ export function SlotProperties({
     printSettings: state.printSettings,
   })));
    const [cropOpen, setCropOpen] = useState(false);
-   const [refineOpen, setRefineOpen] = useState(false);
    const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
    const [autoFill, setAutoFill] = useState(() => {
     return localStorage.getItem("grido_auto_fill_grid") !== "false";
   });
   
-  const user = useEditorStore((state) => state.user);
-  const isLicenseActiveFn = useEditorStore((state) => state.isLicenseActive);
-  const isLicenseActive = isLicenseActiveFn();
-
-  const {
-    isRemovingBg,
-    bgProgress,
-    bgProgressText,
-    handleCancelBgRemoval,
-    handleRemoveBg,
-  } = useBgRemoval(onUpdate);
-
-  const {
-    isEnhancing,
-    enhanceProgress,
-    enhanceProgressText,
-    remainingQuota,
-    dailyLimit,
-    handleEnhance,
-  } = useAiEnhance(onUpdate);
-
-  const {
-    isFraming,
-    frameProgress,
-    frameProgressText,
-    handleCancelFrame,
-    handleFrameFace,
-  } = useFaceFrame(onUpdate);
-
    const handleOpenFile = async () => {
      if (isFileDialogOpen) return;
      setIsFileDialogOpen(true);
@@ -238,7 +204,7 @@ export function SlotProperties({
   }
 
   return (
-    <div className="space-y-3 font-cairo select-none h-full flex flex-col overflow-y-auto pe-0.5 pb-4">
+    <div className="space-y-3 font-cairo select-none pb-4">
       <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular space-y-2.5">
         <div className="flex items-center justify-between border-b border-border/20 pb-2">
           <span className="text-xs font-semibold text-muted-foreground">أبعاد الطباعة</span>
@@ -651,26 +617,16 @@ export function SlotProperties({
             originalImageSrc={slot.originalImageSrc}
             onCropSave={async (cropped) => {
               try {
-                const localPath = await SaveImageFromBase64(cropped);
-                onUpdate(slot.id, { imageSrc: localPath });
+                if (wailsIsDesktop()) {
+                  const localPath = await SaveImageFromBase64(cropped);
+                  onUpdate(slot.id, { imageSrc: localPath });
+                } else {
+                  onUpdate(slot.id, { imageSrc: cropped });
+                }
               } catch (err) {
                 console.error("Failed to save cropped slot image:", err);
                 toast.error("فشل حفظ الصورة المقصوصة محلياً");
               }
-            }}
-          />
-        </Suspense>
-      )}
-
-      {slot.imageSrc && slot.originalImageSrc && refineOpen && (
-        <Suspense fallback={null}>
-          <RefineBgDialog
-            open={refineOpen}
-            onOpenChange={setRefineOpen}
-            element={slot}
-            onSave={async (newImageSrc) => {
-              onUpdate(slot.id, { imageSrc: newImageSrc });
-              useEditorStore.getState().pushHistory();
             }}
           />
         </Suspense>

@@ -26,6 +26,7 @@ import {
 import { ALL_STICKER_TEMPLATES } from "@/features/stickers/templates";
 import { StickerTemplate } from "@/features/stickers/types";
 import { renderSvgToPngDataUrl } from "@/features/stickers/lib/svg-rasterizer";
+import { sanitizeSvgMarkupCached } from "@/lib/utils";
 
 // كاش محلي للـ SVG لتسريع العرض الفوري
 const SVG_PREVIEW_CACHE = new Map<string, string>();
@@ -178,7 +179,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
                     {svg ? (
                       <div
                         className="w-full h-full flex items-center justify-center transition-transform group-hover:scale-105 duration-200 pointer-events-none"
-                        dangerouslySetInnerHTML={{ __html: svg }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeSvgMarkupCached(svg) }}
                       />
                     ) : (
                       <Stamp className="w-8 h-8 text-muted-foreground/50" />

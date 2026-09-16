@@ -70,8 +70,6 @@ const SortableLayerItem = React.memo(
       <div
         ref={setNodeRef}
         style={style}
-        role="button"
-        tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
@@ -102,7 +100,7 @@ const SortableLayerItem = React.memo(
             role="button"
             tabIndex={0}
             aria-label="اسحب لإعادة ترتيب الطبقة"
-            className="cursor-grab active:cursor-grabbing hover:bg-input p-1 rounded text-muted-foreground/60 hover:text-foreground transition-colors shrink-0"
+            className="cursor-grab active:cursor-grabbing hover:bg-input p-1 rounded text-muted-foreground/60 hover:text-foreground transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             onClick={(e) => e.stopPropagation()}
           >
             <DotsSixVertical className="w-3.5 h-3.5" weight="bold" />
@@ -146,10 +144,11 @@ const SortableLayerItem = React.memo(
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <TooltipBtn content={isLocked ? "إلغاء قفل الطبقة" : "قفل الطبقة"}>
+           <TooltipBtn content={isLocked ? "إلغاء قفل الطبقة" : "قفل الطبقة"}>
             <Button
               variant="ghost"
               size="icon"
+              aria-label={isLocked ? "إلغاء قفل الطبقة" : "قفل الطبقة"}
               className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${isLocked ? "text-primary" : "text-muted-foreground/50 hover:text-foreground"}`}
               onClick={(e) => toggleLock(el, e)}
             >
@@ -160,26 +159,29 @@ const SortableLayerItem = React.memo(
             <Button
               variant="ghost"
               size="icon"
+              aria-label={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}
               className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${!isVisible ? "text-muted-foreground/40" : "text-muted-foreground hover:text-foreground"}`}
               onClick={(e) => toggleVisibility(el, e)}
             >
               {isVisible ? <Eye className="w-3.5 h-3.5" weight="regular" /> : <EyeSlash className="w-3.5 h-3.5" weight="regular" />}
             </Button>
           </TooltipBtn>
-          <TooltipBtn content="تكرار الطبقة">
+           <TooltipBtn content="تكرار الطبقة">
             <Button
               variant="ghost"
               size="icon"
+              aria-label="تكرار الطبقة"
               className="w-7 h-7 rounded-md hover:bg-input text-muted-foreground/50 hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
               onClick={(e) => duplicateLayer(el.id, e)}
             >
               <Copy className="w-3.5 h-3.5" weight="regular" />
             </Button>
           </TooltipBtn>
-          <TooltipBtn content="حذف الطبقة">
+           <TooltipBtn content="حذف الطبقة">
             <Button
               variant="ghost"
               size="icon"
+              aria-label="حذف الطبقة"
               className="w-7 h-7 rounded-md hover:bg-destructive/10 text-muted-foreground/50 hover:text-destructive transition-colors focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-1 focus-visible:outline-none"
               onClick={(e) => deleteLayer(el.id, e)}
             >

@@ -10,7 +10,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { FluentSection, FluentSettingRow, FluentSliderField } from "@/components/ui/blocks";
 
 export function CollageSettings() {
@@ -55,6 +55,21 @@ export function CollageSettings() {
       useEditorStore.getState().pushHistory();
     }, 400);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (colorCommitTimerRef.current !== null) window.clearTimeout(colorCommitTimerRef.current);
+    };
+  }, []);
+
+  const handleHexInput = (val: string) => {
+    const clean = val.trim();
+    if (/^#?[0-9a-fA-F]{3}$|^#?[0-9a-fA-F]{6}$/.test(clean)) {
+      const withHash = clean.startsWith("#") ? clean : `#${clean}`;
+      setCollageStrokeColor(withHash);
+      commitColorLater();
+    }
+  };
 
   return (
     <div className="flex flex-col gap-3 font-cairo" dir="rtl">
@@ -143,7 +158,7 @@ export function CollageSettings() {
                       onClick={() => { setCollageStrokeColor(hex); commitColorLater(); }}
                       title={label}
                       className={cn(
-                        "w-5.5 h-6 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-115 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                        "w-6 h-6 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-110 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                         isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-xs"
                       )}
                       style={{ backgroundColor: hex }}
@@ -156,7 +171,7 @@ export function CollageSettings() {
                 <input
                   type="text"
                   value={collageStrokeColor}
-                  onChange={(e) => { setCollageStrokeColor(e.target.value); commitColorLater(); }}
+                  onChange={(e) => handleHexInput(e.target.value)}
                   className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-bold"
                 />
                 <label aria-label="لون إطار الكولاج" htmlFor="collage-stroke-color-input" className="relative w-4 h-4 rounded-full border border-border cursor-pointer overflow-hidden shrink-0 shadow-2xs transition-transform hover:scale-110">
@@ -178,10 +193,10 @@ export function CollageSettings() {
         </div>
       </FluentSection>
 
-      {/* 🎴 بطاقة 3: خطوط وعلامات القص */}
+      {/* 🎴 بطاقة 3: خطوط القص */}
       <FluentSection
         icon={<Scissors className="w-3.5 h-3.5" weight="duotone" />}
-        title="خطوط القص والمحاذاة"
+        title="خطوط القص"
         collapsible
         defaultOpen={true}
       >

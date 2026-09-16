@@ -10,6 +10,8 @@ import {
   FlipVertical,
   PaintBrush,
   ArrowsOutCardinal,
+  ArrowsLeftRight,
+  ArrowsDownUp,
   LockSimple,
   Drop,
   Palette,
@@ -115,7 +117,7 @@ export function ElementProperties({
               ]}
             />
 
-          <TabsContent value="style" className="mt-3.5 space-y-3.5">
+          <TabsContent value="style" className={cn("mt-3.5 space-y-3.5", element.locked && "pointer-events-none opacity-50 select-none")}>
             {element.type === "image" && (
               <ImageStyleProperties element={element} onUpdate={onUpdate} />
             )}
@@ -127,7 +129,7 @@ export function ElementProperties({
             )}
           </TabsContent>
 
-          <TabsContent value="adjust" className="mt-3.5 space-y-3.5">
+          <TabsContent value="adjust" className={cn("mt-3.5 space-y-3.5", element.locked && "pointer-events-none opacity-50 select-none")}>
             {element.type === "image" && (
               <ImageAdjustProperties element={element} onUpdate={onUpdate} showReset={true} />
             )}
@@ -139,7 +141,7 @@ export function ElementProperties({
             )}
           </TabsContent>
 
-          <TabsContent value="effects" className="mt-3.5 space-y-3">
+          <TabsContent value="effects" className={cn("mt-3.5 space-y-3", element.locked && "pointer-events-none opacity-50 select-none")}>
             {element.type === "text" ? (
               <TextEffectsProperties element={element} onUpdate={onUpdate} onNavigateTab={setSelectedTab} />
             ) : (
@@ -147,7 +149,7 @@ export function ElementProperties({
               <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
                 <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
                   <Sparkle className="w-3.5 h-3.5 text-primary" weight="duotone" />
-                  <span>الظل والوهج</span>
+                  <span>الظل</span>
                 </Label>
                 
                 <div className="flex items-center justify-between gap-4" title="لون الظل">
@@ -161,7 +163,7 @@ export function ElementProperties({
                 </div>
 
                 <SliderControl
-                  label="الشفافية"
+                  label="شدة الظل"
                   icon={<Eye className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                   value={Math.round((element.shadowOpacity ?? 0) * 100)}
                   min={0}
@@ -186,7 +188,7 @@ export function ElementProperties({
 
                 <SliderControl
                   label="إزاحة أفقية"
-                  icon={<ArrowsOutCardinal className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+                  icon={<ArrowsLeftRight className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                   value={element.shadowOffsetX || 0}
                   min={-50}
                   max={50}
@@ -198,7 +200,7 @@ export function ElementProperties({
 
                 <SliderControl
                   label="إزاحة عمودية"
-                  icon={<ArrowsOutCardinal className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
+                  icon={<ArrowsDownUp className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
                   value={element.shadowOffsetY || 0}
                   min={-50}
                   max={50}
@@ -211,7 +213,7 @@ export function ElementProperties({
             )}
           </TabsContent>
 
-          <TabsContent value="arrange" className="mt-3.5 space-y-3">
+          <TabsContent value="arrange" className={cn("mt-3.5 space-y-3", element.locked && "pointer-events-none opacity-50 select-none")}>
             {/* بطاقة 1: الموضع والمحاذاة السريعة */}
             <div className="bg-card border border-border/80 dark:border-white/10 p-3 rounded-xl shadow-xs fluent-specular space-y-3 animate-in fade-in duration-200">
               <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/20 pb-1.5">
@@ -387,7 +389,7 @@ export function ElementProperties({
               <SliderControl
                 label="التدوير"
                 icon={<ArrowClockwise className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
-                value={element.rotation}
+                value={((element.rotation % 360) + 540) % 360 - 180}
                 min={-180}
                 max={180}
                 step={1}

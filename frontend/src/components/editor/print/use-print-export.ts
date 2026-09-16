@@ -375,13 +375,16 @@ export function usePrintExport(ctx: PrintExportContext) {
 
     if (result.htmlDoc) {
       const iframe = document.createElement("iframe");
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.setAttribute("tabindex", "-1");
       iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
+      iframe.style.left = "-10000px";
+      iframe.style.top = "0";
+      iframe.style.width = "794px";
+      iframe.style.height = "1123px";
       iframe.style.border = "none";
-      iframe.style.visibility = "hidden";
+      iframe.style.opacity = "0";
+      iframe.style.pointerEvents = "none";
       document.body.appendChild(iframe);
 
       const doc = iframe.contentWindow?.document || iframe.contentDocument;
@@ -394,7 +397,10 @@ export function usePrintExport(ctx: PrintExportContext) {
         }
 
         let removeTimer: ReturnType<typeof setTimeout> | undefined;
+        let removed = false;
         const removeIframe = () => {
+          if (removed) return;
+          removed = true;
           if (removeTimer) {
             clearTimeout(removeTimer);
             removeTimer = undefined;
@@ -403,7 +409,7 @@ export function usePrintExport(ctx: PrintExportContext) {
             document.body.removeChild(iframe);
           }
           if (typeof document !== "undefined" && document.body) {
-            document.body.style.pointerEvents = "auto";
+            document.body.style.pointerEvents = "";
           }
           if (typeof window !== "undefined") {
             window.focus();
@@ -428,7 +434,7 @@ export function usePrintExport(ctx: PrintExportContext) {
                 .catch(console.error);
             }
           } finally {
-            removeTimer = setTimeout(removeIframe, 15000);
+            removeTimer = setTimeout(removeIframe, 8000);
           }
         };
 
@@ -495,7 +501,7 @@ export function usePrintExport(ctx: PrintExportContext) {
     effectiveMarginMM: number,
     onDone: () => void
   ) => {
-    if (isExportingRef.current || isExporting || !previewImageSrc) return;
+    if (isExportingRef.current || isExporting) return;
     isExportingRef.current = true;
     setIsExporting(true);
     try {
@@ -545,15 +551,16 @@ export function usePrintExport(ctx: PrintExportContext) {
       setIsExporting(false);
       onDone();
 
-      // ضمان استعادة تفاعل الصفحة فوراً
+      // ضمان استعادة تفاعل الصفحة فوراً بإزالة أي قيد inline بدل فرض "auto"
       if (typeof document !== "undefined" && document.body) {
-        document.body.style.pointerEvents = "auto";
+        document.body.style.pointerEvents = "";
       }
 
-      // 2. إطلاق حوار الطباعة بعد مهلة وجيزة (100ms) للسماح لـ Radix Dialog بالتفكيك النظيف
+      // 2. إطلاق حوار الطباعة بعد اكتمال أنيميشن إغلاق Radix (200ms) حتى لا يتجمد
+      // الـ overlay شبه المُغلق عند حجب خيط الـ UI بواسطة window.print()
       setTimeout(() => {
         showPrintResult(result);
-      }, 100);
+      }, 450);
     } catch (err) {
       toast.error("حدث خطأ أثناء توليد ورقة الطباعة: " + String(err));
     } finally {

@@ -3,7 +3,7 @@ import { MagnifyingGlass, X, Check, SquaresFour } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeSvgMarkupCached } from "@/lib/utils";
 import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate } from "../types";
 import { ALL_STICKER_TEMPLATES, searchStickerTemplates } from "../templates";
 import { CATEGORY_ITEMS, SHAPE_ITEMS } from "../constants";
@@ -151,7 +151,7 @@ const GalleryCard = React.memo(function GalleryCard({
         {miniSvg ? (
           <div
             className="w-full h-full flex items-center justify-center pointer-events-none drop-shadow-2xs [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
-            dangerouslySetInnerHTML={{ __html: miniSvg }}
+            dangerouslySetInnerHTML={{ __html: sanitizeSvgMarkupCached(miniSvg) }}
           />
         ) : (
           <span
