@@ -144,7 +144,7 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
       </svg>
 
       {/* شارة إيضاحية دقيقة لخطوط المطابع — متموضعة بذكاء أسفل الكانفس لمنع حجب التصاميم الصغيرة */}
-      <div className="absolute -bottom-7 start-0 flex items-center gap-1.5 bg-card/95 backdrop-blur-md px-2 py-0.5 rounded-md border border-border/80 text-[10px] font-bold shadow-2xs font-cairo whitespace-nowrap">
+      <div className="absolute -bottom-7 start-0 flex items-center gap-1.5 bg-card/95 backdrop-blur-md px-2 py-0.5 rounded-md border border-border/80 text-micro font-bold shadow-2xs font-cairo whitespace-nowrap">
         <span className="flex items-center gap-1 text-sky-500">
           <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
           <span>قص</span>

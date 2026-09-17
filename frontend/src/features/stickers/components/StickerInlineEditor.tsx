@@ -188,7 +188,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
 
         {/* Footer: Field Navigation + Confirm */}
         <div className="mt-2.5 pt-2 border-t border-border/30 flex items-center justify-between">
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-1 text-micro text-muted-foreground">
             <span className="flex items-center gap-0.5">
               <button
                 type="button"

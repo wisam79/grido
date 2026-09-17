@@ -52,17 +52,26 @@ const SVG_FORBIDDEN_ELEMENTS = new Set([
   "base",
 ]);
 
-const SVG_ALLOWED_URL_SCHEMES = new Set(["http:", "https:", "data:"]);
+const SVG_ALLOWED_URL_SCHEMES = new Set(["http:", "https:"]);
+
+function stripWhitespaceAndControlChars(value: string): string {
+  let out = "";
+  for (const ch of value) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (code > 0x20) out += ch;
+  }
+  return out;
+}
 
 function isSafeSvgUrl(value: string): boolean {
-  const trimmed = value.trim().replace(/[\u0000-\u0020]+/g, "");
+  const trimmed = stripWhitespaceAndControlChars(value);
   if (!trimmed) return true;
   if (trimmed.startsWith("#")) return true;
   try {
     const parsed = new URL(trimmed, "https://grido.invalid/");
     if (parsed.origin === "https://grido.invalid") return true;
     if (parsed.protocol === "data:") {
-      return /^data:image\/(png|jpe?g|gif|webp|svg\+xml);/i.test(trimmed);
+      return /^data:image\/(png|jpe?g|gif|webp);/i.test(trimmed);
     }
     return SVG_ALLOWED_URL_SCHEMES.has(parsed.protocol);
   } catch {
@@ -101,7 +110,10 @@ function scrubSvgElement(el: Element): void {
 export function sanitizeSvgMarkup(svg: string): string {
   if (!svg) return "";
   if (typeof DOMParser === "undefined") {
-    return svg.replace(/<\s*script\b[\s\S]*?<\s*\/\s*script\s*>/gi, "");
+    return svg
+      .replace(/<\s*(script|foreignobject|iframe|object|embed|handler)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+      .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+      .replace(/(href|xlink:href|src)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*')/gi, "");
   }
   try {
     const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
@@ -123,11 +135,13 @@ export function sanitizeSvgMarkupCached(svg: string): string {
   const cached = SVG_SANITIZE_CACHE.get(svg);
   if (cached !== undefined) return cached;
   const clean = sanitizeSvgMarkup(svg);
-  if (SVG_SANITIZE_CACHE.size >= SVG_SANITIZE_CACHE_LIMIT) {
-    const oldest = SVG_SANITIZE_CACHE.keys().next().value;
-    if (oldest !== undefined) SVG_SANITIZE_CACHE.delete(oldest);
+  if (svg.length <= 200_000) {
+    if (SVG_SANITIZE_CACHE.size >= SVG_SANITIZE_CACHE_LIMIT) {
+      const oldest = SVG_SANITIZE_CACHE.keys().next().value;
+      if (oldest !== undefined) SVG_SANITIZE_CACHE.delete(oldest);
+    }
+    SVG_SANITIZE_CACHE.set(svg, clean);
   }
-  SVG_SANITIZE_CACHE.set(svg, clean);
   return clean;
 }
 

@@ -279,17 +279,17 @@ export function CollagePresetsTab({
             </span>
             <div className="flex items-center gap-1 shrink-0">
               {preset.tag && (
-                <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20 leading-none">
+                <span className="text-micro font-bold px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20 leading-none">
                   {preset.tag}
                 </span>
               )}
-              <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted/70 px-1 py-0.2 rounded border border-border/40 leading-none">
+              <span className="text-micro font-mono font-bold text-muted-foreground bg-muted/70 px-1 py-0.2 rounded border border-border/40 leading-none">
                 {preset.slots}×
               </span>
             </div>
           </div>
 
-          <span className="text-[10px] text-muted-foreground font-mono leading-tight" dir="ltr">
+          <span className="text-micro text-muted-foreground font-mono leading-tight" dir="ltr">
             {preset.spec}
           </span>
         </div>
@@ -330,7 +330,7 @@ export function CollagePresetsTab({
 
         {/* شارة التصنيف */}
         {preset.tag && !isActive && (
-          <span className="absolute top-1.5 right-1.5 text-[8.5px] font-bold px-1.2 py-0.2 rounded bg-muted/80 text-muted-foreground border border-border/50 leading-none z-10">
+          <span className="absolute top-1.5 right-1.5 text-2xs font-bold px-1.2 py-0.2 rounded bg-muted/80 text-muted-foreground border border-border/50 leading-none z-10">
             {preset.tag}
           </span>
         )}
@@ -344,11 +344,11 @@ export function CollagePresetsTab({
             <span className="text-xs font-bold text-foreground leading-tight truncate group-hover:text-primary transition-colors">
               {preset.title}
             </span>
-            <span className="text-[9.5px] font-mono font-bold text-muted-foreground/80 bg-muted/60 px-1 py-0.2 rounded shrink-0">
+            <span className="text-micro font-mono font-bold text-muted-foreground/80 bg-muted/60 px-1 py-0.2 rounded shrink-0">
               {preset.slots}×
             </span>
           </div>
-          <span className="text-[9px] text-muted-foreground mt-0.5 leading-none truncate w-full text-center font-mono" dir="ltr">
+          <span className="text-2xs text-muted-foreground mt-0.5 leading-none truncate w-full text-center font-mono" dir="ltr">
             {preset.spec}
           </span>
         </div>
@@ -394,7 +394,7 @@ export function CollagePresetsTab({
                   <currentCat.icon className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                   <span className="truncate">{currentCat.label}</span>
                   {currentCat.badgeCount !== undefined && (
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
+                    <span className="text-micro font-mono font-bold px-1.5 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
                       {currentCat.badgeCount}
                     </span>
                   )}
@@ -411,7 +411,7 @@ export function CollagePresetsTab({
                           <span className="truncate">{cat.label}</span>
                         </div>
                         {cat.badgeCount !== undefined && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold shrink-0">
+                          <span className="text-micro font-mono px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold shrink-0">
                             {cat.badgeCount}
                           </span>
                         )}
@@ -457,7 +457,7 @@ export function CollagePresetsTab({
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="text-[11px] text-primary hover:underline font-bold cursor-pointer"
+              className="text-mini text-primary hover:underline font-bold cursor-pointer"
             >
               إلغاء البحث
             </button>
@@ -487,7 +487,7 @@ export function CollagePresetsTab({
               {/* نتائج القوالب المحفوظة */}
               {searchResults.saved.length > 0 && (
                 <div className="space-y-1.5 pt-1.5 border-t border-border/40">
-                  <span className="text-[11px] font-bold text-muted-foreground block text-right">قوالب محفوظة مطابقة</span>
+                  <span className="text-mini font-bold text-muted-foreground block text-right">قوالب محفوظة مطابقة</span>
                   {searchResults.saved.map((t) => {
                     const isActive = activeTemplateId === t.id;
                     return (
@@ -509,7 +509,7 @@ export function CollagePresetsTab({
                           </div>
                           <div className="flex flex-col items-start min-w-0 gap-0.5">
                             <span className="text-xs font-bold truncate text-right">{t.name}</span>
-                            <span className="text-[10px] font-mono text-muted-foreground">{t.slots}× صور</span>
+                            <span className="text-micro font-mono text-muted-foreground">{t.slots}× صور</span>
                           </div>
                         </div>
                       </div>
@@ -529,7 +529,7 @@ export function CollagePresetsTab({
             </div>
             <div className="space-y-0.5">
               <p className="text-xs font-bold text-foreground">لا توجد قوالب مخصصة محفوظة</p>
-              <p className="text-[10px] text-muted-foreground max-w-[220px] leading-relaxed">
+              <p className="text-micro text-muted-foreground max-w-[220px] leading-relaxed">
                 خصص شبكتك في تبويب "شبكة" واضغط "حفظ كقالب" للوصول إليها هنا بنقرة واحدة.
               </p>
             </div>
@@ -556,7 +556,7 @@ export function CollagePresetsTab({
                   <button
                     type="button"
                     onClick={onImportClick}
-                    className="h-6 px-2 text-[10px] font-bold rounded-md bg-muted/60 hover:bg-muted text-foreground border border-border/60 transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
+                    className="h-6 px-2 text-micro font-bold rounded-md bg-muted/60 hover:bg-muted text-foreground border border-border/60 transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
                     title="استيراد قوالب من ملف"
                   >
                     <UploadSimple className="w-3 h-3 text-primary" weight="bold" />
@@ -567,7 +567,7 @@ export function CollagePresetsTab({
                   <button
                     type="button"
                     onClick={onExportAllClick}
-                    className="h-6 px-2 text-[10px] font-bold rounded-md bg-muted/60 hover:bg-muted text-foreground border border-border/60 transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
+                    className="h-6 px-2 text-micro font-bold rounded-md bg-muted/60 hover:bg-muted text-foreground border border-border/60 transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
                     title="تصدير كافة القوالب المحفوظة"
                   >
                     <DownloadSimple className="w-3 h-3 text-primary" weight="bold" />
@@ -611,7 +611,7 @@ export function CollagePresetsTab({
                         <span className="text-xs font-bold truncate w-full text-right">{t.name}</span>
                         <span
                           className={cn(
-                            "text-[10px] font-mono",
+                            "text-micro font-mono",
                             isActive ? "text-primary font-bold" : "text-muted-foreground"
                           )}
                         >
@@ -649,7 +649,7 @@ export function CollagePresetsTab({
                     <SectionIcon className="w-3.5 h-3.5 text-primary" weight="duotone" />
                     <span>{section.title}</span>
                   </div>
-                  <span className="text-[10px] font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.2 rounded font-bold" dir="ltr">
+                  <span className="text-micro font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.2 rounded font-bold" dir="ltr">
                     {section.presets.length}
                   </span>
                 </div>

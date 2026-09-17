@@ -135,7 +135,7 @@ export function LicenseLockScreen({
                         toast.error("يرجى لصق المفتاح يدوياً");
                       }
                     }}
-                    className="text-[10px] text-primary hover:underline font-medium cursor-pointer"
+                    className="text-micro text-primary hover:underline font-medium cursor-pointer"
                   >
                     لصق من الحافظة
                   </button>

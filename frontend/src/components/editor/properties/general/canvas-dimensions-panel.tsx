@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { CaretDown, Check, Crop } from "@phosphor-icons/react";
+import { CaretDown, Check, Crop, FileText, ArrowsLeftRight, ArrowsClockwise } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES, CARD_AND_LABEL_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -234,7 +234,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       defaultOpen={true}
       action={
         <span 
-          className="text-[10px] text-muted-foreground font-mono bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md font-bold shrink-0 select-none" 
+          className="text-micro font-mono font-bold text-foreground/80 bg-muted/60 dark:bg-muted/40 border border-border/50 px-2 py-0.5 rounded-md shrink-0 select-none shadow-2xs" 
           dir="ltr"
         >
           {unit === "px" 
@@ -243,7 +243,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         </span>
       }
     >
-      <div className="space-y-2.5 animate-in fade-in duration-200">
+      <div className="space-y-2.5 animate-in fade-in duration-200 font-cairo">
         {/* سطر اختيار القالب الجاهز + تبديل الوحدة */}
         <div className="flex items-center gap-1.5 w-full min-w-0" dir="rtl">
           {/* القائمة المنسدلة للمقاسات الجاهزة */}
@@ -251,11 +251,14 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-input border border-border hover:border-primary/50 text-foreground text-xs font-semibold transition-all cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none overflow-hidden"
+                className="flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-input/60 hover:bg-input border border-border hover:border-primary/50 text-foreground text-xs font-semibold transition-all cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none overflow-hidden"
               >
-                <span className="truncate text-right">
-                  {activePreset ? activePreset.name.split(" (")[0] : "مقاس مخصص"}
-                </span>
+                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                  <FileText className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+                  <span className="truncate text-xs font-semibold">
+                    {activePreset ? activePreset.name.split(" (")[0] : "مقاس مخصص"}
+                  </span>
+                </div>
                 <CaretDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
               </button>
             </DropdownMenuTrigger>
@@ -323,13 +326,15 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           </DropdownMenu>
 
           {/* تبديل الوحدة بكسل / ملم */}
-          <div className="flex bg-input border border-border rounded-md p-0.5 h-8 shrink-0 select-none">
+          <div className="flex items-center bg-input/60 border border-border/80 rounded-md p-0.5 h-8 shrink-0 select-none shadow-2xs">
             <button
               type="button"
               onClick={() => setUnit("px")}
               className={cn(
-                "px-2.5 h-full rounded text-xs font-bold transition-all cursor-pointer",
-                unit === "px" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                "px-2.5 h-full rounded text-mini font-mono font-bold transition-all cursor-pointer flex items-center justify-center select-none",
+                unit === "px"
+                  ? "bg-card text-primary font-extrabold shadow-2xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               px
@@ -338,8 +343,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => setUnit("mm")}
               className={cn(
-                "px-2.5 h-full rounded text-xs font-bold transition-all cursor-pointer",
-                unit === "mm" ? "bg-primary text-primary-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                "px-2.5 h-full rounded text-mini font-mono font-bold transition-all cursor-pointer flex items-center justify-center select-none",
+                unit === "mm"
+                  ? "bg-card text-primary font-extrabold shadow-2xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               mm
@@ -347,59 +354,66 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           </div>
         </div>
 
-        {/* سطر الأبعاد: العرض والارتفاع كأعمدة مستقلة واضحة بدون تداخل أو خروج عن الحدود */}
-        <div className="grid grid-cols-2 gap-2" dir="rtl">
+        {/* سطر الأبعاد: العرض والارتفاع في بطاقة إحداثيات مدمجة مع زر التدوير */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5" dir="rtl">
           {/* حقل العرض */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-0.5 select-none">
-              <span>العرض</span>
-              <span className="font-mono text-[10px] text-muted-foreground/70">{unit}</span>
-            </div>
-            <div 
-              className="flex items-center bg-input border border-border hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2.5 h-8 shadow-2xs transition-all"
+          <div 
+            className="flex items-center justify-between bg-input/60 hover:bg-input border border-border/80 hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2.5 h-8 shadow-2xs transition-all"
+            dir="rtl"
+            title="عرض مساحة العمل"
+          >
+            <span className="text-micro font-bold text-muted-foreground select-none shrink-0">العرض</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              aria-label="عرض مساحة العمل"
+              value={widthVal}
+              onChange={(e) => handleWidthChange(e.target.value)}
+              onBlur={handleWidthCommit}
+              onKeyDown={(e) => e.key === "Enter" && handleWidthCommit()}
+              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-bold text-foreground focus:ring-0 focus:outline-none select-all pl-1"
               dir="ltr"
-            >
-              <input
-                type="text"
-                inputMode="decimal"
-                aria-label="عرض مساحة العمل"
-                value={widthVal}
-                onChange={(e) => handleWidthChange(e.target.value)}
-                onBlur={handleWidthCommit}
-                onKeyDown={(e) => e.key === "Enter" && handleWidthCommit()}
-                className="w-full bg-transparent border-0 p-0 text-center font-mono text-xs font-bold text-foreground focus:ring-0 focus:outline-none select-all"
-              />
-            </div>
+            />
           </div>
 
+          {/* زر تبديل الأبعاد السريع */}
+          <button
+            type="button"
+            onClick={handleSwapDimensions}
+            className="w-7 h-8 rounded-md border border-border/80 bg-input/40 hover:bg-primary/10 hover:text-primary hover:border-primary/40 text-muted-foreground flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none shrink-0"
+            title="تبديل العرض والارتفاع (تدوير الورقة)"
+          >
+            <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
+          </button>
+
           {/* حقل الارتفاع */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-0.5 select-none">
-              <span>الارتفاع</span>
-              <span className="font-mono text-[10px] text-muted-foreground/70">{unit}</span>
-            </div>
-            <div 
-              className="flex items-center bg-input border border-border hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2.5 h-8 shadow-2xs transition-all"
+          <div 
+            className="flex items-center justify-between bg-input/60 hover:bg-input border border-border/80 hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2.5 h-8 shadow-2xs transition-all"
+            dir="rtl"
+            title="ارتفاع مساحة العمل"
+          >
+            <span className="text-micro font-bold text-muted-foreground select-none shrink-0">الارتفاع</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              aria-label="ارتفاع مساحة العمل"
+              value={heightVal}
+              onChange={(e) => handleHeightChange(e.target.value)}
+              onBlur={handleHeightCommit}
+              onKeyDown={(e) => e.key === "Enter" && handleHeightCommit()}
+              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-bold text-foreground focus:ring-0 focus:outline-none select-all pl-1"
               dir="ltr"
-            >
-              <input
-                type="text"
-                inputMode="decimal"
-                aria-label="ارتفاع مساحة العمل"
-                value={heightVal}
-                onChange={(e) => handleHeightChange(e.target.value)}
-                onBlur={handleHeightCommit}
-                onKeyDown={(e) => e.key === "Enter" && handleHeightCommit()}
-                className="w-full bg-transparent border-0 p-0 text-center font-mono text-xs font-bold text-foreground focus:ring-0 focus:outline-none select-all"
-              />
-            </div>
+            />
           </div>
         </div>
 
         {/* محدد الاتجاه: عمودي / أفقي */}
-        <div className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8 select-none" dir="rtl">
-          <span className="text-[11px] font-bold text-muted-foreground">الاتجاه</span>
-          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded">
+        <div className="flex items-center justify-between bg-input/40 border border-border/80 rounded-md px-2.5 h-8 select-none" dir="rtl">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/85">
+            <ArrowsClockwise className="w-3.5 h-3.5 text-primary" weight="duotone" />
+            <span>الاتجاه</span>
+          </div>
+          <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-md border border-border/40">
             <button
               type="button"
               onClick={() => {
@@ -408,14 +422,17 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 }
               }}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 h-6 text-[11px] font-bold rounded transition-all cursor-pointer",
+                "flex items-center gap-1.5 px-2.5 h-6 text-mini font-semibold rounded transition-all cursor-pointer select-none",
                 canvasWidth <= canvasHeight
-                  ? "bg-card text-primary shadow-2xs font-bold"
+                  ? "bg-card text-foreground font-bold shadow-2xs border border-border/50"
                   : "text-muted-foreground hover:text-foreground"
               )}
               title="اتجاه رأسي (عمودي)"
             >
-              <span className="w-2.5 h-3.5 border-[1.5px] border-current rounded-md inline-block shrink-0" />
+              <div className={cn(
+                "w-2.5 h-3.5 rounded-[2px] border-[1.5px] transition-colors shrink-0",
+                canvasWidth <= canvasHeight ? "border-primary bg-primary/25" : "border-muted-foreground/60"
+              )} />
               <span>عمودي</span>
             </button>
             <button
@@ -426,14 +443,17 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 }
               }}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 h-6 text-[11px] font-bold rounded transition-all cursor-pointer",
+                "flex items-center gap-1.5 px-2.5 h-6 text-mini font-semibold rounded transition-all cursor-pointer select-none",
                 canvasWidth > canvasHeight
-                  ? "bg-card text-primary shadow-2xs font-bold"
+                  ? "bg-card text-foreground font-bold shadow-2xs border border-border/50"
                   : "text-muted-foreground hover:text-foreground"
               )}
               title="اتجاه أفقي"
             >
-              <span className="w-3.5 h-2.5 border-[1.5px] border-current rounded-md inline-block shrink-0" />
+              <div className={cn(
+                "w-3.5 h-2.5 rounded-[2px] border-[1.5px] transition-colors shrink-0",
+                canvasWidth > canvasHeight ? "border-primary bg-primary/25" : "border-muted-foreground/60"
+              )} />
               <span>أفقي</span>
             </button>
           </div>

@@ -90,9 +90,9 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
       icon={<GridFour className="w-3.5 h-3.5 text-primary" weight="duotone" />}
       title="الشبكة والقص"
       collapsible
-      defaultOpen={true}
+      defaultOpen={Boolean(showGrid || showColumns || showBleedGuides)}
       action={
-        <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md font-bold">
+        <span className="text-micro text-muted-foreground font-mono bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md font-bold">
           {showGrid || showColumns || showBleedGuides ? "نشط" : "مخفي"}
         </span>
       }
@@ -131,7 +131,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     className="flex items-center justify-between bg-input border border-border hover:border-primary/40 rounded-md px-2.5 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="حجم مربع الشبكة"
                   >
-                    <span className="text-[11px] font-bold text-muted-foreground select-none shrink-0">المربع</span>
+                    <span className="text-mini font-bold text-muted-foreground select-none shrink-0">المربع</span>
                     <div className="flex items-center gap-1 min-w-0">
                       <input
                         type="number"
@@ -141,7 +141,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                         onChange={(e) => setGridSize(Math.max(5, Math.min(200, parseInt(e.target.value) || 20)))}
                         className="w-10 bg-transparent border-0 p-0 text-left text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                       />
-                      <span className="text-[10px] text-muted-foreground/70 select-none font-mono">px</span>
+                      <span className="text-micro text-muted-foreground/70 select-none font-mono">px</span>
                     </div>
                   </div>
 
@@ -149,7 +149,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     className="flex items-center justify-between bg-input border border-border hover:border-primary/40 rounded-md px-2.5 h-8 transition-all shadow-2xs"
                     title="تقسيم الشبكة الفرعي"
                   >
-                    <span className="text-[11px] font-bold text-muted-foreground select-none shrink-0">التقسيم</span>
+                    <span className="text-mini font-bold text-muted-foreground select-none shrink-0">التقسيم</span>
                     <Select
                       value={String(gridSubdivisions)}
                       onValueChange={(val) => setGridSubdivisions(Number(val))}
@@ -169,13 +169,13 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
                 {/* صف النمط */}
                 <div className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8" dir="rtl">
-                  <span className="text-[11px] font-bold text-muted-foreground select-none shrink-0">النمط</span>
+                  <span className="text-mini font-bold text-muted-foreground select-none shrink-0">النمط</span>
                   <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded">
                     <button
                       type="button"
                       onClick={() => setGridType("lines")}
                       className={cn(
-                        "px-2.5 h-6 text-[11px] font-bold rounded transition-all cursor-pointer",
+                        "px-2.5 h-6 text-mini font-bold rounded transition-all cursor-pointer",
                         gridType === "lines"
                           ? "bg-card text-primary shadow-2xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -187,7 +187,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                       type="button"
                       onClick={() => setGridType("dots")}
                       className={cn(
-                        "px-2.5 h-6 text-[11px] font-bold rounded transition-all cursor-pointer",
+                        "px-2.5 h-6 text-mini font-bold rounded transition-all cursor-pointer",
                         gridType === "dots"
                           ? "bg-card text-primary shadow-2xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -212,7 +212,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
                 {/* ألوان الشبكة */}
                 <div className="flex items-center justify-between pt-1" dir="rtl">
-                  <span className="text-[11px] font-bold text-muted-foreground">لون الشبكة</span>
+                  <span className="text-mini font-bold text-muted-foreground">لون الشبكة</span>
                   <div className="flex items-center gap-1.5">
                     {[
                       { hex: "#cbd5e1", label: "رمادي فاتح" },
@@ -250,7 +250,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
             ) : (
               <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
-                <p className="text-[11px] leading-relaxed">الشبكة معطلة. فعّلها بالمفتاح أعلاه أو اضغط <kbd className="font-mono bg-muted px-1 py-0.5 rounded border border-border text-[10px]">Ctrl+'</kbd></p>
+                <p className="text-mini leading-relaxed">الشبكة معطلة. فعّلها بالمفتاح أعلاه أو اضغط <kbd className="font-mono bg-muted px-1 py-0.5 rounded border border-border text-micro">Ctrl+'</kbd></p>
               </div>
             )}
           </div>
@@ -276,7 +276,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     className="flex flex-col items-center justify-center bg-input border border-border hover:border-primary/40 rounded-md p-1 h-12 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="عدد الأعمدة"
                   >
-                    <span className="text-[10px] font-bold text-muted-foreground select-none">الأعمدة</span>
+                    <span className="text-micro font-bold text-muted-foreground select-none">الأعمدة</span>
                     <input
                       type="number"
                       value={columnsCount}
@@ -291,7 +291,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     className="flex flex-col items-center justify-center bg-input border border-border hover:border-primary/40 rounded-md p-1 h-12 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="هامش الأعمدة"
                   >
-                    <span className="text-[10px] font-bold text-muted-foreground select-none">الهامش</span>
+                    <span className="text-micro font-bold text-muted-foreground select-none">الهامش</span>
                     <input
                       type="number"
                       value={columnsMargin}
@@ -305,7 +305,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     className="flex flex-col items-center justify-center bg-input border border-border hover:border-primary/40 rounded-md p-1 h-12 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="التباعد بين الأعمدة"
                   >
-                    <span className="text-[10px] font-bold text-muted-foreground select-none">التباعد</span>
+                    <span className="text-micro font-bold text-muted-foreground select-none">التباعد</span>
                     <input
                       type="number"
                       value={columnsGutter}
@@ -318,7 +318,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
                 {/* ألوان الأعمدة */}
                 <div className="flex items-center justify-between pt-1" dir="rtl">
-                  <span className="text-[11px] font-bold text-muted-foreground">لون الأعمدة</span>
+                  <span className="text-mini font-bold text-muted-foreground">لون الأعمدة</span>
                   <div className="flex items-center gap-1.5">
                     {[
                       { hex: "rgba(239, 68, 68, 0.08)", label: "أحمر" },
@@ -350,7 +350,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
             ) : (
               <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
-                <p className="text-[11px] leading-relaxed">الأعمدة الإرشادية معطلة حالياً. فعّلها لمساعدتك على توزيع وتنسيق العناصر بدقة.</p>
+                <p className="text-mini leading-relaxed">الأعمدة الإرشادية معطلة حالياً. فعّلها لمساعدتك على توزيع وتنسيق العناصر بدقة.</p>
               </div>
             )}
           </div>
@@ -372,13 +372,13 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
                 {/* شكل القص Die-cut */}
                 <div className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8" dir="rtl">
-                  <span className="text-[11px] font-bold text-muted-foreground select-none shrink-0">شكل القص</span>
+                  <span className="text-mini font-bold text-muted-foreground select-none shrink-0">شكل القص</span>
                   <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded">
                     <button
                       type="button"
                       onClick={() => setCutShapeType("rectangle")}
                       className={cn(
-                        "px-2 h-6 text-[10px] font-bold rounded transition-all cursor-pointer",
+                        "px-2 h-6 text-micro font-bold rounded transition-all cursor-pointer",
                         cutShapeType === "rectangle"
                           ? "bg-card text-primary shadow-2xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -390,7 +390,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                       type="button"
                       onClick={() => setCutShapeType("rounded-rect")}
                       className={cn(
-                        "px-2 h-6 text-[10px] font-bold rounded transition-all cursor-pointer",
+                        "px-2 h-6 text-micro font-bold rounded transition-all cursor-pointer",
                         cutShapeType === "rounded-rect"
                           ? "bg-card text-primary shadow-2xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -402,7 +402,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                       type="button"
                       onClick={() => setCutShapeType("circle")}
                       className={cn(
-                        "px-2 h-6 text-[10px] font-bold rounded transition-all cursor-pointer",
+                        "px-2 h-6 text-micro font-bold rounded transition-all cursor-pointer",
                         cutShapeType === "circle"
                           ? "bg-card text-primary shadow-2xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -421,7 +421,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   >
                     <div className="flex items-center gap-1.5 select-none shrink-0">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                      <span className="text-[11px] font-bold text-muted-foreground">النزيف</span>
+                      <span className="text-mini font-bold text-muted-foreground">النزيف</span>
                     </div>
                     <div className="flex items-center gap-1 min-w-0">
                       <input
@@ -433,7 +433,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                         onChange={(e) => setBleedMarginMM(Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)))}
                         className="w-10 bg-transparent border-0 p-0 text-left text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                       />
-                      <span className="text-[10px] text-muted-foreground/70 select-none font-mono">مم</span>
+                      <span className="text-micro text-muted-foreground/70 select-none font-mono">مم</span>
                     </div>
                   </div>
 
@@ -443,7 +443,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   >
                     <div className="flex items-center gap-1.5 select-none shrink-0">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                      <span className="text-[11px] font-bold text-muted-foreground">الأمان</span>
+                      <span className="text-mini font-bold text-muted-foreground">الأمان</span>
                     </div>
                     <div className="flex items-center gap-1 min-w-0">
                       <input
@@ -455,13 +455,13 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                         onChange={(e) => setSafeMarginMM(Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)))}
                         className="w-10 bg-transparent border-0 p-0 text-left text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                       />
-                      <span className="text-[10px] text-muted-foreground/70 select-none font-mono">مم</span>
+                      <span className="text-micro text-muted-foreground/70 select-none font-mono">مم</span>
                     </div>
                   </div>
                 </div>
 
                 {/* دليل ألوان الإرشادات */}
-                <div className="p-2 rounded-md border border-border/50 bg-muted/25 space-y-1 text-[10px] select-none" dir="rtl">
+                <div className="p-2 rounded-md border border-border/50 bg-muted/25 space-y-1 text-micro select-none" dir="rtl">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-0.5 border-b-2 border-rose-500 border-dashed shrink-0" />
                     <span className="text-muted-foreground"><strong className="text-foreground">النزيف:</strong> تمديد الخلفية لمنع البياض.</span>
@@ -478,7 +478,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
             ) : (
               <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
-                <p className="text-[11px] leading-relaxed">خطوط النزيف والقص مفيدة لتجهيز كروت العمل والملصقات للطباعة التجارية لمنع تلف التصميم أثناء القص.</p>
+                <p className="text-mini leading-relaxed">خطوط النزيف والقص مفيدة لتجهيز كروت العمل والملصقات للطباعة التجارية لمنع تلف التصميم أثناء القص.</p>
               </div>
             )}
           </div>

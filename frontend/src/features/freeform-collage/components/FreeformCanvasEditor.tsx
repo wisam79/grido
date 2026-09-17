@@ -337,7 +337,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
         ))}
 
         {/* شارة أبعاد الورقة المليمترية مع عدد الخلايا ونسبة الاستغلال */}
-        <div className="absolute bottom-1.5 left-1.5 bg-foreground/85 backdrop-blur-sm text-background text-[9.5px] px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs flex items-center gap-1.5" dir="ltr">
+        <div className="absolute bottom-1.5 left-1.5 bg-foreground/85 backdrop-blur-sm text-background text-micro px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs flex items-center gap-1.5" dir="ltr">
           <span className="font-bold">{paperWidthMM}×{paperHeightMM}mm</span>
           <span className="opacity-40">|</span>
           <span>{slots.length} صور</span>
@@ -347,7 +347,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
 
         {/* المؤشر الحي بالمليمتر أثناء السحب أو التحجيم */}
         {liveBadge && (
-          <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-[9.5px] px-2 py-0.5 rounded-md font-mono z-40 pointer-events-none shadow-fluent-8 animate-in fade-in duration-75" dir="ltr">
+          <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-micro px-2 py-0.5 rounded-md font-mono z-40 pointer-events-none shadow-fluent-8 animate-in fade-in duration-75" dir="ltr">
             {liveBadge}
           </div>
         )}

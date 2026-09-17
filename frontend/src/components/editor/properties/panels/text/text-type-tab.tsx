@@ -19,9 +19,10 @@ import {
   ArrowsInLineVertical,
   ArrowsHorizontal,
   Palette,
+  TextAa,
 } from "@phosphor-icons/react";
-import { Slider } from "@/components/ui/slider";
 import { PopoverColorPicker } from "../../shared-controls";
+import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import { TextFontSelector } from "./text-font-selector";
 import { loadGoogleFont } from "@/lib/io/fonts";
 import { TextTabProps, WEIGHT_OPTIONS } from "./text-tab-types";
@@ -112,13 +113,17 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
     );
 
   return (
-    <div className="space-y-2.5 animate-in fade-in duration-150">
-
+    <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
       {/* 🎴 بطاقة 1: نوع الخط والقياسات */}
-      <div className="bg-card border border-border rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
+      <FluentSection
+        icon={<TextAa className="w-4 h-4 text-primary" weight="duotone" />}
+        title="نوع وحجم الخط"
+        collapsible
+        defaultOpen={true}
+      >
         {/* النمط السريع */}
         <div className="space-y-1">
-          <div className="grid grid-cols-3 gap-1 text-[10px]">
+          <div className="grid grid-cols-3 gap-1 text-micro">
             {[
               { id: "heading" as const, label: "رئيسي", icon: TextHOne },
               { id: "subheading" as const, label: "فرعي", icon: TextHTwo },
@@ -139,7 +144,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               );
             })}
           </div>
-          <div className="grid grid-cols-2 gap-1 text-[10px]">
+          <div className="grid grid-cols-2 gap-1 text-micro">
             {[
               { id: "badge" as const, label: "شارة", icon: Tag },
               { id: "stamp" as const, label: "ختم", icon: Stamp },
@@ -169,7 +174,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
         {/* سماكة وحجم الخط */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <span className="text-[10px] font-bold text-muted-foreground block">
+            <span className="text-micro font-bold text-muted-foreground block">
               السمك
             </span>
             <div className="relative">
@@ -195,10 +200,10 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-muted-foreground">
+              <span className="text-micro font-bold text-muted-foreground">
                 الحجم
               </span>
-              <span className="text-[10px] font-bold font-mono text-primary">{currentFontSize}px</span>
+              <span className="text-micro font-bold font-mono text-primary">{currentFontSize}px</span>
             </div>
             <div className="relative">
               <select
@@ -227,22 +232,16 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
         </div>
 
         {/* مؤشر الحجم السريع */}
-        <div className="p-2 bg-muted/20 border border-border/40 rounded-lg space-y-1">
-          <div className="flex justify-between text-[9.5px] text-muted-foreground font-mono">
-            <span>8px</span>
-            <span className="font-bold text-foreground">{currentFontSize}px</span>
-            <span>200px</span>
-          </div>
-          <Slider
-            value={[currentFontSize]}
-            min={8}
-            max={200}
-            step={1}
-            onValueChange={(val) => onUpdate(element.id, { fontSize: val[0] })}
-            onPointerUp={() => useEditorStore.getState().pushHistory()}
-            className="py-0.5"
-          />
-        </div>
+        <FluentSliderField
+          label="حجم الخط السريع"
+          value={currentFontSize}
+          min={8}
+          max={200}
+          step={1}
+          unit="px"
+          onChange={(val) => onUpdate(element.id, { fontSize: val })}
+          onCommit={() => useEditorStore.getState().pushHistory()}
+        />
 
         {/* لون النص السريع مع إمكانية الانتقال للاستوديو الكامل */}
         <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg border border-border/40">
@@ -263,17 +262,20 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               <button
                 type="button"
                 onClick={() => onNavigateTab("adjust")}
-                className="text-[10.5px] text-primary font-bold hover:underline cursor-pointer transition-colors"
+                className="text-mini text-primary font-bold hover:underline cursor-pointer transition-colors"
               >
                 تخصيص كامل ←
               </button>
             )}
           </div>
         </div>
-      </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 2: التنسيق والمحاذاة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2 shadow-xs fluent-specular">
+      <FluentSection
+        icon={<Article className="w-4 h-4 text-primary" weight="duotone" />}
+        title="التنسيق والمحاذاة"
+      >
         {/* الصف 1: التنسيقات والمحاذاة */}
         <div className="flex items-center justify-between p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
           <div className="flex items-center gap-0.5">
@@ -370,7 +372,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
         </div>
 
         {/* الصف 2: حالة الأحرف والأرقام وملاءمة العرض */}
-        <div className="flex items-center justify-between p-1 bg-muted/25 rounded-lg border border-border/40 text-[10px] font-semibold">
+        <div className="flex items-center justify-between p-1 bg-muted/25 rounded-lg border border-border/40 text-micro font-semibold">
           <div className="flex items-center gap-0.5">
             {[
               { id: "none", label: "Aa" },
@@ -386,7 +388,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   useEditorStore.getState().pushHistory();
                 }}
                 className={cn(
-                  "px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  "px-1.5 py-0.5 rounded-md text-micro font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                   element.textTransform === tr.id
                     ? "bg-background text-primary shadow-2xs font-extrabold"
                     : "hover:text-foreground text-muted-foreground hover:bg-background/40"
@@ -405,7 +407,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "h-6 px-1.5 rounded-md flex items-center justify-center gap-0.5 transition-all cursor-pointer text-[10px] font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+                "h-6 px-1.5 rounded-md flex items-center justify-center gap-0.5 transition-all cursor-pointer text-micro font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
                 isArabicNumerals
                   ? "bg-background text-primary shadow-xs font-extrabold border border-primary/30"
                   : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
@@ -421,7 +423,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
             <button
               type="button"
               onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
-              className="h-6 px-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-[9.5px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none shrink-0"
+              className="h-6 px-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-micro font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none shrink-0"
               title="ملاءمة عرض الصندوق للنص تلقائياً"
             >
               <ArrowsInLineHorizontal className="w-3 h-3" weight="bold" />
@@ -429,13 +431,16 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
             </button>
           </div>
         </div>
-      </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 3: التباعد والمسافات */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2 shadow-xs fluent-specular">
+      <FluentSection
+        icon={<ArrowsInLineVertical className="w-4 h-4 text-primary" weight="duotone" />}
+        title="التباعد والمسافات"
+      >
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+            <span className="text-micro font-bold text-muted-foreground flex items-center gap-1">
               <ArrowsInLineVertical className="w-3 h-3 text-primary/70" weight="regular" />
               <span>ارتفاع الأسطر</span>
             </span>
@@ -466,7 +471,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           </div>
 
           <div className="space-y-1">
-            <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+            <span className="text-micro font-bold text-muted-foreground flex items-center gap-1">
               <ArrowsHorizontal className="w-3 h-3 text-primary/70" weight="regular" />
               <span>{isArabic ? "تباعد الكلمات" : "تباعد الحروف"}</span>
             </span>
@@ -496,7 +501,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
             </div>
           </div>
         </div>
-      </div>
+      </FluentSection>
 
     </div>
   );

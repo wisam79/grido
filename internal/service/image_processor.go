@@ -9,7 +9,9 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/disintegration/imaging"
@@ -32,7 +34,39 @@ func ResizeGrayLinear(src *image.Gray, w, h int) *image.Gray {
 	if srcW == 0 || srcH == 0 {
 		return dst
 	}
-	for y := 0; y < h; y++ {
+
+	workers := runtime.NumCPU()
+	if workers > h {
+		workers = h
+	}
+	if workers < 2 || h < 64 {
+		resizeGrayLinearRows(src, dst, srcW, srcH, w, h, 0, h)
+		return dst
+	}
+
+	rowsPerWorker := (h + workers - 1) / workers
+	var wg sync.WaitGroup
+	for worker := 0; worker < workers; worker++ {
+		startY := worker * rowsPerWorker
+		endY := startY + rowsPerWorker
+		if endY > h {
+			endY = h
+		}
+		if startY >= endY {
+			continue
+		}
+		wg.Add(1)
+		go func(sy, ey int) {
+			defer wg.Done()
+			resizeGrayLinearRows(src, dst, srcW, srcH, w, h, sy, ey)
+		}(startY, endY)
+	}
+	wg.Wait()
+	return dst
+}
+
+func resizeGrayLinearRows(src, dst *image.Gray, srcW, srcH, w, h, startY, endY int) {
+	for y := startY; y < endY; y++ {
 		srcY := float64(y) * float64(srcH) / float64(h)
 		y0 := int(srcY)
 		y1 := y0 + 1
@@ -63,7 +97,6 @@ func ResizeGrayLinear(src *image.Gray, w, h int) *image.Gray {
 			dst.Pix[dstStride+x] = uint8(val)
 		}
 	}
-	return dst
 }
 
 func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW int, maskH int) (string, error) {

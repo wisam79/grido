@@ -10,7 +10,6 @@ import { ToolbarFileOps } from "./toolbar-file-ops";
 import {
   TooltipBtn,
   ToolbarAddTools,
-  ToolbarSelectionTools,
   ToolbarHistoryTools,
   TemplateInfo,
 } from "./toolbar-items";
@@ -59,15 +58,12 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
         <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
-        {/* المجموعة 2: إضافة عناصر (نص وأشكال) */}
+        {/* المجموعة 2: إضافة عناصر (نص وأشكال وملصقات) */}
         <ToolbarAddTools />
 
         <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
-        {/* المجموعة 3: تعديل وترتيب ومحاذاة العنصر المحدد */}
-        <ToolbarSelectionTools />
-
-        {/* المجموعة 4: التراجع والإعادة */}
+        {/* المجموعة 3: التراجع والإعادة */}
         <ToolbarHistoryTools />
 
 

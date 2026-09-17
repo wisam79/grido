@@ -37,7 +37,7 @@ export const PaperDimInput: React.FC<PaperDimInputProps> = ({ value, onCommit, a
       dir="ltr"
       aria-label={ariaLabel}
       value={text}
-      className="h-7 text-[11px] rounded-md w-[52px] font-mono font-black text-center bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all"
+      className="h-7 text-mini rounded-md w-[52px] font-mono font-black text-center bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all"
       onFocus={() => setFocused(true)}
       onChange={(e) => setText(e.target.value.replace(/[^\d]/g, "").slice(0, 4))}
       onBlur={() => {
@@ -93,16 +93,16 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
       >
         <SelectTrigger
           size="sm"
-          className="h-7 text-[11px] font-bold rounded-md bg-background border-border/60 min-w-[110px] shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+          className="h-7 text-mini font-bold rounded-md bg-background border-border/60 min-w-[110px] shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
         >
           <SelectValue placeholder="مقاس الورق..." />
         </SelectTrigger>
         <SelectContent className="font-cairo z-(--z-print-toolbar) rounded-xl border-border/60 max-h-64">
-          <SelectItem value="custom" className="text-[11px] font-bold rounded-md">
+          <SelectItem value="custom" className="text-mini font-bold rounded-md">
             مخصص (أرقام)
           </SelectItem>
           {COMMON_PAPER_PRESETS.map((p) => (
-            <SelectItem key={p.id} value={p.id} className="text-[11px] font-bold rounded-md">
+            <SelectItem key={p.id} value={p.id} className="text-mini font-bold rounded-md">
               {p.name}
             </SelectItem>
           ))}
@@ -117,13 +117,13 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
           ariaLabel="عرض الورقة بالمليمتر"
           onCommit={(w) => onPaperDimensionsChange(w, paperHeightMM)}
         />
-        <span className="text-[10px] font-extrabold text-muted-foreground">×</span>
+        <span className="text-micro font-extrabold text-muted-foreground">×</span>
         <PaperDimInput
           value={paperHeightMM}
           ariaLabel="ارتفاع الورقة بالمليمتر"
           onCommit={(h) => onPaperDimensionsChange(paperWidthMM, h)}
         />
-        <span className="text-[9px] font-bold text-muted-foreground">مم</span>
+        <span className="text-2xs font-bold text-muted-foreground">مم</span>
       </div>
     </div>
   );

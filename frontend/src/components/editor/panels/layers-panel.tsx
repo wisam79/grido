@@ -179,7 +179,7 @@ const LayerRow = React.memo(function LayerRow({
               <Copy size={13} weight="regular" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="font-cairo text-[10px]">نسخ</TooltipContent>
+          <TooltipContent side="top" className="font-cairo text-micro">نسخ</TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -195,7 +195,7 @@ const LayerRow = React.memo(function LayerRow({
               {isHidden ? <EyeSlash size={14} weight="bold" /> : <Eye size={14} weight="regular" />}
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="font-cairo text-[10px]">
+          <TooltipContent side="top" className="font-cairo text-micro">
             {isHidden ? "إظهار" : "إخفاء"}
           </TooltipContent>
         </Tooltip>
@@ -213,7 +213,7 @@ const LayerRow = React.memo(function LayerRow({
               {isLocked ? <LockSimple size={14} weight="fill" /> : <LockSimpleOpen size={14} weight="light" />}
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="font-cairo text-[10px]">
+          <TooltipContent side="top" className="font-cairo text-micro">
             {isLocked ? "فك القفل" : "قفل"}
           </TooltipContent>
         </Tooltip>
@@ -228,7 +228,7 @@ const LayerRow = React.memo(function LayerRow({
               <Trash size={13} weight="regular" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="font-cairo text-[10px]">حذف</TooltipContent>
+          <TooltipContent side="top" className="font-cairo text-micro">حذف</TooltipContent>
         </Tooltip>
       </div>
     </div>
@@ -344,7 +344,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
           </div>
           <span>الطبقات</span>
         </div>
-        <span className="text-[10px] text-muted-foreground font-mono bg-muted/40 border border-border/20 px-2 py-0.5 rounded-md font-bold">
+        <span className="text-micro text-muted-foreground font-mono bg-muted/40 border border-border/20 px-2 py-0.5 rounded-md font-bold">
           {elements.length}
         </span>
       </div>
@@ -359,7 +359,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
             <p className="text-xs text-muted-foreground font-bold">
               لا توجد عناصر بعد
             </p>
-            <p className="text-[10px] text-muted-foreground/60 mt-1">
+            <p className="text-micro text-muted-foreground/60 mt-1">
               أضف صوراً أو نصوصاً أو أشكالاً من شريط الأدوات
             </p>
           </div>

@@ -109,7 +109,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       <div className="bg-card border border-border p-2 rounded-xl shadow-xs fluent-specular space-y-2">
         <div className="flex items-center justify-between border-b border-border/40 pb-1.5 px-1">
           <span className="text-xs font-bold text-foreground/80">أدوات الطبقات والترتيب</span>
-          <span className="text-[10px] text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
+          <span className="text-micro text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
             {selectedIds.length > 0 ? `${selectedIds.length} محدد` : `${elements.length} طبقة`}
           </span>
         </div>

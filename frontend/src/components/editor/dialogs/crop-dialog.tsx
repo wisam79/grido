@@ -241,7 +241,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   <Compass className="text-primary w-3.5 h-3.5 shrink-0" weight="duotone" />
                   <span>استقامة الزاوية</span>
                 </Label>
-                <span className="text-[10px] font-mono font-bold text-primary">{straightenAngle > 0 ? `+${straightenAngle}°` : `${straightenAngle}°`}</span>
+                <span className="text-micro font-mono font-bold text-primary">{straightenAngle > 0 ? `+${straightenAngle}°` : `${straightenAngle}°`}</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <div className="flex-1 py-1">
@@ -257,7 +257,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   <button
                     type="button"
                     onClick={() => handleStraightenChange(0)}
-                    className="text-[10px] text-muted-foreground hover:text-primary underline shrink-0 cursor-pointer font-semibold"
+                    className="text-micro text-muted-foreground hover:text-primary underline shrink-0 cursor-pointer font-semibold"
                   >
                     تصفير
                   </button>

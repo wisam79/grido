@@ -77,8 +77,8 @@ function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonPr
           title={label}
         />
       </div>
-      <span className="text-[10px] font-semibold text-foreground/80">{label}</span>
-      <span className="text-[9px] font-mono text-muted-foreground/75 truncate max-w-full uppercase">
+      <span className="text-micro font-semibold text-foreground/80">{label}</span>
+      <span className="text-2xs font-mono text-muted-foreground/75 truncate max-w-full uppercase">
         {color}
       </span>
     </div>
@@ -157,7 +157,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             <h3 className="text-xs font-bold text-foreground truncate" title={template.name}>
               {template.name}
             </h3>
-            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+            <p className="text-micro text-muted-foreground font-mono mt-0.5">
               {currentMm.width} × {currentMm.height} مم • 300 DPI
             </p>
           </div>
@@ -197,7 +197,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               label: "الشيت",
               icon: <Printer className="w-3.5 h-3.5" weight={activeTab === "sheet" ? "bold" : "regular"} />,
               badge: (
-                <span className="text-[9px] font-mono px-1 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
+                <span className="text-2xs font-mono px-1 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
                   {gridConfig.rows * gridConfig.cols}
                 </span>
               ),
@@ -207,7 +207,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               label: "قوالبي",
               icon: <BookmarkSimple className="w-3.5 h-3.5" weight={activeTab === "presets" ? "bold" : "regular"} />,
               badge: templatePresets.length > 0 ? (
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                <span className="text-2xs font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
                   {templatePresets.length}
                 </span>
               ) : undefined,
@@ -235,7 +235,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                     return (
                       <div key={field.id} className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <Label className="text-[11px] font-semibold text-foreground/85">{field.label}</Label>
+                          <Label className="text-mini font-semibold text-foreground/85">{field.label}</Label>
                           {isModified && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -311,7 +311,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                   >
                     ∅
                   </div>
-                  <span className="text-[10px] font-semibold">
+                  <span className="text-micro font-semibold">
                     {params.isTransparent ? "مفرغة" : "شفافة"}
                   </span>
                 </button>
@@ -529,7 +529,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                 <FloppyDisk className="w-4 h-4 text-primary" weight="duotone" />
                 <span>حفظ التخصيص الحالي</span>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <p className="text-mini text-muted-foreground leading-relaxed">
                 احفظ النصوص والألوان والخط لهذا الملصق لاسترجاعها لاحقاً بضغطة زر.
               </p>
               <div className="flex items-center gap-1.5">
@@ -562,7 +562,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                   القوالب المحفوظة ({templatePresets.length})
                 </span>
                 {presets.length > templatePresets.length && (
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-micro text-muted-foreground">
                     {presets.length} قالب إجمالي
                   </span>
                 )}
@@ -601,7 +601,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                       </div>
 
                       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/20">
-                        <span className="text-[10px] text-muted-foreground font-mono">
+                        <span className="text-micro text-muted-foreground font-mono">
                           {new Date(preset.createdAt).toLocaleDateString("ar-EG", {
                             month: "short",
                             day: "numeric",
@@ -638,7 +638,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                 <div className="p-4 rounded-xl bg-card/30 border border-dashed border-border/50 text-center space-y-1.5">
                   <BookmarkSimple className="w-7 h-7 mx-auto text-muted-foreground/60" weight="duotone" />
                   <p className="text-xs font-semibold text-foreground/80">لا توجد قوالب محفوظة بعد</p>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  <p className="text-mini text-muted-foreground leading-relaxed">
                     اكتب اسماً في الأعلى واضغط "حفظ" للرجوع لتخصيصاتك ونصوصك لاحقاً بضغطة واحدة.
                   </p>
                 </div>

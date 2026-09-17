@@ -85,6 +85,12 @@
   --text-xs: 11.5px;
   --text-sm: 13.5px;
   --text-base: 15px;
+  /* مقياس طباعي دلالي موحّد للميكرو-نصوص (Unified Micro Typography Scale)
+     8px / 9px / 10px / 11px — يُمنع استخدام text-[Npx] العشوائي خارجها */
+  --text-3xs: 8px;
+  --text-2xs: 9px;
+  --text-micro: 10px;
+  --text-mini: 11px;
 }
 
 :root {

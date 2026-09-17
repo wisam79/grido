@@ -1,8 +1,8 @@
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import { Palette, Sparkle, ArrowCounterClockwise } from "@phosphor-icons/react";
-import { Slider } from "@/components/ui/slider";
 import { PopoverColorPicker } from "../../shared-controls";
+import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import type { TextTabProps } from "./text-tab-types";
 
 const SHADOW_PRESETS = [
@@ -23,7 +23,7 @@ const CURVE_PRESETS = [
 
 const toggleButtonClassName = (active: boolean) =>
   cn(
-    "h-7 px-2.5 rounded-md border text-[9.5px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+    "h-7 px-2.5 rounded-md border text-micro font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
     active
       ? "bg-primary text-primary-foreground border-primary font-bold"
       : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
@@ -35,16 +35,13 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
   const hasCurve = typeof element.curve === "number" && element.curve !== 0;
 
   return (
-    <div className="space-y-2.5 animate-in fade-in duration-150">
-
+    <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
       {/* 🎴 بطاقة 1: الخلفية والشارة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
-            <span>الخلفية والشارة</span>
-          </span>
-
+      <FluentSection
+        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
+        title="الخلفية والشارة"
+        open={hasBadge}
+        action={
           <div className="flex items-center gap-1.5">
             {hasBadge && (
               <PopoverColorPicker
@@ -78,72 +75,52 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
               {hasBadge ? "مفعّلة" : "إضافة"}
             </button>
           </div>
-        </div>
-
+        }
+      >
         {hasBadge && (
-          <div className="space-y-2.5 pt-2 border-t border-border/30 animate-in fade-in duration-150">
-            {/* تباعد أفقي X */}
-            <div className="space-y-1">
-              <div className="flex justify-between items-center text-[10px]">
-                <span className="text-muted-foreground font-semibold">أفقي (X)</span>
-                <span className="font-mono font-bold text-foreground">{element.textBgPaddingX ?? element.textBgPadding ?? 12}px</span>
-              </div>
-              <Slider
-                value={[element.textBgPaddingX ?? element.textBgPadding ?? 12]}
-                min={0}
-                max={48}
-                step={1}
-                onValueChange={(val) => onUpdate(element.id, { textBgPaddingX: val[0] })}
-                onPointerUp={() => useEditorStore.getState().pushHistory()}
-                className="py-0.5"
-              />
-            </div>
+          <div className="space-y-2.5 animate-in fade-in duration-150">
+            <FluentSliderField
+              label="أفقي (X)"
+              value={element.textBgPaddingX ?? element.textBgPadding ?? 12}
+              min={0}
+              max={48}
+              step={1}
+              unit="px"
+              onChange={(val) => onUpdate(element.id, { textBgPaddingX: val })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
 
-            {/* تباعد عمودي Y */}
-            <div className="space-y-1">
-              <div className="flex justify-between items-center text-[10px]">
-                <span className="text-muted-foreground font-semibold">عمودي (Y)</span>
-                <span className="font-mono font-bold text-foreground">{element.textBgPaddingY ?? element.textBgPadding ?? 6}px</span>
-              </div>
-              <Slider
-                value={[element.textBgPaddingY ?? element.textBgPadding ?? 6]}
-                min={0}
-                max={36}
-                step={1}
-                onValueChange={(val) => onUpdate(element.id, { textBgPaddingY: val[0] })}
-                onPointerUp={() => useEditorStore.getState().pushHistory()}
-                className="py-0.5"
-              />
-            </div>
+            <FluentSliderField
+              label="عمودي (Y)"
+              value={element.textBgPaddingY ?? element.textBgPadding ?? 6}
+              min={0}
+              max={36}
+              step={1}
+              unit="px"
+              onChange={(val) => onUpdate(element.id, { textBgPaddingY: val })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
 
-            {/* الاستدارة */}
-            <div className="space-y-1">
-              <div className="flex justify-between items-center text-[10px]">
-                <span className="text-muted-foreground font-semibold">الاستدارة</span>
-                <span className="font-mono font-bold text-foreground">{element.textBgRadius ?? 8}px</span>
-              </div>
-              <Slider
-                value={[element.textBgRadius ?? 8]}
-                min={0}
-                max={64}
-                step={1}
-                onValueChange={(val) => onUpdate(element.id, { textBgRadius: val[0] })}
-                onPointerUp={() => useEditorStore.getState().pushHistory()}
-                className="py-0.5"
-              />
-            </div>
+            <FluentSliderField
+              label="الاستدارة"
+              value={element.textBgRadius ?? 8}
+              min={0}
+              max={64}
+              step={1}
+              unit="px"
+              onChange={(val) => onUpdate(element.id, { textBgRadius: val })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
           </div>
         )}
-      </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 2: الظل والتوهج */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-            <Sparkle className="w-3.5 h-3.5 text-primary" weight="duotone" />
-            <span>الظل والتوهج</span>
-          </span>
-
+      <FluentSection
+        icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
+        title="الظل والتوهج"
+        open={hasShadow}
+        action={
           <div className="flex items-center gap-1.5">
             {hasShadow && (
               <PopoverColorPicker
@@ -177,10 +154,10 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
               {hasShadow ? "مفعّل" : "إضافة"}
             </button>
           </div>
-        </div>
-
+        }
+      >
         {/* أنماط سريعة */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar text-[10px]">
+        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar text-micro">
           {SHADOW_PRESETS.map((p) => (
             <button
               key={p.id}
@@ -195,7 +172,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                 });
                 useEditorStore.getState().pushHistory();
               }}
-              className="px-2 py-0.5 bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border/50 rounded-md text-muted-foreground text-[9.5px] font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="px-2 py-0.5 bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border/50 rounded-md text-muted-foreground text-micro font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
             >
               {p.label}
             </button>
@@ -203,32 +180,27 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
         </div>
 
         {hasShadow && (
-          <div className="space-y-1.5 pt-2 border-t border-border/30 animate-in fade-in duration-150">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-muted-foreground font-semibold">التمويه</span>
-              <span className="font-mono font-bold">{element.shadowBlur ?? 10}px</span>
-            </div>
-            <Slider
-              value={[element.shadowBlur ?? 10]}
+          <div className="space-y-1.5 pt-1 animate-in fade-in duration-150">
+            <FluentSliderField
+              label="التمويه"
+              value={element.shadowBlur ?? 10}
               min={0}
               max={40}
               step={2}
-              onValueChange={(val) => onUpdate(element.id, { shadowBlur: val[0] })}
-              onPointerUp={() => useEditorStore.getState().pushHistory()}
-              className="py-0.5"
+              unit="px"
+              onChange={(val) => onUpdate(element.id, { shadowBlur: val })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
             />
           </div>
         )}
-      </div>
+      </FluentSection>
 
-      {/* 🎴 بطاقة 4: تقويس النص */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-            <ArrowCounterClockwise className="w-3.5 h-3.5 text-primary" weight="duotone" />
-            <span>تقويس النص</span>
-          </span>
-
+      {/* 🎴 بطاقة 3: تقويس النص */}
+      <FluentSection
+        icon={<ArrowCounterClockwise className="w-4 h-4 text-primary" weight="duotone" />}
+        title="تقويس النص"
+        open={hasCurve}
+        action={
           <button
             type="button"
             onClick={() => {
@@ -243,12 +215,12 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
           >
             {hasCurve ? "مفعّل" : "إضافة"}
           </button>
-        </div>
-
+        }
+      >
         {hasCurve && (
-          <div className="space-y-2 pt-2 border-t border-border/30 animate-in fade-in duration-150">
+          <div className="space-y-2 animate-in fade-in duration-150">
             {/* زوايا جاهزة */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar text-[10px]">
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar text-micro">
               {CURVE_PRESETS.map((cp) => (
                 <button
                   key={cp.label}
@@ -258,7 +230,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    "px-1.5 py-0.5 rounded-md border text-[10px] font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                    "px-1.5 py-0.5 rounded-md border text-micro font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
                     (element.curve ?? 0) === cp.value
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background hover:bg-primary/10 text-muted-foreground border-border/50"
@@ -269,37 +241,19 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
               ))}
             </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono">
-                <span>-100°</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onUpdate(element.id, { curve: 0 });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  className="px-1.5 py-0.5 bg-background border border-border/60 hover:border-primary/40 rounded-md text-[10px] text-foreground font-bold cursor-pointer flex items-center gap-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
-                  title="استقامة"
-                >
-                  <ArrowCounterClockwise className="w-2.5 h-2.5" weight="bold" />
-                  <span>تصفير</span>
-                </button>
-                <span>+100°</span>
-              </div>
-              <Slider
-                value={[element.curve ?? 60]}
-                min={-100}
-                max={100}
-                step={5}
-                onValueChange={(val) => onUpdate(element.id, { curve: val[0] })}
-                onPointerUp={() => useEditorStore.getState().pushHistory()}
-                className="py-1"
-              />
-            </div>
+            <FluentSliderField
+              label="زاوية التقويس"
+              value={element.curve ?? 60}
+              min={-100}
+              max={100}
+              step={5}
+              unit="°"
+              onChange={(val) => onUpdate(element.id, { curve: val })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
           </div>
         )}
-      </div>
-
+      </FluentSection>
     </div>
   );
 }

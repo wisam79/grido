@@ -161,7 +161,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
             <div className="flex items-center gap-1.5">
               <span>{showRuler ? "إخفاء المساطر" : "إظهار المساطر"}</span>
-              <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+R</kbd>
+              <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+R</kbd>
             </div>
           </TooltipContent>
         </Tooltip>
@@ -186,7 +186,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
             <div className="flex items-center gap-1.5">
               <span>{showGrid ? "إخفاء شبكة المحاذاة" : "إظهار شبكة المحاذاة"}</span>
-              <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+'</kbd>
+              <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+'</kbd>
             </div>
           </TooltipContent>
         </Tooltip>
@@ -233,7 +233,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
           <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
             <div className="flex items-center gap-1.5">
               <span>{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
-              <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+;</kbd>
+              <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+;</kbd>
             </div>
           </TooltipContent>
         </Tooltip>
@@ -308,7 +308,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>تصغير</span>
-                <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+-</kbd>
+                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+-</kbd>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -328,7 +328,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>ملاءمة الورقة للشاشة (100%)</span>
-                <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
+                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -348,7 +348,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>تكبير</span>
-                <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl++</kbd>
+                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl++</kbd>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -368,7 +368,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>ملاءمة الورقة للشاشة</span>
-                <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
+                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -390,7 +390,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>اختصارات لوحة المفاتيح</span>
-                <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+/</kbd>
+                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+/</kbd>
               </div>
             </TooltipContent>
           </Tooltip>

@@ -448,7 +448,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                           {isPinned && <PushPin className="text-primary w-3 h-3 shrink-0" weight="fill" />}
                           {project.name}
                         </h4>
-                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                        <div className="flex items-center gap-3 text-micro text-muted-foreground">
                           <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">
                             {project.mode === "single" ? "صورة مفردة" : "كولاج مجمع"}
                           </span>
@@ -600,14 +600,14 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 <RadioGroupItem value="merge" id="r-merge" />
                 <Label htmlFor="r-merge" className="cursor-pointer flex-1 space-y-0.5">
                   <div className="font-semibold text-xs text-foreground">دمج المشاريع</div>
-                  <div className="text-[10px] text-muted-foreground">إضافة المشاريع الجديدة وتحديث المشاريع المتشابهة بالمعرف</div>
+                  <div className="text-micro text-muted-foreground">إضافة المشاريع الجديدة وتحديث المشاريع المتشابهة بالمعرف</div>
                 </Label>
               </div>
               <div className="flex items-center space-x-reverse space-x-2 border rounded-xl p-3 hover:bg-accent/40 cursor-pointer border-destructive/20 hover:border-destructive/30 transition-colors">
                 <RadioGroupItem value="overwrite" id="r-overwrite" />
                 <Label htmlFor="r-overwrite" className="cursor-pointer flex-1 space-y-0.5">
                   <div className="font-semibold text-xs text-destructive">استبدال بالكامل</div>
-                  <div className="text-[10px] text-muted-foreground">مسح كافة المشاريع الحالية واستبدالها بمحتويات ملف النسخة الاحتياطية</div>
+                  <div className="text-micro text-muted-foreground">مسح كافة المشاريع الحالية واستبدالها بمحتويات ملف النسخة الاحتياطية</div>
                 </Label>
               </div>
             </RadioGroup>

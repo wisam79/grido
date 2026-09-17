@@ -431,7 +431,7 @@ export function BatchInsertDialog({
                         alt={`عنصر ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />
-                      <span className="absolute bottom-0.5 end-0.5 text-[10px] font-bold px-1 rounded-md bg-black/60 text-white">
+                      <span className="absolute bottom-0.5 end-0.5 text-micro font-bold px-1 rounded-md bg-black/60 text-white">
                         #{idx + 1}
                       </span>
                     </div>
@@ -542,7 +542,7 @@ export function BatchInsertDialog({
                     onValueChange={(val) => setColumns(val[0])}
                     className="py-1"
                   />
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                  <div className="flex justify-between text-micro text-muted-foreground">
                     <span>تلقائي</span>
                     <span>2</span>
                     <span>4</span>

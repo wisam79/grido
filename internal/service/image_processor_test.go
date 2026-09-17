@@ -86,3 +86,59 @@ func TestImageProcessor_ApplyMaskToImage_ValidMaskAndDefringe(t *testing.T) {
 		t.Fatalf("output file does not exist: %s", createdFilePath)
 	}
 }
+
+func BenchmarkResizeGrayLinear(b *testing.B) {
+	const dim = 2000
+	src := image.NewGray(image.Rect(0, 0, dim, dim))
+	for i := range src.Pix {
+		src.Pix[i] = uint8(i * 7)
+	}
+	b.ResetTimer()
+	for b.Loop() {
+		_ = ResizeGrayLinear(src, 3000, 3000)
+	}
+}
+
+func BenchmarkImageProcessor_ApplyMaskToImage(b *testing.B) {
+	mediaSvc := NewMediaService()
+	procSvc := NewImageProcessorService(mediaSvc)
+	mediaDir := mediaSvc.GetMediaDir()
+
+	const srcDim = 1500
+	const maskDim = 500
+
+	srcImg := image.NewNRGBA(image.Rect(0, 0, srcDim, srcDim))
+	for i := 0; i < len(srcImg.Pix); i += 4 {
+		srcImg.Pix[i] = 180
+		srcImg.Pix[i+1] = 140
+		srcImg.Pix[i+2] = 120
+		srcImg.Pix[i+3] = 255
+	}
+
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, srcImg); err != nil {
+		b.Fatalf("encode source: %v", err)
+	}
+
+	testFileName := "bench_mask_src.png"
+	testFilePath := filepath.Join(mediaDir, testFileName)
+	if err := os.WriteFile(testFilePath, buf.Bytes(), 0644); err != nil {
+		b.Fatalf("write source: %v", err)
+	}
+	defer os.Remove(testFilePath)
+
+	maskBytes := make([]byte, maskDim*maskDim)
+	for i := range maskBytes {
+		maskBytes[i] = uint8(i * 7)
+	}
+	maskB64 := base64.StdEncoding.EncodeToString(maskBytes)
+
+	b.ResetTimer()
+	for b.Loop() {
+		out, err := procSvc.ApplyMaskToImage("/local-image/"+testFileName, maskB64, maskDim, maskDim)
+		if err != nil {
+			b.Fatalf("ApplyMaskToImage: %v", err)
+		}
+		_ = os.Remove(filepath.Join(mediaDir, filepath.Base(out)))
+	}
+}

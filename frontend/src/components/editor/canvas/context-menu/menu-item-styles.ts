@@ -17,7 +17,7 @@ export const menuItemSpinnerClassName =
 
 /** عنوان قسم */
 export const menuSectionLabelClassName =
-  "px-2 pt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider";
+  "px-2 pt-1 text-micro font-bold text-muted-foreground uppercase tracking-wider";
 
 /** فاصل أقسام */
 export const menuSeparatorClassName = "h-px bg-border/40 my-1";

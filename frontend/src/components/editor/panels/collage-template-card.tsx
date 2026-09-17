@@ -124,7 +124,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
         </div>
         <div className="flex items-center justify-between mt-0.5 border-t border-border/30 pt-1.5">
           <span className={cn(
-            "px-2 py-0.5 rounded-md font-mono text-[10.5px] font-bold border transition-colors",
+            "px-2 py-0.5 rounded-md font-mono text-mini font-bold border transition-colors",
             isActive
               ? "bg-primary/15 text-primary border-primary/30"
               : "bg-muted text-muted-foreground border-border/60"
@@ -132,7 +132,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             {tpl.slots} صور
           </span>
           <span className={cn(
-            "text-[9px] font-bold transition-colors",
+            "text-2xs font-bold transition-colors",
             isActive ? "text-primary" : "text-muted-foreground/80 group-hover:text-primary/80"
           )}>
             {tpl.physicalLayout ? "مقاس قياسي" : "شبكي"}

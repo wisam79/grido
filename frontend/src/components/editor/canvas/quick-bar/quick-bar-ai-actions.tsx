@@ -53,11 +53,11 @@ export const QuickBarAiActions = React.memo(function QuickBarAiActions({
             {isRemovingBg ? <Spinner className="w-4 h-4" size={14} /> : <Sparkle className="w-4 h-4" weight="duotone" />}
             <span>{isRemovingBg ? (bgProgress > 0 ? `جاري العزل ... (${Math.round(bgProgress)}%)` : "جاري العزل ...") : "عزل الخلفية"}</span>
             {!licenseActive ? (
-              <span className="text-[7.5px] bg-primary text-primary-foreground font-black px-1 py-0.5 rounded-md tracking-wider uppercase">
+              <span className="text-3xs bg-primary text-primary-foreground font-black px-1 py-0.5 rounded-md tracking-wider uppercase">
                 احترافي
               </span>
             ) : (
-              <span className="text-[8px] bg-primary/20 border border-primary/40 text-primary px-1 py-0.5 rounded-md font-bold font-mono">
+              <span className="text-3xs bg-primary/20 border border-primary/40 text-primary px-1 py-0.5 rounded-md font-bold font-mono">
                 AI
               </span>
             )}

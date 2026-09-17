@@ -258,7 +258,7 @@ export function PrintSettingsToolbar({
             >
               <SelectTrigger
                 aria-label="نمط خطوط القص"
-                className="h-6 w-[84px] px-2 py-0 text-[11px] font-semibold bg-background border-border/50 shadow-none focus:ring-1 focus:ring-primary/40"
+                className="h-6 w-[84px] px-2 py-0 text-mini font-semibold bg-background border-border/50 shadow-none focus:ring-1 focus:ring-primary/40"
               >
                 <SelectValue />
               </SelectTrigger>

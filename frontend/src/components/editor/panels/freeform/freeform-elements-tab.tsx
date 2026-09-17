@@ -155,7 +155,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
             <button
               type="button"
               onClick={handleOpenFullStickerStudio}
-              className="text-[11px] font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
+              className="text-mini font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
             >
               <Sparkle className="w-3 h-3" weight="fill" />
               <span>الاستوديو الكامل</span>
@@ -187,12 +187,12 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
 
                     {isBusy && (
                       <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center rounded-lg">
-                        <span className="text-[10px] font-bold text-primary animate-pulse">جاري الإدراج ...</span>
+                        <span className="text-micro font-bold text-primary animate-pulse">جاري الإدراج ...</span>
                       </div>
                     )}
                   </div>
 
-                  <span className="text-[11px] font-bold text-foreground/90 mt-1.5 truncate w-full group-hover:text-primary transition-colors">
+                  <span className="text-mini font-bold text-foreground/90 mt-1.5 truncate w-full group-hover:text-primary transition-colors">
                     {tmpl.name}
                   </span>
                 </button>
@@ -249,7 +249,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
                   <span className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
                     {shape.label}
                   </span>
-                  <span className="text-[10px] text-muted-foreground/80 truncate">إدراج فوري</span>
+                  <span className="text-micro text-muted-foreground/80 truncate">إدراج فوري</span>
                 </div>
               </button>
             ))}
@@ -283,7 +283,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab() {
                     <span className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
                       {preset.label}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/80 truncate">{preset.description}</span>
+                    <span className="text-micro text-muted-foreground/80 truncate">{preset.description}</span>
                   </div>
                 </div>
 

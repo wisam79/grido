@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,14 @@ export function LicenseTabContent({
 }: LicenseTabContentProps) {
   const [licenseKey, setLicenseKey] = useState("");
   const [loading, setLoading] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,11 +48,14 @@ export function LicenseTabContent({
     try {
       await onActivate(licenseKey.trim());
     } catch (err) {
+      if (!isMountedRef.current) return;
       const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "مفتاح الترخيص غير صالح. يرجى التحقق من الصيغة.");
       onError(errMsg);
       toast.error(errMsg);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 

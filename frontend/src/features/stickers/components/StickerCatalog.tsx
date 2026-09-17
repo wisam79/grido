@@ -172,9 +172,9 @@ const GalleryCard = React.memo(function GalleryCard({
         >
           {template.name}
         </span>
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground/80 font-mono pt-1 border-t border-border/20">
+        <div className="flex items-center justify-between text-micro text-muted-foreground/80 font-mono pt-1 border-t border-border/20">
           <span>{mm.width}×{mm.height} مم</span>
-          <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground font-sans">
+          <span className="text-2xs px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground font-sans">
             {shapeLabel(template)}
           </span>
         </div>
@@ -314,7 +314,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                 <span>{cat.title}</span>
                 <span
                   className={cn(
-                    "text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold",
+                    "text-micro font-mono px-1.5 py-0.2 rounded-full font-bold",
                     isActive ? "bg-black/15 text-primary-foreground" : "bg-muted text-muted-foreground"
                   )}
                 >
@@ -414,7 +414,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
           <div className="flex flex-col items-center justify-center h-64 text-center p-4 text-muted-foreground space-y-2">
             <SquaresFour className="w-8 h-8 opacity-40 mb-1" />
             <p className="text-xs font-semibold text-foreground/80">لا توجد نتائج مطابقة</p>
-            <p className="text-[11px] text-muted-foreground">جرب البحث بكلمات أخرى أو تصفية تصنيف مختلف</p>
+            <p className="text-mini text-muted-foreground">جرب البحث بكلمات أخرى أو تصفية تصنيف مختلف</p>
             <Button
               type="button"
               variant="outline"

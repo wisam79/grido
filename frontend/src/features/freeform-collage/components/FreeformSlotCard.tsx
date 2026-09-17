@@ -119,7 +119,7 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       {/* شارة الرقم — تظهر عند التحديد أو التحويم فقط */}
       <div
         className={cn(
-          "absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-[3px] text-[8.5px] font-black flex items-center justify-center pointer-events-none transition-all duration-150 leading-none",
+          "absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-[3px] text-2xs font-black flex items-center justify-center pointer-events-none transition-all duration-150 leading-none",
           isSelected
             ? "bg-primary text-primary-foreground opacity-100 shadow-xs"
             : isMultiSelected
@@ -139,7 +139,7 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       >
         <span
           className={cn(
-            "text-[8px] font-mono font-bold px-1 py-px rounded-[3px] leading-none whitespace-nowrap",
+            "text-3xs font-mono font-bold px-1 py-px rounded-[3px] leading-none whitespace-nowrap",
             isSelected
               ? "bg-primary text-primary-foreground"
               : "bg-foreground/80 text-background"

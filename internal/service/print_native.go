@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"grido/internal/utils"
 )
 
 // منظف مركزي لملفات HTML المؤقتة — كان كل طباعة تطلق goroutine نائمة 3 دقائق
@@ -73,6 +75,33 @@ func (s *PrintService) PrintNative(filePath string) error {
 	}
 	if !validExts[ext] {
 		return fmt.Errorf("نوع الملف غير مدعوم للطباعة: %s", ext)
+	}
+
+	// 🔒 حصر الطباعة في مخرجات التطبيق: مجلد Exports أو ملفات HTML المؤقتة
+	// التي ينشئها التطبيق نفسه — يمنع تمرير أي مسار نظامي من الواجهة.
+	exportsDir, expErr := filepath.Abs(filepath.Join(utils.GetAppDir(), "Exports"))
+	if expErr != nil {
+		return fmt.Errorf("تعذر تحديد مجلد التصدير: %w", expErr)
+	}
+	if resolvedBase, err := filepath.EvalSymlinks(exportsDir); err == nil {
+		exportsDir = resolvedBase
+	}
+	tempDir, tempErr := filepath.Abs(os.TempDir())
+	if tempErr == nil {
+		if resolvedTmp, err := filepath.EvalSymlinks(tempDir); err == nil {
+			tempDir = resolvedTmp
+		}
+	}
+	absClean, absErr := filepath.Abs(cleanPath)
+	if absErr != nil {
+		return fmt.Errorf("مسار الطباعة غير صالح: %w", absErr)
+	}
+	inExports := strings.HasPrefix(absClean, filepath.Clean(exportsDir)+string(filepath.Separator))
+	inPrintTemp := tempErr == nil &&
+		strings.HasPrefix(absClean, filepath.Clean(tempDir)+string(filepath.Separator)) &&
+		strings.HasPrefix(filepath.Base(absClean), "grido_print_")
+	if !inExports && !inPrintTemp {
+		return fmt.Errorf("مسار الطباعة خارج النطاق المسموح")
 	}
 
 	if runtime.GOOS == "windows" {

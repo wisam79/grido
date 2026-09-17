@@ -98,18 +98,18 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
             >
               {currentFont.arabicName}
             </span>
-            <span className="text-[10px] text-muted-foreground font-normal truncate hidden sm:inline">
+            <span className="text-micro text-muted-foreground font-normal truncate hidden sm:inline">
               ({currentFont.englishName})
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
             {currentFont.isOffline ? (
-              <span className="text-[8px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1 py-0.5 rounded">
+              <span className="text-3xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1 py-0.5 rounded">
                 مدمج
               </span>
             ) : (
-              <span className="text-[8px] font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 border border-sky-500/20 px-1 py-0.5 rounded flex items-center gap-0.5">
+              <span className="text-3xs font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 border border-sky-500/20 px-1 py-0.5 rounded flex items-center gap-0.5">
                 <Cloud className="w-2.5 h-2.5" />
                 <span>سحابي</span>
               </span>
@@ -157,7 +157,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
               type="button"
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "h-6 px-2 text-[10px] rounded-md font-semibold whitespace-nowrap cursor-pointer transition-colors shrink-0",
+                "h-6 px-2 text-micro rounded-md font-semibold whitespace-nowrap cursor-pointer transition-colors shrink-0",
                 activeCategory === cat.id
                   ? "bg-primary text-primary-foreground shadow-2xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-border/40"
@@ -204,12 +204,12 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
                       >
                         {font.arabicName}
                       </span>
-                      <span className="text-[10px] text-muted-foreground font-mono truncate">
+                      <span className="text-micro text-muted-foreground font-mono truncate">
                         {font.englishName}
                       </span>
                     </div>
                     <p
-                      className="text-[11px] text-muted-foreground/80 mt-0.5 truncate"
+                      className="text-mini text-muted-foreground/80 mt-0.5 truncate"
                       style={{ fontFamily: font.family }}
                     >
                       {font.sampleText || "أبجد هوز 123"}
@@ -218,11 +218,11 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     {font.isOffline ? (
-                      <span className="text-[8px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded">
+                      <span className="text-3xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded">
                         مدمج
                       </span>
                     ) : (
-                      <span className="text-[8px] font-medium text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1 py-0.5 rounded">
+                      <span className="text-3xs font-medium text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1 py-0.5 rounded">
                         سحابي
                       </span>
                     )}

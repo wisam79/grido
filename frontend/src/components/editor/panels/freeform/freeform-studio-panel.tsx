@@ -27,22 +27,22 @@ export const FreeformStudioPanel = React.memo(function FreeformStudioPanel() {
           {
             id: "layers",
             label: "الطبقات",
-            icon: <Stack className="w-4 h-4 text-primary" weight="duotone" />,
+            icon: <Stack className="w-3.5 h-3.5 text-primary" weight="duotone" />,
             badge: elementsCount > 0 ? (
-              <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold rounded-full bg-primary/20 text-primary border border-primary/30">
-                {elementsCount}
+              <span className="text-micro font-mono font-bold text-primary/85">
+                ({elementsCount})
               </span>
             ) : undefined,
           },
           {
             id: "elements",
             label: "العناصر",
-            icon: <Sparkle className="w-4 h-4 text-primary" weight="duotone" />,
+            icon: <Sparkle className="w-3.5 h-3.5 text-primary" weight="duotone" />,
           },
           {
             id: "presets",
             label: "المقاسات",
-            icon: <FrameCorners className="w-4 h-4 text-primary" weight="duotone" />,
+            icon: <FrameCorners className="w-3.5 h-3.5 text-primary" weight="duotone" />,
           },
         ]}
       />

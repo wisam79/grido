@@ -271,7 +271,7 @@ export function LayersList() {
         </div>
         <div className="space-y-1">
           <p className="text-xs font-bold text-foreground/80">لا توجد عناصر بعد</p>
-          <p className="text-[10px] text-muted-foreground max-w-[170px] leading-normal mx-auto text-center" dir="rtl">أضف صوراً أو نصوصاً أو أشكالاً من شريط الأدوات</p>
+          <p className="text-micro text-muted-foreground max-w-[170px] leading-normal mx-auto text-center" dir="rtl">أضف صوراً أو نصوصاً أو أشكالاً من شريط الأدوات</p>
         </div>
       </div>
     );

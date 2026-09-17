@@ -43,7 +43,7 @@ export function renderSvgToPngDataUrl(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     if (typeof window === "undefined" || !window.Blob) {
-      resolve(`data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`);
+      resolve(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`);
       return;
     }
 
@@ -90,6 +90,7 @@ export function downloadFile(dataUrlOrBlob: string, filename: string) {
   const link = document.createElement("a");
   link.download = filename;
   link.href = dataUrlOrBlob;
+  link.rel = "noopener";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

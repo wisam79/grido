@@ -161,7 +161,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
 
       <div className="relative flex py-0.5 items-center">
         <div className="flex-grow border-t border-border/40"></div>
-        <span className="flex-shrink mx-3 text-[10px] text-muted-foreground font-medium">أو بالبريد الإلكتروني</span>
+        <span className="flex-shrink mx-3 text-micro text-muted-foreground font-medium">أو بالبريد الإلكتروني</span>
         <div className="flex-grow border-t border-border/40"></div>
       </div>
 

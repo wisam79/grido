@@ -148,10 +148,7 @@ func startOAuthLocalServer() (string, chan string, chan error, func(), string, e
 		allowedOrigins := map[string]bool{
 			fmt.Sprintf("http://127.0.0.1:%d", localPort): true,
 			fmt.Sprintf("http://localhost:%d", localPort): true,
-			"http://127.0.0.1:34567":                      true,
-			"http://localhost:34567":                      true,
 			"https://grido.cloud-ip.cc":                   true,
-			"null":                                        true,
 		}
 
 		if origin == "" || !allowedOrigins[origin] {

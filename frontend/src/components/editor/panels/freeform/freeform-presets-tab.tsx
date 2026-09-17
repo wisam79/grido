@@ -102,7 +102,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
           <button
             type="button"
             onClick={handleToggleOrientation}
-            className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors cursor-pointer bg-muted/60 hover:bg-muted px-2 py-1 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="flex items-center gap-1 text-mini font-bold text-muted-foreground hover:text-primary transition-colors cursor-pointer bg-muted/60 hover:bg-muted px-2 py-1 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="تبديل الاتجاه بين أفقي وعمودي"
           >
             <ArrowsClockwise className="w-3.5 h-3.5" />
@@ -114,7 +114,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
           <span className="font-bold text-foreground">
             {currentW_MM} × {currentH_MM} ملم
           </span>
-          <span className="text-[11px] text-muted-foreground font-sans">
+          <span className="text-mini text-muted-foreground font-sans">
             {canvasWidth} × {canvasHeight} بكسل ({currentDpi} DPI)
           </span>
         </div>
@@ -147,7 +147,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
                   >
                     <div className="flex flex-col min-w-0">
                       <span className="text-xs truncate">{preset.name}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground truncate">{preset.tag}</span>
+                      <span className="text-micro font-mono text-muted-foreground truncate">{preset.tag}</span>
                     </div>
 
                     {active ? (
@@ -155,7 +155,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
                         <Check className="w-3 h-3" weight="bold" />
                       </div>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground/60 shrink-0 font-mono">
+                      <span className="text-micro text-muted-foreground/60 shrink-0 font-mono">
                         {preset.dpi} DPI
                       </span>
                     )}

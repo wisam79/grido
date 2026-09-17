@@ -208,17 +208,17 @@ export const TextFontSelector = React.memo(function TextFontSelector({
             >
               {currentFontObj.arabicName || currentFontObj.name}
             </span>
-            <span className="text-[10px] text-muted-foreground font-medium truncate">
+            <span className="text-micro text-muted-foreground font-medium truncate">
               ({currentFontObj.englishName})
             </span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {currentFontObj.isOffline ? (
-              <span className="text-[8px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1 py-0.5 rounded" title="مدمج أوفلاين">
+              <span className="text-3xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1 py-0.5 rounded" title="مدمج أوفلاين">
                 أوفلاين
               </span>
             ) : (
-              <span className="text-[8px] font-bold text-sky-600 dark:text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1 py-0.5 rounded flex items-center gap-0.5" title="سحابي Google Fonts">
+              <span className="text-3xs font-bold text-sky-600 dark:text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1 py-0.5 rounded flex items-center gap-0.5" title="سحابي Google Fonts">
                 <Cloud className="w-2.5 h-2.5" weight="regular" />
                 <span>سحابي</span>
               </span>
@@ -300,7 +300,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         </div>
 
         {/* Category Filter Chips */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar text-[10px]">
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar text-micro">
           {allCategoryPills.map((cat) => (
             <button
               key={cat.id}
@@ -319,7 +319,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
               {cat.icon}
               <span>{cat.name}</span>
               {cat.count !== undefined && (
-                <span className="text-[8.5px] opacity-80">({cat.count})</span>
+                <span className="text-2xs opacity-80">({cat.count})</span>
               )}
             </button>
           ))}
@@ -333,7 +333,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
           {filteredFonts.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground space-y-1">
               <p className="font-semibold">لم يتم العثور على خط يطابق البحث</p>
-              <p className="text-[10px] text-muted-foreground/70">جرب كتابة اسم خط آخر أو اختيار فئة مختلفة</p>
+              <p className="text-micro text-muted-foreground/70">جرب كتابة اسم خط آخر أو اختيار فئة مختلفة</p>
             </div>
           ) : (
             filteredFonts.map((font, idx) => {
@@ -376,15 +376,15 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                     </span>
                     
                     {/* Font Meta Details */}
-                    <div className="text-[9.5px] text-muted-foreground font-medium flex items-center gap-1.5 truncate">
+                    <div className="text-micro text-muted-foreground font-medium flex items-center gap-1.5 truncate">
                       <span className="font-bold text-foreground/75 truncate">{font.arabicName}</span>
-                      <span className="text-[10px] opacity-70 truncate font-mono">({font.englishName})</span>
+                      <span className="text-micro opacity-70 truncate font-mono">({font.englishName})</span>
                       {font.isOffline ? (
-                        <span className="text-[7.5px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-1 py-px rounded font-bold">
+                        <span className="text-3xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-1 py-px rounded font-bold">
                           أوفلاين
                         </span>
                       ) : (
-                        <span className="text-[7.5px] bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 px-1 py-px rounded font-bold">
+                        <span className="text-3xs bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 px-1 py-px rounded font-bold">
                           Google Font
                         </span>
                       )}

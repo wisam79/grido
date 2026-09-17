@@ -84,7 +84,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             <Scan size={15} weight="duotone" className="text-primary shrink-0" />
             <span>نمط المسح</span>
           </Label>
-          <span className="text-[10px] text-muted-foreground font-semibold">
+          <span className="text-micro text-muted-foreground font-semibold">
             {detectionMode === "single" ? "مستند واحد" : "متعدد البطاقات"}
           </span>
         </div>
@@ -180,7 +180,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-5 px-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer"
+                  className="h-5 px-1.5 text-micro font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer"
                   onClick={onSelectAllDocs}
                 >
                   {isAllSelected ? "إلغاء الكل" : "تحديد الكل"}
@@ -192,7 +192,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-5 px-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer flex items-center gap-0.5"
+                      className="h-5 px-1.5 text-micro font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer flex items-center gap-0.5"
                       onClick={onAddDocument}
                     >
                       <Plus size={12} weight="bold" />
@@ -428,7 +428,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             <span>التدوير والضبط</span>
           </Label>
           {(((rotation % 360) + 360) % 360) !== 0 && (
-            <span className="text-[10px] font-mono text-primary font-bold px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
+            <span className="text-micro font-mono text-primary font-bold px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
               {((rotation % 360) + 360) % 360}°
             </span>
           )}

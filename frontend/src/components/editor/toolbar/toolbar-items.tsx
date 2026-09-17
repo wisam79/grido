@@ -132,7 +132,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           </DropdownMenuTrigger>
         </TooltipBtn>
         <DropdownMenuContent align="start" className="w-64 max-h-[460px] overflow-y-auto font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
-          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+          <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
             نصوص قياسية
           </div>
 
@@ -146,10 +146,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-bold text-foreground truncate">عنوان رئيسي</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">نص عريض بارز</span>
+                <span className="text-micro text-muted-foreground/80 truncate">نص عريض بارز</span>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
+            <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
               48px
             </span>
           </DropdownMenuItem>
@@ -164,10 +164,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">عنوان فرعي</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">نص متوسط</span>
+                <span className="text-micro text-muted-foreground/80 truncate">نص متوسط</span>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
+            <span className="text-micro font-mono font-medium px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
               28px
             </span>
           </DropdownMenuItem>
@@ -182,17 +182,17 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-normal text-foreground truncate">نص عادي</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">فقرة تفاصيل</span>
+                <span className="text-micro text-muted-foreground/80 truncate">فقرة تفاصيل</span>
               </div>
             </div>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
+            <span className="text-micro font-mono px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
               18px
             </span>
           </DropdownMenuItem>
 
           <Separator className="my-1 bg-border/50" />
 
-          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+          <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
             توثيق واستوديو
           </div>
 
@@ -206,10 +206,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">تاريخ اليوم</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">تاريخ تلقائي منسق</span>
+                <span className="text-micro text-muted-foreground/80 truncate">تاريخ تلقائي منسق</span>
               </div>
             </div>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+            <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
               تلقائي
             </span>
           </DropdownMenuItem>
@@ -224,10 +224,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">توقيع المصور</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">حقوق وتوثيق العمل</span>
+                <span className="text-micro text-muted-foreground/80 truncate">حقوق وتوثيق العمل</span>
               </div>
             </div>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 shrink-0">
+            <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 shrink-0">
               حقوق
             </span>
           </DropdownMenuItem>
@@ -242,10 +242,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">شارة مميزة</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">كبسولة ملونة بخلفية</span>
+                <span className="text-micro text-muted-foreground/80 truncate">كبسولة ملونة بخلفية</span>
               </div>
             </div>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+            <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
               شارة
             </span>
           </DropdownMenuItem>
@@ -260,17 +260,17 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">علامة مائية</span>
-                <span className="text-[10px] text-muted-foreground truncate">حماية مائلة شفافة</span>
+                <span className="text-micro text-muted-foreground truncate">حماية مائلة شفافة</span>
               </div>
             </div>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
+            <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
               مسودة
             </span>
           </DropdownMenuItem>
 
           <Separator className="my-1 bg-border/50" />
 
-          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+          <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
             تأثيرات فنية
           </div>
 
@@ -284,10 +284,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">ذهب ملكي</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">تدرج ذهبي وظلال فخمة</span>
+                <span className="text-micro text-muted-foreground/80 truncate">تدرج ذهبي وظلال فخمة</span>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+            <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
               فاخر
             </span>
           </DropdownMenuItem>
@@ -302,10 +302,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">نيون متوهج</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">إضاءة إشعاعية ساطعة</span>
+                <span className="text-micro text-muted-foreground/80 truncate">إضاءة إشعاعية ساطعة</span>
               </div>
             </div>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
+            <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
               نيون
             </span>
           </DropdownMenuItem>
@@ -320,10 +320,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">ختم مقوس</span>
-                <span className="text-[10px] text-muted-foreground truncate">نص دائري معتمد</span>
+                <span className="text-micro text-muted-foreground truncate">نص دائري معتمد</span>
               </div>
             </div>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive shrink-0">
+            <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive shrink-0">
               ختم
             </span>
           </DropdownMenuItem>
@@ -338,10 +338,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">عنوان مجسّم</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">ظلال إسقاطية مجسمة</span>
+                <span className="text-micro text-muted-foreground/80 truncate">ظلال إسقاطية مجسمة</span>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+            <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
               مجسّم
             </span>
           </DropdownMenuItem>
@@ -356,10 +356,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">نص مفرغ</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">حدود عصرية بدون ملء</span>
+                <span className="text-micro text-muted-foreground/80 truncate">حدود عصرية بدون ملء</span>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400 shrink-0">
+            <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400 shrink-0">
               مفرّغ
             </span>
           </DropdownMenuItem>
@@ -374,10 +374,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">بطاقة ملاحظة</span>
-                <span className="text-[10px] text-muted-foreground/80 truncate">نص داخل صندوق مؤطر</span>
+                <span className="text-micro text-muted-foreground/80 truncate">نص داخل صندوق مؤطر</span>
               </div>
             </div>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
+            <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
               بطاقة
             </span>
           </DropdownMenuItem>
@@ -400,7 +400,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           </DropdownMenuTrigger>
         </TooltipBtn>
         <DropdownMenuContent align="start" className="w-48 max-h-[460px] overflow-y-auto font-cairo rounded-2xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1.5 space-y-1">
-          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+          <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
             أشكال هندسية
           </div>
           <DropdownMenuItem
@@ -451,7 +451,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
 
           <Separator className="my-1 bg-border/50" />
 
-          <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
+          <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 uppercase tracking-wider select-none">
             رموز وتأطير
           </div>
           <DropdownMenuItem
@@ -598,7 +598,7 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
                     <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500" style={{ filter: f.css }} />
                   )}
                 </div>
-                <span className="text-[10px] tracking-tight leading-tight truncate max-w-full text-center mt-0.5">{f.name}</span>
+                <span className="text-micro tracking-tight leading-tight truncate max-w-full text-center mt-0.5">{f.name}</span>
               </button>
             );
           })}
@@ -635,7 +635,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
 
   return (
     <div className="flex items-center gap-1 font-cairo bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 px-1 py-0.5 rounded-lg shadow-2xs">
-      <div className="flex items-center gap-1 text-[11px] font-bold text-primary px-1 border-e border-primary/20 select-none hidden md:flex">
+      <div className="flex items-center gap-1 text-mini font-bold text-primary px-1 border-e border-primary/20 select-none hidden md:flex">
         <Sparkle className="w-3.5 h-3.5 text-primary" weight="fill" />
         <span>ذكاء اصطناعي</span>
       </div>

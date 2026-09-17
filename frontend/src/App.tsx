@@ -254,8 +254,6 @@ export default function App() {
   }, [checkLicenseStatus]);
 
 
-  const isModalOpen = exportOpen || printOpen || mobileTemplatesOpen || mobilePropsOpen;
-
   if (isInitializing) {
     return (
       <div className="fixed inset-0 z-(--z-ruler) flex flex-col items-center justify-center bg-background text-foreground font-cairo select-none" dir="rtl">
@@ -306,6 +304,8 @@ export default function App() {
             onLogout={logoutAccount}
             user={user}
           />
+          <AccountLicenseModal />
+          <UpdateNotifier />
         </TooltipProvider>
       </PhosphorProvider>
     );
@@ -322,6 +322,7 @@ export default function App() {
         >
       {!isMaximized && <WindowResizeHandles />}
       {/* الرأس الموحد للنافذة بتصميم Fluent 2 Acrylic */}
+      <ErrorBoundary>
       <header
         className={cn(
           "border-b border-border bg-sidebar/95 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
@@ -429,7 +430,7 @@ export default function App() {
               <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
                 <div className="flex items-center gap-1.5">
                   <span>{rightSidebarOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}</span>
-                  <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+B</kbd>
+                  <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+B</kbd>
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -453,7 +454,7 @@ export default function App() {
               <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
                 <div className="flex items-center gap-1.5">
                   <span>{leftSidebarOpen ? "إخفاء لوحة الخصائص" : "إظهار لوحة الخصائص"}</span>
-                  <kbd className="px-1 py-0.5 text-[10px] font-mono bg-muted/80 rounded border border-border">Ctrl+Shift+B</kbd>
+                  <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+Shift+B</kbd>
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -490,6 +491,7 @@ export default function App() {
           </div>
         </div>
       </header>
+      </ErrorBoundary>
 
       {/* شريط الأدوات */}
       <Toolbar
@@ -517,11 +519,13 @@ export default function App() {
           className={cn(
             "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
             rightSidebarOpen
-              ? "w-[308px] min-w-[308px] max-w-[308px] opacity-100 border-l border-sidebar-border shadow-sm"
+              ? "w-[308px] min-w-[240px] max-w-[308px] 2xl:min-w-[308px] opacity-100 border-l border-sidebar-border shadow-sm"
               : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none"
           )}
         >
-          <TemplatePanel onCollapse={() => setRightSidebarOpen(false)} />
+          <ErrorBoundary>
+            <TemplatePanel onCollapse={() => setRightSidebarOpen(false)} />
+          </ErrorBoundary>
         </aside>
 
         {/* الكانفس - الوسط */}
@@ -566,15 +570,18 @@ export default function App() {
           className={cn(
             "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
             leftSidebarOpen
-              ? "w-[296px] min-w-[296px] max-w-[296px] opacity-100 border-r border-sidebar-border shadow-sm"
+              ? "w-[296px] min-w-[240px] max-w-[296px] 2xl:min-w-[296px] opacity-100 border-r border-sidebar-border shadow-sm"
               : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none"
           )}
         >
-          <PropertiesPanel onCollapse={() => setLeftSidebarOpen(false)} />
+          <ErrorBoundary>
+            <PropertiesPanel onCollapse={() => setLeftSidebarOpen(false)} />
+          </ErrorBoundary>
         </aside>
       </main>
 
       {/* النوافذ المنزلقة للجوال */}
+      {mobileTemplatesOpen && (
       <Sheet open={mobileTemplatesOpen} onOpenChange={setMobileTemplatesOpen}>
         <SheetContent side="right" className="w-[85vw] sm:w-96 p-0" dir="rtl">
           <SheetHeader className="border-b">
@@ -585,7 +592,9 @@ export default function App() {
           </div>
         </SheetContent>
       </Sheet>
+      )}
 
+      {mobilePropsOpen && (
       <Sheet open={mobilePropsOpen} onOpenChange={setMobilePropsOpen}>
         <SheetContent side="left" className="w-[85vw] sm:w-96 p-0" dir="rtl">
           <SheetHeader className="border-b">
@@ -596,6 +605,7 @@ export default function App() {
           </div>
         </SheetContent>
       </Sheet>
+      )}
 
       {/* نافذة التصدير */}
       <ErrorBoundary>

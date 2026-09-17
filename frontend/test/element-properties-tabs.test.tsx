@@ -105,9 +105,9 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
       </TooltipProvider>
     );
 
-    // 1. Switch to Colors tab: should have "حدود النص (إطار خارجي)" and "شفافية النص"
+    // 1. Switch to Colors tab: should have "إطار وحدود النص" and "شفافية النص"
     fireEvent.click(screen.getByRole('tab', { name: /الألوان/i }));
-    expect(screen.getByText('حدود النص (إطار خارجي)')).toBeInTheDocument();
+    expect(screen.getByText('إطار وحدود النص')).toBeInTheDocument();
     expect(screen.getByText('شفافية النص')).toBeInTheDocument();
 
     // 2. Switch to Effects tab: should have "الخلفية والشارة", "الظل والتوهج", but NOT "الإطار والحدود"
@@ -164,7 +164,7 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     );
 
     fireEvent.click(screen.getByRole('tab', { name: /الألوان/i }));
-    expect(screen.getByText('0 %')).toBeInTheDocument();
+    expect(screen.getByText('0%')).toBeInTheDocument();
 
     unmount();
 

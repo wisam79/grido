@@ -13,7 +13,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -197,13 +196,6 @@ func (s *PhoneBridgeService) handleMobilePage(w http.ResponseWriter, r *http.Req
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0")
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Expires", "0")
-
-	// Dynamic disk reload for development: check disk first so changes reflect instantly
-	devPath := filepath.Join("internal", "service", "embedded", "phone_camera_page.html")
-	if data, err := os.ReadFile(devPath); err == nil && len(data) > 0 {
-		_, _ = w.Write(data)
-		return
-	}
 
 	_, _ = w.Write(phoneCameraPageHTML)
 }

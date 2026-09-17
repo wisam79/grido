@@ -61,7 +61,7 @@ export const DocumentListItem: React.FC<DocumentListItemProps> = ({
           {isSelected && <Check size={11} weight="bold" />}
         </button>
         <span className="truncate flex items-center gap-1.5">
-          <span className="w-4 h-4 rounded-full bg-black/20 dark:bg-white/10 flex items-center justify-center text-[10px] font-mono shrink-0 font-bold">
+          <span className="w-4 h-4 rounded-full bg-black/20 dark:bg-white/10 flex items-center justify-center text-micro font-mono shrink-0 font-bold">
             {index + 1}
           </span>
           <span className="truncate font-medium">{doc.label}</span>
@@ -69,7 +69,7 @@ export const DocumentListItem: React.FC<DocumentListItemProps> = ({
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-[10px] opacity-75 font-mono">
+        <span className="text-micro opacity-75 font-mono">
           {Math.round(doc.confidence * 100)}%
         </span>
 

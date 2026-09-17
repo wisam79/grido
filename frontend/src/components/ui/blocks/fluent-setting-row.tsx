@@ -42,7 +42,7 @@ export const FluentSettingRow = React.memo(
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      className="text-muted-foreground/70 hover:text-foreground cursor-pointer"
+                      className="text-muted-foreground/70 hover:text-foreground cursor-pointer rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       aria-label="مزيد من المعلومات"
                     >
                       <Question className="size-3.5 shrink-0" weight="bold" />
@@ -55,7 +55,7 @@ export const FluentSettingRow = React.memo(
               )}
             </div>
             {description && (
-              <span className="text-[10px] text-muted-foreground">{description}</span>
+              <span className="text-micro text-muted-foreground">{description}</span>
             )}
           </div>
           {actionElement}
@@ -82,7 +82,7 @@ export const FluentSettingRow = React.memo(
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      className="text-muted-foreground/70 hover:text-foreground cursor-pointer inline-flex"
+                      className="text-muted-foreground/70 hover:text-foreground cursor-pointer inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       aria-label="مزيد من المعلومات"
                     >
                       <Question className="size-3.5 shrink-0" weight="bold" />
@@ -95,7 +95,7 @@ export const FluentSettingRow = React.memo(
               )}
             </div>
             {description && (
-              <p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
+              <p className="text-micro text-muted-foreground truncate leading-tight mt-0.5">
                 {description}
               </p>
             )}

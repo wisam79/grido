@@ -216,7 +216,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-xs">PNG</div>
-                  <div className="text-[10px] text-muted-foreground">جودة فائقة وشفافية</div>
+                  <div className="text-micro text-muted-foreground">جودة فائقة وشفافية</div>
                 </div>
               </button>
               <button
@@ -233,7 +233,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-xs">JPG</div>
-                  <div className="text-[10px] text-muted-foreground">حجم أصغر</div>
+                  <div className="text-micro text-muted-foreground">حجم أصغر</div>
                 </div>
               </button>
             </div>
@@ -287,7 +287,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 {format === "png" 
                   ? ((canvasWidth * canvasHeight * 4) / 1024 / 1024 * 0.6).toFixed(1)
                   : ((canvasWidth * canvasHeight * 3) / 1024 / 1024 * 0.35 * (quality / 100)).toFixed(1)} MB
-                <span className="text-[10px] text-muted-foreground font-normal"> (تقريبي)</span>
+                <span className="text-micro text-muted-foreground font-normal"> (تقريبي)</span>
               </span>
             </div>
           </div>
@@ -325,7 +325,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 unit="mm"
                 onChange={setBleedMM}
               />
-              <p className="text-[10px] text-muted-foreground">هامش إضافي لمنع ظهور حواف بيضاء بعد القص.</p>
+              <p className="text-micro text-muted-foreground">هامش إضافي لمنع ظهور حواف بيضاء بعد القص.</p>
             </div>
 
             {mode === "collage" && (

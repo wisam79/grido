@@ -40,53 +40,61 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   labelWidth,
 }: FluentSliderFieldProps) {
   const [localValue, setLocalValue] = useState(value);
-  const rafRef = useRef<number | null>(null);
-  const pendingRef = useRef<number | null>(null);
-  const isDraggingRef = useRef(false);
-  const keyCommitTimerRef = useRef<number | null>(null);
-  const onCommitRef = useRef(onCommit);
   const latestValRef = useRef(value);
+  const isDraggingRef = useRef(false);
+  const pendingRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const keyCommitTimerRef = useRef<number | null>(null);
+
+  const onChangeRef = useRef(onChange);
+  const onCommitRef = useRef(onCommit);
+  const onDragStartRef = useRef(onDragStart);
+  const onDragEndRef = useRef(onDragEnd);
+
   // 🛡️ a11y: ربط ملصق الحقل بمنزلق Radix (role=slider) باسم قابل للوصول
   const labelId = React.useId();
+
   useEffect(() => {
+    onChangeRef.current = onChange;
     onCommitRef.current = onCommit;
+    onDragStartRef.current = onDragStart;
+    onDragEndRef.current = onDragEnd;
   });
 
+  // مزامنة القيمة المحلية عند تغيّر الـ prop من الخارج (طالما المستخدم لا يسحب حالياً)
   useEffect(() => {
     if (!isDraggingRef.current) {
       setLocalValue(value);
+      latestValRef.current = value;
     }
   }, [value]);
 
   const flushPending = useCallback(() => {
     if (pendingRef.current !== null) {
-      onChange(pendingRef.current);
+      const val = pendingRef.current;
       pendingRef.current = null;
+      onChangeRef.current(val);
     }
     rafRef.current = null;
-  }, [onChange]);
+  }, []);
 
-  const handleChange = useCallback(
-    (v: number[]) => {
-      const newVal = v[0];
-      setLocalValue(newVal);
-      pendingRef.current = newVal;
-      if (!rafRef.current) {
-        rafRef.current = requestAnimationFrame(flushPending);
-      }
-      // تعديلات لوحة المفاتيح (أسهم/Home/End) لا تُطلق pointerup —
-      // نُجدول onCommit بتأجيل حتى تُسجَّل كخطوة تراجع واحدة (إصلاح Bug#18)
-      if (!isDraggingRef.current) {
-        if (keyCommitTimerRef.current !== null) window.clearTimeout(keyCommitTimerRef.current);
-        keyCommitTimerRef.current = window.setTimeout(() => {
-          keyCommitTimerRef.current = null;
-          onCommitRef.current?.(newVal);
-        }, 500);
-        latestValRef.current = newVal;
-      }
-    },
-    [flushPending]
-  );
+  const handleDragEnd = useCallback(() => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (pendingRef.current !== null) {
+      const val = pendingRef.current;
+      pendingRef.current = null;
+      onChangeRef.current(val);
+    }
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      const finalVal = latestValRef.current;
+      onCommitRef.current?.(finalVal);
+      onDragEndRef.current?.();
+    }
+  }, []);
 
   const handlePointerDown = useCallback(() => {
     if (keyCommitTimerRef.current !== null) {
@@ -94,30 +102,54 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       keyCommitTimerRef.current = null;
     }
     isDraggingRef.current = true;
-    onDragStart?.();
-  }, [onDragStart]);
+    onDragStartRef.current?.();
 
-  const handlePointerUp = useCallback(() => {
-    const finalValue = pendingRef.current ?? localValue;
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    if (pendingRef.current !== null) {
-      onChange(pendingRef.current);
-      pendingRef.current = null;
-    }
-    if (isDraggingRef.current) {
-      isDraggingRef.current = false;
-      onCommit?.(finalValue);
-      onDragEnd?.();
-    }
-  }, [onChange, onCommit, onDragEnd, localValue]);
+    // 🛡️ صمام أمان عالمي: رصد pointerup على مستوى window بالكامل
+    // لضمان إنهاء حالة السحب حتى لو حرر المستخدم الفأرة خارج إطار السلايدر
+    const handleGlobalPointerUp = () => {
+      window.removeEventListener("pointerup", handleGlobalPointerUp);
+      window.removeEventListener("pointercancel", handleGlobalPointerUp);
+      handleDragEnd();
+    };
+    window.addEventListener("pointerup", handleGlobalPointerUp);
+    window.addEventListener("pointercancel", handleGlobalPointerUp);
+  }, [handleDragEnd]);
+
+  const handleChange = useCallback(
+    (v: number[]) => {
+      const newVal = v[0];
+      setLocalValue(newVal);
+      latestValRef.current = newVal;
+      pendingRef.current = newVal;
+
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(flushPending);
+      }
+
+      // تعديلات لوحة المفاتيح (أسهم/Home/End) لا تُطلق pointerdown/up
+      if (!isDraggingRef.current) {
+        if (keyCommitTimerRef.current !== null) window.clearTimeout(keyCommitTimerRef.current);
+        keyCommitTimerRef.current = window.setTimeout(() => {
+          keyCommitTimerRef.current = null;
+          onCommitRef.current?.(newVal);
+        }, 400);
+      }
+    },
+    [flushPending]
+  );
+
+  const handleValueCommit = useCallback(
+    (v: number[]) => {
+      const commitVal = v[0] ?? latestValRef.current;
+      latestValRef.current = commitVal;
+      handleDragEnd();
+    },
+    [handleDragEnd]
+  );
 
   useEffect(() => {
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      // عند إلغاء التركيب مع تعديل لوحة مفاتيح معلّق: نُثبته كخطوة تراجع
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (keyCommitTimerRef.current !== null) {
         window.clearTimeout(keyCommitTimerRef.current);
         keyCommitTimerRef.current = null;
@@ -128,7 +160,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
 
   const displayVal = valueFormatter
     ? valueFormatter(localValue)
-    : `${localValue}${unit ? ` ${unit}` : ""}`;
+    : `${localValue}${unit ? (unit === "%" || unit === "°" ? unit : ` ${unit}`) : ""}`;
 
   if (layout === "inline") {
     return (
@@ -160,14 +192,14 @@ export const FluentSliderField = React.memo(function FluentSliderField({
           step={step}
           disabled={disabled}
           onValueChange={handleChange}
+          onValueCommit={handleValueCommit}
           onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
           className="py-1 flex-1"
         />
 
         <span
           dir="ltr"
-          className="font-mono font-bold text-[11px] bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-foreground/90 select-none shrink-0 min-w-10 text-center"
+          className="font-mono font-bold text-mini bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-foreground/90 select-none shrink-0 min-w-10 text-center"
         >
           {displayVal}
         </span>
@@ -205,8 +237,8 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         step={step}
         disabled={disabled}
         onValueChange={handleChange}
+        onValueCommit={handleValueCommit}
         onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
         className="py-1"
       />
     </div>

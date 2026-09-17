@@ -97,7 +97,7 @@ const ToolBtn: React.FC<{
         {children}
       </Button>
     </TooltipTrigger>
-    <TooltipContent side="bottom" className="font-cairo text-[11px]">{title}</TooltipContent>
+    <TooltipContent side="bottom" className="font-cairo text-mini">{title}</TooltipContent>
   </Tooltip>
 );
 
@@ -168,10 +168,10 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="font-cairo text-[11px]">إدراج مقاس معتمد</TooltipContent>
+          <TooltipContent side="bottom" className="font-cairo text-mini">إدراج مقاس معتمد</TooltipContent>
         </Tooltip>
         <DropdownMenuContent align="start" className="w-52 font-cairo text-xs z-(--z-print-toolbar)">
-          <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold text-center">
+          <DropdownMenuLabel className="text-micro text-muted-foreground font-bold text-center">
             مقاسات الاستوديو (مم)
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -182,7 +182,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               className="flex items-center justify-between cursor-pointer py-1.5"
             >
               <span className="font-semibold">{PHOTO_PRESET_LABELS[key as PhotoPresetType]}</span>
-              <span className="font-mono text-[10px] text-muted-foreground" dir="ltr">
+              <span className="font-mono text-micro text-muted-foreground" dir="ltr">
                 {dims.w}×{dims.h}
               </span>
             </DropdownMenuItem>
@@ -198,30 +198,30 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             className="h-7 px-2.5 gap-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer font-bold shadow-xs shrink-0"
           >
             <Lightning className="w-3.5 h-3.5" weight="fill" />
-            <span className="text-[11px]">تعبئة</span>
+            <span className="text-mini">تعبئة</span>
             <CaretDown className="w-2.5 h-2.5 opacity-80" weight="bold" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 font-cairo text-xs z-(--z-print-toolbar)">
-          <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold text-center">
+          <DropdownMenuLabel className="text-micro text-muted-foreground font-bold text-center">
             أقصى استغلال للورقة
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onAutoPack("id-max")} className="cursor-pointer py-1.5 font-semibold">
             <span className="flex-1">بطاقات 35×45</span>
-            <span className="text-[10px] text-muted-foreground font-mono">ID</span>
+            <span className="text-micro text-muted-foreground font-mono">ID</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onAutoPack("passport-max")} className="cursor-pointer py-1.5 font-semibold">
             <span className="flex-1">جوازات 50×50</span>
-            <span className="text-[10px] text-muted-foreground font-mono">PP</span>
+            <span className="text-micro text-muted-foreground font-mono">PP</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onAutoPack("transactions-max")} className="cursor-pointer py-1.5 font-semibold">
             <span className="flex-1">معاملات 30×40</span>
-            <span className="text-[10px] text-muted-foreground font-mono">TR</span>
+            <span className="text-micro text-muted-foreground font-mono">TR</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onAutoPack("wallet-max")} className="cursor-pointer py-1.5 font-semibold">
             <span className="flex-1">محفظة 54×86</span>
-            <span className="text-[10px] text-muted-foreground font-mono">WL</span>
+            <span className="text-micro text-muted-foreground font-mono">WL</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onAutoPack("combo-standard")} className="cursor-pointer py-1.5 font-semibold">
@@ -234,7 +234,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
           {/* الفجوة والهامش */}
           <div className="px-2 py-1.5 flex flex-col gap-1.5 bg-muted/30 rounded-b-md">
             <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
+              <span className="flex items-center gap-1 text-micro font-bold text-muted-foreground">
                 <Ruler className="w-3 h-3 text-primary/70" weight="bold" />
                 الفجوة
               </span>
@@ -242,22 +242,22 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
                 <button
                   type="button"
                   onClick={() => onPackGapChange(Math.max(0, packGapMM - 1))}
-                  className="w-5 h-5 rounded text-[11px] font-black bg-background border border-border/60 hover:bg-muted cursor-pointer"
+                  className="w-5 h-5 rounded text-mini font-black bg-background border border-border/60 hover:bg-muted cursor-pointer"
                 >
                   −
                 </button>
-                <span className="w-8 text-center font-mono text-[10px] font-bold" dir="ltr">{packGapMM} مم</span>
+                <span className="w-8 text-center font-mono text-micro font-bold" dir="ltr">{packGapMM} مم</span>
                 <button
                   type="button"
                   onClick={() => onPackGapChange(Math.min(10, packGapMM + 1))}
-                  className="w-5 h-5 rounded text-[11px] font-black bg-background border border-border/60 hover:bg-muted cursor-pointer"
+                  className="w-5 h-5 rounded text-mini font-black bg-background border border-border/60 hover:bg-muted cursor-pointer"
                 >
                   +
                 </button>
               </div>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
+              <span className="flex items-center gap-1 text-micro font-bold text-muted-foreground">
                 <ArrowsOutCardinal className="w-3 h-3 text-primary/70" weight="bold" />
                 الهامش
               </span>
@@ -265,15 +265,15 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
                 <button
                   type="button"
                   onClick={() => onPackMarginChange(Math.max(0, packMarginMM - 1))}
-                  className="w-5 h-5 rounded text-[11px] font-black bg-background border border-border/60 hover:bg-muted cursor-pointer"
+                  className="w-5 h-5 rounded text-mini font-black bg-background border border-border/60 hover:bg-muted cursor-pointer"
                 >
                   −
                 </button>
-                <span className="w-8 text-center font-mono text-[10px] font-bold" dir="ltr">{packMarginMM} مم</span>
+                <span className="w-8 text-center font-mono text-micro font-bold" dir="ltr">{packMarginMM} مم</span>
                 <button
                   type="button"
                   onClick={() => onPackMarginChange(Math.min(15, packMarginMM + 1))}
-                  className="w-5 h-5 rounded text-[11px] font-black bg-background border border-border/60 hover:bg-muted cursor-pointer"
+                  className="w-5 h-5 rounded text-mini font-black bg-background border border-border/60 hover:bg-muted cursor-pointer"
                 >
                   +
                 </button>
@@ -287,7 +287,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
 
       {/* ── مجموعة 2: المحاذاة والتقسيم ── */}
       <ToolBtn onClick={() => onAlignSlot("top-left")} disabled={!selectedSlotId} title="زاوية القص (أعلى اليسار)">
-        <span className="text-[10px] font-black text-primary leading-none">TL</span>
+        <span className="text-micro font-black text-primary leading-none">TL</span>
       </ToolBtn>
       <ToolBtn onClick={() => onAlignSlot("center-h")} disabled={!selectedSlotId} title="توسيط أفقي على الورقة">
         <AlignCenterHorizontal className="w-3.5 h-3.5" weight="bold" />
@@ -328,7 +328,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
                 <SquaresFour className="w-3.5 h-3.5" weight="bold" />
                 {isMulti && (
                   <span
-                    className="absolute -top-1 -left-1 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-[8px] font-black flex items-center justify-center"
+                    className="absolute -top-1 -left-1 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-3xs font-black flex items-center justify-center"
                     dir="ltr"
                   >
                     {multiSelectedCount}
@@ -337,12 +337,12 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="font-cairo text-[11px]">
+          <TooltipContent side="bottom" className="font-cairo text-mini">
             محاذاة جماعية {isMulti ? `(${multiSelectedCount} خلايا)` : "(حدد بـ Shift+نقرة)"}
           </TooltipContent>
         </Tooltip>
         <DropdownMenuContent align="start" className="w-48 font-cairo text-xs z-(--z-print-toolbar)">
-          <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold text-center">
+          <DropdownMenuLabel className="text-micro text-muted-foreground font-bold text-center">
             {isMulti ? `محاذاة ${multiSelectedCount} خلايا فيما بينها` : "حدد خليتين أو أكثر"}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

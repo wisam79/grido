@@ -391,7 +391,9 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       const a = document.createElement("a");
       a.href = url;
       a.download = `${(layoutName || "freeform").replace(/[\\/:*?"<>|]/g, "_")}.grido.json`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success("تم تصدير التخطيط كملف JSON");
     } catch {
@@ -545,7 +547,17 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         await SaveCustomTemplate(templateName, gridoTemplate.cells.length, JSON.stringify(gridoTemplate.cells));
         toast.success(`تم حفظ القالب المخصص "${templateName}" في مكتبة قوالبك!`);
       } else {
-        const saved = JSON.parse(localStorage.getItem("grido_custom_templates") || "[]");
+        const raw = localStorage.getItem("grido_custom_templates");
+        let saved: Array<{ name: string; template: unknown }> = [];
+        if (raw) {
+          const parsed: unknown = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            saved = parsed.filter(
+              (item): item is { name: string; template: unknown } =>
+                !!item && typeof item === "object" && typeof (item as { name?: unknown }).name === "string"
+            );
+          }
+        }
         saved.push({ name: templateName, template: gridoTemplate });
         localStorage.setItem("grido_custom_templates", JSON.stringify(saved));
         toast.success(`تم حفظ كولاج "${templateName}" المخصص بنجاح!`);
@@ -650,7 +662,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                   <DialogTitle className="text-base font-bold tracking-tight text-foreground truncate">
                     محرر الكولاج الحر
                   </DialogTitle>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-mini font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                     Freeform
                   </span>
                 </div>
@@ -781,7 +793,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                     <DownloadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="font-cairo text-[11px]">تصدير JSON للمشاركة</TooltipContent>
+                <TooltipContent side="top" className="font-cairo text-mini">تصدير JSON للمشاركة</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -795,7 +807,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                     <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="font-cairo text-[11px]">استيراد تخطيط JSON</TooltipContent>
+                <TooltipContent side="top" className="font-cairo text-mini">استيراد تخطيط JSON</TooltipContent>
               </Tooltip>
 
               <input
@@ -811,11 +823,11 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
           <div className="flex items-center gap-2.5 shrink-0">
             {/* عدادات حية: الخلايا + التحديد + نسبة الاستغلال */}
             <div className="flex items-center gap-1.5" dir="rtl">
-              <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
+              <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
                 {slots.length} خلية
               </span>
               {multiSelectedIds.length > 0 && (
-                <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20 animate-in fade-in duration-150">
+                <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20 animate-in fade-in duration-150">
                   ×{multiSelectedIds.length + 1} محدد
                 </span>
               )}

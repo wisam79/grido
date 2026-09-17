@@ -338,7 +338,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   <DialogTitle className="text-sm font-bold text-foreground truncate">
                     الملصقات
                   </DialogTitle>
-                  <span className="text-[11px] font-mono font-bold px-2 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-mini font-mono font-bold px-2 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
                     {ALL_STICKER_TEMPLATES.length}
                   </span>
                   <DialogDescription className="sr-only">
@@ -367,7 +367,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   <DialogTitle className="text-sm font-bold text-foreground truncate">
                     {selectedTemplate.name}
                   </DialogTitle>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
+                  <span className="text-micro font-mono px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
                     {templateMm.width}×{templateMm.height} مم
                   </span>
                   <DialogDescription className="sr-only">
@@ -437,7 +437,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                 <SealCheck className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 <span className="text-foreground font-bold truncate">{selectedTemplate.name}</span>
                 <span className="text-border/60">•</span>
-                <span className="font-mono text-[11px]">{templateMm.width}×{templateMm.height} مم</span>
+                <span className="font-mono text-mini">{templateMm.width}×{templateMm.height} مم</span>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">

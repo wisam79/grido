@@ -182,7 +182,7 @@ export function UpdateNotifier() {
           {/* 1. بطاقة مقارنة الإصدارات الأنيقة */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40 dark:bg-muted/20 border border-border/70 fluent-specular">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] text-muted-foreground font-semibold">الإصدار المثبت</span>
+              <span className="text-micro text-muted-foreground font-semibold">الإصدار المثبت</span>
               <span className="font-mono text-xs text-foreground/80 font-bold bg-background/90 px-2 py-0.5 rounded-md border border-border/50 inline-block w-fit">
                 {updateInfo.current_version || "dev"}
               </span>
@@ -193,7 +193,7 @@ export function UpdateNotifier() {
             </div>
 
             <div className="flex flex-col items-end gap-0.5">
-              <span className="text-[10px] text-primary font-bold">الإصدار الأحدث</span>
+              <span className="text-micro text-primary font-bold">الإصدار الأحدث</span>
               <span className="font-mono text-xs text-primary-foreground font-bold bg-primary px-2.5 py-0.5 rounded-md shadow-xs shadow-primary/30 flex items-center gap-1">
                 <Sparkle className="w-3 h-3" weight="fill" />
                 {updateInfo.latest_version}
@@ -236,7 +236,7 @@ export function UpdateNotifier() {
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-[10px] text-muted-foreground text-center">
+              <p className="text-micro text-muted-foreground text-center">
                 سيُعاد تشغيل التطبيق تلقائياً
               </p>
             </div>

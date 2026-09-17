@@ -34,15 +34,16 @@ func writeSecureFile(path string, data []byte) error {
 
 // derivedKeyCache يخزن المفاتيح المشتقة لكل عملية لمنع إعادة اشتقاق PBKDF2
 // (600K تكرار) مع كل استدعاء — المفاتيح حتمية لكل جهاز فلا خطر من التخزين المؤقت.
-var derivedKeyCache sync.Map // salt → []byte
+var derivedKeyCache sync.Map // deviceID|salt → []byte
 
 // deriveKey derives a 32-byte key using PBKDF2 with 600,000 iterations.
 func deriveKey(deviceID, salt string) []byte {
-	if cached, ok := derivedKeyCache.Load(salt); ok {
+	cacheKey := deviceID + "|" + salt
+	if cached, ok := derivedKeyCache.Load(cacheKey); ok {
 		return cached.([]byte)
 	}
 	key := pbkdf2.Key([]byte(deviceID), []byte(salt), 600_000, 32, sha256.New)
-	derivedKeyCache.Store(salt, key)
+	derivedKeyCache.Store(cacheKey, key)
 	return key
 }
 
@@ -154,9 +155,10 @@ func ClearLicenseSignature() error {
 func UpdateLastTime(t time.Time) error {
 	path := filepath.Join(GetAppDir(), ".license_time")
 
-	// Skip the write when the stored time is already ahead or equal (not newer)
+	// Skip the write when the stored time is already ahead or equal (not newer).
+	// يُقرأ الطابع الزمني فقط بعد التحقق من توقيعه HMAC أدناه لمنع تثبيت وقت مزوّر.
 	if existing, err := readLicenseTime(path); err == nil {
-		if t.Unix() <= existing {
+		if verifyLicenseTimeSignature(path, existing) && t.Unix() <= existing {
 			return nil
 		}
 	}
@@ -187,6 +189,26 @@ func readLicenseTime(path string) (int64, error) {
 		return 0, errors.New("invalid license time format")
 	}
 	return strconv.ParseInt(parts[0], 10, 64)
+}
+
+// verifyLicenseTimeSignature يتحقق من توقيع HMAC للطابع الزمني المخزّن
+func verifyLicenseTimeSignature(path string, unixValue int64) bool {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	parts := strings.Split(string(data), "|")
+	if len(parts) != 2 {
+		return false
+	}
+	deviceID := GetDeviceID()
+	if deviceID == "" {
+		deviceID = getFallbackDeviceID()
+	}
+	key := deriveSigningKey(deviceID)
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte(strconv.FormatInt(unixValue, 10)))
+	return hmac.Equal([]byte(hex.EncodeToString(mac.Sum(nil))), []byte(parts[1]))
 }
 
 // VerifyTime returns false if system clock rollback is detected or time file is tampered with.
@@ -222,13 +244,13 @@ func VerifyTime(t time.Time) bool {
 	mac.Write([]byte(unixStr))
 	expectedSig := hex.EncodeToString(mac.Sum(nil))
 
-	if !hmac.Equal([]byte(expectedSig), []byte(storedSigHex)) {
-		slog.Warn("License time integrity check failed")
+	lastUnix, err := strconv.ParseInt(unixStr, 10, 64)
+	if err != nil {
 		return false
 	}
 
-	lastUnix, err := strconv.ParseInt(unixStr, 10, 64)
-	if err != nil {
+	if !hmac.Equal([]byte(expectedSig), []byte(storedSigHex)) {
+		slog.Warn("License time integrity check failed")
 		return false
 	}
 

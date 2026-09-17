@@ -262,7 +262,7 @@ export function ToolbarFileOps() {
               </DropdownMenuTrigger>
             </TooltipBtn>
             <DropdownMenuContent align="start" className="w-56 font-cairo [direction:rtl] rounded-xl backdrop-blur-2xl bg-popover/95 border border-border shadow-fluent-16 p-1.5 space-y-1">
-              <div className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground/70 select-none">
+              <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
                 خيارات الإدراج
               </div>
               <DropdownMenuItem
@@ -274,9 +274,9 @@ export function ToolbarFileOps() {
                 </div>
                 <div className="flex flex-col min-w-0 text-start flex-1">
                   <span className="font-bold text-foreground">دفعة صور</span>
-                  <span className="text-[10px] text-muted-foreground">إدراج معاملات متعددة</span>
+                  <span className="text-micro text-muted-foreground">إدراج معاملات متعددة</span>
                 </div>
-                <span className="text-[10px] font-mono text-muted-foreground/80">Ctrl+Shift+O</span>
+                <span className="text-micro font-mono text-muted-foreground/80">Ctrl+Shift+O</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
@@ -288,22 +288,8 @@ export function ToolbarFileOps() {
                 </div>
                 <div className="flex flex-col min-w-0 text-start flex-1">
                   <span className="font-bold text-foreground">كاميرا الهاتف</span>
-                  <span className="text-[10px] text-muted-foreground">التقاط عبر QR اللاسلكي</span>
+                  <span className="text-micro text-muted-foreground">التقاط عبر QR اللاسلكي</span>
                 </div>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => setIsProjectsOpen(true)}
-                className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
-              >
-                <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Folders className="w-4 h-4" weight="duotone" />
-                </div>
-                <div className="flex flex-col min-w-0 text-start flex-1">
-                  <span className="font-bold text-foreground">مكتبة المشاريع</span>
-                  <span className="text-[10px] text-muted-foreground">استعراض وحفظ المشاريع</span>
-                </div>
-                <span className="text-[10px] font-mono text-muted-foreground/80">Ctrl+S</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

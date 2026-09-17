@@ -285,6 +285,10 @@ export async function applyWatermarkIfFree(
   return new Promise((resolve) => {
     const url = URL.createObjectURL(blob);
     const img = new Image();
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(blob);
+    };
     img.onload = () => {
       URL.revokeObjectURL(url);
       const canvas = document.createElement("canvas");
@@ -932,6 +936,10 @@ export async function applyBleedAndCropMarks(
   return new Promise((resolve) => {
     const url = URL.createObjectURL(blob);
     const img = new Image();
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(blob);
+    };
     img.onload = () => {
       URL.revokeObjectURL(url);
       

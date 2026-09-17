@@ -416,7 +416,7 @@ export function SheetPreview({
             className="w-full h-full object-contain"
           />
         ) : (
-          <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-[10px] text-muted-foreground font-cairo">
+          <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-micro text-muted-foreground font-cairo">
             جاري تجهيز المعاينة ...
           </div>
         )}

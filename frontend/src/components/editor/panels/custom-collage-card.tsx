@@ -300,13 +300,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             <MagicWand className="w-5 h-5" weight="duotone" />
           </div>
           <span className="font-bold text-xs text-foreground">كولاج حر بالملم</span>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-muted-foreground select-none">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 text-micro text-muted-foreground select-none">
             <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40 font-mono">mm</span>
             <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40">تحديد متعدد</span>
             <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40">تعبئة ذكية</span>
             <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40">تصدير/استيراد</span>
           </div>
-          <p className="text-[10px] text-muted-foreground leading-relaxed">
+          <p className="text-micro text-muted-foreground leading-relaxed">
             ورقة فارغة بلا قوالب: ارسم شبكتك بالمليمر مع تقسيم، محاذاة، مغناطيس، وتعبئة ذكية
           </p>
           <button

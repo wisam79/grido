@@ -135,7 +135,7 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
               className={cn(
                 "font-mono select-none tracking-tighter",
                 isZero
-                  ? "fill-primary font-bold text-[8.5px]"
+                  ? "fill-primary font-bold text-2xs"
                   : "fill-ruler-tick-label-active font-medium"
               )}
             >
@@ -319,7 +319,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
               className={cn(
                 "font-mono select-none tracking-tighter",
                 isZero
-                  ? "fill-primary font-bold text-[8.5px]"
+                  ? "fill-primary font-bold text-2xs"
                   : "fill-ruler-tick-label-active font-medium"
               )}
               transform={`rotate(-90, 5.5, ${y})`}

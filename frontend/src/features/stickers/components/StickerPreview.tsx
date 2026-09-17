@@ -330,7 +330,7 @@ export const StickerPreview = React.memo(function StickerPreview({
         </Tooltip>
 
         {/* Real Dimensions & DPI Spec */}
-        <div className="absolute top-3 end-3 z-10 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-card/75 backdrop-blur-md border border-border/30 text-[10px] font-mono text-muted-foreground/90 select-none pointer-events-none">
+        <div className="absolute top-3 end-3 z-10 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-card/75 backdrop-blur-md border border-border/30 text-micro font-mono text-muted-foreground/90 select-none pointer-events-none">
           <span>{currentMm.width}×{currentMm.height} مم</span>
           <span className="text-border/60">•</span>
           <span className="text-primary font-bold">300 DPI</span>
@@ -428,7 +428,7 @@ export const StickerPreview = React.memo(function StickerPreview({
             <MagnifyingGlassMinus className="w-3.5 h-3.5" />
           </button>
           <span
-            className="w-11 text-center text-[11px] font-mono font-bold text-foreground select-none"
+            className="w-11 text-center text-mini font-mono font-bold text-foreground select-none"
             aria-live="polite"
           >
             {Math.round(zoomLevel * 100)}%
@@ -453,7 +453,7 @@ export const StickerPreview = React.memo(function StickerPreview({
               handleZoomReset();
             }}
             className={cn(
-              "h-7 px-1.5 text-[10px] font-semibold rounded-md cursor-pointer flex items-center justify-center transition-colors",
+              "h-7 px-1.5 text-micro font-semibold rounded-md cursor-pointer flex items-center justify-center transition-colors",
               zoomLevel !== 1
                 ? "text-primary font-bold hover:bg-primary/10"
                 : "text-muted-foreground/60"

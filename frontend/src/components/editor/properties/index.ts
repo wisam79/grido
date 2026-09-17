@@ -5,4 +5,3 @@ export * from "./collage-settings";
 export * from "./shared-controls";
 export * from "./gradient-picker";
 export * from "./layers-list";
-export * from "./slots-list";

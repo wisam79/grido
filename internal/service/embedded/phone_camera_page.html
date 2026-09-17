@@ -581,7 +581,8 @@
       form.append('photo', file, file.name || 'shot.jpg');
 
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/upload?token=' + encodeURIComponent(token));
+      xhr.open('POST', '/upload');
+      xhr.setRequestHeader('X-Bridge-Token', token);
 
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {

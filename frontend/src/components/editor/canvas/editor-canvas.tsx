@@ -560,7 +560,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
             <div
               className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded-md ${
                 lockUserGuides ? "bg-amber-600" : "bg-primary"
-              } text-white font-mono text-[10px] font-bold shadow-fluent-8 z-50 pointer-events-none ${
+              } text-white font-mono text-micro font-bold shadow-fluent-8 z-50 pointer-events-none ${
                 isH ? "left-3 -top-5" : "top-3 left-2"
               }`}
             >
@@ -622,7 +622,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
         }}
       >
         <div
-          className={`absolute flex items-center px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground font-mono text-[10px] font-bold shadow-fluent-8 ${
+          className={`absolute flex items-center px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground font-mono text-micro font-bold shadow-fluent-8 ${
             dragGuideState.type === "h" ? "left-3 -top-5" : "top-3 left-2"
           }`}
         >

@@ -45,7 +45,7 @@ func main() {
 	go repository.CleanupUnusedMedia()
 
 	// 🧹 تنظيف كاش الويب في بيئة التطوير لتفادي الكاش القديم للمتصفح
-	if os.Getenv("WAILS_DEV") == "true" {
+	if isDevMode() {
 		cacheDir := getWebviewCacheDir()
 		_ = os.RemoveAll(cacheDir)
 	}
@@ -139,9 +139,19 @@ func main() {
 					var filePath string
 					dir := r.URL.Query().Get("dir")
 					if dir != "" {
+						exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
 						cleanDir := filepath.Clean(dir)
 						if fi, err := os.Stat(cleanDir); err == nil && fi.IsDir() {
-							filePath = filepath.Join(cleanDir, filename)
+							if resolvedDir, err := filepath.EvalSymlinks(cleanDir); err == nil {
+								cleanDir = resolvedDir
+							}
+							resolvedExports := exportsDir
+							if resolvedBase, err := filepath.EvalSymlinks(exportsDir); err == nil {
+								resolvedExports = resolvedBase
+							}
+							if strings.HasPrefix(cleanDir, filepath.Clean(resolvedExports)+string(filepath.Separator)) {
+								filePath = filepath.Join(cleanDir, filename)
+							}
 						}
 					}
 
@@ -360,15 +370,24 @@ func main() {
 			Middleware: func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					// 🔒 تطبيق رأس حماية أمني مشدد (Content Security Policy) للـ WebView2
-					// يسمح بـ WebAssembly (OpenCV/MediaPipe) و Web Workers والمصادر الخارجية المصرح بها فقط
+					// يسمح بـ WebAssembly (OpenCV/MediaPipe) و Web Workers والمصادر الخارجية المصرح بها فقط.
+					// في وضع التطوير (Vite HMR) يلزم 'unsafe-inline' لأن Vite يحقن سكربت
+					// الـ preamble سطرياً، وإلا يُحجب React Refresh ويتعطل التطوير — الإنتاج يبقى صارماً.
+					devScriptSrc := "'self' 'wasm-unsafe-eval'"
+					if isDevMode() {
+						devScriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'"
+					}
 					w.Header().Set("Content-Security-Policy",
 						"default-src 'self'; "+
-							"script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; "+
+							"script-src "+devScriptSrc+"; "+
 							"style-src 'self' 'unsafe-inline'; "+
-							"img-src 'self' data: blob: https: file:; "+
+							"img-src 'self' data: blob: https:; "+
 							"font-src 'self' data:; "+
-							"connect-src 'self' https://*.supabase.co https://*.modal.run https://api.modal.com; "+
-							"worker-src 'self' blob:;")
+							"connect-src 'self' ws: http://localhost:* https://*.supabase.co https://*.modal.run https://api.modal.com; "+
+							"worker-src 'self' blob:; "+
+							"object-src 'none'; "+
+							"base-uri 'self'; "+
+							"frame-ancestors 'none';")
 
 					// Ensure WebAssembly and model files are served with correct MIME types
 					if strings.HasSuffix(r.URL.Path, ".wasm") {
@@ -469,3 +488,23 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+// isDevMode يتحقق مما إذا كان التطبيق يعمل في وضع التطوير (Wails dev / Vite HMR)
+// يجمع بين فحص وسم البناء (dev build tag)، ومتغيرات بيئة Wails CLI،
+// ولاحقة اسم الملف التنفيذي المولد لبيئة التطوير (-dev).
+func isDevMode() bool {
+	if isDevBuild {
+		return true
+	}
+	if os.Getenv("devserver") != "" || os.Getenv("frontenddevserverurl") != "" || os.Getenv("WAILS_DEV") == "true" {
+		return true
+	}
+	if exe, err := os.Executable(); err == nil && strings.Contains(strings.ToLower(exe), "-dev") {
+		return true
+	}
+	if len(os.Args) > 0 && strings.Contains(strings.ToLower(os.Args[0]), "-dev") {
+		return true
+	}
+	return false
+}
+

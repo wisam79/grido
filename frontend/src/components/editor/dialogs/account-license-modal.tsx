@@ -128,18 +128,18 @@ export function AccountLicenseModal() {
                 <div>
                   {active ? (
                     user?.plan === "trial" ? (
-                      <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
+                      <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-micro px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                         تجريبي ({trialDaysLeft} يوم)
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
+                      <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-micro px-2.5 py-0.5 font-bold rounded-full shadow-2xs">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         احترافي
                       </span>
                     )
                   ) : (
-                    <Badge variant="outline" className="text-muted-foreground text-[10px] px-2 py-0 font-semibold rounded-full border-border/80">
+                    <Badge variant="outline" className="text-muted-foreground text-micro px-2 py-0 font-semibold rounded-full border-border/80">
                       مجاني
                     </Badge>
                   )}
@@ -163,7 +163,7 @@ export function AccountLicenseModal() {
                 <span className="text-xs font-bold text-foreground block truncate">
                   {user.name || "مستخدم مسجل"}
                 </span>
-                <span className="font-mono text-[10.5px] text-muted-foreground truncate block">
+                <span className="font-mono text-mini text-muted-foreground truncate block">
                   {user.email}
                 </span>
               </div>
@@ -174,7 +174,7 @@ export function AccountLicenseModal() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  className="h-7 px-2 text-[10px] font-bold cursor-pointer rounded-md"
+                  className="h-7 px-2 text-micro font-bold cursor-pointer rounded-md"
                   onClick={confirmLogout}
                 >
                   تأكيد الخروج
@@ -182,7 +182,7 @@ export function AccountLicenseModal() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-1.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer rounded-md"
+                  className="h-7 px-1.5 text-micro text-muted-foreground hover:text-foreground cursor-pointer rounded-md"
                   onClick={() => setShowLogoutConfirm(false)}
                 >
                   إلغاء

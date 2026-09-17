@@ -292,11 +292,11 @@ export function DocumentScannerDialog({
                   ماسح وتقويم المستندات والبطاقات
                 </DialogTitle>
                 {detectedDocs.length > 1 ? (
-                  <span className="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] px-2 py-0.5 font-bold rounded-full shadow-2xs">
+                  <span className="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-micro px-2 py-0.5 font-bold rounded-full shadow-2xs">
                     مسح متعدد ({detectedDocs.length})
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 text-[10px] px-2 py-0.5 font-bold rounded-full shadow-2xs">
+                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 text-micro px-2 py-0.5 font-bold rounded-full shadow-2xs">
                     مسح مفرد
                   </span>
                 )}

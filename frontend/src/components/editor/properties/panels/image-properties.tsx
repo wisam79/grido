@@ -1,7 +1,6 @@
 import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { ImageElement, useEditorStore } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/huge-icon";
 import {
@@ -24,7 +23,7 @@ import {
   Scan,
   Square,
 } from "@phosphor-icons/react";
-import { SliderControl } from "../shared-controls";
+import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
@@ -33,6 +32,7 @@ import { useBgRemoval } from "@/hooks/use-bg-removal";
 import { useAiEnhance } from "@/hooks/use-ai-enhance";
 import { useFaceFrame } from "@/hooks/use-face-frame";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { PopoverColorPicker } from "../shared-controls";
 
 // أدوات الصور الثقيلة لا تُحمّل إلا عند فتحها، بدلاً من تأخير المحرر عند البدء.
 const CropDialog = lazy(() => import("../../dialogs/crop-dialog").then((module) => ({ default: module.CropDialog })));
@@ -51,17 +51,17 @@ export function ImageAdjustProperties({
   const currentOpacity = Math.round((element.opacity ?? 1) * 100);
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200">
+    <div className="space-y-3 animate-in fade-in duration-200 font-cairo">
       {/* بطاقة 1: تعديل الألوان */}
-      <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-3">
-        <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 border-b border-border/40 pb-1.5 mb-1">
-          <Palette className="w-4 h-4 text-primary" weight="duotone" />
-          <span>تعديل الألوان</span>
-        </Label>
-
+      <FluentSection
+        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
+        title="تعديل الألوان"
+        collapsible
+        defaultOpen={true}
+      >
         {/* قوالب تدرج لوني سريعة للاستوديوهات */}
         <div className="space-y-1.5 pb-2 border-b border-border/20">
-          <span className="text-[10px] font-bold text-muted-foreground block">قوالب ألوان الاستوديو</span>
+          <span className="text-micro font-bold text-muted-foreground block">قوالب ألوان الاستوديو</span>
           <div className="grid grid-cols-2 gap-1.5">
             {[
               { label: "استوديو دافئ", b: 104, c: 106, s: 108 },
@@ -73,7 +73,7 @@ export function ImageAdjustProperties({
                 key={preset.label}
                 variant="outline"
                 size="sm"
-                className="h-7 text-[10px] font-semibold rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="h-7 text-micro font-semibold rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 onClick={() => {
                   onUpdate(element.id, {
                     brightness: preset.b,
@@ -89,9 +89,9 @@ export function ImageAdjustProperties({
           </div>
         </div>
 
-        <SliderControl
+        <FluentSliderField
           label="السطوع"
-          icon={<Sun className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          icon={<Sun className="w-4 h-4" weight="regular" />}
           value={element.brightness ?? 100}
           min={0}
           max={200}
@@ -102,9 +102,9 @@ export function ImageAdjustProperties({
           onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
-        <SliderControl
+        <FluentSliderField
           label="التباين"
-          icon={<CircleHalfTilt className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          icon={<CircleHalfTilt className="w-4 h-4" weight="regular" />}
           value={element.contrast ?? 100}
           min={0}
           max={200}
@@ -115,9 +115,9 @@ export function ImageAdjustProperties({
           onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
-        <SliderControl
+        <FluentSliderField
           label="التشبع"
-          icon={<Drop className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          icon={<Drop className="w-4 h-4" weight="regular" />}
           value={element.saturation ?? 100}
           min={0}
           max={200}
@@ -128,9 +128,9 @@ export function ImageAdjustProperties({
           onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
-        <SliderControl
+        <FluentSliderField
           label="الضبابية"
-          icon={<EyeSlash className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          icon={<EyeSlash className="w-4 h-4" weight="regular" />}
           value={element.blur ?? 0}
           min={0}
           max={20}
@@ -162,13 +162,16 @@ export function ImageAdjustProperties({
             <span>إعادة تعيين الألوان</span>
           </Button>
         )}
-      </div>
+      </FluentSection>
 
       {/* بطاقة 2: الشفافية العامة */}
-      <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-2.5">
-        <SliderControl
+      <FluentSection
+        icon={<Eye className="w-4 h-4 text-primary" weight="duotone" />}
+        title="الشفافية"
+      >
+        <FluentSliderField
           label="شفافية الصورة"
-          icon={<Eye className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          icon={<Eye className="w-4 h-4" weight="regular" />}
           value={currentOpacity}
           min={0}
           max={100}
@@ -177,7 +180,7 @@ export function ImageAdjustProperties({
           onChange={(v) => onUpdate(element.id, { opacity: v / 100 })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
-      </div>
+      </FluentSection>
     </div>
   );
 }
@@ -322,7 +325,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
   return (
     <div className="space-y-2.5 font-cairo animate-in fade-in duration-200">
       {/* 🎴 بطاقة 1: شبكة أدوات الذكاء الاصطناعي الفاخرة (2x2 Grid) */}
-      <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
+      <FluentSection
+        icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
+        title="أدوات الذكاء الاصطناعي"
+        collapsible
+        defaultOpen={true}
+      >
         <div className="grid grid-cols-2 gap-1.5">
           {/* 1. عزل الخلفية */}
           <Tooltip>
@@ -422,7 +430,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         {/* أشرطة تقدم العمليات */}
         {isRemovingBg && (
           <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[10px] font-bold text-primary">
+            <div className="flex justify-between items-center text-micro font-bold text-primary">
               <span className="animate-pulse">{bgProgressText}</span>
               <span>{Math.round(bgProgress)}%</span>
             </div>
@@ -437,7 +445,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
         {isEnhancing && (
           <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[10px] font-bold text-primary">
+            <div className="flex justify-between items-center text-micro font-bold text-primary">
               <span className="animate-pulse">{enhanceProgressText}</span>
               <span>{Math.round(enhanceProgress)}%</span>
             </div>
@@ -452,7 +460,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
         {isFraming && (
           <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-[10px] font-bold text-primary">
+            <div className="flex justify-between items-center text-micro font-bold text-primary">
               <span className="animate-pulse">{frameProgressText}</span>
               <span>{Math.round(frameProgress)}%</span>
             </div>
@@ -464,15 +472,13 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             </div>
           </div>
         )}
-      </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 2: خلفية الصورة */}
-      <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/85">
-          <Palette className="w-4 h-4 text-primary" weight="duotone" />
-          <span>خلفية الصورة</span>
-        </div>
-
+      <FluentSection
+        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
+        title="خلفية الصورة"
+      >
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
             { id: "trans", label: "شفاف", val: "transparent" },
@@ -514,20 +520,23 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           })}
 
           {/* Custom Color Input */}
-          <div className="flex items-center gap-1 border border-border rounded-md px-1.5 h-7 bg-input" title="لون مخصص">
-            <input
-              type="color"
-              value={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
-              onChange={(e) => onUpdate(element.id, { bgColor: e.target.value })}
-              onBlur={() => useEditorStore.getState().pushHistory()}
-              className="w-4 h-4 rounded cursor-pointer border-0 bg-transparent p-0"
-            />
-          </div>
+          <PopoverColorPicker
+            color={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
+            onChange={(val) => {
+              onUpdate(element.id, { bgColor: val });
+              useEditorStore.getState().pushHistory();
+            }}
+            swatchOnly
+            className="w-7 h-7"
+          />
         </div>
-      </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 3: أدوات الصورة والقص */}
-      <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
+      <FluentSection
+        icon={<Crop className="w-4 h-4 text-primary" weight="duotone" />}
+        title="الصورة والقص"
+      >
         <div className="grid grid-cols-2 gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -622,13 +631,16 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             </Button>
           </div>
         )}
-      </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 4: استدارة الحواف */}
-      <div className="bg-card border border-border/80 p-2.5 rounded-xl space-y-2 shadow-xs fluent-specular">
-        <SliderControl
+      <FluentSection
+        icon={<Square className="w-4 h-4 text-primary" weight="duotone" />}
+        title="استدارة الحواف"
+      >
+        <FluentSliderField
           label="استدارة الزوايا"
-          icon={<Square className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
+          icon={<Square className="w-4 h-4" weight="regular" />}
           value={element.cornerRadius || 0}
           min={0}
           max={200}
@@ -637,7 +649,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           onChange={(v) => onUpdate(element.id, { cornerRadius: v })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
-      </div>
+      </FluentSection>
 
       {element.imageSrc && cropOpen && (
         <Suspense fallback={null}>

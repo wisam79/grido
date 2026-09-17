@@ -27,7 +27,7 @@ function DocumentPresetGraphic({ type, active }: { type: string; active: boolean
   if (type === "stretch") {
     return (
       <div className={cn("w-5 h-5 rounded-md border border-dashed flex items-center justify-center transition-all", activeBorder)}>
-        <span className="text-[10px] font-mono font-black leading-none">⤢</span>
+        <span className="text-micro font-mono font-black leading-none">⤢</span>
       </div>
     );
   }
@@ -186,14 +186,14 @@ export function CollageCustomGridTab({
           badge={
             <div className="flex items-center gap-1.5 select-none">
               <span
-                className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 flex items-center gap-1"
+                className="text-micro font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25 flex items-center gap-1"
                 title="إجمالي الصور على الورقة"
               >
                 <span className="font-mono">{totalPhotos}</span>
                 <span>صور</span>
               </span>
               <span
-                className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/60"
+                className="text-micro font-mono font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/60"
                 title="نسبة استغلال مساحة الورقة"
               >
                 {coverage}%
@@ -206,9 +206,9 @@ export function CollageCustomGridTab({
         <div className="grid grid-cols-2 gap-2">
           {/* عداد الصفوف */}
           <div className="flex flex-col gap-1 p-2 rounded-lg bg-background/60 border border-border/60">
-            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground select-none">
+            <div className="flex items-center justify-between text-mini font-bold text-muted-foreground select-none">
               <span>الصفوف</span>
-              <span className="text-[9px] font-mono font-normal opacity-70">أقصى {maxRows}</span>
+              <span className="text-2xs font-mono font-normal opacity-70">أقصى {maxRows}</span>
             </div>
             <div className="flex items-center justify-between gap-1" dir="ltr">
               <button
@@ -237,9 +237,9 @@ export function CollageCustomGridTab({
 
           {/* عداد الأعمدة */}
           <div className="flex flex-col gap-1 p-2 rounded-lg bg-background/60 border border-border/60">
-            <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground select-none">
+            <div className="flex items-center justify-between text-mini font-bold text-muted-foreground select-none">
               <span>الأعمدة</span>
-              <span className="text-[9px] font-mono font-normal opacity-70">أقصى {maxCols}</span>
+              <span className="text-2xs font-mono font-normal opacity-70">أقصى {maxCols}</span>
             </div>
             <div className="flex items-center justify-between gap-1" dir="ltr">
               <button
@@ -274,7 +274,7 @@ export function CollageCustomGridTab({
             onClick={handleFillSheet}
             title={`ملء كامل الورقة بأقصى عدد (${maxRows * maxCols} صورة)`}
             className={cn(
-              "h-8 px-2.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+              "h-8 px-2.5 rounded-lg text-mini font-bold transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
               isMaxFill
                 ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-bold"
                 : "bg-background/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70 hover:border-primary/40"
@@ -284,7 +284,7 @@ export function CollageCustomGridTab({
               <CornersOut className="w-3.5 h-3.5 shrink-0 text-primary" weight="bold" />
               <span>ملء الورقة</span>
             </span>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
+            <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
               {maxRows * maxCols}
             </span>
           </button>
@@ -294,7 +294,7 @@ export function CollageCustomGridTab({
             onClick={handleCornerStrip}
             title="شريط زاوية علوي (4 صور) لحفظ مساحة بقية الورقة"
             className={cn(
-              "h-8 px-2.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+              "h-8 px-2.5 rounded-lg text-mini font-bold transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
               rows === 1 && cols === Math.min(4, maxCols) && gridAlign === "top-left"
                 ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-bold"
                 : "bg-background/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70 hover:border-primary/40"
@@ -304,7 +304,7 @@ export function CollageCustomGridTab({
               <Rows className="w-3.5 h-3.5 shrink-0 text-primary" weight="bold" />
               <span>شريط سريع</span>
             </span>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
+            <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
               {Math.min(4, maxCols)}
             </span>
           </button>
@@ -317,7 +317,7 @@ export function CollageCustomGridTab({
           icon={<Ruler className="w-3.5 h-3.5" weight="duotone" />}
           title="مقاس الصورة"
           badge={
-            <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 select-none">
+            <span className="text-micro font-bold font-mono px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 select-none">
               {photoType === "stretch" ? "تلقائي" : `${getPhotoDimensions(photoType).wMM}×${getPhotoDimensions(photoType).hMM} مم`}
             </span>
           }
@@ -344,17 +344,17 @@ export function CollageCustomGridTab({
                   <DocumentPresetGraphic type={opt.value} active={isActive} />
                 </div>
                 <div className="min-w-0 flex-1 leading-tight text-right">
-                  <div className={cn("text-[11px] font-bold truncate", isActive ? "text-primary" : "text-foreground")}>
+                  <div className={cn("text-mini font-bold truncate", isActive ? "text-primary" : "text-foreground")}>
                     {opt.label}
                   </div>
-                  <div className="flex items-center gap-1 text-[9px] text-muted-foreground font-mono mt-0.5" dir="rtl">
+                  <div className="flex items-center gap-1 text-2xs text-muted-foreground font-mono mt-0.5" dir="rtl">
                     {opt.value !== "stretch" ? (
                       <>
                         <span dir="ltr" className="font-bold text-foreground/80">{opt.dim}</span>
-                        <span className="font-cairo text-[8.5px]">مم</span>
+                        <span className="font-cairo text-2xs">مم</span>
                       </>
                     ) : (
-                      <span className="font-cairo text-[8.5px]">{opt.dim}</span>
+                      <span className="font-cairo text-2xs">{opt.dim}</span>
                     )}
                   </div>
                 </div>
@@ -371,7 +371,7 @@ export function CollageCustomGridTab({
             icon={<Crosshair className="w-3.5 h-3.5" weight="duotone" />}
             title="المحاذاة على الورقة"
             badge={
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 select-none">
+              <span className="text-micro font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 select-none">
                 {gridAlign === "top-left" ? "ركن القص" : gridAlign === "center" ? "توسيط" : ALIGNMENT_LABELS[gridAlign]}
               </span>
             }
@@ -442,7 +442,7 @@ export function CollageCustomGridTab({
                 </div>
                 <span
                   className={cn(
-                    "text-[9.5px] px-1.5 py-0.5 rounded-md border shrink-0 font-medium",
+                    "text-micro px-1.5 py-0.5 rounded-md border shrink-0 font-medium",
                     gridAlign === "top-left"
                       ? "bg-primary/15 text-primary border-primary/30 font-bold"
                       : "bg-muted/50 text-muted-foreground border-border/40"
@@ -478,7 +478,7 @@ export function CollageCustomGridTab({
                 </div>
                 <span
                   className={cn(
-                    "text-[9.5px] px-1.5 py-0.5 rounded-md border shrink-0 font-medium",
+                    "text-micro px-1.5 py-0.5 rounded-md border shrink-0 font-medium",
                     gridAlign === "center"
                       ? "bg-primary/15 text-primary border-primary/30 font-bold"
                       : "bg-muted/50 text-muted-foreground border-border/40"
@@ -500,7 +500,7 @@ export function CollageCustomGridTab({
               type="button"
               onClick={() => onApply(rows, cols)}
               className={cn(
-                "flex-1 h-8.5 text-xs font-bold rounded-lg transition-all border active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+                "flex-1 h-8 text-xs font-bold rounded-lg transition-all border active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
                 isCustomActive
                   ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
                   : "bg-primary/90 hover:bg-primary text-primary-foreground border-primary"
@@ -516,7 +516,7 @@ export function CollageCustomGridTab({
                 setSaveName(`شبكة ${rows}×${cols} — ${getPhotoDimensions(photoType).label.split(" ")[0]}`);
                 setShowSaveForm(true);
               }}
-              className="h-8.5 px-3.5 text-xs font-bold rounded-lg border border-border/80 bg-background hover:bg-accent hover:border-primary/40 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all shadow-2xs shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="h-8 px-3.5 text-xs font-bold rounded-lg border border-border/80 bg-background hover:bg-accent hover:border-primary/40 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all shadow-2xs shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
               title="حفظ التخطيط كقالب دائم في مكتبتي"
             >
               <FloppyDisk className="w-4 h-4" weight="duotone" />
@@ -552,7 +552,7 @@ export function CollageCustomGridTab({
         )}
       </div>
 
-      <p className="text-[11px] text-muted-foreground/85 font-medium text-center leading-relaxed select-none pb-1">
+      <p className="text-mini text-muted-foreground/85 font-medium text-center leading-relaxed select-none pb-1">
         الحد الأقصى لهذه الورقة: <span className="font-mono font-bold text-foreground" dir="ltr">{maxRows}×{maxCols}</span> صور ({maxRows * maxCols} إجمالي)
       </p>
     </div>

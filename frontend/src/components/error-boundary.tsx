@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
               واجه التطبيق خطأً أثناء محاولة عرض الواجهة. يمكنك محاولة إعادة تحميل الصفحة أو مسح المسودة لبدء جلسة جديدة.
             </p>
             {this.state.error && (
-              <div className="text-[10px] font-mono bg-muted p-3 rounded-md text-left overflow-auto max-h-24 text-destructive border border-destructive/10">
+              <div className="text-micro font-mono bg-muted p-3 rounded-md text-left overflow-auto max-h-24 text-destructive border border-destructive/10">
                 {this.state.error.toString()}
               </div>
             )}

@@ -68,11 +68,11 @@ function MmField({
         max={max}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-8 pr-7 pl-7 text-center font-mono text-[11px] font-bold rounded-md bg-input/40 border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+        className="h-8 pr-7 pl-7 text-center font-mono text-mini font-bold rounded-md bg-input/40 border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
         dir="ltr"
         aria-label={label}
       />
-      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground/70 pointer-events-none font-mono">
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-2xs font-bold text-muted-foreground/70 pointer-events-none font-mono">
         مم
       </span>
     </div>
@@ -95,7 +95,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
       <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl bg-card/60 border border-dashed border-border/70 fluent-specular shadow-2xs h-full min-h-[160px] text-muted-foreground select-none gap-1.5">
         <SlidersHorizontal className="w-6 h-6 opacity-30 text-primary" weight="duotone" />
         <span className="text-xs font-bold text-foreground/75">لا توجد خلية محددة</span>
-        <span className="text-[10px] leading-relaxed text-muted-foreground">
+        <span className="text-micro leading-relaxed text-muted-foreground">
           انقر خلية لضبط مقاسها وموقعها بالمليمتر
         </span>
       </div>
@@ -171,11 +171,11 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
       {/* شريط التحديد الجماعي */}
       {multiSelectedCount > 1 && (
         <div className="flex items-center justify-between gap-1.5 rounded-lg bg-primary/10 border border-primary/25 px-2 py-1.5">
-          <span className="flex items-center gap-1.5 font-bold text-primary text-[10.5px]">
+          <span className="flex items-center gap-1.5 font-bold text-primary text-mini">
             <Copy className="w-3 h-3" weight="bold" />
             أدوات جماعية
           </span>
-          <span className="font-mono text-[10px] font-black text-primary bg-background/70 border border-primary/20 rounded px-1.5 py-0.5" dir="ltr">
+          <span className="font-mono text-micro font-black text-primary bg-background/70 border border-primary/20 rounded px-1.5 py-0.5" dir="ltr">
             ×{multiSelectedCount}
           </span>
         </div>
@@ -185,7 +185,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
       <div className="flex items-center justify-between gap-1.5 border-b border-border/40 pb-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-          <span className="font-bold text-foreground truncate text-[11.5px]">
+          <span className="font-bold text-foreground truncate text-xs">
             {slot.label || "خلية مخصصة"}
           </span>
         </div>
@@ -195,7 +195,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
             <Button
               variant="outline"
               size="sm"
-              className="h-6 px-2 text-[10.5px] gap-1 rounded-md border-border/70 hover:border-primary/40 cursor-pointer shrink-0 font-bold"
+              className="h-6 px-2 text-mini gap-1 rounded-md border-border/70 hover:border-primary/40 cursor-pointer shrink-0 font-bold"
             >
               <ArrowsOut className="w-3 h-3 text-primary/70" weight="bold" />
               {PHOTO_PRESET_LABELS[slot.presetType || "custom"]?.split(" ")[0] || "مقاس"}
@@ -210,7 +210,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="flex items-center justify-between cursor-pointer py-1.5"
               >
                 <span>{PHOTO_PRESET_LABELS[key as PhotoPresetType]}</span>
-                <span className="font-mono text-[10px] text-muted-foreground" dir="ltr">
+                <span className="font-mono text-micro text-muted-foreground" dir="ltr">
                   {dims.w}×{dims.h}
                 </span>
               </DropdownMenuItem>
@@ -221,7 +221,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
 
       {/* الأبعاد: العرض × الارتفاع مع قفل النسبة */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-bold">
+        <div className="flex items-center justify-between text-micro text-muted-foreground font-bold">
           <span className="flex items-center gap-1">
             <Ruler className="w-3 h-3 text-primary/70" weight="bold" />
             الأبعاد
@@ -252,7 +252,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
             step={0.5}
             onChange={handleWidthChange}
           />
-          <span className="text-[10px] font-bold text-muted-foreground/60 text-center">×</span>
+          <span className="text-micro font-bold text-muted-foreground/60 text-center">×</span>
           <MmField
             icon={<Ruler className="w-3 h-3 rotate-90" weight="bold" />}
             label="الارتفاع بالمليمتر"
@@ -267,7 +267,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
 
       {/* الموقع: X , Y */}
       <div className="space-y-1.5">
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold">
+        <span className="flex items-center gap-1 text-micro text-muted-foreground font-bold">
           <Cursor className="w-3 h-3 text-primary/70" weight="bold" />
           الموقع من الزاوية (0,0)
         </span>
@@ -281,7 +281,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
             step={0.5}
             onChange={handleXChange}
           />
-          <span className="text-[10px] font-bold text-muted-foreground/60 text-center">,</span>
+          <span className="text-micro font-bold text-muted-foreground/60 text-center">,</span>
           <MmField
             icon={<Cursor className="w-3 h-3 rotate-90" weight="bold" />}
             label="الموقع Y بالمليمتر"
@@ -319,7 +319,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={() => onAlignSlot("top-left")}
               >
-                <span className="text-[10px] font-black text-primary leading-none">TL</span>
+                <span className="text-micro font-black text-primary leading-none">TL</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">زاوية القص</TooltipContent>

@@ -1,7 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { wailsIsDesktop } from "@/lib/wails-env";
-import { Label } from "@/components/ui/label";
 import {
   ImageSquare,
   Crop,
@@ -19,6 +18,8 @@ import {
   Copy,
   Rows,
   Columns,
+  Sun,
+  MagnifyingGlassPlus,
 } from "@phosphor-icons/react";
 import {
   Tooltip,
@@ -30,7 +31,8 @@ import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { toast } from "sonner";
 import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
-import { SliderControl, PopoverColorPicker } from "./shared-controls";
+import { PopoverColorPicker } from "./shared-controls";
+import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import { Switch } from "@/components/ui/switch";
@@ -163,59 +165,64 @@ export function SlotProperties({
   if (!slot.imageSrc) {
     return (
       <div className="space-y-3 font-cairo select-none h-full flex flex-col justify-start">
-        <div className="flex items-center justify-between bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular">
-          <span className="text-xs font-semibold text-muted-foreground">أبعاد الخلية</span>
-          <div className="flex items-baseline gap-1 font-mono" dir="ltr">
-            <span className="text-sm font-bold text-primary">{widthMM} × {heightMM}</span>
-            <span className="text-[10px] font-semibold text-primary/80">mm</span>
-            <span className="text-[10px] text-muted-foreground/70 ms-1">({dpi} DPI)</span>
-          </div>
-        </div>
-
-        <div className="text-xs text-muted-foreground text-center py-6 bg-muted/20 rounded-xl border border-dashed border-border/60">
-          لا توجد صورة في هذه الخلية
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all text-xs"
-          onClick={handleOpenFile}
+        <FluentSection
+          icon={<ImageSquare className="w-3.5 h-3.5" weight="duotone" />}
+          title="أبعاد الخلية"
+          action={
+            <span className="text-micro font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 font-mono" dir="ltr">
+              {widthMM} × {heightMM} mm · {dpi} DPI
+            </span>
+          }
         >
-          <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
-          <span>رفع صورة للخلية</span>
-        </Button>
-        {lastEditedImage && (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer text-xs"
-            onClick={handleUseLastImage}
-          >
-            <Copy className="w-4 h-4 text-primary" weight="regular" />
-            <span>تعبئة بآخر صورة معدلة</span>
-          </Button>
-        )}
+          <div className="text-xs text-muted-foreground text-center py-6 bg-muted/20 rounded-xl border border-dashed border-border/60 mb-2.5">
+            لا توجد صورة في هذه الخلية
+          </div>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all text-xs"
+              onClick={handleOpenFile}
+            >
+              <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
+              <span>رفع صورة للخلية</span>
+            </Button>
+            {lastEditedImage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer text-xs"
+                onClick={handleUseLastImage}
+              >
+                <Copy className="w-4 h-4 text-primary" weight="regular" />
+                <span>تعبئة بآخر صورة معدلة</span>
+              </Button>
+            )}
+          </div>
+        </FluentSection>
 
-        <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular">
+        <FluentSection
+          icon={<Copy className="w-3.5 h-3.5" weight="duotone" />}
+          title="التعبئة التلقائية"
+        >
           {renderAutoFillToggle()}
-        </div>
+        </FluentSection>
       </div>
     );
   }
 
   return (
     <div className="space-y-3 font-cairo select-none pb-4">
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular space-y-2.5">
-        <div className="flex items-center justify-between border-b border-border/20 pb-2">
-          <span className="text-xs font-semibold text-muted-foreground">أبعاد الطباعة</span>
-          <div className="flex items-center gap-1.5 font-mono" dir="ltr">
-            <span className="text-xs font-bold text-primary">{widthMM} × {heightMM} mm</span>
-            <span className="text-[10px] font-semibold text-muted-foreground/80 bg-muted px-1.5 py-0.5 rounded-md border border-border/40 font-mono">
-              {dpi} DPI
-            </span>
-          </div>
-        </div>
-
+      {/* 🎴 بطاقة 1: أبعاد ومعاينة الخلية */}
+      <FluentSection
+        icon={<ImageSquare className="w-3.5 h-3.5" weight="duotone" />}
+        title="أبعاد الطباعة"
+        action={
+          <span className="text-micro font-semibold text-muted-foreground/80 bg-muted px-2 py-0.5 rounded-md border border-border/40 font-mono" dir="ltr">
+            {widthMM} × {heightMM} mm · {dpi} DPI
+          </span>
+        }
+      >
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
@@ -236,10 +243,13 @@ export function SlotProperties({
             <span>قص وتدوير</span>
           </Button>
         </div>
-      </div>
+      </FluentSection>
 
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
-        <Label className="text-xs font-bold text-foreground/90 block">تحويل وتدوير الصورة</Label>
+      {/* 🎴 بطاقة 2: تحويل وتدوير الصورة */}
+      <FluentSection
+        icon={<ArrowClockwise className="w-3.5 h-3.5" weight="duotone" />}
+        title="تحويل وتدوير الصورة"
+      >
         <div className="flex items-center gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -318,25 +328,27 @@ export function SlotProperties({
             <TooltipContent side="top" className="text-xs">إعادة تعيين الاتجاه</TooltipContent>
           </Tooltip>
         </div>
-      </div>
+      </FluentSection>
 
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs font-bold text-foreground/90 block">تعبئة الخلايا</Label>
-          {slots.length > 1 && (
+      {/* 🎴 بطاقة 3: تعبئة الخلايا والموضع */}
+      <FluentSection
+        icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
+        title="تعبئة الخلايا"
+        action={
+          slots.length > 1 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-2 text-[10px] rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
+                  className="h-7 px-2 text-micro rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
                 >
-                  <ArrowsLeftRight className="w-4 h-4" weight="bold" />
+                  <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
                   <span>تبديل الموضع</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 font-cairo text-xs">
-                <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground border-b border-border/20">
+                <div className="px-2 py-1 text-micro font-bold text-muted-foreground border-b border-border/20">
                   اختر الخلية للتبديل معها:
                 </div>
                 {slots
@@ -348,125 +360,125 @@ export function SlotProperties({
                       className="cursor-pointer flex items-center justify-between text-xs py-1.5"
                     >
                       <span className="font-semibold">الخلية #{otherSlot.cellIndex + 1 || idx + 1}</span>
-                      <span className="text-[10px] text-muted-foreground font-mono">
+                      <span className="text-micro text-muted-foreground font-mono">
                         {otherSlot.imageSrc ? "ممتلئة" : "فارغة"}
                       </span>
                     </DropdownMenuItem>
                   ))}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
+          ) : undefined
+        }
+      >
+        <div className="space-y-2.5">
+          <div className="grid grid-cols-4 gap-1.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                  onClick={handleFillRow}
+                >
+                  <Rows className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                  <span>الصف</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">تعبئة الصف كاملاً</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                  onClick={handleFillColumn}
+                >
+                  <Columns className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                  <span>العمود</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">تعبئة العمود كاملاً</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                  onClick={() => {
+                    if (slot.imageSrc) {
+                      fillEmptySlots(slot.imageSrc, slot.id);
+                    }
+                  }}
+                >
+                  <Sparkle className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                  <span>الفارغة</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">تعبئة الخانات الفارغة فقط</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                  onClick={handleFillAll}
+                >
+                  <GridFour className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                  <span>الكل</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">تعبئة كافة الخلايا</TooltipContent>
+            </Tooltip>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 flex-1 rounded-md text-xs font-semibold border-border/80 hover:bg-accent gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                  onClick={() => {
+                    onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                >
+                  <Crosshair className="w-3.5 h-3.5 text-primary" weight="regular" />
+                  <span>توسيط الصورة</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">تصفير الإزاحة وتوسيط الصورة داخل الخانة</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2.5 rounded-md text-xs font-semibold border-border/80 hover:bg-destructive/10 hover:border-destructive/40 text-destructive cursor-pointer"
+                  onClick={() => {
+                    onUpdate(slot.id, { imageSrc: undefined });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                >
+                  <Trash className="w-3.5 h-3.5" weight="regular" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">إفراغ الخلية</TooltipContent>
+            </Tooltip>
+          </div>
+
+          {renderAutoFillToggle()}
         </div>
+      </FluentSection>
 
-        <div className="grid grid-cols-4 gap-1.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
-                onClick={handleFillRow}
-              >
-                <Rows className="w-4 h-4 text-primary shrink-0" weight="regular" />
-                <span>الصف</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">تعبئة الصف كاملاً</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
-                onClick={handleFillColumn}
-              >
-                <Columns className="w-4 h-4 text-primary shrink-0" weight="regular" />
-                <span>العمود</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">تعبئة العمود كاملاً</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
-                onClick={() => {
-                  if (slot.imageSrc) {
-                    fillEmptySlots(slot.imageSrc, slot.id);
-                  }
-                }}
-              >
-                <Sparkle className="w-4 h-4 text-primary shrink-0" weight="regular" />
-                <span>الفارغة</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">تعبئة الخانات الفارغة فقط</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
-                onClick={handleFillAll}
-              >
-                <GridFour className="w-4 h-4 text-primary shrink-0" weight="regular" />
-                <span>الكل</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">تعبئة كافة الخلايا</TooltipContent>
-          </Tooltip>
-        </div>
-
-        <div className="flex items-center gap-1.5 pt-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 flex-1 rounded-md text-xs font-semibold border-border/80 hover:bg-accent gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
-                onClick={() => {
-                  onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
-                  useEditorStore.getState().pushHistory();
-                }}
-              >
-                <Crosshair className="w-4 h-4 text-primary" weight="regular" />
-                <span>توسيط الصورة</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">تصفير الإزاحة وتوسيط الصورة داخل الخانة</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2.5 rounded-md text-xs font-semibold border-border/80 hover:bg-destructive/10 hover:border-destructive/40 text-destructive cursor-pointer"
-                onClick={() => {
-                  onUpdate(slot.id, { imageSrc: undefined });
-                  useEditorStore.getState().pushHistory();
-                }}
-              >
-                <Trash className="w-4 h-4" weight="regular" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">إفراغ الخلية</TooltipContent>
-          </Tooltip>
-        </div>
-
-        {renderAutoFillToggle()}
-      </div>
-
-      {/* 3.5 كرت لون خلفية صورة الهوية المعزولة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-2.5 shadow-xs fluent-specular space-y-2">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/90">
-          <Palette className="w-4 h-4 text-primary" weight="duotone" />
-          <span>خلفية الصورة</span>
-        </div>
-
+      {/* 🎴 بطاقة 4: لون خلفية صورة الهوية */}
+      <FluentSection
+        icon={<Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />}
+        title="خلفية الصورة"
+      >
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
             { id: "trans", label: "شفاف", val: "transparent" },
@@ -514,7 +526,6 @@ export function SlotProperties({
             );
           })}
 
-          {/* Color Picker مخصص فاخر */}
           <PopoverColorPicker
             color={slot.bgColor === "transparent" || !slot.bgColor ? "#ffffff" : slot.bgColor}
             onChange={(val: string) => {
@@ -533,69 +544,80 @@ export function SlotProperties({
             className="w-8 h-8"
           />
         </div>
-      </div>
+      </FluentSection>
 
-      {/* 4. كرت تعديل الألوان والسطوع */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular space-y-3">
-        <Label className="text-xs font-bold text-foreground/90 block border-b border-border/20 pb-1.5">تعديل الألوان والسطوع</Label>
-        <SliderControl
-          label="السطوع"
-          value={slot.brightness ?? 100}
-          min={0}
-          max={200}
-          step={1}
-          unit="%"
-          onChange={(v) => onUpdate(slot.id, { brightness: v })}
-          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
-          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-        />
-        <SliderControl
-          label="التباين"
-          value={slot.contrast ?? 100}
-          min={0}
-          max={200}
-          step={1}
-          unit="%"
-          onChange={(v) => onUpdate(slot.id, { contrast: v })}
-          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
-          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-        />
-        <SliderControl
-          label="التشبع"
-          value={slot.saturation ?? 100}
-          min={0}
-          max={200}
-          step={1}
-          unit="%"
-          onChange={(v) => onUpdate(slot.id, { saturation: v })}
-          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
-          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-        />
+      {/* 🎴 بطاقة 5: تعديل الألوان والسطوع */}
+      <FluentSection
+        icon={<Sun className="w-3.5 h-3.5 text-primary" weight="duotone" />}
+        title="تعديل الألوان والسطوع"
+        collapsible
+        defaultOpen={true}
+      >
+        <div className="space-y-3">
+          <FluentSliderField
+            label="السطوع"
+            value={slot.brightness ?? 100}
+            min={0}
+            max={200}
+            step={1}
+            unit="%"
+            onChange={(v) => onUpdate(slot.id, { brightness: v })}
+            onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+          />
+          <FluentSliderField
+            label="التباين"
+            value={slot.contrast ?? 100}
+            min={0}
+            max={200}
+            step={1}
+            unit="%"
+            onChange={(v) => onUpdate(slot.id, { contrast: v })}
+            onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+          />
+          <FluentSliderField
+            label="التشبع"
+            value={slot.saturation ?? 100}
+            min={0}
+            max={200}
+            step={1}
+            unit="%"
+            onChange={(v) => onUpdate(slot.id, { saturation: v })}
+            onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+          />
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full rounded-md font-semibold text-xs h-8 border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors mt-1"
-          onClick={() =>
-            onUpdate(slot.id, {
-              filter: "none",
-              brightness: 100,
-              contrast: 100,
-              saturation: 100,
-            })
-          }
-        >
-          إعادة تعيين الألوان
-        </Button>
-      </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full rounded-md font-semibold text-xs h-8 border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors mt-1"
+            onClick={() =>
+              onUpdate(slot.id, {
+                filter: "none",
+                brightness: 100,
+                contrast: 100,
+                saturation: 100,
+              })
+            }
+          >
+            إعادة تعيين الألوان
+          </Button>
+        </div>
+      </FluentSection>
 
-      {/* 5. كرت تكبير الصورة */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 shadow-xs fluent-specular">
-        <SliderControl
-          label="تكبير الصورة"
+      {/* 🎴 بطاقة 6: تكبير الصورة داخل الخلية */}
+      <FluentSection
+        icon={<MagnifyingGlassPlus className="w-3.5 h-3.5 text-primary" weight="duotone" />}
+        title="تكبير الصورة"
+        collapsible
+        defaultOpen={true}
+      >
+        <FluentSliderField
+          label="نسبة التكبير"
           value={Math.round((slot.zoom ?? 1) * 100)}
           min={100}
           max={300}
@@ -606,7 +628,7 @@ export function SlotProperties({
           onCommit={() => useEditorStore.getState().pushHistory()}
           unit="%"
         />
-      </div>
+      </FluentSection>
 
       {slot.imageSrc && cropOpen && (
         <Suspense fallback={null}>

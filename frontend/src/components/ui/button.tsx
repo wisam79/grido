@@ -11,8 +11,6 @@ const buttonVariants = cva(
       variant: {
         default:
           "bg-primary text-primary-foreground shadow-2xs enabled:hover:bg-primary/90 enabled:active:bg-primary/95",
-        primary:
-          "bg-primary text-primary-foreground shadow-2xs enabled:hover:bg-primary/90 enabled:active:bg-primary/95",
         destructive:
           "bg-destructive text-destructive-foreground shadow-2xs enabled:hover:bg-destructive/90 focus-visible:ring-destructive",
         outline:
@@ -20,8 +18,6 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground shadow-2xs enabled:hover:bg-secondary/80",
         ghost:
-          "text-muted-foreground enabled:hover:bg-accent/60 enabled:hover:text-foreground enabled:active:bg-accent/80",
-        subtle:
           "text-muted-foreground enabled:hover:bg-accent/60 enabled:hover:text-foreground enabled:active:bg-accent/80",
         transparent:
           "bg-transparent text-foreground enabled:hover:bg-black/5 dark:enabled:hover:bg-white/5",

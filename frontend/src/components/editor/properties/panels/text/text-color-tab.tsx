@@ -1,11 +1,10 @@
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
-import { Palette, Eye, Check, Square, Sparkle } from "@phosphor-icons/react";
+import { Palette, Eye, Sparkle, BoundingBox } from "@phosphor-icons/react";
 import { GradientPicker } from "../../gradient-picker";
 import { gradientAngleFromPoints, gradientPointsFromAngle } from "../../gradient-utils";
-import { PopoverColorPicker, SliderControl } from "../../shared-controls";
-import { Label } from "@/components/ui/label";
-import { STUDIO_PALETTE } from "@/lib/canvas/canvas-colors";
+import { PopoverColorPicker, QuickColorPalette } from "../../shared-controls";
+import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import type { TextTabProps } from "./text-tab-types";
 
 export function TextColorTab({ element, onUpdate }: TextTabProps) {
@@ -16,14 +15,21 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
   const hasBadge = !!element.textBgColor && element.textBgColor !== "transparent";
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-150">
+    <div className="space-y-3 animate-in fade-in duration-150 font-cairo">
       {/* 🎴 بطاقة 1: تعبئة ولون النص */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-3 shadow-xs fluent-specular overflow-hidden">
-        <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
-          <Palette className="w-4 h-4 text-primary" weight="duotone" />
-          <span>تعبئة ولون النص</span>
-        </Label>
-
+      <FluentSection
+        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
+        title="تعبئة ولون النص"
+        collapsible
+        defaultOpen={true}
+        action={
+          element.fillType && element.fillType !== "solid" ? (
+            <span className="text-micro font-bold text-muted-foreground px-2 py-0.5 rounded-full bg-muted/60 border border-border/50 select-none">
+              {element.fillType === "linear" ? "خطي" : "دائري"}
+            </span>
+          ) : undefined
+        }
+      >
         <GradientPicker
           fillType={element.fillType || "solid"}
           color={currentColor}
@@ -60,49 +66,24 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
         {/* باليتة الألوان السريعة في حالة اللون المصمت */}
         {(element.fillType === "solid" || !element.fillType) && (
           <div className="pt-2 border-t border-border/30 space-y-1.5">
-            <span className="text-[10px] font-bold text-muted-foreground block">ألوان استوديو سريعة:</span>
-            <div className="grid grid-cols-4 gap-1.5">
-              {STUDIO_PALETTE.map((c) => {
-                const isCurrent = currentColor.toLowerCase() === c.color.toLowerCase();
-                return (
-                  <button
-                    key={c.label}
-                    type="button"
-                    onClick={() => {
-                      onUpdate(element.id, { color: c.color, fillType: "solid" });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                    className={cn(
-                      "h-7 rounded-lg border p-1 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 px-2",
-                      isCurrent ? "border-primary ring-2 ring-primary ring-offset-1 bg-primary/5 font-bold" : "border-border/60 bg-background/60 hover:bg-background"
-                    )}
-                    title={c.label}
-                  >
-                    <div
-                      className="w-3.5 h-3.5 rounded-md border border-black/15 dark:border-white/20 shrink-0 flex items-center justify-center shadow-2xs relative overflow-hidden"
-                      style={{ backgroundColor: c.color }}
-                    >
-                      {isCurrent && (
-                        <Check className={cn("w-2.5 h-2.5 z-10", c.color === "#ffffff" ? "text-black" : "text-white")} weight="bold" />
-                      )}
-                    </div>
-                    <span className="text-[10px] font-bold truncate text-foreground/80">{c.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <span className="text-micro font-semibold text-muted-foreground block">ألوان سريعة</span>
+            <QuickColorPalette
+              currentColor={currentColor}
+              onSelectColor={(col) => {
+                onUpdate(element.id, { color: col, fillType: "solid" });
+                useEditorStore.getState().pushHistory();
+              }}
+            />
           </div>
         )}
-      </div>
+      </FluentSection>
 
-      {/* 🎴 بطاقة 2: لون حد النص (Stroke) */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
-        <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
-          <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-            <Square className="w-4 h-4 text-primary" weight="duotone" />
-            <span>حدود النص (إطار خارجي)</span>
-          </Label>
-
+      {/* 🎴 بطاقة 2: إطار وحدود النص (Stroke) */}
+      <FluentSection
+        icon={<BoundingBox className="w-4 h-4 text-primary" weight="duotone" />}
+        title="إطار وحدود النص"
+        open={hasStroke}
+        action={
           <div className="flex items-center gap-2">
             {hasStroke && (
               <PopoverColorPicker
@@ -112,6 +93,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
                   useEditorStore.getState().pushHistory();
                 }}
                 swatchOnly
+                className="w-6 h-6 rounded-md shadow-2xs border border-white/10"
               />
             )}
             <button
@@ -124,48 +106,52 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
                 }
                 useEditorStore.getState().pushHistory();
               }}
+              aria-label={hasStroke ? "مفعّل" : "إضافة"}
               className={cn(
-                "h-6 px-2 rounded-md border text-[10px] font-bold transition-all cursor-pointer shadow-2xs active:scale-95",
+                "h-6 px-2.5 rounded-full text-micro font-bold transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1.5 border select-none",
                 hasStroke
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background hover:bg-muted text-muted-foreground border-border/60"
+                  ? "bg-primary/15 text-primary border-primary/35 hover:bg-primary/25"
+                  : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
               )}
             >
-              {hasStroke ? "مفعّل" : "إضافة حد"}
+              {hasStroke && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />}
+              <span>{hasStroke ? "مفعّل" : "إضافة"}</span>
             </button>
           </div>
-        </div>
-
+        }
+      >
         {hasStroke && (
-          <div className="space-y-2 pt-1 animate-in fade-in duration-150">
-            {/* باليتة سريعة للحد */}
-            <div className="grid grid-cols-4 gap-1.5">
-              {STUDIO_PALETTE.map((c) => {
-                const isSelected = currentStroke.toLowerCase() === c.color.toLowerCase();
-                return (
-                  <button
-                    key={c.label}
-                    type="button"
-                    onClick={() => {
-                      onUpdate(element.id, { stroke: c.color });
+          <div className="space-y-2.5 animate-in fade-in duration-150">
+            {/* وحدة لون الحد المدمجة */}
+            <div className="space-y-1.5 bg-background/40 p-2 rounded-xl border border-border/50 shadow-2xs">
+              <div className="flex items-center justify-between text-micro font-bold text-muted-foreground px-0.5">
+                <span>لون الحد</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[10px] text-muted-foreground/70 uppercase select-none" dir="ltr">
+                    {currentStroke}
+                  </span>
+                  <PopoverColorPicker
+                    color={currentStroke}
+                    onChange={(val) => {
+                      onUpdate(element.id, { stroke: val });
                       useEditorStore.getState().pushHistory();
                     }}
-                    className={cn(
-                      "h-6 rounded-md border p-0.5 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1",
-                      isSelected ? "border-primary ring-1 ring-primary bg-primary/10" : "border-border/50 bg-background/50"
-                    )}
-                    title={c.label}
-                  >
-                    <span className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: c.color }} />
-                    <span className="text-[9px] font-bold truncate">{c.label}</span>
-                  </button>
-                );
-              })}
+                    swatchOnly
+                    className="w-5 h-5 rounded"
+                  />
+                </div>
+              </div>
+              <QuickColorPalette
+                currentColor={currentStroke}
+                onSelectColor={(col) => {
+                  onUpdate(element.id, { stroke: col });
+                  useEditorStore.getState().pushHistory();
+                }}
+              />
             </div>
 
-            <SliderControl
+            <FluentSliderField
               label="سماكة الحد"
-              icon={<Square className="w-3.5 h-3.5 text-muted-foreground/75" weight="regular" />}
               value={element.strokeWidth ?? 2}
               min={0.5}
               max={20}
@@ -176,16 +162,14 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
             />
           </div>
         )}
-      </div>
+      </FluentSection>
 
       {/* 🎴 بطاقة 3: ألوان الشارة والخلفية إن وُجدت */}
       {hasBadge && (
-        <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2.5 shadow-xs fluent-specular">
-          <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5 border-b border-border/40 pb-1.5">
-            <Sparkle className="w-4 h-4 text-primary" weight="duotone" />
-            <span>ألوان خلفية وشارة النص</span>
-          </Label>
-
+        <FluentSection
+          icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
+          title="ألوان خلفية وشارة النص"
+        >
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-foreground/80">لون الخلفية</span>
             <PopoverColorPicker
@@ -211,14 +195,21 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
               />
             </div>
           )}
-        </div>
+        </FluentSection>
       )}
 
       {/* 🎴 بطاقة 4: الشفافية */}
-      <div className="bg-card border border-border/80 dark:border-white/10 rounded-xl p-3 space-y-2 shadow-xs fluent-specular">
-        <SliderControl
+      <FluentSection
+        icon={<Eye className="w-4 h-4 text-primary" weight="duotone" />}
+        title="الشفافية"
+        action={
+          <span className="text-micro font-bold font-mono px-2 py-0.5 rounded-md bg-muted/60 border border-border/50 text-foreground/90 tabular-nums select-none" dir="ltr">
+            {currentOpacity}%
+          </span>
+        }
+      >
+        <FluentSliderField
           label="شفافية النص"
-          icon={<Eye className="w-4 h-4 text-muted-foreground/75" weight="regular" />}
           value={currentOpacity}
           min={0}
           max={100}
@@ -227,7 +218,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
           onChange={(v) => onUpdate(element.id, { opacity: v / 100 })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
-      </div>
+      </FluentSection>
     </div>
   );
 }

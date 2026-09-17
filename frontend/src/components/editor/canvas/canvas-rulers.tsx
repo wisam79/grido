@@ -87,19 +87,19 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
             aria-label="خيارات وحدة قياس المسطرة"
             className="w-[20px] h-[20px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-1 focus-visible:ring-primary relative"
           >
-            <span className="text-[7.5px] font-bold text-primary font-mono leading-none tracking-tighter uppercase">
+            <span className="text-3xs font-bold text-primary font-mono leading-none tracking-tighter uppercase">
               {rulerUnit}
             </span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16">
           <div dir="rtl">
-            <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold flex items-center justify-between">
+            <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Ruler className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
                 <span>وحدة قياس المسطرة</span>
               </span>
-              <span className="text-[10px] text-muted-foreground/70 font-mono">Ctrl+R</span>
+              <span className="text-micro text-muted-foreground/70 font-mono">Ctrl+R</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {RULER_UNITS.map((u) => {
@@ -115,7 +115,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                       <span className="font-mono text-xs text-primary font-bold">{u.id}</span>
                       <span className="text-xs">{u.label}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground font-normal">{u.sub}</span>
+                    <span className="text-micro text-muted-foreground font-normal">{u.sub}</span>
                   </div>
                   {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />}
                 </DropdownMenuItem>
@@ -123,7 +123,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
             })}
 
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold">
+            <DropdownMenuLabel className="text-micro text-muted-foreground font-bold">
               الخطوط الإرشادية
             </DropdownMenuLabel>
 
@@ -140,7 +140,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                   )}
                   <span>{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground/70 font-mono">Ctrl+;</span>
+                <span className="text-micro text-muted-foreground/70 font-mono">Ctrl+;</span>
               </DropdownMenuItem>
             )}
 

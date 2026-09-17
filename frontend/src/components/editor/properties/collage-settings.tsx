@@ -12,6 +12,7 @@ import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import { useRef, useCallback, useEffect } from "react";
 import { FluentSection, FluentSettingRow, FluentSliderField } from "@/components/ui/blocks";
+import { PopoverColorPicker } from "./shared-controls";
 
 export function CollageSettings() {
   const {
@@ -62,14 +63,6 @@ export function CollageSettings() {
     };
   }, []);
 
-  const handleHexInput = (val: string) => {
-    const clean = val.trim();
-    if (/^#?[0-9a-fA-F]{3}$|^#?[0-9a-fA-F]{6}$/.test(clean)) {
-      const withHash = clean.startsWith("#") ? clean : `#${clean}`;
-      setCollageStrokeColor(withHash);
-      commitColorLater();
-    }
-  };
 
   return (
     <div className="flex flex-col gap-3 font-cairo" dir="rtl">
@@ -167,27 +160,14 @@ export function CollageSettings() {
                 })}
               </div>
 
-              <div className="flex items-center gap-1.5 bg-background border border-border/80 hover:border-primary/60 rounded-md px-2 w-28 h-8 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background shadow-2xs">
-                <input
-                  type="text"
-                  value={collageStrokeColor}
-                  onChange={(e) => handleHexInput(e.target.value)}
-                  className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-bold"
-                />
-                <label aria-label="لون إطار الكولاج" htmlFor="collage-stroke-color-input" className="relative w-4 h-4 rounded-full border border-border cursor-pointer overflow-hidden shrink-0 shadow-2xs transition-transform hover:scale-110">
-                  <input
-                    id="collage-stroke-color-input"
-                    type="color"
-                    value={collageStrokeColor}
-                    onChange={(e) => { setCollageStrokeColor(e.target.value); commitColorLater(); }}
-                    className="absolute -inset-2 w-8 h-8 opacity-0 cursor-pointer"
-                  />
-                  <div
-                    className="w-full h-full rounded-full"
-                    style={{ backgroundColor: collageStrokeColor }}
-                  />
-                </label>
-              </div>
+              <PopoverColorPicker
+                color={collageStrokeColor}
+                onChange={(hex) => {
+                  setCollageStrokeColor(hex);
+                  commitColorLater();
+                }}
+                className="w-32 h-8"
+              />
             </div>
           )}
         </div>

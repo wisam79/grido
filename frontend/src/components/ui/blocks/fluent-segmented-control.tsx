@@ -81,13 +81,13 @@ export function FluentSegmentedControl<T extends string = string>({
               "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               fullWidth ? "flex-1" : "shrink-0",
               stacked
-                ? "flex-col gap-0.5 h-10 px-1 text-[10.5px] leading-tight"
+                ? "flex-col gap-0.5 h-10 px-1 text-mini leading-tight"
                 : cn(
                     "gap-1.5",
                     size === "sm" ? "h-7 px-2 text-xs" : size === "lg" ? "h-9 px-3 text-xs font-bold" : "h-8 px-2.5 text-xs"
                   ),
               isActive
-                ? "text-primary font-bold shadow-2xs"
+                ? "text-foreground font-bold shadow-2xs"
                 : "text-muted-foreground hover:text-foreground font-medium",
               opt.disabled && "opacity-40 cursor-not-allowed pointer-events-none",
               opt.className

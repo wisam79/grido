@@ -79,7 +79,8 @@ export const FluentSection = React.memo(
           className={cn(
             "flex items-center justify-between gap-2 select-none",
             isOpen ? "pb-2.5 mb-2.5 border-b border-border/50" : "",
-            collapsible && "cursor-pointer group/sec-header hover:opacity-90 transition-opacity",
+            collapsible &&
+              "cursor-pointer group/sec-header hover:opacity-90 transition-opacity rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             headerClassName
           )}
         >
@@ -97,7 +98,7 @@ export const FluentSection = React.memo(
                 {badge}
               </div>
               {subtitle && (
-                <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                <p className="text-micro text-muted-foreground truncate mt-0.5">
                   {subtitle}
                 </p>
               )}
