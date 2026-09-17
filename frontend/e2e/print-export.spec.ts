@@ -11,7 +11,7 @@ test.describe('Print & Export Workflows E2E', () => {
   test('Open and interact with Print Dialog', async ({ page }) => {
     // Add image first so there is content to print
     await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: /إدراج صورة جديدة|إدراج/ }).click();
+    await page.getByRole('button', { name: 'إدراج صورة جديدة' }).click();
 
     // Click Print button in toolbar
     const printBtn = page.getByRole('button', { name: /طباعة/ }).or(page.getByTitle(/طباعة/)).first();
@@ -30,7 +30,7 @@ test.describe('Print & Export Workflows E2E', () => {
 
   test('Open and interact with Export Dialog', async ({ page }) => {
     await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: /إدراج صورة جديدة|إدراج/ }).click();
+    await page.getByRole('button', { name: 'إدراج صورة جديدة' }).click();
 
     const exportBtn = page.getByRole('button', { name: /تصدير/ }).or(page.getByTitle(/تصدير/)).first();
     await expect(exportBtn).toBeVisible();

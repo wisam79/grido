@@ -18,7 +18,7 @@ test.describe('Single Photo Workflow E2E', () => {
   test('Add image, view properties panel and image controls', async ({ page }) => {
     // Switch to freeform mode and add image
     await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: /إدراج صورة جديدة|إدراج/ }).click();
+    await page.getByRole('button', { name: 'إدراج صورة جديدة' }).click();
 
     // Verify properties panel appears with action buttons
     await expect(page.getByRole('button', { name: 'قص وتدوير' })).toBeVisible();
