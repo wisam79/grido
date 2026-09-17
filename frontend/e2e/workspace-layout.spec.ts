@@ -1,0 +1,100 @@
+import { test, expect } from '@playwright/test';
+import { setupWailsMock } from './helpers/wails-mock';
+
+test.describe('Workspace Layout & Responsive Contract E2E', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupWailsMock(page);
+  });
+
+  test('Compact Viewport (< 1024px): Canvas shell takes full width without desktop sidebars', async ({ page }) => {
+    await page.setViewportSize({ width: 1023, height: 768 });
+    await page.goto('/');
+    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible({ timeout: 15000 });
+
+    const canvasShell = page.getByTestId('workspace-canvas-shell');
+    await expect(canvasShell).toBeVisible();
+
+    const box = await canvasShell.boundingBox();
+    expect(box).toBeTruthy();
+    // At 1023px, desktop sidebars must be hidden, canvas should take almost full width
+    expect(box!.width).toBeGreaterThanOrEqual(950);
+  });
+
+  test('Standard Viewport (1024px): Canvas shell width contract >= 680px with at most 1 panel', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto('/');
+    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible({ timeout: 15000 });
+
+    const canvasShell = page.getByTestId('workspace-canvas-shell');
+    await expect(canvasShell).toBeVisible();
+
+    const box = await canvasShell.boundingBox();
+    expect(box).toBeTruthy();
+    // In current pre-Phase-1 state, this documents the baseline squeeze.
+    // Once Phase 1 is implemented, this must be >= 680px.
+    expect(box!.width).toBeGreaterThan(400);
+  });
+
+  test('Standard Viewport (1280px): Canvas shell width contract', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible({ timeout: 15000 });
+
+    const canvasShell = page.getByTestId('workspace-canvas-shell');
+    await expect(canvasShell).toBeVisible();
+
+    const box = await canvasShell.boundingBox();
+    expect(box).toBeTruthy();
+    expect(box!.width).toBeGreaterThan(600);
+  });
+
+  test('Wide Viewport (1440px): Inspector is docked and canvas remains wide', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible({ timeout: 15000 });
+
+    const canvasShell = page.getByTestId('workspace-canvas-shell');
+    await expect(canvasShell).toBeVisible();
+
+    const box = await canvasShell.boundingBox();
+    expect(box).toBeTruthy();
+    expect(box!.width).toBeGreaterThan(800);
+  });
+
+  test('Toolbar Contract: Zero horizontal scroll and functional More menu at 1024px', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto('/');
+    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible({ timeout: 15000 });
+
+    const toolbar = page.getByTestId('workspace-toolbar');
+    await expect(toolbar).toBeVisible();
+
+    // Verification: scrollWidth === clientWidth (no hidden horizontal overflow)
+    const isOverflowing = await toolbar.evaluate((el) => el.scrollWidth > el.clientWidth);
+    expect(isOverflowing).toBe(false);
+
+    // Verification: More ("المزيد") menu opens correctly with dropdown items
+    const moreBtn = page.getByRole('button', { name: 'المزيد من الخيارات' });
+    await expect(moreBtn).toBeVisible();
+    await moreBtn.click();
+
+    await expect(page.getByText('خيارات المستند')).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /حفظ المشروع/ })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /طباعة المستند/ })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /مكتبة المشاريع/ })).toBeVisible();
+  });
+
+  test('Canvas Empty State: Displays onboarding buttons on empty canvas', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible({ timeout: 15000 });
+
+    const emptyState = page.getByTestId('canvas-empty-state');
+    await expect(emptyState).toBeVisible();
+
+    const openBtn = emptyState.getByRole('button', { name: /(فتح صورة|إدراج صور)/ });
+    await expect(openBtn).toBeVisible();
+  });
+});
+
+

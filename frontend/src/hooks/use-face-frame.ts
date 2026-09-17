@@ -3,6 +3,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 import { preloadImageIntoCache } from "./use-async-image";
+import { useOperationStatusStore } from "@/lib/ui/operation-status";
 import type { CanvasElement, CanvasSlot } from "@/lib/store/types";
 import { create } from "zustand";
 
@@ -164,6 +165,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
     setIsFraming(false);
     setFrameProgress(0);
     setFrameProgressText("");
+    useOperationStatusStore.getState().cancelActiveOperation();
     toast.info("تم إلغاء العملية.");
   };
 
@@ -181,6 +183,15 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
       return;
     }
 
+    const targetId = "id" in target ? (target as { id: string }).id : undefined;
+    const opId = useOperationStatusStore.getState().startOperation({
+      type: "face_frame",
+      title: "جاري ضبط وتأطير الوجه ...",
+      targetId,
+      canCancel: true,
+      onCancel: handleCancelFrame,
+    });
+
     setIsFraming(true);
     setFrameProgress(0);
     setFrameProgressText("جاري التهيئة ...");
@@ -192,6 +203,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
     const startedAt = performance.now();
 
     const settle = () => {
+      useOperationStatusStore.getState().finishOperation(opId);
       pendingFrameRequests.delete(requestId);
       if (busyFrameRequestId === requestId) busyFrameRequestId = 0;
       if (activeRequestRef.current === requestId) activeRequestRef.current = 0;

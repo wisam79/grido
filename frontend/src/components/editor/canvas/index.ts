@@ -7,3 +7,4 @@ export * from "./ruler";
 export * from "./text-editing-overlay";
 export * from "./canvas-viewport-deck";
 export * from "./canvas-paper";
+export * from "./canvas-empty-state";

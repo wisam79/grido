@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { 
   Toolbar, 
@@ -11,7 +11,9 @@ import {
   WindowResizeHandles,
   CanvasViewportDeck,
   DesktopMenuBar,
+  WorkspaceLayout,
 } from "@/components/editor";
+import { useWorkspacePanels } from "@/hooks/use-workspace-panels";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { GetStartupFile, ProcessLocalImageFile } from "../wailsjs/go/main/App";
 import { EventsOn, EventsOff } from "../wailsjs/runtime/runtime";
@@ -20,7 +22,7 @@ const ExportDialog = lazy(() => import("@/components/editor/dialogs/export-dialo
 const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog").then(module => ({ default: module.PrintDialog })));
 import { FluentSegmentedControl } from "@/components/ui/blocks";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useOperationStatusStore } from "@/lib/ui/operation-status";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Spinner } from "@/components/ui/huge-icon";
 import { PhosphorProvider } from "@/components/ui/phosphor-provider";
@@ -52,28 +54,19 @@ import { usePhoneBridgeListener } from "@/components/editor/system/use-phone-bri
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
-  const [mobileTemplatesOpen, setMobileTemplatesOpen] = useState(false);
-  const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
-  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
 
+  const panelsHook = useWorkspacePanels();
+  const isTemplatesOpen = panelsHook.breakpoint === "wide" ? panelsHook.isTemplatesDrawerOpen : panelsHook.activePanel === "templates";
+  const isPropertiesOpen = panelsHook.activePanel === "properties";
   const { theme, toggleTheme } = useTheme();
-
-  const sidebarsRef = useRef({ right: rightSidebarOpen, left: leftSidebarOpen });
-  useEffect(() => {
-    sidebarsRef.current = { right: rightSidebarOpen, left: leftSidebarOpen };
-  }, [rightSidebarOpen, leftSidebarOpen]);
+  const activeOperation = useOperationStatusStore((s) => s.activeOperation);
+  const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
 
   useEffect(() => {
-    const handleToggleRight = () => setRightSidebarOpen((v) => !v);
-    const handleToggleLeft = () => setLeftSidebarOpen((v) => !v);
-    const handleToggleZen = () => {
-      const { right, left } = sidebarsRef.current;
-      const anyOpen = right || left;
-      setRightSidebarOpen(!anyOpen);
-      setLeftSidebarOpen(!anyOpen);
-    };
+    const handleToggleRight = () => panelsHook.togglePanel("templates");
+    const handleToggleLeft = () => panelsHook.togglePanel("properties");
+    const handleToggleZen = () => panelsHook.toggleZenMode();
 
     window.addEventListener("grido:toggle-right-sidebar", handleToggleRight);
     window.addEventListener("grido:toggle-left-sidebar", handleToggleLeft);
@@ -84,7 +77,7 @@ export default function App() {
       window.removeEventListener("grido:toggle-left-sidebar", handleToggleLeft);
       window.removeEventListener("grido:toggle-zen-mode", handleToggleZen);
     };
-  }, []);
+  }, [panelsHook]);
 
 
   const {
@@ -415,21 +408,21 @@ export default function App() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setRightSidebarOpen((v) => !v)}
+                  onClick={() => panelsHook.togglePanel("templates")}
                   className={cn(
                     "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
-                    rightSidebarOpen
+                    isTemplatesOpen
                       ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
                       : "text-muted-foreground hover:bg-muted/80"
                   )}
-                  aria-label={rightSidebarOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}
+                  aria-label={isTemplatesOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}
                 >
-                  <SidebarSimple className="w-4 h-4" weight={rightSidebarOpen ? "fill" : "regular"} />
+                  <SidebarSimple className="w-4 h-4" weight={isTemplatesOpen ? "fill" : "regular"} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
                 <div className="flex items-center gap-1.5">
-                  <span>{rightSidebarOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}</span>
+                  <span>{isTemplatesOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}</span>
                   <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+B</kbd>
                 </div>
               </TooltipContent>
@@ -439,21 +432,21 @@ export default function App() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setLeftSidebarOpen((v) => !v)}
+                  onClick={() => panelsHook.togglePanel("properties")}
                   className={cn(
                     "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
-                    leftSidebarOpen
+                    isPropertiesOpen
                       ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
                       : "text-muted-foreground hover:bg-muted/80"
                   )}
-                  aria-label={leftSidebarOpen ? "إخفاء لوحة الخصائص" : "إظهار لوحة الخصائص"}
+                  aria-label={isPropertiesOpen ? "إخفاء لوحة الخصائص" : "إظهار لوحة الخصائص"}
                 >
-                  <SlidersHorizontal className="w-4 h-4" weight={leftSidebarOpen ? "bold" : "regular"} />
+                  <SlidersHorizontal className="w-4 h-4" weight={isPropertiesOpen ? "bold" : "regular"} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
                 <div className="flex items-center gap-1.5">
-                  <span>{leftSidebarOpen ? "إخفاء لوحة الخصائص" : "إظهار لوحة الخصائص"}</span>
+                  <span>{isPropertiesOpen ? "إخفاء لوحة الخصائص" : "إظهار لوحة الخصائص"}</span>
                   <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+Shift+B</kbd>
                 </div>
               </TooltipContent>
@@ -463,7 +456,7 @@ export default function App() {
               variant="ghost"
               size="sm"
               className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
-              onClick={() => setMobileTemplatesOpen(true)}
+              onClick={() => panelsHook.openPanel("templates")}
             >
               <SidebarSimple className="w-4 h-4" />
               <span className="text-xs font-semibold">{mode === "collage" ? "القوالب" : "التصميم"}</span>
@@ -472,7 +465,7 @@ export default function App() {
               variant="ghost"
               size="sm"
               className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
-              onClick={() => setMobilePropsOpen(true)}
+              onClick={() => panelsHook.openPanel("properties")}
             >
               <SlidersHorizontal className="w-4 h-4" />
               <span className="text-xs font-semibold">خصائص</span>
@@ -511,101 +504,61 @@ export default function App() {
         onSave={() => window.dispatchEvent(new CustomEvent("grido:open-projects-dialog", { detail: { tab: "save" } }))}
       />
 
-      {/* المحتوى الرئيسي */}
-      <main className="flex-1 flex overflow-hidden">
-        {/* لوحة القوالب — أول عنصر في flex مع dir="rtl" فيُعرض على يمين الشاشة */}
-        <aside
-          data-collapsed={!rightSidebarOpen}
-          className={cn(
-            "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
-            rightSidebarOpen
-              ? "w-[308px] min-w-[240px] max-w-[308px] 2xl:min-w-[308px] opacity-100 border-l border-sidebar-border shadow-sm"
-              : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none"
-          )}
-        >
+      {/* المحتوى الرئيسي للمساحة بتصميم Fluent 2 المستقر */}
+      <WorkspaceLayout
+        panelsHook={panelsHook}
+        templatesContent={
           <ErrorBoundary>
-            <TemplatePanel onCollapse={() => setRightSidebarOpen(false)} />
-          </ErrorBoundary>
-        </aside>
-
-        {/* الكانفس - الوسط */}
-        <section className="flex-1 flex flex-col min-w-0 bg-background relative z-10 overflow-hidden">
-          <div className="flex-1 relative h-full w-full overflow-hidden">
-            <ErrorBoundary>
-              <EditorCanvas />
-            </ErrorBoundary>
-
-            {/* مؤشر المعالجة العائم (يظهر فقط أثناء العمل على الكانفاس) */}
-            {isBusy && (
-              <div className="absolute top-4 right-4 z-30 font-cairo animate-in fade-in slide-in-from-top-2 duration-300 no-print pointer-events-none">
-                <span className="inline-flex items-center gap-2 text-xs font-bold text-primary bg-card/90 backdrop-blur-xl h-8 px-3.5 rounded-full border border-border shadow-fluent-8">
-                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span>جاري المعالجة ...</span>
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* شريط الأدوات السفلي المثبت (Docked Bottom Command Bar - لا يغطي الكانفاس نهائياً) */}
-          <footer className="h-10 shrink-0 border-t border-border bg-sidebar px-3 flex items-center justify-center relative z-20 no-print select-none">
-            <CanvasViewportDeck
-              isZenMode={!rightSidebarOpen && !leftSidebarOpen}
-              onToggleZenMode={() => {
-                const zen = !rightSidebarOpen && !leftSidebarOpen;
-                if (zen) {
-                  setRightSidebarOpen(true);
-                  setLeftSidebarOpen(true);
-                } else {
-                  setRightSidebarOpen(false);
-                  setLeftSidebarOpen(false);
-                }
-              }}
+            <TemplatePanel
+              onCollapse={panelsHook.closeActivePanel}
+              activeStudioTab={panelsHook.activeStudioTab}
+              onActiveStudioTabChange={panelsHook.setActiveStudioTab}
             />
-          </footer>
-        </section>
-
-        {/* لوحة الخصائص — ثاني عنصر في flex مع dir="rtl" فيُعرض على يسار الشاشة */}
-        <aside
-          data-collapsed={!leftSidebarOpen}
-          className={cn(
-            "hidden lg:flex h-full native-depth-sidebar flex-col no-print z-20 overflow-hidden fluent-panel-motion",
-            leftSidebarOpen
-              ? "w-[296px] min-w-[240px] max-w-[296px] 2xl:min-w-[296px] opacity-100 border-r border-sidebar-border shadow-sm"
-              : "w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none"
-          )}
-        >
-          <ErrorBoundary>
-            <PropertiesPanel onCollapse={() => setLeftSidebarOpen(false)} />
           </ErrorBoundary>
-        </aside>
-      </main>
-
-      {/* النوافذ المنزلقة للجوال */}
-      {mobileTemplatesOpen && (
-      <Sheet open={mobileTemplatesOpen} onOpenChange={setMobileTemplatesOpen}>
-        <SheetContent side="right" className="w-[85vw] sm:w-96 p-0" dir="rtl">
-          <SheetHeader className="border-b">
-            <SheetTitle>القوالب الجاهزة</SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 overflow-hidden">
-            <TemplatePanel />
-          </div>
-        </SheetContent>
-      </Sheet>
-      )}
-
-      {mobilePropsOpen && (
-      <Sheet open={mobilePropsOpen} onOpenChange={setMobilePropsOpen}>
-        <SheetContent side="left" className="w-[85vw] sm:w-96 p-0" dir="rtl">
-          <SheetHeader className="border-b">
-            <SheetTitle>خصائص التعديل</SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 overflow-hidden">
-            <PropertiesPanel />
-          </div>
-        </SheetContent>
-      </Sheet>
-      )}
+        }
+        propertiesContent={
+          <ErrorBoundary>
+            <PropertiesPanel onCollapse={panelsHook.closeActivePanel} />
+          </ErrorBoundary>
+        }
+        canvasContent={
+          <ErrorBoundary>
+            <EditorCanvas
+              onOpenFile={() => window.dispatchEvent(new CustomEvent("grido:open-file-dialog"))}
+              onOpenTemplates={() => panelsHook.openPanel("templates")}
+            />
+          </ErrorBoundary>
+        }
+        floatingFeedback={
+          activeOperation ? (
+            <div className="absolute top-4 end-4 z-30 font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-auto">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+              <span className="text-xs font-bold text-foreground truncate max-w-xs">{activeOperation.title}</span>
+              {activeOperation.canCancel && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={cancelActiveOperation}
+                  className="h-6 px-2 text-mini font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer transition-all"
+                >
+                  إلغاء
+                </Button>
+              )}
+            </div>
+          ) : isBusy ? (
+            <div className="absolute top-4 end-4 z-30 font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 px-3 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-none">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+              <span className="text-xs font-bold text-primary">جاري المعالجة ...</span>
+            </div>
+          ) : null
+        }
+        footerContent={
+          <CanvasViewportDeck
+            isZenMode={panelsHook.isZenMode}
+            onToggleZenMode={panelsHook.toggleZenMode}
+          />
+        }
+      />
 
       {/* نافذة التصدير */}
       <ErrorBoundary>

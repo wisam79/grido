@@ -3,6 +3,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { ApplyMaskToImage } from "../../wailsjs/go/main/App";
 import { preloadImageIntoCache } from "./use-async-image";
+import { useOperationStatusStore } from "@/lib/ui/operation-status";
 import { create } from "zustand";
 
 interface BgRemovalState {
@@ -150,6 +151,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
     setIsRemovingBg(false);
     setBgProgress(0);
     setBgProgressText("");
+    useOperationStatusStore.getState().cancelActiveOperation();
     toast.info("تم إلغاء العملية.");
   };
 
@@ -181,6 +183,14 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       return;
     }
 
+    const opId = useOperationStatusStore.getState().startOperation({
+      type: "bg_removal",
+      title: "جاري عزل الخلفية ...",
+      targetId: element.id,
+      canCancel: true,
+      onCancel: handleCancelBgRemoval,
+    });
+
     setIsRemovingBg(true);
     setBgProgress(0);
     setBgProgressText("جاري التهيئة ...");
@@ -193,6 +203,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
 
     // إنهاء مشترك بين المسارات الثلاثة (نتيجة/خطأ/إلغاء خارجي)
     const settle = () => {
+      useOperationStatusStore.getState().finishOperation(opId);
       pendingBgRequests.delete(requestId);
       if (busyRequestId === requestId) busyRequestId = 0;
       if (activeRequestRef.current === requestId) activeRequestRef.current = 0;

@@ -21,16 +21,28 @@ import {
   GridFour,
   CaretRight,
   Sparkle,
+  Stack,
+  FrameCorners,
+  Stamp,
+  Shapes,
+  TextT,
 } from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
 import { FreeformStudioPanel } from "./freeform";
+import type { FreeformTab } from "./freeform/freeform-panel-constants";
 
 export interface TemplatePanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
   onCollapse?: () => void;
+  activeStudioTab?: FreeformTab;
+  onActiveStudioTabChange?: (tab: FreeformTab) => void;
 }
 
-export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
+export function TemplatePanel({
+  onCollapse,
+  activeStudioTab = "layers",
+  onActiveStudioTabChange,
+}: TemplatePanelProps) {
   const { 
     setCollageTemplate, 
     collageTemplate, 
@@ -116,13 +128,54 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
     }
   };
 
+  const studioIcon =
+    activeStudioTab === "layers" ? (
+      <Stack className="w-4 h-4 text-primary" weight="duotone" />
+    ) : activeStudioTab === "stickers" ? (
+      <Stamp className="w-4 h-4 text-primary" weight="duotone" />
+    ) : activeStudioTab === "shapes" ? (
+      <Shapes className="w-4 h-4 text-primary" weight="duotone" />
+    ) : activeStudioTab === "text" ? (
+      <TextT className="w-4 h-4 text-primary" weight="duotone" />
+    ) : activeStudioTab === "presets" ? (
+      <FrameCorners className="w-4 h-4 text-primary" weight="duotone" />
+    ) : (
+      <Sparkle className="w-4 h-4 text-primary" weight="duotone" />
+    );
+
+  const studioTitle =
+    activeStudioTab === "layers"
+      ? "الطبقات"
+      : activeStudioTab === "stickers"
+      ? "الملصقات والشارات"
+      : activeStudioTab === "shapes"
+      ? "الأشكال والتصاميم"
+      : activeStudioTab === "text"
+      ? "النصوص الجاهزة"
+      : activeStudioTab === "presets"
+      ? "المقاسات والورق"
+      : "استوديو التصميم";
+
+  const studioSubtitle =
+    activeStudioTab === "layers"
+      ? "ترتيب وتحديد عناصر الكانفاس"
+      : activeStudioTab === "stickers"
+      ? "أختام وشارات وبطاقات جاهزة"
+      : activeStudioTab === "shapes"
+      ? "أشكال هندسية ورسوم وتصاميم"
+      : activeStudioTab === "text"
+      ? "عناوين وتأثيرات طباعية جاهزة"
+      : activeStudioTab === "presets"
+      ? "نماذج طباعة ومقاسات مخصصة"
+      : "الطبقات والعناصر والمقاسات";
+
   return (
     <PanelShell
-      icon={mode === "collage" ? <GridFour className="w-4 h-4 text-primary" weight="duotone" /> : <Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
-      title={mode === "collage" ? "القوالب" : "استوديو التصميم"}
-      subtitle={mode === "collage" ? "قوالب الكولاج والطباعة" : "الطبقات والعناصر والمقاسات"}
+      icon={mode === "collage" ? <GridFour className="w-4 h-4 text-primary" weight="duotone" /> : studioIcon}
+      title={mode === "collage" ? "القوالب" : studioTitle}
+      subtitle={mode === "collage" ? "قوالب الكولاج والطباعة" : studioSubtitle}
       onCollapse={onCollapse}
-      collapseTitle={mode === "collage" ? "إخفاء لوحة القوالب (Ctrl+B)" : "إخفاء استوديو التصميم (Ctrl+B)"}
+      collapseTitle={mode === "collage" ? "إخفاء لوحة القوالب (Ctrl+B)" : `إخفاء ${studioTitle} (Ctrl+B)`}
       collapseIcon={<CaretRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" weight="bold" />}
       className="bg-transparent select-none"
     >
@@ -168,7 +221,7 @@ export function TemplatePanel({ onCollapse }: TemplatePanelProps) {
           />
         </div>
       ) : (
-        <FreeformStudioPanel />
+        <FreeformStudioPanel activeTab={activeStudioTab} />
       )}
 
       {/* Confirmation Dialog when switching templates with existing photos */}

@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { SaveImageFromBase64, EnhanceImageWithAI } from "../../wailsjs/go/main/App";
 import { useEditorStore } from "@/lib/editor-store";
+import { useOperationStatusStore } from "@/lib/ui/operation-status";
 import { create } from "zustand";
 
 interface AiEnhanceState {
@@ -146,6 +147,13 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
       return;
     }
 
+    const opId = useOperationStatusStore.getState().startOperation({
+      type: "ai_enhance",
+      title: "جاري تحسين الصورة بالذكاء الاصطناعي ...",
+      targetId: element.id,
+      canCancel: false,
+    });
+
     setIsEnhancing(true);
     useRenderQuality.getState().setEnhancingElementId(element.id);
     setEnhanceProgress(10);
@@ -244,6 +252,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
         toast.error(errorMsg);
       }
     } finally {
+      useOperationStatusStore.getState().finishOperation(opId);
       setIsEnhancing(false);
       useRenderQuality.getState().setEnhancingElementId(null);
       setEnhanceProgress(0);

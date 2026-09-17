@@ -5,3 +5,4 @@ export * from "./fluent-segmented-control";
 export * from "./fluent-empty-state";
 export * from "./fluent-icon-button";
 export * from "./fluent-modal";
+export * from "./fluent-filter-chips";

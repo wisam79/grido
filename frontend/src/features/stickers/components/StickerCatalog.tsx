@@ -3,6 +3,7 @@ import { MagnifyingGlass, X, Check, SquaresFour } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { FluentFilterChips } from "@/components/ui/blocks";
 import { cn, sanitizeSvgMarkupCached } from "@/lib/utils";
 import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate } from "../types";
 import { ALL_STICKER_TEMPLATES, searchStickerTemplates } from "../templates";
@@ -289,41 +290,18 @@ export const StickerCatalog = React.memo(function StickerCatalog({
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background/20 select-none">
       {/* ── Top Navigation: Categories Capsule Bar ── */}
       <div className="px-4 pt-3 pb-2 border-b border-border/30 bg-muted/10 shrink-0">
-        <nav
-          aria-label="تصنيفات الملصقات"
-          className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5"
-        >
-          {CATEGORY_ITEMS.map((cat) => {
-            const isActive = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => onSelectCategory(cat.id)}
-                aria-pressed={isActive}
-                className={cn(
-                  "h-8 px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                    : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40"
-                )}
-              >
-                <span className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
-                  {cat.icon}
-                </span>
-                <span>{cat.title}</span>
-                <span
-                  className={cn(
-                    "text-micro font-mono px-1.5 py-0.2 rounded-full font-bold",
-                    isActive ? "bg-black/15 text-primary-foreground" : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {CATEGORY_COUNTS[cat.id] || 0}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+        <FluentFilterChips
+          value={selectedCategory}
+          onChange={(val) => onSelectCategory(val as StickerCategoryGroupId | StickerCategory | "all")}
+          variant="tint"
+          size="md"
+          options={CATEGORY_ITEMS.map((cat) => ({
+            id: cat.id,
+            label: cat.title,
+            icon: cat.icon,
+            count: CATEGORY_COUNTS[cat.id] || 0,
+          }))}
+        />
 
         {/* ── Sub-bar: Search Input & Shape Filter ── */}
         <div className="flex items-center justify-between gap-3 mt-2.5">

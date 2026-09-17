@@ -208,6 +208,7 @@ describe('Component Testing: UI Rendering', () => {
   }, 15000);
 
   it('renders the TemplatePanel correctly', async () => {
+    localStorage.setItem('grido_workspace_layout_v1', JSON.stringify({ lastActivePanel: 'templates' }));
     useEditorStore.setState({ mode: 'single' });
     render(<App />);
     expect(await screen.findByText('الطبقات')).toBeInTheDocument();

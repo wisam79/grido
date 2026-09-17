@@ -8,7 +8,7 @@ import {
   SHAPE_PATH_ARROW,
 } from "@/lib/io/svg-paths";
 
-export type FreeformTab = "layers" | "elements" | "presets";
+export type FreeformTab = "layers" | "elements" | "stickers" | "shapes" | "text" | "presets";
 
 export interface ElementCategoryItem {
   id: "badges" | "shapes" | "text";

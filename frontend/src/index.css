@@ -337,7 +337,13 @@
   input[type="submit"], 
   input[type="button"],
   .touch-target {
-    cursor: default !important;
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  select:disabled {
+    cursor: not-allowed;
   }
 
   *:focus {
