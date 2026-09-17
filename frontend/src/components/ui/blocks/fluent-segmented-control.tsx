@@ -72,6 +72,7 @@ export function FluentSegmentedControl<T extends string = string>({
             role="tab"
             aria-selected={isActive}
             data-tab={opt.id}
+            data-testid={`segmented-${opt.id}`}
             aria-label={accessibleLabel}
             title={titleText}
             disabled={opt.disabled}

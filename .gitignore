@@ -46,6 +46,26 @@ opencode.json
 # Third-party build artifacts
 build/windows/installer/CodeFormer-temp/
 
+# Husky internal helpers
+# Note: `.husky/_/h` is the shared shell script that every hook sources.
+# We commit it so developers don't need to run `npx husky` after cloning.
+# The `.gitignore` below ignores the other auto-generated hook stubs that
+# simply `source h` — those are regenerated on `npm run prepare`.
+.husky/_/applypatch-msg
+.husky/_/commit-msg
+.husky/_/post-applypatch
+.husky/_/post-checkout
+.husky/_/post-commit
+.husky/_/post-merge
+.husky/_/post-rewrite
+.husky/_/pre-applypatch
+.husky/_/pre-auto-gc
+.husky/_/pre-merge-commit
+.husky/_/pre-push
+.husky/_/pre-rebase
+.husky/_/prepare-commit-msg
+.husky/_/husky.sh
+
 # Scratch / workspace
 scratch/
 *.whl

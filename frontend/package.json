@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "prepare": "node ../scripts/setup-husky.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -16,6 +17,21 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\""
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --report-unused-disable-directives --max-warnings 0",
+      "prettier --write"
+    ],
+    "src/**/*.{css,md}": [
+      "prettier --write"
+    ],
+    "e2e/**/*.ts": [
+      "prettier --write"
+    ],
+    "playwright.config.ts": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -81,8 +97,10 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^17.7.0",
+    "husky": "^9.1.7",
     "jest-axe": "^10.0.0",
     "jsdom": "^29.1.1",
+    "lint-staged": "^17.5.1",
     "postcss": "^8.5.23",
     "prettier": "^3.9.4",
     "tailwindcss": "^4.3.2",

@@ -66,6 +66,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               variant="ghost"
               size="sm"
               onClick={onSave}
+              data-testid="toolbar-save"
               aria-label="حفظ المشروع"
               className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
             >
@@ -80,6 +81,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
               variant="outline"
               size="sm"
               onClick={onPrint}
+              data-testid="toolbar-print"
               aria-label="طباعة المستند"
               className="h-8 px-2.5 gap-1.5 border border-border/80 dark:border-border bg-background/80 hover:bg-accent text-foreground rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] shadow-2xs group"
             >
@@ -93,6 +95,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
             <Button
               size="sm"
               onClick={onExport}
+              data-testid="toolbar-export"
               aria-label="تصدير صورة"
               className="h-8 px-3.5 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98]"
             >
@@ -108,6 +111,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  data-testid="toolbar-more"
                   aria-label="المزيد من الخيارات"
                   className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md transition-all cursor-pointer"
                 >

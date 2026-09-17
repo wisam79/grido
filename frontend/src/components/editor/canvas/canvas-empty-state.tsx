@@ -57,6 +57,7 @@ export const CanvasEmptyState = React.memo(function CanvasEmptyState({
             type="button"
             size="sm"
             onClick={onOpenFile}
+            data-testid="empty-state-open-file"
             className="h-8 px-3.5 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md font-bold text-xs shadow-xs cursor-pointer active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4" weight="bold" />
@@ -69,6 +70,7 @@ export const CanvasEmptyState = React.memo(function CanvasEmptyState({
               variant="outline"
               size="sm"
               onClick={onOpenTemplates}
+              data-testid="empty-state-open-templates"
               className="h-8 px-3 gap-1.5 border-border/80 text-foreground hover:bg-accent rounded-md font-semibold text-xs cursor-pointer active:scale-95 transition-all shadow-2xs"
             >
               <GridFour className="w-4 h-4 text-primary" weight="duotone" />

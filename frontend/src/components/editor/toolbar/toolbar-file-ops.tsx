@@ -240,6 +240,7 @@ export function ToolbarFileOps() {
               variant="ghost"
               size="sm"
               onClick={handleOpenFile}
+              data-testid="toolbar-insert"
               aria-label="إدراج صورة جديدة"
               className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/90 active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
             >
@@ -305,6 +306,7 @@ export function ToolbarFileOps() {
                 setProjectsTab("list");
                 setIsProjectsOpen(true);
               }}
+              data-testid="toolbar-projects"
               aria-label="مكتبة المشاريع"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer group"
             >

@@ -147,6 +147,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <button
               type="button"
               onClick={() => setShowRuler(!showRuler)}
+              data-testid="canvas-ruler-toggle"
               aria-label="المساطر (Ctrl + R)"
               className={cn(
                 "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
@@ -300,6 +301,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 type="button"
                 className="w-7 h-7 flex items-center justify-center hover:bg-muted/60 hover:text-foreground rounded-md transition-all duration-150 cursor-pointer text-muted-foreground/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent"
                 onClick={handleZoomOut}
+                data-testid="canvas-zoom-out"
                 aria-label="تصغير"
               >
                 <MagnifyingGlassMinus className="w-4 h-4" weight="regular" />
@@ -340,6 +342,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 type="button"
                 className="w-7 h-7 flex items-center justify-center hover:bg-muted/60 hover:text-foreground rounded-md transition-all duration-150 cursor-pointer text-muted-foreground/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent"
                 onClick={handleZoomIn}
+                data-testid="canvas-zoom-in"
                 aria-label="تكبير"
               >
                 <MagnifyingGlassPlus className="w-4 h-4" weight="regular" />
@@ -382,6 +385,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 type="button"
                 className="w-7 h-7 flex items-center justify-center text-muted-foreground/80 hover:text-foreground hover:bg-muted/60 rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent"
                 onClick={() => window.dispatchEvent(new CustomEvent("grido:open-shortcuts"))}
+                data-testid="canvas-shortcuts"
                 aria-label="اختصارات لوحة المفاتيح"
               >
                 <Keyboard className="w-4 h-4" weight="regular" />

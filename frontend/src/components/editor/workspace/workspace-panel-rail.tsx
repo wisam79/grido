@@ -67,6 +67,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                 variant="ghost"
                 size="icon"
                 onClick={() => onTogglePanel('templates')}
+                data-testid="rail-collage-templates"
                 aria-label="قوالب الكولاج والشبكة"
                 className={cn(
                   'h-8 w-8 rounded-md transition-all cursor-pointer relative',
@@ -99,6 +100,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                       ? onSelectStudioTab('layers')
                       : onTogglePanel('templates')
                   }
+                  data-testid="rail-studio-layers"
                   aria-label="الطبقات"
                   className={cn(
                     'h-8 w-8 rounded-md transition-all cursor-pointer relative',
@@ -137,6 +139,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                       ? onSelectStudioTab('stickers')
                       : onTogglePanel('templates')
                   }
+                  data-testid="rail-studio-stickers"
                   aria-label="الملصقات والشارات"
                   className={cn(
                     'h-8 w-8 rounded-md transition-all cursor-pointer relative',
@@ -170,6 +173,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                       ? onSelectStudioTab('shapes')
                       : onTogglePanel('templates')
                   }
+                  data-testid="rail-studio-shapes"
                   aria-label="الأشكال والتصاميم"
                   className={cn(
                     'h-8 w-8 rounded-md transition-all cursor-pointer relative',
@@ -203,6 +207,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                       ? onSelectStudioTab('text')
                       : onTogglePanel('templates')
                   }
+                  data-testid="rail-studio-text"
                   aria-label="النصوص الجاهزة"
                   className={cn(
                     'h-8 w-8 rounded-md transition-all cursor-pointer relative',
@@ -236,6 +241,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                       ? onSelectStudioTab('presets')
                       : onTogglePanel('templates')
                   }
+                  data-testid="rail-studio-presets"
                   aria-label="المقاسات والورق"
                   className={cn(
                     'h-8 w-8 rounded-md transition-all cursor-pointer relative',
@@ -270,6 +276,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
               variant="ghost"
               size="icon"
               onClick={() => onTogglePanel('properties')}
+              data-testid="rail-properties"
               aria-label="لوحة الخصائص"
               className={cn(
                 'h-8 w-8 rounded-md transition-all cursor-pointer relative',
@@ -298,6 +305,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
               variant="ghost"
               size="icon"
               onClick={onToggleZenMode}
+              data-testid="rail-zen-mode"
               aria-label={isZenMode ? 'استعادة الألواح' : 'وضع التركيز الكامل'}
               className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all cursor-pointer"
             >

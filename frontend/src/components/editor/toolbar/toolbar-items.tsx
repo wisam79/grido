@@ -120,9 +120,10 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
       <DropdownMenu>
         <TooltipBtn content="إضافة نص">
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="toolbar-add-text"
               aria-label="إضافة نص"
               className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
             >
@@ -911,6 +912,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           size="sm"
           onClick={undo}
           disabled={!canUndo}
+          data-testid="toolbar-undo"
           aria-label="تراجع"
           className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
@@ -923,6 +925,7 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           size="sm"
           onClick={redo}
           disabled={!canRedo}
+          data-testid="toolbar-redo"
           aria-label="إعادة"
           className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
