@@ -13,7 +13,7 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
 
     await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: 'إضافة صورة جديدة' }).click();
+    await page.getByRole('button', { name: /إدراج صورة جديدة|إدراج/ }).click();
 
     await expect(page.getByRole('button', { name: 'عزل الخلفية' }).first()).toBeVisible();
 

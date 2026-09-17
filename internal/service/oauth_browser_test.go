@@ -77,6 +77,7 @@ func TestOpenBrowserURL_NotConfiguredFailsClearly(t *testing.T) {
 // SetContext(nil) يجب أن يبقى آمناً ولا يبني منفذاً
 func TestSetContext_NilContextIsIgnored(t *testing.T) {
 	svc := NewLicenseService(nil)
+	//lint:ignore SA1012 testing nil context safety
 	svc.SetContext(nil)
 
 	if svc.browserOpen != nil {

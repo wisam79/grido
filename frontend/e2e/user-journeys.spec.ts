@@ -11,7 +11,7 @@ test.describe('Integrated User Journeys E2E', () => {
   test('Complete User Journey: Import image, edit, switch to collage, and trigger export', async ({ page }) => {
     // 1. Add image to canvas
     await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: 'إضافة صورة جديدة' }).click();
+    await page.getByRole('button', { name: /إدراج صورة جديدة|إدراج/ }).click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
     // 2. Switch to Collage Mode

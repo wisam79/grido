@@ -11,7 +11,7 @@ test.describe('Element Properties & Hierarchy E2E', () => {
   test('Image properties expose all 4 standardized tabs without dead tabs', async ({ page }) => {
     // Add image
     await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: 'إضافة صورة جديدة' }).click();
+    await page.getByRole('button', { name: /إدراج صورة جديدة|إدراج/ }).click();
 
     // The 4 standardized tabs
     const styleTab = page.getByRole('tab', { name: /تنسيق|التنسيق/ });

@@ -338,25 +338,6 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
 </html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, escapedSrc)
 }
 
-// setPngDPI modifies a PNG byte slice to include a pHYs chunk with the specified DPI.
-func setPngDPI(pngData []byte, dpi int) ([]byte, error) {
-	if len(pngData) < 33 {
-		return nil, fmt.Errorf("invalid PNG data")
-	}
-
-	insertPos, skipEnd, err := pngDPIInsertPos(pngData)
-	if err != nil {
-		return nil, err
-	}
-	physChunk := buildPhysChunk(dpi)
-
-	result := make([]byte, 0, len(pngData)-(skipEnd-insertPos)+len(physChunk))
-	result = append(result, pngData[:insertPos]...)
-	result = append(result, physChunk...)
-	result = append(result, pngData[skipEnd:]...)
-
-	return result, nil
-}
 
 // buildPhysChunk يبني قطعة pHYs (21 بايت) بالـ DPI المطلوب.
 func buildPhysChunk(dpi int) []byte {

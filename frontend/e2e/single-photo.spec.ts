@@ -10,7 +10,7 @@ test.describe('Single Photo Workflow E2E', () => {
 
   test('Single photo mode loads with canvas, toolbar and bottom deck', async ({ page }) => {
     await expect(page.locator('#canvas-area')).toBeVisible();
-    await expect(page.getByRole('button', { name: /إضافة صورة|رفع صورة/ }).or(page.getByTitle(/صورة جديدة/)).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /إدراج صورة|إدراج|إضافة صورة/ }).or(page.getByTitle(/صورة جديدة/)).first()).toBeVisible();
     await expect(page.getByLabel('تكبير')).toBeVisible();
     await expect(page.getByLabel('تصغير')).toBeVisible();
   });
@@ -18,7 +18,7 @@ test.describe('Single Photo Workflow E2E', () => {
   test('Add image, view properties panel and image controls', async ({ page }) => {
     // Switch to freeform mode and add image
     await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: 'إضافة صورة جديدة' }).click();
+    await page.getByRole('button', { name: /إدراج صورة جديدة|إدراج/ }).click();
 
     // Verify properties panel appears with action buttons
     await expect(page.getByRole('button', { name: 'قص وتدوير' })).toBeVisible();

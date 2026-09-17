@@ -11,7 +11,7 @@ test.describe('Background Removal Smoke Test', () => {
     await page.goto('/');
 
     await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: 'إضافة صورة جديدة' }).click();
+    await page.getByRole('button', { name: /إدراج صورة جديدة|إدراج/ }).click();
 
     await expect(page.getByRole('button', { name: 'عزل الخلفية' }).first()).toBeVisible();
   });
