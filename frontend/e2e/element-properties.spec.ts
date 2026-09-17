@@ -26,7 +26,7 @@ test.describe('Element Properties & Hierarchy E2E', () => {
 
     // Click Colors tab and verify opacity slider is present
     await colorsTab.click();
-    await expect(page.getByText(/شفافية/)).toBeVisible();
+    await expect(page.getByText(/شفافية/).first()).toBeVisible();
 
     // Click Arrange tab and verify flip/rotation controls
     await arrangeTab.click();
