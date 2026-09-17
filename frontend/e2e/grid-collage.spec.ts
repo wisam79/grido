@@ -13,7 +13,12 @@ test.describe('Grid Collage Workflow E2E', () => {
     await page.getByRole('tab', { name: 'كولاج', exact: true }).click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    // Switch to presets tab
+    // Open templates panel via rail if collapsed
+    const templatesRailBtn = page.getByRole('button', { name: 'قوالب الكولاج والشبكة' });
+    if (await templatesRailBtn.isVisible()) {
+      await templatesRailBtn.click();
+    }
+    await page.waitForSelector('[data-tab="presets"]', { timeout: 10000 });
     await page.locator('[data-tab="presets"]').click();
     const templateCard = page.getByRole('button', { name: /طقم سفر|طقم تقديم|شيت|4 صور/ }).first();
     await expect(templateCard).toBeVisible();

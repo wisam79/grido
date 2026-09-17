@@ -67,7 +67,12 @@ test.describe('Editor Core Workflows E2E', () => {
   });
 
   test('Apply a quick collage template from the panel', async ({ page }) => {
-    await page.getByRole('button', { name: 'وضع الكولاج' }).or(page.getByTitle('وضع الكولاج')).first().click();
+    await page.getByRole('tab', { name: 'كولاج', exact: true }).first().click();
+    const templatesRailBtn = page.getByRole('button', { name: 'قوالب الكولاج والشبكة' });
+    if (await templatesRailBtn.isVisible()) {
+      await templatesRailBtn.click();
+    }
+    await page.waitForSelector('[data-tab="presets"]', { timeout: 10000 });
     await page.locator('[data-tab="presets"]').click();
     const card = page.getByRole('button', { name: /طقم سفر|طقم تقديم|شيت|4 صور/ }).first();
     await expect(card).toBeVisible();

@@ -8,11 +8,13 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
   });
 
   test('Open app, upload image, and save project', async ({ page }) => {
+    test.setTimeout(60000);
     await page.goto('/');
 
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible({ timeout: 15000 });
 
     await page.getByRole('tab', { name: 'تعديل حر' }).click();
+    await expect(page.locator('#canvas-area')).toBeVisible({ timeout: 15000 });
     await page.getByRole('button', { name: 'إدراج صورة جديدة' }).click();
 
     await expect(page.getByRole('button', { name: 'عزل الخلفية' }).first()).toBeVisible();

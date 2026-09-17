@@ -11,9 +11,13 @@ test.describe('Collage Mode and Filters E2E', () => {
     await page.goto('/');
 
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
-    await page.getByRole('button', { name: 'وضع الكولاج' }).or(page.getByTitle('وضع الكولاج')).first().click();
+    await page.getByRole('tab', { name: 'كولاج', exact: true }).first().click();
 
-    // التبديل إلى تبويب القوالب لأن تبويب الشبكة هو الافتراضي
+    const templatesRailBtn = page.getByRole('button', { name: 'قوالب الكولاج والشبكة' });
+    if (await templatesRailBtn.isVisible()) {
+      await templatesRailBtn.click();
+    }
+    await page.waitForSelector('[data-tab="presets"]', { timeout: 10000 });
     await page.locator('[data-tab="presets"]').click();
 
     // لوحة القوالب تعرض بطاقات القوالب الجاهزة مباشرة (تصميم Fluent 2)
