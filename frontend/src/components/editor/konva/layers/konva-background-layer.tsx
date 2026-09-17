@@ -41,12 +41,14 @@ export const KonvaBackgroundLayer = React.memo(function KonvaBackgroundLayer({
   return (
     <>
       {/* Background Color Layer */}
-      <Layer>
+      <Layer listening={false}>
         <Rect
           name="bg-rect"
           width={canvasWidth}
           height={canvasHeight}
           fill={backgroundColor === "transparent" ? undefined : backgroundColor}
+          listening={false}
+          perfectDrawEnabled={false}
         />
       </Layer>
 

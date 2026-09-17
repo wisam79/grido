@@ -13,7 +13,7 @@ export function useRulerMetricsPreview(
   deps: { canvasZoom: number; mode: string; aspect: number }
 ) {
   const { showRuler, printMode } = opts;
-  const { canvasZoom, mode } = deps;
+  const { mode } = deps;
 
   const [rulerMetrics, setRulerMetrics] = useState({
     originX: 0,
@@ -85,12 +85,17 @@ export function useRulerMetricsPreview(
   }, [updateRulerPositions, containerRef, innerRef]);
 
   // قياس واحد بعد استقرار التخطيط — كان rAF→rAF→setTimeout(40) زائداً عن الحاجة
+  // 🛡️ الأداء: تجنّب الاعتماد على canvasZoom هنا. القياسات تعتمد على
+  // تخطيط DOM (origin/viewport)، والزوم لا يغيّر تخطيط الـ inner element
+  // (يُطبَّق عبر CSS scale من Konva) — كل getBoundingClientRect هنا كان
+  // يتسبب بـ layout-thrashing قسري عند كل ضغطة زوم (270ms hitch).
+  // ResizeObserver في الـ effect السابق يلتقط أي تخطيط فعلي.
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       updateRulerPositions();
     });
     return () => cancelAnimationFrame(id);
-  }, [updateRulerPositions, canvasZoom, mode, containerSize]);
+  }, [updateRulerPositions, mode, containerSize]);
 
   // ملاحظة: مستمع scroll مسجل مرة واحدة مع rAF throttle في الأثر أعلاه (handleLayout)،
   // فلا نسجل مستمعاً ثانياً هنا لتفادي getBoundingClientRect مكرراً لكل scroll.

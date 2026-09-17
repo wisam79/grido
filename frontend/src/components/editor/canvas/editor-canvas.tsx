@@ -228,35 +228,22 @@ export const EditorCanvas = React.memo(React.forwardRef<
     setCanvasZoom: state.setCanvasZoom,
   })));
 
-  const {
-    mode,
-    elements,
-    editingTextId,
-    canvasWidth,
-    canvasHeight,
-    backgroundColor,
-    canvasZoom,
-    showRuler,
-    template,
-    printSettings,
-    selectedIds,
-    collageMargin,
-    slots,
-  } = useEditorStore(useShallow((state) => ({
-    mode: state.mode,
-    elements: state.elements,
-    editingTextId: state.editingTextId,
-    canvasWidth: state.canvasWidth,
-    canvasHeight: state.canvasHeight,
-    backgroundColor: state.backgroundColor,
-    canvasZoom: state.canvasZoom,
-    showRuler: state.showRuler,
-    template: state.template,
-    printSettings: state.printSettings,
-    selectedIds: state.selectedIds,
-    collageMargin: state.collageMargin,
-    slots: state.slots,
-  })));
+  // 🛡️ تقسيم الاشتراكات: كل حقل في اشتراك مستقل حتى لا يُعاد رسم المكون
+  // بسبب تغيير حقل واحد (مثل canvasZoom عند الزوم) — يقرأ من الذاكرة مباشرة فيعيد
+  // الحسابات فقط، ولا يُلوّث باقي الـ sub-tree
+  const mode = useEditorStore((s) => s.mode);
+  const elements = useEditorStore((s) => s.elements);
+  const editingTextId = useEditorStore((s) => s.editingTextId);
+  const canvasWidth = useEditorStore((s) => s.canvasWidth);
+  const canvasHeight = useEditorStore((s) => s.canvasHeight);
+  const backgroundColor = useEditorStore((s) => s.backgroundColor);
+  const canvasZoom = useEditorStore((s) => s.canvasZoom);
+  const showRuler = useEditorStore((s) => s.showRuler);
+  const template = useEditorStore((s) => s.template);
+  const printSettings = useEditorStore((s) => s.printSettings);
+  const selectedIds = useEditorStore((s) => s.selectedIds);
+  const collageMargin = useEditorStore((s) => s.collageMargin);
+  const slots = useEditorStore((s) => s.slots);
 
   const isFreeformEmpty = mode === "single" && elements.length === 0;
   const isCollageEmpty = mode === "collage" && slots.every((s) => !s.imageSrc);
