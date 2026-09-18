@@ -360,11 +360,13 @@
 
   /* Desktop Drag Window Titles */
   .title-bar-draggable {
-    --wails-draggable:drag;
+    --wails-draggable: drag;
+    -webkit-app-region: drag;
   }
 
   .title-bar-controls {
-    --wails-draggable:no-drag;
+    --wails-draggable: no-drag;
+    -webkit-app-region: no-drag;
   }
 
   /* Win11 Style Overlay Scrollbars */

@@ -21,6 +21,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
+	"github.com/wailsapp/wails/v3/pkg/services/notifications"
 )
 
 //go:embed all:frontend/dist
@@ -107,6 +108,23 @@ func main() {
 
 	var mainWindow *application.WebviewWindow
 
+	// 🔔 تهيئة خدمة الإشعارات التفاعلية لويندوز
+	notifSvc := notifications.New()
+	notifSvc.OnNotificationResponse(func(result notifications.NotificationResult) {
+		if result.Error != nil {
+			slog.Warn("Notification response error", "error", result.Error)
+			return
+		}
+		if result.Response.UserInfo != nil {
+			if path, ok := result.Response.UserInfo["filePath"].(string); ok && path != "" {
+				_ = appInstance.ShowInFolder(path)
+			} else if dir, ok := result.Response.UserInfo["folderPath"].(string); ok && dir != "" {
+				_ = appInstance.OpenFolder(dir)
+			}
+		}
+	})
+	appInstance.desktopSvc.SetNotificationService(notifSvc)
+
 	// تهيئة تطبيق Wails v3
 	wailsApp := application.New(application.Options{
 		Name:        "Grido Studio",
@@ -117,6 +135,7 @@ func main() {
 			application.NewService(printHandler),
 			application.NewService(backupHandler),
 			application.NewService(licenseHandler),
+			application.NewService(notifSvc),
 		},
 		Assets: application.AssetOptions{
 			Handler:    createAssetHandler(appInstance),
@@ -150,7 +169,7 @@ func main() {
 		},
 	})
 
-	// إعداد خيارات النافذة الرئيسية
+	// إعداد خيارات النافذة الرئيسية مع خامة Mica الأصلية وسحب بدون تأخير
 	winOptions := application.WebviewWindowOptions{
 		Title:              "Grido Studio",
 		Width:              initialWidth,
@@ -161,10 +180,12 @@ func main() {
 		Hidden:             false,
 		ZoomControlEnabled: false,
 		EnableFileDrop:     true,
-		BackgroundColour:   application.NewRGBA(255, 255, 255, 255),
+		BackgroundType:     application.BackgroundTypeTranslucent,
+		BackgroundColour:   application.NewRGBA(0, 0, 0, 0),
 		Windows: application.WindowsWindow{
-			BackdropType:                      application.None,
+			BackdropType:                      application.Mica,
 			DisableFramelessWindowDecorations: false,
+			NonClientRegionSupport:            true,
 		},
 		URL: "/",
 	}
@@ -183,6 +204,7 @@ func main() {
 	}
 
 	mainWindow = wailsApp.Window.NewWithOptions(winOptions)
+	appInstance.desktopSvc.SetMainWindow(mainWindow)
 
 	// 📂 معالجة سحب وإفلات الملفات من نظام التشغيل مباشرة
 	mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {

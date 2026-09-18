@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Minus, CopySimple, Square, X } from "@phosphor-icons/react";
+import { WindowSnapAssist } from "../../../../wailsjs/runtime/runtime";
 
 /**
  * WindowControls — الأزرار الثلاثة الموحدة للنافذة (تصغير / تكبير / إغلاق)
@@ -29,8 +30,12 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
         variant="ghost"
         size="sm"
         onClick={onMaximize}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          WindowSnapAssist();
+        }}
         className="w-9 h-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md transition-colors"
-        title={isMaximized ? "استعادة" : "تكبير"}
+        title={isMaximized ? "استعادة (انقر باليمين لمخططات النوافذ)" : "تكبير (انقر باليمين لمخططات النوافذ)"}
       >
         {isMaximized ? <CopySimple className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
       </Button>

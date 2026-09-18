@@ -309,7 +309,7 @@ export default function App() {
       <TooltipProvider delayDuration={650} skipDelayDuration={150}>
         <div 
           className={cn(
-            "h-screen flex flex-col overflow-hidden font-cairo bg-background",
+            "h-screen flex flex-col overflow-hidden font-cairo bg-background/90",
           )}
           dir="rtl"
         >
@@ -318,7 +318,7 @@ export default function App() {
       <ErrorBoundary>
       <header
         className={cn(
-          "border-b border-border bg-sidebar/95 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
+          "border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
           !isFocused && "opacity-75"
         )}
         onDoubleClick={handleMaximize}

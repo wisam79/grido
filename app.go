@@ -23,12 +23,14 @@ type App struct {
 	autosaveSvc    *service.AutosaveService
 	aiLogsSvc      *service.AiLogsService
 	licenseSvc     *service.LicenseService
+	desktopSvc     *service.DesktopService
 	startupFile    string
 }
 
 func NewApp(templates domain.CustomTemplateRepository) *App {
 	mediaSvc := service.NewMediaService()
 	phoneBridgeSvc := service.NewPhoneBridgeService(mediaSvc)
+	desktopSvc := service.NewDesktopService()
 	return &App{
 		mediaSvc:       mediaSvc,
 		phoneBridgeSvc: phoneBridgeSvc,
@@ -36,6 +38,7 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 		imageProc:      service.NewImageProcessorService(mediaSvc),
 		autosaveSvc:    service.NewAutosaveService(templates),
 		aiLogsSvc:      service.NewAiLogsService(),
+		desktopSvc:     desktopSvc,
 	}
 }
 
@@ -322,3 +325,20 @@ func (a *App) GetScreensInfo() ([]*application.Screen, error) {
 func (a *App) GetBatchImageDimensions(localPaths []string) map[string]service.ImageDimensions {
 	return a.mediaSvc.GetBatchImageDimensions(localPaths)
 }
+
+func (a *App) SetTaskbarProgress(percent int, state string) error {
+	return a.desktopSvc.SetTaskbarProgress(percent, state)
+}
+
+func (a *App) ShowInFolder(filePath string) error {
+	return a.desktopSvc.ShowInFolder(filePath)
+}
+
+func (a *App) OpenFolder(folderPath string) error {
+	return a.desktopSvc.OpenFolder(folderPath)
+}
+
+func (a *App) SendNotification(title, body, imagePath string) error {
+	return a.desktopSvc.SendToast(title, body, imagePath)
+}
+

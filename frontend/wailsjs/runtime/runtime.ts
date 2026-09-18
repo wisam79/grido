@@ -57,3 +57,8 @@ export function WindowGetPosition(): Promise<{ x: number; y: number }> {
 export function WindowSetPosition(x: number, y: number): void {
   Window.SetPosition(x, y);
 }
+
+export function WindowSnapAssist(): void {
+  Window.SnapAssist();
+}
+
