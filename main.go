@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -20,11 +19,8 @@ import (
 	"grido/internal/service"
 	"grido/internal/utils"
 
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"github.com/wailsapp/wails/v2/pkg/options/windows"
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 //go:embed all:frontend/dist
@@ -68,15 +64,30 @@ func main() {
 	// استعادة أبعاد وموقع النافذة من الجلسة السابقة
 	initialWidth := 1024
 	initialHeight := 720
+	initialX := 0
+	initialY := 0
+	hasSavedPos := false
+	startMax := false
+
 	if state, err := loadWindowState(); err == nil {
 		if state.Width > 0 && state.Height > 0 {
 			initialWidth = state.Width
 			initialHeight = state.Height
 		}
+		const maxScreenSize = 50000
+		if state.X > -maxScreenSize && state.X < maxScreenSize &&
+			state.Y > -maxScreenSize && state.Y < maxScreenSize &&
+			(state.X != 0 || state.Y != 0) &&
+			isPointOnAnyMonitor(state.X+50, state.Y+50) {
+			initialX = state.X
+			initialY = state.Y
+			hasSavedPos = true
+		}
+		startMax = state.Max
 	}
 
-	app := NewApp(repository.NewCustomTemplateRepository(db))
-	app.licenseSvc = licenseSvc // لربط سياق Wails بفتح متصفح OAuth في startup
+	appInstance := NewApp(repository.NewCustomTemplateRepository(db))
+	appInstance.licenseSvc = licenseSvc
 
 	// 🖼️ دعم خيار "فتح باستخدام" وسحب الملفات على أيقونة التطبيق (CLI file open)
 	if len(os.Args) > 1 {
@@ -88,24 +99,37 @@ func main() {
 				ext := strings.ToLower(filepath.Ext(arg))
 				switch ext {
 				case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
-					app.setStartupFile(arg)
+					appInstance.setStartupFile(arg)
 				}
 			}
 		}
 	}
 
-	err = wails.Run(&options.App{
-		Title:       "Grido Studio",
-		Width:       initialWidth,
-		Height:      initialHeight,
-		MinWidth:    900,
-		MinHeight:   600,
-		StartHidden: true, // إخفاء النافذة أثناء التحميل الأولي لتفادي الوميض
-		SingleInstanceLock: &options.SingleInstanceLock{
-			UniqueId: "grido-studio-single-instance-lock-v1",
-			OnSecondInstanceLaunch: func(secondInstanceData options.SecondInstanceData) {
-				wailsruntime.WindowUnminimise(app.ctx)
-				wailsruntime.WindowShow(app.ctx)
+	var mainWindow *application.WebviewWindow
+
+	// تهيئة تطبيق Wails v3
+	wailsApp := application.New(application.Options{
+		Name:        "Grido Studio",
+		Description: "Professional Photo & Collage Studio",
+		Services: []application.Service{
+			application.NewService(appInstance),
+			application.NewService(projectHandler),
+			application.NewService(printHandler),
+			application.NewService(backupHandler),
+			application.NewService(licenseHandler),
+		},
+		Assets: application.AssetOptions{
+			Handler:    createAssetHandler(appInstance),
+			Middleware: createCSPMiddleware(),
+		},
+		SingleInstance: &application.SingleInstanceOptions{
+			UniqueID: "grido-studio-single-instance-lock-v1",
+			OnSecondInstanceLaunch: func(secondInstanceData application.SecondInstanceData) {
+				if mainWindow != nil {
+					mainWindow.UnMinimise()
+					mainWindow.Show()
+					mainWindow.Focus()
+				}
 				if len(secondInstanceData.Args) > 0 {
 					for _, arg := range secondInstanceData.Args {
 						if strings.HasPrefix(arg, "-") {
@@ -115,383 +139,368 @@ func main() {
 							ext := strings.ToLower(filepath.Ext(arg))
 							switch ext {
 							case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
-								wailsruntime.EventsEmit(app.ctx, "file-opened", arg)
+								if application.Get() != nil {
+									application.Get().Event.Emit("file-opened", arg)
+								}
 							}
 						}
 					}
 				}
-			},
-		},
-		DragAndDrop: &options.DragAndDrop{
-			EnableFileDrop:     true,
-			DisableWebViewDrop: false,
-		},
-		AssetServer: &assetserver.Options{
-			Assets: assets,
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method == http.MethodPost && r.URL.Path == "/api/save-file" {
-					filename := r.URL.Query().Get("filename")
-					if filename == "" {
-						filename = "exported_photo.png"
-					}
-					filename = filepath.Base(filepath.Clean(filename))
-
-					var filePath string
-					dir := r.URL.Query().Get("dir")
-					if dir != "" {
-						exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
-						cleanDir := filepath.Clean(dir)
-						if fi, err := os.Stat(cleanDir); err == nil && fi.IsDir() {
-							if resolvedDir, err := filepath.EvalSymlinks(cleanDir); err == nil {
-								cleanDir = resolvedDir
-							}
-							resolvedExports := exportsDir
-							if resolvedBase, err := filepath.EvalSymlinks(exportsDir); err == nil {
-								resolvedExports = resolvedBase
-							}
-							if strings.HasPrefix(cleanDir, filepath.Clean(resolvedExports)+string(filepath.Separator)) {
-								filePath = filepath.Join(cleanDir, filename)
-							}
-						}
-					}
-
-					if filePath == "" {
-						ext := strings.ToLower(filepath.Ext(filename))
-						var filters []wailsruntime.FileFilter
-						if ext == ".png" {
-							filters = []wailsruntime.FileFilter{{DisplayName: "PNG Image (*.png)", Pattern: "*.png"}}
-						} else {
-							filters = []wailsruntime.FileFilter{{DisplayName: "JPEG Image (*.jpg;*.jpeg)", Pattern: "*.jpg;*.jpeg"}}
-						}
-
-						var err error
-						filePath, err = wailsruntime.SaveFileDialog(app.ctx, wailsruntime.SaveDialogOptions{
-							Title:           "Save Image",
-							DefaultFilename: filename,
-							Filters:         filters,
-						})
-						if err != nil {
-							http.Error(w, "Dialog error: "+err.Error(), http.StatusInternalServerError)
-							return
-						}
-						if filePath == "" {
-							w.WriteHeader(http.StatusNoContent)
-							return
-						}
-					}
-
-					af, err := utils.CreateAtomic(filePath, 0o644)
-					if err != nil {
-						http.Error(w, "Failed to create file: "+err.Error(), http.StatusInternalServerError)
-						return
-					}
-					defer af.Abort()
-
-					limitReader := io.LimitReader(r.Body, service.MaxFileSize)
-					if _, err := io.Copy(af, limitReader); err != nil {
-						http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
-						return
-					}
-					if err := af.Commit(); err != nil {
-						http.Error(w, "Failed to finalize file: "+err.Error(), http.StatusInternalServerError)
-						return
-					}
-
-					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(map[string]string{"status": "success", "path": filePath})
-					return
-				}
-
-				// رفع صورة الطباعة المؤقتة كتيار ثنائي (Blob) بدل تمرير DataURL
-				// عملاقة عبر جسر IPC — تُخزَّن في Exports باسم print_upload_* وتُخدَم
-				// لاحقاً عبر /local-image/ (المصرح بها في معالج القراءة أدناه).
-				// 🚀 W-B: يلغي اتجاه IPC الصاعد 25-60MB نص Base64 لكل طباعة.
-				if r.Method == http.MethodPost && r.URL.Path == "/api/upload-print-image" {
-					exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
-					if err := os.MkdirAll(exportsDir, 0755); err != nil {
-						http.Error(w, "Failed to create exports dir", http.StatusInternalServerError)
-						return
-					}
-
-					// 🛡️ فحص MIME فعلي على أول 512 بايت — يمنع حفظ ملفات غير صور
-					// 60MB سقفاً — صورة A3 300DPI PNG قد تتجاوز 40MB
-					limitReader := io.LimitReader(r.Body, 60*1024*1024)
-					sniffBuf := make([]byte, 512)
-					n, sniffErr := io.ReadFull(limitReader, sniffBuf)
-					if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
-						http.Error(w, "Failed to read upload body", http.StatusBadRequest)
-						return
-					}
-					sniffBuf = sniffBuf[:n]
-					detectedMime := http.DetectContentType(sniffBuf)
-					if !strings.HasPrefix(detectedMime, "image/") {
-						http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
-						return
-					}
-
-					ext := ".png"
-					if strings.HasPrefix(detectedMime, "image/jpeg") {
-						ext = ".jpg"
-					}
-					// print_ prefix يجعل الملف مرئياً لـ /local-image/ ويشمله تنظيف 24h التلقائي
-					filename := fmt.Sprintf("print_upload_%d%s", time.Now().UnixNano(), ext)
-					absPath := filepath.Join(exportsDir, filename)
-
-					af, afErr := utils.CreateAtomic(absPath, 0o644)
-					if afErr != nil {
-						http.Error(w, "Failed to create file", http.StatusInternalServerError)
-						return
-					}
-					defer af.Abort()
-
-					// إعادة تجميع القارئ: البايتات المقروءة + بقية الجسم
-					combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
-					if _, err := io.Copy(af, combined); err != nil {
-						http.Error(w, "Failed to write file", http.StatusInternalServerError)
-						return
-					}
-					if err := af.Commit(); err != nil {
-						http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
-						return
-					}
-
-					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(map[string]string{
-						"status":   "success",
-						"imageSrc": "/local-image/" + filename,
-					})
-					return
-				}
-
-				// 🚀 مسار البث الثنائي المباشر لرفع الصور (Direct Binary Media Upload):
-				// يستقبل ملفات الصور كـ Binary Stream ويكتبها مباشرة في مجلد Media
-				// دون تشفير Base64 المرهق للـ V8 Heap وذاكرة JavaScript.
-				if r.Method == http.MethodPost && r.URL.Path == "/api/upload-media" {
-					mediaDir := app.mediaSvc.GetMediaDir()
-					if err := os.MkdirAll(mediaDir, 0o755); err != nil {
-						http.Error(w, "Failed to create media dir", http.StatusInternalServerError)
-						return
-					}
-
-					limitReader := io.LimitReader(r.Body, service.MaxFileSize)
-					sniffBuf := make([]byte, 512)
-					n, sniffErr := io.ReadFull(limitReader, sniffBuf)
-					if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
-						http.Error(w, "Failed to read upload body", http.StatusBadRequest)
-						return
-					}
-					sniffBuf = sniffBuf[:n]
-					detectedMime := http.DetectContentType(sniffBuf)
-					if !strings.HasPrefix(detectedMime, "image/") {
-						http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
-						return
-					}
-
-					ext := app.mediaSvc.GetExtensionFromMime(detectedMime)
-					filename := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
-					absPath := filepath.Join(mediaDir, filename)
-
-					af, afErr := utils.CreateAtomic(absPath, 0o644)
-					if afErr != nil {
-						http.Error(w, "Failed to create file", http.StatusInternalServerError)
-						return
-					}
-					defer af.Abort()
-
-					combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
-					if _, err := io.Copy(af, combined); err != nil {
-						http.Error(w, "Failed to write file", http.StatusInternalServerError)
-						return
-					}
-					if err := af.Commit(); err != nil {
-						http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
-						return
-					}
-
-					w.Header().Set("Content-Type", "application/json")
-					_ = json.NewEncoder(w).Encode(map[string]string{
-						"status":   "success",
-						"imageSrc": "/local-image/" + filename,
-					})
-					return
-				}
-
-
-				if strings.HasPrefix(r.URL.Path, "/local-image/") {
-					filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
-					filename := filepath.Base(filepath.Clean(filePath))
-
-					// 🔒 التحقق الأمني: السماح بالملفات داخل مجلد Media، أو مجلد Exports للملفات المؤقتة التي تبدأ بـ print_
-					var baseDir string
-					if strings.HasPrefix(filename, "print_") {
-						baseDir = filepath.Join(utils.GetAppDir(), "Exports")
-					} else {
-						baseDir = app.mediaSvc.GetMediaDir()
-					}
-					absPath := filepath.Join(baseDir, filename)
-
-					if _, err := os.Stat(absPath); err != nil {
-						http.Error(w, "Image not found on disk", http.StatusNotFound)
-						return
-					}
-
-					// 🔒 حماية ضد هجمات Symlink: تحليل المسار بالكامل والتأكد من بقائه داخل المجلد المعتمد
-					resolvedPath, err := filepath.EvalSymlinks(absPath)
-					if err != nil {
-						http.Error(w, "Forbidden", http.StatusForbidden)
-						return
-					}
-					if resolvedBase, err := filepath.EvalSymlinks(baseDir); err == nil {
-						baseDir = resolvedBase
-					}
-					if !strings.HasPrefix(resolvedPath, filepath.Clean(baseDir)+string(filepath.Separator)) &&
-						resolvedPath != filepath.Clean(baseDir) {
-						http.Error(w, "Forbidden", http.StatusForbidden)
-						return
-					}
-
-					// تعيين رؤوس الأمان والسرعة والتخزين المؤقت الطويل لأن أسماء الملفات فريدة
-					w.Header().Set("X-Content-Type-Options", "nosniff")
-					w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-
-					// تحديد نوع المحتوى بدقة بناءً على الامتداد — يدعم png وjpeg وwebp وgif
-					ext := strings.ToLower(filepath.Ext(filename))
-					contentType := mime.TypeByExtension(ext)
-					if contentType == "" {
-						contentType = "application/octet-stream"
-					}
-					w.Header().Set("Content-Type", contentType)
-
-					http.ServeFile(w, r, absPath)
-					return
-				}
-				http.NotFound(w, r)
-			}),
-			Middleware: func(next http.Handler) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					// 🔒 تطبيق رأس حماية أمني مشدد (Content Security Policy) للـ WebView2
-					// يسمح بـ WebAssembly (OpenCV/MediaPipe) و Web Workers والمصادر الخارجية المصرح بها فقط.
-					// في وضع التطوير (Vite HMR) يلزم 'unsafe-inline' لأن Vite يحقن سكربت
-					// الـ preamble سطرياً، وإلا يُحجب React Refresh ويتعطل التطوير — الإنتاج يبقى صارماً.
-					devScriptSrc := "'self' 'wasm-unsafe-eval'"
-					if isDevMode() {
-						devScriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'"
-					}
-					w.Header().Set("Content-Security-Policy",
-						"default-src 'self'; "+
-							"script-src "+devScriptSrc+"; "+
-							"style-src 'self' 'unsafe-inline'; "+
-							"img-src 'self' data: blob: https:; "+
-							"font-src 'self' data:; "+
-							"connect-src 'self' ws: http://localhost:* https://*.supabase.co https://*.modal.run https://api.modal.com; "+
-							"worker-src 'self' blob:; "+
-							"object-src 'none'; "+
-							"base-uri 'self'; "+
-							"frame-ancestors 'none';")
-
-					// Ensure WebAssembly and model files are served with correct MIME types
-					if strings.HasSuffix(r.URL.Path, ".wasm") {
-						w.Header().Set("Content-Type", "application/wasm")
-					} else if strings.HasSuffix(r.URL.Path, ".onnx") || strings.HasSuffix(r.URL.Path, ".ort") || strings.HasSuffix(r.URL.Path, ".bin") {
-						w.Header().Set("Content-Type", "application/octet-stream")
-					}
-
-					next.ServeHTTP(w, r)
-				})
-			},
-		},
-		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 255},
-		OnStartup: func(ctx context.Context) {
-			// استعادة موضع النافذة وحالة التكبير عند بدء التشغيل
-			if state, err := loadWindowState(); err == nil {
-				// حماية متقدمة: التحقق أن الموضع السابق يقع ضمن شاشة متصلة فعلياً (لمنع النوافذ الشبحية عند فصل شاشة خارجية)
-				const maxScreenSize = 50000
-				if state.X > -maxScreenSize && state.X < maxScreenSize &&
-					state.Y > -maxScreenSize && state.Y < maxScreenSize &&
-					(state.X != 0 || state.Y != 0) &&
-					isPointOnAnyMonitor(state.X+50, state.Y+50) {
-					wailsruntime.WindowSetPosition(ctx, state.X, state.Y)
-				} else if state.X != 0 || state.Y != 0 {
-					wailsruntime.WindowCenter(ctx)
-				}
-				if state.Max {
-					wailsruntime.WindowMaximise(ctx)
-				}
-			}
-			app.startup(ctx)
-		},
-		OnDomReady: func(ctx context.Context) {
-			wailsruntime.WindowShow(ctx)
-		},
-		OnShutdown: func(ctx context.Context) {
-			defer func() {
-				if r := recover(); r != nil {
-					// حماية من خطأ runtime panic (ScaleToDefaultDPI/divide by zero) عند الإغلاق السريع لـ Wails
-				}
-			}()
-			// حفظ مقاسات وموضع النافذة عند إغلاق التطبيق
-			isMax := wailsruntime.WindowIsMaximised(ctx)
-			w, h := wailsruntime.WindowGetSize(ctx)
-			x, y := wailsruntime.WindowGetPosition(ctx)
-
-			state := windowState{
-				Width:  w,
-				Height: h,
-				X:      x,
-				Y:      y,
-				Max:    isMax,
-			}
-			_ = saveWindowState(state)
-
-			// إيقاف تنظيف الميديا بشكل آمن
-			repository.StopCleanupUnusedMedia()
-
-			// إغلاق آمن لقاعدة البيانات
-			_ = repository.CloseDB()
-
-			app.shutdown(ctx)
-		},
-		Bind: []interface{}{
-			app,
-			projectHandler, // ربط طبقة التحكم مع Wails
-			printHandler,
-			backupHandler,
-			licenseHandler,
-		},
-		Frameless: true,
-		Windows: &windows.Options{
-			WebviewIsTransparent:              false, // إيقاف الشفافية لأنها تسبب مشاكل بصرية وظهور خلفية سوداء في ويندوز 10
-			WindowIsTranslucent:               false,
-			BackdropType:                      windows.None, // إيقاف Mica لأنه مدعوم فقط في ويندوز 11 ويتسبب بتشوهات في ويندوز 10
-			DisableWindowIcon:                 false,
-			DisableFramelessWindowDecorations: false,                // الحفاظ على هذه كـ false للإبقاء على ظل النافذة الافتراضي لنظام ويندوز
-			WebviewUserDataPath:               getWebviewCacheDir(), // تعيين مجلد الكاش الآمن لـ WebView2
-			DLLSearchPaths: windows.DLLSearchSafeCurrentDirs |
-				windows.DLLSearchSystem32 |
-				windows.DLLSearchApplicationDir, // 🛡️ منع هجمات حقن الـ DLL في ويندوز
-			IsZoomControlEnabled: false, // 🔍 منع تكبير المتصفح الافتراضي لكي لا يتعارض مع تكبير الكانفاس
-			DisablePinchZoom:     true,  // 🤏 منع تقريب المتصفح بالإيماءات للإبقاء على تحكم الكانفاس
-			ResizeDebounceMS:     10,    // ⚡ سلاسة استجابة النافذة أثناء السحب وإعادة التحجيم
-			OnSuspend: func() {
-				slog.Info("Entering suspend mode...")
-				wailsruntime.EventsEmit(app.ctx, "app:suspend")
-			},
-			OnResume: func() {
-				slog.Info("Resuming from suspend...")
-				wailsruntime.EventsEmit(app.ctx, "app:resume")
 			},
 		},
 	})
 
+	// إعداد خيارات النافذة الرئيسية
+	winOptions := application.WebviewWindowOptions{
+		Title:              "Grido Studio",
+		Width:              initialWidth,
+		Height:             initialHeight,
+		MinWidth:           900,
+		MinHeight:          600,
+		Frameless:          true,
+		Hidden:             true,
+		ZoomControlEnabled: false,
+		EnableFileDrop:     true,
+		BackgroundColour:   application.NewRGBA(255, 255, 255, 255),
+		Windows: application.WindowsWindow{
+			BackdropType:                      application.None,
+			DisableFramelessWindowDecorations: false,
+		},
+		URL: "/",
+	}
+
+	if hasSavedPos {
+		winOptions.X = initialX
+		winOptions.Y = initialY
+	} else {
+		winOptions.InitialPosition = application.WindowCentered
+	}
+
+	mainWindow = wailsApp.Window.NewWithOptions(winOptions)
+
+	// إظهار النافذة وتطبيق التكبير بعد بدء التشغيل
+	go func() {
+		time.Sleep(150 * time.Millisecond)
+		mainWindow.Show()
+		if startMax {
+			mainWindow.Maximise()
+		}
+	}()
+
+	// 📂 معالجة سحب وإفلات الملفات من نظام التشغيل مباشرة
+	mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {
+		ctx := e.Context()
+		if ctx == nil {
+			return
+		}
+		paths := ctx.DroppedFiles()
+		if len(paths) == 0 {
+			return
+		}
+		var validPaths []string
+		for _, p := range paths {
+			ext := strings.ToLower(filepath.Ext(p))
+			switch ext {
+			case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
+				validPaths = append(validPaths, p)
+			}
+		}
+		if len(validPaths) == 0 {
+			return
+		}
+		processed, err := appInstance.mediaSvc.ProcessMultipleOpenedFiles(validPaths)
+		if err == nil && len(processed) > 0 {
+			wailsApp.Event.Emit("native-file-drop", map[string]any{
+				"images": processed,
+			})
+		}
+	})
+
+	// حفظ مقاسات وموضع النافذة عند إغلاقها
+	mainWindow.OnWindowEvent(events.Common.WindowClosing, func(_ *application.WindowEvent) {
+		w, h := mainWindow.Size()
+		x, y := mainWindow.Position()
+		isMax := mainWindow.IsMaximised()
+
+		state := windowState{
+			Width:  w,
+			Height: h,
+			X:      x,
+			Y:      y,
+			Max:    isMax,
+		}
+		_ = saveWindowState(state)
+	})
+
+	// إيقاف الخدمات وتنظيف الموارد عند إغلاق التطبيق
+	wailsApp.OnShutdown(func() {
+		repository.StopCleanupUnusedMedia()
+		_ = repository.CloseDB()
+	})
+
+	err = wailsApp.Run()
 	if err != nil {
 		slog.Error("Wails run encountered an error", "error", err.Error())
 		os.Exit(1)
 	}
 }
 
-// isDevMode يتحقق مما إذا كان التطبيق يعمل في وضع التطوير (Wails dev / Vite HMR)
-// يجمع بين فحص وسم البناء (dev build tag)، ومتغيرات بيئة Wails CLI،
-// ولاحقة اسم الملف التنفيذي المولد لبيئة التطوير (-dev).
+func createAssetHandler(app *App) http.Handler {
+	fileServer := application.AssetFileServerFS(assets)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && r.URL.Path == "/api/save-file" {
+			filename := r.URL.Query().Get("filename")
+			if filename == "" {
+				filename = "exported_photo.png"
+			}
+			filename = filepath.Base(filepath.Clean(filename))
+
+			var filePath string
+			dir := r.URL.Query().Get("dir")
+			if dir != "" {
+				exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+				cleanDir := filepath.Clean(dir)
+				if fi, err := os.Stat(cleanDir); err == nil && fi.IsDir() {
+					if resolvedDir, err := filepath.EvalSymlinks(cleanDir); err == nil {
+						cleanDir = resolvedDir
+					}
+					resolvedExports := exportsDir
+					if resolvedBase, err := filepath.EvalSymlinks(exportsDir); err == nil {
+						resolvedExports = resolvedBase
+					}
+					if strings.HasPrefix(cleanDir, filepath.Clean(resolvedExports)+string(filepath.Separator)) {
+						filePath = filepath.Join(cleanDir, filename)
+					}
+				}
+			}
+
+			if filePath == "" {
+				ext := strings.ToLower(filepath.Ext(filename))
+				d := application.Get().Dialog.SaveFile()
+				d.SetMessage("Save Image")
+				d.SetFilename(filename)
+				if ext == ".png" {
+					d.AddFilter("PNG Image (*.png)", "*.png")
+				} else {
+					d.AddFilter("JPEG Image (*.jpg;*.jpeg)", "*.jpg;*.jpeg")
+				}
+
+				var err error
+				filePath, err = d.PromptForSingleSelection()
+				if err != nil {
+					http.Error(w, "Dialog error: "+err.Error(), http.StatusInternalServerError)
+					return
+				}
+				if filePath == "" {
+					w.WriteHeader(http.StatusNoContent)
+					return
+				}
+			}
+
+			af, err := utils.CreateAtomic(filePath, 0o644)
+			if err != nil {
+				http.Error(w, "Failed to create file: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			defer af.Abort()
+
+			limitReader := io.LimitReader(r.Body, service.MaxFileSize)
+			if _, err := io.Copy(af, limitReader); err != nil {
+				http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err := af.Commit(); err != nil {
+				http.Error(w, "Failed to finalize file: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{"status": "success", "path": filePath})
+			return
+		}
+
+		if r.Method == http.MethodPost && r.URL.Path == "/api/upload-print-image" {
+			exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+			if err := os.MkdirAll(exportsDir, 0755); err != nil {
+				http.Error(w, "Failed to create exports dir", http.StatusInternalServerError)
+				return
+			}
+
+			limitReader := io.LimitReader(r.Body, 60*1024*1024)
+			sniffBuf := make([]byte, 512)
+			n, sniffErr := io.ReadFull(limitReader, sniffBuf)
+			if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
+				http.Error(w, "Failed to read upload body", http.StatusBadRequest)
+				return
+			}
+			sniffBuf = sniffBuf[:n]
+			detectedMime := http.DetectContentType(sniffBuf)
+			if !strings.HasPrefix(detectedMime, "image/") {
+				http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
+				return
+			}
+
+			ext := ".png"
+			if strings.HasPrefix(detectedMime, "image/jpeg") {
+				ext = ".jpg"
+			}
+			filename := fmt.Sprintf("print_upload_%d%s", time.Now().UnixNano(), ext)
+			absPath := filepath.Join(exportsDir, filename)
+
+			af, afErr := utils.CreateAtomic(absPath, 0o644)
+			if afErr != nil {
+				http.Error(w, "Failed to create file", http.StatusInternalServerError)
+				return
+			}
+			defer af.Abort()
+
+			combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
+			if _, err := io.Copy(af, combined); err != nil {
+				http.Error(w, "Failed to write file", http.StatusInternalServerError)
+				return
+			}
+			if err := af.Commit(); err != nil {
+				http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"status":   "success",
+				"imageSrc": "/local-image/" + filename,
+			})
+			return
+		}
+
+		if r.Method == http.MethodPost && r.URL.Path == "/api/upload-media" {
+			mediaDir := app.mediaSvc.GetMediaDir()
+			if err := os.MkdirAll(mediaDir, 0o755); err != nil {
+				http.Error(w, "Failed to create media dir", http.StatusInternalServerError)
+				return
+			}
+
+			limitReader := io.LimitReader(r.Body, service.MaxFileSize)
+			sniffBuf := make([]byte, 512)
+			n, sniffErr := io.ReadFull(limitReader, sniffBuf)
+			if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
+				http.Error(w, "Failed to read upload body", http.StatusBadRequest)
+				return
+			}
+			sniffBuf = sniffBuf[:n]
+			detectedMime := http.DetectContentType(sniffBuf)
+			if !strings.HasPrefix(detectedMime, "image/") {
+				http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
+				return
+			}
+
+			ext := app.mediaSvc.GetExtensionFromMime(detectedMime)
+			filename := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
+			absPath := filepath.Join(mediaDir, filename)
+
+			af, afErr := utils.CreateAtomic(absPath, 0o644)
+			if afErr != nil {
+				http.Error(w, "Failed to create file", http.StatusInternalServerError)
+				return
+			}
+			defer af.Abort()
+
+			combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
+			if _, err := io.Copy(af, combined); err != nil {
+				http.Error(w, "Failed to write file", http.StatusInternalServerError)
+				return
+			}
+			if err := af.Commit(); err != nil {
+				http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"status":   "success",
+				"imageSrc": "/local-image/" + filename,
+			})
+			return
+		}
+
+		if strings.HasPrefix(r.URL.Path, "/local-image/") {
+			filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
+			filename := filepath.Base(filepath.Clean(filePath))
+
+			var baseDir string
+			if strings.HasPrefix(filename, "print_") {
+				baseDir = filepath.Join(utils.GetAppDir(), "Exports")
+			} else {
+				baseDir = app.mediaSvc.GetMediaDir()
+			}
+			absPath := filepath.Join(baseDir, filename)
+
+			if _, err := os.Stat(absPath); err != nil {
+				http.Error(w, "Image not found on disk", http.StatusNotFound)
+				return
+			}
+
+			resolvedPath, err := filepath.EvalSymlinks(absPath)
+			if err != nil {
+				http.Error(w, "Forbidden", http.StatusForbidden)
+				return
+			}
+			if resolvedBase, err := filepath.EvalSymlinks(baseDir); err == nil {
+				baseDir = resolvedBase
+			}
+			if !strings.HasPrefix(resolvedPath, filepath.Clean(baseDir)+string(filepath.Separator)) &&
+				resolvedPath != filepath.Clean(baseDir) {
+				http.Error(w, "Forbidden", http.StatusForbidden)
+				return
+			}
+
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+
+			ext := strings.ToLower(filepath.Ext(filename))
+			contentType := mime.TypeByExtension(ext)
+			if contentType == "" {
+				contentType = "application/octet-stream"
+			}
+			w.Header().Set("Content-Type", contentType)
+
+			http.ServeFile(w, r, absPath)
+			return
+		}
+
+		fileServer.ServeHTTP(w, r)
+	})
+}
+
+func createCSPMiddleware() application.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			devScriptSrc := "'self' 'wasm-unsafe-eval'"
+			if isDevMode() {
+				devScriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'"
+			}
+			w.Header().Set("Content-Security-Policy",
+				"default-src 'self'; "+
+					"script-src "+devScriptSrc+"; "+
+					"style-src 'self' 'unsafe-inline'; "+
+					"img-src 'self' data: blob: https:; "+
+					"font-src 'self' data:; "+
+					"connect-src 'self' ws: http://localhost:* https://*.supabase.co https://*.modal.run https://api.modal.com; "+
+					"worker-src 'self' blob:; "+
+					"object-src 'none'; "+
+					"base-uri 'self'; "+
+					"frame-ancestors 'none';")
+
+			if strings.HasSuffix(r.URL.Path, ".wasm") {
+				w.Header().Set("Content-Type", "application/wasm")
+			} else if strings.HasSuffix(r.URL.Path, ".onnx") || strings.HasSuffix(r.URL.Path, ".ort") || strings.HasSuffix(r.URL.Path, ".bin") {
+				w.Header().Set("Content-Type", "application/octet-stream")
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 func isDevMode() bool {
 	if isDevBuild {
 		return true
@@ -507,4 +516,3 @@ func isDevMode() bool {
 	}
 	return false
 }
-

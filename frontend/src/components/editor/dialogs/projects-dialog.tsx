@@ -101,7 +101,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     setIsLoading(true);
     try {
       const list = await GetAllProjects();
-      setProjectsList(list);
+      setProjectsList(list || []);
     } catch (err) {
       console.error("Failed to load projects:", err);
       toast.error(toErrorMessage(err, "فشل في تحميل المشاريع من قاعدة البيانات"));
