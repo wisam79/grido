@@ -274,13 +274,13 @@ export function CollageCustomGridTab({
             onClick={handleFillSheet}
             title={`ملء كامل الورقة بأقصى عدد (${maxRows * maxCols} صورة)`}
             className={cn(
-              "h-8 px-2.5 rounded-lg text-mini font-medium transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+              "h-8 px-2.5 rounded-lg text-mini font-medium font-sans transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
               isMaxFill
                 ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-semibold"
                 : "bg-background/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70 hover:border-primary/40"
             )}
           >
-            <span className="flex items-center gap-1.5 truncate">
+            <span className="flex items-center gap-1.5 truncate font-sans">
               <CornersOut className="w-3.5 h-3.5 shrink-0 text-primary" weight="bold" />
               <span>ملء الورقة</span>
             </span>
@@ -294,13 +294,13 @@ export function CollageCustomGridTab({
             onClick={handleCornerStrip}
             title="شريط زاوية علوي (4 صور) لحفظ مساحة بقية الورقة"
             className={cn(
-              "h-8 px-2.5 rounded-lg text-mini font-medium transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+              "h-8 px-2.5 rounded-lg text-mini font-medium font-sans transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
               rows === 1 && cols === Math.min(4, maxCols) && gridAlign === "top-left"
                 ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-semibold"
                 : "bg-background/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70 hover:border-primary/40"
             )}
           >
-            <span className="flex items-center gap-1.5 truncate">
+            <span className="flex items-center gap-1.5 truncate font-sans">
               <Rows className="w-3.5 h-3.5 shrink-0 text-primary" weight="bold" />
               <span>شريط سريع</span>
             </span>
@@ -334,7 +334,7 @@ export function CollageCustomGridTab({
                 aria-pressed={isActive}
                 onClick={() => onPhotoTypeChange(opt.value as PhotoGridType)}
                 className={cn(
-                  "h-10 px-2 rounded-lg border transition-all cursor-pointer active:scale-95 select-none flex items-center gap-2 text-right focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+                  "h-10 px-2 rounded-lg border font-sans transition-all cursor-pointer active:scale-95 select-none flex items-center gap-2 text-right focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
                   isActive
                     ? "border-primary bg-primary/10 shadow-xs ring-1 ring-primary/30"
                     : "bg-background/80 border-border/60 hover:bg-muted/40 hover:border-primary/40"
@@ -343,8 +343,8 @@ export function CollageCustomGridTab({
                 <div className="w-6 h-6 rounded-md bg-muted/50 border border-border/40 flex items-center justify-center shrink-0">
                   <DocumentPresetGraphic type={opt.value} active={isActive} />
                 </div>
-                <div className="min-w-0 flex-1 leading-tight text-right">
-                  <div className={cn("text-xs truncate transition-colors", isActive ? "text-primary font-semibold" : "text-foreground font-medium")}>
+                <div className="min-w-0 flex-1 leading-tight text-right font-sans">
+                  <div className={cn("text-xs font-sans truncate transition-colors", isActive ? "text-primary font-semibold" : "text-foreground font-medium")}>
                     {opt.label}
                   </div>
                   <div className="flex items-center gap-1 text-2xs text-muted-foreground font-mono mt-0.5" dir="rtl">

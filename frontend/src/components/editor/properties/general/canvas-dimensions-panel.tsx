@@ -422,7 +422,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 }
               }}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 h-6 text-mini rounded transition-all cursor-pointer select-none",
+                "flex items-center gap-1.5 px-2.5 h-6 text-mini font-sans rounded transition-all cursor-pointer select-none",
                 canvasWidth <= canvasHeight
                   ? "bg-card text-foreground font-semibold shadow-2xs border border-border/50"
                   : "text-muted-foreground hover:text-foreground font-normal"
@@ -433,7 +433,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 "w-2.5 h-3.5 rounded-[2px] border-[1.5px] transition-colors shrink-0",
                 canvasWidth <= canvasHeight ? "border-primary bg-primary/25" : "border-muted-foreground/60"
               )} />
-              <span>عمودي</span>
+              <span className="font-sans">عمودي</span>
             </button>
             <button
               type="button"
@@ -443,7 +443,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 }
               }}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 h-6 text-mini rounded transition-all cursor-pointer select-none",
+                "flex items-center gap-1.5 px-2.5 h-6 text-mini font-sans rounded transition-all cursor-pointer select-none",
                 canvasWidth > canvasHeight
                   ? "bg-card text-foreground font-semibold shadow-2xs border border-border/50"
                   : "text-muted-foreground hover:text-foreground font-normal"
@@ -454,7 +454,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 "w-3.5 h-2.5 rounded-[2px] border-[1.5px] transition-colors shrink-0",
                 canvasWidth > canvasHeight ? "border-primary bg-primary/25" : "border-muted-foreground/60"
               )} />
-              <span>أفقي</span>
+              <span className="font-sans">أفقي</span>
             </button>
           </div>
         </div>
