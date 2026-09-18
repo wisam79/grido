@@ -123,3 +123,30 @@ func (a *App) OpenPrintPreviewWindow(url string) {
 - [ ] فحص مسارات الصور المحلية ضد هجمات **Symlink Path Traversal** عبر `filepath.EvalSymlinks`.
 - [ ] التأكد من إخماد تكبير المتصفح الافتراضي عبر إعدادات الـ WebView2 للنافذة لتفادي تشوه أبعاد الكانفاس.
 - [ ] الحفاظ على الحفظ الذري الدوري (`utils.CreateAtomic`) للمشاريع والملفات المصدرة.
+
+---
+
+## 🔧 5. إرشادات التشغيل والتصحيح الحرجة (Critical Troubleshooting & Invariants)
+
+1. **انغلاق النافذة فور تشغيلها (Window Closes Immediately):**
+   - **السبب الجذري:** بناء المشروع بـ `CGO_ENABLED=0` على الويندوز. حزمة `gorm.io/driver/sqlite` (`mattn/go-sqlite3`) تتطلب CGO بشكل إلزامي، ودونه تُترجم إلى كود Stub ينهار فورياً عند `repository.InitDB()`.
+   - **الحل:** التأكد من توفر مترجم MinGW GCC وضبط `CGO_ENABLED: '1'` في `build/windows/Taskfile.yml` و `build.ps1`.
+
+2. **وضع التطوير يفتح في المتصفح فقط ولا تظهر نافذة التطبيق (`wails3 task dev`):**
+   - **السبب الجذري:** انهيار العملية التنفيذية لـ Go في الخلفية (بسبب CGO أو خطأ `build:dev` مفقود)، بينما يستمر خادم Vite بالعمل في المتصفح على المنفذ `9245`.
+   - **الحل:** مراجعة ملف السجل `%AppData%\Roaming\GridoStudio\logs\grido.log`، وإضافة `"build:dev": "vite build"` داخل `frontend/package.json`.
+
+3. **حقن متغيرات البيئة عبر ldflags في Wails v3:**
+   - قوالب Wails v3 لا تحقن متغيرات `.env` تلقائياً. يجب إضافتها صراحة في `build/windows/Taskfile.yml`:
+     ```yaml
+     LDFLAGS_INJECT: '{{if .APP_VERSION}} -X grido/internal/service.AppVersion={{.APP_VERSION}}{{end}}{{if .SUPABASE_URL}} -X grido/internal/service.SupabaseURL={{.SUPABASE_URL}}{{end}}{{if .SUPABASE_ANON_KEY}} -X grido/internal/service.SupabaseAnonKey={{.SUPABASE_ANON_KEY}}{{end}}{{if .MODAL_AI_KEY}} -X grido/internal/service.ModalAIKey={{.MODAL_AI_KEY}}{{end}}'
+     ```
+   - مع تفعيل `dotenv: ['.env']` في `Taskfile.yml` الرئيسي ومزامنة `.env` في أي مساحة عمل Worktree جديدة.
+
+4. **دورة حياة ظهور النوافذ في Wails v3:**
+   - تجنب استخدام `Hidden: true` متبوعاً بـ `time.Sleep` و `mainWindow.Show()` في goroutine منفصلة.
+   - استخدم دائماً `Hidden: false` مع `winOptions.StartState = application.WindowStateMaximised` أو `WindowStateNormal`.
+
+5. **تنظيف تحذيرات `uname` و `tail` على الويندوز:**
+   - في `Taskfile.yml`، استبعد قوالب `ios` و `android` من قسم `includes` لمنع تشغيل استعلامات Bash على بيئة Windows.
+
