@@ -38,26 +38,19 @@ type LicenseService struct {
 }
 
 func NewLicenseService(repo domain.LicenseRepository) *LicenseService {
-	s := &LicenseService{repo: repo}
-	s.browserOpen = func(url string) error {
-		if application.Get() != nil {
-			return application.Get().Browser.OpenURL(url)
-		}
-		return nil
-	}
-	return s
+	return &LicenseService{repo: repo}
 }
 
 // SetContext يحافظ على التوافقية مع Wails Runtime
-func (s *LicenseService) SetContext(_ context.Context) {
-	if s == nil {
+func (s *LicenseService) SetContext(ctx context.Context) {
+	if s == nil || ctx == nil {
 		return
 	}
 	s.browserOpen = func(url string) error {
-		if application.Get() != nil {
-			return application.Get().Browser.OpenURL(url)
+		if app := application.Get(); app != nil {
+			return app.Browser.OpenURL(url)
 		}
-		return nil
+		return errors.New("browser opener is not configured: application runtime is nil")
 	}
 }
 
