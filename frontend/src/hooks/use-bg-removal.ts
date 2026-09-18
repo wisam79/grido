@@ -54,7 +54,8 @@ interface BgWorkerMessage {
   text?: string;
   message?: string;
   result?: {
-    maskBase64: string;
+    maskBuffer?: ArrayBufferLike;
+    maskBase64?: string;
     targetW: number;
     targetH: number;
     inferredMs: number;
@@ -234,49 +235,75 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
         }
 
         if (msg.type === "result") {
-          const { maskBase64, targetW, targetH, inferredMs } = msg.result as {
-          maskBase64: string; targetW: number; targetH: number; inferredMs: number;
-        };
+          const { maskBuffer, maskBase64, targetW, targetH, inferredMs } = msg.result as {
+            maskBuffer?: ArrayBufferLike;
+            maskBase64?: string;
+            targetW: number;
+            targetH: number;
+            inferredMs: number;
+          };
 
-        // مؤشر «العزل» يبقى ظاهراً حتى تُطبَّق النتيجة وتُفكّضغط في كاش الصور،
-        // وبعدها نُسقط المؤشر في نفس الإطار — فلا تظهر «فجوة» بينه وبين الكانفس.
-        try {
-          setBgProgressText("جاري تجهيز الصورة ...");
-          const localPath = await ApplyMaskToImage(element.imageSrc || "", maskBase64, targetW, targetH);
-          await preloadImageIntoCache(localPath);
+          // مؤشر «العزل» يبقى ظاهراً حتى تُطبَّق النتيجة وتُفكّضغط في كاش الصور،
+          // وبعدها نُسقط المؤشر في نفس الإطار — فلا تظهر «فجوة» بينه وبين الكانفس.
+          try {
+            setBgProgressText("جاري تجهيز الصورة ...");
+            let localPath: string;
 
-          // 🔒 تعيين originalImageSrc في المرّة الأولى فقط لمنع فقدان الصورة الأصلية
-          const patch: BgRemovalPatch = { imageSrc: localPath };
-          if (!element.originalImageSrc) {
-            patch.originalImageSrc = element.imageSrc;
+            if (maskBuffer) {
+              // ⚡ نقل ثنائي مباشر وخام عبر الجسر فائق السرعة دون أي تشفير Base64
+              const url = `/api/apply-mask?src=${encodeURIComponent(element.imageSrc || "")}&w=${targetW}&h=${targetH}`;
+              const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/octet-stream" },
+                body: maskBuffer as BodyInit,
+              });
+              if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(errText || "فشل معالجة القناع الثنائي عبر الجسر");
+              }
+              const data = await response.json();
+              localPath = data.imageSrc;
+            } else if (maskBase64) {
+              // مسار احتياطي عبر Wails RPC في حال وصول Base64
+              localPath = await ApplyMaskToImage(element.imageSrc || "", maskBase64, targetW, targetH);
+            } else {
+              throw new Error("بيانات القناع مفقودة");
+            }
+
+            await preloadImageIntoCache(localPath);
+
+            // 🔒 تعيين originalImageSrc في المرّة الأولى فقط لمنع فقدان الصورة الأصلية
+            const patch: BgRemovalPatch = { imageSrc: localPath };
+            if (!element.originalImageSrc) {
+              patch.originalImageSrc = element.imageSrc;
+            }
+            onUpdateRef.current(element.id, patch);
+            useEditorStore.getState().pushHistory();
+            toast.success("تم عزل خلفية الصورة بنجاح");
+
+            // ⏱️ توثيق القياسات الفعلية بدلاً من القيم الثابتة (الاستدلال محلي — لا تكلفة سحابية)
+            const totalSec = Math.round((performance.now() - startedAt) / 100) / 10;
+            const user = useEditorStore.getState().user;
+            useEditorStore.getState().logAiUsage({
+              email: user?.email || "unknown",
+              serviceName: "عزل الخلفية الذكي (AI Background Removal)",
+              source: "Grido Studio Desktop (Windows)",
+              durationSec: totalSec,
+              costUsd: 0,
+              status: "success",
+            });
+            modelCachedRef.current = true;
+            if (inferredMs > 0) {
+              // قياس زمن الاستدلال الخام متاح في وحدة التحكم للتشخيص
+              console.debug(`[BG-Removal] inference: ${inferredMs}ms, total: ${totalSec}s`);
+            }
+          } catch (err) {
+            console.error("Failed to apply background mask:", err);
+            toast.error("فشل تجهيز الصورة النهائية بعد العزل.");
+          } finally {
+            // إسقاط المؤشر بعد تطبيق النتيجة (أو فشلها) — يحدث التبديل في نفس الدفعة
+            settle();
           }
-          onUpdateRef.current(element.id, patch);
-          useEditorStore.getState().pushHistory();
-          toast.success("تم عزل خلفية الصورة بنجاح");
-
-          // ⏱️ توثيق القياسات الفعلية بدلاً من القيم الثابتة (الاستدلال محلي — لا تكلفة سحابية)
-          const totalSec = Math.round((performance.now() - startedAt) / 100) / 10;
-          const user = useEditorStore.getState().user;
-          useEditorStore.getState().logAiUsage({
-            email: user?.email || "unknown",
-            serviceName: "عزل الخلفية الذكي (AI Background Removal)",
-            source: "Grido Studio Desktop (Windows)",
-            durationSec: totalSec,
-            costUsd: 0,
-            status: "success",
-          });
-          modelCachedRef.current = true;
-          if (inferredMs > 0) {
-            // قياس زمن الاستدلال الخام متاح في وحدة التحكم للتشخيص
-            console.debug(`[BG-Removal] inference: ${inferredMs}ms, total: ${totalSec}s`);
-          }
-        } catch (err) {
-          console.error("Failed to apply background mask:", err);
-          toast.error("فشل تجهيز الصورة النهائية بعد العزل.");
-        } finally {
-          // إسقاط المؤشر بعد تطبيق النتيجة (أو فشلها) — يحدث التبديل في نفس الدفعة
-          settle();
-        }
         }
       },
     });

@@ -18,7 +18,7 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import { exportCanvas, downloadBlob, exportSlotCanvas, applyBleedAndCropMarks, CanvasTooLargeError } from "@/lib/export";
-import { SelectExportDirectory } from "../../../../wailsjs/go/main/App";
+import { SelectExportDirectory, SetTaskbarProgress, SendNotification, OpenFolder } from "../../../../wailsjs/go/main/App";
 import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/canvas/stage-context";
 import { toast } from "sonner";
@@ -56,6 +56,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
     setProgress(0);
+    SetTaskbarProgress(0, "none").catch(() => {});
     if (!open) {
       isCancelledRef.current = true;
     } else {
@@ -70,6 +71,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const handleExport = async () => {
     setLoading(true);
     setProgress(0);
+    SetTaskbarProgress(0, "normal").catch(() => {});
     setTimeout(async () => {
       try {
         if (batchExport && mode === "collage") {
@@ -77,6 +79,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           if (validSlots.length === 0) {
             toast.error("لا توجد صور في الكولاج لتصديرها");
             setLoading(false);
+            SetTaskbarProgress(0, "none").catch(() => {});
             return;
           }
 
@@ -84,6 +87,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           const targetDir = await SelectExportDirectory();
           if (!targetDir) {
             setLoading(false);
+            SetTaskbarProgress(0, "none").catch(() => {});
             return;
           }
 
@@ -101,23 +105,34 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               else if (res === "") break;
             }
             if (isCancelledRef.current) break;
-            setProgress(((i + 1) / validSlots.length) * 100);
+            const pct = Math.round(((i + 1) / validSlots.length) * 100);
+            setProgress(pct);
+            SetTaskbarProgress(pct, "normal").catch(() => {});
             
             await new Promise(r => setTimeout(r, 60));
           }
           
           if (isCancelledRef.current) {
+            SetTaskbarProgress(0, "none").catch(() => {});
             return;
           }
           
+          SetTaskbarProgress(0, "none").catch(() => {});
           if (successCount > 0) {
-            toast.success(`تم تصدير ${successCount} صورة بنجاح`);
+            toast.success(`تم تصدير ${successCount} صورة بنجاح`, {
+              action: {
+                label: "فتح المجلد",
+                onClick: () => OpenFolder(targetDir).catch(console.error),
+              },
+            });
+            SendNotification("Grido Studio", `تم تصدير ${successCount} صورة بنجاح إلى المجلد المحدد`, "").catch(() => {});
             onOpenChange(false);
           } else {
             toast.error("تعذر تصدير الصور");
           }
         } else {
           setProgress(50);
+          SetTaskbarProgress(50, "normal").catch(() => {});
           const blob = await exportCanvas(format, quality / 100, stageRef.current);
           // المستخدم أغلق النافذة أثناء التصدير — لا نُظهر حوار الحفظ ولا رسائل (إصلاح Bug#9)
           if (blob && !isCancelledRef.current) {
@@ -129,7 +144,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               quality / 100,
               printSettings.dpi
             );
-            if (isCancelledRef.current) return;
+            if (isCancelledRef.current) {
+              SetTaskbarProgress(0, "none").catch(() => {});
+              return;
+            }
             const ext = format === "png" ? "png" : "jpg";
             const dateStr = new Date().toISOString().slice(0, 10);
             const name = template
@@ -139,8 +157,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               : `Grido_Design_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`;
             const res = await downloadBlob(finalBlob, name);
             setProgress(100);
+            SetTaskbarProgress(0, "none").catch(() => {});
             if (res === "success") {
               toast.success("تم تصدير الصورة بنجاح");
+              SendNotification("Grido Studio", "تم تصدير الصورة وحفظها بنجاح", "").catch(() => {});
               onOpenChange(false);
             } else if (res === "") {
               toast.info("تم إلغاء التصدير");
@@ -148,10 +168,15 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               toast.error("فشل حفظ الصورة");
             }
           } else {
+            SetTaskbarProgress(0, "none").catch(() => {});
             toast.error("تعذر إنشاء الصورة");
           }
         }
       } catch (e) {
+        SetTaskbarProgress(100, "error").catch(() => {});
+        setTimeout(() => {
+          SetTaskbarProgress(0, "none").catch(() => {});
+        }, 2500);
         if (e instanceof CanvasTooLargeError) {
           toast.error(
             `الأبعاد كبيرة جداً للتصدير (${e.width}×${e.height} بكسل ≈ ${(e.pixelCount / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. قلّل مقاس الكانفاس أو DPI.`
@@ -162,6 +187,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         }
       } finally {
         setLoading(false);
+        SetTaskbarProgress(0, "none").catch(() => {});
         if (typeof document !== "undefined" && document.body) {
           document.body.style.pointerEvents = "";
         }

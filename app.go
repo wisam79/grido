@@ -11,7 +11,7 @@ import (
 	"grido/internal/service"
 	"grido/internal/utils"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type App struct {
@@ -23,12 +23,14 @@ type App struct {
 	autosaveSvc    *service.AutosaveService
 	aiLogsSvc      *service.AiLogsService
 	licenseSvc     *service.LicenseService
+	desktopSvc     *service.DesktopService
 	startupFile    string
 }
 
 func NewApp(templates domain.CustomTemplateRepository) *App {
 	mediaSvc := service.NewMediaService()
 	phoneBridgeSvc := service.NewPhoneBridgeService(mediaSvc)
+	desktopSvc := service.NewDesktopService()
 	return &App{
 		mediaSvc:       mediaSvc,
 		phoneBridgeSvc: phoneBridgeSvc,
@@ -36,53 +38,36 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 		imageProc:      service.NewImageProcessorService(mediaSvc),
 		autosaveSvc:    service.NewAutosaveService(templates),
 		aiLogsSvc:      service.NewAiLogsService(),
+		desktopSvc:     desktopSvc,
 	}
 }
 
-func (a *App) startup(ctx context.Context) {
+// ServiceStartup يتم استدعاؤها تلقائياً بواسطة Wails v3 عند بدء تشغيل الخدمة
+func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
 	a.ctx = ctx
 	a.phoneBridgeSvc.SetContext(ctx)
-	// ربط سياق Wails بخدمة الترخيص ليفتح رابط Google OAuth عبر
-	// runtime.BrowserOpenURL القياسي بدل أوامر نظام يدوية
 	if a.licenseSvc != nil {
 		a.licenseSvc.SetContext(ctx)
 	}
-	service.InitLogger() // محمي بـ once — لا يعيد التهيئة إذا استدعي من main سابقاً
-	// تنظيف ملفات التحديث المهجورة في الخلفية فور بدء التشغيل
+	service.InitLogger()
 	go service.CleanupTempUpdates()
-
-	// 📂 استقبال السحب والإفلات المباشر للملفات من نظام التشغيل (Native File Drop)
-	// يعالج مسارات الصور على القرص مباشرة في Go دون تشفير Base64 الثقيل في JavaScript
-	runtime.OnFileDrop(ctx, func(x, y int, paths []string) {
-		if len(paths) == 0 {
-			return
-		}
-		var validPaths []string
-		for _, p := range paths {
-			ext := strings.ToLower(filepath.Ext(p))
-			switch ext {
-			case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
-				validPaths = append(validPaths, p)
-			}
-		}
-		if len(validPaths) == 0 {
-			return
-		}
-		processed, err := a.mediaSvc.ProcessMultipleOpenedFiles(validPaths)
-		if err == nil && len(processed) > 0 {
-			runtime.EventsEmit(ctx, "native-file-drop", map[string]any{
-				"x":      x,
-				"y":      y,
-				"images": processed,
-			})
-		}
-	})
+	return nil
 }
 
-func (a *App) shutdown(_ context.Context) {
+// ServiceShutdown يتم استدعاؤها تلقائياً بواسطة Wails v3 عند إغلاق التطبيق
+func (a *App) ServiceShutdown() error {
 	if a.phoneBridgeSvc != nil {
 		_ = a.phoneBridgeSvc.Stop()
 	}
+	return nil
+}
+
+func (a *App) startup(ctx context.Context) {
+	_ = a.ServiceStartup(ctx, application.ServiceOptions{})
+}
+
+func (a *App) shutdown(ctx context.Context) {
+	_ = a.ServiceShutdown()
 }
 
 func (a *App) LogFrontendError(level, message, stackTrace string) {
@@ -105,14 +90,11 @@ func (a *App) ExportSupportLogs() (string, error) {
 	appDir := utils.GetAppDir()
 	logDir := filepath.Join(appDir, "logs")
 
-	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		DefaultFilename: "grido_support_logs.zip",
-		Filters: []runtime.FileFilter{
-			{DisplayName: "Zip Files (*.zip)", Pattern: "*.zip"},
-		},
-		Title: "تصدير سجلات الأخطاء",
-	})
-
+	d := application.Get().Dialog.SaveFile()
+	d.SetMessage("تصدير سجلات الأخطاء")
+	d.SetFilename("grido_support_logs.zip")
+	d.AddFilter("Zip Files (*.zip)", "*.zip")
+	savePath, err := d.PromptForSingleSelection()
 	if err != nil || savePath == "" {
 		return "", nil // user cancelled
 	}
@@ -123,10 +105,6 @@ func (a *App) ExportSupportLogs() (string, error) {
 	}
 
 	return savePath, nil
-}
-
-var imageFilters = []runtime.FileFilter{
-	{DisplayName: "Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", Pattern: "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp"},
 }
 
 // LoadAiUsageLogs يسترجع سجلات استخدام الذكاء الاصطناعي من AppData
@@ -140,10 +118,10 @@ func (a *App) SaveAiUsageLogs(jsonData string) error {
 }
 
 func (a *App) OpenFile() (string, error) {
-	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title:   "Select an Image",
-		Filters: imageFilters,
-	})
+	d := application.Get().Dialog.OpenFile()
+	d.SetTitle("Select an Image")
+	d.AddFilter("Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp")
+	filePath, err := d.PromptForSingleSelection()
 	if err != nil {
 		return "", fmt.Errorf("open dialog: %w", err)
 	}
@@ -154,10 +132,10 @@ func (a *App) OpenFile() (string, error) {
 }
 
 func (a *App) OpenMultipleFiles() ([]string, error) {
-	filePaths, err := runtime.OpenMultipleFilesDialog(a.ctx, runtime.OpenDialogOptions{
-		Title:   "Select Images",
-		Filters: imageFilters,
-	})
+	d := application.Get().Dialog.OpenFile()
+	d.SetTitle("Select Images")
+	d.AddFilter("Images (*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp)", "*.png;*.jpg;*.jpeg;*.webp;*.gif;*.bmp")
+	filePaths, err := d.PromptForMultipleSelection()
 	if err != nil {
 		return nil, fmt.Errorf("open multiple dialog: %w", err)
 	}
@@ -168,9 +146,11 @@ func (a *App) OpenMultipleFiles() ([]string, error) {
 }
 
 func (a *App) OpenDirectoryDialog() ([]string, error) {
-	dirPath, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select Folder Containing Images",
-	})
+	d := application.Get().Dialog.OpenFile()
+	d.SetTitle("Select Folder Containing Images")
+	d.CanChooseDirectories(true)
+	d.CanChooseFiles(false)
+	dirPath, err := d.PromptForSingleSelection()
 	if err != nil {
 		return nil, fmt.Errorf("open directory dialog: %w", err)
 	}
@@ -179,7 +159,6 @@ func (a *App) OpenDirectoryDialog() ([]string, error) {
 	}
 	return a.mediaSvc.ProcessDirectoryImages(dirPath)
 }
-
 
 func (a *App) SaveImageFromBase64(base64Data string) (string, error) {
 	return a.mediaSvc.SaveImageFromBase64(base64Data)
@@ -204,9 +183,7 @@ func (a *App) CleanUnusedMediaNow() (map[string]interface{}, error) {
 	}, nil
 }
 
-
 func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayName string, pattern string) (string, error) {
-	// فحص الحجم قبل الفك: السلسلة base64 ≈ 4/3 الخام — يمنع تخصيص 50MB+ عبثاً
 	if int64(len(base64Data)) > int64(service.MaxFileSize)*4/3+16 {
 		return "", fmt.Errorf("file size too large: payload %d bytes (max %d raw)", len(base64Data), service.MaxFileSize)
 	}
@@ -227,13 +204,13 @@ func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayN
 		return "", fmt.Errorf("file size too large: %d bytes (max %d)", len(decoded), service.MaxFileSize)
 	}
 
-	filePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Save File",
-		DefaultFilename: defaultFilename,
-		Filters: []runtime.FileFilter{
-			{DisplayName: displayName, Pattern: pattern},
-		},
-	})
+	d := application.Get().Dialog.SaveFile()
+	d.SetMessage("Save File")
+	d.SetFilename(defaultFilename)
+	if displayName != "" && pattern != "" {
+		d.AddFilter(displayName, pattern)
+	}
+	filePath, err := d.PromptForSingleSelection()
 	if err != nil {
 		return "", fmt.Errorf("save dialog: %w", err)
 	}
@@ -241,8 +218,6 @@ func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayN
 		return "", nil
 	}
 
-	// كتابة ذرية موحّدة (utils.AtomicWriteFile) بدل WriteFile المباشر —
-	// تمنع ملفاً تالفاً عند الانقطاع
 	if err := utils.AtomicWriteFile(filePath, decoded, 0o644); err != nil {
 		return "", fmt.Errorf("commit file: %w", err)
 	}
@@ -278,6 +253,10 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 	return a.imageProc.ApplyMaskToImage(localImagePath, maskBase64, maskW, maskH)
 }
 
+func (a *App) ApplyMaskRaw(localImagePath string, maskBytes []byte, maskW int, maskH int) (string, error) {
+	return a.imageProc.ApplyMaskRaw(localImagePath, maskBytes, maskW, maskH)
+}
+
 func (a *App) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
 	return a.aiSvc.EnhanceImageWithAI(base64Image, token, limit)
 }
@@ -293,9 +272,11 @@ func (a *App) DownloadAndInstallUpdate(url string, sha256 string) error {
 }
 
 func (a *App) SelectExportDirectory() (string, error) {
-	dirPath, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "اختر مجلد تصدير الصور",
-	})
+	d := application.Get().Dialog.OpenFile()
+	d.SetTitle("اختر مجلد تصدير الصور")
+	d.CanChooseDirectories(true)
+	d.CanChooseFiles(false)
+	dirPath, err := d.PromptForSingleSelection()
 	if err != nil {
 		return "", fmt.Errorf("select export directory: %w", err)
 	}
@@ -306,55 +287,62 @@ func (a *App) setStartupFile(filePath string) {
 	a.startupFile = filePath
 }
 
-// GetStartupFile يعيد رابط الصورة المحلية لأي ملف تم فتحه عند الإقلاع عبر سطر الأوامر أو "فتح بواسطة"
 func (a *App) GetStartupFile() (string, error) {
 	if a.startupFile == "" {
 		return "", nil
 	}
 	f := a.startupFile
-	a.startupFile = "" // استهلاك المسار لمرة واحدة فقط لمنع التكرار
+	a.startupFile = ""
 	return a.mediaSvc.ProcessOpenedFile(f)
 }
 
-// StartPhoneBridge يبدأ خادم جسر الهاتف اللاسلكي ويعيد بيانات الاتصال ورابط QR
 func (a *App) StartPhoneBridge() (*service.BridgeInfo, error) {
 	return a.phoneBridgeSvc.Start()
 }
 
-// StopPhoneBridge يوقف خادم جسر الهاتف
 func (a *App) StopPhoneBridge() error {
 	return a.phoneBridgeSvc.Stop()
 }
 
-// GetPhoneBridgeStatus يسترجع حالة خادم جسر الهاتف وعدد الصور المستلمة
 func (a *App) GetPhoneBridgeStatus() *service.BridgeStatus {
 	return a.phoneBridgeSvc.GetStatus()
 }
 
-// ProcessLocalImageFile يعالج ملف صورة محلي على القرص ويجهزه للاستخدام
 func (a *App) ProcessLocalImageFile(filePath string) (string, error) {
 	return a.mediaSvc.ProcessOpenedFile(filePath)
 }
 
-// GetClipboardText يسترجع النص من الحافظة عبر محرك Wails الأصلي
 func (a *App) GetClipboardText() (string, error) {
-	return runtime.ClipboardGetText(a.ctx)
+	text, _ := application.Get().Clipboard.Text()
+	return text, nil
 }
 
-// SetClipboardText يحفظ نصاً في الحافظة عبر محرك Wails الأصلي
 func (a *App) SetClipboardText(text string) error {
-	return runtime.ClipboardSetText(a.ctx, text)
+	application.Get().Clipboard.SetText(text)
+	return nil
 }
 
-// GetScreensInfo يسترجع بيانات جميع الشاشات المتصلة بالنظام
-func (a *App) GetScreensInfo() ([]runtime.Screen, error) {
-	return runtime.ScreenGetAll(a.ctx)
+func (a *App) GetScreensInfo() ([]*application.Screen, error) {
+	return application.Get().Screen.GetAll(), nil
 }
 
-// GetBatchImageDimensions يسترجع أبعاد وتوجيه قائمة صور دفعة واحدة
 func (a *App) GetBatchImageDimensions(localPaths []string) map[string]service.ImageDimensions {
 	return a.mediaSvc.GetBatchImageDimensions(localPaths)
 }
 
+func (a *App) SetTaskbarProgress(percent int, state string) error {
+	return a.desktopSvc.SetTaskbarProgress(percent, state)
+}
 
+func (a *App) ShowInFolder(filePath string) error {
+	return a.desktopSvc.ShowInFolder(filePath)
+}
+
+func (a *App) OpenFolder(folderPath string) error {
+	return a.desktopSvc.OpenFolder(folderPath)
+}
+
+func (a *App) SendNotification(title, body, imagePath string) error {
+	return a.desktopSvc.SendToast(title, body, imagePath)
+}
 

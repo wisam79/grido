@@ -136,10 +136,11 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
 
   const size = menuSize || { w: 190, h: 280 };
 
-  const maxRight = window.innerWidth - 8;
-  const maxBottom = window.innerHeight - 8;
-  const minLeft = 8;
-  const minTop = 8;
+  const SAFETY_MARGIN = 12;
+  const maxRight = window.innerWidth - SAFETY_MARGIN;
+  const maxBottom = window.innerHeight - SAFETY_MARGIN;
+  const minLeft = SAFETY_MARGIN;
+  const minTop = SAFETY_MARGIN;
 
   let left = position.x;
   let top = position.y;

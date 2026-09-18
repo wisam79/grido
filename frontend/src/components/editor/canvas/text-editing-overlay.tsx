@@ -95,7 +95,7 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
           padding: `${paddingYPx}px ${paddingXPx}px`,
           minHeight: `${minHeightPx}px`,
           fontSize: `${(textEl.fontSize || 20) * scaleRatio}px`,
-          fontFamily: textEl.fontFamily || "Cairo, sans-serif",
+          fontFamily: textEl.fontFamily || '"IBM Plex Sans Arabic", Cairo, sans-serif',
           fontWeight: textEl.fontWeight || 400,
           fontStyle: textEl.fontStyle || "normal",
           textDecoration: textEl.textDecoration || "none",

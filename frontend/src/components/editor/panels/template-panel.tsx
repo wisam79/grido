@@ -85,7 +85,7 @@ export function TemplatePanel({
   const loadTemplates = useCallback(async () => {
     try {
       const templates = await GetCustomTemplates();
-      const mapped = templates.map((t) => ({
+      const mapped = (templates || []).map((t) => ({
         id: "collage-user-" + t.id,
         name: t.name,
         slots: t.slots,

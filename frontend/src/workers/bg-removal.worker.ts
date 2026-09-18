@@ -9,7 +9,8 @@
 import type { ImageSegmenter } from "@mediapipe/tasks-vision";
 
 export interface BgRemovalResult {
-  maskBase64: string;
+  maskBuffer?: ArrayBufferLike;
+  maskBase64?: string;
   targetW: number;
   targetH: number;
   inferredMs: number;
@@ -93,8 +94,12 @@ function postError(requestId: number, message: string) {
   ctx.postMessage({ type: "error", requestId, message });
 }
 
-function postResult(requestId: number, result: BgRemovalResult) {
-  ctx.postMessage({ type: "result", requestId, result });
+function postResult(requestId: number, result: BgRemovalResult, transfer?: Transferable[]) {
+  if (transfer && transfer.length > 0) {
+    ctx.postMessage({ type: "result", requestId, result }, transfer);
+  } else {
+    ctx.postMessage({ type: "result", requestId, result });
+  }
 }
 
 async function handleSegment(req: SegmentRequest) {
@@ -174,15 +179,10 @@ async function handleSegment(req: SegmentRequest) {
 
     if (isCancelled()) return;
 
-    // تحويل بايتات القناع إلى Base64 بحجم كتل آمن ومضاد لفيض المكدس (Call Stack Overflow Protection)
+    // ⚡ نقل بايتات القناع فورياً وبشكل صفري كـ Transferable ArrayBuffer (Zero-Copy Transfer)
     postProgress(requestId, 95, "جاري تجهيز القناع ... (95%)");
-    const CHUNK_SIZE = 0x2000; // 8192 - حجم مثالي وآمن كلياً في محركات JS
-    let binary = "";
-    for (let i = 0; i < maskBytes.length; i += CHUNK_SIZE) {
-      binary += String.fromCharCode(...maskBytes.subarray(i, i + CHUNK_SIZE));
-    }
-
-    postResult(requestId, { maskBase64: btoa(binary), targetW, targetH, inferredMs });
+    const maskBuffer = maskBytes.buffer;
+    postResult(requestId, { maskBuffer, targetW, targetH, inferredMs }, [maskBuffer as ArrayBuffer]);
   } catch (err) {
     if (!isCancelled()) {
       const message = err instanceof Error ? err.message : String(err);

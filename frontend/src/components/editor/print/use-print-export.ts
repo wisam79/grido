@@ -4,6 +4,7 @@ import { useEditorStore } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/canvas/stage-context";
 import { previewWhite } from "@/lib/canvas/canvas-colors";
 import { ExportPrintSheet, PrintNative } from "../../../../wailsjs/go/handlers/PrintHandler";
+import { SetTaskbarProgress } from "../../../../wailsjs/go/main/App";
 import { domain } from "../../../../wailsjs/go/models";
 import { captureStageBlob } from "@/lib/canvas/konva-export-utils";
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
@@ -524,6 +525,7 @@ export function usePrintExport(ctx: PrintExportContext) {
         return;
       }
 
+      SetTaskbarProgress(50, "indeterminate").catch(() => {});
       const result = await ExportPrintSheet(domain.PrintRequest.createFrom({
         paperWidthMM: paperWidth,
         paperHeightMM: paperHeight,
@@ -542,9 +544,13 @@ export function usePrintExport(ctx: PrintExportContext) {
       }));
 
       if (!result.success) {
+        SetTaskbarProgress(100, "error").catch(() => {});
+        setTimeout(() => SetTaskbarProgress(0, "none").catch(() => {}), 2000);
         toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
         return;
       }
+
+      SetTaskbarProgress(0, "none").catch(() => {});
 
       // 1. إغلاق نافذة إعدادات الطباعة أولاً لضمان عدم بقائها عالقة خلف حوار الطباعة
       isExportingRef.current = false;
@@ -562,8 +568,11 @@ export function usePrintExport(ctx: PrintExportContext) {
         showPrintResult(result);
       }, 450);
     } catch (err) {
+      SetTaskbarProgress(100, "error").catch(() => {});
+      setTimeout(() => SetTaskbarProgress(0, "none").catch(() => {}), 2000);
       toast.error("حدث خطأ أثناء توليد ورقة الطباعة: " + String(err));
     } finally {
+      SetTaskbarProgress(0, "none").catch(() => {});
       isExportingRef.current = false;
       setIsExporting(false);
     }

@@ -21,7 +21,6 @@ import { useImageDrop } from "./use-image-drop";
 import { useRulerMetricsPreview } from "./use-ruler-metrics";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { CanvasBleedGuides } from "./canvas-bleed-guides";
-import { CanvasEmptyState } from "./canvas-empty-state";
 
 /**
  * شريط الأدوات السريع للخانة المحددة (إزالة/استبدال الصورة).
@@ -244,18 +243,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
   const selectedIds = useEditorStore((s) => s.selectedIds);
   const collageMargin = useEditorStore((s) => s.collageMargin);
   const slots = useEditorStore((s) => s.slots);
-
-  const isFreeformEmpty = mode === "single" && elements.length === 0;
-  const isCollageEmpty = mode === "collage" && slots.every((s) => !s.imageSrc);
-  const isCanvasEmpty = isFreeformEmpty || isCollageEmpty;
-
-  const handleEmptyStateOpenFile = useCallback(() => {
-    if (onOpenFile) {
-      onOpenFile();
-    } else {
-      window.dispatchEvent(new CustomEvent("grido:open-file-dialog"));
-    }
-  }, [onOpenFile]);
 
   // 🧭 منطق الزوم والتحريك (كان مضمّناً في هذا الملف)
   useCanvasViewport(containerRef, innerRef);
@@ -610,15 +597,6 @@ export const EditorCanvas = React.memo(React.forwardRef<
         pushHistory={pushHistory}
         setEditingTextId={setEditingTextId}
       />
-
-      {/* الحالة الفارغة التفاعلية لورقة الكانفس عند خلوها من أي محتوى */}
-      {!printMode && isCanvasEmpty && (
-        <CanvasEmptyState
-          mode={mode}
-          onOpenFile={handleEmptyStateOpenFile}
-          onOpenTemplates={onOpenTemplates}
-        />
-      )}
     </div>
 
     {/* خطوط وهوامش النزيف والقص والأمان للمطابع (طافية حول ورقة الكانفس) */}

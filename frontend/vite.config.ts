@@ -74,6 +74,8 @@ export default defineConfig({
     }
   },
   server: {
-    // Headers removed to allow local asset fetching in Wails WebView without CORP errors
+    host: '127.0.0.1',
+    port: 9245,
+    strictPort: true,
   }
 })

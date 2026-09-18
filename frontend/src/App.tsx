@@ -32,8 +32,8 @@ import {
   ShieldCheck,
   Moon,
   Sun,
+  Desktop,
   SidebarSimple,
-  SlidersHorizontal,
   User,
 } from "@phosphor-icons/react";
 import { useTheme } from "@/hooks/use-theme";
@@ -58,8 +58,7 @@ export default function App() {
 
   const panelsHook = useWorkspacePanels();
   const isTemplatesOpen = panelsHook.breakpoint === "wide" ? panelsHook.isTemplatesDrawerOpen : panelsHook.activePanel === "templates";
-  const isPropertiesOpen = panelsHook.activePanel === "properties";
-  const { theme, toggleTheme } = useTheme();
+  const { theme, themeMode, toggleTheme } = useTheme();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
 
@@ -309,7 +308,7 @@ export default function App() {
       <TooltipProvider delayDuration={650} skipDelayDuration={150}>
         <div 
           className={cn(
-            "h-screen flex flex-col overflow-hidden font-cairo bg-background",
+            "h-screen flex flex-col overflow-hidden font-cairo bg-background/90",
           )}
           dir="rtl"
         >
@@ -318,12 +317,12 @@ export default function App() {
       <ErrorBoundary>
       <header
         className={cn(
-          "border-b border-border bg-sidebar/95 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
+          "border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
           !isFocused && "opacity-75"
         )}
         onDoubleClick={handleMaximize}
       >
-        <div className="flex items-center justify-between px-3 py-1.5 relative">
+        <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
@@ -363,7 +362,7 @@ export default function App() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 title-bar-controls">
+          <div className="flex items-center gap-1.5 h-full title-bar-controls">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -392,13 +391,29 @@ export default function App() {
                   size="sm"
                   onClick={toggleTheme}
                   className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
-                  aria-label={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
+                  aria-label={
+                    themeMode === "system"
+                      ? "مظهر النظام تلقائي مع Windows 11"
+                      : themeMode === "dark"
+                      ? "الوضع الداكن"
+                      : "الوضع المضيء"
+                  }
                 >
-                  {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  {themeMode === "system" ? (
+                    <Desktop className="w-4 h-4 text-primary" weight="duotone" />
+                  ) : themeMode === "dark" ? (
+                    <Moon className="w-4 h-4" />
+                  ) : (
+                    <Sun className="w-4 h-4" />
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
-                {theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
+                {themeMode === "system"
+                  ? `مظهر النظام تلقائي (${theme === "dark" ? "داكن" : "مضيء"})`
+                  : themeMode === "dark"
+                  ? "الوضع الداكن (يدوي)"
+                  : "الوضع المضيء (يدوي)"}
               </TooltipContent>
             </Tooltip>
 
@@ -427,30 +442,6 @@ export default function App() {
                 </div>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => panelsHook.togglePanel("properties")}
-                  className={cn(
-                    "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
-                    isPropertiesOpen
-                      ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
-                      : "text-muted-foreground hover:bg-muted/80"
-                  )}
-                  aria-label={isPropertiesOpen ? "إخفاء لوحة الخصائص" : "إظهار لوحة الخصائص"}
-                >
-                  <SlidersHorizontal className="w-4 h-4" weight={isPropertiesOpen ? "bold" : "regular"} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
-                <div className="flex items-center gap-1.5">
-                  <span>{isPropertiesOpen ? "إخفاء لوحة الخصائص" : "إظهار لوحة الخصائص"}</span>
-                  <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+Shift+B</kbd>
-                </div>
-              </TooltipContent>
-            </Tooltip>
 
             <Button
               variant="ghost"
@@ -460,15 +451,6 @@ export default function App() {
             >
               <SidebarSimple className="w-4 h-4" />
               <span className="text-xs font-semibold">{mode === "collage" ? "القوالب" : "التصميم"}</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
-              onClick={() => panelsHook.openPanel("properties")}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="text-xs font-semibold">خصائص</span>
             </Button>
 
             {/* Separator */}
@@ -577,7 +559,7 @@ export default function App() {
       <AccountLicenseModal />
       <UpdateNotifier />
 
-      <SonnerToaster position="top-center" duration={1500} closeButton />
+      <SonnerToaster position="top-center" duration={1500} offset={56} closeButton />
       <KeyboardShortcutsDialog />
     </div>
     </TooltipProvider>

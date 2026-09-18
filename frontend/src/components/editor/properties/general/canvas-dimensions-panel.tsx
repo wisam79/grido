@@ -331,10 +331,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => setUnit("px")}
               className={cn(
-                "px-2.5 h-full rounded text-mini font-mono font-bold transition-all cursor-pointer flex items-center justify-center select-none",
+                "px-2.5 h-full rounded text-mini font-mono transition-all cursor-pointer flex items-center justify-center select-none",
                 unit === "px"
-                  ? "bg-card text-primary font-extrabold shadow-2xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary font-semibold shadow-2xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground font-normal"
               )}
             >
               px
@@ -343,10 +343,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               type="button"
               onClick={() => setUnit("mm")}
               className={cn(
-                "px-2.5 h-full rounded text-mini font-mono font-bold transition-all cursor-pointer flex items-center justify-center select-none",
+                "px-2.5 h-full rounded text-mini font-mono transition-all cursor-pointer flex items-center justify-center select-none",
                 unit === "mm"
-                  ? "bg-card text-primary font-extrabold shadow-2xs border border-border/40"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-primary font-semibold shadow-2xs border border-border/40"
+                  : "text-muted-foreground hover:text-foreground font-normal"
               )}
             >
               mm
@@ -362,7 +362,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             dir="rtl"
             title="عرض مساحة العمل"
           >
-            <span className="text-micro font-bold text-muted-foreground select-none shrink-0">العرض</span>
+            <span className="text-micro font-medium text-muted-foreground select-none shrink-0">العرض</span>
             <input
               type="text"
               inputMode="decimal"
@@ -371,7 +371,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               onChange={(e) => handleWidthChange(e.target.value)}
               onBlur={handleWidthCommit}
               onKeyDown={(e) => e.key === "Enter" && handleWidthCommit()}
-              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-bold text-foreground focus:ring-0 focus:outline-none select-all pl-1"
+              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all pl-1"
               dir="ltr"
             />
           </div>
@@ -392,7 +392,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             dir="rtl"
             title="ارتفاع مساحة العمل"
           >
-            <span className="text-micro font-bold text-muted-foreground select-none shrink-0">الارتفاع</span>
+            <span className="text-micro font-medium text-muted-foreground select-none shrink-0">الارتفاع</span>
             <input
               type="text"
               inputMode="decimal"
@@ -401,7 +401,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               onChange={(e) => handleHeightChange(e.target.value)}
               onBlur={handleHeightCommit}
               onKeyDown={(e) => e.key === "Enter" && handleHeightCommit()}
-              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-bold text-foreground focus:ring-0 focus:outline-none select-all pl-1"
+              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all pl-1"
               dir="ltr"
             />
           </div>
@@ -409,7 +409,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
         {/* محدد الاتجاه: عمودي / أفقي */}
         <div className="flex items-center justify-between bg-input/40 border border-border/80 rounded-md px-2.5 h-8 select-none" dir="rtl">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/85">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/85">
             <ArrowsClockwise className="w-3.5 h-3.5 text-primary" weight="duotone" />
             <span>الاتجاه</span>
           </div>
@@ -422,10 +422,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 }
               }}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 h-6 text-mini font-semibold rounded transition-all cursor-pointer select-none",
+                "flex items-center gap-1.5 px-2.5 h-6 text-mini font-sans rounded transition-all cursor-pointer select-none",
                 canvasWidth <= canvasHeight
-                  ? "bg-card text-foreground font-bold shadow-2xs border border-border/50"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-foreground font-semibold shadow-2xs border border-border/50"
+                  : "text-muted-foreground hover:text-foreground font-normal"
               )}
               title="اتجاه رأسي (عمودي)"
             >
@@ -433,7 +433,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 "w-2.5 h-3.5 rounded-[2px] border-[1.5px] transition-colors shrink-0",
                 canvasWidth <= canvasHeight ? "border-primary bg-primary/25" : "border-muted-foreground/60"
               )} />
-              <span>عمودي</span>
+              <span className="font-sans">عمودي</span>
             </button>
             <button
               type="button"
@@ -443,10 +443,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 }
               }}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 h-6 text-mini font-semibold rounded transition-all cursor-pointer select-none",
+                "flex items-center gap-1.5 px-2.5 h-6 text-mini font-sans rounded transition-all cursor-pointer select-none",
                 canvasWidth > canvasHeight
-                  ? "bg-card text-foreground font-bold shadow-2xs border border-border/50"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card text-foreground font-semibold shadow-2xs border border-border/50"
+                  : "text-muted-foreground hover:text-foreground font-normal"
               )}
               title="اتجاه أفقي"
             >
@@ -454,7 +454,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 "w-3.5 h-2.5 rounded-[2px] border-[1.5px] transition-colors shrink-0",
                 canvasWidth > canvasHeight ? "border-primary bg-primary/25" : "border-muted-foreground/60"
               )} />
-              <span>أفقي</span>
+              <span className="font-sans">أفقي</span>
             </button>
           </div>
         </div>

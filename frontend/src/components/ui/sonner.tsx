@@ -8,7 +8,7 @@ import {
 } from "@phosphor-icons/react"
 import { Spinner } from "@/components/ui/huge-icon"
 
-const Toaster = ({ ...props }: ToasterProps) => {
+const Toaster = ({ offset = 56, ...props }: ToasterProps) => {
   const theme = typeof window !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"
 
   return (
@@ -17,6 +17,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       dir="rtl"
       className="toaster group"
+      offset={offset}
       icons={{
         success: <CheckCircle className="w-4 h-4 text-primary shrink-0" weight="duotone" />,
         error: <XCircle className="w-4 h-4 text-destructive shrink-0" weight="duotone" />,

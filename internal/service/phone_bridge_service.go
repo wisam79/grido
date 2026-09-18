@@ -18,9 +18,9 @@ import (
 	"sync"
 	"time"
 
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
-
 	"grido/internal/utils"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:embed embedded/phone_camera_page.html
@@ -324,11 +324,10 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 	s.mu.Lock()
 	s.receivedCount++
 	s.lastReceived = time.Now().Format("15:04:05")
-	currentCtx := s.ctx
 	s.mu.Unlock()
 
-	if currentCtx != nil {
-		wailsruntime.EventsEmit(currentCtx, "phone:photo-received", map[string]string{
+	if application.Get() != nil {
+		application.Get().Event.Emit("phone:photo-received", map[string]string{
 			"path": virtualPath,
 		})
 	}

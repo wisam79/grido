@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // updateMutex يمنع تعارض تنظيف مجلد التحديثات مع تحميل نشط في نفس الوقت
@@ -257,7 +257,9 @@ func (pw *progressWriter) Write(p []byte) (int, error) {
 		percentage := int(float64(pw.downloaded) / float64(pw.total) * 100)
 		if percentage != pw.lastEmit {
 			pw.lastEmit = percentage
-			wailsruntime.EventsEmit(pw.ctx, "update-progress", percentage)
+			if application.Get() != nil {
+				application.Get().Event.Emit("update-progress", percentage)
+			}
 		}
 	}
 	return n, nil
@@ -379,7 +381,9 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	}
 	slog.Info("Update installer checksum verified", "sha256", actual)
 
-	wailsruntime.EventsEmit(ctx, "update-progress", 100)
+	if application.Get() != nil {
+		application.Get().Event.Emit("update-progress", 100)
+	}
 
 	// Execute NSIS installer with Administrator elevation and silent mode (/S)
 	if err := runAsAdmin(installerPath, "/S"); err != nil {
@@ -390,7 +394,9 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	// (حفظ حالة النافذة، إيقاف مهام الخلفية، وإغلاق قاعدة البيانات) قبل خروج العملية،
 	// ويحرر أقفال الملفات و Single-Instance Mutex بشكل طبيعي ليستبدلها المثبت.
 	time.Sleep(200 * time.Millisecond)
-	wailsruntime.Quit(ctx)
+	if application.Get() != nil {
+		application.Get().Quit()
+	}
 	return nil
 }
 

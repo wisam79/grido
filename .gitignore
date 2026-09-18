@@ -37,7 +37,8 @@ __pycache__/
 .env
 .env.*
 diff.patch
-frontend/wailsjs/
+.task/
+frontend/bindings/
 frontend/coverage/
 
 # Agent config (contains API keys — use env vars instead)

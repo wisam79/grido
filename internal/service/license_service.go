@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
-
 	"grido/internal/core/domain"
 	"grido/internal/utils"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,9 +32,8 @@ import (
 
 type LicenseService struct {
 	repo domain.LicenseRepository
-	// browserOpen يفتح رابط تفويض OAuth في المتصفح الافتراضي. يُحقن من
-	// App.startup عبر SetContext (runtime.BrowserOpenURL القياسي في Wails v2)،
-	// وقابل للاستبدال داخل الاختبارات.
+	// browserOpen يفتح رابط تفويض OAuth في المتصفح الافتراضي.
+	// قابل للاستبدال داخل الاختبارات.
 	browserOpen func(url string) error
 }
 
@@ -42,16 +41,16 @@ func NewLicenseService(repo domain.LicenseRepository) *LicenseService {
 	return &LicenseService{repo: repo}
 }
 
-// SetContext يربط سياق Wails لفتح المتصفح بالطريقة القياسية (Wails Runtime)
-// بدل تنفيذ أوامر نظام يدوية (rundll32 / xdg-open / open) — كانت ثلاث نسخ
-// build-tag تعيد اختراع ما يوفره runtime.BrowserOpenURL أصلاً.
+// SetContext يحافظ على التوافقية مع Wails Runtime
 func (s *LicenseService) SetContext(ctx context.Context) {
 	if s == nil || ctx == nil {
 		return
 	}
 	s.browserOpen = func(url string) error {
-		wailsruntime.BrowserOpenURL(ctx, url)
-		return nil
+		if app := application.Get(); app != nil {
+			return app.Browser.OpenURL(url)
+		}
+		return errors.New("browser opener is not configured: application runtime is nil")
 	}
 }
 

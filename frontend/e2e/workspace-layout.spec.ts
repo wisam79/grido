@@ -84,16 +84,14 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     await expect(page.getByRole('menuitem', { name: /مكتبة المشاريع/ })).toBeVisible();
   });
 
-  test('Canvas Empty State: Displays onboarding buttons on empty canvas', async ({ page }) => {
+  test('Canvas is clean and unobstructed without intrusive overlay cards', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible({ timeout: 15000 });
 
+    // The canvas should be clean and not obstructed by any empty-state card
     const emptyState = page.getByTestId('canvas-empty-state');
-    await expect(emptyState).toBeVisible();
-
-    const openBtn = emptyState.getByRole('button', { name: /(فتح صورة|إدراج صور)/ });
-    await expect(openBtn).toBeVisible();
+    await expect(emptyState).not.toBeVisible();
   });
 });
 

@@ -7,11 +7,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-cairo);
+  --font-sans: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   /* خط monospace حقيقي للقراءات الرقمية والأكواد (كان مربوطاً بالخط العربي ففقد خاصيته) */
   --font-mono: 'IBM Plex Mono', 'Cascadia Mono', ui-monospace, SFMono-Regular, 'Consolas', monospace;
-  --font-cairo: var(--font-cairo);
-  --font-tajawal: var(--font-tajawal);
+  --font-cairo: 'IBM Plex Sans Arabic', sans-serif;
+  --font-tajawal: 'IBM Plex Sans Arabic', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -98,34 +98,34 @@
   --font-tajawal: 'IBM Plex Sans Arabic', 'Tajawal', 'Inter', system-ui, sans-serif;
   --radius: 0.5rem;
   
-  /* Grido Studio Light Theme (Clean Crisp Fluent Blue Palette) */
-  --background: #f8fafc; /* Soft clean canvas workspace */
+  /* Grido Studio Light Theme (Clean Crisp Fluent Blue Palette for Windows 11 Mica) */
+  --background: rgba(248, 250, 252, 0.82); /* Soft clean canvas workspace allowing Mica translucency */
   --foreground: #0f172a; /* Slate-900 high contrast */
-  --card: #ffffff;       /* Pure crisp white card surface */
+  --card: rgba(255, 255, 255, 0.88);       /* Fluent Acrylic white card surface */
   --card-foreground: #0f172a;
-  --popover: #ffffff;
+  --popover: rgba(255, 255, 255, 0.95);
   --popover-foreground: #0f172a;
   --primary: #2563eb;    /* Modern vibrant Royal Blue #2563eb */
   --primary-foreground: #ffffff;
-  --secondary: #eff6ff;  /* Soft blue secondary tint */
+  --secondary: rgba(239, 246, 255, 0.85);  /* Soft blue secondary tint */
   --secondary-foreground: #1e40af;
-  --muted: #f1f5f9;      /* Recessed control track */
+  --muted: rgba(241, 245, 249, 0.80);      /* Recessed control track */
   --muted-foreground: #64748b;
-  --accent: #eff6ff;
+  --accent: rgba(239, 246, 255, 0.85);
   --accent-foreground: #1e40af;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;     /* Crisp clean border */
-  --input: #ffffff;
+  --border: rgba(226, 232, 240, 0.80);     /* Crisp clean border */
+  --input: rgba(255, 255, 255, 0.85);
   --ring: #3b82f6;
   
-  --sidebar: #f8fafc;    /* Clean off-white sidebar */
+  --sidebar: rgba(248, 250, 252, 0.84);    /* Clean off-white Mica sidebar */
   --sidebar-foreground: #0f172a;
   --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eff6ff;
+  --sidebar-accent: rgba(239, 246, 255, 0.85);
   --sidebar-accent-foreground: #1e40af;
-  --sidebar-border: #e2e8f0;
+  --sidebar-border: rgba(226, 232, 240, 0.80);
   --sidebar-ring: #3b82f6;
 
   /* Canvas & Konva Semantic Colors (Light) */
@@ -196,41 +196,41 @@
 
 .dark {
   color-scheme: dark;
-  /* Grido Studio Pure Neutral Charcoal Identity:
-     1. مساحة العمل الكلية (Workspace Canvas): #141414
-     2. خلفية الألواح والأشرطة (Sidebars Base): #1A1A1A
-     3. أسطح البطاقات البارزة (Cards & Panels): #242424 (رمادي محايد نقي مبني على #212121)
+  /* Grido Studio Pure Neutral Charcoal Identity for Windows 11 Fluent:
+     1. مساحة العمل الكلية (Workspace Canvas): #141414 شبه شفافة للميكا
+     2. خلفية الألواح والأشرطة (Sidebars Base): #1A1A1A شبه شفافة للأكريليك
+     3. أسطح البطاقات البارزة (Cards & Panels): #242424
      4. الحقول الغائرة والممرات (Inputs & Inset): #171717
      5. الحدود والفواصل الدقيقة (Borders & Dividers): #333333
      6. اللون المميز (Primary Accent): #3b82f6 (Vibrant Electric Blue)
   */
-  --background: #141414;   /* مساحة العمل الكلية الفحمية النقية */
+  --background: rgba(20, 20, 20, 0.78);   /* مساحة العمل الكلية الفحمية شبه الشفافة للميكا */
   --foreground: #F5F5F5;   /* High contrast crisp neutral white text */
-  --card: #242424;         /* أسطح البطاقات والألواح الرمادية المحايدة */
+  --card: rgba(36, 36, 36, 0.86);         /* أسطح البطاقات والألواح الرمادية المحايدة الأكريليكية */
   --card-foreground: #F5F5F5;
-  --popover: #242424;      /* أسطح القوائم والنوافذ المنبثقة */
+  --popover: rgba(36, 36, 36, 0.95);      /* أسطح القوائم والنوافذ المنبثقة */
   --popover-foreground: #F5F5F5;
   --primary: #3b82f6;      /* Vibrant modern Electric Blue */
   --primary-foreground: #ffffff;
-  --secondary: #1F1F1F;    /* الأسطح التفاعلية الثانوية */
+  --secondary: rgba(31, 31, 31, 0.85);    /* الأسطح التفاعلية الثانوية */
   --secondary-foreground: #F5F5F5;
-  --muted: #171717;        /* الحقول والممرات الغائرة */
+  --muted: rgba(23, 23, 23, 0.80);        /* الحقول والممرات الغائرة */
   --muted-foreground: #A3A3A3; /* Clear readable neutral secondary text */
-  --accent: #1F1F1F;       /* Secondary hover and accents */
+  --accent: rgba(31, 31, 31, 0.85);       /* Secondary hover and accents */
   --accent-foreground: #60a5fa; /* Blue accent highlight */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #333333;       /* الحدود والفواصل الرمادية المحايدة الدقيقة */
-  --input: #171717;        /* Inset inputs */
+  --border: rgba(51, 51, 51, 0.75);       /* الحدود والفواصل الرمادية المحايدة الدقيقة */
+  --input: rgba(23, 23, 23, 0.85);        /* Inset inputs */
   --ring: #3b82f6;
   
-  --sidebar: #1A1A1A;      /* خلفية الأشرطة الجانبية والألواح الحاضنة */
+  --sidebar: rgba(26, 26, 26, 0.84);      /* خلفية الأشرطة الجانبية والألواح الحاضنة */
   --sidebar-foreground: #F5F5F5;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #242424; /* أسطح البطاقات والقوائم النشطة */
+  --sidebar-accent: rgba(36, 36, 36, 0.88); /* أسطح البطاقات والقوائم النشطة */
   --sidebar-accent-foreground: #60a5fa;
-  --sidebar-border: #333333; /* الحدود والفواصل */
+  --sidebar-border: rgba(51, 51, 51, 0.75); /* الحدود والفواصل */
   --sidebar-ring: #3b82f6;
 
   /* Canvas & Konva Semantic Colors (Dark) */
@@ -302,11 +302,12 @@
     overscroll-behavior: none !important;
     touch-action: pan-x pan-y !important;
     background: transparent !important;
+    font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   body {
     color: var(--foreground);
-    font-family: var(--font-cairo), var(--font-tajawal), system-ui, sans-serif;
+    font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 15.5px;
     user-select: none;
     cursor: default;
@@ -332,11 +333,18 @@
   }
 
   button, 
+  input,
+  optgroup,
+  select,
+  textarea,
   [role="button"], 
-  select, 
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
   input[type="submit"], 
   input[type="button"],
   .touch-target {
+    font-family: inherit !important;
     cursor: pointer;
   }
 
@@ -360,11 +368,13 @@
 
   /* Desktop Drag Window Titles */
   .title-bar-draggable {
-    --wails-draggable:drag;
+    --wails-draggable: drag;
+    -webkit-app-region: drag;
   }
 
   .title-bar-controls {
-    --wails-draggable:no-drag;
+    --wails-draggable: no-drag;
+    -webkit-app-region: no-drag;
   }
 
   /* Win11 Style Overlay Scrollbars */
@@ -443,14 +453,37 @@
   }
 
   .font-cairo {
-    font-family: var(--font-cairo), system-ui, sans-serif;
+    font-family: 'IBM Plex Sans Arabic', 'Cairo', system-ui, sans-serif;
   }
   .font-tajawal {
-    font-family: var(--font-tajawal), system-ui, sans-serif;
+    font-family: 'IBM Plex Sans Arabic', 'Tajawal', system-ui, sans-serif;
   }
   .glass-panel {
     background: var(--card);
     border: 1px solid var(--border);
+  }
+
+  /* ─── Fluent 2 Windows 11 Native Materials ─────────────────── */
+  .fluent-mica {
+    background-color: var(--background);
+    backdrop-filter: blur(0px); /* يتيح لـ Win32 Mica الظهور أصلياً */
+  }
+
+  .fluent-acrylic {
+    background-color: var(--card);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+
+  .fluent-specular {
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .fluent-smoke-backdrop {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   /* ─── Fluent 2 Panel Motion (Spring Curve) ─────────────────── */
@@ -644,12 +677,12 @@
    تنسيقات إشعارات استوديو Grido المخصصة (Soft Compact Floating Pill Toasts)
    ========================================================================== */
 [data-sonner-toaster] {
-  font-family: var(--font-cairo), system-ui, sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
   --width: auto !important;
 }
 
 [data-sonner-toast] {
-  font-family: var(--font-cairo), system-ui, sans-serif !important;
+  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
   position: relative !important;
   overflow: hidden !important;
   min-height: 34px !important;
