@@ -494,7 +494,7 @@ func createCSPMiddleware() application.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			devScriptSrc := "'self' 'wasm-unsafe-eval'"
-			if isDevMode() {
+			if isDevMode() || strings.Contains(r.Host, "9245") || strings.Contains(r.Host, "localhost") || strings.Contains(r.Host, "127.0.0.1") {
 				devScriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'"
 			}
 			w.Header().Set("Content-Security-Policy",
@@ -503,7 +503,7 @@ func createCSPMiddleware() application.Middleware {
 					"style-src 'self' 'unsafe-inline'; "+
 					"img-src 'self' data: blob: https:; "+
 					"font-src 'self' data:; "+
-					"connect-src 'self' ws: http://localhost:* https://*.supabase.co https://*.modal.run https://api.modal.com; "+
+					"connect-src 'self' ws: wss: http://localhost:* http://127.0.0.1:* https://*.supabase.co https://*.modal.run https://api.modal.com; "+
 					"worker-src 'self' blob:; "+
 					"object-src 'none'; "+
 					"base-uri 'self'; "+
@@ -524,7 +524,7 @@ func isDevMode() bool {
 	if isDevBuild {
 		return true
 	}
-	if os.Getenv("devserver") != "" || os.Getenv("frontenddevserverurl") != "" || os.Getenv("WAILS_DEV") == "true" {
+	if os.Getenv("devserver") != "" || os.Getenv("frontenddevserverurl") != "" || os.Getenv("FRONTEND_DEVSERVER_URL") != "" || os.Getenv("WAILS_DEV") == "true" {
 		return true
 	}
 	if exe, err := os.Executable(); err == nil && strings.Contains(strings.ToLower(exe), "-dev") {
