@@ -274,9 +274,9 @@ export function CollageCustomGridTab({
             onClick={handleFillSheet}
             title={`ملء كامل الورقة بأقصى عدد (${maxRows * maxCols} صورة)`}
             className={cn(
-              "h-8 px-2.5 rounded-lg text-mini font-bold transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+              "h-8 px-2.5 rounded-lg text-mini font-medium transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
               isMaxFill
-                ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-bold"
+                ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-semibold"
                 : "bg-background/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70 hover:border-primary/40"
             )}
           >
@@ -284,7 +284,7 @@ export function CollageCustomGridTab({
               <CornersOut className="w-3.5 h-3.5 shrink-0 text-primary" weight="bold" />
               <span>ملء الورقة</span>
             </span>
-            <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
+            <span className="text-micro font-mono font-medium px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
               {maxRows * maxCols}
             </span>
           </button>
@@ -294,9 +294,9 @@ export function CollageCustomGridTab({
             onClick={handleCornerStrip}
             title="شريط زاوية علوي (4 صور) لحفظ مساحة بقية الورقة"
             className={cn(
-              "h-8 px-2.5 rounded-lg text-mini font-bold transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+              "h-8 px-2.5 rounded-lg text-mini font-medium transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
               rows === 1 && cols === Math.min(4, maxCols) && gridAlign === "top-left"
-                ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-bold"
+                ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-semibold"
                 : "bg-background/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70 hover:border-primary/40"
             )}
           >
@@ -304,7 +304,7 @@ export function CollageCustomGridTab({
               <Rows className="w-3.5 h-3.5 shrink-0 text-primary" weight="bold" />
               <span>شريط سريع</span>
             </span>
-            <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
+            <span className="text-micro font-mono font-medium px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
               {Math.min(4, maxCols)}
             </span>
           </button>
@@ -344,17 +344,17 @@ export function CollageCustomGridTab({
                   <DocumentPresetGraphic type={opt.value} active={isActive} />
                 </div>
                 <div className="min-w-0 flex-1 leading-tight text-right">
-                  <div className={cn("text-mini font-bold truncate", isActive ? "text-primary" : "text-foreground")}>
+                  <div className={cn("text-xs truncate transition-colors", isActive ? "text-primary font-semibold" : "text-foreground font-medium")}>
                     {opt.label}
                   </div>
                   <div className="flex items-center gap-1 text-2xs text-muted-foreground font-mono mt-0.5" dir="rtl">
                     {opt.value !== "stretch" ? (
                       <>
-                        <span dir="ltr" className="font-bold text-foreground/80">{opt.dim}</span>
-                        <span className="font-cairo text-2xs">مم</span>
+                        <span dir="ltr" className="font-normal text-foreground/75">{opt.dim}</span>
+                        <span className="text-2xs">مم</span>
                       </>
                     ) : (
-                      <span className="font-cairo text-2xs">{opt.dim}</span>
+                      <span className="text-2xs">{opt.dim}</span>
                     )}
                   </div>
                 </div>
