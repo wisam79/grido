@@ -150,3 +150,161 @@ func (a *App) OpenPrintPreviewWindow(url string) {
 5. **تنظيف تحذيرات `uname` و `tail` على الويندوز:**
    - في `Taskfile.yml`، استبعد قوالب `ios` و `android` من قسم `includes` لمنع تشغيل استعلامات Bash على بيئة Windows.
 
+---
+
+## ⚡ 6. دليل القدرات الخارقة المتقدمة في Wails v3 (Wails v3 Advanced Capabilities & Recipes)
+
+يقدم هذا القسم نماذج تنفيذية برمجية جاهزة للاستخدام لاستثمار كامل قدرات محرك Wails v3 داخل Grido Studio:
+
+### 1. معمارية النوافذ المتعددة المستقلة (Multi-Window Architecture)
+في Wails v3، لم نعد محصورين بنافذة واحدة. يمكن فتح شاشات مستقلة لمعاينة الطباعة، أدوات الذكاء الاصطناعي، أو شاشة العميل:
+
+```go
+// فتح نافذة معاينة الطباعة على شاشة ثانية
+func (a *App) OpenPrintPreviewWindow(previewData any) {
+    app := application.Get()
+    
+    // فحص ما إذا كانت النافذة مفتوحة مسبقاً لإيقاظها
+    if win, exists := app.Window.GetByName("print-preview"); exists {
+        win.Restore()
+        win.Focus()
+        return
+    }
+
+    previewWin := app.Window.NewWithOptions(application.WebviewWindowOptions{
+        Name:   "print-preview",
+        Title:  "معاينة الطباعة - Grido Studio",
+        Width:  1100,
+        Height: 800,
+        MinWidth: 800,
+        MinHeight: 600,
+        URL:    "/print-preview",
+        Windows: application.WindowsWindow{
+            BackdropType: application.Mica,
+        },
+    })
+    
+    // إرسال البيانات للنافذة الجديدة فور جهوزيتها
+    previewWin.OnWindowEvent(events.Common.WindowRuntimeReady, func(_ *application.WindowEvent) {
+        previewWin.EmitEvent("init-print-data", previewData)
+    })
+}
+```
+
+### 2. دعم خامات Windows 11 الأصلية (Native Mica & Acrylic Backdrops)
+لتطبيق خامة Mica أو Acrylic الشفافة الأصلية لويندوز 11 المتوافقة مع معيار Fluent 2:
+```go
+winOptions := application.WebviewWindowOptions{
+    Frameless:        true,
+    BackgroundType:   application.BackgroundTypeTranslucent,
+    BackgroundColour: application.NewRGBA(0, 0, 0, 0), // شفافية كاملة
+    Windows: application.WindowsWindow{
+        BackdropType:           application.Mica, // أو application.Acrylic
+        NonClientRegionSupport: true, // سحب سلس لشريط العنوان الأصلي
+    },
+}
+```
+
+### 3. الإشعارات التفاعلية لنظام التشغيل (Windows Toast Notifications)
+إرسال تنبيهات أصلية من ويندوز عند اكتمال تصدير كميات كبيرة من الصور أو انتهاء معالجة الذكاء الاصطناعي:
+```go
+import "github.com/wailsapp/wails/v3/pkg/services/notifications"
+
+func (a *App) NotifyExportComplete(exportDir, previewImagePath string, count int) {
+    notificationSvc := notifications.New()
+    
+    notificationSvc.Send(&notifications.NotificationOptions{
+        Title:    "اكتمل التصدير بنجاح",
+        Subtitle: "Grido Studio",
+        Body:     fmt.Sprintf("تم تصدير %d صورة بدقة طباعة فائقة.", count),
+        Attachments: []notifications.NotificationAttachment{
+            {
+                URL: previewImagePath, // معاينة مصغرة داخل الإشعار
+            },
+        },
+        Actions: []notifications.NotificationAction{
+            {
+                Identifier: "OPEN_FOLDER",
+                Label:      "فتح مجلد الحفظ",
+            },
+        },
+    }, func(response *notifications.NotificationResponse) {
+        if response.ActionIdentifier == "OPEN_FOLDER" {
+            application.Get().Browser.OpenURL(exportDir)
+        }
+    })
+}
+```
+
+### 4. تكامل صينية النظام (System Tray & Background Processing)
+إبقاء التطبيق يعمل في الخلفية لمعالجة مهام الذكاء الاصطناعي مع قائمة وصول سريعة:
+```go
+func SetupSystemTray(app *application.App) {
+    tray := app.SystemTray.New()
+    tray.SetIcon(trayIconBytes)
+    tray.SetTooltip("Grido Studio - محرر الصور والكولاج")
+
+    trayMenu := app.NewMenu()
+    trayMenu.Add("إظهار التطبيق").OnClick(func(_ *application.Context) {
+        if win, ok := app.Window.GetByName("main"); ok {
+            win.Show()
+            win.Focus()
+        }
+    })
+    trayMenu.AddSeparator()
+    trayMenu.Add("إنهاء Grido").OnClick(func(_ *application.Context) {
+        app.Quit()
+    })
+
+    tray.SetMenu(trayMenu)
+    tray.OnDoubleClick(func() {
+        if win, ok := app.Window.GetByName("main"); ok {
+            win.Show()
+            win.Focus()
+        }
+    })
+}
+```
+
+### 5. إلغاء العمليات الخلفية المتزامن (Cancellable RPC via Context)
+في Wails v3، أي دالة Go تستقبل `ctx context.Context` يمكن إلغاؤها من الواجهة فورياً:
+```go
+// في Go Backend
+func (s *ImageService) ProcessBatchAI(ctx context.Context, photoIDs []string) error {
+    for _, id := range photoIDs {
+        select {
+        case <-ctx.Done():
+            return errors.New("تم إلغاء العملية بواسطة المستخدم")
+        default:
+            // متابعة المعالجة
+        }
+    }
+    return nil
+}
+```
+وفي الواجهة الأمامية عبر TypeScript:
+```typescript
+// استدعاء قابل للإلغاء بضغطة زر
+const call = ImageService.ProcessBatchAI(selectedIds);
+
+// عند نقر المستخدم على زر "إلغاء":
+cancelBtn.onclick = () => {
+    call.cancel();
+};
+```
+
+### 6. دفق البيانات اللحظي المباشر (Bidirectional Streams)
+لدفق تقدم المعالجة أو نقل البيانات دون تعليق الـ Event Bus:
+```go
+app.HandleStream("ai-progress-stream", func(conn *application.StreamConn) {
+    defer conn.Close()
+    for progress := range aiProgressChan {
+        _ = conn.SendJSON(map[string]any{
+            "percent": progress.Percent,
+            "stage": progress.CurrentStage,
+        })
+    }
+})
+```
+
+
