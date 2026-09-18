@@ -577,7 +577,7 @@ export default function App() {
       <AccountLicenseModal />
       <UpdateNotifier />
 
-      <SonnerToaster position="top-center" duration={1500} closeButton />
+      <SonnerToaster position="top-center" duration={1500} offset={56} closeButton />
       <KeyboardShortcutsDialog />
     </div>
     </TooltipProvider>
