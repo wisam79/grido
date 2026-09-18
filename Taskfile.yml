@@ -1,5 +1,7 @@
 version: '3'
 
+dotenv: ['.env']
+
 vars:
   APP_NAME: "GridoStudio"
   BIN_DIR: "bin"
@@ -15,8 +17,9 @@ includes:
   windows: ./build/windows/Taskfile.yml
   darwin: ./build/darwin/Taskfile.yml
   linux: ./build/linux/Taskfile.yml
-  ios: ./build/ios/Taskfile.yml
-  android: ./build/android/Taskfile.yml
+  # ios and android are omitted for desktop platforms to prevent unix tool errors on Windows
+  # ios: ./build/ios/Taskfile.yml
+  # android: ./build/android/Taskfile.yml
 
 tasks:
   build:

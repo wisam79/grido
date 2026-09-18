@@ -4,7 +4,7 @@ Stop-Process -Name "GridoStudio*" -Force -ErrorAction SilentlyContinue
 Start-Sleep -Milliseconds 300
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host " 🚀 Grido Studio Local Build & Packaging Workflow" -ForegroundColor Cyan
+Write-Host " 🚀 Grido Studio Local Build & Packaging Workflow (Wails v3)" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 $envPath = ".env"
@@ -45,11 +45,14 @@ if (-not $appVersion) {
     $appVersion = "v1.3.40"
 }
 
-Write-Host " [2/3] Building Wails Desktop App & NSIS Installer ($appVersion)..." -ForegroundColor Green
-$ldflags = "-s -w -X grido/internal/service.AppVersion=$appVersion -X grido/internal/service.SupabaseURL=$supabaseUrl -X grido/internal/service.SupabaseAnonKey=$supabaseAnonKey -X grido/internal/service.ModalAIKey=$modalAiKey"
+Write-Host " [2/3] Building Wails v3 Desktop App ($appVersion)..." -ForegroundColor Green
+$env:APP_VERSION = $appVersion
+$env:SUPABASE_URL = $supabaseUrl
+$env:SUPABASE_ANON_KEY = $supabaseAnonKey
+$env:MODAL_AI_KEY = $modalAiKey
 
-wails build -nsis -clean -ldflags $ldflags
+wails3 task build
 
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host " 🎉 Build completed successfully! Executable saved to build\bin\" -ForegroundColor Green
+Write-Host " 🎉 Build completed successfully! Executable saved to bin\GridoStudio.exe" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
