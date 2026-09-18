@@ -286,7 +286,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
       {/* ظل خلفي ناعم يحاكي طاولة الاستوديو */}
       <div
         ref={paperRef}
-        className="relative bg-white dark:bg-card rounded-md transition-shadow overflow-hidden touch-none shadow-fluent-8 border border-border/40"
+        className="relative bg-white dark:bg-card rounded-md transition-shadow overflow-hidden touch-none shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.6)] dark:ring-1 dark:ring-white/12 border border-border/40"
         style={{
           width: paperAspect >= 1 ? "97%" : "auto",
           height: paperAspect < 1 ? "97%" : "auto",

@@ -11,7 +11,11 @@ export type TextPresetType =
   | "3d-title"
   | "outline-modern"
   | "photographer-tag"
-  | "caption-card";
+  | "caption-card"
+  | "congrats"
+  | "sale-offer"
+  | "certificate"
+  | "special-price";
 
 export interface TextPresetConfig {
   getText: () => string;
@@ -187,5 +191,57 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
     textBgBorderColor: "#cbd5e1",
     textBgBorderWidth: 1.5,
     height: 0.04,
+  },
+  congrats: {
+    getText: () => "ألف مبروك التخرج والنجاح",
+    fontSize: 38,
+    fontWeight: 800,
+    fontFamily: "Cairo, sans-serif",
+    color: "#047857",
+    shadowColor: "rgba(4, 120, 87, 0.35)",
+    shadowBlur: 10,
+    shadowOffsetY: 3,
+    shadowOpacity: 0.5,
+    height: 0.065,
+  },
+  "sale-offer": {
+    getText: () => "عروض كبرى · خصم 50%",
+    fontSize: 38,
+    fontWeight: 900,
+    fontFamily: "Changa, sans-serif",
+    color: "#ffffff",
+    textBgColor: "#dc2626",
+    textBgRadius: 10,
+    textBgPadding: 12,
+    shadowColor: "rgba(220, 38, 38, 0.4)",
+    shadowBlur: 12,
+    shadowOffsetY: 4,
+    shadowOpacity: 0.6,
+    height: 0.07,
+  },
+  certificate: {
+    getText: () => "شهادة شكر وتقدير",
+    fontSize: 40,
+    fontWeight: 800,
+    fontFamily: "Reem Kufi, sans-serif",
+    color: "#1e3a8a",
+    stroke: "#1e3a8a",
+    strokeWidth: 0.5,
+    shadowColor: "rgba(30, 58, 138, 0.25)",
+    shadowBlur: 8,
+    shadowOffsetY: 2,
+    shadowOpacity: 0.4,
+    height: 0.07,
+  },
+  "special-price": {
+    getText: () => "السعر: 25,000 د.ع فقط",
+    fontSize: 24,
+    fontWeight: 800,
+    fontFamily: "Tajawal, sans-serif",
+    color: "#ffffff",
+    textBgColor: "#0284c7",
+    textBgRadius: 8,
+    textBgPadding: 10,
+    height: 0.05,
   },
 };

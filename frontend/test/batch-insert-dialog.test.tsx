@@ -58,7 +58,7 @@ describe('BatchInsertDialog Component Tests', () => {
       <BatchInsertDialog open={true} onOpenChange={handleOpenChange} />
     );
 
-    const addFilesBtn = screen.getByText('إدراج صور...');
+    const addFilesBtn = screen.getByText('إدراج صور');
     fireEvent.click(addFilesBtn);
 
     await waitFor(() => {

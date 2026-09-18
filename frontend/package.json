@@ -5,6 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/ensure-bindings.mjs",
+    "prebuild:dev": "node scripts/ensure-bindings.mjs",
+    "pretypecheck": "node scripts/ensure-bindings.mjs",
+    "pretest": "node scripts/ensure-bindings.mjs",
+    "pretest:coverage": "node scripts/ensure-bindings.mjs",
     "build": "tsc && vite build",
     "build:dev": "vite build",
     "preview": "vite preview",

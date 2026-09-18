@@ -3,6 +3,8 @@ import {
   Stack, 
   FrameCorners, 
   GridFour, 
+  SquaresFour,
+  MagicWand,
   ArrowsOutSimple, 
   ArrowsInSimple,
   Stamp,
@@ -12,17 +14,19 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { WorkspacePanel, FreeformTab } from '@/hooks/use-workspace-panels';
+import { WorkspacePanel, FreeformTab, CollageTab } from '@/hooks/use-workspace-panels';
 import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
 
 interface WorkspacePanelRailProps {
   activePanel: WorkspacePanel;
   activeStudioTab?: FreeformTab;
+  activeCollageTab?: CollageTab;
   isTemplatesDrawerOpen?: boolean;
   isZenMode: boolean;
   onTogglePanel: (panel: 'templates' | 'properties') => void;
   onSelectStudioTab?: (tab: FreeformTab) => void;
+  onSelectCollageTab?: (tab: CollageTab) => void;
   onToggleZenMode: () => void;
   className?: string;
 }
@@ -30,21 +34,26 @@ interface WorkspacePanelRailProps {
 export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   activePanel,
   activeStudioTab = 'layers',
+  activeCollageTab = 'custom',
   isTemplatesDrawerOpen,
   isZenMode,
   onTogglePanel,
   onSelectStudioTab,
+  onSelectCollageTab,
   onToggleZenMode,
   className,
 }: WorkspacePanelRailProps) {
-  const { mode, elementsCount } = useEditorStore(
+  const { mode, elementsCount, collageTemplate } = useEditorStore(
     useShallow((state) => ({
       mode: state.mode,
       elementsCount: state.elements.length,
+      collageTemplate: state.collageTemplate,
     }))
   );
 
   const isTemplatesActive = activePanel === 'templates' || isTemplatesDrawerOpen;
+  const isCustomActive = collageTemplate?.id === 'collage-custom';
+  const isFreeformActive = typeof collageTemplate?.id === 'string' && collageTemplate.id.startsWith('freeform-');
 
   return (
     <aside
@@ -58,32 +67,116 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
       {/* 1. أدوات استوديو التصميم / الكولاج */}
       <div className="flex flex-col items-center gap-1.5">
         {mode === 'collage' ? (
-          /* وضع الكولاج: أداة القوالب والشبكات */
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onTogglePanel('templates')}
-                data-testid="rail-collage-templates"
-                aria-label="قوالب الكولاج والشبكة"
-                className={cn(
-                  'h-8 w-8 rounded-md transition-all cursor-pointer relative',
-                  isTemplatesActive
-                    ? 'bg-primary/15 text-primary hover:bg-primary/20 shadow-2xs font-bold'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
-                )}
-              >
-                <GridFour className="w-4.5 h-4.5" weight={isTemplatesActive ? 'fill' : 'regular'} />
-                {isTemplatesActive && (
-                  <span className="absolute right-0.5 top-1/2 -translate-y-1/2 w-0.75 h-4 bg-primary rounded-full" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="font-cairo text-xs font-semibold">
-              قوالب الكولاج والشبكة (Alt+1)
-            </TooltipContent>
-          </Tooltip>
+          /* وضع الكولاج: 3 أدوات رئيسية (الشبكة، القوالب، الكولاج الحر) */
+          <>
+            {/* 1. أداة شبكة الكولاج */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    onSelectCollageTab
+                      ? onSelectCollageTab('custom')
+                      : onTogglePanel('templates')
+                  }
+                  data-testid="rail-collage-grid"
+                  aria-label="شبكة الكولاج"
+                  className={cn(
+                    'h-8 w-8 rounded-md transition-all cursor-pointer relative',
+                    isTemplatesActive && activeCollageTab === 'custom'
+                      ? 'bg-primary/15 text-primary hover:bg-primary/20 shadow-2xs font-bold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
+                  )}
+                >
+                  <GridFour
+                    className="w-4.5 h-4.5"
+                    weight={isTemplatesActive && activeCollageTab === 'custom' ? 'fill' : 'regular'}
+                  />
+                  {isCustomActive && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-background animate-pulse pointer-events-none" />
+                  )}
+                  {isTemplatesActive && activeCollageTab === 'custom' && (
+                    <span className="absolute right-0.5 top-1/2 -translate-y-1/2 w-0.75 h-4 bg-primary rounded-full" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-cairo text-xs font-semibold">
+                شبكة الكولاج (Alt+1)
+              </TooltipContent>
+            </Tooltip>
+
+            {/* 2. أداة قوالب ونماذج الكولاج */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    onSelectCollageTab
+                      ? onSelectCollageTab('presets')
+                      : onTogglePanel('templates')
+                  }
+                  data-testid="rail-collage-presets"
+                  aria-label="قوالب الكولاج"
+                  className={cn(
+                    'h-8 w-8 rounded-md transition-all cursor-pointer relative',
+                    isTemplatesActive && activeCollageTab === 'presets'
+                      ? 'bg-primary/15 text-primary hover:bg-primary/20 shadow-2xs font-bold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
+                  )}
+                >
+                  <SquaresFour
+                    className="w-4.5 h-4.5"
+                    weight={isTemplatesActive && activeCollageTab === 'presets' ? 'fill' : 'regular'}
+                  />
+                  {isTemplatesActive && activeCollageTab === 'presets' && (
+                    <span className="absolute right-0.5 top-1/2 -translate-y-1/2 w-0.75 h-4 bg-primary rounded-full" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-cairo text-xs font-semibold">
+                قوالب الكولاج (Alt+2)
+              </TooltipContent>
+            </Tooltip>
+
+            {/* 3. أداة الكولاج الحر بالملم */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    onSelectCollageTab
+                      ? onSelectCollageTab('freeform')
+                      : onTogglePanel('templates')
+                  }
+                  data-testid="rail-collage-freeform"
+                  aria-label="كولاج حر بالملم"
+                  className={cn(
+                    'h-8 w-8 rounded-md transition-all cursor-pointer relative',
+                    isTemplatesActive && activeCollageTab === 'freeform'
+                      ? 'bg-primary/15 text-primary hover:bg-primary/20 shadow-2xs font-bold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
+                  )}
+                >
+                  <MagicWand
+                    className="w-4.5 h-4.5"
+                    weight={isTemplatesActive && activeCollageTab === 'freeform' ? 'fill' : 'regular'}
+                  />
+                  {isFreeformActive && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-background animate-pulse pointer-events-none" />
+                  )}
+                  {isTemplatesActive && activeCollageTab === 'freeform' && (
+                    <span className="absolute right-0.5 top-1/2 -translate-y-1/2 w-0.75 h-4 bg-primary rounded-full" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-cairo text-xs font-semibold">
+                كولاج حر بالملم (Alt+3)
+              </TooltipContent>
+            </Tooltip>
+          </>
         ) : (
           /* وضع التعديل الحر: استخراج التبويبات الثلاثة مباشرة للشريط */
           <>

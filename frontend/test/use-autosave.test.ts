@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useAutoSave } from "../src/hooks/use-autosave";
 import { useEditorStore } from "../src/lib/editor-store";
 import { renderHook, waitFor, act } from "@testing-library/react";
+import { LoadAutoSave, SaveAutoSave } from "../wailsjs/go/main/App";
 import { toast } from "sonner";
 
 // Mock sonner toast
@@ -11,6 +12,18 @@ vi.mock("sonner", () => ({
     success: vi.fn(),
     error: vi.fn(),
   },
+}));
+
+// جسر Wails v3: الوحدة تحت الاختبار (use-autosave.ts) تستورد من wailsjs/go/main/App
+// وهو جسر يدوي يعيد التصدير من bindings/grido عبر @wailsio/runtime ($Call.ByID)،
+// فلا يقرأ window.go إطلاقاً — لذا نحاكي وحدة الجسر نفسها بنمط المشروع
+// (انظر export-project.test.ts وApp.test.tsx) بدل حقن window.go (نمط v2 القديم).
+// ملاحظة: لا نستخدم importOriginal هنا — تحميل الجسر الحقيقي داخل الـfactory يفشل
+// في jsdom («Cannot read properties of undefined (reading 'config')» من @wailsio/runtime).
+vi.mock("../wailsjs/go/main/App", () => ({
+  LoadAutoSave: vi.fn(),
+  SaveAutoSave: vi.fn(),
+  ClearAutoSave: vi.fn(),
 }));
 
 describe("useAutoSave - Auto Save Hook Tests", () => {
@@ -34,8 +47,8 @@ describe("useAutoSave - Auto Save Hook Tests", () => {
       slots: [],
     });
 
-    const mockLoadAutoSave = vi.fn().mockResolvedValue(savedDraft);
-    (window as any).go.main.App.LoadAutoSave = mockLoadAutoSave;
+    const mockLoadAutoSave = vi.mocked(LoadAutoSave);
+    mockLoadAutoSave.mockResolvedValue(savedDraft);
 
     renderHook(() => useAutoSave());
 
@@ -47,9 +60,9 @@ describe("useAutoSave - Auto Save Hook Tests", () => {
   });
 
   it("should trigger SaveAutoSave after editing canvas elements", async () => {
-    const mockSaveAutoSave = vi.fn().mockResolvedValue(undefined);
-    (window as any).go.main.App.SaveAutoSave = mockSaveAutoSave;
-    (window as any).go.main.App.LoadAutoSave = vi.fn().mockResolvedValue("");
+    const mockSaveAutoSave = vi.mocked(SaveAutoSave);
+    mockSaveAutoSave.mockResolvedValue(undefined);
+    vi.mocked(LoadAutoSave).mockResolvedValue("");
 
     // مؤقتات وهمية بدل انتظار debounce الحقيقي (ثانيتان) — أسرع ودون اعتماد على توقيت حقيقي
     vi.useFakeTimers();

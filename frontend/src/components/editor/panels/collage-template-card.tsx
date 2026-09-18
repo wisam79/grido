@@ -126,7 +126,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
           <span className={cn(
             "px-2 py-0.5 rounded-md font-mono text-mini font-bold border transition-colors",
             isActive
-              ? "bg-primary/15 text-primary border-primary/30"
+              ? "bg-card text-foreground border-border/80 dark:border-white/15 shadow-xs"
               : "bg-muted text-muted-foreground border-border/60"
           )}>
             {tpl.slots} صور

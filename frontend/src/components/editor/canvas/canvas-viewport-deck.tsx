@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -50,6 +50,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
     setCanvasZoom,
     mode,
     template,
+    rulerUnit,
     printSettings,
   } = useEditorStore(
     useShallow((state) => ({
@@ -70,6 +71,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
       setCanvasZoom: state.setCanvasZoom,
       mode: state.mode,
       template: state.template,
+      rulerUnit: state.rulerUnit,
       printSettings: state.printSettings,
     }))
   );
@@ -100,6 +102,21 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
     );
   });
 
+  const formattedDimensions = useMemo(() => {
+    if (rulerUnit === "px") {
+      return `${Math.round(canvasWidth)} × ${Math.round(canvasHeight)} px`;
+    }
+    const wMM = (canvasWidth / currentDpi) * 25.4;
+    const hMM = (canvasHeight / currentDpi) * 25.4;
+    if (rulerUnit === "cm") {
+      return `${(wMM / 10).toFixed(1)} × ${(hMM / 10).toFixed(1)} cm`;
+    }
+    if (rulerUnit === "in") {
+      return `${(wMM / 25.4).toFixed(2)} × ${(hMM / 25.4).toFixed(2)} in`;
+    }
+    return `${Math.round(wMM)} × ${Math.round(hMM)} mm`;
+  }, [rulerUnit, canvasWidth, canvasHeight, currentDpi]);
+
   return (
     <div
       className={cn(
@@ -116,7 +133,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             {activePaper ? activePaper.name.split(" (")[0] : "مخصص"}
           </span>
           <span className="text-xs text-muted-foreground/90 font-mono font-medium" dir="ltr">
-            {Math.round((canvasWidth / currentDpi) * 25.4)} × {Math.round((canvasHeight / currentDpi) * 25.4)} mm
+            {formattedDimensions}
           </span>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -329,7 +346,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
-                <span>ملاءمة الورقة للشاشة (100%)</span>
+                <span>المقياس الفعلي (100%)</span>
                 <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
               </div>
             </TooltipContent>

@@ -35,7 +35,7 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
   }, []);
 
   return (
-    <div className="inline-flex items-stretch h-full select-none title-bar-controls z-50">
+    <div className="inline-flex items-stretch h-full select-none title-bar-controls z-50" dir="ltr">
       {/* زر التصغير Minimize */}
       <button
         type="button"

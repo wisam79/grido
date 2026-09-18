@@ -1,0 +1,273 @@
+---
+name: wails-v3-runtime-mastery
+description: دليل وخريطة مهارة Wails v3 الشاملة لتطبيقات سطح المكتب (Architecture, Runtime APIs, Security Hardening, Windows Fluent Integration, Drag & Drop, Multi-Monitor & IPC) — المشروع يعمل حالياً على v3.0.0-beta.23
+---
+
+# 🚀 دليل احتراف محرك Wails v3 الشامل (Wails Runtime Mastery)
+
+يقدم هذا الدليل المرجعي كافة التقنيات والمعايير الهندسية المعتمدة لاستغلال أقصى قدرات محرك **Wails v3** ودمجه بسلاسة مع الواجهة الرسومية (React + Konva) والأنظمة الأساسية (خاصة Windows 10/11).
+
+> **الإصدار الفعلي:** `github.com/wailsapp/wails/v3 v3.0.0-beta.23`
+> **أداة البناء:** `wails3` CLI مع `Taskfile.yml`
+> **الحزمة الرئيسية:** `github.com/wailsapp/wails/v3/pkg/application`
+
+---
+
+## 🏛️ 1. المعمارية ودورة حياة التطبيق (Lifecycle & Architecture)
+
+### 1.1 إنشاء التطبيق والنافذة الرئيسية
+في Wails v3، يُفصل إنشاء التطبيق عن تكوين النوافذ:
+
+```go
+package main
+
+import (
+    "embed"
+    "github.com/wailsapp/wails/v3/pkg/application"
+)
+
+//go:embed all:frontend/dist
+var assets embed.FS
+
+func main() {
+    app := application.New(application.Options{
+        Name:        "Grido Studio",
+        Description: "Professional Photo & Collage Studio",
+        Services: []application.Service{
+            application.NewService(projectHandler),
+            application.NewService(printHandler),
+            application.NewService(licenseHandler),
+        },
+        Assets: application.AssetOptions{
+            Handler: customAssetHandler(assets),
+        },
+    })
+
+    mainWindow := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+        Title:     "Grido Studio",
+        Name:      "main",
+        Width:     1280,
+        Height:    800,
+        MinWidth:  900,
+        MinHeight: 600,
+        Frameless: true,
+        Windows: application.WindowsWindow{
+            BackdropType:           application.Mica,
+            NonClientRegionSupport: true,
+        },
+    })
+    _ = mainWindow
+
+    if err := app.Run(); err != nil {
+        println("Error:", err.Error())
+    }
+}
+```
+
+### 1.2 دورة حياة النافذة في Wails v3
+```go
+mainWindow.OnWindowEvent(events.Common.WindowCreated, func(_ *application.WindowEvent) {
+    // معادل OnDomReady — الواجهة جاهزة
+})
+
+mainWindow.OnWindowEvent(events.Common.WindowClosing, func(e *application.WindowEvent) {
+    // معادل OnBeforeClose — اعتراض الإغلاق
+    saveWindowState(mainWindow)
+})
+```
+
+**قاعدة ثابتة:** استخدم `Hidden: false` مع `StartState = application.WindowStateMaximised` دائماً، وتجنب `Hidden: true` + `time.Sleep` + `Show()` في goroutine.
+
+### 1.3 قفل المثيل الفردي (Single Instance Lock)
+```go
+app := application.New(application.Options{
+    SingleInstanceLock: &options.SingleInstanceLock{
+        UniqueId: "grido-studio-single-instance-lock-v1",
+        OnSecondInstanceLaunch: func(data options.SecondInstanceData) {
+            if win, ok := application.Get().Window.GetByName("main"); ok {
+                win.UnMinimise()
+                win.Show()
+                win.Focus()
+            }
+            for _, arg := range data.Args {
+                if isImageFile(arg) {
+                    application.Get().EmitEvent("file-opened", arg)
+                }
+            }
+        },
+    },
+})
+```
+
+---
+
+## 🛡️ 2. الأمان المتقدم (Windows Security & WebView2)
+
+### 2.1 حماية مسارات الصور المحلية (Symlink Path Traversal)
+```go
+func safeLocalImageHandler(w http.ResponseWriter, r *http.Request) {
+    requestedPath := r.URL.Query().Get("path")
+    resolved, err := filepath.EvalSymlinks(requestedPath)
+    if err != nil || !strings.HasPrefix(resolved, allowedBasePath) {
+        http.Error(w, "Forbidden", http.StatusForbidden)
+        return
+    }
+    http.ServeFile(w, r, resolved)
+}
+```
+
+### 2.2 رؤوس CSP للـ WebView2
+```go
+const cspHeader = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; " +
+    "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
+    "connect-src 'self' https://api.supabase.io;"
+```
+
+---
+
+## ⚡ 3. واجهات وقت التشغيل (Runtime APIs)
+
+### 3.1 النوافذ المتعددة (Multi-Window)
+```go
+func (a *App) OpenPrintPreviewWindow(previewData any) {
+    app := application.Get()
+    if win, exists := app.Window.GetByName("print-preview"); exists {
+        win.Restore(); win.Focus(); return
+    }
+    previewWin := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+        Name:   "print-preview",
+        Title:  "معاينة الطباعة - Grido Studio",
+        Width:  1100, Height: 800,
+        URL:    "/print-preview",
+        Windows: application.WindowsWindow{BackdropType: application.Mica},
+    })
+    previewWin.OnWindowEvent(events.Common.WindowRuntimeReady, func(_ *application.WindowEvent) {
+        previewWin.EmitEvent("init-print-data", previewData)
+    })
+}
+```
+
+### 3.2 خامات Windows 11 الأصلية (Mica & Acrylic)
+```go
+Windows: application.WindowsWindow{
+    BackdropType:           application.Mica, // أو application.Acrylic
+    NonClientRegionSupport: true,
+}
+```
+
+### 3.3 السحب والإفلات الأصلي (Native File Drag & Drop)
+```go
+mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {
+    files := e.Context().DroppedFiles()
+    x, y := e.Context().CursorPosition()
+    processed, _ := app.mediaSvc.ProcessMultipleOpenedFiles(files)
+    mainWindow.EmitEvent("native-file-drop", map[string]any{
+        "x": x, "y": y, "images": processed,
+    })
+})
+```
+
+### 3.4 الإشعارات الأصلية (Windows Toast Notifications)
+```go
+import "github.com/wailsapp/wails/v3/pkg/services/notifications"
+
+notificationSvc.Send(&notifications.NotificationOptions{
+    Title: "اكتمل التصدير",
+    Body:  fmt.Sprintf("تم تصدير %d صورة بنجاح.", count),
+    Actions: []notifications.NotificationAction{
+        {Identifier: "OPEN_FOLDER", Label: "فتح مجلد الحفظ"},
+    },
+}, func(response *notifications.NotificationResponse) {
+    if response.ActionIdentifier == "OPEN_FOLDER" {
+        application.Get().Browser.OpenURL(exportDir)
+    }
+})
+```
+
+### 3.5 صينية النظام (System Tray)
+```go
+func SetupSystemTray(app *application.App) {
+    tray := app.SystemTray.New()
+    tray.SetIcon(trayIconBytes)
+    tray.SetTooltip("Grido Studio")
+
+    menu := app.NewMenu()
+    menu.Add("إظهار التطبيق").OnClick(func(_ *application.Context) {
+        if win, ok := app.Window.GetByName("main"); ok { win.Show(); win.Focus() }
+    })
+    menu.AddSeparator()
+    menu.Add("إنهاء").OnClick(func(_ *application.Context) { app.Quit() })
+    tray.SetMenu(menu)
+    tray.OnDoubleClick(func() {
+        if win, ok := app.Window.GetByName("main"); ok { win.Show(); win.Focus() }
+    })
+}
+```
+
+### 3.6 الشاشات المتعددة والحافظة
+```go
+// الشاشات
+screens, _ := application.Get().GetScreens()
+// screen.Size.Width, screen.Size.Height, screen.IsPrimary
+
+// الحافظة
+text, _ := application.Get().Clipboard().Text()
+application.Get().Clipboard().SetText("نص منسوخ")
+```
+
+---
+
+## 📡 4. جسر الأحداث وإلغاء العمليات (IPC & Cancellable RPC)
+
+| النمط | الاستخدام | التوجيه |
+|:---|:---|:---|
+| **RPC (Go Service Bind)** | فتح الملفات، الحفظ، البيانات | دوال تُرجع `(result, error)` |
+| **EmitEvent / OnWindowEvent** | إشعارات خلفية، اكتمال معالجة | أحداث غير متزامنة |
+| **AssetServer Handler** | بث الصور والملفات الضخمة | HTTP مع `Cache-Control` |
+| **Cancellable Context** | عمليات AI طويلة | `ctx.Done()` في goroutine |
+
+```go
+// Go — قابل للإلغاء من الواجهة
+func (s *ImageService) ProcessBatchAI(ctx context.Context, photoIDs []string) error {
+    for _, id := range photoIDs {
+        select {
+        case <-ctx.Done():
+            return errors.New("تم إلغاء العملية")
+        default:
+            // متابعة المعالجة
+        }
+    }
+    return nil
+}
+```
+
+```typescript
+// TypeScript
+const call = ImageService.ProcessBatchAI(selectedIds);
+cancelBtn.onclick = () => call.cancel();
+```
+
+---
+
+## 🔧 5. أخطاء شائعة وحلولها
+
+| المشكلة | السبب | الحل |
+|:---|:---|:---|
+| النافذة تنغلق فوراً | `CGO_ENABLED=0` مع `go-sqlite3` | تأكد من GCC + `CGO_ENABLED: '1'` في Taskfile |
+| وضع التطوير يفتح المتصفح فقط | انهيار Go في الخلفية | راجع `%AppData%\GridoStudio\logs\grido.log` |
+| متغيرات البيئة لا تُحقن | Wails v3 لا يحقنها تلقائياً | استخدم `ldflags` صريحة في `Taskfile.yml` |
+| تحذيرات `uname`/`tail` | قوالب ios/android في includes | استبعدها من `Taskfile.yml` |
+
+---
+
+## 🎯 6. قائمة تحقق الجودة
+
+- [x] الخدمات مسجّلة عبر `application.NewService(...)` في `Options.Services`
+- [x] كاش WebView2 مخصص داخل AppData عبر `WebviewUserDataPath`
+- [x] النافذة Frameless مع Mica أو Acrylic على Windows 11
+- [x] قفل المثيل يوجه وسائط CLI للنافذة الأولى
+- [x] فحص مسارات الصور ضد Symlink Path Traversal
+- [x] دعم السحب والإفلات عبر `WindowFilesDropped`
+- [x] استعادة موضع النافذة مشروطة بوجود النقطة داخل شاشة متصلة
+- [x] رؤوس CSP تدعم `wasm-unsafe-eval`
+- [x] `CGO_ENABLED=1` في جميع مهام البناء

@@ -336,7 +336,7 @@ export function BatchInsertDialog({
               className="h-8 rounded-md gap-1.5 text-xs font-medium border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
             >
               <Plus className="w-3.5 h-3.5 shrink-0" weight="bold" />
-              إدراج صور...
+              إدراج صور
             </Button>
 
             <Button
@@ -347,7 +347,7 @@ export function BatchInsertDialog({
               className="h-8 rounded-md gap-1.5 text-xs font-medium border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
             >
               <FolderOpen className="w-3.5 h-3.5 shrink-0" weight="bold" />
-              إدراج مجلد...
+              إدراج مجلد
             </Button>
           </div>
 

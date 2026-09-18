@@ -254,18 +254,18 @@ export function SlotProperties({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={slot.flipX ? "secondary" : "outline"}
+                variant="outline"
                 size="sm"
                 className={cn(
                   "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
-                  slot.flipX && "bg-primary/15 text-primary border-primary/40 font-bold"
+                  slot.flipX && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
                 )}
                 onClick={() => {
                   onUpdate(slot.id, { flipX: !slot.flipX });
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipHorizontal className="w-4 h-4" weight={slot.flipX ? "fill" : "regular"} />
+                <FlipHorizontal className={cn("w-4 h-4", slot.flipX ? "text-primary" : "text-muted-foreground")} weight={slot.flipX ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">قلب أفقي</TooltipContent>
@@ -274,18 +274,18 @@ export function SlotProperties({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={slot.flipY ? "secondary" : "outline"}
+                variant="outline"
                 size="sm"
                 className={cn(
                   "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
-                  slot.flipY && "bg-primary/15 text-primary border-primary/40 font-bold"
+                  slot.flipY && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
                 )}
                 onClick={() => {
                   onUpdate(slot.id, { flipY: !slot.flipY });
                   useEditorStore.getState().pushHistory();
                 }}
               >
-                <FlipVertical className="w-4 h-4" weight={slot.flipY ? "fill" : "regular"} />
+                <FlipVertical className={cn("w-4 h-4", slot.flipY ? "text-primary" : "text-muted-foreground")} weight={slot.flipY ? "fill" : "regular"} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">قلب عمودي</TooltipContent>

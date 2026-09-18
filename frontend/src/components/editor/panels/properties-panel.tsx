@@ -6,7 +6,7 @@ import { ElementProperties } from "../properties/element-properties";
 import { SlotProperties } from "../properties/slot-properties";
 import { CollageSettings } from "../properties/collage-settings";
 import { PanelShell } from "./panel-shell";
-import { SlidersHorizontal, FileText, CaretLeft, Image as ImageIcon, TextAa, Shapes, SquaresFour } from "@phosphor-icons/react";
+import { SlidersHorizontal, FileText, CaretRight, Image as ImageIcon, TextAa, Shapes, SquaresFour } from "@phosphor-icons/react";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
 
@@ -102,7 +102,7 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
       title={panelTitle}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
-      collapseIcon={<CaretLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all" weight="bold" />}
+      collapseIcon={<CaretRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" weight="bold" />}
       className="bg-transparent select-none"
     >
       <div className="space-y-3">

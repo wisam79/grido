@@ -218,13 +218,17 @@ describe('Component Testing: UI Rendering', () => {
     useEditorStore.setState({ mode: 'collage' });
     render(<TemplatePanel />);
 
-    expect(await screen.findAllByText('القوالب')).not.toHaveLength(0);
-    // التحقق من أن تبويب الشبكة هو التبويب الافتراضي عند فتح التطبيق
+    // العنوان السياقي الافتراضي هو "شبكة الكولاج" مع محتوى أبعاد الشبكة
+    expect(await screen.findByText('شبكة الكولاج')).toBeInTheDocument();
+    // التحقق من أن محتوى تبويب الشبكة هو التبويب الافتراضي عند فتح التطبيق
     expect(await screen.findByText('أبعاد الشبكة')).toBeInTheDocument();
+  }, 15000);
 
-    // التبديل إلى تبويب القوالب
-    const presetsTab = await screen.findByText('قوالب');
-    fireEvent.click(presetsTab);
+  it('renders collage presets panel correctly', async () => {
+    useEditorStore.setState({ mode: 'collage' });
+    render(<TemplatePanel activeCollageTab="presets" />);
+
+    // التحقق من عرض محتوى تبويب القوالب مباشرة
     expect(await screen.findByText('طقم سفر')).toBeInTheDocument();
   }, 15000);
 });

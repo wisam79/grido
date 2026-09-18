@@ -61,16 +61,10 @@ if (typeof window !== 'undefined') {
 
 import { StageProvider } from '@/lib/canvas/stage-context'
 
-if (typeof window !== "undefined" && !window.go) {
-  window.addEventListener("contextmenu", (e) => {
-    if (import.meta.env.PROD) {
-      const target = e.target as HTMLElement;
-      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-      if (!isInput) {
-        e.preventDefault();
-      }
-    }
-  });
+// 🛑 Wails v3 لا يحقن window.go (واجهة v2 القديمة) إطلاقاً ⇒ الشرط `!window.go`
+// كان صحيحاً دائماً في الإنتاج، فيُركَّب محاكي خلفية يُخفي أي فشل حقيقي للجسر.
+// المحاكي الآن محصور في وضع التطوير (Vite dev / Playwright E2E) حيث لا خلفية Go.
+if (import.meta.env.DEV && typeof window !== "undefined" && !window.go) {
   const mockImage = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc4MDAnIGhlaWdodD0nNjAwJz48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWxsPScjNjM2NmYxJy8+PHRleHQgeD0nNTAlJyB5PSc1MCUnIGRvbWluYW50LWJhc2VsaW5lPSdtaWRkbGUnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3doaXRlJyBmb250LXNpemU9JzMyJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZic+R3JpZG8gU3R1ZGlvIE1vY2sgSW1hZ2U8L3RleHQ+PC9zdmc+";
   window.go = {
     main: {
@@ -91,6 +85,17 @@ if (typeof window !== "undefined" && !window.go) {
       }
     }
   };
+}
+
+// منع قائمة السياق الافتراضية للمتصفح في نسخة الإنتاج (خارج حقول الإدخال)
+if (typeof window !== "undefined" && import.meta.env.PROD) {
+  window.addEventListener("contextmenu", (e) => {
+    const target = e.target as HTMLElement;
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+    if (!isInput) {
+      e.preventDefault();
+    }
+  });
 }
 
 const container = document.getElementById('root')

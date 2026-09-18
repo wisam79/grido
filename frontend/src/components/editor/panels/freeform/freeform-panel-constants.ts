@@ -42,24 +42,173 @@ export const QUICK_SHAPES: QuickShapeItem[] = [
   { id: "arrow", label: "سهم", shape: "path", svgPath: SHAPE_PATH_ARROW, color: "#ea580c" },
 ];
 
+export type TextPresetCategory = "all" | "titles" | "effects" | "badges" | "phrases";
+
+export interface TextFilterOption {
+  id: string;
+  label: string;
+}
+
+export const TEXT_FILTER_OPTIONS: TextFilterOption[] = [
+  { id: "all", label: "الكل" },
+  { id: "effects", label: "تأثيرات" },
+  { id: "badges", label: "شارات" },
+  { id: "phrases", label: "عبارات" },
+];
+
 export interface QuickTextItem {
   id: TextPresetType;
   label: string;
   description: string;
+  category: "titles" | "effects" | "badges" | "phrases";
   previewColor: string;
+  sampleText?: string;
 }
 
 export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
-  { id: "heading", label: "عنوان رئيسي", description: "خط عريض بارز", previewColor: "#0f172a" },
-  { id: "subheading", label: "عنوان فرعي", description: "خط متوسط أنيق", previewColor: "#334155" },
-  { id: "gold-luxury", label: "ذهبي فاخر", description: "تدرج ذهبي ملكي", previewColor: "#d97706" },
-  { id: "neon-glow", label: "نيون متوهج", description: "توهج أزرق سيبراني", previewColor: "#00f0ff" },
-  { id: "stamp-circle", label: "ختم دائري", description: "نص مقوّس رسمي", previewColor: "#dc2626" },
-  { id: "3d-title", label: "ثلاثي الأبعاد", description: "ظل 3D مجسم", previewColor: "#4338ca" },
-  { id: "badge", label: "شارة ملونة", description: "نص داخل خلفية كبسولة", previewColor: "#2563eb" },
-  { id: "outline-modern", label: "حدود عصرية", description: "نص مفرغ مع إطار", previewColor: "#059669" },
-  { id: "watermark", label: "علامة مائية", description: "نص مائل شبه شفاف", previewColor: "#94a3b8" },
-  { id: "studio-date", label: "تاريخ الاستوديو", description: "تاريخ وبصمة تصوير", previewColor: "#64748b" },
+  // 🏷️ 1. هرمية العناوين الأساسية
+  {
+    id: "heading",
+    label: "عنوان رئيسي",
+    description: "خط عريض وبارز",
+    category: "titles",
+    previewColor: "#0f172a",
+    sampleText: "عنوان رئيسي",
+  },
+  {
+    id: "subheading",
+    label: "عنوان فرعي",
+    description: "خط متوسط أنيق",
+    category: "titles",
+    previewColor: "#334155",
+    sampleText: "عنوان فرعي",
+  },
+  {
+    id: "body",
+    label: "نص فقرة",
+    description: "نص توضيحي وشرح مريح",
+    category: "titles",
+    previewColor: "#475569",
+    sampleText: "اكتب وصفاً أو تفاصيل...",
+  },
+
+  // ✨ 2. تأثيرات فنية واحترافية
+  {
+    id: "gold-luxury",
+    label: "ذهبي فاخر",
+    description: "تدرج ذهبي ملكي متوهج",
+    category: "effects",
+    previewColor: "#d97706",
+    sampleText: "استوديو الفخامة",
+  },
+  {
+    id: "neon-glow",
+    label: "نيون متوهج",
+    description: "إشعاع سيبراني أزرق",
+    category: "effects",
+    previewColor: "#00f0ff",
+    sampleText: "NEON GLOW",
+  },
+  {
+    id: "3d-title",
+    label: "ثلاثي الأبعاد",
+    description: "ظل 3D مجسم وعميق",
+    category: "effects",
+    previewColor: "#6366f1",
+    sampleText: "إصدار مجسم 3D",
+  },
+  {
+    id: "outline-modern",
+    label: "حدود عصرية",
+    description: "نص مفرغ مع إطار دقيق",
+    category: "effects",
+    previewColor: "#059669",
+    sampleText: "MODERN DESIGN",
+  },
+
+  // 🛡️ 3. شارات وتوثيق
+  {
+    id: "badge",
+    label: "شارة كبسولة",
+    description: "نص داخل خلفية كبسولة",
+    category: "badges",
+    previewColor: "#2563eb",
+    sampleText: "استوديو احترافي",
+  },
+  {
+    id: "studio-date",
+    label: "تاريخ الاستوديو",
+    description: "تاريخ وبصمة تصوير اليوم",
+    category: "badges",
+    previewColor: "#64748b",
+    sampleText: "تاريخ الاستوديو",
+  },
+  {
+    id: "photographer-tag",
+    label: "بصمة المصور",
+    description: "توثيق حقوق الاستوديو والمصور",
+    category: "badges",
+    previewColor: "#475569",
+    sampleText: "تصوير: الاستوديو",
+  },
+  {
+    id: "watermark",
+    label: "علامة مائية",
+    description: "نص مائل شبه شفاف للحماية",
+    category: "badges",
+    previewColor: "#94a3b8",
+    sampleText: "مسودة غير معتمدة",
+  },
+  {
+    id: "caption-card",
+    label: "بطاقة وصف",
+    description: "إطار كرت مع حواف ناعمة",
+    category: "badges",
+    previewColor: "#1e293b",
+    sampleText: "بطاقة توثيق مؤطرة",
+  },
+
+  // 💬 4. عبارات ومناسبات
+  {
+    id: "congrats",
+    label: "تهنئة وتخرج",
+    description: "ألف مبروك التخرج والنجاح",
+    category: "phrases",
+    previewColor: "#047857",
+    sampleText: "ألف مبروك النجاح",
+  },
+  {
+    id: "sale-offer",
+    label: "عروض وخصومات",
+    description: "عروض كبرى · خصم 50%",
+    category: "phrases",
+    previewColor: "#dc2626",
+    sampleText: "عروض كبرى 50%",
+  },
+  {
+    id: "certificate",
+    label: "شهادة تقدير",
+    description: "شهادة شكر وتقدير رسمية",
+    category: "phrases",
+    previewColor: "#1e3a8a",
+    sampleText: "شهادة شكر وتقدير",
+  },
+  {
+    id: "stamp-circle",
+    label: "ختم مقوّس",
+    description: "نص مقوّس رسمي بحبر قرمزي",
+    category: "phrases",
+    previewColor: "#dc2626",
+    sampleText: "معتمد وموثق رسمي",
+  },
+  {
+    id: "special-price",
+    label: "شارة تسعير",
+    description: "السعر: 25,000 د.ع فقط",
+    category: "phrases",
+    previewColor: "#0284c7",
+    sampleText: "السعر: 25,000 د.ع",
+  },
 ];
 
 export interface CanvasSizePreset {

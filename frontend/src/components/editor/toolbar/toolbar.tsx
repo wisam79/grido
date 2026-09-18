@@ -13,7 +13,6 @@ import {
   TooltipBtn,
   ToolbarAddTools,
   ToolbarHistoryTools,
-  TemplateInfo,
 } from "./toolbar-items";
 import {
   DropdownMenu,
@@ -53,56 +52,57 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           <ToolbarHistoryTools />
         </div>
 
-        {/* المنتصف: معلومات القالب والمقاس */}
-        <div className="flex-1 flex items-center justify-center min-w-0">
-          <TemplateInfo />
-        </div>
+        {/* فاصل مرن بين الأدوات والإجراءات */}
+        <div className="flex-1 min-w-0" />
 
-        {/* المجموعة 4: الحفظ والتصدير والطباعة بتسلسل هرمي وقائمة المزيد */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* حفظ (Ctrl+S) */}
-          <TooltipBtn content="حفظ المشروع (Ctrl + S)">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSave}
-              data-testid="toolbar-save"
-              aria-label="حفظ المشروع"
-              className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
-            >
-              <FloppyDisk className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" weight="duotone" />
-              <span className="hidden xl:inline">حفظ</span>
-            </Button>
-          </TooltipBtn>
+        {/* المجموعة 4: الحفظ والطباعة والتصدير في مجموعة أوامر موحدة */}
+        <div className="flex items-center gap-1 shrink-0">
+          <div className="fluent-command-group shadow-2xs">
+            {/* حفظ (Ctrl+S) */}
+            <TooltipBtn content="حفظ المشروع (Ctrl + S)">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onSave}
+                data-testid="toolbar-save"
+                aria-label="حفظ المشروع"
+                className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
+              >
+                <FloppyDisk className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" weight="duotone" />
+                <span className="hidden xl:inline">حفظ</span>
+              </Button>
+            </TooltipBtn>
 
-          {/* طباعة (Ctrl+P) */}
-          <TooltipBtn content="طباعة المستند (Ctrl + P)">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPrint}
-              data-testid="toolbar-print"
-              aria-label="طباعة المستند"
-              className="h-8 px-2.5 gap-1.5 border border-border/80 dark:border-border bg-background/80 hover:bg-accent text-foreground rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] shadow-2xs group"
-            >
-              <PrintIcon className="w-4 h-4 group-hover:scale-105 transition-transform" />
-              <span className="hidden xl:inline">طباعة</span>
-            </Button>
-          </TooltipBtn>
+            {/* طباعة (Ctrl+P) */}
+            <TooltipBtn content="طباعة المستند (Ctrl + P)">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onPrint}
+                data-testid="toolbar-print"
+                aria-label="طباعة المستند"
+                className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
+              >
+                <PrintIcon className="w-4 h-4 group-hover:scale-105 transition-transform" />
+                <span className="hidden xl:inline">طباعة</span>
+              </Button>
+            </TooltipBtn>
 
-          {/* تصدير (Ctrl+E) - الإجراء البارز الأساسي */}
-          <TooltipBtn content="تصدير صورة (Ctrl + E)">
-            <Button
-              size="sm"
-              onClick={onExport}
-              data-testid="toolbar-export"
-              aria-label="تصدير صورة"
-              className="h-8 px-3.5 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98]"
-            >
-              <Export className="w-4 h-4" weight="bold" />
-              <span>تصدير</span>
-            </Button>
-          </TooltipBtn>
+            {/* تصدير (Ctrl+E) */}
+            <TooltipBtn content="تصدير صورة (Ctrl + E)">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onExport}
+                data-testid="toolbar-export"
+                aria-label="تصدير صورة"
+                className="h-8 px-2.5 gap-1.5 text-primary hover:text-primary hover:bg-primary/10 rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98] group"
+              >
+                <Export className="w-4 h-4 group-hover:scale-105 transition-transform" weight="bold" />
+                <span>تصدير</span>
+              </Button>
+            </TooltipBtn>
+          </div>
 
           {/* قائمة المزيد للإجراءات السريعة */}
           <DropdownMenu>

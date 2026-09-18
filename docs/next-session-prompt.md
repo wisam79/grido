@@ -6,7 +6,7 @@
 
 # استكمال خطة إصلاحات وتطوير Grido Studio
 
-أنت تكمل عملاً في مشروع `C:\projects\grido` (Grido Studio — تطبيق سطح مكتب Wails v2: Go backend + React/TypeScript/Konva frontend + صفحة هبوط admin-web بـ React+Vite+Tailwind v4 على Netlify).
+أنت تكمل عملاً في مشروع `C:\projects\grido` (Grido Studio — تطبيق سطح مكتب Wails v3: Go backend + React/TypeScript/Konva frontend + صفحة هبوط admin-web بـ React+Vite+Tailwind v4 على Netlify).
 
 اقرأ أولاً هذه الملفات قبل أي كود: `.agents/AGENTS.md` (قواعد إلزامية)، `docs/features-tracker.md` (حالة الميزات والإصلاحات المنفذة والمتبقية)، وملف المهمة الحالية عند الحاجة.
 
@@ -14,7 +14,7 @@
 
 إصلاحات مكتملة ومختبرة (go test ✅ / vitest جزئي ✅ / typecheck ✅ / vite build ✅):
 
-1. **L-1/L-4**: المحدِّث يتحقق من SHA-256 للمثبت قبل تشغيله (fail-closed عند عدم التطابق، تحذير+متابعة للإصدارات القديمة بلا بصمة) — `internal/service/updater.go` + فصل `runAsAdmin` لملفَي build-tag (`updater_windows.go`/`updater_other.go`). `UpdateInfo` صار فيه `sha256`، وُلّدت bindings من جديد بـ `wails generate module`، و`update-notifier.tsx` يمررها. `admin-web/netlify/functions/version.ts` يجلب البصمة من أصل `grido-checksums.txt` في الإصدار، و`.github/workflows/release.yml` يولّده عبر `Get-FileHash`.
+1. **L-1/L-4**: المحدِّث يتحقق من SHA-256 للمثبت قبل تشغيله (fail-closed عند عدم التطابق، تحذير+متابعة للإصدارات القديمة بلا بصمة) — `internal/service/updater.go` + فصل `runAsAdmin` لملفَي build-tag (`updater_windows.go`/`updater_other.go`). `UpdateInfo` صار فيه `sha256`، وُلّدت bindings من جديد بـ `wails3 generate bindings -ts -clean=true`، و`update-notifier.tsx` يمررها. `admin-web/netlify/functions/version.ts` يجلب البصمة من أصل `grido-checksums.txt` في الإصدار، و`.github/workflows/release.yml` يولّده عبر `Get-FileHash`.
 2. **AI-2/AI-3**: الحد اليومي للـ AI يُشتق خادمياً من خطة المستخدم (لا ثقة بالعميل) — `internal/service/ai_service.go` (planLimitFree=5/Pro=15/Enterprise=50 مع كاش 5 دقائق بمفتاح hash التوكن + جلب الخطة عبر Supabase REST) + migration جديدة `supabase/migrations/20260730000000_server_side_ai_quota.sql` (RPC يشتق الحد من profiles.plan ويدعم `p_check_only`) + `modal_ai/upscaler.py` فيه فحص رصيد مسبق قبل حرق GPU + إزالة مسار `X-Grido-Api-Key` الميت (تسجيل الدخول إلزامي).
 3. **L-3**: نظام تسجيل موحد — حُذف `internal/utils/logger.go`؛ `service/logger.go` يستخدم `utils.GetAppDir()` و`sync.Once`.
 4. **E-1**: `textBgColor` يُصيَّر في Konva (Rect خلف النص في `text-node.tsx`) + `text-editing-overlay.tsx` + `export-image.ts`.
@@ -27,7 +27,7 @@
 11. **P-1**: شريط «توزيع النسخ» في `print-dialog.tsx` (نسخ/ورقة 1–48 معطل خارج all + نمط تكرار all/row/column + فجوة 0–20مم + مفتاح خطوط قص).
 12. **AI-1/AI-6**: Web Worker حقيقي `frontend/src/workers/bg-removal.worker.ts` (النموذج محمّل كسلاً، الإلغاء=terminate قسري يوقف الاستدلال فوراً) + قياس حقيقي للمدة وcostUsd=0 للمعالجة المحلية.
 
-**قرارات يجب عدم نقضها:** `getSnapPositions` ليست ميتة (تستخدمها اختبارات)؛ حدود الحصة 5/15/50 متكررة عمداً في 3 مواضع متزامنة؛ ملفات `frontend/wailsjs/` مولّدة (gitignored).
+**قرارات يجب عدم نقضها:** `getSnapPositions` ليست ميتة (تستخدمها اختبارات)؛ حدود الحصة 5/15/50 متكررة عمداً في 3 مواضع متزامنة؛ ملفات `frontend/wailsjs/` **جسور يدوية مُتتبَّعة في Git** (وليست مولّدة) تعيد التصدير من `frontend/bindings/` المولَّدة والمُستثناة — **لا تشغّل `wails generate module` (أمر v2) ولا تعدّل `wailsjs/` يدوياً**؛ التوليد الصحيح: `wails3 generate bindings -ts -clean=true`.
 
 ## المهام المتبقية (نفّذها بالترتيب)
 

@@ -6,25 +6,25 @@ Welcome to the **Grido Studio** developer guide. This document provides an in-de
 
 ## 1. Architectural Overview
 
-Grido Studio is built as a hybrid desktop application utilizing **Wails v2** (Go backend) and **React + TypeScript** (Frontend).
+Grido Studio is built as a hybrid desktop application utilizing **Wails v3** (Go backend) and **React + TypeScript** (Frontend).
 
 ```mermaid
 graph TD
-    A[Wails Desktop Shell] --> B[Go Application Backend]
+    A[Wails v3 Desktop Shell] --> B[Go Application Backend - application.New]
     A --> C[Frontend Renderer HTML/JS/CSS]
     C --> D[Zustand State Store]
     C --> E[React-Konva Canvas]
     C --> F[Web Worker AI Engine]
-    B --> G[SQLite Local DB]
-    B --> H[Asset Server - /local-image/]
+    B --> G[SQLite Local DB via GORM]
+    B --> H[Secure Asset Server - /local-image/]
 ```
 
 ### Backend (Go)
-- **Framework:** [Wails v2](https://wails.io/) binds Go methods to JavaScript automatically.
-- **Wails App Lifecycle:** Defined in `app.go` (`App` struct). Key hooks include `startup` (initializes context) and `shutdown`.
-- **Database Repository:** SQLite is handled under `internal/repository/db.go`. It manages project serialization, saving, and loading.
-- **Media Directory:** Local files are written to a user-specific AppData directory (accessible via `getMediaDir()`).
-- **Custom Asset Handler:** Configured in `main.go` to serve local files. Wails maps the route `/local-image/*` directly to local files saved on disk in the application directory.
+- **Framework:** [Wails v3](https://v3.wails.io/) binds Go services and methods to TypeScript automatically via `@wailsio/runtime`.
+- **Wails App Lifecycle:** Initialized in `main.go` (`application.New`) with services registered via `application.NewService(...)`. Window lifecycle hooks include `OnWindowEvent` (`events.Common.WindowCreated`, `events.Common.WindowClosing`).
+- **Database Repository:** SQLite is handled under `internal/repository/db.go`. It manages project serialization, saving, and loading with `CGO_ENABLED=1`.
+- **Media Directory:** Local files are written to a user-specific AppData directory (accessible via `utils.GetAppDir()`).
+- **Custom Asset Handler:** Configured in `main.go` via `application.AssetOptions{Handler: ...}` to serve local files. Wails maps the route `/local-image/*` directly to local files saved on disk in the application directory with strict `filepath.EvalSymlinks` validation.
 
 ### Frontend (TypeScript + React)
 - **Framework:** Vite-powered React with TypeScript.
@@ -117,8 +117,18 @@ Background removal is powered by **`selfie_multiclass.tflite`** running entirely
 ### Local Development
 To run the application locally with hot-reloading enabled for both frontend and backend:
 ```bash
-wails dev
+wails3 task dev
 ```
+> Requires Wails v3 CLI: `go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.23`
+> The Vite dev server runs on `127.0.0.1:9245` (see `frontend/vite.config.ts` — keep `playwright.config.ts` in sync).
+
+> 🧱 Frontend bindings are generated into `frontend/bindings/` (git-ignored) and are required for
+> `tsc`/`vite build`:
+> ```bash
+> wails3 generate bindings -ts -clean=true
+> ```
+> `frontend/wailsjs/**` files are **hand-written shims** re-exporting those bindings — never regenerate
+> them with the Wails v2 CLI (`wails generate module`).
 
 ### Running Tests
 To verify all application layers compile and operate successfully:
@@ -144,6 +154,12 @@ npm run test:e2e
 ### Production Build
 To build the optimized production desktop binary:
 ```bash
-wails build
+wails3 task build
 ```
-The compiled executable will be placed in the `build/bin/` folder.
+The compiled executable will be placed in the `bin/` folder (`BIN_DIR` in `Taskfile.yml`).
+
+For the NSIS installer (requires `makensis` on PATH):
+```bash
+wails3 task package
+```
+The installer is produced at `build/windows/nsis/GridoStudio-installer.exe`.

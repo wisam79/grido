@@ -1,5 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// 🔌 منفذ خادم التطوير موحّد مع Vite/Wails v3 (vite.config.ts: port 9245 + strictPort)
+// كان 5173 هنا = تعارض مؤكد يجعل webServer لا يجهز أبداً ويفشل E2E بالمهلة.
+const DEV_SERVER_HOST = '127.0.0.1';
+const DEV_SERVER_PORT = 9245;
+const DEV_SERVER_URL = `http://${DEV_SERVER_HOST}:${DEV_SERVER_PORT}`;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -12,7 +18,7 @@ export default defineConfig({
   },
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: DEV_SERVER_URL,
     trace: 'on-first-retry',
   },
 
@@ -28,8 +34,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: `npm run dev -- --host ${DEV_SERVER_HOST} --port ${DEV_SERVER_PORT} --strictPort`,
+    url: DEV_SERVER_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

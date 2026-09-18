@@ -267,24 +267,31 @@ export function CollageCustomGridTab({
           </div>
         </div>
 
-        {/* إجراءات التعبئة السريعة للورقة — أزرار ثانوية متزنة بصرياً */}
-        <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+        {/* إجراءات التعبئة السريعة للورقة في مسار مجوف Fluent 2 */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
           <button
             type="button"
             onClick={handleFillSheet}
             title={`ملء كامل الورقة بأقصى عدد (${maxRows * maxCols} صورة)`}
             className={cn(
-              "h-8 px-2.5 rounded-lg text-mini font-medium font-sans transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+              "h-7 px-2.5 rounded-lg text-mini font-medium font-sans transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
               isMaxFill
-                ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-semibold"
-                : "bg-background/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70 hover:border-primary/40"
+                ? "bg-card text-foreground border-border/80 dark:border-white/15 shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent"
             )}
           >
             <span className="flex items-center gap-1.5 truncate font-sans">
-              <CornersOut className="w-3.5 h-3.5 shrink-0 text-primary" weight="bold" />
+              <CornersOut className={cn("w-3.5 h-3.5 shrink-0", isMaxFill ? "text-primary" : "text-muted-foreground")} weight="bold" />
               <span>ملء الورقة</span>
             </span>
-            <span className="text-micro font-mono font-medium px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
+            <span
+              className={cn(
+                "text-micro font-mono font-medium px-1.5 py-0.5 rounded border",
+                isMaxFill
+                  ? "bg-muted text-foreground border-border/70 font-bold"
+                  : "bg-muted/50 text-muted-foreground border-border/40"
+              )}
+            >
               {maxRows * maxCols}
             </span>
           </button>
@@ -294,17 +301,24 @@ export function CollageCustomGridTab({
             onClick={handleCornerStrip}
             title="شريط زاوية علوي (4 صور) لحفظ مساحة بقية الورقة"
             className={cn(
-              "h-8 px-2.5 rounded-lg text-mini font-medium font-sans transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+              "h-7 px-2.5 rounded-lg text-mini font-medium font-sans transition-all cursor-pointer select-none flex items-center justify-between border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
               rows === 1 && cols === Math.min(4, maxCols) && gridAlign === "top-left"
-                ? "bg-primary/10 text-primary border-primary/50 shadow-xs ring-1 ring-primary/25 font-semibold"
-                : "bg-background/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border/70 hover:border-primary/40"
+                ? "bg-card text-foreground border-border/80 dark:border-white/15 shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent"
             )}
           >
             <span className="flex items-center gap-1.5 truncate font-sans">
-              <Rows className="w-3.5 h-3.5 shrink-0 text-primary" weight="bold" />
+              <Rows className={cn("w-3.5 h-3.5 shrink-0", rows === 1 && cols === Math.min(4, maxCols) && gridAlign === "top-left" ? "text-primary" : "text-muted-foreground")} weight="bold" />
               <span>شريط سريع</span>
             </span>
-            <span className="text-micro font-mono font-medium px-1.5 py-0.5 rounded bg-muted/60 text-foreground/80 border border-border/40">
+            <span
+              className={cn(
+                "text-micro font-mono font-medium px-1.5 py-0.5 rounded border",
+                rows === 1 && cols === Math.min(4, maxCols) && gridAlign === "top-left"
+                  ? "bg-muted text-foreground border-border/70 font-bold"
+                  : "bg-muted/50 text-muted-foreground border-border/40"
+              )}
+            >
               {Math.min(4, maxCols)}
             </span>
           </button>
@@ -423,8 +437,8 @@ export function CollageCustomGridTab({
                 className={cn(
                   "h-[34px] px-2.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer select-none active:scale-[0.98]",
                   gridAlign === "top-left"
-                    ? "bg-primary/12 text-primary border-primary/60 shadow-xs font-bold ring-1 ring-primary/25"
-                    : "bg-background/80 hover:bg-muted text-foreground/80 hover:text-foreground border-border/70 hover:border-primary/40"
+                    ? "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
+                    : "bg-card/40 hover:bg-muted text-foreground/80 hover:text-foreground border-border/60 hover:border-border"
                 )}
               >
                 <div className="flex items-center gap-2 min-w-0">
@@ -432,7 +446,7 @@ export function CollageCustomGridTab({
                     className={cn(
                       "w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors",
                       gridAlign === "top-left"
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-primary/10 text-primary"
                         : "bg-muted/70 text-muted-foreground"
                     )}
                   >
@@ -444,7 +458,7 @@ export function CollageCustomGridTab({
                   className={cn(
                     "text-micro px-1.5 py-0.5 rounded-md border shrink-0 font-medium",
                     gridAlign === "top-left"
-                      ? "bg-primary/15 text-primary border-primary/30 font-bold"
+                      ? "bg-muted text-foreground border-border/70 font-bold"
                       : "bg-muted/50 text-muted-foreground border-border/40"
                   )}
                 >
@@ -459,8 +473,8 @@ export function CollageCustomGridTab({
                 className={cn(
                   "h-[34px] px-2.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-all border cursor-pointer select-none active:scale-[0.98]",
                   gridAlign === "center"
-                    ? "bg-primary/12 text-primary border-primary/60 shadow-xs font-bold ring-1 ring-primary/25"
-                    : "bg-background/80 hover:bg-muted text-foreground/80 hover:text-foreground border-border/70 hover:border-primary/40"
+                    ? "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
+                    : "bg-card/40 hover:bg-muted text-foreground/80 hover:text-foreground border-border/60 hover:border-border"
                 )}
               >
                 <div className="flex items-center gap-2 min-w-0">
@@ -468,7 +482,7 @@ export function CollageCustomGridTab({
                     className={cn(
                       "w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors",
                       gridAlign === "center"
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-primary/10 text-primary"
                         : "bg-muted/70 text-muted-foreground"
                     )}
                   >
@@ -480,7 +494,7 @@ export function CollageCustomGridTab({
                   className={cn(
                     "text-micro px-1.5 py-0.5 rounded-md border shrink-0 font-medium",
                     gridAlign === "center"
-                      ? "bg-primary/15 text-primary border-primary/30 font-bold"
+                      ? "bg-muted text-foreground border-border/70 font-bold"
                       : "bg-muted/50 text-muted-foreground border-border/40"
                   )}
                 >

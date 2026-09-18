@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { exportCanvas, downloadBlob, quickExportPNG } from "../src/lib/export";
 import { useEditorStore } from "../src/lib/editor-store";
+import { SaveFileDialog } from "../wailsjs/go/main/App";
 import { toast } from "sonner";
 
 // Mock sonner toast
@@ -10,6 +11,15 @@ vi.mock("sonner", () => ({
     error: vi.fn(),
     info: vi.fn(),
   },
+}));
+
+// جسر Wails v3: downloadBlob/quickExportPNG تستورد SaveFileDialog من wailsjs/go/main/App
+// (جسر يدوي يعيد التصدير من bindings/grido عبر @wailsio/runtime) — الحقن في window.go
+// (نمط v2) لا تأثير له، لذا نحاكي وحدة الجسر نفسها بنمط المشروع (export-project.test.ts).
+// ملاحظة: لا نستخدم importOriginal هنا — تحميل الجسر الحقيقي داخل الـfactory يفشل
+// في jsdom («Cannot read properties of undefined (reading 'config')» من @wailsio/runtime).
+vi.mock("../wailsjs/go/main/App", () => ({
+  SaveFileDialog: vi.fn(),
 }));
 
 describe("export-utils - Image/Project Export Utilities Tests", () => {
@@ -65,9 +75,8 @@ describe("export-utils - Image/Project Export Utilities Tests", () => {
   });
 
   it("should call SaveFileDialog during downloadBlob for image files", async () => {
-    const mockSaveFileDialog = vi.fn().mockResolvedValue("success");
-    // Inject custom mock for SaveFileDialog in the Wails global object
-    (window as any).go.main.App.SaveFileDialog = mockSaveFileDialog;
+    const mockSaveFileDialog = vi.mocked(SaveFileDialog);
+    mockSaveFileDialog.mockResolvedValue("success");
 
     const blob = new Blob(["mock-image-data"], { type: "image/png" });
     const result = await downloadBlob(blob, "photo.png");
@@ -77,8 +86,8 @@ describe("export-utils - Image/Project Export Utilities Tests", () => {
   });
 
   it("should trigger toast notifications for quickExportPNG success, cancel, and failures", async () => {
-    const mockSaveFileDialog = vi.fn().mockResolvedValue("success");
-    (window as any).go.main.App.SaveFileDialog = mockSaveFileDialog;
+    const mockSaveFileDialog = vi.mocked(SaveFileDialog);
+    mockSaveFileDialog.mockResolvedValue("success");
 
     // Case 1: Success
     await quickExportPNG();

@@ -9,26 +9,33 @@ description: دليل بناء وتغليف وتصغير حجم تطبيق Grido
 
 ---
 
-## 🛠️ 1. حقن متغيرات البناء (Ldflags Injection)
+## 🛠️ 1. حقن متغيرات البناء في Wails v3 (Ldflags & Taskfile Invariants)
 
-عند البناء المحلي أو عبر GitHub Actions، يجب دائماً حقن مفاتيح الخدمة ورقم الإصدار عبر خيارات `-ldflags`:
+في Wails v3، يتم حقن المفاتيح عبر متغيرات البيئة المعرفة في `Taskfile.yml` و `build/windows/Taskfile.yml`:
 
 ```powershell
-$ldflags = "-s -w " +
-  "-X grido/internal/service.AppVersion=$appVersion " +
-  "-X grido/internal/service.SupabaseURL=$supabaseUrl " +
-  "-X grido/internal/service.SupabaseAnonKey=$supabaseAnonKey " +
-  "-X grido/internal/service.ModalAIKey=$modalAiKey"
+# 1. إعداد متغيرات البيئة قبل البناء (أو الاعتماد على build.ps1)
+$env:CGO_ENABLED = "1"
+$env:APP_VERSION = $appVersion
+$env:SUPABASE_URL = $supabaseUrl
+$env:SUPABASE_ANON_KEY = $supabaseAnonKey
+$env:MODAL_AI_KEY = $modalAiKey
 
-wails build -platform windows/amd64 -nsis -ldflags $ldflags
+# 2. بناء الملف التنفيذي للإنتاج (المخرجات في bin/GridoStudio.exe):
+wails3 task build
+
+# 3. بناء مثبت الويندوز NSIS (المخرجات في build/windows/nsis/GridoStudio-installer.exe):
+wails3 task package
 ```
+
+> 🔒 يتم التعامل مع خيارات `-ldflags` تلقائياً عبر `build/windows/Taskfile.yml` لدمج `AppVersion` و `SupabaseURL` و `ModalAIKey` مع معلمات `-w -s -H windowsgui`.
 
 ---
 
 ## ⚙️ 2. تحسين مثبت الويندوز NSIS (NSIS Installer Invariants)
 
 1. **الرمز الموحد للملف التنفيذي:**
-   - يجب أن يظل اسم الملف التنفيذي موحداً بدون مسافات (`GridoStudio.exe`) لمنع تعطل التحديثات الصامتة.
+   - يجب أن يظل اسم الملف التنفيذي موحداً بدون مسافات (`GridoStudio.exe`) ومطابقاً لـ `APP_NAME: "GridoStudio"` في `Taskfile.yml` و `PRODUCT_EXECUTABLE` في `project.nsi`.
 
 2. **التنفيذ الصامت للأوامر في NSIS:**
    - يُمنع استخدام `ExecWait 'taskkill ...'` لتفادي ظهور نافذة CMD سوداء للمستخدم.
@@ -41,5 +48,5 @@ wails build -platform windows/amd64 -nsis -ldflags $ldflags
 
 ## 🚀 3. ضغط وتصغير حجم الملف المحمول (UPX Compression Protocol)
 
-- للحصول على أسرع زمن تشغيل وأصغر حجم ملف محمول، استخدم ضغط UPX بعد البناء:
-  `upx --best --lzma build/bin/GridoStudio.exe`
+- للحصول على أسرع زمن تشغيل وأصغر حجم ملف محمول، استخدم ضغط UPX بعد البناء على مسار Wails v3 الرسمي:
+  `upx --best --lzma bin/GridoStudio.exe`

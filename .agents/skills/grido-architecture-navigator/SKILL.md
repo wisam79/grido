@@ -12,8 +12,8 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
 ## 🏗️ 1. الهيكل العام ودليل الملفات (Directory Layout)
 
 ### 🔹 Go Backend (`/internal` & `/main.go`)
-- **[main.go](file:///c:/projects/grido/main.go):** مدخل التطبيق وتثبيت الـ Assets و Mime Types و Wails Runtime Options.
-- **[app.go](file:///c:/projects/grido/app.go):** الواجهة الرئيسية الرابطة بين Wails والخدمات (App struct).
+- **[main.go](file:///c:/projects/grido/main.go):** مدخل التطبيق في Wails v3 (`application.New`) وتثبيت الـ Assets Handler ومعالجات الميديا والخدمات (`application.NewService`) وخيارات النافذة الأصلية.
+- **[app.go](file:///c:/projects/grido/app.go):** الواجهة الرئيسية الرابطة بين Wails والخدمات (App struct المعرض للواجهة).
 - **`internal/core/domain/`**: الهياكل الأساسية والأنواع (Domain Models):
   - [print.go](file:///c:/projects/grido/internal/core/domain/print.go): `PrintRequest`, `PrintItem`, `CutLine`, `PrintResult`.
   - [user.go](file:///c:/projects/grido/internal/core/domain/user.go): `UserProfile`, `LicenseInfo`.
@@ -55,26 +55,30 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
   - **`canvas/`**: مساحة العمل والكانفاس (`editor-canvas.tsx`, `context-menu.tsx`, `canvas-rulers.tsx`, `canvas-quick-bar.tsx`, `text-editing-overlay.tsx`).
   - **`properties/`**: لوحات التحكم بالخصائص والألوان والتأثيرات (`element-properties.tsx`, `slot-properties.tsx`, `collage-settings.tsx`, `gradient-picker.tsx`, `shared-controls.tsx`).
   - **`konva/`**: محرك الرسم بـ Konva (`konva-canvas.tsx`, `konva-grid.tsx`, عقد العناصر `elements/`).
-- **`wailsjs/go/`**: الواجهات المولدة تلقائياً بواسطة Wails للتواصل بين JS ↔ Go (`main/App` و `models.ts`).
+- **`frontend/bindings/`**: الربطات الأصلية المولدة تلقائياً بواسطة Wails v3 عبر أمر `wails3 generate bindings -ts -clean=true` (مستثناة من Git).
+- **`frontend/wailsjs/`**: **جسور يدوية متتبعة في Git** تعيد التصدير من `frontend/bindings/` لضمان توافقية الاستيرادات وسهولة الصيانة (مثل `wailsjs/go/main/App.ts` → `bindings/grido/app`).
 
 ---
 
-## 🔄 2. تدفق البيانات والجسر التفاعلي (IPC Bridge Flow)
+## 🔄 2. تدفق البيانات والجسر التفاعلي (IPC Bridge Flow in Wails v3)
 
 ```mermaid
 graph TD
-    A["React UI (Events)"] -->|"useEditorStore.getState()"| B["Zustand Slice"]
-    B -->|"Wails Async Call"| C["Go Handler / App struct"]
-    C -->|"Go Service (Goroutines)"| D["Domain Processing / Disk / AI"]
-    D -->|"Return Data / Error"| C
-    C -->|"Resolve Promise (JSON/Model)"| B
-    B -->|"Re-render UI"| A
+    A["React UI (Events / Components)"] -->|"useEditorStore.getState()"| B["Zustand Slice / Action"]
+    B -->|"Wails v3 Runtime ($Call.ByID)"| C["Go Service / App struct"]
+    C -->|"Go Goroutines / Handlers"| D["Domain Services / SQLite / Disk / AI"]
+    D -->|"Return Result / Error"| C
+    C -->|"Resolve Promise (@wailsio/runtime)"| B
+    B -->|"Reactive State Update"| A
 ```
 
-### 💡 قواعد استدعاءات Wails الذهبية:
+### 💡 قواعد استدعاءات Wails v3 الذهبية:
 1. **استبقاء الأخطاء:** Wails يرجع الأخطاء كـ `string`. استخدم دائماً:
    `typeof err === "string" ? err : (err instanceof Error ? err.message : fallback)`
-2. **منع Stale Closures:** داخل معالجات الأحداث غير المتزامنة (مثل `handleDrop`) استخدم دائماً `useEditorStore.getState()` لقراءة أحدث حالة مباشرة لحظة وقوع الحدث.
+2. **منع Stale Closures:** داخل معالجات الأحداث غير المتزامنة (مثل `handleDrop` أو الحفظ التلقائي) استخدم دائماً `useEditorStore.getState()` لقراءة أحدث حالة مباشرة لحظة وقوع الحدث.
+3. **توليد وصيانة الربطات:** عند إضافة أي دالة جديدة في `app.go` أو خدمات Go، ولّد الربطات فوراً بالأمر:
+   `wails3 generate bindings -ts -clean=true`
+   ولا تستخدم إطلاقاً أدوات Wails v2 القديمة.
 
 ---
 

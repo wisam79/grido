@@ -34,6 +34,9 @@ interface CustomCollageCardProps {
   savedTemplates?: CollageTemplate[];
   onDeleteTemplate?: (id: string, e: React.MouseEvent) => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
+  activeTab?: "presets" | "custom" | "freeform";
+  onActiveTabChange?: (tab: "presets" | "custom" | "freeform") => void;
+  showInternalTabs?: boolean;
 }
 
 const CustomCollageCard = React.memo(function CustomCollageCard({
@@ -43,6 +46,9 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   savedTemplates = [],
   onDeleteTemplate,
   fileInputRef,
+  activeTab: propActiveTab,
+  onActiveTabChange,
+  showInternalTabs = false,
 }: CustomCollageCardProps) {
   const { canvasWidth, canvasHeight, printSettings, collageTemplate } =
     useEditorStore(
@@ -56,8 +62,20 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
   const storedDpi = printSettings?.dpi || 300;
 
-  // التبويب الرئيسي للوحة الكولاج (3 تبويبات متوازنة ورشيقة — الشبكة أولاً)
-  const [activeTab, setActiveTab] = useState<"presets" | "custom" | "freeform">("custom");
+  // التبويب الرئيسي للوحة الكولاج (الشبكة افتراضياً)
+  const [localActiveTab, setLocalActiveTab] = useState<"presets" | "custom" | "freeform">("custom");
+  const effectiveTab = propActiveTab ?? localActiveTab;
+
+  const handleTabChange = useCallback(
+    (nextTab: "presets" | "custom" | "freeform") => {
+      setLocalActiveTab(nextTab);
+      onActiveTabChange?.(nextTab);
+      if (nextTab === "freeform") {
+        setShowFreeformModal(true);
+      }
+    },
+    [onActiveTabChange]
+  );
 
   // تصنيف النماذج السريعة
   const [presetCategory, setPresetCategory] = useState<CollagePresetCategory>("all");
@@ -81,17 +99,22 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     setPrevTemplateId(activeTemplateId);
     if (activeTemplateId) {
       if (isCustomActive) {
-        setActiveTab("custom");
+        setLocalActiveTab("custom");
+        onActiveTabChange?.("custom");
       } else if (isFreeformActive) {
-        setActiveTab("freeform");
+        setLocalActiveTab("freeform");
+        onActiveTabChange?.("freeform");
       } else if (savedTemplates.some((p) => p.id === activeTemplateId)) {
-        setActiveTab("presets");
+        setLocalActiveTab("presets");
+        onActiveTabChange?.("presets");
         setPresetCategory("saved");
       } else if (STUDIO_COMBO_PRESETS.some((p) => p.id === activeTemplateId)) {
-        setActiveTab("presets");
+        setLocalActiveTab("presets");
+        onActiveTabChange?.("presets");
         setPresetCategory("combo");
       } else if (STUDIO_KEEPSAKE_PRESETS.some((p) => p.id === activeTemplateId)) {
-        setActiveTab("presets");
+        setLocalActiveTab("presets");
+        onActiveTabChange?.("presets");
         setPresetCategory("keepsake");
       }
     }
@@ -201,53 +224,49 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       setRows(adjustedRows);
       setCols(adjustedCols);
       // يُمنع استدعاء applyCustomCollage إلا إذا كان المستخدم فعلياً في تبويب الشبكة والقالب النشط مخصص
-      if (activeTab === "custom" && isCustomActive) {
+      if (effectiveTab === "custom" && isCustomActive) {
         applyCustomCollage(adjustedRows, adjustedCols, photoType, gridAlign);
       }
     }
-  }, [photoType, canvasWidth, canvasHeight, rows, cols, applyCustomCollage, gridAlign, storedDpi, activeTab, isCustomActive]);
+  }, [photoType, canvasWidth, canvasHeight, rows, cols, applyCustomCollage, gridAlign, storedDpi, effectiveTab, isCustomActive]);
 
   return (
     <div className="flex flex-col gap-2.5 font-cairo" dir="rtl">
-      {/* 🧭 شريط التبويبات الثلاثي الموحد والمتوازن بدون أي انضغاط — الشبكة أولاً */}
-      <FluentSegmentedControl
-        layoutId="collage-main-tabs"
-        options={[
-          {
-            id: "custom",
-            label: "شبكة",
-            icon: <GridFour className="w-4 h-4 text-primary" weight="duotone" />,
-            badge: isCustomActive ? (
-              <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
-            ) : undefined,
-          },
-          {
-            id: "presets",
-            label: "قوالب",
-            icon: <Stack className="w-4 h-4 text-primary" weight="duotone" />,
-          },
-          {
-            id: "freeform",
-            label: "حر",
-            icon: <MagicWand className="w-4 h-4 text-primary" weight="duotone" />,
-            badge: isFreeformActive ? (
-              <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
-            ) : undefined,
-          },
-        ]}
-        value={activeTab}
-        onChange={(val) => {
-          const next = val as "presets" | "custom" | "freeform";
-          setActiveTab(next);
-          if (next === "freeform") {
-            setShowFreeformModal(true);
-          }
-        }}
-        size="sm"
-      />
+      {/* 🧭 شريط التبويبات الثلاثي (يُعرض فقط عند الحاجة للشاشات المدمجة) */}
+      {showInternalTabs && (
+        <FluentSegmentedControl
+          layoutId="collage-main-tabs"
+          options={[
+            {
+              id: "custom",
+              label: "شبكة",
+              icon: <GridFour className="w-4 h-4 text-primary" weight="duotone" />,
+              badge: isCustomActive ? (
+                <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
+              ) : undefined,
+            },
+            {
+              id: "presets",
+              label: "قوالب",
+              icon: <Stack className="w-4 h-4 text-primary" weight="duotone" />,
+            },
+            {
+              id: "freeform",
+              label: "حر",
+              icon: <MagicWand className="w-4 h-4 text-primary" weight="duotone" />,
+              badge: isFreeformActive ? (
+                <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
+              ) : undefined,
+            },
+          ]}
+          value={effectiveTab}
+          onChange={(val) => handleTabChange(val as "presets" | "custom" | "freeform")}
+          size="sm"
+        />
+      )}
 
       {/* 1️⃣ تبويب تخصيص الشبكة الذاتي (صفوف وأعمدة ومقاسات رسمية) */}
-      {activeTab === "custom" && (
+      {effectiveTab === "custom" && (
         <CollageCustomGridTab
           rows={rows}
           cols={cols}
@@ -280,7 +299,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       )}
 
       {/* 2️⃣ تبويب القوالب المنسقة + المحفوظات */}
-      {activeTab === "presets" && (
+      {effectiveTab === "presets" && (
         <CollagePresetsTab
           presetCategory={presetCategory}
           onPresetCategoryChange={setPresetCategory}
@@ -294,7 +313,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       )}
 
       {/* 3️⃣ تبويب الكولاج الحر بالملم */}
-      {activeTab === "freeform" && (
+      {effectiveTab === "freeform" && (
         <div className="p-3.5 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
           <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shadow-2xs">
             <MagicWand className="w-5 h-5" weight="duotone" />

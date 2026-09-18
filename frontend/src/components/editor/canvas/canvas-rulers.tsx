@@ -99,7 +99,6 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                 <Ruler className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
                 <span>وحدة قياس المسطرة</span>
               </span>
-              <span className="text-micro text-muted-foreground/70 font-mono">Ctrl+R</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {RULER_UNITS.map((u) => {

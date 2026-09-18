@@ -306,11 +306,11 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
             title="قلب أفقي"
             className={cn(
               "h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              element.flipX && "bg-primary/10 border-primary/50 text-primary"
+              element.flipX && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
             )}
           >
             <FlipHorizontal
-              className="w-3.5 h-3.5 text-muted-foreground"
+              className={cn("w-3.5 h-3.5", element.flipX ? "text-primary" : "text-muted-foreground")}
               weight={element.flipX ? "fill" : "regular"}
             />
           </Button>
@@ -321,11 +321,11 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
             title="قلب عمودي"
             className={cn(
               "h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              element.flipY && "bg-primary/10 border-primary/50 text-primary"
+              element.flipY && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
             )}
           >
             <FlipVertical
-              className="w-3.5 h-3.5 text-muted-foreground"
+              className={cn("w-3.5 h-3.5", element.flipY ? "text-primary" : "text-muted-foreground")}
               weight={element.flipY ? "fill" : "regular"}
             />
           </Button>

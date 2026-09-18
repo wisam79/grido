@@ -92,7 +92,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
       collapsible
       defaultOpen={Boolean(showGrid || showColumns || showBleedGuides)}
       action={
-        <span className="text-micro text-muted-foreground font-mono bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md font-bold">
+        <span className="text-micro text-muted-foreground font-sans font-semibold bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md">
           {showGrid || showColumns || showBleedGuides ? "نشط" : "مخفي"}
         </span>
       }

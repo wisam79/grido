@@ -421,6 +421,26 @@
     height: 0 !important;
   }
 
+  /* شريط تمرير ناعم ومضغوط لنظام Fluent 2 لمنع ظهور عصا التمرير البدائية في WebView2 */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(125, 125, 125, 0.25);
+    border-radius: 999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(125, 125, 125, 0.45);
+  }
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(125, 125, 125, 0.25) transparent;
+  }
+
   /* أنماط تفاعل الكانفس لاستوديو الملصقات */
   .sticker-svg-interactive text,
   .sticker-svg-interactive textPath {

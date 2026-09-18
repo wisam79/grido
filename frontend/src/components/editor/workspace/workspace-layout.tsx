@@ -59,10 +59,12 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
         <WorkspacePanelRail
           activePanel={activePanel}
           activeStudioTab={panelsHook.activeStudioTab}
+          activeCollageTab={panelsHook.activeCollageTab}
           isTemplatesDrawerOpen={isTemplatesDrawerOpen}
           isZenMode={isZenMode}
           onTogglePanel={togglePanel}
           onSelectStudioTab={panelsHook.selectStudioTab}
+          onSelectCollageTab={panelsHook.selectCollageTab}
           onToggleZenMode={toggleZenMode}
         />
       )}

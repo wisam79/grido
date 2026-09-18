@@ -140,22 +140,22 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             onCommit={() => useEditorStore.getState().pushHistory()}
           />
 
-          {/* أزرار سماكة سريعة */}
-          <div className="grid grid-cols-5 gap-1 pt-0.5">
+          {/* أزرار سماكة سريعة في مسار مجوف Fluent 2 */}
+          <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
             {STROKE_WIDTH_PRESETS.map((preset) => {
               const currVal = isLine
                 ? (element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4)
                 : (element.strokeWidth ?? 0);
               const isActive = Math.round(currVal) === preset.val;
               return (
-                <Button
+                <button
                   key={preset.label}
                   type="button"
-                  variant="outline"
-                  size="sm"
                   className={cn(
-                    "h-6 px-1 text-micro font-semibold rounded-md border-border/70 hover:border-primary/40 hover:bg-primary/10 transition-all cursor-pointer",
-                    isActive && "bg-primary/15 text-primary border-primary/50 font-bold"
+                    "h-6 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
+                    isActive
+                      ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium"
                   )}
                   onClick={() => {
                     onUpdate(element.id, { strokeWidth: preset.val });
@@ -163,7 +163,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                   }}
                 >
                   {preset.label}
-                </Button>
+                </button>
               );
             })}
           </div>
@@ -201,19 +201,19 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               onCommit={() => useEditorStore.getState().pushHistory()}
             />
 
-            {/* أزرار استدارة سريعة */}
-            <div className="grid grid-cols-4 gap-1 pt-0.5">
+            {/* أزرار استدارة سريعة في مسار مجوف Fluent 2 */}
+            <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
               {CORNER_RADIUS_PRESETS.map((preset) => {
                 const isActive = (element.radius ?? 0) === preset.val;
                 return (
-                  <Button
+                  <button
                     key={preset.label}
                     type="button"
-                    variant="outline"
-                    size="sm"
                     className={cn(
-                      "h-6 px-1 text-micro font-semibold rounded-md border-border/70 hover:border-primary/40 hover:bg-primary/10 transition-all cursor-pointer",
-                      isActive && "bg-primary/15 text-primary border-primary/50 font-bold"
+                      "h-6 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
+                      isActive
+                        ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
+                        : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium"
                     )}
                     onClick={() => {
                       onUpdate(element.id, { radius: preset.val });
@@ -221,7 +221,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                     }}
                   >
                     {preset.label}
-                  </Button>
+                  </button>
                 );
               })}
             </div>
@@ -359,17 +359,17 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
 
-        {/* أزرار الشفافية السريعة */}
-        <div className="grid grid-cols-4 gap-1 pt-1">
+        {/* أزرار الشفافية السريعة في مسار مجوف Fluent 2 */}
+        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
           {OPACITY_PRESETS.map((pct) => (
-            <Button
+            <button
               key={pct}
               type="button"
-              variant="outline"
-              size="sm"
               className={cn(
-                "h-6 px-1 text-micro font-semibold rounded-md border-border/70 hover:border-primary/40 hover:bg-primary/10 transition-all cursor-pointer",
-                currentOpacity === pct && "bg-primary/15 text-primary border-primary/50 font-bold"
+                "h-6 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
+                currentOpacity === pct
+                  ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium"
               )}
               onClick={() => {
                 onUpdate(element.id, { opacity: pct / 100 });
@@ -377,7 +377,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
               }}
             >
               {pct}%
-            </Button>
+            </button>
           ))}
         </div>
       </FluentSection>

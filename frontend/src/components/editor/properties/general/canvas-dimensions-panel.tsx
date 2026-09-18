@@ -25,6 +25,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     setShowBleedGuides,
     setBleedMarginMM,
     setCutShapeType,
+    rulerUnit,
+    setRulerUnit,
   } = useEditorStore(useShallow((state) => ({
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
@@ -35,9 +37,11 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     setShowBleedGuides: state.setShowBleedGuides,
     setBleedMarginMM: state.setBleedMarginMM,
     setCutShapeType: state.setCutShapeType,
+    rulerUnit: state.rulerUnit,
+    setRulerUnit: state.setRulerUnit,
   })));
 
-  const [unit, setUnit] = useState<"px" | "mm">("px");
+  const activeUnit = rulerUnit === "px" ? "px" : "mm";
   const [widthVal, setWidthVal] = useState(canvasWidth.toString());
   const [heightVal, setHeightVal] = useState(canvasHeight.toString());
 
@@ -45,11 +49,11 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   useEffect(() => {
     const nextWidthVal =
-      unit === "px"
+      activeUnit === "px"
         ? canvasWidth.toString()
         : Number(((canvasWidth / currentDpi) * 25.4).toFixed(1)).toString();
     const nextHeightVal =
-      unit === "px"
+      activeUnit === "px"
         ? canvasHeight.toString()
         : Number(((canvasHeight / currentDpi) * 25.4).toFixed(1)).toString();
 
@@ -59,7 +63,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     });
 
     return () => cancelAnimationFrame(rafId);
-  }, [canvasWidth, canvasHeight, unit, currentDpi]);
+  }, [canvasWidth, canvasHeight, activeUnit, currentDpi]);
 
   const MIN_PX = 10;
   const MAX_PX = 20000;
@@ -74,13 +78,13 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     const num = parseFloat(widthVal);
     if (isNaN(num) || num <= 0) {
       setWidthVal(
-        unit === "px"
+        activeUnit === "px"
           ? canvasWidth.toString()
           : Number(((canvasWidth / currentDpi) * 25.4).toFixed(1)).toString()
       );
       return;
     }
-    if (unit === "px") {
+    if (activeUnit === "px") {
       const px = Math.max(MIN_PX, Math.min(MAX_PX, Math.round(num)));
       setWidthVal(px.toString());
       if (px !== canvasWidth) {
@@ -108,13 +112,13 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     const num = parseFloat(heightVal);
     if (isNaN(num) || num <= 0) {
       setHeightVal(
-        unit === "px"
+        activeUnit === "px"
           ? canvasHeight.toString()
           : Number(((canvasHeight / currentDpi) * 25.4).toFixed(1)).toString()
       );
       return;
     }
-    if (unit === "px") {
+    if (activeUnit === "px") {
       const px = Math.max(MIN_PX, Math.min(MAX_PX, Math.round(num)));
       setHeightVal(px.toString());
       if (px !== canvasHeight) {
@@ -237,7 +241,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           className="text-micro font-mono font-bold text-foreground/80 bg-muted/60 dark:bg-muted/40 border border-border/50 px-2 py-0.5 rounded-md shrink-0 select-none shadow-2xs" 
           dir="ltr"
         >
-          {unit === "px" 
+          {activeUnit === "px" 
             ? `${canvasWidth} × ${canvasHeight}` 
             : `${Number(((canvasWidth / currentDpi) * 25.4).toFixed(1))} × ${Number(((canvasHeight / currentDpi) * 25.4).toFixed(1))} mm`}
         </span>
@@ -278,7 +282,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               {PAPER_SIZES.map((p) => {
                 const nameParts = p.name.split(" (");
                 const mainName = nameParts[0].replace(" بوصة", "″");
-                const label = `${mainName} (${unit === "px" ? `${Math.round((p.widthMM * currentDpi) / 25.4)}×${Math.round((p.heightMM * currentDpi) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                const label = `${mainName} (${activeUnit === "px" ? `${Math.round((p.widthMM * currentDpi) / 25.4)}×${Math.round((p.heightMM * currentDpi) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
                 return (
                   <DropdownMenuItem
                     key={p.id}
@@ -294,7 +298,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               <DropdownMenuSeparator />
               <DropdownMenuLabel>كروت وبطاقات العمل</DropdownMenuLabel>
               {CARD_AND_LABEL_SIZES.filter((p) => p.category === "card").map((p) => {
-                const label = `${p.name} (${unit === "px" ? `${Math.round((p.widthMM * currentDpi) / 25.4)}×${Math.round((p.heightMM * currentDpi) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                const label = `${p.name} (${activeUnit === "px" ? `${Math.round((p.widthMM * currentDpi) / 25.4)}×${Math.round((p.heightMM * currentDpi) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
                 return (
                   <DropdownMenuItem
                     key={p.id}
@@ -310,7 +314,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               <DropdownMenuSeparator />
               <DropdownMenuLabel>ملصقات دائرية وتجارية</DropdownMenuLabel>
               {CARD_AND_LABEL_SIZES.filter((p) => p.category !== "card").map((p) => {
-                const label = `${p.name} (${unit === "px" ? `${Math.round((p.widthMM * currentDpi) / 25.4)}×${Math.round((p.heightMM * currentDpi) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
+                const label = `${p.name} (${activeUnit === "px" ? `${Math.round((p.widthMM * currentDpi) / 25.4)}×${Math.round((p.heightMM * currentDpi) / 25.4)} px` : `${p.widthMM}×${p.heightMM} مم`})`;
                 return (
                   <DropdownMenuItem
                     key={p.id}
@@ -329,10 +333,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           <div className="flex items-center bg-input/60 border border-border/80 rounded-md p-0.5 h-8 shrink-0 select-none shadow-2xs">
             <button
               type="button"
-              onClick={() => setUnit("px")}
+              onClick={() => setRulerUnit("px")}
               className={cn(
                 "px-2.5 h-full rounded text-mini font-mono transition-all cursor-pointer flex items-center justify-center select-none",
-                unit === "px"
+                activeUnit === "px"
                   ? "bg-card text-primary font-semibold shadow-2xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground font-normal"
               )}
@@ -341,10 +345,10 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             </button>
             <button
               type="button"
-              onClick={() => setUnit("mm")}
+              onClick={() => setRulerUnit("mm")}
               className={cn(
                 "px-2.5 h-full rounded text-mini font-mono transition-all cursor-pointer flex items-center justify-center select-none",
-                unit === "mm"
+                activeUnit === "mm"
                   ? "bg-card text-primary font-semibold shadow-2xs border border-border/40"
                   : "text-muted-foreground hover:text-foreground font-normal"
               )}
@@ -356,13 +360,13 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
         {/* سطر الأبعاد: العرض والارتفاع في بطاقة إحداثيات مدمجة مع زر التدوير */}
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5" dir="rtl">
-          {/* حقل العرض */}
+          {/* حقل العرض W */}
           <div 
-            className="flex items-center justify-between bg-input/60 hover:bg-input border border-border/80 hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2.5 h-8 shadow-2xs transition-all"
-            dir="rtl"
-            title="عرض مساحة العمل"
+            className="flex items-center gap-1.5 bg-input/60 hover:bg-input border border-border/80 hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2 h-8 shadow-2xs transition-all"
+            dir="ltr"
+            title="العرض"
           >
-            <span className="text-micro font-medium text-muted-foreground select-none shrink-0">العرض</span>
+            <span className="text-3xs font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">W</span>
             <input
               type="text"
               inputMode="decimal"
@@ -371,7 +375,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               onChange={(e) => handleWidthChange(e.target.value)}
               onBlur={handleWidthCommit}
               onKeyDown={(e) => e.key === "Enter" && handleWidthCommit()}
-              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all pl-1"
+              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
               dir="ltr"
             />
           </div>
@@ -380,19 +384,19 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           <button
             type="button"
             onClick={handleSwapDimensions}
-            className="w-7 h-8 rounded-md border border-border/80 bg-input/40 hover:bg-primary/10 hover:text-primary hover:border-primary/40 text-muted-foreground flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none shrink-0"
+            className="w-8 h-8 rounded-md border border-border/80 bg-input/40 hover:bg-primary/10 hover:text-primary hover:border-primary/40 text-muted-foreground flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none shrink-0"
             title="تبديل العرض والارتفاع (تدوير الورقة)"
           >
             <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
           </button>
 
-          {/* حقل الارتفاع */}
+          {/* حقل الارتفاع H */}
           <div 
-            className="flex items-center justify-between bg-input/60 hover:bg-input border border-border/80 hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2.5 h-8 shadow-2xs transition-all"
-            dir="rtl"
-            title="ارتفاع مساحة العمل"
+            className="flex items-center gap-1.5 bg-input/60 hover:bg-input border border-border/80 hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-md px-2 h-8 shadow-2xs transition-all"
+            dir="ltr"
+            title="الارتفاع"
           >
-            <span className="text-micro font-medium text-muted-foreground select-none shrink-0">الارتفاع</span>
+            <span className="text-3xs font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">H</span>
             <input
               type="text"
               inputMode="decimal"
@@ -401,7 +405,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               onChange={(e) => handleHeightChange(e.target.value)}
               onBlur={handleHeightCommit}
               onKeyDown={(e) => e.key === "Enter" && handleHeightCommit()}
-              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all pl-1"
+              className="w-full bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
               dir="ltr"
             />
           </div>

@@ -7,7 +7,7 @@
 تطبيق سطح مكتب لويندوز لتصميم صور الهوية، تجميع الكولاجات، وعزل الخلفية
 وترميم الصور بالذكاء الاصطناعي — مع محرك طباعة عالي الدقة وأبعاد ملمية دقيقة.
 
-**Wails v2 (Go)** × **React + TypeScript** × **Konva Canvas**
+**Wails v3 (Go)** × **React + TypeScript** × **Konva Canvas**
 
 </div>
 
@@ -47,12 +47,16 @@
 |---|---|
 | [Go](https://go.dev/dl/) | 1.25+ |
 | [Node.js](https://nodejs.org/) | 22+ |
-| [Wails CLI](https://wails.io/) | v2.12 |
+| [Wails CLI](https://v3.wails.io/) | `wails3` v3.0.0-beta.23 |
 | NSIS | للبناء على ويندوز فقط |
 
 ```bash
-go install github.com/wailsapp/wails/v2/cmd/wails@latest
+go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.23
 ```
+
+> 🧱 **مطلوب قبل أي بناء/فحص نوعي:** ربطات الواجهة تُولَّد إلى `frontend/bindings/` (مُستثناة من Git):
+> `wails3 generate bindings -ts -clean=true` — ملفات `frontend/wailsjs/**` هي **جسور يدوية مُتتبَّعة** تعيد التصدير منها ولا تُولَّد بالأمر السابق.
+> (خطافات `prebuild`/`pretypecheck`/`pretest` في `frontend/package.json` تُعطي رسالة صريحة إذا غابت الربطات.)
 
 ---
 
@@ -62,8 +66,8 @@ go install github.com/wailsapp/wails/v2/cmd/wails@latest
 # 1. انسخ متغيرات البيئة واملأ القيم
 cp .env.example .env
 
-# 2. شغّل وضع التطوير مع Hot Reload
-wails dev
+# 2. شغّل وضع التطوير مع Hot Reload (منفذ Vite الافتراضي 9245)
+wails3 task dev
 ```
 
 <details>
@@ -84,11 +88,11 @@ wails dev
 ## 🛠️ البناء
 
 ```bash
-# بناء محلي موقّع (يقرأ .env تلقائياً)
+# بناء محلي موقّع (يقرأ .env تلقائياً) — Wails v3 Taskfile
 ./build.ps1
 
 # أو مباشرة
-wails build
+wails3 task build
 ```
 
 <details>

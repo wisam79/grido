@@ -296,7 +296,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                   className={cn(
                     "relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md border transition-all cursor-pointer text-center",
                     params.isTransparent
-                      ? "bg-primary/10 border-primary text-primary shadow-2xs font-bold ring-1 ring-primary/30"
+                      ? "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
                       : "bg-card/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-card"
                   )}
                   title={params.isTransparent ? "الخلفية مفرغة (انقر للإلغاء)" : "تفريغ الخلفية"}
@@ -459,7 +459,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             </div>
 
             {/* Grid Presets */}
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-4 gap-1 bg-muted/60 dark:bg-black/35 p-1 rounded-xl border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
               {[
                 { r: 2, c: 2, label: "2×2" },
                 { r: 3, c: 3, label: "3×3" },
@@ -473,10 +473,10 @@ export const StickerProperties = React.memo(function StickerProperties({
                     type="button"
                     onClick={() => onChangeGridConfig((prev) => ({ ...prev, rows: p.r, cols: p.c }))}
                     className={cn(
-                      "h-7 text-xs font-semibold rounded-md border transition-all cursor-pointer flex items-center justify-center",
+                      "h-7 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center select-none active:scale-[0.98]",
                       isActive
-                        ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs"
-                        : "bg-muted/20 border-border/30 hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                        ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
+                        : "text-muted-foreground hover:text-foreground hover:bg-card/40 dark:hover:bg-white/5 border-transparent font-medium"
                     )}
                   >
                     {p.label}

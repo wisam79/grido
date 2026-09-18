@@ -132,6 +132,54 @@ describe("Element Slice Text & Typography Tests", () => {
     }
   });
 
+  it("creates congrats preset with emerald styling and shadow", () => {
+    useEditorStore.getState().addTextPreset("congrats");
+    const elements = useEditorStore.getState().elements;
+    expect(elements.length).toBe(1);
+    const el = elements[0];
+    if (el.type === "text") {
+      expect(el.text).toContain("مبروك");
+      expect(el.color).toBe("#047857");
+      expect(el.fontWeight).toBe(800);
+    }
+  });
+
+  it("creates sale offer preset with red background badge", () => {
+    useEditorStore.getState().addTextPreset("sale-offer");
+    const elements = useEditorStore.getState().elements;
+    expect(elements.length).toBe(1);
+    const el = elements[0];
+    if (el.type === "text") {
+      expect(el.text).toContain("عروض");
+      expect(el.textBgColor).toBe("#dc2626");
+      expect(el.color).toBe("#ffffff");
+    }
+  });
+
+  it("creates certificate preset with royal navy stroke", () => {
+    useEditorStore.getState().addTextPreset("certificate");
+    const elements = useEditorStore.getState().elements;
+    expect(elements.length).toBe(1);
+    const el = elements[0];
+    if (el.type === "text") {
+      expect(el.text).toContain("شهادة");
+      expect(el.color).toBe("#1e3a8a");
+      expect(el.stroke).toBe("#1e3a8a");
+    }
+  });
+
+  it("creates special price preset with sky blue capsule", () => {
+    useEditorStore.getState().addTextPreset("special-price");
+    const elements = useEditorStore.getState().elements;
+    expect(elements.length).toBe(1);
+    const el = elements[0];
+    if (el.type === "text") {
+      expect(el.text).toContain("السعر");
+      expect(el.textBgColor).toBe("#0284c7");
+      expect(el.color).toBe("#ffffff");
+    }
+  });
+
   it("centers element horizontally and vertically on canvas", () => {
     useEditorStore.getState().addTextElement("Centered Text");
     const id = useEditorStore.getState().selectedId!;

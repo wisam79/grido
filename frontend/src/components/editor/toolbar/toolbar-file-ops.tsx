@@ -232,17 +232,18 @@ export function ToolbarFileOps() {
 
   return (
     <>
-      <div className="flex items-center gap-1 bg-muted/50 dark:bg-background/90 border border-border/60 dark:border-border p-0.5 rounded-lg shadow-2xs">
-        {/* زر الإدراج المنقسم: فتح صورة فوري + قائمة منسدلة للدفعة والكاميرا والمشاريع */}
-        <div className="flex items-center rounded-md bg-background/60 dark:bg-muted/40 shadow-2xs border border-border/40">
-          <TooltipBtn content="إدراج صورة جديدة">
+      {/* مجموعة الإدراج والمشاريع */}
+      <div className="fluent-command-group shadow-2xs">
+        {/* زر الإدراج المنقسم: فتح صورة فوري + قائمة منسدلة للدفعة والكاميرا */}
+        <div className="flex items-center rounded-md overflow-hidden">
+          <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleOpenFile}
               data-testid="toolbar-insert"
               aria-label="إدراج صورة جديدة"
-              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/90 active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group"
+              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/80 active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/40"
             >
               <AddPhotoIcon className="w-4 h-4 text-primary group-hover:scale-105 transition-transform" />
               <span>إدراج</span>
@@ -256,7 +257,7 @@ export function ToolbarFileOps() {
                   variant="ghost"
                   size="sm"
                   aria-label="خيارات الإدراج الإضافية"
-                  className="h-8 px-1 text-muted-foreground hover:text-foreground rounded-s-none rounded-e-md border-s border-border/40 hover:bg-background/90 active:scale-95 transition-all cursor-pointer"
+                  className="h-8 px-1.5 text-muted-foreground hover:text-foreground rounded-s-none rounded-e-md hover:bg-background/80 active:scale-95 transition-all cursor-pointer"
                 >
                   <CaretDown className="w-3.5 h-3.5 opacity-70" />
                 </Button>
@@ -308,7 +309,7 @@ export function ToolbarFileOps() {
               }}
               data-testid="toolbar-projects"
               aria-label="مكتبة المشاريع"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/90 rounded-md transition-all cursor-pointer group"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer group"
             >
               <Folders className="w-4 h-4 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
             </Button>
@@ -323,7 +324,7 @@ export function ToolbarFileOps() {
         <PhoneBridgeDialog open={isPhoneBridgeOpen} onOpenChange={setIsPhoneBridgeOpen} />
       </div>
 
-      {/* جديد / مسح مساحة العمل */}
+      {/* مسح مساحة العمل */}
       <TooltipBtn content="مسح مساحة العمل">
         <Button
           variant="ghost"
@@ -332,7 +333,7 @@ export function ToolbarFileOps() {
           aria-label="مسح مساحة العمل"
           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer group"
         >
-          <Broom className="w-5 h-5 text-muted-foreground/90 group-hover:text-destructive group-hover:scale-105 transition-all" weight="duotone" />
+          <Broom className="w-4 h-4 text-muted-foreground/90 group-hover:text-destructive group-hover:scale-105 transition-all" weight="duotone" />
         </Button>
       </TooltipBtn>
 

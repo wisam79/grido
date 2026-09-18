@@ -110,11 +110,11 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
               className={cn(
                 "h-6 px-2.5 rounded-full text-micro font-bold transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1.5 border select-none",
                 hasStroke
-                  ? "bg-primary/15 text-primary border-primary/35 hover:bg-primary/25"
+                  ? "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
                   : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
               )}
             >
-              {hasStroke && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />}
+              {hasStroke && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 animate-pulse" />}
               <span>{hasStroke ? "مفعّل" : "إضافة"}</span>
             </button>
           </div>

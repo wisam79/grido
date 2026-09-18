@@ -3,12 +3,14 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 export type WorkspacePanel = 'templates' | 'properties' | null;
 export type WorkspaceBreakpoint = 'compact' | 'standard' | 'wide';
 export type FreeformTab = 'layers' | 'elements' | 'stickers' | 'shapes' | 'text' | 'presets';
+export type CollageTab = 'custom' | 'presets' | 'freeform';
 
 const STORAGE_KEY = 'grido_workspace_layout_v1';
 
 interface StoredPreferences {
   lastActivePanel?: WorkspacePanel;
   lastActiveStudioTab?: FreeformTab;
+  lastActiveCollageTab?: CollageTab;
   isInspectorPinned?: boolean;
 }
 
@@ -60,6 +62,12 @@ export function useWorkspacePanels() {
   const [activeStudioTab, setActiveStudioTabState] = useState<FreeformTab>(() => {
     const saved = getStoredPreferences().lastActiveStudioTab;
     return saved !== undefined ? saved : 'layers';
+  });
+
+  // Active collage tab (custom grid, presets, freeform)
+  const [activeCollageTab, setActiveCollageTabState] = useState<CollageTab>(() => {
+    const saved = getStoredPreferences().lastActiveCollageTab;
+    return saved !== undefined ? saved : 'custom';
   });
 
   // Mobile Sheet states
@@ -132,6 +140,44 @@ export function useWorkspacePanels() {
       }
     },
     [breakpoint, isTemplatesDrawerOpen, activeStudioTab, activePanel]
+  );
+
+  const setActiveCollageTab = useCallback((tab: CollageTab) => {
+    setActiveCollageTabState(tab);
+    saveStoredPreferences({ lastActiveCollageTab: tab });
+  }, []);
+
+  const selectCollageTab = useCallback(
+    (tab: CollageTab) => {
+      setActiveCollageTabState(tab);
+      saveStoredPreferences({ lastActiveCollageTab: tab });
+
+      if (breakpoint === 'compact') {
+        setMobileActiveTab('templates');
+        setIsMobileSheetOpen(true);
+        return;
+      }
+
+      if (breakpoint === 'wide') {
+        // If drawer is open on the exact same tab, clicking again toggles it closed
+        if (isTemplatesDrawerOpen && activeCollageTab === tab) {
+          setIsTemplatesDrawerOpen(false);
+        } else {
+          setIsTemplatesDrawerOpen(true);
+        }
+        return;
+      }
+
+      // Standard (1024 - 1439px): single active panel rule
+      if (activePanel === 'templates' && activeCollageTab === tab) {
+        setActivePanelState(null);
+        saveStoredPreferences({ lastActivePanel: null });
+      } else {
+        setActivePanelState('templates');
+        saveStoredPreferences({ lastActivePanel: 'templates' });
+      }
+    },
+    [breakpoint, isTemplatesDrawerOpen, activeCollageTab, activePanel]
   );
 
   // Toggle or switch panel
@@ -221,6 +267,7 @@ export function useWorkspacePanels() {
     isMobileSheetOpen,
     mobileActiveTab,
     activeStudioTab,
+    activeCollageTab,
     isZenMode,
     setActivePanel,
     setIsInspectorPinned,
@@ -229,6 +276,8 @@ export function useWorkspacePanels() {
     setMobileActiveTab,
     setActiveStudioTab,
     selectStudioTab,
+    setActiveCollageTab,
+    selectCollageTab,
     togglePanel,
     openPanel,
     closeActivePanel,

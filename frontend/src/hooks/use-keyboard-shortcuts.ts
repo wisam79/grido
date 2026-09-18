@@ -160,6 +160,53 @@ export function useKeyboardShortcuts() {
     window.dispatchEvent(new CustomEvent("grido:toggle-left-sidebar"));
   });
 
+  // Switch Studio / Collage Tabs: Alt+1 to Alt+5
+  useHotkeys("alt+1", (e) => {
+    e.preventDefault();
+    const currentMode = useEditorStore.getState().mode;
+    if (currentMode === "collage") {
+      window.dispatchEvent(new CustomEvent("grido:select-collage-tab", { detail: { tab: "custom" } }));
+    } else {
+      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "layers" } }));
+    }
+  });
+
+  useHotkeys("alt+2", (e) => {
+    e.preventDefault();
+    const currentMode = useEditorStore.getState().mode;
+    if (currentMode === "collage") {
+      window.dispatchEvent(new CustomEvent("grido:select-collage-tab", { detail: { tab: "presets" } }));
+    } else {
+      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "stickers" } }));
+    }
+  });
+
+  useHotkeys("alt+3", (e) => {
+    e.preventDefault();
+    const currentMode = useEditorStore.getState().mode;
+    if (currentMode === "collage") {
+      window.dispatchEvent(new CustomEvent("grido:select-collage-tab", { detail: { tab: "freeform" } }));
+    } else {
+      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "shapes" } }));
+    }
+  });
+
+  useHotkeys("alt+4", (e) => {
+    e.preventDefault();
+    const currentMode = useEditorStore.getState().mode;
+    if (currentMode !== "collage") {
+      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "text" } }));
+    }
+  });
+
+  useHotkeys("alt+5", (e) => {
+    e.preventDefault();
+    const currentMode = useEditorStore.getState().mode;
+    if (currentMode !== "collage") {
+      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "presets" } }));
+    }
+  });
+
   // Toggle Zen Mode (Canvas focus): Tab key (outside inputs/controls)
   useHotkeys(
     "tab",

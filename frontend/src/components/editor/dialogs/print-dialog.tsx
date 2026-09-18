@@ -349,7 +349,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* لوحة الورقة البيضاء الممركزة داخل مساحة العمل */}
             <div className="flex-1 overflow-auto p-6 flex items-center justify-center select-none workspace-grid relative">
               <div
-                className="bg-white rounded-md relative border border-print-paper-border shadow-fluent-8 transition-all duration-200"
+                className="bg-white rounded-md relative border border-print-paper-border shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.6)] dark:ring-1 dark:ring-white/12 transition-all duration-200"
                 style={{
                   width: paperWidth * scaleFactor * zoom,
                   height: paperHeight * scaleFactor * zoom,

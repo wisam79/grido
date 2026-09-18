@@ -123,7 +123,7 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
           ariaLabel="ارتفاع الورقة بالمليمتر"
           onCommit={(h) => onPaperDimensionsChange(paperWidthMM, h)}
         />
-        <span className="text-2xs font-bold text-muted-foreground">مم</span>
+        <span className="text-2xs font-bold text-muted-foreground font-cairo">مم</span>
       </div>
     </div>
   );

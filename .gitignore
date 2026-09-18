@@ -47,6 +47,13 @@ opencode.json
 # Third-party build artifacts
 build/windows/installer/CodeFormer-temp/
 
+# Wails v3 binary output (BIN_DIR="bin" في Taskfile.yml)
+/bin
+
+# Stale local tool artifacts (كانت مُتتبَّعة بالخطأ)
+frontend/lint-results.txt
+frontend/package.json.md5
+
 # Husky internal helpers
 # Note: `.husky/_/h` is the shared shell script that every hook sources.
 # We commit it so developers don't need to run `npx husky` after cloning.

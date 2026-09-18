@@ -504,7 +504,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
       </DropdownMenu>
 
       {/* استوديو الملصقات والإطارات */}
-      <TooltipBtn content="الملصقات">
+      <TooltipBtn content="الملصقات والإطارات">
         <Button
           variant="ghost"
           size="sm"
@@ -512,10 +512,9 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           onMouseEnter={preloadBarcodeDialog}
           onFocus={preloadBarcodeDialog}
           aria-label="الملصقات"
-          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1.5"
+          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer flex items-center justify-center"
         >
-          <SealCheck className="w-4 h-4 text-primary" weight="bold" />
-          <span className="text-xs font-semibold hidden xl:inline">ملصقات</span>
+          <SealCheck className="w-5 h-5 text-primary" weight="bold" />
         </Button>
       </TooltipBtn>
 
@@ -936,27 +935,4 @@ const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
   );
 });
 
-const TemplateInfo = React.memo(function TemplateInfo() {
-  const { template, canvasWidth, canvasHeight } = useEditorStore(useShallow((state) => ({
-    template: state.template,
-    canvasWidth: state.canvasWidth,
-    canvasHeight: state.canvasHeight,
-  })));
-
-  if (!template) return null;
-
-  const Icon = template.icon;
-
-  return (
-    <div className="text-xs text-muted-foreground bg-muted/20 dark:bg-muted/10 border border-border/20 rounded-md px-2.5 py-1.5 hidden lg:flex items-center gap-2 font-medium fluent-specular">
-      {Icon && typeof Icon === "function" && (
-        <Icon size={16} className="text-primary" />
-      )}
-      <span className="font-bold">{template.name}</span>
-      <span className="text-muted-foreground/60">·</span>
-      <span className="font-mono text-muted-foreground/75">{canvasWidth}×{canvasHeight}px</span>
-    </div>
-  );
-});
-
-export { TooltipBtn, ToolbarAddTools, ImageFiltersPopover, ToolbarSelectionTools, ToolbarHistoryTools, TemplateInfo };
+export { TooltipBtn, ToolbarAddTools, ToolbarSelectionTools, ToolbarHistoryTools };

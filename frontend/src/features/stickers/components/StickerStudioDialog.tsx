@@ -437,7 +437,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                 <SealCheck className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 <span className="text-foreground font-bold truncate">{selectedTemplate.name}</span>
                 <span className="text-border/60">•</span>
-                <span className="font-mono text-mini">{templateMm.width}×{templateMm.height} مم</span>
+                <span className="text-mini"><span className="font-mono">{templateMm.width}×{templateMm.height}</span> مم</span>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">

@@ -13,14 +13,14 @@ import {
   DesktopMenuBar,
   WorkspaceLayout,
 } from "@/components/editor";
-import { useWorkspacePanels } from "@/hooks/use-workspace-panels";
+import { useWorkspacePanels, type CollageTab, type FreeformTab } from "@/hooks/use-workspace-panels";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { GetStartupFile, ProcessLocalImageFile } from "../wailsjs/go/main/App";
 import { EventsOn, EventsOff } from "../wailsjs/runtime/runtime";
 
 const ExportDialog = lazy(() => import("@/components/editor/dialogs/export-dialog").then(module => ({ default: module.ExportDialog })));
 const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog").then(module => ({ default: module.PrintDialog })));
-import { FluentSegmentedControl } from "@/components/ui/blocks";
+
 import { Button } from "@/components/ui/button";
 import { useOperationStatusStore } from "@/lib/ui/operation-status";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -66,15 +66,31 @@ export default function App() {
     const handleToggleRight = () => panelsHook.togglePanel("templates");
     const handleToggleLeft = () => panelsHook.togglePanel("properties");
     const handleToggleZen = () => panelsHook.toggleZenMode();
+    const handleSelectCollageTab = (e: Event) => {
+      const detail = (e as CustomEvent<{ tab: CollageTab }>).detail;
+      if (detail?.tab) {
+        panelsHook.selectCollageTab(detail.tab);
+      }
+    };
+    const handleSelectStudioTab = (e: Event) => {
+      const detail = (e as CustomEvent<{ tab: FreeformTab }>).detail;
+      if (detail?.tab) {
+        panelsHook.selectStudioTab(detail.tab);
+      }
+    };
 
     window.addEventListener("grido:toggle-right-sidebar", handleToggleRight);
     window.addEventListener("grido:toggle-left-sidebar", handleToggleLeft);
     window.addEventListener("grido:toggle-zen-mode", handleToggleZen);
+    window.addEventListener("grido:select-collage-tab", handleSelectCollageTab);
+    window.addEventListener("grido:select-studio-tab", handleSelectStudioTab);
 
     return () => {
       window.removeEventListener("grido:toggle-right-sidebar", handleToggleRight);
       window.removeEventListener("grido:toggle-left-sidebar", handleToggleLeft);
       window.removeEventListener("grido:toggle-zen-mode", handleToggleZen);
+      window.removeEventListener("grido:select-collage-tab", handleSelectCollageTab);
+      window.removeEventListener("grido:select-studio-tab", handleSelectStudioTab);
     };
   }, [panelsHook]);
 
@@ -320,6 +336,7 @@ export default function App() {
           "border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
           !isFocused && "opacity-75"
         )}
+        dir="ltr"
         onDoubleClick={handleMaximize}
       >
         <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
@@ -332,34 +349,85 @@ export default function App() {
               </h1>
             </div>
             <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
-            <div className="hidden sm:flex items-center title-bar-controls">
+            <div className="hidden sm:flex items-center title-bar-controls" dir="rtl">
               <DesktopMenuBar />
             </div>
           </div>
 
-          {/* وضع العمل - Fluent 2 Segmented Control */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 title-bar-controls" dir="rtl">
-            <FluentSegmentedControl<"collage" | "single">
-              layoutId="header-active-mode-pill"
-              value={mode}
-              onChange={setMode}
-              size="md"
-              fullWidth={false}
-              options={[
-                {
-                  id: "collage",
-                  label: "كولاج",
-                  icon: <SquaresFour className="w-4 h-4" weight={mode === "collage" ? "fill" : "regular"} />,
-                  tooltip: "وضع الكولاج والشبكات",
-                },
-                {
-                  id: "single",
-                  label: "تعديل حر",
-                  icon: <Image className="w-4 h-4" weight={mode === "single" ? "fill" : "regular"} />,
-                  tooltip: "وضع التعديل والتصميم الحر",
-                },
-              ]}
-            />
+          {/* وضع العمل — مبدّل الأوضاع القياسي وفق Fluent 2 */}
+          <div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 title-bar-controls hidden md:block"
+            dir="rtl"
+          >
+            <div
+              role="tablist"
+              aria-label="وضع العمل"
+              className="relative inline-flex items-center p-0.5 rounded-lg bg-muted/40 dark:bg-black/20 border border-border/50 shadow-inner select-none"
+            >
+              {/* خيار 1: كولاج */}
+              <button
+                type="button"
+                role="tab"
+                id="mode-tab-collage"
+                aria-selected={mode === "collage"}
+                aria-controls="mode-panel"
+                data-testid="mode-tab-collage"
+                title="وضع الكولاج والشبكات (Ctrl+Alt+1)"
+                onClick={() => setMode("collage")}
+                className={cn(
+                  "relative z-10 flex items-center gap-1.5 h-6.5 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                  mode === "collage"
+                    ? "text-foreground font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {mode === "collage" && (
+                  <motion.span
+                    layoutId="titlebar-mode-indicator"
+                    className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
+                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <SquaresFour
+                  className={cn("w-3.5 h-3.5 shrink-0 transition-colors", mode === "collage" ? "text-primary" : "text-muted-foreground")}
+                  weight={mode === "collage" ? "fill" : "regular"}
+                />
+                <span>كولاج</span>
+              </button>
+
+              {/* خيار 2: تعديل حر */}
+              <button
+                type="button"
+                role="tab"
+                id="mode-tab-single"
+                aria-selected={mode === "single"}
+                aria-controls="mode-panel"
+                data-testid="mode-tab-single"
+                title="وضع التعديل والتصميم الحر (Ctrl+Alt+2)"
+                onClick={() => setMode("single")}
+                className={cn(
+                  "relative z-10 flex items-center gap-1.5 h-6.5 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                  mode === "single"
+                    ? "text-foreground font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {mode === "single" && (
+                  <motion.span
+                    layoutId="titlebar-mode-indicator"
+                    className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
+                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <Image
+                  className={cn("w-3.5 h-3.5 shrink-0 transition-colors", mode === "single" ? "text-primary" : "text-muted-foreground")}
+                  weight={mode === "single" ? "fill" : "regular"}
+                />
+                <span>تعديل حر</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-1.5 h-full title-bar-controls">
@@ -495,6 +563,9 @@ export default function App() {
               onCollapse={panelsHook.closeActivePanel}
               activeStudioTab={panelsHook.activeStudioTab}
               onActiveStudioTabChange={panelsHook.setActiveStudioTab}
+              activeCollageTab={panelsHook.activeCollageTab}
+              onActiveCollageTabChange={panelsHook.setActiveCollageTab}
+              showInternalCollageTabs={panelsHook.breakpoint === 'compact'}
             />
           </ErrorBoundary>
         }

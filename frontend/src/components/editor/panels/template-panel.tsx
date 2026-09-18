@@ -19,7 +19,9 @@ import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
 import {
   GridFour,
-  CaretRight,
+  SquaresFour,
+  MagicWand,
+  CaretLeft,
   Sparkle,
   Stack,
   FrameCorners,
@@ -30,18 +32,26 @@ import {
 import { useShallow } from "zustand/react/shallow";
 import { FreeformStudioPanel } from "./freeform";
 import type { FreeformTab } from "./freeform/freeform-panel-constants";
+import type { CollageTab } from "@/hooks/use-workspace-panels";
 
 export interface TemplatePanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
   onCollapse?: () => void;
   activeStudioTab?: FreeformTab;
   onActiveStudioTabChange?: (tab: FreeformTab) => void;
+  activeCollageTab?: CollageTab;
+  onActiveCollageTabChange?: (tab: CollageTab) => void;
+  /** يُمكّن شريط التبويبات الداخلي في الشاشات المدمجة (< 1024px) */
+  showInternalCollageTabs?: boolean;
 }
 
 export function TemplatePanel({
   onCollapse,
   activeStudioTab = "layers",
   onActiveStudioTabChange,
+  activeCollageTab = "custom",
+  onActiveCollageTabChange,
+  showInternalCollageTabs = false,
 }: TemplatePanelProps) {
   const { 
     setCollageTemplate, 
@@ -169,14 +179,44 @@ export function TemplatePanel({
       ? "نماذج طباعة ومقاسات مخصصة"
       : "الطبقات والعناصر والمقاسات";
 
+  const collageIcon =
+    activeCollageTab === "presets" ? (
+      <SquaresFour className="w-4 h-4 text-primary" weight="duotone" />
+    ) : activeCollageTab === "freeform" ? (
+      <MagicWand className="w-4 h-4 text-primary" weight="duotone" />
+    ) : (
+      <GridFour className="w-4 h-4 text-primary" weight="duotone" />
+    );
+
+  const collageTitle =
+    activeCollageTab === "presets"
+      ? "قوالب الكولاج"
+      : activeCollageTab === "freeform"
+      ? "كولاج حر بالملم"
+      : "شبكة الكولاج";
+
+  const collageSubtitle =
+    activeCollageTab === "presets"
+      ? "نماذج الاستوديو والتشكيلات الجاهزة"
+      : activeCollageTab === "freeform"
+      ? "تصميم وتقسيم شبكات مخصصة بالملم"
+      : "تخصيص الصفوف والأعمدة والمقاسات";
+
+  const collageCollapseTitle =
+    activeCollageTab === "presets"
+      ? "إخفاء قوالب الكولاج (Ctrl+B)"
+      : activeCollageTab === "freeform"
+      ? "إخفاء الكولاج الحر (Ctrl+B)"
+      : "إخفاء شبكة الكولاج (Ctrl+B)";
+
   return (
     <PanelShell
-      icon={mode === "collage" ? <GridFour className="w-4 h-4 text-primary" weight="duotone" /> : studioIcon}
-      title={mode === "collage" ? "القوالب" : studioTitle}
-      subtitle={mode === "collage" ? "قوالب الكولاج والطباعة" : studioSubtitle}
+      icon={mode === "collage" ? collageIcon : studioIcon}
+      title={mode === "collage" ? collageTitle : studioTitle}
+      subtitle={mode === "collage" ? collageSubtitle : studioSubtitle}
       onCollapse={onCollapse}
-      collapseTitle={mode === "collage" ? "إخفاء لوحة القوالب (Ctrl+B)" : `إخفاء ${studioTitle} (Ctrl+B)`}
-      collapseIcon={<CaretRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" weight="bold" />}
+      collapseTitle={mode === "collage" ? collageCollapseTitle : `إخفاء ${studioTitle} (Ctrl+B)`}
+      collapseIcon={<CaretLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all" weight="bold" />}
       className="bg-transparent select-none"
     >
       {/* Hidden File Input for Templates Import */}
@@ -218,6 +258,9 @@ export function TemplatePanel({
             savedTemplates={savedTemplates}
             onDeleteTemplate={handleDeleteTemplate}
             fileInputRef={fileInputRef}
+            activeTab={activeCollageTab}
+            onActiveTabChange={onActiveCollageTabChange}
+            showInternalTabs={showInternalCollageTabs}
           />
         </div>
       ) : (

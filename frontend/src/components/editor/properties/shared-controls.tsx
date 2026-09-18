@@ -379,12 +379,12 @@ export function ColorWheelPicker({
           className={cn(
             "w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
             isTransparent
-              ? "border-primary bg-primary/10 text-primary font-bold shadow-xs ring-2 ring-primary/30"
+              ? "bg-card text-foreground border border-border/80 dark:border-white/15 font-bold shadow-xs ring-1 ring-primary/40"
               : "border-border/60 bg-input/80 text-muted-foreground hover:bg-accent hover:text-foreground"
           )}
           title="خلفية شفافة"
         >
-          <Palette className="w-4 h-4" weight="regular" />
+          <Palette className={cn("w-4 h-4", isTransparent ? "text-primary" : "text-muted-foreground")} weight={isTransparent ? "fill" : "regular"} />
         </button>
 
         {hasEyeDropper && (
@@ -515,8 +515,8 @@ export function StudioCanvasColorDeck({
 
   const studioPresets = [
     { name: "أبيض استوديو", value: "#FFFFFF" },
-    { name: "رمادي وثائق", value: "#F1F5F9" },
-    { name: "رمادي حيادي", value: "#E2E8F0" },
+    { name: "رمادي وثائق", value: "#E2E8F0" },
+    { name: "رمادي حيادي", value: "#94A3B8" },
     { name: "أزرق هوية وطنية", value: "#2563EB" },
     { name: "كحلي رسمي", value: "#1E40AF" },
     { name: "أحمر جوازات", value: "#DC2626" },

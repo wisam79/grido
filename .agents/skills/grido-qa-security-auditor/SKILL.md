@@ -45,15 +45,21 @@ description: دليل الجودة والأمان والاختبار وتولي�
 # 1. اختبارات Go Backend
 go test ./internal/...
 
-# 2. اختبارات جودة وتوافقية واجهة React (TypeScript & Lint)
+# 2. توليد ربطات Wails v3 (إذا تم تعديل واجهات Go)
+wails3 generate bindings -ts -clean=true
+
+# 3. اختبارات جودة وتوافقية واجهة React (TypeScript & Lint)
 cd frontend && npm run typecheck
 cd frontend && npm run lint
 
-# 3. اختبارات React Frontend التلقائية (Vitest)
+# 4. اختبارات React Frontend التلقائية (Vitest)
 cd frontend && npm run test
 
-# 4. فحص البناء النهائي والأنواع (TypeScript & Vite)
+# 5. فحص بناء الواجهة والأنواع (TypeScript & Vite)
 cd frontend && npm run build
+
+# 6. فحص بناء التطبيق المكتبي بالكامل (Wails v3)
+cd .. && wails3 task build
 ```
 
 ### التحقق البكسلي لمخرجات الطباعة (Pixel-Level Verification)

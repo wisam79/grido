@@ -89,7 +89,7 @@ const ToolBtn: React.FC<{
         className={cn(
           "h-7 w-7 rounded-md cursor-pointer shrink-0 transition-all duration-150",
           "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-          active && "text-primary bg-primary/15 border border-primary/40 font-bold",
+          active && "text-foreground bg-card border border-border/80 dark:border-white/15 shadow-xs font-bold",
           destructive &&
             "text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive"
         )}
@@ -246,7 +246,9 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
                 >
                   −
                 </button>
-                <span className="w-8 text-center font-mono text-micro font-bold" dir="ltr">{packGapMM} مم</span>
+                <span className="w-8 text-center text-micro font-bold" dir="ltr">
+                  <span className="font-mono">{packGapMM}</span> <span className="font-cairo">مم</span>
+                </span>
                 <button
                   type="button"
                   onClick={() => onPackGapChange(Math.min(10, packGapMM + 1))}
@@ -269,7 +271,9 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
                 >
                   −
                 </button>
-                <span className="w-8 text-center font-mono text-micro font-bold" dir="ltr">{packMarginMM} مم</span>
+                <span className="w-8 text-center text-micro font-bold" dir="ltr">
+                  <span className="font-mono">{packMarginMM}</span> <span className="font-cairo">مم</span>
+                </span>
                 <button
                   type="button"
                   onClick={() => onPackMarginChange(Math.min(15, packMarginMM + 1))}
@@ -322,7 +326,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
                 disabled={!selectedSlotId}
                 className={cn(
                   "h-7 w-7 rounded-md cursor-pointer shrink-0 relative",
-                  isMulti && "text-primary bg-primary/15 border border-primary/40"
+                  isMulti && "text-foreground bg-card border border-border/80 dark:border-white/15 shadow-xs font-bold"
                 )}
               >
                 <SquaresFour className="w-3.5 h-3.5" weight="bold" />

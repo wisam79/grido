@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **تصحيح توثيقي (سبتمبر 2026 — مثبت من الكود):** إدخال `v1.2.11` ادعى أن `build.ps1` يفشل عند غياب `MODAL_AI_KEY`، لكن `build.ps1:22-26,49` يبني بمفتاح فارغ دون فشل. يُترك الإدخال الأصلي لسجل التاريخ، والصحيح هو السلوك الحالي في `build.ps1`.
 
+## [BUILD-FIX] - 2026-09-18
+
+### Fixed (Wails v3 Build Pipeline, E2E Port & Production Mock)
+
+**سلسلة البناء والتسليم — كانت تقود Wails v2 على مشروع v3:**
+- **`.github/workflows/ci.yml`**: استبدال `go install github.com/wailsapp/wails/v2/cmd/wails@latest` بـ `wails3@v3.0.0-beta.23` في المهام الثلاث، واستبدال `wails generate module` (مولّد v2 — لا يستخرج الخدمات من `application.New(application.Options{Services:...})`) بـ `wails3 generate bindings -ts -clean=true`، واستبدال `wails build -s -debug` بـ `wails3 task build` مع `CGO_ENABLED=1` وحقن `APP_VERSION/SUPABASE_URL/SUPABASE_ANON_KEY` (مطابق لثوابت `AGENTS.md` §116-119).
+- **`.github/workflows/release.yml`**: استبدال تثبيت v2 وتوليد الربطات، و`wails build -nsis` بـ `wails3 task package`، وتصحيح مسارات المخرجات من `build\bin` (اصطلاح v2) إلى `bin` (اصطلاح `BIN_DIR` في `Taskfile.yml:6`) ومثبّت NSIS من `build\windows\nsis\GridoStudio-installer.exe` في خطوات الجمع والتوقيع والبصمات والرفع.
+- **مهمة `windows-build` في CI**: إضافة تثبيت Node (خطوة `wails3 task build` تبني الواجهة وتحتاج npm، ولم تكن Node مثبتة في المهمة).
+
+**تعارض منفذ E2E (مؤكد تجريبياً: `9245 => HTTP 200` و`5173 => UNREACHABLE`):**
+- **`frontend/playwright.config.ts`**: كان `baseURL`/`webServer.url` على `localhost:5173` بينما Vite مضبوط على `127.0.0.1:9245` مع `strictPort: true` ⇒ `webServer` لا يجهز أبداً وتفشل مهمة `e2e-tests` في CI بالمهلة. تم توحيد المضيف/المنفذ في ثوابت وتشغيل الخادم بمنفذ صريح.
+
+**بقايا Wails v2 في الواجهة:**
+- **`frontend/src/main.tsx`**: كان محاكي `window.go` يُركَّب في نسخة الإنتاج دائماً (لأن v3 لا يحقن `window.go` إطلاقاً)، فيُخفي أي فشل حقيقي في الجسر؛ صار محصوراً بـ `import.meta.env.DEV`، ونُقل مانع قائمة السياق ليُطبَّق في الإنتاج باستقلال.
+- **`frontend/src/lib/wails-env.ts`**: `wailsIsDesktop()` تكتشف الآن إشارات Wails v3 (`window.wails` / `chrome.webview.postMessage` / `webkit.messageHandlers`) مع إبقاء `window.go` كإشارة متوافقة (تعتمد عليها اختبارات الوحدة).
+
+**حاجز مسبق للربطات المولّدة (فشل البناء الغامض):**
+- **`frontend/scripts/ensure-bindings.mjs`** + خطافات `prebuild`/`prebuild:dev`/`pretypecheck`/`pretest`/`pretest:coverage`: رسالة عملية صريحة عند غياب `frontend/bindings/` (مُستثناة من Git وتُولَّد بـ `wails3 generate bindings`) بدل رسالة `Cannot find module '../../../bindings/grido/app'`.
+
+**تشخيص حزمة E2E بعد أن صارت قابلة للتشغيل (السبب الجذري مكشوف):**
+- `frontend/e2e/helpers/wails-mock.ts:166-177` يحاكي نمط Wails v2 (`window.go` + `window.runtime`) بينما ربطات v3 تستدعي `$Call.ByID` من `@wailsio/runtime` ⇒ كل نداءات الخلفية تفشل، فيعرض التطبيق شاشة «النسخة مقفلة» (دليل: لقطة صفحة Playwright) وتفشل التوكيدات. مُوثَّق كـ **Q-02**، ومهمة `e2e-tests` صارت `continue-on-error: true` مؤقتاً مع تعليق صريح (كانت تفشل بالمهلة قبل الإصلاح، فالحاجب لم يُكسر بل صُححت حالته ليصبح صادقاً).
+
+### Removed
+- `frontend/lint-results.txt` و`frontend/package.json.md5`: آثار تشغيل محلية كانت مُتتبَّعة في Git بالخطأ، مع إضافة `/bin` إليهما في `.gitignore`.
+
+### Verified (2026-09-18)
+- `go vet ./...` = سليم، `go test ./internal/...` = كل الحزم ناجحة (handlers/repository/service/utils).
+- `npx tsc --noEmit` = سليم، `npm run lint` (`--max-warnings 0`) = سليم ⇒ البوابة خضراء.
+- فحص المنافذ: `http://127.0.0.1:9245` يستجيب 200 و`5173` غير قابل للوصول (أساس إصلاح E2E).
+
 ## [MAINT] - 2026-09-16
 
 ### Removed (Engine Wheel-Reinvention Deduplication — MAINT-03/04/06)

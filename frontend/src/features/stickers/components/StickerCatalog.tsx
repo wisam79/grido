@@ -291,9 +291,9 @@ export const StickerCatalog = React.memo(function StickerCatalog({
       {/* ── Top Navigation: Categories Capsule Bar ── */}
       <div className="px-4 pt-3 pb-2 border-b border-border/30 bg-muted/10 shrink-0">
         <FluentFilterChips
+          layoutId="sticker-catalog-filter-chips"
           value={selectedCategory}
           onChange={(val) => onSelectCategory(val as StickerCategoryGroupId | StickerCategory | "all")}
-          variant="tint"
           size="md"
           options={CATEGORY_ITEMS.map((cat) => ({
             id: cat.id,

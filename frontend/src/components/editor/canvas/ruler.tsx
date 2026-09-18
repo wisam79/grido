@@ -298,9 +298,7 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       const isMid = !isLabel && Math.abs(u % labelStep - labelStep / 2) < (subStep / 2) + 1e-9;
       const isZero = Math.abs(u) < 0.00001;
       const isNearEnd = y + 8 > endY;
-
       if (isLabel) {
-        const anchor = isZero ? "end" : isNearEnd ? "start" : "middle";
         labels.push(
           <g key={`v-lbl-${idx}`}>
             <line
@@ -312,22 +310,30 @@ export const VerticalRuler = React.memo(function VerticalRuler({
               className={isZero ? "stroke-primary" : "stroke-ruler-tick-major"}
               strokeWidth={isZero ? 1.5 : 0.8}
             />
-            <text
-              x={5.5}
-              y={y}
-              fontSize={8}
-              className={cn(
-                "font-mono select-none tracking-tighter",
-                isZero
-                  ? "fill-primary font-bold text-2xs"
-                  : "fill-ruler-tick-label-active font-medium"
-              )}
-              transform={`rotate(-90, 5.5, ${y})`}
-              textAnchor={anchor}
-              dominantBaseline="middle"
-            >
-              {formatRulerNumber(u, unit)}
-            </text>
+            {isZero ? (
+              <text
+                x={4}
+                y={y + 2}
+                fontSize={8}
+                className="font-mono select-none tracking-tighter fill-primary font-bold text-2xs"
+                textAnchor="start"
+                dominantBaseline="hanging"
+              >
+                0
+              </text>
+            ) : (
+              <text
+                x={5.5}
+                y={y}
+                fontSize={8}
+                className="font-mono select-none tracking-tighter fill-ruler-tick-label-active font-medium"
+                transform={`rotate(-90, 5.5, ${y})`}
+                textAnchor={isNearEnd ? "start" : "middle"}
+                dominantBaseline="middle"
+              >
+                {formatRulerNumber(u, unit)}
+              </text>
+            )}
           </g>
         );
       } else if (isMid) {
