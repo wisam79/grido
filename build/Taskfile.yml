@@ -22,7 +22,7 @@ tasks:
       - package.json
       - package-lock.json
     generates:
-      - node_modules
+      - node_modules/.package-lock.json
     preconditions:
       - sh: npm version
         msg: "Looks like npm isn't installed. Npm is part of the Node installer: https://nodejs.org/en/download/"
@@ -205,30 +205,28 @@ tasks:
 
   dev:frontend:
     summary: Runs the frontend in development mode
-    deps:
-      - task: install:frontend:deps
     cmds:
       - task: frontend:dev:{{.PACKAGE_MANAGER}}
 
   frontend:dev:npm:
     dir: frontend
     cmds:
-      - npm run dev -- --port {{.VITE_PORT}} --strictPort
+      - npm run dev -- --host 127.0.0.1 --port {{.VITE_PORT}} --strictPort
 
   frontend:dev:yarn:
     dir: frontend
     cmds:
-      - yarn dev --port {{.VITE_PORT}} --strictPort
+      - yarn dev --host 127.0.0.1 --port {{.VITE_PORT}} --strictPort
 
   frontend:dev:pnpm:
     dir: frontend
     cmds:
-      - pnpm dev --port {{.VITE_PORT}} --strictPort
+      - pnpm dev --host 127.0.0.1 --port {{.VITE_PORT}} --strictPort
 
   frontend:dev:bun:
     dir: frontend
     cmds:
-      - bun run dev --port {{.VITE_PORT}} --strictPort
+      - bun run dev --host 127.0.0.1 --port {{.VITE_PORT}} --strictPort
 
   update:build-assets:
     summary: Updates the build assets
