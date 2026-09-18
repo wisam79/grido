@@ -3,7 +3,6 @@ import {
   Stack, 
   FrameCorners, 
   GridFour, 
-  Faders, 
   ArrowsOutSimple, 
   ArrowsInSimple,
   Stamp,
@@ -46,7 +45,6 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   );
 
   const isTemplatesActive = activePanel === 'templates' || isTemplatesDrawerOpen;
-  const isPropertiesActive = activePanel === 'properties';
 
   return (
     <aside
@@ -265,36 +263,6 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             </Tooltip>
           </>
         )}
-
-        {/* فاصل ناعم بين أدوات الاستوديو وأدوات التعديل */}
-        <div className="w-5 h-px bg-border/60 my-0.5" />
-
-        {/* أداة الخصائص والمفتش */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onTogglePanel('properties')}
-              data-testid="rail-properties"
-              aria-label="لوحة الخصائص"
-              className={cn(
-                'h-8 w-8 rounded-md transition-all cursor-pointer relative',
-                isPropertiesActive
-                  ? 'bg-primary/15 text-primary hover:bg-primary/20 shadow-2xs font-bold'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
-              )}
-            >
-              <Faders className="w-4.5 h-4.5" weight={isPropertiesActive ? 'fill' : 'regular'} />
-              {isPropertiesActive && (
-                <span className="absolute right-0.5 top-1/2 -translate-y-1/2 w-0.75 h-4 bg-primary rounded-full" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="font-cairo text-xs font-semibold">
-            لوحة الخصائص (Ctrl+Shift+B)
-          </TooltipContent>
-        </Tooltip>
       </div>
 
       {/* 2. زر وضع التركيز (Zen Mode) في الأسفل */}
