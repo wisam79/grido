@@ -32,6 +32,7 @@ import {
   ShieldCheck,
   Moon,
   Sun,
+  Desktop,
   SidebarSimple,
   SlidersHorizontal,
   User,
@@ -59,7 +60,7 @@ export default function App() {
   const panelsHook = useWorkspacePanels();
   const isTemplatesOpen = panelsHook.breakpoint === "wide" ? panelsHook.isTemplatesDrawerOpen : panelsHook.activePanel === "templates";
   const isPropertiesOpen = panelsHook.activePanel === "properties";
-  const { theme, toggleTheme } = useTheme();
+  const { theme, themeMode, toggleTheme } = useTheme();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
 
@@ -323,7 +324,7 @@ export default function App() {
         )}
         onDoubleClick={handleMaximize}
       >
-        <div className="flex items-center justify-between px-3 py-1.5 relative">
+        <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
@@ -363,7 +364,7 @@ export default function App() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 title-bar-controls">
+          <div className="flex items-center gap-1.5 h-full title-bar-controls">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -392,13 +393,29 @@ export default function App() {
                   size="sm"
                   onClick={toggleTheme}
                   className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
-                  aria-label={theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
+                  aria-label={
+                    themeMode === "system"
+                      ? "مظهر النظام تلقائي مع Windows 11"
+                      : themeMode === "dark"
+                      ? "الوضع الداكن"
+                      : "الوضع المضيء"
+                  }
                 >
-                  {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  {themeMode === "system" ? (
+                    <Desktop className="w-4 h-4 text-primary" weight="duotone" />
+                  ) : themeMode === "dark" ? (
+                    <Moon className="w-4 h-4" />
+                  ) : (
+                    <Sun className="w-4 h-4" />
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
-                {theme === "light" ? "الوضع الداكن" : "الوضع المضيء"}
+                {themeMode === "system"
+                  ? `مظهر النظام تلقائي (${theme === "dark" ? "داكن" : "مضيء"})`
+                  : themeMode === "dark"
+                  ? "الوضع الداكن (يدوي)"
+                  : "الوضع المضيء (يدوي)"}
               </TooltipContent>
             </Tooltip>
 
