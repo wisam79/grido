@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -167,6 +168,13 @@ func main() {
 				}
 			},
 		},
+		Windows: application.WindowsOptions{
+			AdditionalBrowserArgs: []string{
+				"--enable-gpu-rasterization",
+				"--enable-zero-copy",
+				"--ignore-gpu-blocklist",
+			},
+		},
 	})
 
 	// إعداد خيارات النافذة الرئيسية مع خامة Mica الأصلية وسحب بدون تأخير
@@ -267,6 +275,47 @@ func main() {
 func createAssetHandler(app *App) http.Handler {
 	fileServer := application.AssetFileServerFS(assets)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && r.URL.Path == "/api/apply-mask" {
+			src := r.URL.Query().Get("src")
+			wStr := r.URL.Query().Get("w")
+			hStr := r.URL.Query().Get("h")
+			if src == "" || wStr == "" || hStr == "" {
+				http.Error(w, "Missing query params (src, w, h)", http.StatusBadRequest)
+				return
+			}
+			maskW, errW := strconv.Atoi(wStr)
+			maskH, errH := strconv.Atoi(hStr)
+			if errW != nil || errH != nil || maskW <= 0 || maskH <= 0 {
+				http.Error(w, "Invalid dimensions", http.StatusBadRequest)
+				return
+			}
+			expectedLen := int64(maskW) * int64(maskH)
+			const maxMaskPixels = int64(32 * 1024 * 1024)
+			if expectedLen > maxMaskPixels {
+				http.Error(w, "Mask dimensions too large", http.StatusBadRequest)
+				return
+			}
+
+			maskBytes := make([]byte, expectedLen)
+			if _, err := io.ReadFull(r.Body, maskBytes); err != nil {
+				http.Error(w, "Failed to read binary mask: "+err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			localPath, err := app.imageProc.ApplyMaskRaw(src, maskBytes, maskW, maskH)
+			if err != nil {
+				http.Error(w, "Failed to apply mask: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"status":   "success",
+				"imageSrc": localPath,
+			})
+			return
+		}
+
 		if r.Method == http.MethodPost && r.URL.Path == "/api/save-file" {
 			filename := r.URL.Query().Get("filename")
 			if filename == "" {

@@ -99,23 +99,148 @@ func resizeGrayLinearRows(src, dst *image.Gray, srcW, srcH, w, h, startY, endY i
 	}
 }
 
-func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW int, maskH int) (string, error) {
+var (
+	lutAlpha       [256]uint8
+	lutSpillFactor [256]float64
+)
+
+func init() {
+	for i := 0; i < 256; i++ {
+		if i < 65 {
+			lutAlpha[i] = 0
+			lutSpillFactor[i] = 0.65
+		} else if i > 215 {
+			lutAlpha[i] = 255
+			lutSpillFactor[i] = 0.0
+		} else {
+			v := float64(i-65) / 150.0
+			smoothV := v * v * (3.0 - 2.0*v)
+			lutAlpha[i] = uint8(math.Round(smoothV * 255.0))
+			lutSpillFactor[i] = (1.0 - smoothV) * 0.65
+		}
+	}
+}
+
+func compositeMaskParallel(srcNRGBA *image.NRGBA, mask *image.Gray, srcW, srcH int) {
+	workers := runtime.NumCPU()
+	if workers > srcH {
+		workers = srcH
+	}
+	if workers < 2 || srcH < 64 {
+		compositeMaskRows(srcNRGBA, mask, srcW, 0, srcH)
+		return
+	}
+
+	rowsPerWorker := (srcH + workers - 1) / workers
+	var wg sync.WaitGroup
+	for worker := 0; worker < workers; worker++ {
+		startY := worker * rowsPerWorker
+		endY := startY + rowsPerWorker
+		if endY > srcH {
+			endY = srcH
+		}
+		if startY >= endY {
+			continue
+		}
+		wg.Add(1)
+		go func(sy, ey int) {
+			defer wg.Done()
+			compositeMaskRows(srcNRGBA, mask, srcW, sy, ey)
+		}(startY, endY)
+	}
+	wg.Wait()
+}
+
+func compositeMaskRows(srcNRGBA *image.NRGBA, mask *image.Gray, srcW, startY, endY int) {
+	pix := srcNRGBA.Pix
+	maskPix := mask.Pix
+
+	for y := startY; y < endY; y++ {
+		srcRowOffset := y * srcNRGBA.Stride
+		maskRowOffset := y * mask.Stride
+
+		for x := 0; x < srcW; x++ {
+			srcIdx := srcRowOffset + x*4
+			maskIdx := maskRowOffset + x
+
+			rawAlpha := maskPix[maskIdx]
+			alpha := lutAlpha[rawAlpha]
+
+			if alpha == 0 {
+				pix[srcIdx+3] = 0
+				continue
+			}
+			if alpha == 255 {
+				pix[srcIdx+3] = 255
+				continue
+			}
+
+			// ✂️ البكسلات الانتقالية الشبه شفافة (حواف الشعر والملابس):
+			r := pix[srcIdx]
+			g := pix[srcIdx+1]
+			b := pix[srcIdx+2]
+
+			spillFactor := lutSpillFactor[rawAlpha]
+
+			// 1. مكافحة تسرب الهالة البيضاء/الفاتحة على حواف الشعر (Hair Edge Spill Suppression)
+			lum := (uint32(r)*299 + uint32(g)*587 + uint32(b)*114) / 1000
+			if lum > 125 {
+				suppression := float64(lum-125) * spillFactor
+				if float64(r) > suppression {
+					r = uint8(float64(r) - suppression)
+				} else {
+					r = 0
+				}
+				if float64(g) > suppression {
+					g = uint8(float64(g) - suppression)
+				} else {
+					g = 0
+				}
+				if float64(b) > suppression {
+					b = uint8(float64(b) - suppression)
+				} else {
+					b = 0
+				}
+			}
+
+			// 2. مكافحة تسرب ألوان خلفيات الاستوديو (Chroma Decontamination: Green/Blue Spill)
+			// إزالة انعكاسات الشاشة الخضراء أو الزرقاء الشائعة على أطراف الشعر
+			avgRB := (uint32(r) + uint32(b)) / 2
+			if uint32(g) > avgRB+15 {
+				excessG := float64(uint32(g)-avgRB) * spillFactor
+				if float64(g) > excessG {
+					g = uint8(float64(g) - excessG)
+				}
+			}
+			avgRG := (uint32(r) + uint32(g)) / 2
+			if uint32(b) > avgRG+15 {
+				excessB := float64(uint32(b)-avgRG) * spillFactor
+				if float64(b) > excessB {
+					b = uint8(float64(b) - excessB)
+				}
+			}
+
+			pix[srcIdx] = r
+			pix[srcIdx+1] = g
+			pix[srcIdx+2] = b
+			pix[srcIdx+3] = alpha
+		}
+	}
+}
+
+// ApplyMaskRaw يطبق بايتات القناع الثنائية مباشرة بدون أي فك تشفير Base64 (Zero-Overhead)
+func (s *ImageProcessorService) ApplyMaskRaw(localImagePath string, maskBytes []byte, maskW int, maskH int) (string, error) {
 	// 🛡️ رفض أبعاد قناع غير منطقية أو فيض حسابي (maskW*maskH)
 	if maskW <= 0 || maskH <= 0 {
 		return "", fmt.Errorf("invalid mask dimensions: %dx%d", maskW, maskH)
 	}
-	// 32MP كحد أقصى (≈128MB NRGBA) — كان 200MP أي ~800MB مع 3 نسخ متزامنة
+	// 32MP كحد أقصى (≈128MB NRGBA)
 	const maxMaskPixels = int64(32 * 1024 * 1024)
 	if int64(maskW)*int64(maskH) > maxMaskPixels {
 		return "", fmt.Errorf("mask dimensions too large: %dx%d", maskW, maskH)
 	}
-	// فحص طول السلسلة قبل التخصيص: base64 ≈ 4/3 الخام — يمنع فك 100MB في الذاكرة
-	if int64(len(maskBase64)) > maxMaskPixels*4/3+16 {
-		return "", fmt.Errorf("mask payload too large: %d bytes", len(maskBase64))
-	}
-	maskBytes, err := base64.StdEncoding.DecodeString(maskBase64)
-	if err != nil {
-		return "", fmt.Errorf("decode mask base64: %w", err)
+	if int64(len(maskBytes)) != int64(maskW)*int64(maskH) {
+		return "", fmt.Errorf("mask bytes size mismatch: expected %d, got %d", maskW*maskH, len(maskBytes))
 	}
 
 	var srcImg image.Image
@@ -157,23 +282,19 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 		}
 	}
 
-	if int64(len(maskBytes)) != int64(maskW)*int64(maskH) {
-		return "", fmt.Errorf("mask bytes size mismatch: expected %d, got %d", maskW*maskH, len(maskBytes))
+	srcBounds := srcImg.Bounds()
+	srcW, srcH := srcBounds.Dx(), srcBounds.Dy()
+
+	// سقف المصدر قبل أي نسخة: يمنع تضخيم الذاكرة لصور ضخمة
+	const maxSourcePixels = int64(50 * 1024 * 1024)
+	if int64(srcW)*int64(srcH) > maxSourcePixels {
+		return "", fmt.Errorf("source image too large: %dx%d", srcW, srcH)
 	}
 
 	maskImg := &image.Gray{
 		Pix:    maskBytes,
 		Stride: maskW,
 		Rect:   image.Rect(0, 0, maskW, maskH),
-	}
-
-	srcBounds := srcImg.Bounds()
-	srcW, srcH := srcBounds.Dx(), srcBounds.Dy()
-
-	// سقف المصدر قبل أي نسخة: يمنع تضخيم 3x (Clone + Resize + مخرج) لصور ضخمة
-	const maxSourcePixels = int64(50 * 1024 * 1024)
-	if int64(srcW)*int64(srcH) > maxSourcePixels {
-		return "", fmt.Errorf("source image too large: %dx%d", srcW, srcH)
 	}
 
 	var finalMask *image.Gray = maskImg
@@ -188,67 +309,8 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 	}
 	srcImg = nil
 
-	// كتابة موضعية في نفس المخزن بدل مخرج ثالث بحجم المصدر (القراءة تسبق
-	// الكتابة لكل بكسل فالمشاركة آمنة) — يوفر نسخة NRGBA كاملة
-	pix := srcNRGBA.Pix
-	maskPix := finalMask.Pix
-
-	for y := 0; y < srcH; y++ {
-		srcRowOffset := y * srcNRGBA.Stride
-		maskRowOffset := y * finalMask.Stride
-
-		for x := 0; x < srcW; x++ {
-			srcIdx := srcRowOffset + x*4
-			maskIdx := maskRowOffset + x
-
-			rawAlpha := float64(maskPix[maskIdx])
-
-			// ✂️ منحنى تشذيب وتنعيم حواف القناع ومكافحة الهالة البيضاء حول الشعر (Alpha Remapping & Edge Defringe)
-			var alpha uint8
-			r := pix[srcIdx]
-			g := pix[srcIdx+1]
-			b := pix[srcIdx+2]
-
-			if rawAlpha < 65 {
-				alpha = 0
-			} else if rawAlpha > 215 {
-				alpha = 255
-			} else {
-				// منحنى Smoothstep التكعيبي s(v) = v^2 * (3 - 2v) للانتقال الطبيعي الحوافي
-				v := (rawAlpha - 65.0) / 150.0
-				smoothV := v * v * (3.0 - 2.0*v)
-				alpha = uint8(math.Round(smoothV * 255.0))
-
-				// 🛡️ مكافحة تسرب الضوء الحوافي الدقيقة للشعر (Hair Edge Spill Suppression):
-				// للبكسلات الانتقالية الشبه شفافة وحواف الشعر المجعد القادمة من خلفيات فاتحة (lum > 130)،
-				// نكبح السطوع الفائق لمنع تكون هالة بيضاء/رمادية نهائياً فوق الخلفيات الداكنة.
-				lum := (uint32(r)*299 + uint32(g)*587 + uint32(b)*114) / 1000
-				if lum > 130 {
-					suppression := float64(lum-130) * (1.0 - smoothV) * 0.65
-					if float64(r) > suppression {
-						r = uint8(float64(r) - suppression)
-					} else {
-						r = 0
-					}
-					if float64(g) > suppression {
-						g = uint8(float64(g) - suppression)
-					} else {
-						g = 0
-					}
-					if float64(b) > suppression {
-						b = uint8(float64(b) - suppression)
-					} else {
-						b = 0
-					}
-				}
-			}
-
-			pix[srcIdx] = r
-			pix[srcIdx+1] = g
-			pix[srcIdx+2] = b
-			pix[srcIdx+3] = alpha
-		}
-	}
+	// دمج القناع ومعالجة الحواف متوازياً عبر أنوية المعالج بالكامل
+	compositeMaskParallel(srcNRGBA, finalMask, srcW, srcH)
 
 	newName := fmt.Sprintf("img_%d.png", time.Now().UnixNano())
 	newPath := filepath.Join(mediaDir, newName)
@@ -269,4 +331,17 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 	}
 
 	return "/local-image/" + newName, nil
+}
+
+// ApplyMaskToImage يحافظ على التوافقية العكسية باستقبال Base64 وتوجيهه لمحرك البايتات المتوازي
+func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW int, maskH int) (string, error) {
+	const maxMaskPixels = int64(32 * 1024 * 1024)
+	if int64(len(maskBase64)) > maxMaskPixels*4/3+16 {
+		return "", fmt.Errorf("mask payload too large: %d bytes", len(maskBase64))
+	}
+	maskBytes, err := base64.StdEncoding.DecodeString(maskBase64)
+	if err != nil {
+		return "", fmt.Errorf("decode mask base64: %w", err)
+	}
+	return s.ApplyMaskRaw(localImagePath, maskBytes, maskW, maskH)
 }

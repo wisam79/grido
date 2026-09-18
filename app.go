@@ -253,6 +253,10 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 	return a.imageProc.ApplyMaskToImage(localImagePath, maskBase64, maskW, maskH)
 }
 
+func (a *App) ApplyMaskRaw(localImagePath string, maskBytes []byte, maskW int, maskH int) (string, error) {
+	return a.imageProc.ApplyMaskRaw(localImagePath, maskBytes, maskW, maskH)
+}
+
 func (a *App) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
 	return a.aiSvc.EnhanceImageWithAI(base64Image, token, limit)
 }

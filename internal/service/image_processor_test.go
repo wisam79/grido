@@ -38,6 +38,50 @@ func TestImageProcessor_ApplyMaskToImage_DimensionsValidation(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for oversized mask dimensions, got nil")
 	}
+
+	// اختبار التحقق من الأبعاد في ApplyMaskRaw
+	_, err = procSvc.ApplyMaskRaw("test.png", []byte{1, 2}, 0, 10)
+	if err == nil {
+		t.Fatal("expected error for non-positive width in ApplyMaskRaw, got nil")
+	}
+	_, err = procSvc.ApplyMaskRaw("test.png", []byte{1, 2}, 2, 2)
+	if err == nil {
+		t.Fatal("expected error for mismatched mask bytes length, got nil")
+	}
+}
+
+func TestImageProcessor_ApplyMaskRaw_Success(t *testing.T) {
+	mediaSvc := NewMediaService()
+	procSvc := NewImageProcessorService(mediaSvc)
+	mediaDir := mediaSvc.GetMediaDir()
+
+	srcImg := image.NewNRGBA(image.Rect(0, 0, 2, 2))
+	srcImg.SetNRGBA(0, 0, color.NRGBA{R: 240, G: 240, B: 240, A: 255})
+	srcImg.SetNRGBA(1, 0, color.NRGBA{R: 20, G: 220, B: 20, A: 255}) // green spill test
+	srcImg.SetNRGBA(0, 1, color.NRGBA{R: 200, G: 200, B: 200, A: 255})
+	srcImg.SetNRGBA(1, 1, color.NRGBA{R: 50, G: 50, B: 50, A: 255})
+
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, srcImg); err != nil {
+		t.Fatalf("failed to encode test image: %v", err)
+	}
+
+	testFileName := "test_raw_mask.png"
+	testFilePath := filepath.Join(mediaDir, testFileName)
+	if err := os.WriteFile(testFilePath, buf.Bytes(), 0644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+	defer os.Remove(testFilePath)
+
+	maskBytes := []byte{10, 130, 240, 200}
+	outPath, err := procSvc.ApplyMaskRaw("/local-image/"+testFileName, maskBytes, 2, 2)
+	if err != nil {
+		t.Fatalf("ApplyMaskRaw failed: %v", err)
+	}
+	if outPath == "" {
+		t.Fatal("expected non-empty output path")
+	}
+	defer os.Remove(filepath.Join(mediaDir, filepath.Base(outPath)))
 }
 
 func TestImageProcessor_ApplyMaskToImage_ValidMaskAndDefringe(t *testing.T) {
