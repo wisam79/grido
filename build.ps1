@@ -50,6 +50,7 @@ $env:APP_VERSION = $appVersion
 $env:SUPABASE_URL = $supabaseUrl
 $env:SUPABASE_ANON_KEY = $supabaseAnonKey
 $env:MODAL_AI_KEY = $modalAiKey
+$env:CGO_ENABLED = "1"
 
 wails3 task build
 

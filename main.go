@@ -158,7 +158,7 @@ func main() {
 		MinWidth:           900,
 		MinHeight:          600,
 		Frameless:          true,
-		Hidden:             true,
+		Hidden:             false,
 		ZoomControlEnabled: false,
 		EnableFileDrop:     true,
 		BackgroundColour:   application.NewRGBA(255, 255, 255, 255),
@@ -169,6 +169,12 @@ func main() {
 		URL: "/",
 	}
 
+	if startMax {
+		winOptions.StartState = application.WindowStateMaximised
+	} else {
+		winOptions.StartState = application.WindowStateNormal
+	}
+
 	if hasSavedPos {
 		winOptions.X = initialX
 		winOptions.Y = initialY
@@ -177,15 +183,6 @@ func main() {
 	}
 
 	mainWindow = wailsApp.Window.NewWithOptions(winOptions)
-
-	// إظهار النافذة وتطبيق التكبير بعد بدء التشغيل
-	go func() {
-		time.Sleep(150 * time.Millisecond)
-		mainWindow.Show()
-		if startMax {
-			mainWindow.Maximise()
-		}
-	}()
 
 	// 📂 معالجة سحب وإفلات الملفات من نظام التشغيل مباشرة
 	mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {
