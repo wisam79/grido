@@ -17,6 +17,7 @@ import {
   GridNine,
   Star,
 } from "@phosphor-icons/react";
+import { useEditorStore } from "@/lib/editor-store";
 
 /* ═══════════════════════════════════════════════════════════════
    سجل أدوات الشريط الجانبي — مصدر حقيقة واحد للأوضاع الثلاثة:
@@ -374,3 +375,122 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
 export function dispatchWorkspaceCommand(command: WorkspaceCommand): void {
   window.dispatchEvent(new CustomEvent(command.event, { detail: command.detail }));
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   أوامر الحالة الحية (State Commands) — تقرأ وتعدّل متجر Zustand
+   مباشرة (undo/redo، المساطر، الشبكة، الزوم) بدل إطلاق أحداث.
+   تُعرض في لوحة الأوامر مع حالتها الحالية كسطر وصفي، وتعطل نفسها
+   (disabled) عندما لا معنى لتنفيذها (لا شيء للتراجع عنه مثلاً).
+   ═══════════════════════════════════════════════════════════════ */
+
+export interface StateCommand {
+  id: string;
+  title: string;
+  group: string;
+  shortcut?: string;
+  /** يُعاد تقييمه في كل فتح للوحة — الحالة والوصف والتعطيل */
+  getSnapshot: () => { subtitle: string; disabled?: boolean; run: () => void };
+}
+
+const percent = (zoom: number): string => `${Math.round(zoom * 100)}%`;
+
+export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
+  {
+    id: "undo",
+    title: "تراجع",
+    group: "تحرير",
+    shortcut: "Ctrl+Z",
+    getSnapshot: () => {
+      const { history, historyIndex, undo } = useEditorStore.getState();
+      const stepsBack = history.length - 1 - historyIndex;
+      return {
+        subtitle: stepsBack > 0 ? `${stepsBack} خطوات محفوظة` : "لا شيء للتراجع عنه",
+        disabled: stepsBack <= 0,
+        run: undo,
+      };
+    },
+  },
+  {
+    id: "redo",
+    title: "إعادة",
+    group: "تحرير",
+    shortcut: "Ctrl+Shift+Z",
+    getSnapshot: () => {
+      const { history, historyIndex, redo } = useEditorStore.getState();
+      const stepsForward = historyIndex;
+      return {
+        subtitle: stepsForward > 0 ? "تستعيد الخطوة التالية" : "لا شيء لإعادته",
+        disabled: stepsForward <= 0,
+        run: redo,
+      };
+    },
+  },
+  {
+    id: "toggle-rulers",
+    title: "المساطر",
+    group: "عرض الكانفاس",
+    shortcut: "Ctrl+R",
+    getSnapshot: () => {
+      const { showRuler, setShowRuler } = useEditorStore.getState();
+      return {
+        subtitle: showRuler ? "ظاهرة الآن — للإخفاء" : "مخفية الآن — للإظهار",
+        run: () => setShowRuler(!showRuler),
+      };
+    },
+  },
+  {
+    id: "toggle-grid",
+    title: "الشبكة",
+    group: "عرض الكانفاس",
+    shortcut: "Ctrl+'",
+    getSnapshot: () => {
+      const { showGrid, setShowGrid } = useEditorStore.getState();
+      return {
+        subtitle: showGrid ? "ظاهرة الآن — للإخفاء" : "مخفية الآن — للإظهار",
+        run: () => setShowGrid(!showGrid),
+      };
+    },
+  },
+  {
+    id: "zoom-in",
+    title: "تكبير",
+    group: "عرض الكانفاس",
+    shortcut: "Ctrl++",
+    getSnapshot: () => {
+      const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
+      return {
+        subtitle: `الحالي ${percent(canvasZoom)}`,
+        disabled: canvasZoom >= 5,
+        run: () => setCanvasZoom(Math.min(5, parseFloat((canvasZoom + 0.1).toFixed(2)))),
+      };
+    },
+  },
+  {
+    id: "zoom-out",
+    title: "تصغير",
+    group: "عرض الكانفاس",
+    shortcut: "Ctrl+-",
+    getSnapshot: () => {
+      const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
+      return {
+        subtitle: `الحالي ${percent(canvasZoom)}`,
+        disabled: canvasZoom <= 0.1,
+        run: () => setCanvasZoom(Math.max(0.1, parseFloat((canvasZoom - 0.1).toFixed(2)))),
+      };
+    },
+  },
+  {
+    id: "zoom-reset",
+    title: "إعادة الضبط إلى 100%",
+    group: "عرض الكانفاس",
+    shortcut: "Ctrl+0",
+    getSnapshot: () => {
+      const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
+      return {
+        subtitle: canvasZoom === 1 ? "أنت عند 100%" : `الحالي ${percent(canvasZoom)}`,
+        disabled: canvasZoom === 1,
+        run: () => setCanvasZoom(1),
+      };
+    },
+  },
+];

@@ -22,6 +22,7 @@ import {
   COLLAGE_TOOLS,
   STUDIO_TOOLS,
   WORKSPACE_COMMANDS,
+  WORKSPACE_STATE_COMMANDS,
   dispatchWorkspaceCommand,
   groupTools,
   toolShortcut,
@@ -298,6 +299,32 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                       <CommandShortcut>{toolShortcut(index)}</CommandShortcut>
                     </CommandItem>
                   ))}
+                </CommandGroup>
+
+                {/* أوامر الحالة الحية — تراجع/إعادة تتعطل تلقائياً، والعرض يظهر الحالة الحالية */}
+                <CommandSeparator />
+                <CommandGroup heading="تحرير وعرض">
+                  {WORKSPACE_STATE_COMMANDS.map((command) => {
+                    const { subtitle, disabled, run } = command.getSnapshot();
+                    return (
+                      <CommandItem
+                        key={command.id}
+                        value={`${command.title} ${subtitle}`}
+                        disabled={disabled}
+                        onSelect={() => {
+                          run();
+                          setIsLauncherOpen(false);
+                        }}
+                        data-testid={`command-${command.id}`}
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-bold truncate">{command.title}</span>
+                          <span className="block text-mini text-muted-foreground truncate">{subtitle}</span>
+                        </span>
+                        {command.shortcut && <CommandShortcut>{command.shortcut}</CommandShortcut>}
+                      </CommandItem>
+                    );
+                  })}
                 </CommandGroup>
 
                 {/* الأوامر العالمية — نفس أحداث grido:* ونفس اختصارات use-keyboard-shortcuts */}
