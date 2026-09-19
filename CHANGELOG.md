@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **تصحيح توثيقي (سبتمبر 2026 — مثبت من الكود):** إدخال `v1.2.11` ادعى أن `build.ps1` يفشل عند غياب `MODAL_AI_KEY`، لكن `build.ps1:22-26,49` يبني بمفتاح فارغ دون فشل. يُترك الإدخال الأصلي لسجل التاريخ، والصحيح هو السلوك الحالي في `build.ps1`.
 
+## [v1.4.0] - 2026-09-19
+
+### Changed (Wails v3 Migration & Desktop Integration)
+
+- تمت ترقية خط البناء بالكامل إلى **Wails v3.0.0-beta.23** (bindings مولّدة عبر `wails3 generate bindings -ts`، مخرجات في `bin/`، جملة `wails3 task package` مع حقن `APP_VERSION` و`SUPABASE_*` عبر ldflags).
+- اندماج أصيل مع Windows 11: **Fluent Mica**، تقدّم شريط المهام، إشعارات Toast، وSnap Assist (`6059356`).
+- **تسريع جسر IPC**: تدفق ثنائي zero-copy مع دمج أقنعة الذكاء الاصطناعي متعدد الأنوية، وتقليص نطاق إعادة الرسم في Konva والقضاء على layout thrashing أثناء التقريب (`65fe4bd`، `68b9f4d`).
+- إطار **لوحة الأوامر** (Ctrl+K) القابلة للبحث مع أوامر live-state ومخططات Fluent shimmer (`b20b725`، `8c8015d`).
+
+### Improved (UI & Quality)
+
+- توحيد خط التطبيق على IBM Plex Sans Arabic وتوحيد عنوان Toolbar/Titlebar ولوحة الخصائص وفق Fluent 2 (`90ebc29`، `e747425`، `bf07210`).
+- إصلاح منطق **Undo/Redo** المعكوس وتقوية defaultability في project-serializer مع توسيع تغطية الاختبارات (وحدة + E2E 21+ suite عبر مصفوفة CI من 4 شرائح) (`ee5e359`، `e56c278`، `5ced47d`).
+
+### Fixed
+
+- تعطيل deadlock نافذة الطباعة وقفل pointer-events (`7e51b41`)، مواءمة مسارات Windows الأصلية في `GetImageDimensions`/`resolveLocalPath` (`204fab4`)، وتنقية الحوافز والهوامش الأمانية للنوافذ المنبثقة (`2e9bfc1`، `58aac9b`).
+
 ## [BUILD-FIX] - 2026-09-18
 
 ### Fixed (Wails v3 Build Pipeline, E2E Port & Production Mock)
