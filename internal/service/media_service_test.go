@@ -503,3 +503,47 @@ func TestMediaService_GetBatchImageDimensions(t *testing.T) {
 		}
 	}
 }
+
+func TestMediaService_CrossPlatformAndWindowsPaths(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	svc := NewMediaService()
+	mediaDir := svc.GetMediaDir()
+
+	decoded, _ := base64.StdEncoding.DecodeString(validPNGBase64)
+
+	// 1. ملف باسم عربي ومسافات
+	arabicFilename := "صورة شخصية مع مسافات 4x6.png"
+	arabicPath := filepath.Join(tempDir, arabicFilename)
+	if err := os.WriteFile(arabicPath, decoded, 0644); err != nil {
+		t.Fatalf("failed to write arabic file: %v", err)
+	}
+
+	resPath, err := svc.ProcessOpenedFile(arabicPath)
+	if err != nil {
+		t.Fatalf("ProcessOpenedFile failed for arabic filename: %v", err)
+	}
+	if !strings.HasPrefix(resPath, "/local-image/") {
+		t.Errorf("expected /local-image/ prefix, got %s", resPath)
+	}
+
+	// 2. فحص الأبعاد مع المسار المعالج
+	dims := svc.GetImageDimensions(resPath)
+	if dims.Width != 1 || dims.Height != 1 {
+		t.Errorf("expected 1x1 dimensions for arabic path, got %dx%d", dims.Width, dims.Height)
+	}
+
+	// 3. التحقق من تطبيع المسارات
+	rawTarget := filepath.Join(mediaDir, "test_norm.png")
+	if err := os.WriteFile(rawTarget, decoded, 0644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+
+	// محاكاة استدعاء بمسار Windows مع Backslashes
+	winPath := strings.ReplaceAll(rawTarget, "/", "\\")
+	winDims := svc.GetImageDimensions(winPath)
+	if winDims.Width != 1 || winDims.Height != 1 {
+		t.Errorf("expected 1x1 for windows backslash path, got %dx%d", winDims.Width, winDims.Height)
+	}
+}

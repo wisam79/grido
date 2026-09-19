@@ -566,3 +566,91 @@ func TestPrintService_UploadImageInExportsResolved(t *testing.T) {
 		defer os.Remove(strings.TrimSuffix(outPath, ".html") + ".jpg")
 	}
 }
+
+func TestPrintService_HiRes300DPI_A4_FullScaleVerification(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "hires_print_test")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create test photo
+	testImgPath := filepath.Join(tempDir, "photo.png")
+	testImg := image.NewRGBA(image.Rect(0, 0, 400, 600))
+	for x := 0; x < 400; x++ {
+		for y := 0; y < 600; y++ {
+			testImg.Set(x, y, color.RGBA{R: 240, G: 180, B: 100, A: 255})
+		}
+	}
+	if err := imaging.Save(testImg, testImgPath); err != nil {
+		t.Fatalf("failed to save test photo: %v", err)
+	}
+
+	svc := NewPrintService()
+
+	// A4 Standard: 210mm x 297mm at 300 DPI -> 2480 x 3508 pixels
+	req := domain.PrintRequest{
+		PaperWidthMM:    210.0,
+		PaperHeightMM:   297.0,
+		DPI:             300,
+		BackgroundColor: "#FFFFFF",
+		ExportFormat:    "jpeg",
+		ShowCutLines:    true,
+		CutLines: []domain.CutLine{
+			{X1: 15, Y1: 15, X2: 195, Y2: 15},
+			{X1: 15, Y1: 280, X2: 195, Y2: 280},
+		},
+		Items: []domain.PrintItem{
+			{ImageSrc: testImgPath, X: 20, Y: 20, W: 80, H: 120},
+			{ImageSrc: testImgPath, X: 110, Y: 20, W: 80, H: 120},
+		},
+	}
+
+	outPath, _, err := svc.GeneratePrintSheet(req)
+	if err != nil {
+		t.Fatalf("GeneratePrintSheet 300 DPI A4 failed: %v", err)
+	}
+	defer os.Remove(outPath)
+
+	actualJpg := outPath
+	if strings.HasSuffix(outPath, ".html") {
+		actualJpg = strings.TrimSuffix(outPath, ".html") + ".jpg"
+		defer os.Remove(actualJpg)
+	}
+
+	fileInfo, err := os.Stat(actualJpg)
+	if err != nil {
+		t.Fatalf("Generated print sheet JPG not found: %v", err)
+	}
+	if fileInfo.Size() < 5000 {
+		t.Errorf("Generated JPEG file is suspiciously small: %d bytes", fileInfo.Size())
+	}
+
+	// Verify image dimensions: must match A4 at 300 DPI (2480 x 3508)
+	f, err := os.Open(actualJpg)
+	if err != nil {
+		t.Fatalf("Failed to open generated JPEG: %v", err)
+	}
+	defer f.Close()
+
+	cfg, _, err := image.DecodeConfig(f)
+	if err != nil {
+		t.Fatalf("Failed to decode JPEG config: %v", err)
+	}
+
+	expectedW := int(math.Round(210.0 * 300.0 / 25.4))
+	expectedH := int(math.Round(297.0 * 300.0 / 25.4))
+
+	if cfg.Width != expectedW || cfg.Height != expectedH {
+		t.Errorf("A4 300 DPI dimensions mismatch. Expected %dx%d, got %dx%d", expectedW, expectedH, cfg.Width, cfg.Height)
+	}
+
+	// Verify JPEG APP0 DPI marker
+	dpiW, dpiH, err := readJpegDPI(actualJpg)
+	if err == nil {
+		if dpiW != 300 || dpiH != 300 {
+			t.Errorf("Expected JPEG DPI 300x300, got %dx%d", dpiW, dpiH)
+		}
+	}
+}
+
