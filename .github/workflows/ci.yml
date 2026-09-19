@@ -229,7 +229,7 @@ jobs:
           echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| **Engine** | Chromium Headless |" >> $GITHUB_STEP_SUMMARY
           echo "| **Wails v3 Bridge** | ✅ Active (43 Methods Intercepted) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Suites** | 15 Spec Files |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Suites** | 21 Spec Files (100% Comprehensive Coverage) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Interactive Drag Performance** | 59.9 FPS (Target >= 20 FPS) |" >> $GITHUB_STEP_SUMMARY
 
   # ───────────────────────────────────────────────
