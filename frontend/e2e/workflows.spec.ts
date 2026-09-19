@@ -89,6 +89,10 @@ test.describe('Editor Core Workflows E2E', () => {
   });
 
   test('Welcome screen appears when mode is not set and allows mode selection', async ({ page }) => {
+    // ضبط علم يجبر init script على حذف grido_workflow_mode بدل ضبطه
+    await page.addInitScript(() => {
+      (window as unknown as { __GRIDO_E2E_FORCE_WELCOME__?: boolean }).__GRIDO_E2E_FORCE_WELCOME__ = true;
+    });
     // محاكاة مستخدم جديد لأول مرة (مسح التخزين المحلي)
     await page.evaluate(() => {
       localStorage.removeItem('grido_workflow_mode');

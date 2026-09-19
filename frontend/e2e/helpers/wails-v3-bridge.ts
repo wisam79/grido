@@ -176,10 +176,17 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
   });
 
   // 3. حقن كائنات التوافق العكسي وتجاوز شاشة الترحيب في بيئة الاختبار
+  //    يتم تجاهل الكتابة التلقائية على grido_workflow_mode إن تم ضبط علم
+  //    __GRIDO_E2E_FORCE_WELCOME__ على window (يُستخدم من اختبار شاشة الترحيب).
   await page.addInitScript((mockImage) => {
     try {
-      if (!localStorage.getItem('grido_workflow_mode')) {
+      const forceWelcome = (window as unknown as { __GRIDO_E2E_FORCE_WELCOME__?: boolean })
+        .__GRIDO_E2E_FORCE_WELCOME__;
+      if (!forceWelcome && !localStorage.getItem('grido_workflow_mode')) {
         localStorage.setItem('grido_workflow_mode', 'studio');
+      }
+      if (forceWelcome) {
+        localStorage.removeItem('grido_workflow_mode');
       }
     } catch {
       // تجاهل أخطاء التخزين إن وجدت
