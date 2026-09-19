@@ -921,6 +921,20 @@
   }
 }
 
+/* Fluent 2 Wait UX: هيكل تحميل نابض — يُستخدم مع مكوّن Skeleton */
+.fluent-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.12) 45%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.12) 55%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: fluent-shimmer 1.6s linear infinite;
+}
+
 @keyframes fluent-pulse-glow {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.35);

@@ -251,3 +251,126 @@ export function groupTools<T extends string>(tools: WorkspaceTool<T>[]): ToolGro
   });
   return groups;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   سجل أوامر لوحة الأوامر (Ctrl+K) — الأوامر العالمية خارج أدوات
+   الألواح (ملف، تصدير، طباعة، إدراج دفعي، تحديثات، اختصارات...).
+   التنفيذ يمر عبر ناقل أحداث grido:* الحالي، فلا تكرار منطق،
+   واختصارات كل أمر هي نفسها المسجلة في use-keyboard-shortcuts.ts.
+   ═══════════════════════════════════════════════════════════════ */
+
+export interface WorkspaceCommand {
+  id: string;
+  title: string;
+  subtitle: string;
+  group: string;
+  shortcut?: string;
+  /** اسم حدث grido:* المُطلق عند التنفيذ (بلا detail ما عدا المشاريع) */
+  event: string;
+  detail?: Record<string, unknown>;
+}
+
+export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
+  // — الملف والمشاريع —
+  {
+    id: "open-file",
+    title: "فتح صورة",
+    subtitle: "اختيار صورة من الجهاز",
+    group: "الملف",
+    shortcut: "Ctrl+O",
+    event: "grido:open-file-dialog",
+  },
+  {
+    id: "batch-insert",
+    title: "إدراج دفعي",
+    subtitle: "اختيار عدة صور معاً",
+    group: "الملف",
+    shortcut: "Ctrl+Shift+O",
+    event: "grido:open-batch-insert-dialog",
+  },
+  {
+    id: "projects",
+    title: "المشاريع",
+    subtitle: "الحفظ والتحميل والمكتبة",
+    group: "الملف",
+    shortcut: "Ctrl+S",
+    event: "grido:open-projects-dialog",
+    detail: { tab: "save" },
+  },
+  // — الإخراج —
+  {
+    id: "export",
+    title: "تصدير",
+    subtitle: "حفظ النتيجة بجودة عالية",
+    group: "الإخراج",
+    shortcut: "Ctrl+E",
+    event: "grido:open-export-dialog",
+  },
+  {
+    id: "print",
+    title: "طباعة",
+    subtitle: "إعداد الورقة وخطوط القص",
+    group: "الإخراج",
+    shortcut: "Ctrl+P",
+    event: "grido:open-print-dialog",
+  },
+  // — العرض —
+  {
+    id: "toggle-right-sidebar",
+    title: "الألواح الجانبية",
+    subtitle: "إظهار أو إخفاء قوالب/طبقات",
+    group: "العرض",
+    shortcut: "Ctrl+B",
+    event: "grido:toggle-right-sidebar",
+  },
+  {
+    id: "toggle-left-sidebar",
+    title: "خصائص العنصر",
+    subtitle: "إظهار أو إخفاء لوحة الخصائص",
+    group: "العرض",
+    shortcut: "Ctrl+Shift+B",
+    event: "grido:toggle-left-sidebar",
+  },
+  {
+    id: "zen-mode",
+    title: "وضع التركيز",
+    subtitle: "إخفاء كل الألواح مؤقتاً",
+    group: "العرض",
+    shortcut: "Ctrl+.",
+    event: "grido:toggle-zen-mode",
+  },
+  // — النظام —
+  {
+    id: "shortcuts",
+    title: "الاختصارات",
+    subtitle: "قائمة كاملة بلوحة المفاتيح",
+    group: "النظام",
+    event: "grido:open-shortcuts",
+  },
+  {
+    id: "stickers",
+    title: "استوديو الملصقات",
+    subtitle: "أختام وشارات قابلة للتخصيص",
+    group: "النظام",
+    event: "grido:open-stickers-dialog",
+  },
+  {
+    id: "phone-bridge",
+    title: "جسر الهاتف",
+    subtitle: "استقبال صور مباشرة من الجوال",
+    group: "النظام",
+    event: "grido:open-phone-bridge",
+  },
+  {
+    id: "check-updates",
+    title: "فحص التحديثات",
+    subtitle: "البحث عن إصدار أحدث",
+    group: "النظام",
+    event: "grido:check-updates",
+  },
+];
+
+/** تنفيذ أمر من السجل عبر ناقل الأحداث الموحد */
+export function dispatchWorkspaceCommand(command: WorkspaceCommand): void {
+  window.dispatchEvent(new CustomEvent(command.event, { detail: command.detail }));
+}

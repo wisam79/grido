@@ -23,6 +23,7 @@ import { SaveFileDialog } from "../../../../wailsjs/go/main/App";
 import { domain } from "../../../../wailsjs/go/models";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/huge-icon";
+import { ProjectsSkeleton } from "@/components/ui/skeleton";
 import {
   FolderOpen,
   FloppyDisk,
@@ -412,10 +413,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
               </div>
 
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground border rounded-xl bg-muted/10">
-                  <Spinner className="w-7 h-7 text-primary mb-2" size={28} />
-                  <span className="text-xs font-medium">جاري تحميل المشاريع ...</span>
-                </div>
+                <ProjectsSkeleton rows={4} />
               ) : projectsList.length === 0 ? (
                 <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground text-xs">
                   لا توجد مشاريع محفوظة

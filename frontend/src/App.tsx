@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { useOperationStatusStore } from "@/lib/ui/operation-status";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Spinner } from "@/components/ui/huge-icon";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PhosphorProvider } from "@/components/ui/phosphor-provider";
 import {
   SquaresFour,
@@ -50,6 +51,27 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { usePhoneBridgeListener } from "@/components/editor/system/use-phone-bridge";
+
+/** هيكل تحميل بسيط يُعرض أثناء تفكيك الحوارات الكسولة (تصدير/طباعة) */
+function DialogLazyFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="جاري التحميل ..."
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+    >
+      <div className="w-[min(480px,90vw)] rounded-2xl border border-border/60 bg-background/95 p-5 space-y-3 shadow-2xl fluent-specular">
+        <Skeleton className="h-6 w-1/2" />
+        <Skeleton className="h-3 w-3/4" />
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+        </div>
+        <Skeleton className="h-8 w-full rounded-md" />
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
@@ -617,14 +639,14 @@ export default function App() {
 
       {/* نافذة التصدير */}
       <ErrorBoundary>
-        <Suspense fallback={null}>
+        <Suspense fallback={exportOpen ? <DialogLazyFallback /> : null}>
           <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
         </Suspense>
       </ErrorBoundary>
 
       {/* نافذة إعدادات الطباعة */}
       <ErrorBoundary>
-        <Suspense fallback={null}>
+        <Suspense fallback={printOpen ? <DialogLazyFallback /> : null}>
           <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
         </Suspense>
       </ErrorBoundary>

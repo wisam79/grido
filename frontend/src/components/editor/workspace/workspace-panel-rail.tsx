@@ -1,16 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowsOutSimple, ArrowsInSimple, SquaresFour, MagnifyingGlass } from '@phosphor-icons/react';
+import { ArrowsOutSimple, ArrowsInSimple, SquaresFour } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandSeparator,
+  CommandItem,
+  CommandShortcut,
+} from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import type { WorkspacePanel } from '@/hooks/use-workspace-panels';
 import type { CollageTab, FreeformTab, WorkspaceTool } from '@/lib/workspace-tools';
 import {
   COLLAGE_TOOLS,
   STUDIO_TOOLS,
+  WORKSPACE_COMMANDS,
+  dispatchWorkspaceCommand,
   groupTools,
   toolShortcut,
 } from '@/lib/workspace-tools';
@@ -120,54 +132,6 @@ function RailToolButton({
         </kbd>
       </TooltipContent>
     </Tooltip>
-  );
-}
-
-/** بطاقة أداة داخل لوحة الأدوات — الاسم والوصف والاختصار في مكان واحد */
-function ToolLauncherCard<T extends string>({
-  tool,
-  index,
-  isActive,
-  onSelect,
-}: {
-  tool: WorkspaceTool<T>;
-  index: number;
-  isActive: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      data-testid={`launcher-${tool.id}`}
-      aria-current={isActive ? 'page' : undefined}
-      className={cn(
-        'group flex items-start gap-2.5 p-2 rounded-xl border text-start transition-colors cursor-pointer',
-        'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-        isActive
-          ? 'border-primary/50 bg-primary/10'
-          : 'border-border/70 bg-card hover:border-primary/40 hover:bg-muted/50'
-      )}
-    >
-      <span
-        className={cn(
-          'w-8 h-8 shrink-0 rounded-lg flex items-center justify-center',
-          isActive ? 'bg-primary/20 text-primary' : 'bg-muted/70 text-muted-foreground'
-        )}
-      >
-        <tool.icon className="w-4 h-4" weight={isActive ? 'fill' : 'duotone'} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-xs font-bold text-foreground truncate">{tool.title}</span>
-        <span className="block text-mini text-muted-foreground truncate mt-0.5">
-          {tool.subtitle}
-        </span>
-      </span>
-      {/* الاختصار في الطرف المقابل — كي لا يضيّق على اسم الأداة */}
-      <kbd className="shrink-0 px-1 py-0.5 text-mini font-mono text-muted-foreground bg-muted/70 rounded border border-border/60 self-center">
-        {toolShortcut(index)}
-      </kbd>
-    </button>
   );
 }
 
@@ -295,40 +259,72 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             align="end"
             sideOffset={10}
             dir="rtl"
-            className="w-[360px] p-0 rounded-2xl border fluent-specular font-cairo"
+            className="w-[380px] p-0 rounded-2xl border fluent-specular font-cairo overflow-hidden"
+            onOpenAutoFocus={(e) => e.preventDefault()}
           >
-            <div className="flex items-center gap-2 p-3 border-b border-border/70">
-              <span className="w-7 h-7 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
-                <MagnifyingGlass className="w-4 h-4" weight="duotone" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-xs font-bold text-foreground">
-                  {isCollage ? 'أدوات الكولاج' : 'أدوات التعديل الحر'}
-                </span>
-                <span className="block text-mini text-muted-foreground">
-                  {(isCollage ? COLLAGE_TOOLS : STUDIO_TOOLS).length} أدوات — اختر بالاسم أو بـ Alt+الرقم
-                </span>
-              </span>
-            </div>
+            <Command
+              data-testid="command-palette"
+              loop
+            >
+              <CommandInput placeholder="ابحث عن أداة أو أمر ..." aria-label="البحث في لوحة الأوامر" />
+              <CommandList className="max-h-[60vh]">
+                <CommandEmpty>لا توجد نتائج مطابقة</CommandEmpty>
 
-            <div className="max-h-[60vh] overflow-y-auto p-2 flex flex-col gap-2">
-              {groups.map((group) => (
-                <div key={group.name} className="flex flex-col gap-1">
-                  <span className="text-mini font-bold text-muted-foreground px-1">{group.name}</span>
-                  <div className="flex flex-col gap-1.5">
-                    {group.tools.map((tool, index) => (
-                      <ToolLauncherCard
-                        key={tool.id}
-                        tool={tool}
-                        index={toolIndex(tool) >= 0 ? toolIndex(tool) : group.offset + index}
-                        isActive={isTemplatesActive && activeTab === tool.id}
-                        onSelect={() => selectTool(tool)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                {/* الأدوات — نفس بنية السجل الموحد ورقم Alt المتسق مع الشريط */}
+                <CommandGroup heading={isCollage ? 'أدوات الكولاج' : 'أدوات التعديل الحر'}>
+                  {(isCollage ? COLLAGE_TOOLS : STUDIO_TOOLS).map((tool, index) => (
+                    <CommandItem
+                      key={tool.id}
+                      value={`${tool.title} ${tool.subtitle} ${tool.label}`}
+                      onSelect={() => selectTool(tool)}
+                      data-testid={`launcher-${tool.id}`}
+                    >
+                      <span
+                        className={cn(
+                          'w-7 h-7 shrink-0 rounded-lg flex items-center justify-center',
+                          isTemplatesActive && activeTab === tool.id
+                            ? 'bg-primary/20 text-primary'
+                            : 'bg-muted/70 text-muted-foreground'
+                        )}
+                      >
+                        <tool.icon className="w-4 h-4" weight="duotone" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-bold truncate">{tool.title}</span>
+                        <span className="block text-mini text-muted-foreground truncate">
+                          {tool.subtitle}
+                        </span>
+                      </span>
+                      <CommandShortcut>{toolShortcut(index)}</CommandShortcut>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+
+                {/* الأوامر العالمية — نفس أحداث grido:* ونفس اختصارات use-keyboard-shortcuts */}
+                <CommandSeparator />
+                <CommandGroup heading="أوامر">
+                  {WORKSPACE_COMMANDS.map((command) => (
+                    <CommandItem
+                      key={command.id}
+                      value={`${command.title} ${command.subtitle}`}
+                      onSelect={() => {
+                        dispatchWorkspaceCommand(command);
+                        setIsLauncherOpen(false);
+                      }}
+                      data-testid={`command-${command.id}`}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-bold truncate">{command.title}</span>
+                        <span className="block text-mini text-muted-foreground truncate">
+                          {command.subtitle}
+                        </span>
+                      </span>
+                      {command.shortcut && <CommandShortcut>{command.shortcut}</CommandShortcut>}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
           </PopoverContent>
         </Popover>
 
