@@ -62,11 +62,11 @@ func (a *App) ServiceShutdown() error {
 	return nil
 }
 
-func (a *App) startup(ctx context.Context) {
+func (a *App) Startup(ctx context.Context) {
 	_ = a.ServiceStartup(ctx, application.ServiceOptions{})
 }
 
-func (a *App) shutdown(ctx context.Context) {
+func (a *App) Shutdown(ctx context.Context) {
 	_ = a.ServiceShutdown()
 }
 
