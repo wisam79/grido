@@ -128,26 +128,26 @@ jobs:
           MODAL_AI_KEY: ${{ secrets.MODAL_AI_KEY }}
         run: wails3 task package
 
-- name: Prepare Executable Assets
+      - name: Prepare Executable Assets
         shell: pwsh
         env:
           APP_VERSION: ${{ github.ref_name }}
         run: |
-          Get-ChildItem -Path "bin"
-          $exe = "bin\GridoStudio.exe"
+          Get-ChildItem -Path 'bin'
+          $exe = 'bin\GridoStudio.exe'
           if (-not (Test-Path $exe)) {
             throw "Expected binary not found at $exe"
           }
-          Copy-Item $exe "bin\Grido Studio.exe" -Force
+          Copy-Item $exe 'bin\Grido Studio.exe' -Force
 
-          $installerPath = "build\windows\nsis\GridoStudio-installer.exe"
+          $installerPath = 'build\windows\nsis\GridoStudio-installer.exe'
           if (Test-Path $installerPath) {
-            Copy-Item $installerPath "bin\GridoStudio-installer.exe" -Force
-            Copy-Item $installerPath "bin\Grido Studio Setup.exe" -Force
+            Copy-Item $installerPath 'bin\GridoStudio-installer.exe' -Force
+            Copy-Item $installerPath 'bin\Grido Studio Setup.exe' -Force
           } else {
             Write-Host "WARNING: NSIS installer not found at $installerPath - publishing portable exe copies instead."
-            Copy-Item $exe "bin\GridoStudio-installer.exe" -Force
-            Copy-Item $exe "bin\Grido Studio Setup.exe" -Force
+            Copy-Item $exe 'bin\GridoStudio-installer.exe' -Force
+            Copy-Item $exe 'bin\Grido Studio Setup.exe' -Force
           }
 
       - name: Upload Executables for Signing
