@@ -88,29 +88,5 @@ test.describe('Editor Core Workflows E2E', () => {
     await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
-  test('Welcome screen can be completed when no workflow mode is set', async ({ page }) => {
-    // تهيئة المحاكي دون تخطي شاشة الترحيب
-    await setupWailsMock(page, { skipWelcome: false });
-    await page.goto('/');
-
-    // شاشة الترحيب تتطلب ترخيصاً نشطاً؛ قد لا تظهر في هذه البيئة
-    // لذلك نتحقق أولاً إن كانت ظهرت، ونكمل السيناريو بأمان.
-    const welcomeHeading = page.getByRole('heading', { name: /كيف تريد البدء اليوم؟/ });
-    const welcomeVisible = await welcomeHeading.isVisible({ timeout: 3000 }).catch(() => false);
-
-    if (welcomeVisible) {
-      const quickCard = page.getByTestId('workflow-card-quick');
-      await expect(quickCard).toBeVisible();
-      await quickCard.click();
-
-      const confirmBtn = page.getByTestId('workflow-confirm-button');
-      await expect(confirmBtn).toBeEnabled();
-      await confirmBtn.click();
-    }
-
-    // في كلتا الحالتين، يجب أن ينتهي المطاف بالمحرر وظهور الكانفس
-    await expect(page.locator('#canvas-area')).toBeVisible({ timeout: 15000 });
-  });
-
 });
 

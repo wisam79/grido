@@ -113,11 +113,7 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
 /**
  * يقوم بتهيئة جسر محاكاة Wails v3 المتكامل لصفحة الاختبار في Playwright
  */
-export async function setupWailsV3Bridge(
-  page: Page,
-  options: { customHandlers?: Record<number, (...args: any[]) => any>; skipWelcome?: boolean } = {}
-) {
-  const { customHandlers, skipWelcome = true } = options;
+export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<number, (...args: any[]) => any>) {
   const handlers = { ...WAILS_V3_METHOD_HANDLERS, ...customHandlers };
 
   // 1. اعتراض مسار استدعاءات Wails v3 Runtime Network Requests
@@ -180,14 +176,9 @@ export async function setupWailsV3Bridge(
   });
 
   // 3. حقن كائنات التوافق العكسي وتجاوز شاشة الترحيب في بيئة الاختبار
-  //    عند skipWelcome=true (الافتراضي) يُكتب 'studio' في localStorage إن كان فارغاً.
-  await page.addInitScript((params: { mockImage: string; skipWelcome: boolean }) => {
-    const mockImage = params.mockImage;
+  await page.addInitScript((mockImage) => {
     try {
-      if (!params.skipWelcome) {
-        // اختبار شاشة الترحيب: اترك المفتاح فارغاً دائماً لإظهار الترحيب
-        localStorage.removeItem('grido_workflow_mode');
-      } else if (!localStorage.getItem('grido_workflow_mode')) {
+      if (!localStorage.getItem('grido_workflow_mode')) {
         localStorage.setItem('grido_workflow_mode', 'studio');
       }
     } catch {
@@ -301,7 +292,7 @@ export async function setupWailsV3Bridge(
 
     Object.defineProperty(window, 'go', { value: legacyMockGo, writable: true, configurable: true });
     Object.defineProperty(window, 'runtime', { value: legacyMockRuntime, writable: true, configurable: true });
-  }, { mockImage: MOCK_PNG_BASE64, skipWelcome });
+  }, MOCK_PNG_BASE64);
 }
 
 /**
