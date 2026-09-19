@@ -24,7 +24,7 @@ description: سجل ومرجع الفروقات المعمارية لانتقا�
 | **توليد ربطات الواجهة (TS)** | `wails generate module` | `wails3 generate bindings -ts -clean=true` |
 | **مجلد الربطات الفعلي** | `frontend/wailsjs/` مباشرة | `frontend/bindings/grido/` (مستثنى من Git) |
 | **دور مجلد `frontend/wailsjs/`**| كان مولّداً تلقائياً | **جسور إعادة تصدير يدوية متتبعة في Git** |
-| **عميل زمن التشغيل بالواجهة** | `window.runtime` / `wailsjs/runtime` | `@wailsio/runtime` (استدعاء بـ `$Call.ByID`) و `window.wails` |
+| **عميل زمن التشغيل بالواجهة** | `window.runtime` / `wailsjs/runtime` | `@wailsio/runtime` داخل الربطات المولدة (استدعاء بـ `$Call.ByID`) مع جسور `frontend/wailsjs/runtime/runtime` كنقطة استيراد موحدة في مكونات الواجهة |
 | **دورة حياة ظهور النوافذ** | شائعة بـ `Hidden: true` + `Show()` | إجبارياً `Hidden: false` مع `WindowStateMaximised` أو `Normal` |
 | **تكامل ويندوز 11 و Fluent 2**| دعم محدود | `Mica` / `Acrylic` أصلي مع `NonClientRegionSupport: true` |
 

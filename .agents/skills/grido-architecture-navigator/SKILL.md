@@ -15,17 +15,21 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
 - **[main.go](file:///c:/projects/grido/main.go):** مدخل التطبيق في Wails v3 (`application.New`) وتثبيت الـ Assets Handler ومعالجات الميديا والخدمات (`application.NewService`) وخيارات النافذة الأصلية.
 - **[app.go](file:///c:/projects/grido/app.go):** الواجهة الرئيسية الرابطة بين Wails والخدمات (App struct المعرض للواجهة).
 - **`internal/core/domain/`**: الهياكل الأساسية والأنواع (Domain Models):
-  - [print.go](file:///c:/projects/grido/internal/core/domain/print.go): `PrintRequest`, `PrintItem`, `CutLine`, `PrintResult`.
-  - [user.go](file:///c:/projects/grido/internal/core/domain/user.go): `UserProfile`, `LicenseInfo`.
-  - [project.go](file:///c:/projects/grido/internal/core/domain/project.go): `ProjectData`, `CanvasElement`.
+  - [print.go](file:///c:/projects/grido/internal/core/domain/print.go): `PrintRequest`, `PrintItem`, `CutLine`, `PrintResult`, `CanvasComposition`.
+  - [license.go](file:///c:/projects/grido/internal/core/domain/license.go): `UserProfile`, `LicenseRepository` (المصادقة والترخيص والخطط).
+  - [project.go](file:///c:/projects/grido/internal/core/domain/project.go): `Project`, `ProjectRepository`.
+  - [template.go](file:///c:/projects/grido/internal/core/domain/template.go): قوالب الورق والأجهزة المعيارية.
+  - [json_text.go](file:///c:/projects/grido/internal/core/domain/json_text.go): أنواع مساعدة لتسلسل JSON.
+- **`internal/handlers/`**: معالجات Wails v3 المعرضة للواجهة (مثل `licensehandler`, `projecthandler`, `printhandler`, `backuphandler`) — كل معالج جديد هنا يتطلب توليد الربطات ومعالج Mock في جسر الاختبارات (انظر حارس انحراف العقود في AGENTS.md).
 - **`internal/service/`**: خدمات المنطق والعمليات الخلفية (Services):
-  - [print_service.go](file:///c:/projects/grido/internal/service/print_service.go): رسم الكولاج، التحويل إلى CMYK، التصدير لـ TIFF/PNG، وإدارة طباعة HTML.
-  - [media_service.go](file:///c:/projects/grido/internal/service/media_service.go): استخراج أبعاد الصور `GetImageDimensions` والـ Local Image Handler.
-  - [license_service.go](file:///c:/projects/grido/internal/service/license_service.go): الاتصال بـ Supabase (دخول البريد، OTP، Google OAuth، تفعيل الترخيص).
-  - [ai_service.go](file:///c:/projects/grido/internal/service/ai_service.go): إزالة الخلفية وترميم الوجوه عبر Modal AI الخارجي أو MediaPipe المحلي والتحقق من الحصص خادمياً.
+  - [print_service.go](file:///c:/projects/grido/internal/service/print_service.go): رسم الكولاج، التحويل إلى CMYK (`print_cmyk.go`)، التصدير لـ TIFF/PNG، والطباعة الأصلية (`print_native.go`).
+  - [media_service.go](file:///c:/projects/grido/internal/service/media_service.go): استخراج أبعاد الصور `GetImageDimensions` ومعالج `/local-image/` الآمن ضد Path Traversal.
+  - [license_service.go](file:///c:/projects/grido/internal/service/license_service.go): الاتصال بـ Supabase (دخول البريد، OTP، Google OAuth عبر `auth_flows.go` و `oauth_server.go`، تفعيل الترخيص).
+  - [ai_service.go](file:///c:/projects/grido/internal/service/ai_service.go): إزالة الخلفية وترميم الوجوه عبر Modal AI الخارجي والتحقق من الحصص خادمياً.
   - [autosave_service.go](file:///c:/projects/grido/internal/service/autosave_service.go): الحفظ الذري الدوري لملفات المشاريع على القرص (`f.Sync()` + `os.Rename`).
   - [updater.go](file:///c:/projects/grido/internal/service/updater.go): التحقق من التحديثات السحابية ومطابقة بصمة SHA-256 والتحديث الصامت.
   - [logger.go](file:///c:/projects/grido/internal/service/logger.go): نظام التدوين والتسجيل الموحد (Lumberjack) وتصدير السجلات.
+  - ملفات إضافية: `project_service.go` (حفظ وتحميل المشاريع)، `backup_service.go` (النسخ الاحتياطي والاستيراد)، `phone_bridge_service.go` (جسر الهاتف)، `image_processor.go` (المعالجة الثنائية)، `http_retry.go` (إعادة المحاولة مع Backoff)، `zip.go` (أرشفة النسخ الاحتياطي).
 - **`internal/repository/`**: حفظ البيانات المحلية في ملفات ومربعات SQLite / JSON.
 - **`internal/utils/`**: الأدوات المساعدة: `GetAppDir()`, `OpenBrowser()`, `GetDeviceID()`.
 
@@ -76,9 +80,10 @@ graph TD
 1. **استبقاء الأخطاء:** Wails يرجع الأخطاء كـ `string`. استخدم دائماً:
    `typeof err === "string" ? err : (err instanceof Error ? err.message : fallback)`
 2. **منع Stale Closures:** داخل معالجات الأحداث غير المتزامنة (مثل `handleDrop` أو الحفظ التلقائي) استخدم دائماً `useEditorStore.getState()` لقراءة أحدث حالة مباشرة لحظة وقوع الحدث.
-3. **توليد وصيانة الربطات:** عند إضافة أي دالة جديدة في `app.go` أو خدمات Go، ولّد الربطات فوراً بالأمر:
+3. **أحداث الرنتايم في الواجهة تمر عبر جسور `wailsjs/runtime/runtime`** (`EventsOn`, `EventsOff`, ...) وليس عبر `window.wails` أو استيراد مباشر من `@wailsio/runtime` داخل مكونات الواجهة — جسور `wailsjs/` هي نقطة الاستيراد الموحدة التي تعيد التصدير من الربطات المولدة.
+4. **توليد وصيانة الربطات:** عند إضافة أي دالة جديدة في `app.go` أو خدمات Go، ولّد الربطات فوراً بالأمر:
    `wails3 generate bindings -ts -clean=true`
-   ولا تستخدم إطلاقاً أدوات Wails v2 القديمة.
+   ولا تستخدم إطلاقاً أدوات Wails v2 القديمة، وسجّل معالج Mock للدالة الجديدة في `frontend/e2e/helpers/wails-v3-bridge.ts` (انظر حارس انحراف العقود في AGENTS.md).
 
 ---
 

@@ -104,14 +104,35 @@ app := application.New(application.Options{
 ## 🛡️ 2. الأمان المتقدم (Windows Security & WebView2)
 
 ### 2.1 حماية مسارات الصور المحلية (Symlink Path Traversal)
+> **النمط الإلزامي الموحد** (مطابق للتنفيذ الفعلي في `internal/service/media_service.go`):
+> لا تمرّر مساراً كاملاً من العميل أبداً؛ استخرج اسم الملف فقط (`filepath.Base`)، ادمجه مع مجلد مسموح، ثم افحص الطرفين بـ `EvalSymlinks` وقارن بـ `filepath.Clean` على الطرفين مع `filepath.Separator` (لمنع تجاوز البادئة مثل `baseDir_evil`).
+
 ```go
-func safeLocalImageHandler(w http.ResponseWriter, r *http.Request) {
-    requestedPath := r.URL.Query().Get("path")
-    resolved, err := filepath.EvalSymlinks(requestedPath)
-    if err != nil || !strings.HasPrefix(resolved, allowedBasePath) {
-        http.Error(w, "Forbidden", http.StatusForbidden)
+func safeLocalImageHandler(w http.ResponseWriter, r *http.Request, baseDir string) {
+    // 1. تطبيع الخطوط المائلة العكسية قبل أي استخراج (انظر Cross-Platform Path Normalization)
+    normalized := strings.ReplaceAll(r.URL.Query().Get("file"), "\\", "/")
+
+    // 2. استخراج اسم الملف فقط — يمنع أي مسار مطلق أو \r
+    filename := filepath.Base(filepath.Clean(strings.TrimPrefix(normalized, "/local-image/")))
+
+    // 3. البناء داخل المجلد المسموح فقط
+    fullPath := filepath.Join(baseDir, filename)
+
+    // 4. فحص Symlinks على الطرفين مع حد فاصل صريح
+    resolved, err := filepath.EvalSymlinks(fullPath)
+    if err != nil {
+        resolved = fullPath
+    }
+    resolvedBase, err := filepath.EvalSymlinks(baseDir)
+    if err == nil {
+        baseDir = resolvedBase
+    }
+    if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(baseDir)+string(filepath.Separator)) {
+        http.Error(w, "Access denied", http.StatusForbidden)
         return
     }
+
+    w.Header().Set("X-Content-Type-Options", "nosniff")
     http.ServeFile(w, r, resolved)
 }
 ```

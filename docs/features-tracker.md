@@ -9,6 +9,22 @@
 
 ---
 
+## 0.7 سجل جلسة صيانة تعليمات الوكلاء (19 سبتمبر 2026)
+
+**المرجع:** مراجعة شاملة لـ `.agents/AGENTS.md` و `.agents/skills/*/SKILL.md` مع تحقق كل ادعاء مقابل الكود الفعلي.
+
+| البند | التحديث | الحالة |
+| --- | --- | --- |
+| A-1 | **حارس انحراف عقود IPC أصبح حقيقياً** — القاعدة كانت تشير لاختبار غير موجود؛ أُنشئ `frontend/src/lib/wails/ipc-contract-drift.test.ts` (مسح تكراري للربطات المولدة + مطابقة `WAILS_V3_METHOD_HANDLERS` + كشف المعالجات اليتيمة مع قائمة سماح للـ fallback الدفاعيين 2987688963/2154875234) — 4 اختبارات ✅، مع استثناء بنية `e2e/**` من حساب التغطية في `vitest.config.ts` لمنع سحب حدود التغطية للأسفل | ✅ |
+| A-2 | **دمج مهارات Konva الأربع المتداخلة** (`konva-canvas-optimizer`, `konva-gesture-touch-transformer`, `konva-layer-composite-filters`, `konva-freeform-collage-engine`) في مهارة موحدة `konva-rendering-invariants/SKILL.md` مع قائمة فحص ختامية | ✅ |
+| A-3 | **إصلاح مراجع وهمية** — `internal/core/domain/user.go`/`LicenseInfo` (غير موجودين) → `license.go`/`UserProfile`/`LicenseRepository` في `grido-architecture-navigator`؛ «7 وظائف CI» → 4 وظائف فعلية؛ «70+ ملف اختبار» → 70 ملف وحدة فعلي + 21 E2E | ✅ |
+| A-4 | **إصلاح النمط الأمني في أمثلة المهارات** — مثالا `safeLocalImageHandler` و `AssetServerHandler` كانا يقبلان مساراً كاملاً بفحص HasPrefix غير آمن؛ أُعيدت كتابتهما بالنسخة الموحدة المطابقة للتنفيذ الفعلي في `media_service.go` (Base → Join → EvalSymlinks على الطرفين + Clean + Separator) | ✅ |
+| A-5 | **تصحيح نمط الأحداث في `wails-v3-multiwindow-sync`** — كان يستخدم `window.wails?.Events?.Emit` غير الموجود؛ صار عبر جسر `wailsjs/runtime/runtime` (`EventsEmit`/`EventsOn`) المطابق للاستخدام الفعلي، مع تنبيهات توافق لإصدارات beta | ✅ |
+| A-6 | **قاعدة «سيادة المصدر الواحد للحقيقة»** في AGENTS.md (لكل قاعدة موقع واحد + صيانة المراجع عند الحذف) + توثيق استثناء `lint`/`typecheck` المحلي من قاعدة حظر الاختبارات المحلية | ✅ |
+| A-7 | **تنظيف بقايا أدوات** — حذف `git worktree` المهجور `.kilo/worktrees/indispensable-bag` (كان نظيفاً) ومجلدي `.kilo/` و `.kilocode/` | ✅ |
+
+---
+
 ## 0.6 سجل جلسة إصلاح مسار بناء Wails v3 وE2E (18 سبتمبر 2026)
 
 **المرجع:** مراجعة استقرار الكود الحالي + التحقق الدقيق من المشاكل المكتشفة (أدلة أسطر + فحص منافذ تجريبي).

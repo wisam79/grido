@@ -11,15 +11,30 @@ description: دليل مهارة تدفق البيانات الثنائية وا
 
 ## 🛡️ 1. الحماية من ثغرات مسارات الصور (Symlink Path Traversal)
 
+> **النمط الإلزامي الموحد** (مطابق للتنفيذ الفعلي في `internal/service/media_service.go`):
+> لا تمرّر مساراً كاملاً من العميل؛ استخرج اسم الملف فقط، ادمجه مع مجلد مسموح، وافحص الطرفين بـ `EvalSymlinks` وقارن بـ `filepath.Clean` على الطرفين مع `filepath.Separator` (لمنع تجاوز البادئة مثل `baseDir_evil`).
+
 ```go
 func AssetServerHandler(allowedRoot string) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
-        relPath := r.URL.Query().Get("file")
-        resolved, err := filepath.EvalSymlinks(filepath.Clean(relPath))
-        if err != nil || !strings.HasPrefix(resolved, allowedRoot) {
+        // تطبيع الخطوط المائلة ثم استخراج اسم الملف فقط
+        normalized := strings.ReplaceAll(r.URL.Query().Get("file"), "\\", "/")
+        filename := filepath.Base(filepath.Clean(strings.TrimPrefix(normalized, "/local-image/")))
+        fullPath := filepath.Join(allowedRoot, filename)
+
+        resolved, err := filepath.EvalSymlinks(fullPath)
+        if err != nil {
+            resolved = fullPath
+        }
+        resolvedRoot, err := filepath.EvalSymlinks(allowedRoot)
+        if err == nil {
+            allowedRoot = resolvedRoot
+        }
+        if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(allowedRoot)+string(filepath.Separator)) {
             http.Error(w, "Access Denied", http.StatusForbidden)
             return
         }
+
         w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
         w.Header().Set("X-Content-Type-Options", "nosniff")
         http.ServeFile(w, r, resolved)

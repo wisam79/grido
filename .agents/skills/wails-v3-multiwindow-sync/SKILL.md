@@ -11,6 +11,8 @@ description: دليل مهارة إدارة ومزامنة النوافذ الم
 
 ## 🏛️ 1. إنشاء واستعادة النوافذ الذرية
 
+> **تنبيه توافق:** الأمثلة أدناه تعكس نمط API العام في Wails v3 (beta). عند التنفيذ الفعلي في هذا المشروع، تحقق دائماً من التواقيع الدقيقة في نسخة الـ SDK المثبتة (`go.mod`: `v3.0.0-beta.23`) ومثال `main.go` الحقيقي قبل النسخ — أسماء دوال الوصول للنوافذ والأحداث تتغير بين إصدارات الـ beta.
+
 ```go
 func (a *App) ShowOrCreateAuxiliaryWindow(name, title, route string, w, h int) *application.WebviewWindow {
     app := application.Get()
@@ -42,22 +44,30 @@ func (a *App) ShowOrCreateAuxiliaryWindow(name, title, route string, w, h int) *
 
 ## 📡 2. جسر المزامنة اللحظي (Event Bus Syncing)
 
+> **تنبيه توافق:** كذلك هنا — تحقق من تواقيع `EventsEmit`/`EventsOn` في جسر `frontend/wailsjs/runtime/runtime.ts` المعتمد في المشروع قبل نسخ أي نمط.
+
 عند تحديث الكانفاس في النافذة الرئيسية، يتم بث التحديثات إلى النوافذ الثانوية عبر قنوات الأحداث:
 
 ```typescript
 // في النافذة الرئيسية (Sender):
+// بث الأحداث عبر جسر wailsjs/runtime الموحد (EventsEmit)
+import { EventsEmit } from "@/wailsjs/runtime/runtime";
+
 export function syncCanvasToAuxiliary(windowName: string, state: Partial<CanvasState>) {
-  window.wails?.Events?.Emit({
-    name: `sync:canvas:${windowName}`,
-    data: state,
-  });
+  EventsEmit(`sync:canvas:${windowName}`, state);
 }
 
 // في النافذة الثانوية (Receiver):
+// الاستيراد الموحد عبر جسر wailsjs/runtime (انظر grido-architecture-navigator)
+import { EventsOn, EventsOff } from "@/wailsjs/runtime/runtime";
+
 useEffect(() => {
-  const unsub = window.wails?.Events?.On("sync:canvas:preview", (payload) => {
+  const unsubscribe = EventsOn("sync:canvas:preview", (payload) => {
     updatePreviewStore(payload.data);
   });
-  return () => unsub?.();
+  return () => {
+    if (typeof unsubscribe === "function") unsubscribe();
+    else EventsOff("sync:canvas:preview");
+  };
 }, []);
 ```

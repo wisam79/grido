@@ -39,6 +39,7 @@ export default defineConfig({
         '**/coverage/**',
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
+        '**/e2e/**',
         '**/svg-paths.ts',
         '**/vision_bundle*',
       ],
