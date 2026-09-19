@@ -175,8 +175,16 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
     });
   });
 
-  // 3. حقن كائنات التوافق العكسي (window.go & window.runtime) لضمان عدم تعطل الأكواد القديمة
+  // 3. حقن كائنات التوافق العكسي وتجاوز شاشة الترحيب في بيئة الاختبار
   await page.addInitScript((mockImage) => {
+    try {
+      if (!localStorage.getItem('grido_workflow_mode')) {
+        localStorage.setItem('grido_workflow_mode', 'studio');
+      }
+    } catch {
+      // تجاهل أخطاء التخزين إن وجدت
+    }
+
     const legacyMockGo = {
       main: {
         App: {

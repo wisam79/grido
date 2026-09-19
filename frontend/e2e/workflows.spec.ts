@@ -88,4 +88,37 @@ test.describe('Editor Core Workflows E2E', () => {
     await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
+  test('Welcome screen appears when mode is not set and allows mode selection', async ({ page }) => {
+    // محاكاة مستخدم جديد لأول مرة (مسح التخزين المحلي)
+    await page.evaluate(() => {
+      localStorage.removeItem('grido_workflow_mode');
+    });
+    await page.reload();
+
+    // التحقق من ظهور شاشة الترحيب
+    const welcomeHeading = page.getByRole('heading', { name: /كيف تفضّل بدء العمل؟/ });
+    await expect(welcomeHeading).toBeVisible({ timeout: 15000 });
+
+    // اختيار مسار الإنتاج السريع
+    const quickCard = page.getByTestId('workflow-card-quick');
+    await expect(quickCard).toBeVisible();
+    await quickCard.click();
+
+    // تأكيد الاختيار
+    const confirmBtn = page.getByTestId('workflow-confirm-button');
+    await expect(confirmBtn).toBeEnabled();
+    await confirmBtn.click();
+
+    // الانتقال للمحرر الرئيسي وظهور الكانفس
+    await expect(page.locator('#canvas-area')).toBeVisible({ timeout: 15000 });
+
+    // زر تبديل المسار في الهيدر يظهر ويعيد شاشة الترحيب عند النقر
+    const switchBtn = page.getByRole('button', { name: 'تبديل مسار العمل' }).first();
+    if (await switchBtn.isVisible()) {
+      await switchBtn.click();
+      await expect(welcomeHeading).toBeVisible({ timeout: 10000 });
+    }
+  });
+
 });
+
