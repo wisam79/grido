@@ -113,7 +113,11 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
 /**
  * يقوم بتهيئة جسر محاكاة Wails v3 المتكامل لصفحة الاختبار في Playwright
  */
-export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<number, (...args: any[]) => any>) {
+export async function setupWailsV3Bridge(
+  page: Page,
+  options: { customHandlers?: Record<number, (...args: any[]) => any>; skipWelcome?: boolean } = {}
+) {
+  const { customHandlers, skipWelcome = true } = options;
   const handlers = { ...WAILS_V3_METHOD_HANDLERS, ...customHandlers };
 
   // 1. اعتراض مسار استدعاءات Wails v3 Runtime Network Requests
@@ -176,17 +180,15 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
   });
 
   // 3. حقن كائنات التوافق العكسي وتجاوز شاشة الترحيب في بيئة الاختبار
-  //    يتم تجاهل الكتابة التلقائية على grido_workflow_mode إن تم ضبط علم
-  //    __GRIDO_E2E_FORCE_WELCOME__ على window (يُستخدم من اختبار شاشة الترحيب).
-  await page.addInitScript((mockImage) => {
+  //    عند skipWelcome=true (الافتراضي) يُكتب 'studio' في localStorage إن كان فارغاً.
+  await page.addInitScript((params: { mockImage: string; skipWelcome: boolean }) => {
+    const mockImage = params.mockImage;
     try {
-      const forceWelcome = (window as unknown as { __GRIDO_E2E_FORCE_WELCOME__?: boolean })
-        .__GRIDO_E2E_FORCE_WELCOME__;
-      if (!forceWelcome && !localStorage.getItem('grido_workflow_mode')) {
-        localStorage.setItem('grido_workflow_mode', 'studio');
-      }
-      if (forceWelcome) {
+      if (!params.skipWelcome) {
+        // اختبار شاشة الترحيب: اترك المفتاح فارغاً دائماً لإظهار الترحيب
         localStorage.removeItem('grido_workflow_mode');
+      } else if (!localStorage.getItem('grido_workflow_mode')) {
+        localStorage.setItem('grido_workflow_mode', 'studio');
       }
     } catch {
       // تجاهل أخطاء التخزين إن وجدت
@@ -299,7 +301,7 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
 
     Object.defineProperty(window, 'go', { value: legacyMockGo, writable: true, configurable: true });
     Object.defineProperty(window, 'runtime', { value: legacyMockRuntime, writable: true, configurable: true });
-  }, MOCK_PNG_BASE64);
+  }, { mockImage: MOCK_PNG_BASE64, skipWelcome });
 }
 
 /**
