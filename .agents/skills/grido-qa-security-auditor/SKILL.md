@@ -37,30 +37,30 @@ description: دليل الجودة والأمان والاختبار وتولي�
 
 ---
 
-## 🧪 2. خطة الاختبار التلقائي (Automated Verification Pipeline)
+## 🧪 2. خطة الاختبار التلقائي السحابي المستمر (Continuous Cloud CI/CD Pipeline)
 
-قبل إعلان إنجاز أي مهمة أو إصلاح bug، ينبغي تشغيل أوامر الاختبار التالية والتحقق من خلوها من الأخطاء:
+تطبيقاً لمعيار **الصفر إجهاد للجهاز المحلي والاعتماد الكلي على GitHub Actions** (`Pure GitHub Actions CI Invariant`):
+يُمنع إجبارياً تشغيل اختبارات E2E (Playwright) أو حزم الاختبارات الثقيلة على جهاز المستخدم المحلي. بدلاً من ذلك، يُعتمد سير العمل السحابي الحصري التالي عبر GitHub CLI:
 
 ```bash
-# 1. اختبارات Go Backend
-go test ./internal/...
+# 1. إيداع التعديلات ودفعها للفرع الرئيسي
+git add -A
+git commit -m "feat/fix: ..."
+git push origin main
 
-# 2. توليد ربطات Wails v3 (إذا تم تعديل واجهات Go)
-wails3 generate bindings -ts -clean=true
+# 2. استعراض ومراقبة دورة الاختبارات السحابية الجارية فورياً
+gh run list --limit 3
+gh run watch <run-id> --interval 10
 
-# 3. اختبارات جودة وتوافقية واجهة React (TypeScript & Lint)
-cd frontend && npm run typecheck
-cd frontend && npm run lint
-
-# 4. اختبارات React Frontend التلقائية (Vitest)
-cd frontend && npm run test
-
-# 5. فحص بناء الواجهة والأنواع (TypeScript & Vite)
-cd frontend && npm run build
-
-# 6. فحص بناء التطبيق المكتبي بالكامل (Wails v3)
-cd .. && wails3 task build
+# 3. في حال حدوث أي فشل، استخراج سجلات الفشل الدقيقة دون تحميل كامل السجل
+gh run view <run-id> --log-failed
 ```
+
+تشمل دورة الـ CI السحابية المتكاملة 7 وظائف متوازية (Parallel Matrix):
+1. **Frontend Quality & Tests:** فحص الأنواع الصارم (`tsc`) + ESLint (`--max-warnings 0`) + أكثر من 70 ملف اختبار بـ Vitest مع حساب التغطية وحارس انحراف عقود الـ IPC (`ipc-contract-drift.test.ts`).
+2. **Backend Quality & Tests:** فحص `go vet` و `staticcheck` وحزمة اختبارات Go الكاملة.
+3. **Playwright E2E Sharding (4 Shards):** مصفوفة تشظية رباعية تشغل كافة اختبارات الـ E2E في أقل من دقيقتين بالتوازي.
+4. **Windows Build Verification:** تجميع التطبيق الأصلي بـ CGO وتشغيل اختبارات النواة الأصلية على نظام Windows حقيقي (`windows-latest`).
 
 ### التحقق البكسلي والثنائي لمخرجات الطباعة فائقة الدقة (300 DPI & Pixel Verification)
 
