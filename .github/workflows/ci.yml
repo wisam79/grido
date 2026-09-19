@@ -13,7 +13,7 @@ concurrency:
 jobs:
   # ───────────────────────────────────────────────
   # Job 1: Frontend Quality & Unit Tests (Linux)
-  #   → Fast, pure Node & Go bindings check with zero unnecessary apt dependencies
+  #   → Fast, pure Node & Go bindings check
   # ───────────────────────────────────────────────
   validate-frontend:
     name: Frontend Quality & Tests
@@ -21,6 +21,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -95,6 +100,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -142,7 +152,7 @@ jobs:
 
   # ───────────────────────────────────────────────
   # Job 3: Playwright E2E Tests (Linux - 4 Shards Parallel Matrix)
-  #   → Highly scalable parallel sharding running in parallel from minute 0
+  #   → 4 parallel shards executing 41 tests simultaneously
   # ───────────────────────────────────────────────
   e2e-tests:
     name: Playwright E2E (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
@@ -155,6 +165,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
         uses: actions/setup-go@v5
