@@ -89,7 +89,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           />
         </div>
         <p className="text-xs text-muted-foreground text-center">
-          أدخل كود الاستعادة المكون من 6 أرقام المرسل إلى {email}
+          أدخل كود الاستعادة المرسل إلى {email}
         </p>
       </div>
       <div className="space-y-1">
@@ -118,7 +118,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             <span>جاري الحفظ ...</span>
           </>
         ) : (
-          "حفظ كلمة المرور الجديدة وتسجيل الدخول"
+          "حفظ وتسجيل الدخول"
         )}
       </Button>
       <div className="text-center pt-1">
@@ -130,7 +130,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           }}
           className="text-xs text-muted-foreground hover:text-foreground font-medium cursor-pointer"
         >
-          إلغاء والعودة لتسجيل الدخول
+          عودة لتسجيل الدخول
         </button>
       </div>
     </form>
@@ -203,7 +203,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                   <span>جاري تأكيد الكود ...</span>
                 </>
               ) : (
-                "تأكيد الكود وتسجيل الدخول"
+                "تأكيد الكود والدخول"
               )}
             </Button>
 
@@ -221,7 +221,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 ) : resendCooldown > 0 ? (
                   `إعادة الإرسال بعد (${resendCooldown} ث)`
                 ) : (
-                  "إعادة إرسال كود التحقق"
+                  "إعادة إرسال الكود"
                 )}
               </button>
 
@@ -323,7 +323,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
           className="text-xs text-primary hover:underline font-bold cursor-pointer"
         >
-          {authMode === "login" ? "إنشاء حساب جديد" : "لديك حساب بالفعل؟ تسجيل الدخول"}
+          {authMode === "login" ? "إنشاء حساب" : "لديك حساب؟ تسجيل الدخول"}
         </button>
       </div>
     </>

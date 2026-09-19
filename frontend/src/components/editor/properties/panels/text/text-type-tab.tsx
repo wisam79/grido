@@ -106,7 +106,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
   const toggleButtonClassName = (active: boolean) =>
     cn(
-      "w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+      "w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none",
       active
         ? "bg-background text-primary shadow-xs font-extrabold"
         : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
@@ -135,8 +135,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   key={preset.id}
                   type="button"
                   onClick={() => applyPreset(preset.id)}
-                  className="h-7 px-1.5 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
-                  title={`تطبيق نمط ${preset.label}`}
+                  className="h-7 px-1.5 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                  title={`نمط ${preset.label}`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
                   <span className="truncate">{preset.label}</span>
@@ -155,8 +155,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   key={preset.id}
                   type="button"
                   onClick={() => applyPreset(preset.id)}
-                  className="h-7 px-2 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
-                  title={`تطبيق نمط ${preset.label}`}
+                  className="h-7 px-2 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                  title={`نمط ${preset.label}`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
                   <span className="truncate">{preset.label}</span>
@@ -233,7 +233,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
         {/* مؤشر الحجم السريع */}
         <FluentSliderField
-          label="حجم الخط السريع"
+          label="حجم الخط"
           value={currentFontSize}
           min={8}
           max={200}
@@ -388,7 +388,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   useEditorStore.getState().pushHistory();
                 }}
                 className={cn(
-                  "px-1.5 py-0.5 rounded-md text-micro font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                  "px-1.5 py-0.5 rounded-md text-micro font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
                   element.textTransform === tr.id
                     ? "bg-background text-primary shadow-2xs font-extrabold"
                     : "hover:text-foreground text-muted-foreground hover:bg-background/40"
@@ -407,7 +407,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "h-6 px-1.5 rounded-md flex items-center justify-center gap-0.5 transition-all cursor-pointer text-micro font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none",
+                "h-6 px-1.5 rounded-md flex items-center justify-center gap-0.5 transition-all cursor-pointer text-micro font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none",
                 isArabicNumerals
                   ? "bg-background text-primary shadow-xs font-extrabold border border-primary/30"
                   : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
@@ -423,8 +423,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
             <button
               type="button"
               onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
-              className="h-6 px-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-micro font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none shrink-0"
-              title="ملاءمة عرض الصندوق للنص تلقائياً"
+              className="h-6 px-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-micro font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shrink-0"
+              title="ملاءمة عرض الصندوق"
             >
               <ArrowsInLineHorizontal className="w-3 h-3" weight="bold" />
               <span>ملاءمة</span>

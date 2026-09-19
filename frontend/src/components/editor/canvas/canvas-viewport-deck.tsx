@@ -167,7 +167,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               data-testid="canvas-ruler-toggle"
               aria-label="المساطر (Ctrl + R)"
               className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
                 showRuler
                   ? "text-primary hover:bg-primary/10"
                   : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
@@ -192,7 +192,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               onClick={() => setShowGrid(!showGrid)}
               aria-label="الشبكة (Ctrl + ')"
               className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
                 showGrid
                   ? "text-primary hover:bg-primary/10"
                   : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
@@ -217,7 +217,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               onClick={() => setSnapToGrid(!snapToGrid)}
               aria-label="المغناطيس والمحاذاة الذكية"
               className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
                 snapToGrid
                   ? "text-primary hover:bg-primary/10"
                   : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
@@ -239,7 +239,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               onClick={() => setShowUserGuides(!showUserGuides)}
               aria-label="الخطوط الإرشادية (Ctrl + ;)"
               className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
                 showUserGuides
                   ? "text-primary hover:bg-primary/10"
                   : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
@@ -265,7 +265,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={() => setCollageShowCutLines(!collageShowCutLines)}
                 aria-label="خطوط القص للطباعة"
                 className={cn(
-                  "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                  "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
                   collageShowCutLines
                     ? "text-primary hover:bg-primary/10"
                     : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
@@ -289,7 +289,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 onClick={onToggleZenMode}
                 aria-label={isZenMode ? "استعادة الألواح الجانبية" : "وضع التركيز"}
                 className={cn(
-                  "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none active:scale-95",
+                  "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
                   isZenMode
                     ? "text-primary hover:bg-primary/10"
                     : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"

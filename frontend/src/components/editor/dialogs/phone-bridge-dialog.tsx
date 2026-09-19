@@ -60,7 +60,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
       }
     } catch (err) {
       console.error("[PhoneBridgeDialog] Failed to start phone bridge:", err);
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل في تشغيل جسر الهاتف");
+      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "تعذر تشغيل جسر الهاتف");
       setError(msg);
     } finally {
       setIsLoading(false);
@@ -98,7 +98,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     try {
       await navigator.clipboard.writeText(bridgeInfo.url);
       setCopied(true);
-      toast.success("تم نسخ رابط الكاميرا إلى الحافظة");
+      toast.success("تم نسخ الرابط");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("فشل نسخ الرابط");
@@ -109,7 +109,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     try {
       await StopPhoneBridge();
       await initBridge();
-      toast.success("تمت إعادة تشغيل الجسر بنجاح");
+      toast.success("تمت إعادة تشغيل الجسر");
     } catch (err) {
       console.error("Restart error:", err);
       toast.error("تعذر إعادة التشغيل");
@@ -135,7 +135,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                   جسر كاميرا الهاتف
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  التقاط الصور من هاتفك مباشرة إلى مساحة العمل
+                  الصور من هاتفك إلى مساحة العمل
                 </DialogDescription>
               </div>
             </div>
@@ -148,7 +148,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
               <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-              <p className="text-xs text-muted-foreground font-medium">جاري تجهيز خادم الكاميرا اللاسلكي ...</p>
+              <p className="text-xs text-muted-foreground font-medium">جاري تجهيز الخادم ...</p>
             </div>
           )}
 
@@ -204,7 +204,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                 <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-primary/5 border border-primary/20 text-xs">
                   <div className="flex items-center gap-2 text-primary font-medium">
                     <ImageIcon className="w-4 h-4" weight="duotone" />
-                    <span>الصور المستلمة في هذه الجلسة:</span>
+                    <span>الصور المستلمة:</span>
                   </div>
                   <span className="font-bold text-foreground text-sm font-mono bg-background/80 px-2 py-0.5 rounded-md border border-border/40">
                     {receivedCount}
@@ -215,10 +215,10 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
               {/* Instructions Banner */}
               <div className="w-full text-center space-y-1 bg-muted/20 p-3 rounded-xl border border-border/40">
                 <p className="text-xs font-semibold text-foreground">
-                  امسح الرمز أعلاه بكاميرا هاتفك
+                  امسح الرمز بكاميرا هاتفك
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  يجب أن يكون الهاتف والكمبيوتر متصلين بنفس شبكة الـ Wi-Fi. التقط الصور وستظهر في الكانفاس فورياً!
+                  الهاتف والكمبيوتر على نفس شبكة Wi-Fi. الصور تظهر فوراً.
                 </p>
               </div>
 

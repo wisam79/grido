@@ -170,11 +170,11 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         [params.fontFamily || "Cairo"]
       );
       await handleInsertToCanvas(pngUrl);
-      toast.success("تم إدراج الملصق بنجاح");
+      toast.success("أُدرج الملصق");
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("فشل إدراج الملصق");
+      toast.error("فشل الإدراج");
     } finally {
       setIsInserting(false);
     }
@@ -197,12 +197,12 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       });
       await handleInsertToCanvas(sheetPng);
       toast.success(
-        `تم إدراج شيت طباعة مكرر (${gridConfig.rows * gridConfig.cols} ملصقات)`
+        `أُدرج شيت (${gridConfig.rows * gridConfig.cols} ملصقات)`
       );
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("فشل توليد شيت الملصقات");
+      toast.error("فشل توليد الشيت");
     } finally {
       setIsGeneratingSheet(false);
     }
@@ -252,9 +252,9 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       const url = URL.createObjectURL(blob);
       downloadFile(url, `${selectedTemplate.id}.svg`);
       URL.revokeObjectURL(url);
-      toast.success("تم تنزيل ملف SVG المتجهي");
+      toast.success("نُزّل ملف SVG");
     } catch {
-      toast.error("فشل تنزيل ملف SVG");
+      toast.error("فشل تنزيل SVG");
     }
   }, [svgString, selectedTemplate.id]);
 
@@ -268,9 +268,9 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         [params.fontFamily || "Cairo"]
       );
       downloadFile(pngUrl, `${selectedTemplate.id}.png`);
-      toast.success("تم تصدير صورة PNG عالية الدقة (300 DPI)");
+      toast.success("صُدّر PNG عالي الدقة (300 DPI)");
     } catch {
-      toast.error("فشل تصدير الصورة");
+      toast.error("فشل التصدير");
     } finally {
       setBusyExport(false);
     }
@@ -287,10 +287,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       );
       const ok = await copyPngDataUrlToClipboard(pngUrl);
       if (ok) {
-        toast.success("تم نسخ صورة الملصق للحافظة");
+        toast.success("نُسخت الصورة للحافظة");
       } else {
         await copySvgCodeToClipboard(svgString);
-        toast.success("تم نسخ كود SVG للحافظة");
+        toast.success("نُسخ كود SVG");
       }
     } catch {
       toast.error("فشل النسخ");
@@ -303,12 +303,12 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     try {
       const ok = await copySvgCodeToClipboard(svgString);
       if (ok) {
-        toast.success("تم نسخ كود SVG المتجه إلى الحافظة");
+        toast.success("نُسخ كود SVG المتجه");
       } else {
-        toast.error("تعذر نسخ كود SVG");
+        toast.error("تعذر نسخ SVG");
       }
     } catch {
-      toast.error("فشل نسخ كود SVG");
+      toast.error("فشل نسخ SVG");
     }
   }, [svgString]);
 
@@ -342,7 +342,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                     {ALL_STICKER_TEMPLATES.length}
                   </span>
                   <DialogDescription className="sr-only">
-                    معرض ملصقات وشارات Grido Studio
+                    معرض ملصقات وشارات Grido
                   </DialogDescription>
                 </div>
               </div>
@@ -482,7 +482,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                       ) : (
                         <DownloadSimple className="w-3.5 h-3.5" />
                       )}
-                      <span>{busyExport ? "جاري التصدير ..." : "تصدير"}</span>
+                      <span>{busyExport ? "يصدّر ..." : "تصدير"}</span>
                       {!busyExport && <CaretDown className="w-3 h-3 text-muted-foreground" />}
                     </Button>
                   </DropdownMenuTrigger>
@@ -501,7 +501,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleCopySvgCode} className="cursor-pointer gap-2">
                       <Code className="w-4 h-4 text-indigo-500" weight="duotone" />
-                      <span>نسخ كود SVG</span>
+                      <span>نسخ SVG</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -519,7 +519,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   {isGeneratingSheet ? (
                     <>
                       <Spinner className="w-3.5 h-3.5 animate-spin" />
-                      <span>جاري التوليد ...</span>
+                      <span>يولّد ...</span>
                     </>
                   ) : (
                     <>
@@ -553,7 +553,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   {isInserting ? (
                     <>
                       <Spinner className="w-3.5 h-3.5 animate-spin" />
-                      <span>جاري الإدراج ...</span>
+                      <span>يُدرج ...</span>
                     </>
                   ) : (
                     <>

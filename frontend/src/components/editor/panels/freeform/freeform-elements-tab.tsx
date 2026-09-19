@@ -345,7 +345,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
         setIsInserting(template.id);
         const svg = getStickerSvgPreview(template);
         if (!svg) {
-          toast.error("تعذر تجهيز معاينة الملصق");
+          toast.error("تعذر تجهيز المعاينة");
           return;
         }
 
@@ -360,7 +360,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
         toast.success(`تمت إضافة ${template.name}`);
       } catch (err) {
         console.error("Failed to insert quick sticker", err);
-        toast.error("فشل إدراج الملصق في الكانفاس");
+        toast.error("فشل إدراج الملصق");
       } finally {
         setIsInserting(null);
       }
@@ -387,19 +387,19 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               id: "badges",
               label: "شارات",
               icon: <Stamp className="w-3.5 h-3.5 shrink-0" weight={activeCategory === "badges" ? "fill" : "regular"} />,
-              tooltip: "شارات وأختام رسمية",
+              tooltip: "شارات وأختام",
             },
             {
               id: "shapes",
               label: "أشكال",
               icon: <Shapes className="w-3.5 h-3.5 shrink-0" weight={activeCategory === "shapes" ? "fill" : "regular"} />,
-              tooltip: "أشكال وتصاميم هندسية",
+              tooltip: "أشكال وتصاميم",
             },
             {
               id: "text",
               label: "نصوص",
               icon: <TextT className="w-3.5 h-3.5 shrink-0" weight={activeCategory === "text" ? "fill" : "regular"} />,
-              tooltip: "نصوص مصممة جاهزة",
+              tooltip: "نصوص جاهزة",
             },
           ]}
         />
@@ -412,7 +412,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
           <Button
             type="button"
             onClick={handleOpenFullStickerStudio}
-            className="w-full h-8 px-2.5 rounded-lg text-xs font-semibold bg-card hover:bg-accent text-foreground border border-border/80 hover:border-primary/50 transition-all flex items-center justify-between shadow-2xs cursor-pointer select-none active:scale-[0.98]"
+            className="w-full h-8 px-2.5 rounded-md text-xs font-semibold bg-card hover:bg-accent text-foreground border border-border/80 hover:border-primary/50 transition-all flex items-center justify-between shadow-2xs cursor-pointer select-none active:scale-[0.98]"
           >
             <div className="flex items-center gap-2 min-w-0">
               <Stamp className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
@@ -497,7 +497,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
       {activeCategory === "shapes" && (
         <div className="space-y-3">
           <div className="px-1">
-            <span className="text-xs font-bold text-foreground/80">أشكال هندسية وتصاميم للكانفاس</span>
+            <span className="text-xs font-bold text-foreground/80">أشكال هندسية وتصاميم</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -559,8 +559,8 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   addTextPreset("heading");
                   toast.success("تمت إضافة عنوان رئيسي");
                 }}
-                title="إدراج عنوان رئيسي عريض (48px)"
-                className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
+                title="عنوان رئيسي عريض (48px)"
+                className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
               >
                 <span className="w-5 h-5 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-micro border border-primary/20 font-mono">
                   H1
@@ -577,8 +577,8 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   addTextPreset("subheading");
                   toast.success("تمت إضافة عنوان فرعي");
                 }}
-                title="إدراج عنوان فرعي متوسط (28px)"
-                className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
+                title="عنوان فرعي (28px)"
+                className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
               >
                 <span className="w-5 h-5 rounded-md bg-muted text-foreground/80 flex items-center justify-center shrink-0 font-bold text-micro border border-border/60 font-mono">
                   H2
@@ -595,8 +595,8 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   addTextPreset("body");
                   toast.success("تمت إضافة نص فقرة");
                 }}
-                title="إدراج نص فقرة أو وصف (18px)"
-                className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
+                title="نص فقرة (18px)"
+                className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
               >
                 <span className="w-5 h-5 rounded-md bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0 font-medium text-micro border border-border/40 font-mono">
                   P

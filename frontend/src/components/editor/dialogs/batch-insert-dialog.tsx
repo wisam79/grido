@@ -85,6 +85,9 @@ export function BatchInsertDialog({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsProcessing(false);
     setLoading(false);
+    if (!open) {
+      setImages([]);
+    }
   }, [open]);
 
   // Load initial images if provided
@@ -110,7 +113,7 @@ export function BatchInsertDialog({
             setImages(loaded);
           }
         } finally {
-          if (isMounted) setLoading(false);
+          setLoading(false);
         }
       })();
       return () => {
@@ -154,7 +157,7 @@ export function BatchInsertDialog({
       }
 
       setImages((prev) => [...prev, ...newItems]);
-      toast.success(`تمت إضافة ${newItems.length} صورة إلى قائمة الإدراج`);
+      toast.success(`تمت إضافة ${newItems.length} صورة للقائمة`);
     } catch (err) {
       console.error("Add files error:", err);
       toast.error("فشل استيراد الصور");
@@ -193,7 +196,7 @@ export function BatchInsertDialog({
       }
 
       setImages((prev) => [...prev, ...newItems]);
-      toast.success(`تم استيراد ${newItems.length} صورة من المجلد`);
+      toast.success(`تم استيراد ${newItems.length} صورة`);
     } catch (err) {
       console.error("Add directory error:", err);
       toast.error("فشل استيراد صور المجلد");
@@ -229,7 +232,7 @@ export function BatchInsertDialog({
   // Execute Batch Insertion
   const handleExecute = async () => {
     if (images.length === 0) {
-      toast.error("يرجى اختيار صورة واحدة على الأقل");
+      toast.error("اختر صورة واحدة على الأقل");
       return;
     }
 
@@ -265,6 +268,7 @@ export function BatchInsertDialog({
           toast.success(`تم ملء ${assignments.length} خانة في الكولاج`);
         } else {
           toast.error("لا توجد خانات كولاج كافية");
+          return;
         }
       } else {
         // Canvas freeform / grid insertion
@@ -275,9 +279,10 @@ export function BatchInsertDialog({
           marginPx,
           centerLastRow,
         });
-        toast.success(`تم إدراج ${expandedItems.length} صورة في مساحة العمل`);
+        toast.success(`تم إدراج ${expandedItems.length} صورة`);
       }
 
+      setImages([]);
       onOpenChange(false);
     } catch (err) {
       console.error("Execute batch insert error:", err);
@@ -291,7 +296,7 @@ export function BatchInsertDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular transition-all duration-150 gap-0"
+        className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular fluent-acrylic transition-all duration-150 gap-0"
         dir="rtl"
       >
         {/* Header */}
@@ -406,7 +411,7 @@ export function BatchInsertDialog({
                 </div>
                 <h4 className="text-sm font-bold text-foreground">قائمة الصور فارغة</h4>
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs leading-relaxed">
-                  انقر على "إدراج صور" أو "إدراج مجلد" للبدء
+                  اضغط "إدراج صور" أو "إدراج مجلد"
                 </p>
                 <div className="flex items-center gap-2 mt-4">
                   <Button size="sm" onClick={handleAddFiles} className="h-8 gap-1.5 text-xs rounded-md">
@@ -492,7 +497,7 @@ export function BatchInsertDialog({
 
             {/* Layout Mode Selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-foreground">نمط التوزيع على الصفحة</Label>
+              <Label className="text-xs font-semibold text-foreground">نمط التوزيع</Label>
               <div className="grid grid-cols-2 gap-1.5">
                 <Button
                   type="button"
@@ -570,7 +575,7 @@ export function BatchInsertDialog({
                 {/* Margin */}
                 <div className="space-y-2 pt-1 border-t border-border/30">
                   <div className="flex items-center justify-between text-xs">
-                    <Label className="text-xs font-semibold text-foreground">هوامش الحواف (Margin)</Label>
+                    <Label className="text-xs font-semibold text-foreground">الهوامش (Margin)</Label>
                     <span className="font-bold text-muted-foreground">{marginPx} px</span>
                   </div>
                   <Slider
@@ -587,7 +592,7 @@ export function BatchInsertDialog({
                 <div className="flex items-center justify-between pt-2 border-t border-border/30">
                   <div className="space-y-0.5">
                     <Label className="text-xs font-medium text-foreground">توسيط الصف الأخير</Label>
-                    <p className="text-xs text-muted-foreground">موازنة العناصر في الصف غير المكتمل</p>
+                    <p className="text-xs text-muted-foreground">توسيط عناصر الصف الناقص</p>
                   </div>
                   <Switch
                     checked={centerLastRow}
@@ -599,7 +604,7 @@ export function BatchInsertDialog({
 
             {mode === "collage" && (
               <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 text-xs text-primary/90 mt-2">
-                أنت حالياً في وضع الكولاج. يمكنك ملء خانات الكولاج بتسلسل الصور المحدد.
+                وضع الكولاج: تُملأ الخانات بترتيب الصور.
               </div>
             )}
           </div>
@@ -610,7 +615,7 @@ export function BatchInsertDialog({
           <div className="text-xs text-muted-foreground">
             {images.length > 0 ? (
               <span>
-                جاهز لإنشاء <strong className="text-foreground">{totalCopies}</strong> عنصر على الكانفاس
+                جاهز لإنشاء <strong className="text-foreground">{totalCopies}</strong> عنصر
               </span>
             ) : (
               <span>اختر صوراً لتفعيل الإدراج</span>

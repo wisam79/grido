@@ -32,7 +32,7 @@ describe('CanvasDimensionsPanel Component Tests', () => {
       </TooltipProvider>
     );
 
-    const landscapeBtn = screen.getByTitle('اتجاه أفقي');
+    const landscapeBtn = screen.getByTitle('أفقي');
     fireEvent.click(landscapeBtn);
 
     expect(useEditorStore.getState().canvasWidth).toBe(3508);

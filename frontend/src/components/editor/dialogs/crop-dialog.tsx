@@ -152,7 +152,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                 قص وتدوير الصورة
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                قص وتدوير وضبط استقامة الصورة
+                قص وتدوير وضبط الاستقامة
               </DialogDescription>
             </div>
           </div>
@@ -322,7 +322,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   size="sm"
                   className="text-xs h-8 rounded-md cursor-pointer flex items-center justify-center gap-2 w-full text-foreground/90 border-border/80 hover:bg-accent/60 font-medium"
                   onClick={handleResetCrop}
-                  title="إعادة تحديد القص والتدوير للحالة الكاملة الأولية"
+                  title="إعادة ضبط القص والتدوير"
                 >
                   <ArrowCounterClockwise className="text-primary w-3.5 h-3.5 shrink-0" />
                   <span>إعادة ضبط</span>
@@ -334,7 +334,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     size="sm"
                     className="text-xs h-8 rounded-md cursor-pointer flex items-center justify-center gap-2 w-full text-primary border-primary/30 hover:border-primary/50 hover:bg-primary/10 font-semibold"
                     onClick={handleRestoreOriginal}
-                    title="استرجاع الصورة الأصلية الكاملة"
+                    title="استعادة الصورة الأصلية"
                   >
                     <ArrowCounterClockwise className="w-3.5 h-3.5 shrink-0" />
                     <span>استعادة الأصل</span>

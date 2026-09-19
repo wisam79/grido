@@ -17,9 +17,9 @@ export function ElementHeaderBadge({ element, selectedIds, onUnlock }: ElementHe
         <div className="bg-primary/10 border border-primary/20 text-primary p-2.5 rounded-xl flex items-center justify-between text-xs font-semibold mb-2 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
           <div className="flex items-center gap-2">
             <Sparkle className="w-3.5 h-3.5 shrink-0 text-primary" weight="fill" />
-            <span>تحديد متعدد ({selectedIds.length} عناصر)</span>
+            <span>تحديد متعدد ({selectedIds.length})</span>
           </div>
-          <span className="text-micro text-muted-foreground/90 font-medium">التنسيق يُبث للجميع</span>
+          <span className="text-micro text-muted-foreground/90 font-medium">تنسيق يشمل الكل</span>
         </div>
       )}
 

@@ -157,8 +157,8 @@ jobs:
         with:
           name: GridoStudio-unsigned
           path: |
-            build/bin/GridoStudio.exe
-            build/bin/GridoStudio-installer.exe
+            bin/GridoStudio.exe
+            bin/GridoStudio-installer.exe
 
       - name: Sign Executables via SignPath
         if: env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != ''
@@ -172,7 +172,7 @@ jobs:
           artifact-configuration-slug: 'initial-version'
           github-artifact-id: ${{ steps.upload-artifact.outputs.artifact-id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          output-artifact-directory: 'build/bin/signed'
+          output-artifact-directory: 'bin/signed'
           wait-for-completion: true
           wait-for-completion-timeout-in-seconds: 1800
 
@@ -180,16 +180,16 @@ jobs:
         if: env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != ''
         shell: powershell
         run: |
-          if (Test-Path "build\bin\signed") {
-            Get-ChildItem -Path "build\bin\signed" | ForEach-Object { Write-Host "signed: $($_.Name)" }
-            Get-ChildItem -Path "build\bin\signed\*.exe" | ForEach-Object {
-              Copy-Item $_.FullName "build\bin\$($_.Name)" -Force
+          if (Test-Path "bin\signed") {
+            Get-ChildItem -Path "bin\signed" | ForEach-Object { Write-Host "signed: $($_.Name)" }
+            Get-ChildItem -Path "bin\signed\*.exe" | ForEach-Object {
+              Copy-Item $_.FullName "bin\$($_.Name)" -Force
             }
           } else {
-            Write-Host "Warning: build\bin\signed does not exist. Signing step might have failed or skipped."
+            Write-Host "Warning: bin\signed does not exist. Signing step might have failed or skipped."
           }
-          if (Test-Path "build\bin\GridoStudio.exe") {
-            Copy-Item "build\bin\GridoStudio.exe" "build\bin\Grido Studio.exe" -Force
+          if (Test-Path "bin\GridoStudio.exe") {
+            Copy-Item "bin\GridoStudio.exe" "bin\Grido Studio.exe" -Force
           }
 
 
@@ -199,21 +199,21 @@ jobs:
           # 🛡️ توليد بصمات SHA-256 لكل الملفات التنفيذية المنشورة — يستهلكها /api/version
           # ويتحقق منها التطبيق قبل تشغيل أي مثبت محمّل (حماية سلسلة الإمداد)
           $lines = @()
-          Get-ChildItem -Path "build\bin\*.exe" | ForEach-Object {
+          Get-ChildItem -Path "bin\*.exe" | ForEach-Object {
             $hash = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLower()
             $lines += "$hash  $($_.Name)"
           }
-          $lines | Out-File -FilePath "build\bin\grido-checksums.txt" -Encoding ascii
-          Get-Content "build\bin\grido-checksums.txt"
+          $lines | Out-File -FilePath "bin\grido-checksums.txt" -Encoding ascii
+          Get-Content "bin\grido-checksums.txt"
 
       - name: Create GitHub Release & Upload Asset
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/bin/GridoStudio.exe
-            build/bin/GridoStudio-installer.exe
-            build/bin/Grido Studio Setup.exe
-            build/bin/grido-checksums.txt
+            bin/GridoStudio.exe
+            bin/GridoStudio-installer.exe
+            bin/Grido Studio Setup.exe
+            bin/grido-checksums.txt
           fail_on_unmatched_files: false
           draft: false
           prerelease: false

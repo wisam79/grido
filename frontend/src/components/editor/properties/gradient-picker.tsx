@@ -148,12 +148,12 @@ export const GradientPicker = ({
                     type="button"
                     onClick={handleReverseStops}
                     className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground border border-border/50 hover:border-primary/40 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
-                    title="عكس ترتيب الألوان"
+                    title="عكس الألوان"
                   >
                     <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs font-cairo">عكس ترتيب الألوان</TooltipContent>
+                <TooltipContent side="top" className="text-xs font-cairo">عكس الألوان</TooltipContent>
               </Tooltip>
 
               {/* نهاية التدرج */}
@@ -251,7 +251,7 @@ export const GradientPicker = ({
                         aria-label={preset.name}
                       >
                         <div
-                          className="w-full h-full rounded-[6px] relative overflow-hidden flex items-center justify-center shadow-inner before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
+                          className="w-full h-full rounded-md relative overflow-hidden flex items-center justify-center shadow-inner before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
                           style={{ background: bgCss }}
                         >
                           {isSelected && (

@@ -485,7 +485,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
     ctx.putImageData(canvasImgData, 0, 0);
     saveHistory();
-    toast.success("تم مسح المساحة اللونية المتصلة");
+    toast.success("تم مسح المنطقة اللونية");
   };
 
   const handleSave = async () => {
@@ -503,7 +503,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       }
       onSave(localPath);
       onOpenChange(false);
-      toast.success("تم حفظ التعديلات بنجاح");
+      toast.success("تم حفظ التعديلات");
     } catch (err) {
       console.error("Save failed:", err);
       toast.error("فشل حفظ التعديلات");
@@ -525,7 +525,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               <span>تعديل القص يدوياً</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              امسح أو استعد أجزاء الخلفية يدوياً
+              امسح أو استعد أجزاء الخلفية
             </DialogDescription>
           </div>
           <DialogCloseButton />

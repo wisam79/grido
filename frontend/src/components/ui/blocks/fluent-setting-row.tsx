@@ -43,7 +43,7 @@ export const FluentSettingRow = React.memo(
                     <button
                       type="button"
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                      aria-label="مزيد من المعلومات"
+                      aria-label="المزيد"
                     >
                       <Question className="size-3.5 shrink-0" weight="bold" />
                     </button>
@@ -83,7 +83,7 @@ export const FluentSettingRow = React.memo(
                     <button
                       type="button"
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                      aria-label="مزيد من المعلومات"
+                      aria-label="المزيد"
                     >
                       <Question className="size-3.5 shrink-0" weight="bold" />
                     </button>

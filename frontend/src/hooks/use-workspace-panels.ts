@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { CollageTab, FreeformTab } from '@/lib/workspace-tools';
 
 export type WorkspacePanel = 'templates' | 'properties' | null;
 export type WorkspaceBreakpoint = 'compact' | 'standard' | 'wide';
-export type FreeformTab = 'layers' | 'elements' | 'stickers' | 'shapes' | 'text' | 'presets';
-export type CollageTab = 'custom' | 'presets' | 'freeform';
+// الأنواع ومصدرها سجل الأدوات الموحّد (كانت مكرّرة هنا وفي freeform-panel-constants)
+export type { CollageTab, FreeformTab };
 
 const STORAGE_KEY = 'grido_workspace_layout_v1';
 

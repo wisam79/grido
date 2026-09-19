@@ -78,6 +78,13 @@ export function usePrintExport(ctx: PrintExportContext) {
   const [isExporting, setIsExporting] = useState(false);
   const isExportingRef = useRef(false);
 
+  // Sync ref when state is updated externally (e.g., when dialog closes)
+  useEffect(() => {
+    if (!isExporting) {
+      isExportingRef.current = false;
+    }
+  }, [isExporting]);
+
   // مؤشر الطباعة Enter — آخر معاملات نداء الطباعة من المكوّن
   const printInvocationRef = useRef<{
     colorSpace: "sRGB" | "CMYK";

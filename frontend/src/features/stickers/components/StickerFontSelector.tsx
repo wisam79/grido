@@ -84,7 +84,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
         <button
           type="button"
           className={cn(
-            "w-full h-8 bg-card/60 hover:bg-card border border-border/50 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between gap-2 shadow-2xs transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+            "w-full h-8 bg-card/60 hover:bg-card border border-border/50 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between gap-2 shadow-2xs transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
             isOpen && "border-primary ring-1 ring-primary/30 bg-card",
             className
           )}
@@ -144,7 +144,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="بحث في الخطوط العربية..."
+            placeholder="بحث في الخطوط..."
             className="w-full h-7 bg-muted/40 border border-border/60 rounded-md pr-7 pl-2 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
           />
         </div>
@@ -172,7 +172,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
         <div className="max-h-[240px] overflow-y-auto space-y-1 pr-0.5">
           {filteredFonts.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground">
-              لا توجد خطوط مطابقة
+              لا توجد خطوط
             </div>
           ) : (
             filteredFonts.map((font) => {

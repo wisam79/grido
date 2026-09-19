@@ -108,7 +108,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       {/* 🎛️ شريط أدوات الطبقات السريع المجمع */}
       <div className="bg-card border border-border p-2 rounded-xl shadow-xs fluent-specular space-y-2">
         <div className="flex items-center justify-between border-b border-border/40 pb-1.5 px-1">
-          <span className="text-xs font-bold text-foreground/80">أدوات الطبقات والترتيب</span>
+          <span className="text-xs font-bold text-foreground/80">أدوات الطبقات</span>
           <span className="text-micro text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
             {selectedIds.length > 0 ? `${selectedIds.length} محدد` : `${elements.length} طبقة`}
           </span>
@@ -118,7 +118,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
           {/* التحكم الجماعي */}
           <div className="flex items-center gap-0.5 bg-muted/40 p-0.5 rounded-lg border border-border/30">
             <QuickActionBtn
-              content={allHidden ? "إظهار كافة الطبقات" : "إخفاء كافة الطبقات"}
+              content={allHidden ? "إظهار الكل" : "إخفاء الكل"}
               onClick={handleToggleAllVisibility}
               disabled={!hasElements}
             >
@@ -126,7 +126,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
             </QuickActionBtn>
 
             <QuickActionBtn
-              content={allLocked ? "فتح قفل كافة الطبقات" : "قفل كافة الطبقات"}
+              content={allLocked ? "فك قفل الكل" : "قفل الكل"}
               onClick={handleToggleAllLock}
               disabled={!hasElements}
             >
@@ -137,7 +137,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
           {/* التجميع والعمليات */}
           <div className="flex items-center gap-0.5 bg-muted/40 p-0.5 rounded-lg border border-border/30">
             <QuickActionBtn
-              content="تجميع العناصر المحددة (Ctrl+G)"
+              content="تجميع المحدد (Ctrl+G)"
               onClick={groupSelectedElements}
               disabled={!hasMultipleSelected}
             >
@@ -153,7 +153,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
             </QuickActionBtn>
 
             <QuickActionBtn
-              content="تكرار العناصر المحددة"
+              content="تكرار المحدد"
               onClick={() => duplicateElements(selectedIds)}
               disabled={!hasSelection}
             >
@@ -161,7 +161,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
             </QuickActionBtn>
 
             <QuickActionBtn
-              content="حذف العناصر المحددة"
+              content="حذف المحدد"
               onClick={() => removeElements(selectedIds)}
               disabled={!hasSelection}
             >
@@ -201,10 +201,10 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
           <div className="w-px h-4 bg-border/50" />
 
           <div className="flex items-center gap-0.5">
-            <QuickActionBtn content="توزيع المسافات أفقياً" onClick={() => distributeSelectedElements("horizontal")} disabled={!hasMultipleSelected}>
+            <QuickActionBtn content="توزيع أفقي" onClick={() => distributeSelectedElements("horizontal")} disabled={!hasMultipleSelected}>
               <ArrowsHorizontal className="w-3.5 h-3.5" />
             </QuickActionBtn>
-            <QuickActionBtn content="توزيع المسافات عمودياً" onClick={() => distributeSelectedElements("vertical")} disabled={!hasMultipleSelected}>
+            <QuickActionBtn content="توزيع عمودي" onClick={() => distributeSelectedElements("vertical")} disabled={!hasMultipleSelected}>
               <ArrowsVertical className="w-3.5 h-3.5" />
             </QuickActionBtn>
           </div>

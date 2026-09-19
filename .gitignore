@@ -90,3 +90,5 @@ package-lock.json
 .agents/spec_miner_*
 ORIGINAL_REQUEST.md
 .agents/ORIGINAL_REQUEST.md
+.freebuff/
+

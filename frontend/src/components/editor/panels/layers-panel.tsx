@@ -122,7 +122,7 @@ const LayerRow = React.memo(function LayerRow({
       className={cn(
         "group flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-all cursor-pointer select-none",
         "border border-transparent",
-        "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+        "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
         isSelected
           ? "bg-primary/12 border-primary/30 shadow-xs"
           : "hover:bg-muted/50",
@@ -174,7 +174,7 @@ const LayerRow = React.memo(function LayerRow({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-              className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <Copy size={13} weight="regular" />
             </button>
@@ -188,7 +188,7 @@ const LayerRow = React.memo(function LayerRow({
               type="button"
               onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
               className={cn(
-                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
                 isHidden ? "text-destructive/60" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -206,7 +206,7 @@ const LayerRow = React.memo(function LayerRow({
               type="button"
               onClick={(e) => { e.stopPropagation(); onToggleLock(); }}
               className={cn(
-                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
                 isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -223,7 +223,7 @@ const LayerRow = React.memo(function LayerRow({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <Trash size={13} weight="regular" />
             </button>
@@ -357,10 +357,10 @@ export const LayersPanel = React.memo(function LayersPanel() {
               <Stack size={28} weight="thin" className="text-muted-foreground/50" />
             </div>
             <p className="text-xs text-muted-foreground font-bold">
-              لا توجد عناصر بعد
+              لا توجد عناصر
             </p>
             <p className="text-micro text-muted-foreground/60 mt-1">
-              أضف صوراً أو نصوصاً أو أشكالاً من شريط الأدوات
+              أضف عناصر من شريط الأدوات
             </p>
           </div>
         ) : (

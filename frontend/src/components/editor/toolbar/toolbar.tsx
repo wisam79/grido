@@ -13,6 +13,7 @@ import {
   TooltipBtn,
   ToolbarAddTools,
   ToolbarHistoryTools,
+  ToolbarSelectionTools,
 } from "./toolbar-items";
 import {
   DropdownMenu,
@@ -35,9 +36,11 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
       dir="rtl"
       className="relative h-12 shrink-0 border-b border-border bg-sidebar/95 backdrop-blur-xl select-none no-print font-cairo"
     >
-      <div className="h-full flex items-center justify-between gap-2 px-3 overflow-hidden">
-        {/* المجموعات الرئيسية (ملف، أدوات، تحرير) */}
-        <div className="flex items-center gap-2 shrink-0">
+      <div className="h-full flex items-center justify-between gap-2 px-3">
+        {/* المجموعات الرئيسية (ملف، أدوات، تحرير)
+            ⚠️ عند ضيق النافذة تُمرَّر هذه المجموعة أفقياً بلا شريط ظهور
+            بدل أن يُقطع الطرف الآخر (الحفظ/الطباعة/التصدير). */}
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-x-auto scrollbar-none">
           {/* المجموعة 1: إدارة الملفات والمستندات */}
           <ToolbarFileOps />
 
@@ -48,15 +51,17 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
           <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
-          {/* المجموعة 3: التراجع والإعادة */}
+          {/* المجموعة 3: أدوات التحديد — تتغير مع السياق (تكرار/تجميع/مرشحات/AI)
+              وكانت مكتوبة بالكامل لكن غير مربوطة بالشريط، فبقيت المرشحات بلا أي
+              واجهة تُفعّلها رغم أن الكانفاس يرسمها. */}
+          <ToolbarSelectionTools />
+
+          {/* المجموعة 4: التراجع والإعادة */}
           <ToolbarHistoryTools />
         </div>
 
-        {/* فاصل مرن بين الأدوات والإجراءات */}
-        <div className="flex-1 min-w-0" />
-
-        {/* المجموعة 4: الحفظ والطباعة والتصدير في مجموعة أوامر موحدة */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* المجموعة النهائية: الحفظ والطباعة والتصدير في مجموعة أوامر موحدة */}
+        <div className="flex items-center gap-1 shrink-0 ms-auto">
           <div className="fluent-command-group shadow-2xs">
             {/* حفظ (Ctrl+S) */}
             <TooltipBtn content="حفظ المشروع (Ctrl + S)">
@@ -106,7 +111,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
           {/* قائمة المزيد للإجراءات السريعة */}
           <DropdownMenu>
-            <TooltipBtn content="المزيد من خيارات المستند">
+            <TooltipBtn content="المزيد من الخيارات">
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"

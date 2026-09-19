@@ -1,7 +1,22 @@
 import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge"
 import { IMAGE_FILTERS } from "./templates"
 
+/**
+ * tailwind-merge لا يعرف المقياس الطباعي الدلالي المخصص في المشروع (mini/micro)
+ * لأنّ isTshirtSize يتعرف على 2xs/3xs فقط، فيصنّفهما كـ«ألوان نص» (text-color)
+ * فتأتي أي فئة لون لاحقة داخل cn() وتحذفهما بصمت — فيرجع النص إلى مقاس body
+ * (15.5px) ويظهر أكبر وغير متناسق مع بقية الواجهة.
+ * هذا التسجيل يجعل mini/micro مجموعة «حجم خط» أولاً، فيتصارعان مع text-xs
+ * وليس مع الألوان.
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      "font-size": [{ text: ["3xs", "2xs", "micro", "mini"] }],
+    },
+  },
+})
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

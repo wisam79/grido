@@ -49,7 +49,7 @@ export function LicenseTabContent({
       await onActivate(licenseKey.trim());
     } catch (err) {
       if (!isMountedRef.current) return;
-      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "مفتاح الترخيص غير صالح. يرجى التحقق من الصيغة.");
+      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "مفتاح الترخيص غير صالح.");
       onError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -81,7 +81,7 @@ export function LicenseTabContent({
                 type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(user.licenseKey || "");
-                  toast.success("تم نسخ المفتاح إلى الحافظة");
+                  toast.success("تم نسخ المفتاح");
                 }}
                 className="text-xs text-primary hover:underline font-bold cursor-pointer"
               >
@@ -108,10 +108,10 @@ export function LicenseTabContent({
                     const text = await navigator.clipboard.readText();
                     if (text) {
                       setLicenseKey(text.trim().toUpperCase());
-                      toast.success("تم لصق المفتاح من الحافظة");
+                      toast.success("تم لصق المفتاح");
                     }
                   } catch {
-                    toast.error("يرجى لصق المفتاح يدوياً");
+                    toast.error("الصق المفتاح يدوياً");
                   }
                 }}
                 className="text-xs text-primary hover:underline font-bold cursor-pointer flex items-center gap-1"
@@ -156,7 +156,7 @@ export function LicenseTabContent({
             try {
               const path = await ExportSupportLogs();
               if (path) {
-                toast.success(`تم حفظ السجلات بنجاح في: ${path}`);
+                toast.success(`تم حفظ السجلات في: ${path}`);
               }
             } catch (e) {
               toast.error((e as Error)?.message || "فشل تصدير السجلات");

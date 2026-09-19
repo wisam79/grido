@@ -68,7 +68,7 @@ function MmField({
         max={max}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-8 pr-7 pl-7 text-center font-mono text-mini font-bold rounded-md bg-input/40 border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+        className="h-8 pr-7 pl-7 text-center font-mono text-mini font-bold rounded-md bg-input/40 border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         dir="ltr"
         aria-label={label}
       />
@@ -94,9 +94,9 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
     return (
       <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl bg-card/60 border border-dashed border-border/70 fluent-specular shadow-2xs h-full min-h-[160px] text-muted-foreground select-none gap-1.5">
         <SlidersHorizontal className="w-6 h-6 opacity-30 text-primary" weight="duotone" />
-        <span className="text-xs font-bold text-foreground/75">لا توجد خلية محددة</span>
+        <span className="text-xs font-bold text-foreground/75">لا خلية محددة</span>
         <span className="text-micro leading-relaxed text-muted-foreground">
-          انقر خلية لضبط مقاسها وموقعها بالمليمتر
+          انقر خلية لضبط المقاس والموقع
         </span>
       </div>
     );
@@ -233,7 +233,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
               "cursor-pointer p-0.5 rounded transition-all",
               slot.lockAspect ? "text-primary" : "text-muted-foreground/60 hover:text-foreground"
             )}
-            title={slot.lockAspect ? "فك قفل النسبة" : "قفل نسبة الأبعاد"}
+            title={slot.lockAspect ? "فك القفل" : "قفل النسبة"}
           >
             {slot.lockAspect ? (
               <LockSimple className="w-3 h-3 text-primary" weight="fill" />
@@ -245,7 +245,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
         <div className="grid grid-cols-[1fr_20px_1fr] items-center gap-1.5" dir="ltr">
           <MmField
             icon={<Ruler className="w-3 h-3" weight="bold" />}
-            label="العرض بالمليمتر"
+            label="العرض"
             value={wMM}
             min={5}
             max={paperWidthMM}
@@ -255,7 +255,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
           <span className="text-micro font-bold text-muted-foreground/60 text-center">×</span>
           <MmField
             icon={<Ruler className="w-3 h-3 rotate-90" weight="bold" />}
-            label="الارتفاع بالمليمتر"
+            label="الارتفاع"
             value={hMM}
             min={5}
             max={paperHeightMM}
@@ -269,12 +269,12 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
       <div className="space-y-1.5">
         <span className="flex items-center gap-1 text-micro text-muted-foreground font-bold">
           <Cursor className="w-3 h-3 text-primary/70" weight="bold" />
-          الموقع من الزاوية (0,0)
+          الموقع (0,0)
         </span>
         <div className="grid grid-cols-[1fr_20px_1fr] items-center gap-1.5" dir="ltr">
           <MmField
             icon={<Cursor className="w-3 h-3" weight="bold" />}
-            label="الموقع X بالمليمتر"
+            label="الموقع X"
             value={xMM}
             min={0}
             max={paperWidthMM - wMM}
@@ -284,7 +284,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
           <span className="text-micro font-bold text-muted-foreground/60 text-center">,</span>
           <MmField
             icon={<Cursor className="w-3 h-3 rotate-90" weight="bold" />}
-            label="الموقع Y بالمليمتر"
+            label="الموقع Y"
             value={yMM}
             min={0}
             max={paperHeightMM - hMM}

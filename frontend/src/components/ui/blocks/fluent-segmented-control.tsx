@@ -78,7 +78,7 @@ export function FluentSegmentedControl<T extends string = string>({
             disabled={opt.disabled}
             onClick={() => onChange(opt.id)}
             className={cn(
-              "relative flex items-center justify-center font-cairo cursor-pointer rounded-md transition-all duration-150 z-10 select-none min-w-0 overflow-hidden",
+              "relative flex items-center justify-center font-cairo cursor-pointer rounded-md transition-colors duration-150 z-10 select-none min-w-0 overflow-hidden",
               "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
               fullWidth ? "flex-1" : "shrink-0",
               stacked

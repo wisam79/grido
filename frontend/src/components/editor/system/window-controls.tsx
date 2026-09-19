@@ -42,7 +42,7 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
         onClick={onMinimize}
         className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus:outline-none"
         title="تصغير"
-        aria-label="تصغير النافذة"
+        aria-label="تصغير"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M0 5H10" stroke="currentColor" strokeWidth="1" />
@@ -64,8 +64,8 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
           }
         }}
         className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus:outline-none"
-        title={isMaximized ? "استعادة (مرّر أو انقر باليمين لتقسيم الشاشة)" : "تكبير (مرّر أو انقر باليمين لتقسيم الشاشة)"}
-        aria-label={isMaximized ? "استعادة حجم النافذة" : "تكبير النافذة"}
+        title={isMaximized ? "استعادة (انقر باليمين لتقسيم الشاشة)" : "تكبير (انقر باليمين لتقسيم الشاشة)"}
+        aria-label={isMaximized ? "استعادة" : "تكبير"}
       >
         {isMaximized ? (
           // أيقونة الاستعادة (Restore - مربعان متراكبان)
@@ -87,7 +87,7 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
         onClick={onClose}
         className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-white hover:bg-[#c42b1c] active:bg-[#b22517] transition-colors focus:outline-none"
         title="إغلاق"
-        aria-label="إغلاق التطبيق"
+        aria-label="إغلاق"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M0.5 0.5L9.5 9.5M9.5 0.5L0.5 9.5" stroke="currentColor" strokeWidth="1" />

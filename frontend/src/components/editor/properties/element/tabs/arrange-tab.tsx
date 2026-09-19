@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import React, { useCallback } from "react";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +26,7 @@ export interface ElementArrangeTabProps {
   onUpdate: (id: string, patch: Partial<CanvasElement>) => void;
 }
 
-export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps) {
+export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps) {
   const alignSelectedElements = useEditorStore((state) => state.alignSelectedElements);
 
   const handleRotate90 = useCallback(() => {
@@ -91,7 +91,7 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
-              محاذاة للوسط أفقياً
+              توسيط أفقي
             </TooltipContent>
           </Tooltip>
 
@@ -141,7 +141,7 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
-              محاذاة للمنتصف عمودياً
+              توسيط عمودي
             </TooltipContent>
           </Tooltip>
 
@@ -166,7 +166,7 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
         <div className="grid grid-cols-2 gap-2 text-mini">
           <div
             className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all"
-            title="الإحداثي الأفقي X"
+            title="X"
           >
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               X:
@@ -187,7 +187,7 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
 
           <div
             className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all"
-            title="الإحداثي العمودي Y"
+            title="Y"
           >
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               Y:
@@ -208,7 +208,7 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
 
           <div
             className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all"
-            title="نسبة العرض W"
+            title="W"
           >
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               W:
@@ -233,7 +233,7 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
 
           <div
             className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all"
-            title="نسبة الارتفاع H"
+            title="H"
           >
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               H:
@@ -294,7 +294,7 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
             variant="outline"
             size="icon"
             onClick={handleRotate90}
-            title="تدوير 90 درجة"
+            title="تدوير 90°"
             className="h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <ArrowClockwise className="w-3.5 h-3.5 text-muted-foreground" weight="regular" />
@@ -333,4 +333,4 @@ export function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps)
       </FluentSection>
     </div>
   );
-}
+});

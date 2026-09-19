@@ -41,11 +41,11 @@ describe('AccountLicenseModal Component Tests', () => {
 
   it('allows toggling between login and register mode', () => {
     render(<AccountLicenseModal />);
-    const toggleBtn = screen.getByText('إنشاء حساب جديد');
+    const toggleBtn = screen.getByText('إنشاء حساب');
     fireEvent.click(toggleBtn);
 
     expect(screen.getByPlaceholderText('الاسم')).toBeInTheDocument();
-    expect(screen.getByText('لديك حساب بالفعل؟ تسجيل الدخول')).toBeInTheDocument();
+    expect(screen.getByText('لديك حساب؟ تسجيل الدخول')).toBeInTheDocument();
   });
 
   it('submits login form successfully', async () => {
@@ -89,7 +89,7 @@ describe('AccountLicenseModal Component Tests', () => {
     render(<AccountLicenseModal />);
 
     // Switch to register
-    fireEvent.click(screen.getByText('إنشاء حساب جديد'));
+    fireEvent.click(screen.getByText('إنشاء حساب'));
 
     fireEvent.change(screen.getByPlaceholderText('الاسم'), { target: { value: 'Ali' } });
     fireEvent.change(screen.getByPlaceholderText('name@example.com'), { target: { value: 'pending@example.com' } });
@@ -99,7 +99,7 @@ describe('AccountLicenseModal Component Tests', () => {
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('123456')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'تأكيد الكود وتسجيل الدخول' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'تأكيد الكود والدخول' })).toBeInTheDocument();
     });
   });
 

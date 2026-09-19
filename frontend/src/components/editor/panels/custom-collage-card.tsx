@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
-import {
-  GridFour,
-  Stack,
-  MagicWand,
-} from "@phosphor-icons/react";
+import { GridFour, MagicWand } from "@phosphor-icons/react";
+import { COLLAGE_TOOLS, type CollageTab } from "@/lib/workspace-tools";
 import { CollageTemplate } from "@/lib/templates";
 import { FreeformCollageModal } from "@/features/freeform-collage";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
@@ -26,6 +23,10 @@ import {
 } from "./collage/collage-preset-data";
 import { CollagePresetsTab } from "./collage/collage-presets-tab";
 import { CollageCustomGridTab } from "./collage/collage-custom-grid-tab";
+import { CollagePaperToolsTab } from "./collage/collage-paper-tools-tab";
+import { CollageAutofillTab } from "./collage/collage-autofill-tab";
+import { CollageBackdropTab } from "./collage/collage-backdrop-tab";
+import { CollageArrangeTab } from "./collage/collage-arrange-tab";
 
 interface CustomCollageCardProps {
   onSelect: (t: CollageTemplate) => void;
@@ -34,8 +35,8 @@ interface CustomCollageCardProps {
   savedTemplates?: CollageTemplate[];
   onDeleteTemplate?: (id: string, e: React.MouseEvent) => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
-  activeTab?: "presets" | "custom" | "freeform";
-  onActiveTabChange?: (tab: "presets" | "custom" | "freeform") => void;
+  activeTab?: CollageTab;
+  onActiveTabChange?: (tab: CollageTab) => void;
   showInternalTabs?: boolean;
 }
 
@@ -63,11 +64,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   const storedDpi = printSettings?.dpi || 300;
 
   // التبويب الرئيسي للوحة الكولاج (الشبكة افتراضياً)
-  const [localActiveTab, setLocalActiveTab] = useState<"presets" | "custom" | "freeform">("custom");
+  const [localActiveTab, setLocalActiveTab] = useState<CollageTab>("custom");
   const effectiveTab = propActiveTab ?? localActiveTab;
 
   const handleTabChange = useCallback(
-    (nextTab: "presets" | "custom" | "freeform") => {
+    (nextTab: CollageTab) => {
       setLocalActiveTab(nextTab);
       onActiveTabChange?.(nextTab);
       if (nextTab === "freeform") {
@@ -179,6 +180,19 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     [canvasWidth, canvasHeight, photoType, gridAlign, onSelect, storedDpi]
   );
 
+  // تطبيق موحّد بنداء واحد: يزامن عناصر التحكم المحلية ثم يطبّق الشبكة مرة واحدة
+  // (كانت التعبئة السريعة تطلق ثلاثة تطبيقات متتالية فتلوّث سجل التراجع بحالات وسيطة)
+  const handleApplyFromTab = useCallback(
+    (r: number, c: number, customPhotoType?: PhotoGridType, customAlign?: GridAlignment) => {
+      setRows(r);
+      setCols(c);
+      if (customPhotoType) setPhotoType(customPhotoType);
+      if (customAlign) setGridAlign(customAlign);
+      applyCustomCollage(r, c, customPhotoType, customAlign);
+    },
+    [applyCustomCollage]
+  );
+
   const handleSaveCurrentAsTemplate = useCallback(
     (name: string) => {
       const cells =
@@ -206,9 +220,9 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success("تم تصدير كافة القوالب بنجاح");
+      toast.success("تم تصدير القوالب");
     } catch {
-      toast.error("حدث خطأ أثناء التصدير");
+      toast.error("فشل التصدير");
     }
   }, [savedTemplates]);
 
@@ -230,39 +244,39 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     }
   }, [photoType, canvasWidth, canvasHeight, rows, cols, applyCustomCollage, gridAlign, storedDpi, effectiveTab, isCustomActive]);
 
+  const collageTabOptions = useMemo(() => COLLAGE_TOOLS.map((tool) => {
+    const isInUse =
+      tool.badge === "collage-grid"
+        ? isCustomActive
+        : tool.badge === "collage-freeform"
+          ? isFreeformActive
+          : false;
+    return {
+      id: tool.id,
+      label: tool.label,
+      icon: <tool.icon className="w-4 h-4 text-primary" weight="duotone" />,
+      tooltip: tool.title,
+      badge: isInUse ? (
+        <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
+      ) : undefined,
+    };
+  }), [isCustomActive, isFreeformActive]);
+
   return (
     <div className="flex flex-col gap-2.5 font-cairo" dir="rtl">
-      {/* 🧭 شريط التبويبات الثلاثي (يُعرض فقط عند الحاجة للشاشات المدمجة) */}
+      {/* 🧭 شريط تبويبات الكولاج للشاشات المدمجة — يُبنى من سجل الأدوات فلا
+          تبقى أداة جديدة غير قابلة للوصول عند ضيق النافذة، ويمرّ أفقياً عند الحاجة */}
       {showInternalTabs && (
-        <FluentSegmentedControl
-          layoutId="collage-main-tabs"
-          options={[
-            {
-              id: "custom",
-              label: "شبكة",
-              icon: <GridFour className="w-4 h-4 text-primary" weight="duotone" />,
-              badge: isCustomActive ? (
-                <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
-              ) : undefined,
-            },
-            {
-              id: "presets",
-              label: "قوالب",
-              icon: <Stack className="w-4 h-4 text-primary" weight="duotone" />,
-            },
-            {
-              id: "freeform",
-              label: "حر",
-              icon: <MagicWand className="w-4 h-4 text-primary" weight="duotone" />,
-              badge: isFreeformActive ? (
-                <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
-              ) : undefined,
-            },
-          ]}
-          value={effectiveTab}
-          onChange={(val) => handleTabChange(val as "presets" | "custom" | "freeform")}
-          size="sm"
-        />
+        <div className="overflow-x-auto pb-0.5 -mb-0.5">
+          <FluentSegmentedControl
+            layoutId="collage-main-tabs"
+            fullWidth={false}
+            options={collageTabOptions}
+            value={effectiveTab}
+            onChange={(val) => handleTabChange(val as CollageTab)}
+            size="sm"
+          />
+        </div>
       )}
 
       {/* 1️⃣ تبويب تخصيص الشبكة الذاتي (صفوف وأعمدة ومقاسات رسمية) */}
@@ -285,7 +299,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             setCols(c);
             applyCustomCollage(rows, c, photoType, gridAlign);
           }}
-          onApply={applyCustomCollage}
+          onApply={handleApplyFromTab}
           onPhotoTypeChange={(t) => {
             setPhotoType(t);
             applyCustomCollage(rows, cols, t, gridAlign);
@@ -318,7 +332,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shadow-2xs">
             <MagicWand className="w-5 h-5" weight="duotone" />
           </div>
-          <span className="font-bold text-xs text-foreground">كولاج حر بالملم</span>
+          <span className="font-bold text-xs text-foreground">كولاج حر</span>
           <div className="flex flex-wrap items-center justify-center gap-1.5 text-micro text-muted-foreground select-none">
             <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40 font-mono">mm</span>
             <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40">تحديد متعدد</span>
@@ -326,7 +340,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40">تصدير/استيراد</span>
           </div>
           <p className="text-micro text-muted-foreground leading-relaxed">
-            ورقة فارغة بلا قوالب: ارسم شبكتك بالمليمر مع تقسيم، محاذاة، مغناطيس، وتعبئة ذكية
+            ارسم شبكتك بالمليمتر: تقسيم، محاذاة، مغناطيس
           </p>
           <button
             type="button"
@@ -338,6 +352,18 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           </button>
         </div>
       )}
+
+      {/* 4️⃣ ورق وقص — جاهزية الطباعة (نزيف/قص/نسخ/إرشادات) */}
+      {effectiveTab === "paper" && <CollagePaperToolsTab />}
+
+      {/* 5️⃣ معالج التعبئة التلقائية */}
+      {effectiveTab === "autofill" && <CollageAutofillTab />}
+
+      {/* 6️⃣ خلفية وحدود الشبكة */}
+      {effectiveTab === "backdrop" && <CollageBackdropTab />}
+
+      {/* 7️⃣ فرز وترتيب الخانات */}
+      {effectiveTab === "arrange" && <CollageArrangeTab />}
 
       <FreeformCollageModal open={showFreeformModal} onOpenChange={setShowFreeformModal} />
     </div>

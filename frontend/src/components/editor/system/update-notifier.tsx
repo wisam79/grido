@@ -93,7 +93,7 @@ export function UpdateNotifier() {
     } catch (err) {
       console.warn("Failed to check for updates:", err);
       if (isManual) {
-        toast.error("تعذر الاتصال بخادم التحديثات، يرجى المحاولة لاحقاً.");
+        toast.error("تعذر الاتصال بخادم التحديثات. حاول لاحقاً.");
       }
     }
   }, []);
@@ -145,7 +145,7 @@ export function UpdateNotifier() {
           ? err
           : err instanceof Error
           ? err.message
-          : "حدث خطأ أثناء تحميل وتثبيت التحديث.";
+          : "فشل تحميل وتثبيت التحديث.";
       setError(errMsg);
       setIsDownloading(false);
     }
@@ -206,7 +206,7 @@ export function UpdateNotifier() {
             <div className="space-y-1.5">
               <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <CheckCircle className="w-3.5 h-3.5 text-primary" weight="duotone" />
-                <span>أبرز ما يتضمنه هذا التحديث:</span>
+                <span>مميزات التحديث:</span>
               </span>
               <div className="bg-muted/30 dark:bg-muted/10 rounded-xl p-3 max-h-36 overflow-y-auto border border-border/60 fluent-specular">
                 <FormattedReleaseNotes notes={updateInfo.release_notes} />
@@ -222,7 +222,7 @@ export function UpdateNotifier() {
                   <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
                   <span>
                     {progress >= 100
-                      ? "جاري فحص الحزمة وتطبيق التحديث ..."
+                      ? "جاري تطبيق التحديث ..."
                       : "جاري تحميل التحديث ..."}
                   </span>
                 </span>
@@ -261,7 +261,7 @@ export function UpdateNotifier() {
                   className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm fluent-hover-lift cursor-pointer"
                 >
                   <DownloadSimple className="w-4 h-4" weight="bold" />
-                  تثبيت التحديث الآن
+                  تثبيت التحديث
                 </Button>
               ) : (
                 <Button
@@ -277,7 +277,7 @@ export function UpdateNotifier() {
                   className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm cursor-pointer"
                 >
                   <Globe className="w-4 h-4" weight="bold" />
-                  تحميل مباشر من الموقع
+                  تحميل من الموقع
                 </Button>
               )}
               <Button
@@ -291,7 +291,11 @@ export function UpdateNotifier() {
           ) : (
             <div className="flex items-center justify-center w-full py-1 text-xs text-muted-foreground gap-2 font-medium">
               <Spinner className="w-4 h-4 text-primary" size={16} />
-              <span>جاري المعالجة ...</span>
+              <span>
+                {progress >= 100
+                  ? "جاري تطبيق التحديث ..."
+                  : "جاري تحميل التحديث ..."}
+              </span>
             </div>
           )}
         </div>

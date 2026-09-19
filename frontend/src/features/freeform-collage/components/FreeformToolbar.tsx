@@ -168,11 +168,11 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="font-cairo text-mini">إدراج مقاس معتمد</TooltipContent>
+          <TooltipContent side="bottom" className="font-cairo text-mini">إدراج مقاس</TooltipContent>
         </Tooltip>
         <DropdownMenuContent align="start" className="w-52 font-cairo text-xs z-(--z-print-toolbar)">
           <DropdownMenuLabel className="text-micro text-muted-foreground font-bold text-center">
-            مقاسات الاستوديو (مم)
+            مقاسات جاهزة (مم)
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {Object.entries(PHOTO_PRESET_DIMENSIONS_MM).map(([key, dims]) => (
@@ -204,7 +204,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 font-cairo text-xs z-(--z-print-toolbar)">
           <DropdownMenuLabel className="text-micro text-muted-foreground font-bold text-center">
-            أقصى استغلال للورقة
+            استغلال الورقة
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onAutoPack("id-max")} className="cursor-pointer py-1.5 font-semibold">
@@ -225,7 +225,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onAutoPack("combo-standard")} className="cursor-pointer py-1.5 font-semibold">
-            <span className="flex-1">مزيج جوازات + بطاقات</span>
+            <span className="flex-1">جوازات + بطاقات</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onAutoPack("combo-family")} className="cursor-pointer py-1.5 font-semibold">
             <span className="flex-1">عائلية (بورتريه + بطاقات)</span>
@@ -290,28 +290,28 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
       <Divider />
 
       {/* ── مجموعة 2: المحاذاة والتقسيم ── */}
-      <ToolBtn onClick={() => onAlignSlot("top-left")} disabled={!selectedSlotId} title="زاوية القص (أعلى اليسار)">
+      <ToolBtn onClick={() => onAlignSlot("top-left")} disabled={!selectedSlotId} title="زاوية القص">
         <span className="text-micro font-black text-primary leading-none">TL</span>
       </ToolBtn>
-      <ToolBtn onClick={() => onAlignSlot("center-h")} disabled={!selectedSlotId} title="توسيط أفقي على الورقة">
+      <ToolBtn onClick={() => onAlignSlot("center-h")} disabled={!selectedSlotId} title="توسيط أفقي">
         <AlignCenterHorizontal className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
-      <ToolBtn onClick={() => onAlignSlot("center-v")} disabled={!selectedSlotId} title="توسيط عمودي على الورقة">
+      <ToolBtn onClick={() => onAlignSlot("center-v")} disabled={!selectedSlotId} title="توسيط عمودي">
         <AlignCenterVertical className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
-      <ToolBtn onClick={() => onDistributeSlots("horizontal")} title="توزيع أفقي متساوٍ">
+      <ToolBtn onClick={() => onDistributeSlots("horizontal")} title="توزيع أفقي">
         <AlignLeft className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
-      <ToolBtn onClick={() => onDistributeSlots("vertical")} title="توزيع عمودي متساوٍ">
+      <ToolBtn onClick={() => onDistributeSlots("vertical")} title="توزيع عمودي">
         <AlignTop className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
 
       <Divider />
 
-      <ToolBtn onClick={onSplitVertical} disabled={!selectedSlotId} title="تقسيم لصفين">
+      <ToolBtn onClick={onSplitVertical} disabled={!selectedSlotId} title="تقسيم صفين">
         <Rows className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
-      <ToolBtn onClick={onSplitHorizontal} disabled={!selectedSlotId} title="تقسيم لعمودين">
+      <ToolBtn onClick={onSplitHorizontal} disabled={!selectedSlotId} title="تقسيم عمودين">
         <Columns className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
 
@@ -342,31 +342,31 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             </DropdownMenuTrigger>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="font-cairo text-mini">
-            محاذاة جماعية {isMulti ? `(${multiSelectedCount} خلايا)` : "(حدد بـ Shift+نقرة)"}
+            محاذاة {isMulti ? `(${multiSelectedCount} خلايا)` : "(Shift+نقرة)"}
           </TooltipContent>
         </Tooltip>
         <DropdownMenuContent align="start" className="w-48 font-cairo text-xs z-(--z-print-toolbar)">
           <DropdownMenuLabel className="text-micro text-muted-foreground font-bold text-center">
-            {isMulti ? `محاذاة ${multiSelectedCount} خلايا فيما بينها` : "حدد خليتين أو أكثر"}
+            {isMulti ? `محاذاة ${multiSelectedCount} خلايا` : "حدد خليتين"}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onAlignSelectionToEachOther("left")} disabled={!isMulti} className="cursor-pointer py-1.5 font-semibold">
-            الحواف اليسرى
+            يسار
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onAlignSelectionToEachOther("right")} disabled={!isMulti} className="cursor-pointer py-1.5 font-semibold">
-            الحواف اليمنى
+            يمين
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onAlignSelectionToEachOther("top")} disabled={!isMulti} className="cursor-pointer py-1.5 font-semibold">
-            الحواف العلوية
+            أعلى
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onAlignSelectionToEachOther("bottom")} disabled={!isMulti} className="cursor-pointer py-1.5 font-semibold">
-            الحواف السفلية
+            أسفل
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onAlignSelectionToEachOther("center-h")} disabled={!isMulti} className="cursor-pointer py-1.5 font-semibold">
-            توسيط أفقي مشترك
+            توسيط أفقي
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onAlignSelectionToEachOther("center-v")} disabled={!isMulti} className="cursor-pointer py-1.5 font-semibold">
-            توسيط عمودي مشترك
+            توسيط عمودي
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onAlignSelectionToEachOther("same-size")} disabled={!isMulti} className="cursor-pointer py-1.5 font-semibold">
@@ -378,13 +378,13 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
       <Divider />
 
       {/* ── مجموعة 3: التحرير والعرض ── */}
-      <ToolBtn onClick={() => onScaleSelection(1.1)} disabled={!selectedSlotId} title="تكبير التحديد 10%">
+      <ToolBtn onClick={() => onScaleSelection(1.1)} disabled={!selectedSlotId} title="تكبير 10%">
         <ArrowsOut className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
-      <ToolBtn onClick={() => onScaleSelection(1 / 1.1)} disabled={!selectedSlotId} title="تصغير التحديد 10%">
+      <ToolBtn onClick={() => onScaleSelection(1 / 1.1)} disabled={!selectedSlotId} title="تصغير 10%">
         <ArrowsIn className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
-      <ToolBtn onClick={onResolveOverlaps} title="إزالة كل التداخلات">
+      <ToolBtn onClick={onResolveOverlaps} title="إزالة التداخلات">
         <Broom className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
 
@@ -402,7 +402,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
 
       <Divider />
 
-      <ToolBtn onClick={onToggleCutLines} active={showCutLines} title={showCutLines ? "إخفاء خطوط القص" : "خطوط القص"}>
+      <ToolBtn onClick={onToggleCutLines} active={showCutLines} title={showCutLines ? "إخفاء الخطوط" : "خطوط القص"}>
         <Scissors className="w-3.5 h-3.5" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={onToggleSnapping} active={enableSnapping} title={enableSnapping ? "تعطيل المغناطيس" : "المغناطيس الذكي"}>

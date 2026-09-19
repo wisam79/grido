@@ -8,7 +8,8 @@ import {
   SHAPE_PATH_ARROW,
 } from "@/lib/io/svg-paths";
 
-export type FreeformTab = "layers" | "elements" | "stickers" | "shapes" | "text" | "presets";
+// نوع تبويبات وضع التعديل الحر — مصدره سجل الأدوات الموحّد فلا يتكرّر تعريفه
+export type { FreeformTab } from "@/lib/workspace-tools";
 
 export interface ElementCategoryItem {
   id: "badges" | "shapes" | "text";
@@ -86,7 +87,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "body",
     label: "نص فقرة",
-    description: "نص توضيحي وشرح مريح",
+    description: "نص توضيحي مريح",
     category: "titles",
     previewColor: "#475569",
     sampleText: "اكتب وصفاً أو تفاصيل...",
@@ -96,7 +97,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "gold-luxury",
     label: "ذهبي فاخر",
-    description: "تدرج ذهبي ملكي متوهج",
+    description: "تدرج ذهبي متوهج",
     category: "effects",
     previewColor: "#d97706",
     sampleText: "استوديو الفخامة",
@@ -112,7 +113,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "3d-title",
     label: "ثلاثي الأبعاد",
-    description: "ظل 3D مجسم وعميق",
+    description: "ظل 3D مجسم",
     category: "effects",
     previewColor: "#6366f1",
     sampleText: "إصدار مجسم 3D",
@@ -120,7 +121,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "outline-modern",
     label: "حدود عصرية",
-    description: "نص مفرغ مع إطار دقيق",
+    description: "نص مفرغ بإطار",
     category: "effects",
     previewColor: "#059669",
     sampleText: "MODERN DESIGN",
@@ -130,7 +131,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "badge",
     label: "شارة كبسولة",
-    description: "نص داخل خلفية كبسولة",
+    description: "نص داخل كبسولة",
     category: "badges",
     previewColor: "#2563eb",
     sampleText: "استوديو احترافي",
@@ -138,7 +139,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "studio-date",
     label: "تاريخ الاستوديو",
-    description: "تاريخ وبصمة تصوير اليوم",
+    description: "تاريخ وبصمة اليوم",
     category: "badges",
     previewColor: "#64748b",
     sampleText: "تاريخ الاستوديو",
@@ -146,7 +147,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "photographer-tag",
     label: "بصمة المصور",
-    description: "توثيق حقوق الاستوديو والمصور",
+    description: "توثيق حقوق المصور",
     category: "badges",
     previewColor: "#475569",
     sampleText: "تصوير: الاستوديو",
@@ -154,7 +155,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "watermark",
     label: "علامة مائية",
-    description: "نص مائل شبه شفاف للحماية",
+    description: "نص مائل شفاف",
     category: "badges",
     previewColor: "#94a3b8",
     sampleText: "مسودة غير معتمدة",
@@ -162,7 +163,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "caption-card",
     label: "بطاقة وصف",
-    description: "إطار كرت مع حواف ناعمة",
+    description: "إطار بحواف ناعمة",
     category: "badges",
     previewColor: "#1e293b",
     sampleText: "بطاقة توثيق مؤطرة",
@@ -172,7 +173,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "congrats",
     label: "تهنئة وتخرج",
-    description: "ألف مبروك التخرج والنجاح",
+    description: "مبروك التخرج والنجاح",
     category: "phrases",
     previewColor: "#047857",
     sampleText: "ألف مبروك النجاح",
@@ -188,7 +189,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "certificate",
     label: "شهادة تقدير",
-    description: "شهادة شكر وتقدير رسمية",
+    description: "شهادة شكر وتقدير",
     category: "phrases",
     previewColor: "#1e3a8a",
     sampleText: "شهادة شكر وتقدير",
@@ -196,7 +197,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "stamp-circle",
     label: "ختم مقوّس",
-    description: "نص مقوّس رسمي بحبر قرمزي",
+    description: "نص مقوّس أحمر",
     category: "phrases",
     previewColor: "#dc2626",
     sampleText: "معتمد وموثق رسمي",
@@ -204,7 +205,7 @@ export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
   {
     id: "special-price",
     label: "شارة تسعير",
-    description: "السعر: 25,000 د.ع فقط",
+    description: "السعر: 25,000 د.ع",
     category: "phrases",
     previewColor: "#0284c7",
     sampleText: "السعر: 25,000 د.ع",
@@ -227,7 +228,7 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
   // 🇮🇶 وثائق وهوية رسمية
   {
     id: "preset-iq-id",
-    name: "البطاقة الوطنية الموحدة",
+    name: "البطاقة الوطنية",
     category: "id",
     widthMM: 35,
     heightMM: 45,
@@ -238,7 +239,7 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
   },
   {
     id: "preset-iq-passport",
-    name: "جواز السفر الإلكتروني",
+    name: "جواز السفر",
     category: "id",
     widthMM: 35,
     heightMM: 45,
@@ -260,7 +261,7 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
   },
   {
     id: "preset-driving-license",
-    name: "رخصة القيادة / بطاقة ائتمان",
+    name: "رخصة القيادة",
     category: "id",
     widthMM: 85.6,
     heightMM: 54,
@@ -284,7 +285,7 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
   },
   {
     id: "preset-photo-4x6cm",
-    name: "صورة استوديو كلاسيكية",
+    name: "صورة استوديو",
     category: "print",
     widthMM: 40,
     heightMM: 60,
@@ -295,7 +296,7 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
   },
   {
     id: "preset-postcard-4x6in",
-    name: "كارت بريدي / صورة 4×6 إنش",
+    name: "كارت بريدي 4×6",
     category: "print",
     widthMM: 102,
     heightMM: 152,
@@ -306,7 +307,7 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
   },
   {
     id: "preset-paper-a6",
-    name: "ورقة قياسية A6",
+    name: "ورقة A6",
     category: "print",
     widthMM: 105,
     heightMM: 148,
@@ -317,7 +318,7 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
   },
   {
     id: "preset-paper-a5",
-    name: "ورقة قياسية A5",
+    name: "ورقة A5",
     category: "print",
     widthMM: 148,
     heightMM: 210,
@@ -328,7 +329,7 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
   },
   {
     id: "preset-paper-a4",
-    name: "ورقة طباعة قياسية A4",
+    name: "ورقة A4",
     category: "print",
     widthMM: 210,
     heightMM: 297,

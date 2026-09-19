@@ -104,7 +104,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       setProjectsList(list || []);
     } catch (err) {
       console.error("Failed to load projects:", err);
-      toast.error(toErrorMessage(err, "فشل في تحميل المشاريع من قاعدة البيانات"));
+      toast.error(toErrorMessage(err, "فشل تحميل المشاريع"));
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +129,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
 
   const handleSave = async () => {
     if (!projectName.trim()) {
-      toast.error("يرجى إدخال اسم للمشروع");
+      toast.error("أدخل اسم المشروع");
       return;
     }
 
@@ -149,7 +149,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       setActiveTab("list"); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
     } catch (err) {
       console.error("Failed to save project:", err);
-      toast.error(toErrorMessage(err, "فشل في حفظ المشروع"));
+      toast.error(toErrorMessage(err, "فشل حفظ المشروع"));
     } finally {
       setIsLoading(false);
     }
@@ -167,7 +167,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       setIsOpen?.(false);
     } catch (err) {
       console.error("Failed to load project details:", err);
-      toast.error(toErrorMessage(err, "فشل في تحميل بيانات هذا المشروع"));
+      toast.error(toErrorMessage(err, "فشل تحميل المشروع"));
     }
   };
 
@@ -180,7 +180,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     if (!deleteId) return;
     try {
       await DeleteProject(deleteId);
-      toast.success("تم حذف المشروع بنجاح");
+      toast.success("تم حذف المشروع");
       // إذا كان هذا هو المشروع المفتوح حالياً، فمسح المعرف
       const state = useEditorStore.getState();
       if (state.projectId === deleteId) {
@@ -189,7 +189,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       fetchProjects();
     } catch (err) {
       console.error("Failed to delete project:", err);
-      toast.error(toErrorMessage(err, "فشل في حذف المشروع"));
+      toast.error(toErrorMessage(err, "فشل حذف المشروع"));
     } finally {
       setDeleteId(null);
     }
@@ -201,13 +201,13 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     try {
       const dataStr = await ExportBackup();
       if (!dataStr || dataStr === "[]" || dataStr === "null") {
-        toast.warning("لا توجد مشاريع في قاعدة البيانات لتصديرها");
+        toast.warning("لا توجد مشاريع لتصديرها");
         return;
       }
       
       const res = await SaveFileDialog(dataStr, "grido_backup.json", "Grido Backup (*.json)", "*.json");
       if (res === "success") {
-        toast.success("تم تصدير النسخة الاحتياطية بنجاح");
+        toast.success("تم تصدير النسخة الاحتياطية");
       } else if (res === "") {
         toast.info("تم إلغاء التصدير");
       }
@@ -229,13 +229,13 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       try {
         const parsed = JSON.parse(content);
         if (!Array.isArray(parsed)) {
-          toast.error("ملف النسخة الاحتياطية غير صالح - يجب أن يكون مصفوفة مشاريع");
+          toast.error("ملف النسخة الاحتياطية غير صالح");
           return;
         }
         setImportJsonData(content);
         setImportConfirmOpen(true);
       } catch {
-        toast.error("فشل قراءة الملف - ملف غير صالح");
+        toast.error("فشل قراءة الملف");
       }
     };
     reader.readAsText(file);
@@ -248,7 +248,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     setImportConfirmOpen(false);
     try {
       await ImportBackup(importJsonData, importMode);
-      toast.success("تم استيراد المشاريع بنجاح");
+      toast.success("تم استيراد المشاريع");
       fetchProjects();
     } catch (err) {
       console.error(err);
@@ -264,7 +264,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     setBackupActionLoading(true);
     try {
       await ResetLibrary();
-      toast.success("تم تفريغ مكتبة المشاريع بالكامل");
+      toast.success("تم تفريغ مكتبة المشاريع");
       const state = useEditorStore.getState();
       if (state.projectId) {
         useEditorStore.setState({ projectId: null });
@@ -311,7 +311,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                   <span>مكتبة المشاريع</span>
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  حفظ واستعراض المشاريع المحلية
+                  حفظ وإدارة المشاريع
                 </DialogDescription>
               </div>
               <DialogCloseButton />
@@ -341,13 +341,13 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                   id: "list",
                   label: "المشاريع",
                   icon: <FolderOpen className="w-3.5 h-3.5 shrink-0" />,
-                  tooltip: "مكتبة المشاريع المحفوظة",
+                  tooltip: "المشاريع المحفوظة",
                 },
                 {
                   id: "backup",
                   label: "النسخ",
                   icon: <Database className="w-3.5 h-3.5 shrink-0" />,
-                  tooltip: "النسخ الاحتياطي والأرشفة",
+                  tooltip: "النسخ الاحتياطي",
                 },
               ]}
             />
@@ -396,7 +396,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                     type="button"
                     onClick={() => setSortBy(sortBy === "date_desc" ? "date_asc" : "date_desc")}
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("date") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
-                    title="الفرز حسب التاريخ"
+                    title="ترتيب بالتاريخ"
                   >
                     <Calendar className="w-3.5 h-3.5 shrink-0" weight={sortBy.startsWith("date") ? "bold" : "regular"} />
                   </button>
@@ -404,7 +404,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                     type="button"
                     onClick={() => setSortBy("name_asc")}
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("name") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
-                    title="الفرز الأبجدي"
+                    title="ترتيب أبجدي"
                   >
                     <ArrowsDownUp className="w-3.5 h-3.5 shrink-0" weight={sortBy.startsWith("name") ? "bold" : "regular"} />
                   </button>
@@ -422,7 +422,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 </div>
               ) : filteredProjects.length === 0 ? (
                 <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-xs">
-                  لم يتم العثور على نتائج
+                  لا توجد نتائج
                 </div>
               ) : (
                 <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -489,7 +489,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
                   <div>
                     <h4 className="text-xs font-bold text-foreground/90">تصدير نسخة احتياطية</h4>
-                    <p className="text-xs text-muted-foreground">حفظ جميع المشاريع في ملف JSON</p>
+                    <p className="text-xs text-muted-foreground">حفظ كل المشاريع في ملف JSON</p>
                   </div>
                   <Button 
                     size="sm" 
@@ -514,10 +514,10 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
                   <div>
                     <h4 className="text-xs font-bold text-foreground/90">استيراد نسخة احتياطية</h4>
-                    <p className="text-xs text-muted-foreground">استعادة المشاريع من ملف JSON</p>
+                    <p className="text-xs text-muted-foreground">استعادة المشاريع من JSON</p>
                   </div>
                   <label className="cursor-pointer">
-                    <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
+                    <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
                       <UploadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
                       <span>رفع ملف</span>
                     </span>
@@ -534,7 +534,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 <div className="p-3 border rounded-xl bg-destructive/5 border-destructive/20 flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-destructive">تهيئة مكتبة المشاريع</h4>
-                    <p className="text-xs text-muted-foreground">حذف جميع المشاريع المحفوظة نهائياً</p>
+                    <p className="text-xs text-muted-foreground">حذف جميع المشاريع نهائياً</p>
                   </div>
                   <Button 
                     variant="destructive" 
@@ -557,7 +557,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
             <AlertDialogHeader>
               <AlertDialogTitle className="font-cairo text-start">حذف المشروع</AlertDialogTitle>
               <AlertDialogDescription className="font-cairo text-start text-xs">
-                سيتم حذف المشروع نهائياً. هل تريد المتابعة؟
+                سيتم حذف المشروع نهائياً. متابعة؟
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="font-cairo">
@@ -581,7 +581,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                   <span>استيراد المشاريع</span>
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  اختر طريقة الاستيراد المناسبة
+                  اختر طريقة الاستيراد
                 </DialogDescription>
               </div>
               <DialogCloseButton />
@@ -589,7 +589,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
           </DialogHeader>
           <div className="space-y-4 py-2 font-cairo">
             <p className="text-xs text-muted-foreground">
-              تم التحقق من ملف النسخة الاحتياطية. اختر طريقة الاستيراد:
+              الملف سليم. اختر طريقة الاستيراد:
             </p>
             <RadioGroup 
               value={importMode} 
@@ -600,14 +600,14 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 <RadioGroupItem value="merge" id="r-merge" />
                 <Label htmlFor="r-merge" className="cursor-pointer flex-1 space-y-0.5">
                   <div className="font-semibold text-xs text-foreground">دمج المشاريع</div>
-                  <div className="text-micro text-muted-foreground">إضافة المشاريع الجديدة وتحديث المشاريع المتشابهة بالمعرف</div>
+                  <div className="text-micro text-muted-foreground">إضافة الجديد وتحديث المتشابه</div>
                 </Label>
               </div>
               <div className="flex items-center space-x-reverse space-x-2 border rounded-xl p-3 hover:bg-accent/40 cursor-pointer border-destructive/20 hover:border-destructive/30 transition-colors">
                 <RadioGroupItem value="overwrite" id="r-overwrite" />
                 <Label htmlFor="r-overwrite" className="cursor-pointer flex-1 space-y-0.5">
                   <div className="font-semibold text-xs text-destructive">استبدال بالكامل</div>
-                  <div className="text-micro text-muted-foreground">مسح كافة المشاريع الحالية واستبدالها بمحتويات ملف النسخة الاحتياطية</div>
+                  <div className="text-micro text-muted-foreground">مسح الكل واستبداله بمحتويات الملف</div>
                 </Label>
               </div>
             </RadioGroup>
@@ -639,7 +639,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
               <span>تهيئة مكتبة المشاريع</span>
             </AlertDialogTitle>
             <AlertDialogDescription className="font-cairo text-start text-xs">
-              سيتم حذف جميع المشاريع نهائياً. هل تريد المتابعة؟
+              سيتم حذف جميع المشاريع نهائياً. متابعة؟
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="font-cairo">

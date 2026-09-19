@@ -30,7 +30,7 @@ import { toast } from "sonner";
 
 const toggleButtonClassName = (active: boolean) =>
   cn(
-    "rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+    "rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
     active
       ? "bg-primary text-primary-foreground shadow-2xs font-bold"
       : "text-muted-foreground hover:text-foreground hover:bg-background/70"
@@ -76,7 +76,7 @@ export function PrintSettingsToolbar({
 
   const handleAutoImpose = () => {
     if (!imageWidthMM || !imageHeightMM) {
-      toast.error("تعذر قراءة مقاس التصميم الحالي");
+      toast.error("تعذر قراءة مقاس التصميم");
       return;
     }
     const { showBleedGuides, bleedMarginMM } = useEditorStore.getState();
@@ -99,7 +99,7 @@ export function PrintSettingsToolbar({
       showCutLines: true,
     });
     const rotationNote = result.rotateItem ? " (مع تدوير التصميم 90°)" : "";
-    toast.success(`تم المونتاج التلقائي: ${result.maxCopies} نسخة (${result.cols} أعمدة × ${result.rows} صفوف)${rotationNote} - هدر ${result.wastePercentage}%`);
+    toast.success(`تم المونتاج: ${result.maxCopies} نسخة (${result.cols} أعمدة × ${result.rows} صفوف)${rotationNote} - الهدر ${result.wastePercentage}%`);
   };
 
   return (
@@ -146,7 +146,7 @@ export function PrintSettingsToolbar({
                 }
                 className={cn(
                   "px-2 py-1 flex items-center gap-1.5",
-                  "rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none bg-primary text-primary-foreground shadow-2xs font-bold"
+                  "rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none bg-primary text-primary-foreground shadow-2xs font-bold"
                 )}
                 aria-label="تبديل اتجاه الورقة"
               >
@@ -160,8 +160,8 @@ export function PrintSettingsToolbar({
             <TooltipContent side="top" className="font-cairo text-xs font-semibold">
               <span>
                 {printSettings.orientation === "landscape"
-                  ? "الاتجاه الحالي: أفقي (انقر للتحويل إلى رأسي)"
-                  : "الاتجاه الحالي: رأسي (انقر للتحويل إلى أفقي)"}
+                  ? "أفقي (انقر للتحويل إلى رأسي)"
+                  : "رأسي (انقر للتحويل إلى أفقي)"}
               </span>
             </TooltipContent>
           </Tooltip>
@@ -195,7 +195,7 @@ export function PrintSettingsToolbar({
                 type="button"
                 onClick={() => setPrintSettings({ gridAlign: "top-left" })}
                 aria-pressed={(printSettings.gridAlign || "top-left") === "top-left"}
-                aria-label="محاذاة زاوية الورقة"
+                aria-label="محاذاة الزاوية"
                 className={cn(
                   "px-2 py-1 flex items-center gap-1",
                   toggleButtonClassName((printSettings.gridAlign || "top-left") === "top-left")
@@ -206,7 +206,7 @@ export function PrintSettingsToolbar({
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="font-cairo text-xs font-semibold">
-              محاذاة زاوية الورقة (أعلى اليسار / للقص السريع)
+              محاذاة الزاوية للقص السريع
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -223,7 +223,7 @@ export function PrintSettingsToolbar({
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="font-cairo text-xs font-semibold">
-              توسيط الشبكة في منتصف الورقة
+              توسيط في منتصف الورقة
             </TooltipContent>
           </Tooltip>
         </div>
@@ -289,7 +289,7 @@ export function PrintSettingsToolbar({
               </Button>
               <span
                 className="text-xs font-mono font-bold w-6 text-center text-foreground"
-                title={`المطبوع فعلياً على الورقة: ${actualCopies}`}
+                title={`المطبوع على الورقة: ${actualCopies}`}
               >
                 {printSettings.copiesPerSheet ?? 1}
               </span>
@@ -367,7 +367,7 @@ export function PrintSettingsToolbar({
             size="sm"
             onClick={handleAutoImpose}
             className="min-h-[34px] rounded-md border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold gap-1.5 cursor-pointer shadow-2xs flex items-center justify-center transition-all"
-            title="حساب أقصى عدد نسخ وتدوير الورقة تلقائياً لتعبئة الشيت بالكامل"
+            title="تعبئة الشيت بأقصى عدد نسخ"
           >
             <Sparkle className="w-3.5 h-3.5 shrink-0" weight="fill" />
             <span>مونتاج تلقائي</span>

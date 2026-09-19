@@ -8,8 +8,12 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  /* خط monospace حقيقي للقراءات الرقمية والأكواد (كان مربوطاً بالخط العربي ففقد خاصيته) */
-  --font-mono: 'IBM Plex Mono', 'Cascadia Mono', ui-monospace, SFMono-Regular, 'Consolas', monospace;
+  /* ملاحظة: كان المقصود خط monospace حقيقي للقراءات الرقمية والأكواد عبر 'IBM Plex Mono'،
+     لكنه لم يُشحن أبداً في حزمة الخطوط المحلية (offline-fonts.css تشحن 12 عائلة عربية فقط
+     ولا يوجد لها @font-face ولا ملف woff2). لذلك كان كل .font-mono يسقط على خط نظام أجنبي
+     (Consolas / Cascadia Mono) بمقاسات واتساع مختلفين عن بقية الواجهة، فتظهر الأرقام أكبر وغير
+     متناسقة. الحل: عائلة الواجهة نفسها + أرقام جدولية (tabular-nums) تحفظ اصطفاف الأعمدة الرقمية. */
+  --font-mono: 'IBM Plex Sans Arabic', 'Cascadia Mono', ui-monospace, SFMono-Regular, 'Consolas', monospace;
   --font-cairo: 'IBM Plex Sans Arabic', sans-serif;
   --font-tajawal: 'IBM Plex Sans Arabic', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -319,6 +323,12 @@
   /* إتاحة تحديد ونسخ القيم الرقمية والأبعاد والمدخلات */
   input, textarea, [contenteditable], [data-selectable], .font-mono, [role="alert"], [role="status"] {
     user-select: text !important;
+  }
+
+  /* الأرقام الجدولية: العرض الوظيفي الوحيد الذي كان يبرر استخدام خط Mono
+     (اصطفاف الأرقام والأبعاد في أعمدة) بدون إدخال خط ثالث أجنبي إلى الواجهة */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
   }
 
   img {

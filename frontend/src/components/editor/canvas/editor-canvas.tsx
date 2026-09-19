@@ -14,6 +14,7 @@ import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from "./canvas-
 import { RulerUnit } from "./ruler";
 import { TextEditingOverlay } from "./text-editing-overlay";
 import { CanvasContextMenu } from "./canvas-context-menu";
+import { CanvasQuickBar } from "./canvas-quick-bar";
 import { checkerColor, guideCenter, guideEdge } from "@/lib/canvas/canvas-colors";
 import { useCanvasViewport } from "./use-canvas-viewport";
 import { useUserGuides } from "./use-user-guides";
@@ -86,7 +87,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              className="w-6 h-6 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
+              className="w-7 h-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
               onClick={async (e) => {
                 e.stopPropagation();
                 if (isLoading) return;
@@ -124,7 +125,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              className="w-6 h-6 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center cursor-pointer transition-colors"
+              className="w-7 h-7 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center cursor-pointer transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 updateSlot(selectedSlot.id, { imageSrc: undefined });
@@ -471,7 +472,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       {isLoading && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center fluent-smoke-backdrop rounded-md gap-2">
           <Spinner className="w-8 h-8 text-primary" size={32} />
-          <span className="text-xs font-bold text-white font-cairo">جاري المعالجة ...</span>
+          <span className="text-xs font-bold text-white font-cairo">جاري تجهيز الصورة ...</span>
         </div>
       )}
 
@@ -493,6 +494,10 @@ export const EditorCanvas = React.memo(React.forwardRef<
         printMode={printMode}
         onClose={() => setContextMenu(null)}
       />
+
+      {/* الشريط السريع العائم أعلى الكانفاس — كان مكتوباً بالكامل (خانة/تحديد
+          متعدد/عنصر) لكنه غير مربوط، فاختفت إجراءات التحديد من سطح الكانفاس. */}
+      <CanvasQuickBar printMode={printMode} isContextMenuOpen={contextMenu !== null} />
 
       <SelectedSlotQuickBar
         displayW={displayW}

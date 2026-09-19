@@ -132,7 +132,7 @@ const GalleryCard = React.memo(function GalleryCard({
       onFocus={onFocus}
       onKeyDown={onKeyDown}
       aria-pressed={isSelected}
-      aria-label={`قالب ${template.name} — ${mm.width}×${mm.height} مم`}
+      aria-label={`${template.name} — ${mm.width}×${mm.height} مم`}
       className={cn(
         "group relative flex flex-col p-2.5 rounded-xl transition-all cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         isSelected
@@ -319,9 +319,9 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                   handleClearSearch();
                 }
               }}
-              placeholder="بحث (اضغط / للتركيز) ..."
+              placeholder="بحث (/) ..."
               aria-label="بحث"
-              className="h-8 ps-8 pe-7 text-xs rounded-md bg-card/80 border-border/50 focus-visible:ring-1 focus-visible:ring-primary text-foreground placeholder:text-muted-foreground/60"
+              className="h-8 ps-8 pe-7 text-xs rounded-md bg-card/80 border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none text-foreground placeholder:text-muted-foreground/60"
             />
             {searchInput && (
               <button
@@ -339,7 +339,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
           <div className="flex items-center gap-2 shrink-0">
             <div
               role="radiogroup"
-              aria-label="تصفية حسب الشكل"
+              aria-label="تصفية الشكل"
               className="flex items-center gap-0.5 p-0.5 bg-muted/40 rounded-md border border-border/40"
             >
               {SHAPE_ITEMS.map((shape) => {
@@ -386,13 +386,13 @@ export const StickerCatalog = React.memo(function StickerCatalog({
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto scrollbar-none p-4"
         role="listbox"
-        aria-label="قوالب الملصقات"
+        aria-label="القوالب"
       >
         {filteredTemplates.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center p-4 text-muted-foreground space-y-2">
             <SquaresFour className="w-8 h-8 opacity-40 mb-1" />
-            <p className="text-xs font-semibold text-foreground/80">لا توجد نتائج مطابقة</p>
-            <p className="text-mini text-muted-foreground">جرب البحث بكلمات أخرى أو تصفية تصنيف مختلف</p>
+            <p className="text-xs font-semibold text-foreground/80">لا توجد نتائج</p>
+            <p className="text-mini text-muted-foreground">جرّب كلمات أو تصنيفاً آخر</p>
             <Button
               type="button"
               variant="outline"
@@ -404,7 +404,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
               }}
               className="h-7 text-xs px-3 mt-1 rounded-md"
             >
-              عرض كافة الملصقات
+              عرض الكل
             </Button>
           </div>
         ) : (

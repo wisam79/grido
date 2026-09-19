@@ -5,7 +5,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor-store";
@@ -183,7 +182,6 @@ export function DesktopMenuBar() {
           >
             <Image className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">إدراج صورة</span>
-            <DropdownMenuShortcut>Ctrl+O</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -192,7 +190,6 @@ export function DesktopMenuBar() {
           >
             <Images className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">إدراج دفعة</span>
-            <DropdownMenuShortcut>Ctrl+Shift+O</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -222,7 +219,6 @@ export function DesktopMenuBar() {
               <FloppyDisk className="w-4 h-4 text-primary" weight="duotone" />
               <span className="font-medium">حفظ المشروع</span>
             </div>
-            <DropdownMenuShortcut>Ctrl+S</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -239,7 +235,6 @@ export function DesktopMenuBar() {
           >
             <Export className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تصدير</span>
-            <DropdownMenuShortcut>Ctrl+E</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -248,7 +243,6 @@ export function DesktopMenuBar() {
           >
             <Printer className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">طباعة</span>
-            <DropdownMenuShortcut>Ctrl+P</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -282,7 +276,6 @@ export function DesktopMenuBar() {
           >
             <ArrowUUpLeft className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تراجع</span>
-            <DropdownMenuShortcut>Ctrl+Z</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -292,7 +285,6 @@ export function DesktopMenuBar() {
           >
             <ArrowUUpRight className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">إعادة</span>
-            <DropdownMenuShortcut>Ctrl+Y</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -311,7 +303,6 @@ export function DesktopMenuBar() {
           >
             <Copy className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تكرار</span>
-            <DropdownMenuShortcut>Ctrl+D</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -324,7 +315,6 @@ export function DesktopMenuBar() {
           >
             <Trash className="w-4 h-4" />
             <span className="font-medium">حذف</span>
-            <DropdownMenuShortcut>Del</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -335,7 +325,6 @@ export function DesktopMenuBar() {
           >
             <SelectionAll className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تحديد الكل</span>
-            <DropdownMenuShortcut>Ctrl+A</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -343,7 +332,6 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <span className="font-medium">إلغاء التحديد</span>
-            <DropdownMenuShortcut>Esc</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -366,7 +354,6 @@ export function DesktopMenuBar() {
           >
             <MagnifyingGlassPlus className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تكبير</span>
-            <DropdownMenuShortcut>Ctrl++</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -375,7 +362,6 @@ export function DesktopMenuBar() {
           >
             <MagnifyingGlassMinus className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">تصغير</span>
-            <DropdownMenuShortcut>Ctrl+-</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -383,7 +369,6 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <span className="font-medium">الحجم الفعلي</span>
-            <DropdownMenuShortcut>Ctrl+0</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -394,7 +379,6 @@ export function DesktopMenuBar() {
           >
             <Ruler className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">المساطر</span>
-            <DropdownMenuShortcut>Ctrl+R</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -403,7 +387,6 @@ export function DesktopMenuBar() {
           >
             <SquaresFour className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">الشبكة</span>
-            <DropdownMenuShortcut>Ctrl+'</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -412,7 +395,6 @@ export function DesktopMenuBar() {
           >
             <Eye className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">الخطوط الإرشادية</span>
-            <DropdownMenuShortcut>Ctrl+;</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           {userGuides.length > 0 && (
@@ -421,7 +403,7 @@ export function DesktopMenuBar() {
               className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
             >
               <Trash className="w-4 h-4" />
-              <span className="font-medium">مسح الخطوط الإرشادية</span>
+              <span className="font-medium">مسح الخطوط</span>
             </DropdownMenuItem>
           )}
 
@@ -433,7 +415,6 @@ export function DesktopMenuBar() {
           >
             <SidebarSimple className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">القوالب</span>
-            <DropdownMenuShortcut>Ctrl+B</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -442,7 +423,6 @@ export function DesktopMenuBar() {
           >
             <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">الخصائص</span>
-            <DropdownMenuShortcut>Ctrl+Shift+B</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -588,7 +568,6 @@ export function DesktopMenuBar() {
           >
             <Question className="w-4 h-4 text-muted-foreground" />
             <span className="font-medium">الاختصارات</span>
-            <DropdownMenuShortcut>Ctrl+/</DropdownMenuShortcut>
           </DropdownMenuItem>
 
           <DropdownMenuItem

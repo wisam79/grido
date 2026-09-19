@@ -22,8 +22,10 @@ import {
   X,
   Scan,
   Square,
+  FadersHorizontal,
 } from "@phosphor-icons/react";
 import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
+import { IMAGE_FILTERS } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
@@ -61,7 +63,7 @@ export function ImageAdjustProperties({
       >
         {/* قوالب تدرج لوني سريعة للاستوديوهات */}
         <div className="space-y-1.5 pb-2 border-b border-border/20">
-          <span className="text-micro font-bold text-muted-foreground block">قوالب ألوان الاستوديو</span>
+          <span className="text-micro font-bold text-muted-foreground block">قوالب الاستوديو</span>
           <div className="grid grid-cols-2 gap-1.5">
             {[
               { label: "استوديو دافئ", b: 104, c: 106, s: 108 },
@@ -262,9 +264,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       // 🔒 حفظ التاريخ بعد اكتمال إدراج جميع العناصر بالكامل
       useEditorStore.getState().pushHistory();
       if (base64List.length > 1) {
-        toast.success(`تم استبدال وإدراج ${base64List.length} مستندات على اللوحة بنجاح!`);
+        toast.success(`تم استبدال وإدراج ${base64List.length} مستندات`);
       } else {
-        toast.success("تم استعدال وعزل المستند بنجاح!");
+        toast.success("تم عزل المستند");
       }
     } catch (err) {
       console.error(err);
@@ -324,6 +326,68 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
   return (
     <div className="space-y-2.5 font-cairo animate-in fade-in duration-200">
+      {/* 🎴 بطاقة 0: المرشحات — كانت الواجهة الوحيدة لها مكتوبة في مجموعة أدوات
+          الشريط العلوي وغير مربوطة، فبقي الكانفاس يرسم المرشح بلا طريقة لاختياره. */}
+      <FluentSection
+        icon={<FadersHorizontal className="w-4 h-4 text-primary" weight="duotone" />}
+        title="المرشحات"
+        collapsible
+        defaultOpen={true}
+        action={
+          element.filter ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onUpdate(element.id, { filter: undefined });
+                useEditorStore.getState().pushHistory();
+              }}
+              className="text-micro text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              إزالة المرشح
+            </Button>
+          ) : undefined
+        }
+      >
+        <div className="grid grid-cols-4 gap-1.5">
+          {IMAGE_FILTERS.map((filter) => {
+            const isActive = element.filter === filter.id;
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { filter: filter.id });
+                  useEditorStore.getState().pushHistory();
+                }}
+                aria-pressed={isActive}
+                aria-label={filter.name}
+                title={filter.name}
+                className={cn(
+                  "flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer",
+                  "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                  isActive
+                    ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
+                    : "border-border/60 bg-card hover:bg-accent text-muted-foreground"
+                )}
+              >
+                <span className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
+                  <img
+                    src={element.imageSrc}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    style={{ filter: filter.css }}
+                  />
+                </span>
+                <span className="text-micro leading-tight truncate max-w-full text-center">
+                  {filter.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </FluentSection>
+
       {/* 🎴 بطاقة 1: شبكة أدوات الذكاء الاصطناعي الفاخرة (2x2 Grid) */}
       <FluentSection
         icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
@@ -362,7 +426,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
-                title={`ترميم الوجه ورفع الدقة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit})`}
+                title={`ترميم الوجه (${remainingQuota}/${dailyLimit})`}
                 disabled={isEnhancing || isRemovingBg}
                 className={cn(
                   "h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
@@ -379,7 +443,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {`ترميم الوجه ورفع الدقة بالذكاء الاصطناعي (${remainingQuota}/${dailyLimit} المتبقي اليوم)`}
+              {`ترميم الوجه (${remainingQuota}/${dailyLimit} اليوم)`}
             </TooltipContent>
           </Tooltip>
 
@@ -404,7 +468,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {isFraming ? frameProgressText || "إلغاء ضبط الوجه" : "كشف وتأطير الوجه وفق معايير الهوية (محلي)"}
+              {isFraming ? frameProgressText || "إلغاء ضبط الوجه" : "تأطير الوجه وفق معايير الهوية"}
             </TooltipContent>
           </Tooltip>
 
@@ -422,7 +486,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              مسح وتقويم حواف المستند وإزالة المنظور المائل
+              مسح وتقويم المستند
             </TooltipContent>
           </Tooltip>
         </div>
@@ -499,7 +563,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                       useEditorStore.getState().pushHistory();
                     }}
                     className={cn(
-                      "w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                      "w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
                       isActive && "ring-2 ring-primary ring-offset-1 border-primary"
                     )}
                     style={{
@@ -565,7 +629,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 <span>تبديل الصورة</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">استبدال ملف الصورة</TooltipContent>
+            <TooltipContent side="top">استبدال الصورة</TooltipContent>
           </Tooltip>
         </div>
 
@@ -583,9 +647,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     bgColor: "transparent"
                   });
                   useEditorStore.getState().pushHistory();
-                  toast.success("تمت استعادة الصورة الأصلية بنجاح");
+                  toast.success("تمت استعادة الصورة الأصلية");
                 }}
-                title="استعادة الصورة الأصلية وإلغاء العزل أو الترميم"
+                title="استعادة الصورة الأصلية"
               >
                 <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
                 <span>استعادة الأصل</span>
@@ -613,7 +677,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   };
                   window.addEventListener("touchend", restore);
                 }}
-                title="اضغط مطولاً للمقارنة مع الصورة الأصلية"
+                title="اضغط مطولاً للمقارنة"
               >
                 <Eye className="w-4 h-4" weight="regular" />
                 <span>مقارنة الأصل</span>
@@ -624,7 +688,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               variant="outline"
               className="w-full h-8 text-xs font-semibold transition-all duration-200 flex items-center justify-center px-3 gap-1.5 cursor-pointer rounded-md border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group shadow-2xs"
               onClick={() => setRefineOpen(true)}
-              title="تعديل تفاصيل العزل وحواف الصورة يدوياً"
+              title="تعديل العزل يدوياً"
             >
               <PaintBrush className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
               <span>تعديل العزل يدوياً</span>
@@ -692,12 +756,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                  img.onerror = null;
                  img.src = "";
                  // إشعار فشل فك تشفير الصورة المقصوصة — بدون تحديث للعنصر
-                 toast.error("فشل قراءة الصورة المقصوصة");
+                 toast.error("فشل قراءة القص");
                };
                img.src = cropped;
             } catch (err) {
               console.error("Failed to save cropped image:", err);
-              toast.error("فشل حفظ الصورة المقصوصة محلياً");
+              toast.error("فشل حفظ القص");
             }
           }}
           />

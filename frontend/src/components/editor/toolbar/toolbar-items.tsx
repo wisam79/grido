@@ -147,7 +147,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-bold text-foreground truncate">عنوان رئيسي</span>
-                <span className="text-micro text-muted-foreground/80 truncate">نص عريض بارز</span>
+                <span className="text-micro text-muted-foreground/80 truncate">نص عريض</span>
               </div>
             </div>
             <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
@@ -225,7 +225,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">توقيع المصور</span>
-                <span className="text-micro text-muted-foreground/80 truncate">حقوق وتوثيق العمل</span>
+                <span className="text-micro text-muted-foreground/80 truncate">حقوق العمل</span>
               </div>
             </div>
             <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 shrink-0">
@@ -243,7 +243,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">شارة مميزة</span>
-                <span className="text-micro text-muted-foreground/80 truncate">كبسولة ملونة بخلفية</span>
+                <span className="text-micro text-muted-foreground/80 truncate">كبسولة ملونة</span>
               </div>
             </div>
             <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
@@ -261,7 +261,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">علامة مائية</span>
-                <span className="text-micro text-muted-foreground truncate">حماية مائلة شفافة</span>
+                <span className="text-micro text-muted-foreground truncate">حماية شفافة</span>
               </div>
             </div>
             <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">
@@ -285,7 +285,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">ذهب ملكي</span>
-                <span className="text-micro text-muted-foreground/80 truncate">تدرج ذهبي وظلال فخمة</span>
+                <span className="text-micro text-muted-foreground/80 truncate">تدرج ذهبي فاخر</span>
               </div>
             </div>
             <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
@@ -303,7 +303,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">نيون متوهج</span>
-                <span className="text-micro text-muted-foreground/80 truncate">إضاءة إشعاعية ساطعة</span>
+                <span className="text-micro text-muted-foreground/80 truncate">إضاءة ساطعة</span>
               </div>
             </div>
             <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
@@ -321,7 +321,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">ختم مقوس</span>
-                <span className="text-micro text-muted-foreground truncate">نص دائري معتمد</span>
+                <span className="text-micro text-muted-foreground truncate">نص دائري</span>
               </div>
             </div>
             <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive shrink-0">
@@ -339,7 +339,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">عنوان مجسّم</span>
-                <span className="text-micro text-muted-foreground/80 truncate">ظلال إسقاطية مجسمة</span>
+                <span className="text-micro text-muted-foreground/80 truncate">ظل مجسم</span>
               </div>
             </div>
             <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
@@ -357,7 +357,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">نص مفرغ</span>
-                <span className="text-micro text-muted-foreground/80 truncate">حدود عصرية بدون ملء</span>
+                <span className="text-micro text-muted-foreground/80 truncate">حدود بلا ملء</span>
               </div>
             </div>
             <span className="text-micro font-mono font-bold px-1.5 py-0.5 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400 shrink-0">
@@ -375,7 +375,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
               </div>
               <div className="flex flex-col min-w-0 text-start">
                 <span className="font-semibold text-foreground truncate">بطاقة ملاحظة</span>
-                <span className="text-micro text-muted-foreground/80 truncate">نص داخل صندوق مؤطر</span>
+                <span className="text-micro text-muted-foreground/80 truncate">نص مؤطر</span>
               </div>
             </div>
             <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
@@ -392,6 +392,7 @@ const ToolbarAddTools = React.memo(function ToolbarAddTools() {
             <Button
               variant="ghost"
               size="sm"
+              data-testid="toolbar-add-shape"
               className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
               aria-label="إضافة شكل"
             >
@@ -580,7 +581,8 @@ const ImageFiltersPopover = React.memo(function ImageFiltersPopover() {
                   pushHistory();
                 }}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-1 rounded-md border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer",
+                  "flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer",
+                  "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                   isActive
                     ? "border-primary bg-primary/10 text-primary shadow-xs shadow-primary/5 dark:bg-primary/20 dark:border-primary/50 font-bold"
                     : "border-border/60 bg-card hover:bg-accent text-muted-foreground"
@@ -626,7 +628,8 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
   }, []);
 
   const { isRemovingBg, bgProgress, bgProgressText, handleCancelBgRemoval, handleRemoveBg } = useBgRemoval(onUpdate);
-  const { isEnhancing, enhanceProgress, enhanceProgressText, handleEnhance } = useAiEnhance(onUpdate);
+  const { isEnhancing, enhanceProgress, enhanceProgressText, remainingQuota, dailyLimit, handleEnhance } =
+    useAiEnhance(onUpdate);
   const { isFraming, frameProgress, frameProgressText, handleCancelFrame, handleFrameFace } = useFaceFrame(onUpdate);
 
   const [refineOpen, setRefineOpen] = React.useState(false);
@@ -646,7 +649,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           variant={isRemovingBg ? "destructive" : "outline"}
           size="sm"
           className={cn(
-            "h-9 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
             isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(selectedItem)}
@@ -667,11 +670,11 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
 
       {/* تعديل تفاصيل العزل يدويًا إذا كانت خلفيته معزولة */}
       {selectedItem.originalImageSrc && (
-        <TooltipBtn content="تعديل تفاصيل العزل يدوياً">
+        <TooltipBtn content="تعديل العزل يدوياً">
           <Button
             variant="outline"
             size="sm"
-            className="h-9 px-2 gap-1 text-xs font-semibold border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
+            className="h-8 px-2 gap-1 text-xs font-semibold border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
             onClick={() => setRefineOpen(true)}
           >
             <PaintBrush className="w-4 h-4 text-primary shrink-0" weight="duotone" />
@@ -687,7 +690,7 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           size="sm"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "h-9 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
             isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
@@ -707,14 +710,21 @@ const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
         </Button>
       </TooltipBtn>
 
-      {/* تحسين الجودة وترميم الوجه */}
-      <TooltipBtn content="ترميم الوجه">
+      {/* تحسين الجودة وترميم الوجه — التلميح يحمل الحصة المتبقية (كانت معروضة
+          في الشريط العائم وحده قبل توحيد أدوات AI في الشريط العلوي) */}
+      <TooltipBtn
+        content={
+          isEnhancing
+            ? "إلغاء الترميم"
+            : `ترميم الوجه — المتبقي ${remainingQuota} من ${dailyLimit} اليوم`
+        }
+      >
         <Button
           variant="outline"
           size="sm"
           disabled={isEnhancing || isRemovingBg || isFraming}
           className={cn(
-            "h-9 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-all cursor-pointer shadow-2xs",
+            "h-8 px-2.5 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(selectedItem)}
@@ -782,7 +792,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
 
   return (
     <div className="fluent-command-group shadow-2xs animate-in fade-in zoom-in-95 duration-150">
-      <TooltipBtn content="تكرار العناصر المحددة">
+      <TooltipBtn content="تكرار العناصر">
         <Button
           variant="ghost"
           size="sm"
@@ -812,7 +822,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
       )}
 
       {canGroup && (
-        <TooltipBtn content="تجميع العناصر المحددة">
+        <TooltipBtn content="تجميع العناصر">
           <Button
             variant="ghost"
             size="sm"
@@ -826,7 +836,7 @@ const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
       )}
 
       {canUngroup && (
-        <TooltipBtn content="فك تجميع العناصر">
+        <TooltipBtn content="فك التجميع">
           <Button
             variant="ghost"
             size="sm"

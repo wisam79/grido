@@ -85,7 +85,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
             type="button"
             title="انقر لتغيير وحدة القياس أو إدارة الخطوط الإرشادية (Ctrl+R)"
             aria-label="خيارات وحدة قياس المسطرة"
-            className="w-[20px] h-[20px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-30 cursor-pointer transition-all outline-none group active:scale-95 focus-visible:ring-1 focus-visible:ring-primary relative"
+            className="w-[20px] h-[20px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-30 cursor-pointer transition-all group active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
           >
             <span className="text-3xs font-bold text-primary font-mono leading-none tracking-tighter uppercase">
               {rulerUnit}

@@ -158,7 +158,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
                 type="button"
                 onClick={() => onResetField(activeField.fieldId)}
                 className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md cursor-pointer transition-colors"
-                title="استعادة النص الافتراضي"
+                title="استعادة الافتراضي"
               >
                 <ArrowCounterClockwise className="w-3.5 h-3.5" />
               </button>
@@ -182,7 +182,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
             onChange={(e) => onChangeFieldValue(activeField.fieldId, e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={activeFieldDef?.placeholder || activeFieldDef?.label || ""}
-            className="h-8 text-xs font-semibold bg-muted/40 border-border/60 focus-visible:ring-1 focus-visible:ring-primary rounded-md"
+            className="h-8 text-xs font-semibold bg-muted/40 border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none rounded-md"
           />
         </div>
 

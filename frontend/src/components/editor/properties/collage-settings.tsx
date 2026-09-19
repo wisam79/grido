@@ -113,7 +113,7 @@ export function CollageSettings() {
       {/* 🎴 بطاقة 2: إطار وحدود الخلايا */}
       <FluentSection
         icon={<BoundingBox className="w-3.5 h-3.5" weight="duotone" />}
-        title="إطار وحدود الصور"
+        title="إطار الصور"
         collapsible
         defaultOpen={true}
       >
@@ -182,8 +182,8 @@ export function CollageSettings() {
       >
         <div className="space-y-2">
           <FluentSettingRow
-            label="خطوط القص التلقائية"
-            description="إظهار خطوط القص بين صور الكولاج"
+            label="خطوط القص"
+            description="خطوط القص بين الصور"
             control={
               <Switch
                 checked={collageShowCutLines}
@@ -198,10 +198,10 @@ export function CollageSettings() {
                 label={
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
-                    <span>خط نهاية الطباعة (الأزرق)</span>
+                    <span>خط نهاية الطباعة</span>
                   </div>
                 }
-                description="تحديد نهاية الطباعة على الورقة"
+                description="نهاية الطباعة على الورقة"
                 control={
                   <Switch
                     checked={collageShowEndCutLine}

@@ -7,9 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
-import { useBgRemoval } from "@/hooks/use-bg-removal";
-import { useAiEnhance } from "@/hooks/use-ai-enhance";
-import { useFaceFrame } from "@/hooks/use-face-frame";
 import { QuickBarSlotSection } from "./quick-bar/quick-bar-slot-section";
 import { QuickBarMultiSelectionSection } from "./quick-bar/quick-bar-multi-selection-section";
 import { QuickBarElementSection } from "./quick-bar/quick-bar-element-section";
@@ -18,6 +15,12 @@ import { QuickBarElementSection } from "./quick-bar/quick-bar-element-section";
  * CanvasQuickBar — الشريط السريع العائم أعلى الكانفاس (Portal إلى document.body).
  * 🧭 الأقسام الثلاثة (خلية الكولاج / التحديد المتعدد / العنصر الحر) كانت
  * مضمّنة بالكامل هنا (798 سطراً) — الآن كل قسم في ملف مستقل تحت quick-bar/.
+ *
+ * 🎯 نطاق هذا الشريط: **الموضع على الورقة** (ترتيب الطبقة، تدوير، قلب،
+ * توزيع، تعبئة الصف/العمود، تفريغ الخلية، مقارنة بالأصل).
+ * أما خصائص العنصر — تكرار، حذف، محاذاة، تجميع، مرشحات، وأدوات الذكاء
+ * الاصطناعي — فموطنها الشريط العلوي (ToolbarSelectionTools)، وقد أُزيلت
+ * من هنا لأنها كانت مكرّرة حرفياً في السطحين.
  */
 export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   printMode = false,
@@ -34,7 +37,6 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     slots,
     setSlotImage,
     fillAllSlots,
-    licenseActive,
     selectElement,
   } = useEditorStore(
     useShallow((state) => ({
@@ -46,7 +48,6 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       setSlotImage: state.setSlotImage,
       fillAllSlots: state.fillAllSlots,
       selectElement: state.selectElement,
-      licenseActive: state.isLicenseActive(),
     }))
   );
 
@@ -55,18 +56,14 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   const selectedSlot = mode === "collage" ? slots?.find((s) => s.id === selectedId) : undefined;
   const selectedElement = mode === "single" ? elements.find((e) => e.id === selectedId) : undefined;
 
-  const onUpdateSlot = (id: string, patch: Partial<import("@/lib/store/types").CanvasSlot>) => {
-    useEditorStore.getState().updateSlot(id, patch);
-  };
-  const onUpdateElement = (id: string, patch: Partial<import("@/lib/store/types").CanvasElement>) => {
-    useEditorStore.getState().updateElement(id, patch);
-  };
+  // أقسام الشريط: خلية كولاج · عنصر فردي · تحديد متعدد (3 عناصر أو أكثر
+  // للتوزيع فقط). الشريط يُخفى كلياً إن لم يكن لأي قسم محتوى — فلا يبقى
+  // هيكل فارغ بزر إغلاق وحده بعد أن انتقلت إجراءات العناصر للشريط العلوي.
+  const hasSlotSection = Boolean(selectedSlot);
+  const hasElementSection = Boolean(selectedElement) && selectedIds.length <= 1;
+  const hasMultiSection = selectedIds.length >= 3;
 
-  const { isRemovingBg, handleRemoveBg, bgProgress } = useBgRemoval(selectedSlot ? onUpdateSlot : onUpdateElement);
-  const { isEnhancing, handleEnhance, remainingQuota, dailyLimit } = useAiEnhance(selectedSlot ? onUpdateSlot : onUpdateElement);
-  const { isFraming, handleFrameFace, handleCancelFrame } = useFaceFrame(selectedSlot ? onUpdateSlot : onUpdateElement);
-
-  if (printMode || isContextMenuOpen || (!selectedSlot && !selectedElement && selectedIds.length === 0)) {
+  if (printMode || isContextMenuOpen || (!hasSlotSection && !hasElementSection && !hasMultiSection)) {
     return null;
   }
 
@@ -103,46 +100,15 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       <div className="bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 shadow-fluent-16 rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-foreground fluent-specular max-w-full overflow-x-auto">
 
         {/* وضع الكولاج - الخلية المحددة */}
-        {selectedSlot && (
-          <QuickBarSlotSection
-            slot={selectedSlot}
-            licenseActive={licenseActive}
-            isRemovingBg={isRemovingBg}
-            bgProgress={bgProgress}
-            isFraming={isFraming}
-            isEnhancing={isEnhancing}
-            remainingQuota={remainingQuota}
-            dailyLimit={dailyLimit}
-            onOpenFileForSlot={handleOpenFileForSlot}
-            onRemoveBg={() => handleRemoveBg(selectedSlot)}
-            onFrameFace={() => handleFrameFace(selectedSlot)}
-            onCancelFrame={handleCancelFrame}
-            onEnhance={() => handleEnhance(selectedSlot)}
-          />
+        {hasSlotSection && selectedSlot && (
+          <QuickBarSlotSection slot={selectedSlot} onOpenFileForSlot={handleOpenFileForSlot} />
         )}
 
         {/* وضع التحديد المتعدد (Multi-Selection Mode) */}
-        {selectedIds.length > 1 && (
-          <QuickBarMultiSelectionSection selectedIds={selectedIds} />
-        )}
+        {hasMultiSection && <QuickBarMultiSelectionSection selectedIds={selectedIds} />}
 
         {/* وضع التعديل الحر - عنصر فردي */}
-        {selectedElement && selectedIds.length <= 1 && (
-          <QuickBarElementSection
-            element={selectedElement}
-            licenseActive={licenseActive}
-            isRemovingBg={isRemovingBg}
-            bgProgress={bgProgress}
-            isFraming={isFraming}
-            isEnhancing={isEnhancing}
-            remainingQuota={remainingQuota}
-            dailyLimit={dailyLimit}
-            onRemoveBg={() => handleRemoveBg(selectedElement)}
-            onFrameFace={() => handleFrameFace(selectedElement)}
-            onCancelFrame={handleCancelFrame}
-            onEnhance={() => handleEnhance(selectedElement)}
-          />
-        )}
+        {hasElementSection && selectedElement && <QuickBarElementSection element={selectedElement} />}
 
         <Tooltip>
           <TooltipTrigger asChild>
@@ -151,12 +117,12 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
               size="sm"
               onClick={() => selectElement(null)}
               className="h-7 w-7 p-0 rounded-md hover:bg-muted text-muted-foreground ms-1"
-              aria-label="إغلاق الشريط السريع"
+              aria-label="إغلاق الشريط"
             >
               <X className="w-3.5 h-3.5" weight="regular" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">إغلاق الشريط السريع</TooltipContent>
+          <TooltipContent side="bottom">إغلاق الشريط</TooltipContent>
         </Tooltip>
 
       </div>

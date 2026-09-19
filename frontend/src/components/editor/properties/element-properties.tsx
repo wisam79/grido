@@ -66,7 +66,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
                 ),
                 tooltip:
                   element.type === "image"
-                    ? "تعديلات ألوان وفلاتر الصورة"
+                    ? "ألوان وفلاتر الصورة"
                     : "الألوان والتعبئة والتدرجات",
                 className: "px-1.5 gap-1",
               },

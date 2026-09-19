@@ -62,20 +62,22 @@ export default function App() {
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
 
+  const { togglePanel, toggleZenMode, selectCollageTab, selectStudioTab } = panelsHook;
+
   useEffect(() => {
-    const handleToggleRight = () => panelsHook.togglePanel("templates");
-    const handleToggleLeft = () => panelsHook.togglePanel("properties");
-    const handleToggleZen = () => panelsHook.toggleZenMode();
+    const handleToggleRight = () => togglePanel("templates");
+    const handleToggleLeft = () => togglePanel("properties");
+    const handleToggleZen = () => toggleZenMode();
     const handleSelectCollageTab = (e: Event) => {
       const detail = (e as CustomEvent<{ tab: CollageTab }>).detail;
       if (detail?.tab) {
-        panelsHook.selectCollageTab(detail.tab);
+        selectCollageTab(detail.tab);
       }
     };
     const handleSelectStudioTab = (e: Event) => {
       const detail = (e as CustomEvent<{ tab: FreeformTab }>).detail;
       if (detail?.tab) {
-        panelsHook.selectStudioTab(detail.tab);
+        selectStudioTab(detail.tab);
       }
     };
 
@@ -92,7 +94,7 @@ export default function App() {
       window.removeEventListener("grido:select-collage-tab", handleSelectCollageTab);
       window.removeEventListener("grido:select-studio-tab", handleSelectStudioTab);
     };
-  }, [panelsHook]);
+  }, [togglePanel, toggleZenMode, selectCollageTab, selectStudioTab]);
 
 
   const {
@@ -288,7 +290,7 @@ export default function App() {
             transition={{ delay: 0.3, duration: 0.35 }}
             className="text-xs text-muted-foreground mt-1.5 font-medium"
           >
-            جاري تهيئة مساحة العمل ...
+            جاري التهيئة ...
           </motion.p>
         </div>
       </div>
@@ -372,11 +374,11 @@ export default function App() {
                 aria-selected={mode === "collage"}
                 aria-controls="mode-panel"
                 data-testid="mode-tab-collage"
-                title="وضع الكولاج والشبكات (Ctrl+Alt+1)"
+                title="وضع الكولاج (Ctrl+Alt+1)"
                 onClick={() => setMode("collage")}
                 className={cn(
-                  "relative z-10 flex items-center gap-1.5 h-6.5 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                  "relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   mode === "collage"
                     ? "text-foreground font-bold"
                     : "text-muted-foreground hover:text-foreground"
@@ -404,11 +406,11 @@ export default function App() {
                 aria-selected={mode === "single"}
                 aria-controls="mode-panel"
                 data-testid="mode-tab-single"
-                title="وضع التعديل والتصميم الحر (Ctrl+Alt+2)"
+                title="وضع التعديل الحر (Ctrl+Alt+2)"
                 onClick={() => setMode("single")}
                 className={cn(
-                  "relative z-10 flex items-center gap-1.5 h-6.5 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                  "relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   mode === "single"
                     ? "text-foreground font-bold"
                     : "text-muted-foreground hover:text-foreground"
@@ -461,7 +463,7 @@ export default function App() {
                   className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
                   aria-label={
                     themeMode === "system"
-                      ? "مظهر النظام تلقائي مع Windows 11"
+                      ? "مظهر النظام تلقائي"
                       : themeMode === "dark"
                       ? "الوضع الداكن"
                       : "الوضع المضيء"
@@ -540,7 +542,7 @@ export default function App() {
       <Toolbar
         onPrint={() => {
           if (!isLicenseActive) {
-            toast.error("ميزة الطباعة متوفرة فقط في الخطة الاحترافية (Pro).", {
+            toast.error("الطباعة في الخطة الاحترافية (Pro) فقط.", {
               action: {
                 label: "تفعيل الآن",
                 onClick: () => setAccountModalOpen(true)
@@ -601,7 +603,7 @@ export default function App() {
           ) : isBusy ? (
             <div className="absolute top-4 end-4 z-30 font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 px-3 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-none">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
-              <span className="text-xs font-bold text-primary">جاري المعالجة ...</span>
+              <span className="text-xs font-bold text-primary">جاري الترميم ...</span>
             </div>
           ) : null
         }

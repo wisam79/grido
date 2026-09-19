@@ -66,7 +66,7 @@ export function FluentFilterChips<T extends string = string>({
             onClick={() => onChange(opt.id)}
             className={cn(
               "relative flex items-center justify-center transition-all duration-150 cursor-pointer whitespace-nowrap select-none active:scale-[0.98] z-10",
-              "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+              "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
               isFullWidth ? "flex-1" : "shrink-0",
               radiusClass,
               size === "sm"
@@ -97,7 +97,7 @@ export function FluentFilterChips<T extends string = string>({
             {opt.count !== undefined && (
               <span
                 className={cn(
-                  "text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold shrink-0 transition-colors border",
+                  "text-micro font-mono px-1.5 py-0.2 rounded-full font-bold shrink-0 transition-colors border",
                   isActive
                     ? "bg-muted text-foreground border-border/70"
                     : "bg-muted/50 text-muted-foreground border-border/40"

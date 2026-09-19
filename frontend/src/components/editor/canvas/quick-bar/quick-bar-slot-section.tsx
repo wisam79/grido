@@ -7,42 +7,22 @@ import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { useEditorStore } from "@/lib/editor-store";
 import type { CanvasSlot } from "@/lib/store/types";
-import { QuickBarAiActions } from "./quick-bar-ai-actions";
 
 /**
- * QuickBarSlotSection — قسم الخلية المحددة في وضع الكولاج (تعبئة/تدوير/أدوات AI)
- * 🧭 كان مضمّناً بالكامل في canvas-quick-bar (كان الشريط 798 سطراً).
+ * QuickBarSlotSection — قسم الخلية المحددة في وضع الكولاج.
+ *
+ * 🧭 نطاق هذا الشريط هو **موضع الصورة داخل الخلية وسلوك الشبكة**
+ * (رفع/استبدال، تدوير، قلب، تعبئة صف/عمود/كل الخلايا، تفريغ الخلية،
+ * مقارنة بالأصل). أما أدوات الذكاء الاصطناعي فموطنها الشريط العلوي.
  */
 interface QuickBarSlotSectionProps {
   slot: CanvasSlot;
-  licenseActive: boolean;
-  isRemovingBg: boolean;
-  bgProgress: number;
-  isFraming: boolean;
-  isEnhancing: boolean;
-  remainingQuota: number;
-  dailyLimit: number;
   onOpenFileForSlot: () => void;
-  onRemoveBg: () => void;
-  onFrameFace: () => void;
-  onCancelFrame: () => void;
-  onEnhance: () => void;
 }
 
 export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
   slot,
-  licenseActive,
-  isRemovingBg,
-  bgProgress,
-  isFraming,
-  isEnhancing,
-  remainingQuota,
-  dailyLimit,
   onOpenFileForSlot,
-  onRemoveBg,
-  onFrameFace,
-  onCancelFrame,
-  onEnhance,
 }: QuickBarSlotSectionProps) {
   const { fillAllSlots, fillRowSlots, fillColumnSlots, updateSlot, rotateSlot, flipSlotX } = useEditorStore(
     useShallow((s) => ({
@@ -75,7 +55,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
             <span>تغيير</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">رفع صورة جديدة للخلية</TooltipContent>
+        <TooltipContent side="bottom">رفع صورة للخلية</TooltipContent>
       </Tooltip>
 
       {slot.imageSrc && (
@@ -92,7 +72,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                 <span>كل الورقة</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">تكرار الصورة بجميع خلايا الورقة</TooltipContent>
+            <TooltipContent side="bottom">تكرار الصورة بكل الخلايا</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -107,7 +87,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                 <span>الصف</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">تعبئة الصف الحالي بهذه الصورة</TooltipContent>
+            <TooltipContent side="bottom">تعبئة الصف بهذه الصورة</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -122,25 +102,8 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                 <span>العمود</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">تعبئة العمود الحالي بهذه الصورة</TooltipContent>
+            <TooltipContent side="bottom">تعبئة العمود بهذه الصورة</TooltipContent>
           </Tooltip>
-
-          <Separator orientation="vertical" className="h-4 bg-border/40" />
-
-          <QuickBarAiActions
-            isRemovingBg={isRemovingBg}
-            bgProgress={bgProgress}
-            isFraming={isFraming}
-            isEnhancing={isEnhancing}
-            remainingQuota={remainingQuota}
-            dailyLimit={dailyLimit}
-            licenseActive={licenseActive}
-            onRemoveBg={onRemoveBg}
-            onFrameFace={onFrameFace}
-            onCancelFrame={onCancelFrame}
-            onEnhance={onEnhance}
-            removeBgTooltip="عزل التحديد وتفريغ خلفية الصورة"
-          />
 
           <Separator orientation="vertical" className="h-4 bg-border/40" />
 
@@ -186,7 +149,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                         bgColor: undefined
                       });
                       useEditorStore.getState().pushHistory();
-                      toast.success("تمت استعادة الصورة الأصلية");
+                      toast.success("تمت الاستعادة");
                     }}
                     className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                   >
@@ -215,7 +178,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                     <Eye className="w-4 h-4" weight="regular" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">اضغط مطولاً لمعاينة الأصل</TooltipContent>
+                <TooltipContent side="bottom">اضغط مطولاً للمعاينة</TooltipContent>
               </Tooltip>
             </>
           )}

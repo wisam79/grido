@@ -119,13 +119,13 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           
           SetTaskbarProgress(0, "none").catch(() => {});
           if (successCount > 0) {
-            toast.success(`تم تصدير ${successCount} صورة بنجاح`, {
+            toast.success(`تم تصدير ${successCount} صورة`, {
               action: {
                 label: "فتح المجلد",
                 onClick: () => OpenFolder(targetDir).catch(console.error),
               },
             });
-            SendNotification("Grido Studio", `تم تصدير ${successCount} صورة بنجاح إلى المجلد المحدد`, "").catch(() => {});
+            SendNotification("Grido Studio", `تم تصدير ${successCount} صورة للمجلد`, "").catch(() => {});
             onOpenChange(false);
           } else {
             toast.error("تعذر تصدير الصور");
@@ -160,7 +160,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             SetTaskbarProgress(0, "none").catch(() => {});
             if (res === "success") {
               toast.success("تم تصدير الصورة بنجاح");
-              SendNotification("Grido Studio", "تم تصدير الصورة وحفظها بنجاح", "").catch(() => {});
+              SendNotification("Grido Studio", "تم تصدير الصورة وحفظها", "").catch(() => {});
               onOpenChange(false);
             } else if (res === "") {
               toast.info("تم إلغاء التصدير");
@@ -179,7 +179,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         }, 2500);
         if (e instanceof CanvasTooLargeError) {
           toast.error(
-            `الأبعاد كبيرة جداً للتصدير (${e.width}×${e.height} بكسل ≈ ${(e.pixelCount / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. قلّل مقاس الكانفاس أو DPI.`
+            `الأبعاد كبيرة جداً (${e.width}×${e.height} بكسل ≈ ${(e.pixelCount / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. اخفض المقاس أو DPI.`
           );
         } else {
           console.error(e);
@@ -216,7 +216,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               <div className="min-w-0">
                 <DialogTitle className="text-base font-bold truncate">تصدير الصورة</DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  احفظ الصورة بأبعاد القالب المحدد بدقة عالية للطباعة
+                  حفظ بدقة عالية للطباعة
                 </DialogDescription>
               </div>
             </div>
@@ -231,7 +231,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               <button
                 type="button"
                 onClick={() => setFormat("png")}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${
+                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${
                   format === "png"
                     ? "border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20"
                     : "border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground"
@@ -248,7 +248,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               <button
                 type="button"
                 onClick={() => setFormat("jpg")}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${
+                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${
                   format === "jpg"
                     ? "border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20"
                     : "border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground"
@@ -308,7 +308,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               </>
             )}
             <div className="flex justify-between pt-1.5 border-t border-border/50 mt-1">
-              <span className="text-muted-foreground font-semibold">الحجم التقريبي للملف:</span>
+              <span className="text-muted-foreground font-semibold">الحجم التقريبي:</span>
               <span className="font-mono text-primary font-bold">
                 {format === "png" 
                   ? ((canvasWidth * canvasHeight * 4) / 1024 / 1024 * 0.6).toFixed(1)
@@ -323,20 +323,20 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-xs text-destructive flex items-start gap-2">
                 <Warning className="shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
                 <span className="leading-tight font-medium">
-                  الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُوصى بـ 300 DPI للطباعة الاحترافية.
+                  الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُفضل 300 DPI للطباعة.
                 </span>
               </div>
             )}
 
             <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
               <Warning className="text-amber-500 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
-              <span className="leading-tight font-medium">تصدير الصورة بنظام الألوان القياسي RGB للطباعة الرقمية.</span>
+              <span className="leading-tight font-medium">تصدير بنظام الألوان RGB للطباعة الرقمية.</span>
             </div>
 
             <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
               <FluentSettingRow
                 label="علامات القص الإرشادية"
-                description="خطوط إرشادية حول منطقة النزيف"
+                description="خطوط حول منطقة النزيف"
                 control={<Switch checked={showCropMarks} onCheckedChange={setShowCropMarks} />}
               />
             </div>
@@ -351,14 +351,14 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 unit="mm"
                 onChange={setBleedMM}
               />
-              <p className="text-micro text-muted-foreground">هامش إضافي لمنع ظهور حواف بيضاء بعد القص.</p>
+              <p className="text-micro text-muted-foreground">يمنع ظهور حواف بيضاء بعد القص.</p>
             </div>
 
             {mode === "collage" && (
               <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
                 <FluentSettingRow
                   label="تصدير الصور كملفات منفصلة"
-                  description="حفظ كل صورة في الكولاج كملف مستقل"
+                  description="حفظ كل صورة كملف مستقل"
                   control={
                     <Switch 
                       checked={batchExport} 

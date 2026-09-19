@@ -105,24 +105,24 @@ export const StickerProperties = React.memo(function StickerProperties({
   const handleSavePreset = () => {
     const trimmed = newPresetName.trim();
     if (!trimmed) {
-      toast.error("يرجى كتابة اسم للقالب");
+      toast.error("اكتب اسم القالب");
       return;
     }
     const saved = saveStickerPreset(trimmed, template.id, params);
     setPresets((prev) => [saved, ...prev.filter((p) => p.id !== saved.id)]);
     setNewPresetName("");
-    toast.success(`تم حفظ القالب "${saved.name}" بنجاح`);
+    toast.success(`حُفظ القالب "${saved.name}"`);
   };
 
   const handleDeletePreset = (id: string, name: string) => {
     const remaining = deleteStickerPreset(id);
     setPresets(remaining);
-    toast.success(`تم حذف القالب "${name}"`);
+    toast.success(`حُذف القالب "${name}"`);
   };
 
   const handleApplyPreset = (preset: StickerUserPreset) => {
     onChangeParams(() => ({ ...preset.params }));
-    toast.success(`تم تطبيق القالب "${preset.name}"`);
+    toast.success(`طُبّق القالب "${preset.name}"`);
     setActiveTab("design");
   };
 
@@ -257,7 +257,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                           value={val}
                           onChange={(e) => handleFieldChange(field.id, e.target.value)}
                           placeholder={field.placeholder || field.label}
-                          className="h-8 text-xs rounded-md bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary text-foreground"
+                          className="h-8 text-xs rounded-md bg-background border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none text-foreground"
                         />
                       </div>
                     );
@@ -299,7 +299,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                       ? "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
                       : "bg-card/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-card"
                   )}
-                  title={params.isTransparent ? "الخلفية مفرغة (انقر للإلغاء)" : "تفريغ الخلفية"}
+                  title={params.isTransparent ? "مفرغة (انقر للإلغاء)" : "تفريغ"}
                 >
                   <div
                     className={cn(
@@ -446,7 +446,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                       key={idx}
                       className={cn(
                         "w-full h-full max-w-[14px] max-h-[14px] mx-auto border transition-all duration-150 shadow-2xs",
-                        template.shape === "circle" ? "rounded-full" : template.shape === "rect" ? "rounded-[1px]" : "rounded-md"
+                        template.shape === "circle" ? "rounded-full" : template.shape === "rect" ? "rounded-sm" : "rounded-md"
                       )}
                       style={{
                         backgroundColor: params.primaryColor,
@@ -527,10 +527,10 @@ export const StickerProperties = React.memo(function StickerProperties({
             <div className="p-3 rounded-xl bg-card/60 border border-border/40 space-y-2.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                 <FloppyDisk className="w-4 h-4 text-primary" weight="duotone" />
-                <span>حفظ التخصيص الحالي</span>
+                <span>حفظ التخصيص</span>
               </div>
               <p className="text-mini text-muted-foreground leading-relaxed">
-                احفظ النصوص والألوان والخط لهذا الملصق لاسترجاعها لاحقاً بضغطة زر.
+                احفظ النصوص والألوان والخط لاسترجاعها لاحقاً.
               </p>
               <div className="flex items-center gap-1.5">
                 <Input
@@ -540,7 +540,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleSavePreset();
                   }}
-                  placeholder="اسم القالب (مثال: متجر الهدى)"
+                  placeholder="اسم القالب"
                   className="h-8 text-xs font-medium rounded-md flex-1 bg-background/80"
                 />
                 <Button
@@ -615,7 +615,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                             size="sm"
                             onClick={() => handleDeletePreset(preset.id, preset.name)}
                             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer"
-                            title="حذف القالب"
+                            title="حذف"
                           >
                             <Trash className="w-3.5 h-3.5" />
                           </Button>
@@ -637,9 +637,9 @@ export const StickerProperties = React.memo(function StickerProperties({
               ) : (
                 <div className="p-4 rounded-xl bg-card/30 border border-dashed border-border/50 text-center space-y-1.5">
                   <BookmarkSimple className="w-7 h-7 mx-auto text-muted-foreground/60" weight="duotone" />
-                  <p className="text-xs font-semibold text-foreground/80">لا توجد قوالب محفوظة بعد</p>
+                  <p className="text-xs font-semibold text-foreground/80">لا قوالب محفوظة</p>
                   <p className="text-mini text-muted-foreground leading-relaxed">
-                    اكتب اسماً في الأعلى واضغط "حفظ" للرجوع لتخصيصاتك ونصوصك لاحقاً بضغطة واحدة.
+                    اكتب اسماً بالأعلى واضغط "حفظ" لاستخدامه لاحقاً.
                   </p>
                 </div>
               )}

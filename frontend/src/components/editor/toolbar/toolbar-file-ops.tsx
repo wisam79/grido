@@ -156,7 +156,7 @@ export function ToolbarFileOps() {
             const targetSlotId = freshSelectedId || freshSlots[0]?.id;
             if (targetSlotId) {
               freshState.setSlotImage(targetSlotId, localPaths[0]);
-              toast.success("تم إدراج الصورة في الخلية المحددة");
+              toast.success("تم الإدراج في الخلية");
             }
           } else {
             // إدراج مجمّع بلقطة تراجع واحدة — الاستدعاء الفردي داخل الحلقة
@@ -165,7 +165,7 @@ export function ToolbarFileOps() {
               .slice(0, localPaths.length)
               .map((slot, index) => ({ slotId: slot.id, src: localPaths[index] }));
             freshState.setSlotImagesBatch(assignments, localPaths[localPaths.length - 1]);
-            toast.success(`تم إدراج ${assignments.length} صورة في خلايا الكولاج`);
+            toast.success(`تم إدراج ${assignments.length} صورة في الكولاج`);
           }
         } else {
           // الوضع الحر: عند اختيار صورة واحدة تُدرج كالمعتاد، وعند اختيار أكثر من صورة تُدرج بتوزيع شبكي ذكي وخطوة تراجع واحدة
@@ -181,7 +181,7 @@ export function ToolbarFileOps() {
             }
             const aspect = await resolveImageAspectRatio(finalSrc);
             freshState.addImageElement(finalSrc, aspect);
-            toast.success("تم إدراج الصورة في مساحة العمل");
+            toast.success("تم إدراج الصورة");
           } else {
             // حفظ وقياس متوازي (4 خيوط) بدل التسلسل الذي يجمد الزر مع الدفعات الكبيرة
             const items = await mapWithConcurrency(b64s, 4, async (b64) => {
@@ -198,13 +198,13 @@ export function ToolbarFileOps() {
               return { src: finalSrc, aspectRatio: aspect };
             });
             freshState.addImageElementsBatch(items);
-            toast.success(`تم إدراج وتوزيع ${items.length} صورة بنجاح`);
+            toast.success(`تم إدراج ${items.length} صورة بنجاح`);
           }
         }
       }
     } catch (e) {
       console.error(e);
-      toast.error("فشل فتح ملف الصورة");
+      toast.error("فشل فتح الصورة");
     } finally {
       setIsFileDialogOpen(false);
     }
@@ -256,7 +256,7 @@ export function ToolbarFileOps() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label="خيارات الإدراج الإضافية"
+                  aria-label="خيارات الإدراج"
                   className="h-8 px-1.5 text-muted-foreground hover:text-foreground rounded-s-none rounded-e-md hover:bg-background/80 active:scale-95 transition-all cursor-pointer"
                 >
                   <CaretDown className="w-3.5 h-3.5 opacity-70" />
@@ -276,7 +276,7 @@ export function ToolbarFileOps() {
                 </div>
                 <div className="flex flex-col min-w-0 text-start flex-1">
                   <span className="font-bold text-foreground">دفعة صور</span>
-                  <span className="text-micro text-muted-foreground">إدراج معاملات متعددة</span>
+                  <span className="text-micro text-muted-foreground">إدراج صور متعددة</span>
                 </div>
                 <span className="text-micro font-mono text-muted-foreground/80">Ctrl+Shift+O</span>
               </DropdownMenuItem>
@@ -290,7 +290,7 @@ export function ToolbarFileOps() {
                 </div>
                 <div className="flex flex-col min-w-0 text-start flex-1">
                   <span className="font-bold text-foreground">كاميرا الهاتف</span>
-                  <span className="text-micro text-muted-foreground">التقاط عبر QR اللاسلكي</span>
+                  <span className="text-micro text-muted-foreground">التقاط عبر QR</span>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -342,7 +342,7 @@ export function ToolbarFileOps() {
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-start">مسح مساحة العمل</AlertDialogTitle>
             <AlertDialogDescription className="font-cairo text-start">
-              سيتم مسح مساحة العمل نهائياً. هل تريد المتابعة؟
+              سيتم المسح نهائياً. متابعة؟
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="font-cairo">

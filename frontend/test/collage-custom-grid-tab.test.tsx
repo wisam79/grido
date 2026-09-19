@@ -30,7 +30,7 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(screen.getByText('الصفوف')).toBeInTheDocument();
     expect(screen.getByText('الأعمدة')).toBeInTheDocument();
     expect(screen.getByText('ملء الورقة')).toBeInTheDocument();
-    expect(screen.getByText('شريط سريع')).toBeInTheDocument();
+    expect(screen.getByText('شريط علوي')).toBeInTheDocument();
 
     // Section 2: Photo Size
     expect(screen.getByText('مقاس الصورة')).toBeInTheDocument();
@@ -83,11 +83,10 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(onPhotoTypeChange).toHaveBeenCalledWith('iq-civil-id');
   });
 
-  it('handles quick presets like fill sheet and corner strip', () => {
+  it('applies quick presets once with a final value (no intermediate states)', () => {
     const onRowsChange = vi.fn();
     const onColsChange = vi.fn();
     const onApply = vi.fn();
-    const onGridAlignChange = vi.fn();
 
     render(
       <CollageCustomGridTab
@@ -95,20 +94,29 @@ describe('CollageCustomGridTab Component Suite', () => {
         onRowsChange={onRowsChange}
         onColsChange={onColsChange}
         onApply={onApply}
-        onGridAlignChange={onGridAlignChange}
       />
     );
 
-    const fillSheetBtn = screen.getByText('ملء الورقة');
-    fireEvent.click(fillSheetBtn);
-    expect(onRowsChange).toHaveBeenCalled();
-    expect(onColsChange).toHaveBeenCalled();
-    expect(onApply).toHaveBeenCalled();
+    // A4 300dpi بمقاس 35×45 = أقصى 6 صفوف × 5 أعمدة
+    fireEvent.click(screen.getByText('ملء الورقة'));
+    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(onApply).toHaveBeenCalledWith(6, 5, 'iq-national-id', 'top-left');
+    // لا نداءات وسيطة تُلوّث سجل التراجع
+    expect(onRowsChange).not.toHaveBeenCalled();
+    expect(onColsChange).not.toHaveBeenCalled();
 
-    const cornerStripBtn = screen.getByText('شريط سريع');
-    fireEvent.click(cornerStripBtn);
-    expect(onRowsChange).toHaveBeenCalledWith(1);
-    expect(onGridAlignChange).toHaveBeenCalledWith('top-left');
+    onApply.mockClear();
+    fireEvent.click(screen.getByText('شريط علوي'));
+    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(onApply).toHaveBeenCalledWith(1, 4, 'iq-national-id', 'top-left');
+  });
+
+  it('reflects the applied state on the apply action', () => {
+    const { rerender } = render(<CollageCustomGridTab {...defaultProps} />);
+    expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
+
+    rerender(<CollageCustomGridTab {...defaultProps} isCustomActive />);
+    expect(screen.getByText('الشبكة مطبقة')).toBeInTheDocument();
   });
 
   it('toggles template save form on clicking save button', () => {

@@ -268,7 +268,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                   "w-6 h-6 absolute left-2 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
                   showCustomPreviewInput && "text-primary bg-primary/10"
                 )}
-                title="تخصيص نص المعاينة"
+                title="تخصيص المعاينة"
               >
                 <Sparkle className="w-3 h-3" weight={showCustomPreviewInput ? "fill" : "regular"} />
               </button>
@@ -310,7 +310,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 setFocusedIndex(-1);
               }}
               className={cn(
-                "px-2 py-1 rounded-md whitespace-nowrap font-bold transition-all cursor-pointer shrink-0 shadow-2xs flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                "px-2 py-1 rounded-md whitespace-nowrap font-bold transition-all cursor-pointer shrink-0 shadow-2xs flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
                 activeCategory === cat.id
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40"
@@ -332,8 +332,8 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         >
           {filteredFonts.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground space-y-1">
-              <p className="font-semibold">لم يتم العثور على خط يطابق البحث</p>
-              <p className="text-micro text-muted-foreground/70">جرب كتابة اسم خط آخر أو اختيار فئة مختلفة</p>
+              <p className="font-semibold">لا خط مطابق</p>
+              <p className="text-micro text-muted-foreground/70">جرّب اسم خط أو فئة أخرى</p>
             </div>
           ) : (
             filteredFonts.map((font, idx) => {
@@ -358,7 +358,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                   }}
                   onClick={() => handleSelectFont(font)}
                   className={cn(
-                    "w-full text-right px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none",
+                    "w-full text-right px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
                     isSelected
                       ? "bg-primary/15 border-primary/50 text-primary shadow-2xs"
                       : isFocused

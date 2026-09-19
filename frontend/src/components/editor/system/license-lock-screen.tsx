@@ -102,7 +102,7 @@ export function LicenseLockScreen({
             <div className="space-y-2">
               <h1 className="text-xl font-extrabold text-foreground">النسخة مقفلة</h1>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                انتهت الفترة التجريبية. يرجى إدخال مفتاح التفعيل للمتابعة.
+                انتهت الفترة التجريبية. أدخل مفتاح التفعيل للمتابعة.
               </p>
             </div>
 
@@ -112,7 +112,7 @@ export function LicenseLockScreen({
               setLockLoading(true);
               try {
                 await onActivate(lockKey);
-                toast.success("تم تفعيل الترخيص بنجاح! شكراً لك.");
+                toast.success("تم تفعيل الترخيص بنجاح!");
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "فشل تفعيل الترخيص");
               } finally {
@@ -129,10 +129,10 @@ export function LicenseLockScreen({
                         const text = await navigator.clipboard.readText();
                         if (text) {
                           setLockKey(text.trim().toUpperCase());
-                          toast.success("تم لصق المفتاح من الحافظة");
+                          toast.success("تم لصق المفتاح");
                         }
                       } catch {
-                        toast.error("يرجى لصق المفتاح يدوياً");
+                        toast.error("الصق المفتاح يدوياً");
                       }
                     }}
                     className="text-micro text-primary hover:underline font-medium cursor-pointer"
@@ -161,7 +161,7 @@ export function LicenseLockScreen({
                     <span>جاري التفعيل ...</span>
                   </>
                 ) : (
-                  "تفعيل الترخيص الفوري"
+                  "تفعيل الترخيص"
                 )}
               </Button>
             </form>

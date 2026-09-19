@@ -165,7 +165,7 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
               }}
             >
               {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-              <span className="truncate">{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه"}</span>
+              <span className="truncate">{isEnhancing ? "جاري الترميم ..." : "ترميم الوجه"}</span>
             </button>
             </div>
           <div className={menuSeparatorClassName} role="separator" />

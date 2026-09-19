@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowUp, ArrowDown, Copy, ArrowClockwise, FlipHorizontal, ArrowCounterClockwise, Eye, Trash } from "@phosphor-icons/react";
+import { ArrowUp, ArrowDown, ArrowClockwise, FlipHorizontal, ArrowCounterClockwise, Eye } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
@@ -9,46 +9,25 @@ import { useShallow } from "zustand/react/shallow";
 import { useEditorStore } from "@/lib/editor-store";
 import type { CanvasElement } from "@/lib/store/types";
 import { rotateElementAroundCenter } from "@/lib/canvas/element-geometry";
-import { QuickBarAiActions } from "./quick-bar-ai-actions";
 
 /**
- * QuickBarElementSection — قسم العنصر الفردي في وضع التعديل الحر
- * (ترتيب/تدوير/أدوات AI للصور/حذف) — 🧭 كان مضمّناً بالكامل في canvas-quick-bar.
+ * QuickBarElementSection — قسم العنصر الفردي في وضع التعديل الحر.
+ *
+ * 🧭 نطاق هذا الشريط هو **موضع العنصر على الورقة** فقط: ترتيب الطبقة،
+ * التدوير، القلب، ومقارنة الصورة بالأصل. أما ما يخص خصائص العنصر
+ * (التكرار، الحذف، المحاذاة، التجميع، المرشحات، أدوات AI) فموطنه
+ * الشريط العلوي — وكان مكرراً هنا في مكانين فاختار المستخدم تفريقه.
  */
 interface QuickBarElementSectionProps {
   element: CanvasElement;
-  licenseActive: boolean;
-  isRemovingBg: boolean;
-  bgProgress: number;
-  isFraming: boolean;
-  isEnhancing: boolean;
-  remainingQuota: number;
-  dailyLimit: number;
-  onRemoveBg: () => void;
-  onFrameFace: () => void;
-  onCancelFrame: () => void;
-  onEnhance: () => void;
 }
 
 export const QuickBarElementSection = React.memo(function QuickBarElementSection({
   element,
-  licenseActive,
-  isRemovingBg,
-  bgProgress,
-  isFraming,
-  isEnhancing,
-  remainingQuota,
-  dailyLimit,
-  onRemoveBg,
-  onFrameFace,
-  onCancelFrame,
-  onEnhance,
 }: QuickBarElementSectionProps) {
-  const { updateElement, removeElement, duplicateElement, bringToFront, sendToBack } = useEditorStore(
+  const { updateElement, bringToFront, sendToBack } = useEditorStore(
     useShallow((s) => ({
       updateElement: s.updateElement,
-      removeElement: s.removeElement,
-      duplicateElement: s.duplicateElement,
       bringToFront: s.bringToFront,
       sendToBack: s.sendToBack,
     }))
@@ -82,20 +61,6 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">إرسال للخلف</TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => duplicateElement(element.id)}
-            className="h-7 w-7 p-0 rounded-md hover:bg-accent"
-          >
-            <Copy className="w-4 h-4" weight="regular" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">تكرار العنصر</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -142,22 +107,9 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
 
       {element.type === "image" && element.imageSrc && (
         <>
-          <Separator orientation="vertical" className="h-4 bg-border/40" />
-
-          <QuickBarAiActions
-            isRemovingBg={isRemovingBg}
-            bgProgress={bgProgress}
-            isFraming={isFraming}
-            isEnhancing={isEnhancing}
-            remainingQuota={remainingQuota}
-            dailyLimit={dailyLimit}
-            licenseActive={licenseActive}
-            onRemoveBg={onRemoveBg}
-            onFrameFace={onFrameFace}
-            onCancelFrame={onCancelFrame}
-            onEnhance={onEnhance}
-            removeBgTooltip="عزل وتفريغ خلفية الصورة"
-          />
+          {element.originalImageSrc && (
+            <Separator orientation="vertical" className="h-4 bg-border/40" />
+          )}
 
           {element.originalImageSrc && (
             <>
@@ -173,7 +125,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                         bgColor: "transparent"
                       });
                       useEditorStore.getState().pushHistory();
-                      toast.success("تمت استعادة الصورة الأصلية");
+                      toast.success("تمت الاستعادة");
                     }}
                     className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                   >
@@ -202,28 +154,12 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                     <Eye className="w-4 h-4" weight="regular" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">اضغط مطولاً لمعاينة الأصل</TooltipContent>
+                <TooltipContent side="bottom">اضغط مطولاً للمعاينة</TooltipContent>
               </Tooltip>
             </>
           )}
         </>
       )}
-
-      <Separator orientation="vertical" className="h-4 bg-border/40" />
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => removeElement(element.id)}
-            className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
-          >
-            <Trash className="w-4 h-4" weight="regular" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">حذف العنصر</TooltipContent>
-      </Tooltip>
     </>
   );
 });

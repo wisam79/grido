@@ -168,7 +168,7 @@ export function SlotMenuSection({
               }}
             >
               {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-              <span className="truncate">{isEnhancing ? "جاري المعالجة ..." : "ترميم الوجه"}</span>
+              <span className="truncate">{isEnhancing ? "جاري الترميم ..." : "ترميم الوجه"}</span>
             </button>
           </>
         )}

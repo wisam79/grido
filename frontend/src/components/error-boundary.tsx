@@ -45,9 +45,9 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="mx-auto w-12 h-12 bg-destructive/10 text-destructive rounded-full flex items-center justify-center">
               <WarningOctagon className="w-6 h-6 shrink-0" weight="duotone" />
             </div>
-            <h1 className="text-base font-bold text-foreground">عذراً، حدث خطأ غير متوقع</h1>
+            <h1 className="text-base font-bold text-foreground">حدث خطأ غير متوقع</h1>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              واجه التطبيق خطأً أثناء محاولة عرض الواجهة. يمكنك محاولة إعادة تحميل الصفحة أو مسح المسودة لبدء جلسة جديدة.
+              فشل عرض الواجهة. أعد التحميل أو امسح المسودة.
             </p>
             {this.state.error && (
               <div className="text-micro font-mono bg-muted p-3 rounded-md text-left overflow-auto max-h-24 text-destructive border border-destructive/10">

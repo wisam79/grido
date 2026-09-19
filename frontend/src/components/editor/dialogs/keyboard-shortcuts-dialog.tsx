@@ -53,20 +53,20 @@ export function KeyboardShortcutsDialog() {
       title: "التحرير والتنظيم",
       items: [
         { label: "تحديد كافة العناصر", keys: ["Ctrl", "A"] },
-        { label: "تراجع عن الإجراء", keys: ["Ctrl", "Z"] },
-        { label: "إعادة الإجراء", keys: ["Ctrl", "Y"] },
+        { label: "تراجع", keys: ["Ctrl", "Z"] },
+        { label: "إعادة", keys: ["Ctrl", "Y"] },
         { label: "تكرار العنصر", keys: ["Ctrl", "D"] },
         { label: "حذف العنصر المحدد", keys: ["Delete"] },
         { label: "تجميع العناصر", keys: ["Ctrl", "G"] },
         { label: "فك التجميع", keys: ["Ctrl", "Shift", "G"] },
-        { label: "لصق صورة من الحافظة", keys: ["Ctrl", "V"] },
+        { label: "لصق صورة", keys: ["Ctrl", "V"] },
       ],
     },
     {
       title: "الملف والتصدير والطباعة",
       items: [
         { label: "إدراج صورة جديدة", keys: ["Ctrl", "O"] },
-        { label: "إدراج دفعة صور ومعاملات", keys: ["Ctrl", "Shift", "O"] },
+        { label: "إدراج دفعة", keys: ["Ctrl", "Shift", "O"] },
         { label: "حفظ المشروع", keys: ["Ctrl", "S"] },
         { label: "تصدير صورة", keys: ["Ctrl", "E"] },
         { label: "طباعة المستند", keys: ["Ctrl", "P"] },
@@ -75,20 +75,20 @@ export function KeyboardShortcutsDialog() {
     {
       title: "التحريك والمحاذاة",
       items: [
-        { label: "تحريك دقيق للعنصر (1px)", keys: ["الأسهم"] },
-        { label: "تحريك سريع للعنصر (10px)", keys: ["Shift", "الأسهم"] },
+        { label: "تحريك دقيق (1px)", keys: ["الأسهم"] },
+        { label: "تحريك سريع (10px)", keys: ["Shift", "الأسهم"] },
       ],
     },
     {
       title: "الرؤية واللوحات الجانبية",
       items: [
-        { label: "تكبير مساحة العمل", keys: ["Ctrl", "+"] },
-        { label: "تصغير مساحة العمل", keys: ["Ctrl", "-"] },
-        { label: "إعادة ضبط المقياس (100%)", keys: ["Ctrl", "0"] },
-        { label: "إظهار / إخفاء المساطر", keys: ["Ctrl", "R"] },
-        { label: "إظهار / إخفاء شبكة المحاذاة", keys: ["Ctrl", "'"] },
-        { label: "إظهار / إخفاء لوحة القوالب", keys: ["Ctrl", "B"] },
-        { label: "إظهار / إخفاء لوحة الخصائص", keys: ["Ctrl", "Shift", "B"] },
+        { label: "تكبير", keys: ["Ctrl", "+"] },
+        { label: "تصغير", keys: ["Ctrl", "-"] },
+        { label: "إعادة الضبط (100%)", keys: ["Ctrl", "0"] },
+        { label: "المساطر", keys: ["Ctrl", "R"] },
+        { label: "الشبكة", keys: ["Ctrl", "'"] },
+        { label: "القوالب", keys: ["Ctrl", "B"] },
+        { label: "الخصائص", keys: ["Ctrl", "Shift", "B"] },
       ],
     },
   ];
@@ -157,7 +157,7 @@ export function KeyboardShortcutsDialog() {
         {/* ذيل النافذة الثابت */}
         <div className="px-5 py-3 border-t border-border/40 bg-muted/20 text-center shrink-0">
           <p className="text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1.5">
-            <span>يمكنك فتح هذه النافذة دائماً بالضغط على</span>
+            <span>افتح النافذة بالضغط على</span>
             <kbd className="px-2 py-0.5 bg-background rounded-md border border-border text-xs font-mono font-bold text-foreground shadow-2xs">
               Ctrl + /
             </kbd>

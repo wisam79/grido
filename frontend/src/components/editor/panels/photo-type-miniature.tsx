@@ -12,7 +12,7 @@ export function PhotoTypeMiniature({ type, active }: { type: string; active: boo
         <GridFour className={cn("w-3.5 h-3.5 transition-colors", active ? "text-primary" : "text-muted-foreground/60")} weight="regular" />
       ) : (
         <div className={cn(
-          "rounded-[1px] border border-dashed transition-all duration-200",
+          "rounded-sm border border-dashed transition-all duration-200",
           type === "visa" ? "w-4 h-4" : 
           type === "iq-general-id" ? "w-3.5 h-6" :
           type === "iq-national-id" ? "w-4 h-6" :

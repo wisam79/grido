@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { setupWailsMock } from './helpers/wails-mock';
+import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Sticker Studio & Barcode Generator E2E', () => {
   test.beforeEach(async ({ page }) => {
     await setupWailsMock(page);
     await page.goto('/');
-    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
+    await waitForAppReady(page);
   });
 
   test('Open sticker studio dialog and browse collections', async ({ page }) => {
@@ -15,18 +15,13 @@ test.describe('Sticker Studio & Barcode Generator E2E', () => {
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
 
-      // Close dialog
-      const closeBtn = dialog.getByRole('button', { name: /إغلاق|إلغاء/ }).or(page.locator('button[aria-label="إغلاق"]')).first();
-      if (await closeBtn.isVisible()) {
-        await closeBtn.click();
-      } else {
-        await page.keyboard.press('Escape');
-      }
+      // Close dialog via Escape key
+      await page.keyboard.press('Escape');
+      await expect(dialog).not.toBeVisible();
     }
   });
 
   test('Open barcode dialog if available', async ({ page }) => {
-    // Check toolbar more menu or direct button
     const barcodeBtn = page.getByRole('button', { name: /باركود|QR/ }).or(page.getByTitle(/باركود/)).first();
     if (await barcodeBtn.isVisible()) {
       await barcodeBtn.click();

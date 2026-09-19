@@ -71,3 +71,27 @@ tasks:
     summary: Builds and runs the Docker image
     cmds:
       - task: common:run:docker
+
+  test:backend:
+    summary: Runs all Go backend unit and integration tests
+    cmds:
+      - go test -v ./internal/...
+
+  test:frontend:
+    summary: Runs frontend unit and component tests via Vitest
+    dir: frontend
+    cmds:
+      - npm run test
+
+  test:e2e:
+    summary: Runs frontend end-to-end tests via Playwright (Chromium)
+    dir: frontend
+    cmds:
+      - npm run test:e2e:fast
+
+  test:all:
+    summary: Runs complete testing suite across backend and frontend
+    cmds:
+      - task: test:backend
+      - task: test:frontend
+      - task: test:e2e

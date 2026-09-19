@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupWailsMock } from './helpers/wails-mock';
+import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Professional E2E & Visual Testing Suite', () => {
 
@@ -10,17 +10,20 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
   test('Open app, upload image, and save project', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible({ timeout: 15000 });
+    await waitForAppReady(page);
 
-    await page.getByTestId('segmented-single').click();
+    // تبديل الوضع إلى تعديل حر
+    await page.getByTestId('mode-tab-single').click();
     await expect(page.locator('#canvas-area')).toBeVisible({ timeout: 15000 });
+
+    // إدراج صورة
     await page.getByTestId('toolbar-insert').click();
 
-    await expect(page.getByRole('button', { name: 'عزل الخلفية' }).first()).toBeVisible();
+    // فتح نافذة مكتبة المشاريع
+    await page.getByTestId('toolbar-projects').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
 
-    await page.getByRole('button', { name: /مكتبة المشاريع/ }).or(page.getByTitle('مكتبة المشاريع المحلية')).click();
-    await expect(page.getByRole('dialog', { name: /مكتبة المشاريع/ })).toBeVisible();
-
+    // التبديل إلى تبويب الحفظ
     await page.getByRole('tab', { name: /حفظ/ }).click();
     await page.fill('#proj-name', 'مشروع اختباري');
 

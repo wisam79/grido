@@ -18,8 +18,8 @@ describe('LayersPanel Component Tests', () => {
     useEditorStore.setState({ elements: [] });
     renderWithProviders(<LayersPanel />);
 
-    expect(screen.getByText('لا توجد عناصر بعد')).toBeInTheDocument();
-    expect(screen.getByText('أضف صوراً أو نصوصاً أو أشكالاً من شريط الأدوات')).toBeInTheDocument();
+    expect(screen.getByText('لا توجد عناصر')).toBeInTheDocument();
+    expect(screen.getByText('أضف عناصر من شريط الأدوات')).toBeInTheDocument();
   });
 
   it('renders element list with correct labels and icons', () => {

@@ -90,7 +90,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               <span className="text-xs font-bold text-foreground block truncate">
                 {isLine ? "لون الخط" : "لون الشكل"}
               </span>
-              <span className="text-[10px] text-muted-foreground block truncate">
+              <span className="text-micro text-muted-foreground block truncate">
                 {element.fillType === "linear" ? "تدرج خطي" : element.fillType === "radial" ? "تدرج شعاعي" : "لون مصمت"}
               </span>
             </div>
@@ -120,7 +120,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                     <Sparkle className="w-4 h-4 text-primary" weight="duotone" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top">الانتقال لاستوديو الألوان والتدرجات</TooltipContent>
+                <TooltipContent side="top">استوديو الألوان والتدرجات</TooltipContent>
               </Tooltip>
             )}
           </div>
@@ -152,7 +152,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                   key={preset.label}
                   type="button"
                   className={cn(
-                    "h-6 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
+                    "h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
                     isActive
                       ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
                       : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium"
@@ -210,7 +210,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                     key={preset.label}
                     type="button"
                     className={cn(
-                      "h-6 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
+                      "h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
                       isActive
                         ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
                         : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium"
@@ -247,7 +247,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
       {/* بطاقة 1: التعبئة والتدرج */}
       <FluentSection
         icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
-        title="تعبئة ولون الشكل"
+        title="تعبئة الشكل"
         collapsible
         defaultOpen={true}
       >
@@ -310,7 +310,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
       {!isLine && (
         <FluentSection
           icon={<BoundingBox className="w-4 h-4 text-primary" weight="duotone" />}
-          title="لون الحد والإطار"
+          title="لون الحد"
         >
           <div className="flex items-center justify-between gap-4">
             <span className="text-xs font-semibold text-foreground/90">لون الحد</span>
@@ -327,7 +327,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
           </div>
 
           <div className="space-y-1 pt-1 border-t border-border/30">
-            <span className="text-micro font-semibold text-muted-foreground block">ألوان سريعة للحد</span>
+            <span className="text-micro font-semibold text-muted-foreground block">ألوان الحد</span>
             <QuickColorPalette
               currentColor={currentStroke}
               onSelectColor={(col) => {
@@ -366,7 +366,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
               key={pct}
               type="button"
               className={cn(
-                "h-6 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
+                "h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
                 currentOpacity === pct
                   ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
                   : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium"

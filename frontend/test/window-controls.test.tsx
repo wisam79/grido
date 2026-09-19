@@ -25,9 +25,9 @@ describe('WindowControls Unit Tests', () => {
       />
     );
 
-    expect(screen.getByLabelText('تصغير النافذة')).toBeDefined();
-    expect(screen.getByLabelText('تكبير النافذة')).toBeDefined();
-    expect(screen.getByLabelText('إغلاق التطبيق')).toBeDefined();
+    expect(screen.getByLabelText('تصغير')).toBeDefined();
+    expect(screen.getByLabelText('تكبير')).toBeDefined();
+    expect(screen.getByLabelText('إغلاق')).toBeDefined();
   });
 
   it('handles click events properly', () => {
@@ -44,13 +44,13 @@ describe('WindowControls Unit Tests', () => {
       />
     );
 
-    fireEvent.click(screen.getByLabelText('تصغير النافذة'));
+    fireEvent.click(screen.getByLabelText('تصغير'));
     expect(onMinimize).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByLabelText('تكبير النافذة'));
+    fireEvent.click(screen.getByLabelText('تكبير'));
     expect(onMaximize).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByLabelText('إغلاق التطبيق'));
+    fireEvent.click(screen.getByLabelText('إغلاق'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -64,6 +64,6 @@ describe('WindowControls Unit Tests', () => {
       />
     );
 
-    expect(screen.getByLabelText('استعادة حجم النافذة')).toBeDefined();
+    expect(screen.getByLabelText('استعادة')).toBeDefined();
   });
 });

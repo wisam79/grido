@@ -379,7 +379,7 @@ export const StickerPreview = React.memo(function StickerPreview({
         {/* Bottom Dock: Environment Swatches (Icon/Dot-Driven) & Zoom */}
         <div
           role="toolbar"
-          aria-label="خلفية المعاينة والتكبير"
+          aria-label="خلفية وتكبير"
           className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 p-1 bg-card/90 backdrop-blur-md rounded-xl border border-border/50 shadow-fluent-8"
         >
           {MOCKUP_OPTIONS.map((opt) => {
@@ -421,7 +421,7 @@ export const StickerPreview = React.memo(function StickerPreview({
               handleZoomOut();
             }}
             disabled={zoomLevel <= 0.5}
-            aria-label="تصغير المعاينة"
+            aria-label="تصغير معاينة"
             className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
             title="تصغير"
           >
@@ -440,7 +440,7 @@ export const StickerPreview = React.memo(function StickerPreview({
               handleZoomIn();
             }}
             disabled={zoomLevel >= 2.5}
-            aria-label="تكبير المعاينة"
+            aria-label="تكبير معاينة"
             className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
             title="تكبير"
           >
@@ -458,7 +458,7 @@ export const StickerPreview = React.memo(function StickerPreview({
                 ? "text-primary font-bold hover:bg-primary/10"
                 : "text-muted-foreground/60"
             )}
-            title="إعادة ضبط 100%"
+            title="إعادة ضبط"
           >
             1:1
           </button>

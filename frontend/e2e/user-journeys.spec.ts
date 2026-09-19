@@ -1,24 +1,24 @@
 import { test, expect } from '@playwright/test';
-import { setupWailsMock } from './helpers/wails-mock';
+import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Integrated User Journeys E2E', () => {
   test.beforeEach(async ({ page }) => {
     await setupWailsMock(page);
     await page.goto('/');
-    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
+    await waitForAppReady(page);
   });
 
   test('Complete User Journey: Import image, edit, switch to collage, and trigger export', async ({ page }) => {
     // 1. Add image to canvas
-    await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: 'إدراج صورة جديدة' }).click();
+    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
+    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
     // 2. Switch to Collage Mode
-    await page.getByRole('tab', { name: 'كولاج', exact: true }).click();
+    await page.getByTestId('mode-tab-collage').or(page.getByRole('tab', { name: 'كولاج', exact: true })).first().click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    // 4. Open Export dialog
+    // 3. Open Export dialog
     const exportBtn = page.getByRole('button', { name: /تصدير/ }).or(page.getByTitle(/تصدير/)).first();
     await exportBtn.click();
 

@@ -57,7 +57,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             <button
               type="button"
               onClick={(e) => e.stopPropagation()}
-              className="absolute top-2.5 end-2.5 z-10 w-6 h-6 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="absolute top-2.5 end-2.5 z-10 w-6 h-6 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
               title="حذف القالب"
             >
               <Trash className="w-3.5 h-3.5" weight="regular" />
@@ -70,7 +70,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
                 <span>حذف القالب</span>
               </AlertDialogTitle>
               <AlertDialogDescription className="text-start">
-                سيتم حذف القالب نهائياً. هل تريد المتابعة؟
+                سيُحذف القالب نهائياً. متابعة؟
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="font-cairo">

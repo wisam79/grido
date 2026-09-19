@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupWailsMock } from './helpers/wails-mock';
+import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Background Removal Smoke Test', () => {
 
@@ -9,9 +9,10 @@ test.describe('Background Removal Smoke Test', () => {
 
   test('Upload image and expose background removal controls', async ({ page }) => {
     await page.goto('/');
+    await waitForAppReady(page);
 
-    await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: 'إدراج صورة جديدة' }).click();
+    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
+    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
 
     await expect(page.getByRole('button', { name: 'عزل الخلفية' }).first()).toBeVisible();
   });

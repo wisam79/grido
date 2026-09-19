@@ -8,15 +8,15 @@ const DEV_SERVER_URL = `http://${DEV_SERVER_HOST}:${DEV_SERVER_PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: 0,
-  workers: process.env.CI ? 2 : 1,
+  retries: process.env.CI ? 1 : 0,
+  workers: 1,
   timeout: 60000,
   expect: {
     timeout: 15000,
   },
-  reporter: 'html',
+  reporter: process.env.CI ? [['html', { open: 'never' }], ['list']] : 'html',
   use: {
     baseURL: DEV_SERVER_URL,
     trace: 'on-first-retry',

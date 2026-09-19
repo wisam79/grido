@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import type { CanvasElement } from "@/lib/store/types";
 import { GeneralSettings } from "../properties/general-settings";
@@ -15,7 +15,7 @@ export interface PropertiesPanelProps {
   onCollapse?: () => void;
 }
 
-export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
+export const PropertiesPanel = React.memo(function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
   const {
     mode,
     elements,
@@ -148,5 +148,5 @@ export function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
       </div>
     </PanelShell>
   );
-}
+});
 

@@ -242,7 +242,7 @@ export function DocumentScannerDialog({
     setDetectedDocs((prev) =>
       prev.map((doc, idx) => (idx === detection.activeDocIndex ? { ...doc, corners: resetPts } : doc))
     );
-    toast.info("تمت إعادة ضبط الأركان");
+    toast.info("أُعيد ضبط الأركان");
   };
 
   const handleRotateClockwise = () => {
@@ -289,7 +289,7 @@ export function DocumentScannerDialog({
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
                 <DialogTitle className="text-base font-bold text-foreground truncate">
-                  ماسح وتقويم المستندات والبطاقات
+                  ماسح المستندات والبطاقات
                 </DialogTitle>
                 {detectedDocs.length > 1 ? (
                   <span className="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-micro px-2 py-0.5 font-bold rounded-full shadow-2xs">
@@ -302,7 +302,7 @@ export function DocumentScannerDialog({
                 )}
               </div>
               <span className="text-xs font-normal text-muted-foreground mt-0.5 truncate">
-                استعدال المنظور وتبييض الورقة تلقائياً للطباعة بدقة عالية
+                استعدال المنظور وتبييض الورقة تلقائياً
               </span>
             </div>
           </div>
@@ -322,24 +322,24 @@ export function DocumentScannerDialog({
                 {isDetecting ? (
                   <>
                     <ArrowClockwise size={13} weight="bold" className="text-primary shrink-0 animate-spin" />
-                    <span>جاري فحص الحواف واكتشاف المستندات ...</span>
+                    <span>جاري اكتشاف المستندات ...</span>
                   </>
                 ) : isPreviewMode ? (
                   <>
                     <Eye size={13} weight="duotone" className="text-blue-500 shrink-0" />
-                    <span>معاينة المستند بعد الاستعدال والمعالجة</span>
+                    <span>معاينة المستند بعد الاستعدال</span>
                   </>
                 ) : detectedDocs.length > 1 ? (
                   <>
                     <FileText size={13} weight="duotone" className="text-emerald-500 shrink-0" />
                     <span>
-                      تم تحديد {detectedDocs.length} مستندات — انقر على أي مستند أو اضغط أرقام (1-{detectedDocs.length}) للتبديل
+                      تم تحديد {detectedDocs.length} مستندات — اضغط (1-{detectedDocs.length}) للتبديل
                     </span>
                   </>
                 ) : (
                   <>
                     <Sparkle size={13} weight="duotone" className="text-primary shrink-0" />
-                    <span>اسحب الدبابيس لضبط الحدود</span>
+                    <span>اسحب الدبابيس للضبط</span>
                   </>
                 )}
               </div>

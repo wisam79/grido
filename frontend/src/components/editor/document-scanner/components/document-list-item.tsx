@@ -51,12 +51,12 @@ export const DocumentListItem: React.FC<DocumentListItemProps> = ({
             onToggleCheck(doc.id);
           }}
           className={cn(
-            "w-4 h-4 rounded flex items-center justify-center border transition-all cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+            "w-4 h-4 rounded flex items-center justify-center border transition-all cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             isSelected
               ? "bg-emerald-500 border-emerald-400 text-white shadow-2xs"
               : "border-muted-foreground/40 bg-background/60 hover:border-emerald-400"
           )}
-          title={isSelected ? "إلغاء تضمين هذا المستند" : "تضمين هذا المستند في الإدراج"}
+          title={isSelected ? "إلغاء التضمين" : "تضمين في الإدراج"}
         >
           {isSelected && <Check size={11} weight="bold" />}
         </button>
@@ -87,7 +87,7 @@ export const DocumentListItem: React.FC<DocumentListItemProps> = ({
                 <X size={11} weight="bold" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top">حذف هذا المستند</TooltipContent>
+            <TooltipContent side="top">حذف</TooltipContent>
           </Tooltip>
         )}
       </div>

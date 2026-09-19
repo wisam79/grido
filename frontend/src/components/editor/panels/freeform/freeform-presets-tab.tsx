@@ -71,7 +71,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
   // تبديل اتجاه الورقة (أفقي / رأسي)
   const handleToggleOrientation = () => {
     setCanvasSize(canvasHeight, canvasWidth);
-    toast.success("تم تبديل اتجاه الكانفاس (أفقي / رأسي)");
+    toast.success("تم تبديل الاتجاه");
   };
 
   return (
@@ -94,7 +94,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
           type="button"
           onClick={handleToggleOrientation}
           className="flex items-center gap-1 text-micro font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer bg-muted/60 hover:bg-muted px-2 py-1 rounded-md border border-border/60 shadow-2xs active:scale-95 shrink-0 select-none"
-          title="تبديل الاتجاه بين أفقي وعمودي"
+          title="تبديل الاتجاه"
         >
           <ArrowsClockwise className="w-3 h-3" />
           <span>{canvasWidth >= canvasHeight ? "أفقي" : "رأسي"}</span>
@@ -128,7 +128,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
               onClick={() => handleSelectPreset(preset)}
               title={`${preset.name} - ${preset.tag}`}
               className={cn(
-                "group w-full h-9 px-2.5 rounded-lg border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2 select-none active:scale-[0.99] text-right",
+                "group w-full h-9 px-2.5 rounded-md border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2 select-none active:scale-[0.99] text-right",
                 active
                   ? "bg-card border-border/90 text-foreground shadow-xs ring-1 ring-primary/40 font-bold"
                   : "bg-card/40 hover:bg-accent/60 border-border/50 hover:border-primary/40 text-foreground/90"

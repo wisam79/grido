@@ -42,7 +42,7 @@ describe('PhoneBridgeDialog Component Tests', () => {
     renderWithProviders(<PhoneBridgeDialog open={true} onOpenChange={vi.fn()} />);
 
     expect(screen.getByText('جسر كاميرا الهاتف')).toBeInTheDocument();
-    expect(screen.getByText('التقاط الصور من هاتفك مباشرة إلى مساحة العمل')).toBeInTheDocument();
+    expect(screen.getByText('الصور من هاتفك إلى مساحة العمل')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(AppWails.StartPhoneBridge).toHaveBeenCalled();
@@ -55,7 +55,7 @@ describe('PhoneBridgeDialog Component Tests', () => {
     await waitFor(() => {
       expect(screen.getByText('الجسر متصل ويعمل')).toBeInTheDocument();
       expect(screen.getByText('192.168.1.100:8080')).toBeInTheDocument();
-      expect(screen.getByText('الصور المستلمة في هذه الجلسة:')).toBeInTheDocument();
+      expect(screen.getByText('الصور المستلمة:')).toBeInTheDocument();
       expect(screen.getByText('3')).toBeInTheDocument();
     });
   });

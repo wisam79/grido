@@ -87,12 +87,12 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       onPointerCancel={onPointerCancel}
       onKeyDown={(e) => onKeyDown(e, slot.id)}
       className={cn(
-        "absolute rounded-[3px] cursor-move select-none overflow-hidden touch-none",
+        "absolute rounded-sm cursor-move select-none overflow-hidden touch-none",
         "transition-[border-color,background-color,box-shadow] duration-150",
         isSelected
           ? "border-2 border-primary bg-primary/10 ring-2 ring-primary/25 z-20 shadow-md"
           : isMultiSelected
-          ? "border-2 border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20 z-[15] shadow-xs"
+          ? "border-2 border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20 z-(--z-canvas-overlay) shadow-xs"
           : "border border-border/70 bg-muted/80 hover:border-primary/40 hover:bg-background z-10 shadow-2xs fluent-specular group/slot"
       )}
       style={{
@@ -119,7 +119,7 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       {/* شارة الرقم — تظهر عند التحديد أو التحويم فقط */}
       <div
         className={cn(
-          "absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-[3px] text-2xs font-black flex items-center justify-center pointer-events-none transition-all duration-150 leading-none",
+          "absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-sm text-2xs font-black flex items-center justify-center pointer-events-none transition-all duration-150 leading-none",
           isSelected
             ? "bg-primary text-primary-foreground opacity-100 shadow-xs"
             : isMultiSelected
@@ -139,7 +139,7 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       >
         <span
           className={cn(
-            "text-3xs font-mono font-bold px-1 py-px rounded-[3px] leading-none whitespace-nowrap",
+            "text-3xs font-mono font-bold px-1 py-px rounded-sm leading-none whitespace-nowrap",
             isSelected
               ? "bg-primary text-primary-foreground"
               : "bg-foreground/80 text-background"

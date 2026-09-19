@@ -270,7 +270,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         onOpenChange(next);
       }}
     >
-      <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border bg-card rounded-2xl shadow-fluent-16 p-0 gap-0 fluent-specular" dir="rtl">
+      <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-2xl shadow-fluent-28 p-0 gap-0 fluent-specular fluent-acrylic" dir="rtl">
         {/* رأس النافذة */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
           <div className="flex items-center justify-between gap-3">
@@ -280,7 +280,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <span>إعدادات الطباعة</span>
               </DialogTitle>
               <DialogDescription className="text-xs font-medium text-muted-foreground mt-0.5 truncate">
-                اختر مقاس الورقة ونمط الألوان، ثم اضبط الهوامش وخطوط القص
+                مقاس الورقة والألوان والهوامش وخطوط القص
               </DialogDescription>
             </div>
             <DialogCloseButton onClick={() => onOpenChange(false)} />

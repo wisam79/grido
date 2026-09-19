@@ -82,7 +82,7 @@ export function AccountLicenseModal() {
 
   const confirmLogout = async () => {
     await logoutAccount();
-    toast.info("تم تسجيل الخروج بنجاح.");
+    toast.info("تم تسجيل الخروج.");
     forms.setAuthMode("login");
     setActiveTab("auth");
   };
@@ -117,7 +117,7 @@ export function AccountLicenseModal() {
                   الحساب والترخيص
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground/80 mt-0.5 truncate">
-                  {user && user.token ? "إدارة اشتراكك وحسابك السحابي" : "سجل دخولك لتفعيل ميزات الذكاء الاصطناعي والمزامنة"}
+                  {user && user.token ? "إدارة اشتراكك وحسابك السحابي" : "سجّل لتفعيل الذكاء الاصطناعي والمزامنة"}
                 </DialogDescription>
               </div>
             </div>
@@ -214,13 +214,13 @@ export function AccountLicenseModal() {
                 id: "auth",
                 label: "الحساب",
                 icon: <User className="w-3.5 h-3.5" weight="bold" />,
-                tooltip: "تسجيل الدخول أو إنشاء حساب",
+                tooltip: "دخول أو إنشاء حساب",
               },
               {
                 id: "license",
                 label: "الترخيص",
                 icon: <Key className="w-3.5 h-3.5" weight="bold" />,
-                tooltip: "مفتاح ترخيص البرنامج",
+                tooltip: "مفتاح الترخيص",
               },
             ]}
           />

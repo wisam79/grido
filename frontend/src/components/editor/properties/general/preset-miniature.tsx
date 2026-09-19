@@ -14,10 +14,10 @@ export function PresetMiniature({ id, active }: { id: string; active: boolean })
     >
       {isOther ? (
         <div className="relative w-4 h-4 flex items-center justify-center">
-          <div className="absolute w-3.5 h-4 border border-muted-foreground/45 rounded-[1px] bg-muted/30 -rotate-6 -translate-x-0.5" />
+          <div className="absolute w-3.5 h-4 border border-muted-foreground/45 rounded-sm bg-muted/30 -rotate-6 -translate-x-0.5" />
           <div
             className={cn(
-              "absolute w-3.5 h-4 border rounded-[1px] rotate-6 translate-x-0.5 transition-all",
+              "absolute w-3.5 h-4 border rounded-sm rotate-6 translate-x-0.5 transition-all",
               active ? "border-primary bg-primary/25" : "border-muted-foreground/60 bg-muted/40"
             )}
           />
@@ -26,7 +26,7 @@ export function PresetMiniature({ id, active }: { id: string; active: boolean })
         // A3: Large ISO Sheet (Tall 1:1.41)
         <div
           className={cn(
-            "w-4 h-6 rounded-[2px] border transition-all duration-200 relative flex items-center justify-center",
+            "w-4 h-6 rounded-sm border transition-all duration-200 relative flex items-center justify-center",
             active ? "border-primary/90 bg-primary/25" : "border-muted-foreground/50 bg-muted/40"
           )}
         >
@@ -36,7 +36,7 @@ export function PresetMiniature({ id, active }: { id: string; active: boolean })
         // A4: Standard ISO Sheet (1:1.41)
         <div
           className={cn(
-            "w-3.5 h-5 rounded-[2px] border transition-all duration-200 relative flex items-center justify-center",
+            "w-3.5 h-5 rounded-sm border transition-all duration-200 relative flex items-center justify-center",
             active ? "border-primary/90 bg-primary/25" : "border-muted-foreground/50 bg-muted/40"
           )}
         >
@@ -54,26 +54,26 @@ export function PresetMiniature({ id, active }: { id: string; active: boolean })
         // 4x6 Photo: Landscape 3:2 Photo Print Frame
         <div
           className={cn(
-            "w-6 h-3.5 rounded-[2px] border transition-all duration-200 relative flex items-center justify-center",
+            "w-6 h-3.5 rounded-sm border transition-all duration-200 relative flex items-center justify-center",
             active ? "border-primary/90 bg-primary/25" : "border-muted-foreground/50 bg-muted/40"
           )}
         >
-          <div className={cn("w-3.5 h-1.5 rounded-[1px] border border-dashed", active ? "border-primary/40" : "border-muted-foreground/30")} />
+          <div className={cn("w-3.5 h-1.5 rounded-sm border border-dashed", active ? "border-primary/40" : "border-muted-foreground/30")} />
         </div>
       ) : id === "5x7" ? (
         // 5x7 Photo: Wider 7:5 Photo Print Frame
         <div
           className={cn(
-            "w-5 h-3.5 rounded-[2px] border transition-all duration-200 relative flex items-center justify-center",
+            "w-5 h-3.5 rounded-sm border transition-all duration-200 relative flex items-center justify-center",
             active ? "border-primary/90 bg-primary/25" : "border-muted-foreground/50 bg-muted/40"
           )}
         >
-          <div className={cn("w-3 h-1.5 rounded-[1px] border border-dashed", active ? "border-primary/40" : "border-muted-foreground/30")} />
+          <div className={cn("w-3 h-1.5 rounded-sm border border-dashed", active ? "border-primary/40" : "border-muted-foreground/30")} />
         </div>
       ) : (
         <div
           className={cn(
-            "w-3.5 h-5 rounded-[2px] border transition-all duration-200",
+            "w-3.5 h-5 rounded-sm border transition-all duration-200",
             active ? "border-primary/80 bg-primary/30" : "border-muted-foreground/50 bg-muted/40"
           )}
         />

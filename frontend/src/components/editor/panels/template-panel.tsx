@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { CollageTemplate } from "@/lib/templates";
@@ -17,18 +17,8 @@ import type { NormalizedCell } from "./collage/collage-grid-math";
 import { toErrorMessage } from "@/lib/wails-error";
 import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
-import {
-  GridFour,
-  SquaresFour,
-  MagicWand,
-  CaretLeft,
-  Sparkle,
-  Stack,
-  FrameCorners,
-  Stamp,
-  Shapes,
-  TextT,
-} from "@phosphor-icons/react";
+import { CaretLeft } from "@phosphor-icons/react";
+import { getCollageTool, getStudioTool } from "@/lib/workspace-tools";
 import { useShallow } from "zustand/react/shallow";
 import { FreeformStudioPanel } from "./freeform";
 import type { FreeformTab } from "./freeform/freeform-panel-constants";
@@ -45,7 +35,7 @@ export interface TemplatePanelProps {
   showInternalCollageTabs?: boolean;
 }
 
-export function TemplatePanel({
+export const TemplatePanel = React.memo(function TemplatePanel({
   onCollapse,
   activeStudioTab = "layers",
   onActiveStudioTabChange,
@@ -88,9 +78,9 @@ export function TemplatePanel({
     setCollageTemplate(t);
   };
 
-  const droppedCount = pendingTemplate
+  const droppedCount = useMemo(() => pendingTemplate
     ? Math.max(0, new Set(slots.filter((s) => s.imageSrc).map((s) => s.imageSrc)).size - (pendingTemplate.cells?.length ?? pendingTemplate.slots))
-    : 0;
+    : 0, [pendingTemplate, slots]);
 
   const loadTemplates = useCallback(async () => {
     try {
@@ -108,18 +98,17 @@ export function TemplatePanel({
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTemplates();
   }, [loadTemplates]);
 
   const handleSaveTemplate = async (name: string, cells: NormalizedCell[]) => {
     try {
       await SaveCustomTemplate(name, cells.length, JSON.stringify(cells));
-      toast.success("تم حفظ القالب بنجاح");
+      toast.success("تم حفظ القالب");
       loadTemplates();
     } catch (e) {
       console.error(e);
-      toast.error(toErrorMessage(e, "حدث خطأ أثناء حفظ القالب"));
+      toast.error(toErrorMessage(e, "فشل حفظ القالب"));
     }
   };
 
@@ -129,7 +118,7 @@ export function TemplatePanel({
       const numericId = parseInt(id.replace("collage-user-", ""));
       if (!isNaN(numericId)) {
         await DeleteCustomTemplate(numericId);
-        toast.success("تم حذف القالب بنجاح");
+        toast.success("تم حذف القالب");
         loadTemplates();
       }
     } catch (err) {
@@ -138,84 +127,17 @@ export function TemplatePanel({
     }
   };
 
-  const studioIcon =
-    activeStudioTab === "layers" ? (
-      <Stack className="w-4 h-4 text-primary" weight="duotone" />
-    ) : activeStudioTab === "stickers" ? (
-      <Stamp className="w-4 h-4 text-primary" weight="duotone" />
-    ) : activeStudioTab === "shapes" ? (
-      <Shapes className="w-4 h-4 text-primary" weight="duotone" />
-    ) : activeStudioTab === "text" ? (
-      <TextT className="w-4 h-4 text-primary" weight="duotone" />
-    ) : activeStudioTab === "presets" ? (
-      <FrameCorners className="w-4 h-4 text-primary" weight="duotone" />
-    ) : (
-      <Sparkle className="w-4 h-4 text-primary" weight="duotone" />
-    );
-
-  const studioTitle =
-    activeStudioTab === "layers"
-      ? "الطبقات"
-      : activeStudioTab === "stickers"
-      ? "الملصقات والشارات"
-      : activeStudioTab === "shapes"
-      ? "الأشكال والتصاميم"
-      : activeStudioTab === "text"
-      ? "النصوص الجاهزة"
-      : activeStudioTab === "presets"
-      ? "المقاسات والورق"
-      : "استوديو التصميم";
-
-  const studioSubtitle =
-    activeStudioTab === "layers"
-      ? "ترتيب وتحديد عناصر الكانفاس"
-      : activeStudioTab === "stickers"
-      ? "أختام وشارات وبطاقات جاهزة"
-      : activeStudioTab === "shapes"
-      ? "أشكال هندسية ورسوم وتصاميم"
-      : activeStudioTab === "text"
-      ? "عناوين وتأثيرات طباعية جاهزة"
-      : activeStudioTab === "presets"
-      ? "نماذج طباعة ومقاسات مخصصة"
-      : "الطبقات والعناصر والمقاسات";
-
-  const collageIcon =
-    activeCollageTab === "presets" ? (
-      <SquaresFour className="w-4 h-4 text-primary" weight="duotone" />
-    ) : activeCollageTab === "freeform" ? (
-      <MagicWand className="w-4 h-4 text-primary" weight="duotone" />
-    ) : (
-      <GridFour className="w-4 h-4 text-primary" weight="duotone" />
-    );
-
-  const collageTitle =
-    activeCollageTab === "presets"
-      ? "قوالب الكولاج"
-      : activeCollageTab === "freeform"
-      ? "كولاج حر بالملم"
-      : "شبكة الكولاج";
-
-  const collageSubtitle =
-    activeCollageTab === "presets"
-      ? "نماذج الاستوديو والتشكيلات الجاهزة"
-      : activeCollageTab === "freeform"
-      ? "تصميم وتقسيم شبكات مخصصة بالملم"
-      : "تخصيص الصفوف والأعمدة والمقاسات";
-
-  const collageCollapseTitle =
-    activeCollageTab === "presets"
-      ? "إخفاء قوالب الكولاج (Ctrl+B)"
-      : activeCollageTab === "freeform"
-      ? "إخفاء الكولاج الحر (Ctrl+B)"
-      : "إخفاء شبكة الكولاج (Ctrl+B)";
+  // العنوان والوصف والأيقونة تُقرأ من سجل الأدوات الموحّد (كانت 4 سلاسل شروط ثلاثية)
+  const activeTool = mode === "collage" ? getCollageTool(activeCollageTab) : getStudioTool(activeStudioTab);
+  const ActiveToolIcon = activeTool.icon;
 
   return (
     <PanelShell
-      icon={mode === "collage" ? collageIcon : studioIcon}
-      title={mode === "collage" ? collageTitle : studioTitle}
-      subtitle={mode === "collage" ? collageSubtitle : studioSubtitle}
+      icon={<ActiveToolIcon className="w-4 h-4 text-primary" weight="duotone" />}
+      title={activeTool.title}
+      subtitle={activeTool.subtitle}
       onCollapse={onCollapse}
-      collapseTitle={mode === "collage" ? collageCollapseTitle : `إخفاء ${studioTitle} (Ctrl+B)`}
+      collapseTitle={`إخفاء ${activeTool.label} (Ctrl+B)`}
       collapseIcon={<CaretLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all" weight="bold" />}
       className="bg-transparent select-none"
     >
@@ -240,7 +162,7 @@ export function TemplatePanel({
                 imported++;
               }
             }
-            toast.success(`تم استيراد ${imported} قالب بنجاح`);
+            toast.success(`تم استيراد ${imported} قالب`);
             loadTemplates();
           } catch (err) {
             toast.error(toErrorMessage(err, "ملف غير صالح للاستيراد"));
@@ -272,14 +194,14 @@ export function TemplatePanel({
         <AlertDialogContent dir="rtl" className="font-cairo rounded-2xl border fluent-specular">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-start text-base font-bold">
-              {droppedCount > 0 ? "تبديل قالب الكولاج" : "الانتقال إلى وضع الكولاج"}
+              {droppedCount > 0 ? "تبديل قالب الكولاج" : "وضع الكولاج"}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-start text-xs text-muted-foreground leading-relaxed">
               {droppedCount > 0 && mode === "collage"
-                ? `سيتم حذف ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} موجودة لا تتسع للقالب الجديد. هل تريد المتابعة؟`
+                ? `سيتم حذف ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} لا تتسع للقالب الجديد. متابعة؟`
                 : droppedCount > 0
-                  ? `سيتم حذف ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} موجودة ومسح عناصر الوضع الحر الحالية. هل تريد المتابعة؟`
-                  : "سيتم مسح عناصر الوضع الحر الحالية عند التحويل إلى وضع الكولاج. هل تريد المتابعة؟"}
+                  ? `سيتم حذف ${droppedCount} ${droppedCount === 1 ? "صورة" : "صور"} ومسح عناصر الوضع الحر. متابعة؟`
+                  : "سيتم مسح عناصر الوضع الحر عند التحويل للكولاج. متابعة؟"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -298,4 +220,4 @@ export function TemplatePanel({
       </AlertDialog>
     </PanelShell>
   );
-}
+});

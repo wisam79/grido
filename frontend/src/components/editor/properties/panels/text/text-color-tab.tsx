@@ -19,7 +19,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
       {/* 🎴 بطاقة 1: تعبئة ولون النص */}
       <FluentSection
         icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
-        title="تعبئة ولون النص"
+        title="تعبئة النص"
         collapsible
         defaultOpen={true}
         action={
@@ -108,7 +108,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
               }}
               aria-label={hasStroke ? "مفعّل" : "إضافة"}
               className={cn(
-                "h-6 px-2.5 rounded-full text-micro font-bold transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1.5 border select-none",
+                "h-7 px-2.5 rounded-full text-micro font-bold transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1.5 border select-none",
                 hasStroke
                   ? "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
                   : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border-border/60"
@@ -127,7 +127,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
               <div className="flex items-center justify-between text-micro font-bold text-muted-foreground px-0.5">
                 <span>لون الحد</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-[10px] text-muted-foreground/70 uppercase select-none" dir="ltr">
+                  <span className="font-mono text-micro text-muted-foreground/70 uppercase select-none" dir="ltr">
                     {currentStroke}
                   </span>
                   <PopoverColorPicker
@@ -168,7 +168,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
       {hasBadge && (
         <FluentSection
           icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
-          title="ألوان خلفية وشارة النص"
+          title="ألوان الخلفية والشارة"
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-foreground/80">لون الخلفية</span>
@@ -184,7 +184,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
 
           {(element.textBgBorderWidth ?? 0) > 0 && (
             <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/30">
-              <span className="text-xs font-semibold text-foreground/80">لون إطار الشارة</span>
+              <span className="text-xs font-semibold text-foreground/80">إطار الشارة</span>
               <PopoverColorPicker
                 color={element.textBgBorderColor || "#000000"}
                 onChange={(val) => {

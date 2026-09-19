@@ -103,14 +103,14 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
               id: "single",
               label: "مفرد",
               icon: <Sparkle size={13} weight={detectionMode === "single" ? "fill" : "bold"} className="shrink-0" />,
-              tooltip: "مسح مستند مفرد",
+              tooltip: "مسح مستند",
               disabled: isDetecting,
             },
             {
               id: "multi",
               label: "متعدد",
               icon: <SquaresFour size={13} weight={detectionMode === "multi" ? "fill" : "bold"} className="shrink-0" />,
-              tooltip: "مسح بطاقات ومستندات متعددة",
+              tooltip: "مسح متعدد",
               disabled: isDetecting,
             },
           ]}
@@ -199,7 +199,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                       <span>إضافة</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">إضافة مستند أو بطاقة إضافية يدوياً</TooltipContent>
+                  <TooltipContent side="top">إضافة مستند أو بطاقة يدوياً</TooltipContent>
                 </Tooltip>
               )}
             </div>
@@ -229,7 +229,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
           <MagicWand size={15} weight="duotone" className="text-primary shrink-0" />
-          <span>تصفية ومعالجة الورقة</span>
+          <span>فلاتر الورقة</span>
         </Label>
         <div className="grid grid-cols-2 gap-1.5">
           <Tooltip>
@@ -249,7 +249,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <span>أصلي</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">الاحتفاظ بألوان وإضاءة الصورة الأصلية</TooltipContent>
+            <TooltipContent side="left">ألوان وإضاءة الصورة الأصلية</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -269,7 +269,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <span>ذكي</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">تبييض الورقة وإزالة الظلال وتوضيح النصوص</TooltipContent>
+            <TooltipContent side="left">تبييض الورقة وإزالة الظلال</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -289,7 +289,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <span>رمادي</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">تدرج رمادي ناعم لطباعة الليزر</TooltipContent>
+            <TooltipContent side="left">رمادي ناعم للطباعة</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -309,7 +309,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <span>أبيض وأسود</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">عزل ثنائي عالي التباين للنصوص الرسمية</TooltipContent>
+            <TooltipContent side="left">أبيض/أسود عالي التباين</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -329,7 +329,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <span>شحذ</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">شحذ فائق للحروف الدقيقة والأختام والباركود</TooltipContent>
+            <TooltipContent side="left">شحذ الحروف والأختام</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -349,7 +349,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <span>إزالة الاصفرار</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">إزالة الاصفرار من الورق القديم والوثائق التاريخية</TooltipContent>
+            <TooltipContent side="left">إزالة اصفرار الورق القديم</TooltipContent>
           </Tooltip>
         </div>
       </div>
@@ -358,7 +358,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
           <Crop size={15} weight="duotone" className="text-primary shrink-0" />
-          <span>قياس ونسبة المستند</span>
+          <span>نسبة المستند</span>
         </Label>
         <div className="grid grid-cols-2 gap-1.5">
           <Button
@@ -447,7 +447,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <span>90° يساراً</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">تدوير المستند 90 درجة عكس عقارب الساعة</TooltipContent>
+            <TooltipContent side="top">تدوير عكس عقارب الساعة</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -462,7 +462,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 <span>90° يميناً</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">تدوير المستند 90 درجة مع عقارب الساعة</TooltipContent>
+            <TooltipContent side="top">تدوير مع عقارب الساعة</TooltipContent>
           </Tooltip>
         </div>
 

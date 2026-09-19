@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
+import { COLLAGE_TOOLS, STUDIO_TOOLS } from "@/lib/workspace-tools";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
@@ -160,51 +161,35 @@ export function useKeyboardShortcuts() {
     window.dispatchEvent(new CustomEvent("grido:toggle-left-sidebar"));
   });
 
-  // Switch Studio / Collage Tabs: Alt+1 to Alt+5
-  useHotkeys("alt+1", (e) => {
+  // Switch Studio / Collage Tabs: Alt+1 … Alt+9 — مفهرسة من سجل الأدوات الموحّد
+  // (كانت مكتوبة يدوياً لكل تبويب؛ الربط بالفهرس يوسّعها تلقائياً عند إضافة أداة)
+  const selectTabByIndex = (e: KeyboardEvent, index: number) => {
     e.preventDefault();
-    const currentMode = useEditorStore.getState().mode;
-    if (currentMode === "collage") {
-      window.dispatchEvent(new CustomEvent("grido:select-collage-tab", { detail: { tab: "custom" } }));
-    } else {
-      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "layers" } }));
-    }
-  });
+    const isCollage = useEditorStore.getState().mode === "collage";
+    const tools = isCollage ? COLLAGE_TOOLS : STUDIO_TOOLS;
+    const tool = tools[index];
+    if (!tool) return;
+    window.dispatchEvent(
+      new CustomEvent(isCollage ? "grido:select-collage-tab" : "grido:select-studio-tab", {
+        detail: { tab: tool.id },
+      })
+    );
+  };
 
-  useHotkeys("alt+2", (e) => {
-    e.preventDefault();
-    const currentMode = useEditorStore.getState().mode;
-    if (currentMode === "collage") {
-      window.dispatchEvent(new CustomEvent("grido:select-collage-tab", { detail: { tab: "presets" } }));
-    } else {
-      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "stickers" } }));
-    }
-  });
+  useHotkeys("alt+1", (e) => selectTabByIndex(e, 0));
+  useHotkeys("alt+2", (e) => selectTabByIndex(e, 1));
+  useHotkeys("alt+3", (e) => selectTabByIndex(e, 2));
+  useHotkeys("alt+4", (e) => selectTabByIndex(e, 3));
+  useHotkeys("alt+5", (e) => selectTabByIndex(e, 4));
+  useHotkeys("alt+6", (e) => selectTabByIndex(e, 5));
+  useHotkeys("alt+7", (e) => selectTabByIndex(e, 6));
+  useHotkeys("alt+8", (e) => selectTabByIndex(e, 7));
+  useHotkeys("alt+9", (e) => selectTabByIndex(e, 8));
 
-  useHotkeys("alt+3", (e) => {
+  // Ctrl+K — لوحة كل الأدوات (وصول بالاسم بلا تمرير في الشريط)
+  useHotkeys("mod+k", (e) => {
     e.preventDefault();
-    const currentMode = useEditorStore.getState().mode;
-    if (currentMode === "collage") {
-      window.dispatchEvent(new CustomEvent("grido:select-collage-tab", { detail: { tab: "freeform" } }));
-    } else {
-      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "shapes" } }));
-    }
-  });
-
-  useHotkeys("alt+4", (e) => {
-    e.preventDefault();
-    const currentMode = useEditorStore.getState().mode;
-    if (currentMode !== "collage") {
-      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "text" } }));
-    }
-  });
-
-  useHotkeys("alt+5", (e) => {
-    e.preventDefault();
-    const currentMode = useEditorStore.getState().mode;
-    if (currentMode !== "collage") {
-      window.dispatchEvent(new CustomEvent("grido:select-studio-tab", { detail: { tab: "presets" } }));
-    }
+    window.dispatchEvent(new CustomEvent("grido:open-tool-launcher"));
   });
 
   // Toggle Zen Mode (Canvas focus): Tab key (outside inputs/controls)

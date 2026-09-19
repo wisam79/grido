@@ -87,7 +87,7 @@ const SortableLayerItem = React.memo(
             selectElement(el.id);
           }
         }}
-        className={`flex items-center justify-between p-2 rounded-lg border text-start cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none select-none ${
+        className={`flex items-center justify-between p-2 rounded-lg border text-start cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none ${
           isSelected
             ? "border-primary/50 bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/25"
             : "border-transparent bg-transparent hover:bg-input text-muted-foreground hover:text-foreground"
@@ -99,8 +99,8 @@ const SortableLayerItem = React.memo(
             {...listeners}
             role="button"
             tabIndex={0}
-            aria-label="اسحب لإعادة ترتيب الطبقة"
-            className="cursor-grab active:cursor-grabbing hover:bg-input p-1 rounded text-muted-foreground/60 hover:text-foreground transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+            aria-label="اسحب لإعادة الترتيب"
+            className="cursor-grab active:cursor-grabbing hover:bg-input p-1 rounded text-muted-foreground/60 hover:text-foreground transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             onClick={(e) => e.stopPropagation()}
           >
             <DotsSixVertical className="w-3.5 h-3.5" weight="bold" />
@@ -144,12 +144,12 @@ const SortableLayerItem = React.memo(
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-           <TooltipBtn content={isLocked ? "إلغاء قفل الطبقة" : "قفل الطبقة"}>
+           <TooltipBtn content={isLocked ? "فك القفل" : "قفل الطبقة"}>
             <Button
               variant="ghost"
               size="icon"
-              aria-label={isLocked ? "إلغاء قفل الطبقة" : "قفل الطبقة"}
-              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${isLocked ? "text-primary" : "text-muted-foreground/50 hover:text-foreground"}`}
+              aria-label={isLocked ? "فك القفل" : "قفل الطبقة"}
+              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${isLocked ? "text-primary" : "text-muted-foreground/50 hover:text-foreground"}`}
               onClick={(e) => toggleLock(el, e)}
             >
               {isLocked ? <LockSimple className="w-3.5 h-3.5" weight="fill" /> : <LockSimpleOpen className="w-3.5 h-3.5" weight="regular" />}
@@ -160,7 +160,7 @@ const SortableLayerItem = React.memo(
               variant="ghost"
               size="icon"
               aria-label={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}
-              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none ${!isVisible ? "text-muted-foreground/40" : "text-muted-foreground hover:text-foreground"}`}
+              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${!isVisible ? "text-muted-foreground/40" : "text-muted-foreground hover:text-foreground"}`}
               onClick={(e) => toggleVisibility(el, e)}
             >
               {isVisible ? <Eye className="w-3.5 h-3.5" weight="regular" /> : <EyeSlash className="w-3.5 h-3.5" weight="regular" />}
@@ -171,7 +171,7 @@ const SortableLayerItem = React.memo(
               variant="ghost"
               size="icon"
               aria-label="تكرار الطبقة"
-              className="w-7 h-7 rounded-md hover:bg-input text-muted-foreground/50 hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="w-7 h-7 rounded-md hover:bg-input text-muted-foreground/50 hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
               onClick={(e) => duplicateLayer(el.id, e)}
             >
               <Copy className="w-3.5 h-3.5" weight="regular" />
@@ -182,7 +182,7 @@ const SortableLayerItem = React.memo(
               variant="ghost"
               size="icon"
               aria-label="حذف الطبقة"
-              className="w-7 h-7 rounded-md hover:bg-destructive/10 text-muted-foreground/50 hover:text-destructive transition-colors focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-1 focus-visible:outline-none"
+              className="w-7 h-7 rounded-md hover:bg-destructive/10 text-muted-foreground/50 hover:text-destructive transition-colors focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:outline-none"
               onClick={(e) => deleteLayer(el.id, e)}
             >
               <Trash className="w-3.5 h-3.5" weight="regular" />
@@ -270,8 +270,8 @@ export function LayersList() {
           <Stack className="w-4 h-4 opacity-80" weight="duotone" />
         </div>
         <div className="space-y-1">
-          <p className="text-xs font-bold text-foreground/80">لا توجد عناصر بعد</p>
-          <p className="text-micro text-muted-foreground max-w-[170px] leading-normal mx-auto text-center" dir="rtl">أضف صوراً أو نصوصاً أو أشكالاً من شريط الأدوات</p>
+          <p className="text-xs font-bold text-foreground/80">لا توجد عناصر</p>
+          <p className="text-micro text-muted-foreground max-w-[170px] leading-normal mx-auto text-center" dir="rtl">أضف عناصر من شريط الأدوات</p>
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import React, { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import {
@@ -46,7 +46,7 @@ import {
 
 const CropDialog = lazy(() => import("../dialogs/crop-dialog").then((module) => ({ default: module.CropDialog })));
 
-export function SlotProperties({
+export const SlotProperties = React.memo(function SlotProperties({
   slot,
   onUpdate,
 }: {
@@ -150,7 +150,7 @@ export function SlotProperties({
     <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
       <div className="flex items-center gap-1.5 text-start">
         <Copy className="w-4 h-4 text-primary shrink-0" weight="regular" />
-        <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية عند الرفع</span>
+        <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية</span>
       </div>
       <Switch 
         checked={autoFill}
@@ -175,7 +175,7 @@ export function SlotProperties({
           }
         >
           <div className="text-xs text-muted-foreground text-center py-6 bg-muted/20 rounded-xl border border-dashed border-border/60 mb-2.5">
-            لا توجد صورة في هذه الخلية
+            لا توجد صورة
           </div>
           <div className="space-y-2">
             <Button
@@ -185,7 +185,7 @@ export function SlotProperties({
               onClick={handleOpenFile}
             >
               <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
-              <span>رفع صورة للخلية</span>
+              <span>رفع صورة</span>
             </Button>
             {lastEditedImage && (
               <Button
@@ -195,7 +195,7 @@ export function SlotProperties({
                 onClick={handleUseLastImage}
               >
                 <Copy className="w-4 h-4 text-primary" weight="regular" />
-                <span>تعبئة بآخر صورة معدلة</span>
+                <span>آخر صورة معدلة</span>
               </Button>
             )}
           </div>
@@ -248,7 +248,7 @@ export function SlotProperties({
       {/* 🎴 بطاقة 2: تحويل وتدوير الصورة */}
       <FluentSection
         icon={<ArrowClockwise className="w-3.5 h-3.5" weight="duotone" />}
-        title="تحويل وتدوير الصورة"
+        title="تحويل وتدوير"
       >
         <div className="flex items-center gap-1.5">
           <Tooltip>
@@ -349,7 +349,7 @@ export function SlotProperties({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 font-cairo text-xs">
                 <div className="px-2 py-1 text-micro font-bold text-muted-foreground border-b border-border/20">
-                  اختر الخلية للتبديل معها:
+                  تبديل مع الخلية:
                 </div>
                 {slots
                   .filter((s) => s.id !== slot.id)
@@ -383,7 +383,7 @@ export function SlotProperties({
                   <span>الصف</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تعبئة الصف كاملاً</TooltipContent>
+              <TooltipContent side="top" className="text-xs">تعبئة الصف</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -397,7 +397,7 @@ export function SlotProperties({
                   <span>العمود</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تعبئة العمود كاملاً</TooltipContent>
+              <TooltipContent side="top" className="text-xs">تعبئة العمود</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -415,7 +415,7 @@ export function SlotProperties({
                   <span>الفارغة</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تعبئة الخانات الفارغة فقط</TooltipContent>
+              <TooltipContent side="top" className="text-xs">تعبئة الفارغة</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -429,7 +429,7 @@ export function SlotProperties({
                   <span>الكل</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تعبئة كافة الخلايا</TooltipContent>
+              <TooltipContent side="top" className="text-xs">تعبئة الكل</TooltipContent>
             </Tooltip>
           </div>
 
@@ -449,7 +449,7 @@ export function SlotProperties({
                   <span>توسيط الصورة</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تصفير الإزاحة وتوسيط الصورة داخل الخانة</TooltipContent>
+              <TooltipContent side="top" className="text-xs">تصفير الإزاحة وتوسيط الصورة</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -549,7 +549,7 @@ export function SlotProperties({
       {/* 🎴 بطاقة 5: تعديل الألوان والسطوع */}
       <FluentSection
         icon={<Sun className="w-3.5 h-3.5 text-primary" weight="duotone" />}
-        title="تعديل الألوان والسطوع"
+        title="تعديل الألوان"
         collapsible
         defaultOpen={true}
       >
@@ -647,7 +647,7 @@ export function SlotProperties({
                 }
               } catch (err) {
                 console.error("Failed to save cropped slot image:", err);
-                toast.error("فشل حفظ الصورة المقصوصة محلياً");
+                toast.error("فشل حفظ القص");
               }
             }}
           />
@@ -655,4 +655,4 @@ export function SlotProperties({
       )}
     </div>
   );
-}
+});

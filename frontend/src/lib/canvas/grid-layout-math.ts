@@ -120,8 +120,8 @@ export function computeSmartGridLayout(
   const availW = Math.max(0.1, 1 - 2 * normMarginX);
   const availH = Math.max(0.1, 1 - 2 * normMarginY);
 
-  const cellW = (availW - (cols - 1) * normGapX) / cols;
-  const cellH = (availH - (rows - 1) * normGapY) / rows;
+  const cellW = Math.max(0.01, (availW - (cols - 1) * normGapX) / cols);
+  const cellH = Math.max(0.01, (availH - (rows - 1) * normGapY) / rows);
 
   const results: PlacedGridElement[] = [];
 

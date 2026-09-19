@@ -1,23 +1,23 @@
 import { test, expect } from '@playwright/test';
-import { setupWailsMock } from './helpers/wails-mock';
+import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Element Properties & Hierarchy E2E', () => {
   test.beforeEach(async ({ page }) => {
     await setupWailsMock(page);
     await page.goto('/');
-    await expect(page.getByText('Grido Studio | استوديو الهوية')).toBeVisible();
+    await waitForAppReady(page);
   });
 
   test('Image properties expose all 4 standardized tabs without dead tabs', async ({ page }) => {
     // Add image
-    await page.getByRole('tab', { name: 'تعديل حر' }).click();
-    await page.getByRole('button', { name: 'إدراج صورة جديدة' }).click();
+    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
+    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
 
     // The 4 standardized tabs
-    const styleTab = page.getByRole('tab', { name: /تنسيق|التنسيق/ });
-    const colorsTab = page.getByRole('tab', { name: /ألوان|الألوان/ });
-    const effectsTab = page.getByRole('tab', { name: /تأثيرات|التأثيرات/ });
-    const arrangeTab = page.getByRole('tab', { name: /ترتيب|الترتيب/ });
+    const styleTab = page.getByRole('tab', { name: /تنسيق|التنسيق/ }).first();
+    const colorsTab = page.getByRole('tab', { name: /ألوان|الألوان/ }).first();
+    const effectsTab = page.getByRole('tab', { name: /تأثيرات|التأثيرات/ }).first();
+    const arrangeTab = page.getByRole('tab', { name: /ترتيب|الترتيب/ }).first();
 
     await expect(styleTab).toBeVisible();
     await expect(colorsTab).toBeVisible();
