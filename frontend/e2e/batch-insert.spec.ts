@@ -14,14 +14,14 @@ test.describe('Batch Photo Insert Workflow E2E', () => {
       window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'));
     });
 
-    const dialog = page.getByRole('dialog').filter({ hasText: /إدراج دفعة صور|دفعة صور/ });
+    const dialog = page.getByRole('dialog').filter({ hasText: /إدراج دفعة/ });
     await expect(dialog).toBeVisible();
 
     // Verify dialog header
-    await expect(dialog.getByText(/إدراج دفعة صور/)).toBeVisible();
+    await expect(dialog.getByText(/إدراج دفعة/)).toBeVisible();
 
     // Verify empty state guidance
-    await expect(dialog.getByText(/لا توجد صور في قائمة الانتظار/)).toBeVisible();
+    await expect(dialog.getByText(/قائمة الصور فارغة/)).toBeVisible();
 
     // Dismiss with Escape key
     await page.keyboard.press('Escape');

@@ -18,11 +18,11 @@ test.describe('Account, Authentication & License Management E2E', () => {
     await expect(dialog).toBeVisible();
 
     // Verify dialog header
-    await expect(dialog.getByText(/إدارة الحساب والترخيص/)).toBeVisible();
+    await expect(dialog.getByText(/الحساب والترخيص/)).toBeVisible();
 
-    // Verify tabs exist
-    const licenseTab = dialog.getByRole('tab', { name: /الترخيص/ }).first();
-    const authTab = dialog.getByRole('tab', { name: /الحساب/ }).first();
+    // Verify tabs exist (FluentSegmentedControl buttons)
+    const licenseTab = dialog.getByRole('button', { name: /الترخيص/ }).or(dialog.getByText('الترخيص')).first();
+    const authTab = dialog.getByRole('button', { name: /الحساب/ }).or(dialog.getByText('الحساب')).first();
 
     if (await licenseTab.isVisible()) {
       await expect(licenseTab).toBeVisible();
