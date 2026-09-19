@@ -401,10 +401,15 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
     group: "تحرير",
     shortcut: "Ctrl+Z",
     getSnapshot: () => {
-      const { history, historyIndex, undo } = useEditorStore.getState();
-      const stepsBack = history.length - 1 - historyIndex;
+      const { historyIndex, undo } = useEditorStore.getState();
+      const stepsBack = Math.max(0, historyIndex);
       return {
-        subtitle: stepsBack > 0 ? `${stepsBack} خطوات محفوظة` : "لا شيء للتراجع عنه",
+        subtitle:
+          stepsBack > 0
+            ? stepsBack === 1
+              ? "خطوة واحدة محفوظة"
+              : `${stepsBack} خطوات محفوظة`
+            : "لا شيء للتراجع عنه",
         disabled: stepsBack <= 0,
         run: undo,
       };
@@ -417,9 +422,14 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
     shortcut: "Ctrl+Shift+Z",
     getSnapshot: () => {
       const { history, historyIndex, redo } = useEditorStore.getState();
-      const stepsForward = historyIndex;
+      const stepsForward = Math.max(0, history.length - 1 - historyIndex);
       return {
-        subtitle: stepsForward > 0 ? "تستعيد الخطوة التالية" : "لا شيء لإعادته",
+        subtitle:
+          stepsForward > 0
+            ? stepsForward === 1
+              ? "تستعيد خطوة واحدة"
+              : `تستعيد ${stepsForward} خطوات`
+            : "لا شيء لإعادته",
         disabled: stepsForward <= 0,
         run: redo,
       };
@@ -486,9 +496,10 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
     shortcut: "Ctrl+0",
     getSnapshot: () => {
       const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
+      const isAt100 = Math.abs(canvasZoom - 1) < 0.005;
       return {
-        subtitle: canvasZoom === 1 ? "أنت عند 100%" : `الحالي ${percent(canvasZoom)}`,
-        disabled: canvasZoom === 1,
+        subtitle: isAt100 ? "أنت عند 100%" : `الحالي ${percent(canvasZoom)}`,
+        disabled: isAt100,
         run: () => setCanvasZoom(1),
       };
     },

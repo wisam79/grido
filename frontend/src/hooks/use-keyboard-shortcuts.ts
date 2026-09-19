@@ -192,9 +192,9 @@ export function useKeyboardShortcuts() {
     window.dispatchEvent(new CustomEvent("grido:open-tool-launcher"));
   });
 
-  // Toggle Zen Mode (Canvas focus): Tab key (outside inputs/controls)
+  // Toggle Zen Mode (Canvas focus): Tab key or Ctrl+. / Cmd+.
   useHotkeys(
-    "tab",
+    "tab, mod+.",
     (e) => {
       const target = e.target as HTMLElement | null;
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;

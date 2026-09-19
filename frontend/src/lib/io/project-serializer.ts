@@ -151,7 +151,7 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     collageMargin: dbProj.collageMargin ?? 0,
     collageRadius: dbProj.collageRadius ?? 0,
     collageShowCutLines: dbProj.collageShowCutLines ?? false,
-    collageShowEndCutLine: dbProj.collageShowEndCutLine,
+    collageShowEndCutLine: dbProj.collageShowEndCutLine ?? true,
     collageStrokeWidth: dbProj.collageStrokeWidth ?? 0,
     collageStrokeColor: dbProj.collageStrokeColor ?? "#000000",
   };

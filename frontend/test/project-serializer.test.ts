@@ -121,6 +121,7 @@ describe("project-serializer - Project Serialization and Migration Tests", () =>
     expect(projectFile.showGrid).toBe(true);
     expect(projectFile.gridSize).toBe(30);
     expect(projectFile.gridType).toBe("dots");
+    expect(projectFile.collageShowEndCutLine).toBe(true);
 
     // 2. Map back to domain.Project
     const mappedDbProj = projectFileToDomainProject(projectFile, "test-id", "Test Project");
@@ -130,5 +131,6 @@ describe("project-serializer - Project Serialization and Migration Tests", () =>
     expect(mappedDbProj.showGrid).toBe(true);
     expect(mappedDbProj.gridSize).toBe(30);
     expect(mappedDbProj.gridType).toBe("dots");
+    expect(mappedDbProj.collageShowEndCutLine).toBe(true);
   });
 });

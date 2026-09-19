@@ -261,7 +261,6 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             sideOffset={10}
             dir="rtl"
             className="w-[380px] p-0 rounded-2xl border fluent-specular font-cairo overflow-hidden"
-            onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <Command
               data-testid="command-palette"
@@ -276,7 +275,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                   {(isCollage ? COLLAGE_TOOLS : STUDIO_TOOLS).map((tool, index) => (
                     <CommandItem
                       key={tool.id}
-                      value={`${tool.title} ${tool.subtitle} ${tool.label}`}
+                      value={`${tool.title} ${tool.subtitle} ${tool.label} ${toolShortcut(index)}`}
                       onSelect={() => selectTool(tool)}
                       data-testid={`launcher-${tool.id}`}
                     >
@@ -309,7 +308,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                     return (
                       <CommandItem
                         key={command.id}
-                        value={`${command.title} ${subtitle}`}
+                        value={`${command.title} ${subtitle} ${command.shortcut ?? ''}`}
                         disabled={disabled}
                         onSelect={() => {
                           run();
@@ -333,7 +332,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                   {WORKSPACE_COMMANDS.map((command) => (
                     <CommandItem
                       key={command.id}
-                      value={`${command.title} ${command.subtitle}`}
+                      value={`${command.title} ${command.subtitle} ${command.shortcut ?? ''}`}
                       onSelect={() => {
                         dispatchWorkspaceCommand(command);
                         setIsLauncherOpen(false);
