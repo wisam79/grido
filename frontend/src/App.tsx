@@ -12,6 +12,7 @@ import {
   CanvasViewportDeck,
   DesktopMenuBar,
   WorkspaceLayout,
+  WelcomeScreen,
 } from "@/components/editor";
 import { useWorkspacePanels, type CollageTab, type FreeformTab } from "@/hooks/use-workspace-panels";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -36,7 +37,9 @@ import {
   Desktop,
   SidebarSimple,
   User,
+  ArrowsCounterClockwise,
 } from "@phosphor-icons/react";
+import type { WorkflowMode } from "@/lib/store";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
 import { WindowControls } from "@/components/editor/system/window-controls";
@@ -72,6 +75,13 @@ function DialogLazyFallback() {
     </div>
   );
 }
+
+// ─── تسميات المسارات للعرض في الهيدر ────────────────────────────────────
+const WORKFLOW_LABELS: Record<WorkflowMode, string> = {
+  quick: "إنتاج سريع",
+  studio: "استوديو",
+  batch: "دفعي",
+};
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
@@ -133,6 +143,10 @@ export default function App() {
 
   const mode = useEditorStore((state) => state.mode);
   const setMode = useEditorStore((state) => state.setMode);
+
+  const workflowMode = useEditorStore((state) => state.workflowMode);
+  const setWorkflowMode = useEditorStore((state) => state.setWorkflowMode);
+  const resetWorkflow = useEditorStore((state) => state.resetWorkflow);
 
   const checkLicenseStatus = useEditorStore((state) => state.checkLicenseStatus);
   // [FIX #7] قراءة user مباشرة لضمان إعادة render عند تغيير أي من حقوله
@@ -286,6 +300,18 @@ export default function App() {
   }, [checkLicenseStatus]);
 
 
+  // ─── شاشة الترحيب: تظهر مرة واحدة فقط عند أول استخدام ──────────────────
+  if (!isInitializing && isLicenseActive && workflowMode === null) {
+    return (
+      <PhosphorProvider weight="regular" size={18}>
+        <TooltipProvider delayDuration={650} skipDelayDuration={150}>
+          <WelcomeScreen onSelect={setWorkflowMode} />
+          <SonnerToaster position="top-center" duration={1500} offset={16} closeButton />
+        </TooltipProvider>
+      </PhosphorProvider>
+    );
+  }
+
   if (isInitializing) {
     return (
       <div className="fixed inset-0 z-(--z-ruler) flex flex-col items-center justify-center bg-background text-foreground font-cairo select-none" dir="rtl">
@@ -372,6 +398,29 @@ export default function App() {
                 <span className="sr-only">Grido Studio | استوديو الهوية</span>
               </h1>
             </div>
+            {/* شارة المسار الحالي مع زر التبديل */}
+            {workflowMode && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={resetWorkflow}
+                    className={cn(
+                      "hidden sm:flex items-center gap-1 h-5 px-2 rounded-full text-micro font-bold tracking-wide transition-all cursor-pointer",
+                      "border border-border/60 bg-muted/40 hover:bg-muted/80 hover:border-border text-muted-foreground hover:text-foreground",
+                      "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                    )}
+                    aria-label="تبديل مسار العمل"
+                  >
+                    <ArrowsCounterClockwise className="w-2.5 h-2.5" weight="bold" />
+                    <span>{WORKFLOW_LABELS[workflowMode]}</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
+                  تبديل مسار العمل
+                </TooltipContent>
+              </Tooltip>
+            )}
             <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
             <div className="hidden sm:flex items-center title-bar-controls" dir="rtl">
               <DesktopMenuBar />

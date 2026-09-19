@@ -5,3 +5,4 @@ export * from "./system";
 export * from "./canvas";
 export * from "./properties";
 export * from "./workspace";
+export * from "./welcome";

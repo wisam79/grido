@@ -22,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useEditorStore } from "@/lib/editor-store";
 
 interface ToolbarProps {
   onPrint: () => void;
@@ -30,6 +31,10 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
+  // في مسار الإنتاج السريع: إخفاء أدوات الإضافة (نص/أشكال) لتبسيط الواجهة
+  const workflowMode = useEditorStore((state) => state.workflowMode);
+  const isQuickMode = workflowMode === "quick";
+
   return (
     <div
       data-testid="workspace-toolbar"
@@ -46,14 +51,15 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
           <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
-          {/* المجموعة 2: إضافة عناصر (نص وأشكال وملصقات) */}
-          <ToolbarAddTools />
+          {/* المجموعة 2: إضافة عناصر — تُخفى في مسار الإنتاج السريع */}
+          {!isQuickMode && (
+            <>
+              <ToolbarAddTools />
+              <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
+            </>
+          )}
 
-          <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
-
-          {/* المجموعة 3: أدوات التحديد — تتغير مع السياق (تكرار/تجميع/مرشحات/AI)
-              وكانت مكتوبة بالكامل لكن غير مربوطة بالشريط، فبقيت المرشحات بلا أي
-              واجهة تُفعّلها رغم أن الكانفاس يرسمها. */}
+          {/* المجموعة 3: أدوات التحديد — تتغير مع السياق */}
           <ToolbarSelectionTools />
 
           {/* المجموعة 4: التراجع والإعادة */}
