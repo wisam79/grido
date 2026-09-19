@@ -646,11 +646,21 @@ func TestPrintService_HiRes300DPI_A4_FullScaleVerification(t *testing.T) {
 	}
 
 	// Verify JPEG APP0 DPI marker
-	dpiW, dpiH, err := readJpegDPI(actualJpg)
-	if err == nil {
-		if dpiW != 300 || dpiH != 300 {
-			t.Errorf("Expected JPEG DPI 300x300, got %dx%d", dpiW, dpiH)
+	jpgData, err := os.ReadFile(actualJpg)
+	if err != nil {
+		t.Fatalf("Failed to read generated JPEG file: %v", err)
+	}
+	if len(jpgData) >= 18 && bytes.Contains(jpgData[:16], []byte("JFIF")) {
+		if jpgData[13] != 1 {
+			t.Errorf("Expected JFIF density units = 1 (DPI), got %v", jpgData[13])
 		}
+		xDensity := binary.BigEndian.Uint16(jpgData[14:16])
+		yDensity := binary.BigEndian.Uint16(jpgData[16:18])
+		if xDensity != 300 || yDensity != 300 {
+			t.Errorf("Expected JPEG DPI 300x300, got %dx%d", xDensity, yDensity)
+		}
+	} else {
+		t.Errorf("Expected valid JFIF APP0 segment in JPEG output")
 	}
 }
 
