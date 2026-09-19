@@ -143,7 +143,8 @@ func readExifOrientation(r io.ReadSeeker) int {
 }
 
 func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, error) {
-	filename := filepath.Base(filepath.Clean(strings.TrimPrefix(localPath, "/local-image/")))
+	normalized := strings.ReplaceAll(localPath, "\\", "/")
+	filename := filepath.Base(filepath.Clean(strings.TrimPrefix(normalized, "/local-image/")))
 	var baseDir string
 
 	// معاينات الطباعة (print_*) تُوجَّه لمجلد Exports في main.go —

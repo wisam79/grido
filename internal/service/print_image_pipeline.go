@@ -31,8 +31,9 @@ import (
 // ─────────────────────────────────────────────────────────────────────────────
 
 func resolveLocalPath(src string) string {
-	if strings.HasPrefix(src, "/local-image/") {
-		filename := filepath.Base(filepath.Clean(strings.TrimPrefix(src, "/local-image/")))
+	normalized := strings.ReplaceAll(src, "\\", "/")
+	if strings.HasPrefix(normalized, "/local-image/") {
+		filename := filepath.Base(filepath.Clean(strings.TrimPrefix(normalized, "/local-image/")))
 		appDir := utils.GetAppDir()
 
 		// 🔒 الملفات المؤقتة للطباعة (print_upload_* و print_*) تُخزن في Exports
