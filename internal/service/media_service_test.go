@@ -529,7 +529,10 @@ func TestMediaService_CrossPlatformAndWindowsPaths(t *testing.T) {
 	}
 
 	// 2. فحص الأبعاد مع المسار المعالج
-	dims := svc.GetImageDimensions(resPath)
+	dims, err := svc.GetImageDimensions(resPath)
+	if err != nil {
+		t.Fatalf("GetImageDimensions failed for arabic path: %v", err)
+	}
 	if dims.Width != 1 || dims.Height != 1 {
 		t.Errorf("expected 1x1 dimensions for arabic path, got %dx%d", dims.Width, dims.Height)
 	}
@@ -542,7 +545,10 @@ func TestMediaService_CrossPlatformAndWindowsPaths(t *testing.T) {
 
 	// محاكاة استدعاء بمسار Windows مع Backslashes
 	winPath := strings.ReplaceAll(rawTarget, "/", "\\")
-	winDims := svc.GetImageDimensions(winPath)
+	winDims, err := svc.GetImageDimensions(winPath)
+	if err != nil {
+		t.Fatalf("GetImageDimensions failed for windows backslash path: %v", err)
+	}
 	if winDims.Width != 1 || winDims.Height != 1 {
 		t.Errorf("expected 1x1 for windows backslash path, got %dx%d", winDims.Width, winDims.Height)
 	}

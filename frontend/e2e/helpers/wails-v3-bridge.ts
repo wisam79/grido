@@ -78,6 +78,8 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   1225131967: async () => undefined, // ShowItemInFolder
   93234400: async () => ({ ip: '127.0.0.1', port: 8741, token: 'mock-token', url: 'http://127.0.0.1:8741', isRunning: true }), // StartPhoneBridge
   1433752998: async () => undefined, // StopPhoneBridge
+  2987688963: async () => undefined, // Startup / fallback
+  2154875234: async () => undefined, // Shutdown / fallback
 
   // ── LicenseHandler bindings (frontend/bindings/grido/internal/handlers/licensehandler.ts) ──
   1507354738: async () => MOCK_USER_PROFILE, // ActivateLicenseKey
