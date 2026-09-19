@@ -112,6 +112,7 @@ describe("project-serializer - Project Serialization and Migration Tests", () =>
       showGrid: true,
       gridSize: 30,
       gridType: "dots",
+      collageShowEndCutLine: true,
       updatedAt: "2026-07-09T12:00:00Z",
     });
 
