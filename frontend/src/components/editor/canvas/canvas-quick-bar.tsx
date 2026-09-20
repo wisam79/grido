@@ -10,11 +10,17 @@ import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { QuickBarSlotSection } from "./quick-bar/quick-bar-slot-section";
 import { QuickBarMultiSelectionSection } from "./quick-bar/quick-bar-multi-selection-section";
 import { QuickBarElementSection } from "./quick-bar/quick-bar-element-section";
+import { useCanvasOverlayHost } from "./canvas-overlay-host";
 
 /**
- * CanvasQuickBar — الشريط السريع العائم أعلى الكانفاس (Portal إلى document.body).
+ * CanvasQuickBar — الشريط السريع العائم **داخل منطقة الكانفاس**.
  * 🧭 الأقسام الثلاثة (خلية الكولاج / التحديد المتعدد / العنصر الحر) كانت
  * مضمّنة بالكامل هنا (798 سطراً) — الآن كل قسم في ملف مستقل تحت quick-bar/.
+ *
+ * 📐 التموضع: كان `createPortal(document.body)` + `fixed top-16` فيطفو فوق
+ * شريط الأدوات ويمتد على الشريط الجانبي والألواح. الآن يُرسم في حاوية اللوح
+ * (CanvasOverlayHost) بـ`absolute` على حدوده العلوية، فلا يغطي أي عنصر واجهة
+ * خارج الكانفاس ولا يحتاج `z` يتجاوز طبقات الواجهة.
  *
  * 🎯 نطاق هذا الشريط: **الموضع على الورقة** (ترتيب الطبقة، تدوير، قلب،
  * توزيع، تعبئة الصف/العمود، تفريغ الخلية، مقارنة بالأصل).
@@ -52,6 +58,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   );
 
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
+  const overlayHost = useCanvasOverlayHost();
 
   const selectedSlot = mode === "collage" ? slots?.find((s) => s.id === selectedId) : undefined;
   const selectedElement = mode === "single" ? elements.find((e) => e.id === selectedId) : undefined;
@@ -95,8 +102,12 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     }
   };
 
-  return createPortal(
-    <div dir="rtl" className="fixed top-16 left-1/2 -translate-x-1/2 z-(--z-quick-bar) no-print font-cairo select-none animate-in fade-in-50 slide-in-from-top-3 duration-200 max-w-[calc(100vw-3rem)]">
+  const bar = (
+    <div
+      dir="rtl"
+      data-testid="canvas-quick-bar"
+      className="absolute top-3 left-1/2 -translate-x-1/2 z-(--z-quick-bar) pointer-events-auto no-print font-cairo select-none animate-in fade-in-50 slide-in-from-top-3 duration-200 max-w-[calc(100%-1.5rem)]"
+    >
       <div className="bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 shadow-fluent-16 rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-foreground fluent-specular max-w-full overflow-x-auto">
 
         {/* وضع الكولاج - الخلية المحددة */}
@@ -126,7 +137,10 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
         </Tooltip>
 
       </div>
-    </div>,
-    document.body
+    </div>
   );
+
+  // داخل لوح الكانفاس إن توفّر؛ وإلا يُرسم في مكانه (السقوط على حاوية الكانفاس
+  // نفسها) — فلا يعتمد المكوّن على تركيبه في اللوح ليعمل.
+  return overlayHost ? createPortal(bar, overlayHost) : bar;
 });

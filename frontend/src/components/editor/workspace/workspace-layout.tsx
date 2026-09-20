@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { WorkspacePanelRail } from './workspace-panel-rail';
 import { MobilePanelsSheet } from './mobile-panels-sheet';
+import { CanvasOverlayHost } from '@/components/editor/canvas/canvas-overlay-host';
 import { useWorkspacePanels } from '@/hooks/use-workspace-panels';
 
 interface WorkspaceLayoutProps {
@@ -89,9 +90,13 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
         data-testid="workspace-canvas-shell"
         className="flex-1 flex flex-col min-w-0 bg-background relative z-10 overflow-hidden h-full"
       >
+        {/* حاوية العناصر العائمة داخل الكانفاس: `overflow-hidden` هنا هو ما يمنع
+            شريط التحديد السريع من الطفو على الشريط الجانبي/الأدوات */}
         <div className="flex-1 relative h-full w-full overflow-hidden">
-          {canvasContent}
-          {floatingFeedback}
+          <CanvasOverlayHost>
+            {canvasContent}
+            {floatingFeedback}
+          </CanvasOverlayHost>
         </div>
 
         {/* الشريط السفلي المثبت */}
