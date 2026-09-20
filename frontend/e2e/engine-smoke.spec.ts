@@ -55,6 +55,16 @@ test.describe('@smoke إقلاع المحرك والمسارات الحرجة', 
   test('Ctrl+K يفتح لوحة الأدوات وEsc يغلقها', async ({ page }) => {
     const palette = page.getByTestId('command-palette');
 
+    // ⚠️ حارس السبب الجذري: `mod` في مكتبات الاختصارات تُحلّ من `navigator.userAgent`
+    // (Cmd على macOS وCtrl غيرها). المشروع يقدّم نفسه كـWebKitGTK/لينكس في
+    // playwright.config.ts؛ فلو عاد ليبدو macOS لصار Ctrl+K مفحوصاً على اختصار
+    // غير المربوط أصلاً — فشل مُبهم بدل رسالة واضحة.
+    const userAgent = await page.evaluate(() => navigator.userAgent);
+    expect(
+      userAgent,
+      'مشروع webkit يجب أن يقدّم نفسه كمنصة PC (WebKitGTK/لينكس) — User-Agent يشبه macOS يقلب معنى mod إلى Cmd ويفسد فحوص الاختصارات'
+    ).not.toMatch(/mac/i);
+
     await page.keyboard.press('Control+k');
     await expect(palette).toBeVisible();
     // أدوات الوضع الحالي تظهر في اللوحة (أي وضع كان)

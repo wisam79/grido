@@ -36,7 +36,16 @@ export default defineConfig({
       // يُشغّل منه في CI مواصفات @smoke فقط (engine-smoke.spec.ts) لأن
       // تشغيل الحزمة كاملة على WebKit مكلف ومُعرّض للتقلّب.
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: {
+        ...devices['Desktop Safari'],
+        // ⚠️ Playwright يعرّف WebKit بـUser-Agent يشبه macOS، وهذا ليس تفصيلاً
+        // تجميلياً: مكتبات الاختصارات (react-hotkeys-hook) تحدّد معنى `mod`
+        // من `navigator.userAgent` فيصبح Cmd بدل Ctrl — أي أن الاختصارات
+        // تختبر سلوكاً لا يطابق زمن تشغيل WebKitGTK (لينكس) الذي نُشحن به.
+        // (اكتُشف ذلك فعلياً: فحص Ctrl+K سقط على WebKit وحده دون chromium.)
+        userAgent:
+          'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15',
+      },
     },
   ],
 
