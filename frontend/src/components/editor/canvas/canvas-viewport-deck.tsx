@@ -20,6 +20,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { PAPER_SIZES } from "@/lib/templates";
+import { ZOOM_DEFAULT, stepZoom } from "@/lib/canvas/zoom";
 
 export interface CanvasViewportDeckProps {
   className?: string;
@@ -83,15 +84,15 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
   }, [canvasWidth, canvasHeight, setCanvasSize]);
 
   const handleZoomOut = useCallback(() => {
-    setCanvasZoom((prev) => Math.max(0.1, parseFloat((prev - 0.1).toFixed(2))));
+    setCanvasZoom((prev) => stepZoom(prev, -1));
   }, [setCanvasZoom]);
 
   const handleZoomIn = useCallback(() => {
-    setCanvasZoom((prev) => Math.min(5, parseFloat((prev + 0.1).toFixed(2))));
+    setCanvasZoom((prev) => stepZoom(prev, 1));
   }, [setCanvasZoom]);
 
   const handleResetZoom = useCallback(() => {
-    setCanvasZoom(1);
+    setCanvasZoom(ZOOM_DEFAULT);
   }, [setCanvasZoom]);
 
   const currentDpi = template?.dpi || printSettings.dpi || 300;

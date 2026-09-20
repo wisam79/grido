@@ -28,7 +28,6 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
     isMobileSheetOpen,
     mobileActiveTab,
     isZenMode,
-    togglePanel,
     toggleZenMode,
     setIsMobileSheetOpen,
     setMobileActiveTab,
@@ -57,12 +56,9 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
       {/* 1. الشريط الأيقوني الجانبي الأيسر (Rail - 48px) يظهر في Standard و Wide */}
       {!isCompact && (
         <WorkspacePanelRail
-          activePanel={activePanel}
           activeStudioTab={panelsHook.activeStudioTab}
           activeCollageTab={panelsHook.activeCollageTab}
-          isTemplatesDrawerOpen={isTemplatesDrawerOpen}
           isZenMode={isZenMode}
-          onTogglePanel={togglePanel}
           onSelectStudioTab={panelsHook.selectStudioTab}
           onSelectCollageTab={panelsHook.selectCollageTab}
           onToggleZenMode={toggleZenMode}
@@ -72,6 +68,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
       {/* 2. درج القوالب الأيسر في الشاشات العريضة (Wide Drawer - 296px) */}
       {isWide && (
         <aside
+          aria-label="لوحة القوالب"
           data-testid="workspace-panel-templates"
           data-collapsed={!isLeftDrawerOpen}
           className={cn(
@@ -108,6 +105,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
       {/* 4. لوحة المفتش / اللوح النشط الأيمن (Right Inspector - 296px) */}
       {!isCompact && (
         <aside
+          aria-label={isStandard && activePanel === 'templates' ? 'لوحة القوالب' : 'لوحة خصائص العنصر'}
           data-testid={
             isStandard && activePanel === 'templates'
               ? 'workspace-panel-templates'

@@ -31,9 +31,12 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
-  // في مسار الإنتاج السريع: إخفاء أدوات الإضافة (نص/أشكال) لتبسيط الواجهة
+  // في مسار الإنتاج السريع: إخفاء أدوات الإضافة (نص/أشكال) لتبسيط الواجهة.
+  // التبسيط يخصّ مسار الكولاج المبسّط فقط — في وضع التعديل الحر تبقى الأدوات
+  // ظاهرة لأن الكانفاس فعلاً يقبل عناصر حرة
   const workflowMode = useEditorStore((state) => state.workflowMode);
-  const isQuickMode = workflowMode === "quick";
+  const mode = useEditorStore((state) => state.mode);
+  const isQuickMode = workflowMode === "quick" && mode === "collage";
 
   return (
     <div

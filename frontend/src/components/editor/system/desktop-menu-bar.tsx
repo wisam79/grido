@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
+import { ZOOM_DEFAULT, stepZoom } from "@/lib/canvas/zoom";
 import {
   Image,
   Images,
@@ -349,7 +350,7 @@ export function DesktopMenuBar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16">
           <DropdownMenuItem
-            onClick={() => setCanvasZoom((z) => Math.min(5, parseFloat((z + 0.1).toFixed(2))))}
+            onClick={() => setCanvasZoom((z) => stepZoom(z, 1))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <MagnifyingGlassPlus className="w-4 h-4 text-muted-foreground" />
@@ -357,7 +358,7 @@ export function DesktopMenuBar() {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => setCanvasZoom((z) => Math.max(0.1, parseFloat((z - 0.1).toFixed(2))))}
+            onClick={() => setCanvasZoom((z) => stepZoom(z, -1))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <MagnifyingGlassMinus className="w-4 h-4 text-muted-foreground" />
@@ -365,7 +366,7 @@ export function DesktopMenuBar() {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => setCanvasZoom(1)}
+            onClick={() => setCanvasZoom(ZOOM_DEFAULT)}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <span className="font-medium">الحجم الفعلي</span>

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { useEditorStore } from "@/lib/editor-store";
+import { clampZoomRaw } from "@/lib/canvas/zoom";
 
 /**
  * 🧭 منطق إطار عرض المحرر: زوم العجلة المحوري (Ctrl+Wheel) بمحور مؤشر ثابت،
@@ -60,7 +61,7 @@ export function useCanvasViewport(
 
         const baseZoom = pendingZoom !== null ? pendingZoom : useEditorStore.getState().canvasZoom;
         const factor = Math.exp(-e.deltaY * 0.003);
-        const newZoom = Math.min(Math.max(0.1, baseZoom * factor), 5);
+        const newZoom = clampZoomRaw(baseZoom * factor);
 
         pendingZoom = newZoom;
         if (rafId === null) {

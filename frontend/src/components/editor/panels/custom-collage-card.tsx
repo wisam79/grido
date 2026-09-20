@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { GridFour, MagicWand } from "@phosphor-icons/react";
-import { COLLAGE_TOOLS, type CollageTab } from "@/lib/workspace-tools";
+import { getCollageToolsForWorkflow, type CollageTab } from "@/lib/workspace-tools";
 import { CollageTemplate } from "@/lib/templates";
 import { FreeformCollageModal } from "@/features/freeform-collage";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
@@ -51,13 +51,14 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   onActiveTabChange,
   showInternalTabs = false,
 }: CustomCollageCardProps) {
-  const { canvasWidth, canvasHeight, printSettings, collageTemplate } =
+  const { canvasWidth, canvasHeight, printSettings, collageTemplate, workflowMode } =
     useEditorStore(
       useShallow((state) => ({
         canvasWidth: state.canvasWidth,
         canvasHeight: state.canvasHeight,
         printSettings: state.printSettings,
         collageTemplate: state.collageTemplate,
+        workflowMode: state.workflowMode,
       }))
     );
 
@@ -244,7 +245,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     }
   }, [photoType, canvasWidth, canvasHeight, rows, cols, applyCustomCollage, gridAlign, storedDpi, effectiveTab, isCustomActive]);
 
-  const collageTabOptions = useMemo(() => COLLAGE_TOOLS.map((tool) => {
+  // تبويبات الشاشات المدمجة تتبع نفس قائمة الأدوات المستخدمة في الشريط
+  const collageTabOptions = useMemo(() => getCollageToolsForWorkflow(workflowMode).map((tool) => {
     const isInUse =
       tool.badge === "collage-grid"
         ? isCustomActive
@@ -260,7 +262,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
       ) : undefined,
     };
-  }), [isCustomActive, isFreeformActive]);
+  }), [isCustomActive, isFreeformActive, workflowMode]);
 
   return (
     <div className="flex flex-col gap-2.5 font-cairo" dir="rtl">

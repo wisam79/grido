@@ -27,7 +27,6 @@ export const FreeformStudioPanel = React.memo(function FreeformStudioPanel({
       {activeTab === "stickers" && <FreeformElementsTab category="badges" />}
       {activeTab === "shapes" && <FreeformElementsTab category="shapes" />}
       {activeTab === "text" && <FreeformElementsTab category="text" />}
-      {activeTab === "elements" && <FreeformElementsTab />}
       {activeTab === "presets" && <FreeformPresetsTab />}
       {activeTab === "fonts" && <FreeformFontsTab />}
       {activeTab === "palette" && <FreeformPaletteTab />}

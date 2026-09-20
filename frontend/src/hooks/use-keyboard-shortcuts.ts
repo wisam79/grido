@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { COLLAGE_TOOLS, STUDIO_TOOLS } from "@/lib/workspace-tools";
+import { getToolsForWorkflow } from "@/lib/workspace-tools";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
+import { ZOOM_DEFAULT, stepZoom } from "@/lib/canvas/zoom";
 
 export function useKeyboardShortcuts() {
   // --- Shortcuts via react-hotkeys-hook ---
@@ -165,9 +166,11 @@ export function useKeyboardShortcuts() {
   // (كانت مكتوبة يدوياً لكل تبويب؛ الربط بالفهرس يوسّعها تلقائياً عند إضافة أداة)
   const selectTabByIndex = (e: KeyboardEvent, index: number) => {
     e.preventDefault();
-    const isCollage = useEditorStore.getState().mode === "collage";
-    const tools = isCollage ? COLLAGE_TOOLS : STUDIO_TOOLS;
-    const tool = tools[index];
+    const { mode, workflowMode } = useEditorStore.getState();
+    // نفس مصدر الحقيقة المستخدم في الشريط الجانبي — فلا تختلف الأداة
+    // التي يفتحها Alt+الرقم عن الأداة التي يحمل الرقم نفسه في الشريط
+    const isCollage = mode === "collage";
+    const tool = getToolsForWorkflow(mode, workflowMode)[index];
     if (!tool) return;
     window.dispatchEvent(
       new CustomEvent(isCollage ? "grido:select-collage-tab" : "grido:select-studio-tab", {
@@ -185,6 +188,18 @@ export function useKeyboardShortcuts() {
   useHotkeys("alt+7", (e) => selectTabByIndex(e, 6));
   useHotkeys("alt+8", (e) => selectTabByIndex(e, 7));
   useHotkeys("alt+9", (e) => selectTabByIndex(e, 8));
+
+  // Switch Editor Mode: Ctrl+Alt+1 (كولاج) / Ctrl+Alt+2 (تعديل حر)
+  // كانت عناوين مبدّل الوضع في الواجهة تعد بهذين الاختصارين بلا تسجيل فعلي لهما
+  useHotkeys("mod+alt+1", (e) => {
+    e.preventDefault();
+    useEditorStore.getState().setMode("collage");
+  });
+
+  useHotkeys("mod+alt+2", (e) => {
+    e.preventDefault();
+    useEditorStore.getState().setMode("single");
+  });
 
   // Ctrl+K — لوحة كل الأدوات (وصول بالاسم بلا تمرير في الشريط)
   useHotkeys("mod+k", (e) => {
@@ -223,25 +238,32 @@ export function useKeyboardShortcuts() {
     setShowGrid(!showGrid);
   });
 
+  // Toggle User Guides: Ctrl+; or Cmd+; — كان معلناً في شريط العرض بلا تسجيل فعلي
+  useHotkeys("mod+;", (e) => {
+    e.preventDefault();
+    const { showUserGuides, setShowUserGuides } = useEditorStore.getState();
+    setShowUserGuides(!showUserGuides);
+  });
+
   // Zoom In: Ctrl+= or Ctrl++ or Cmd+= / Cmd++
   useHotkeys("mod+=, mod+plus, mod+numpad_add, mod+shift+=", (e) => {
     e.preventDefault();
     const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
-    setCanvasZoom(Math.min(5, parseFloat((canvasZoom + 0.1).toFixed(2))));
+    setCanvasZoom(stepZoom(canvasZoom, 1));
   });
 
   // Zoom Out: Ctrl+- or Ctrl+_ or Cmd+- / Cmd+_
   useHotkeys("mod+-, mod+underscore, mod+numpad_subtract", (e) => {
     e.preventDefault();
     const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
-    setCanvasZoom(Math.max(0.1, parseFloat((canvasZoom - 0.1).toFixed(2))));
+    setCanvasZoom(stepZoom(canvasZoom, -1));
   });
 
   // Reset Zoom / Fit to 100%: Ctrl+0 or Cmd+0
   useHotkeys("mod+0, mod+numpad_0", (e) => {
     e.preventDefault();
     const { setCanvasZoom } = useEditorStore.getState();
-    setCanvasZoom(1);
+    setCanvasZoom(ZOOM_DEFAULT);
   });
 
   // --- Arrows (Nudging) & Paste via native events ---

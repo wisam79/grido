@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { CollageTab, FreeformTab } from '@/lib/workspace-tools';
+import { isCollageTab, isStudioTab } from '@/lib/workspace-tools';
 
 export type WorkspacePanel = 'templates' | 'properties' | null;
 export type WorkspaceBreakpoint = 'compact' | 'standard' | 'wide';
@@ -62,13 +63,15 @@ export function useWorkspacePanels() {
   // Active studio tab (layers, elements, presets)
   const [activeStudioTab, setActiveStudioTabState] = useState<FreeformTab>(() => {
     const saved = getStoredPreferences().lastActiveStudioTab;
-    return saved !== undefined ? saved : 'layers';
+    // التخزين المحلي قد يحمل تبويباً حُذف من السجل — نسقط على الافتراضي بدل
+    // تبويب غير موجود لا يمكن الوصول إليه من الشريط
+    return isStudioTab(saved) ? saved : 'layers';
   });
 
   // Active collage tab (custom grid, presets, freeform)
   const [activeCollageTab, setActiveCollageTabState] = useState<CollageTab>(() => {
     const saved = getStoredPreferences().lastActiveCollageTab;
-    return saved !== undefined ? saved : 'custom';
+    return isCollageTab(saved) ? saved : 'custom';
   });
 
   // Mobile Sheet states
