@@ -31,6 +31,13 @@ export default defineConfig({
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
     },
+    {
+      // محرك الإصدار الحقيقي: WebKitGTK على لينكس وWebView2 على ويندوز.
+      // يُشغّل منه في CI مواصفات @smoke فقط (engine-smoke.spec.ts) لأن
+      // تشغيل الحزمة كاملة على WebKit مكلف ومُعرّض للتقلّب.
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
   ],
 
   webServer: {

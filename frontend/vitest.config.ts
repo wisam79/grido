@@ -32,7 +32,9 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      // json-summary ينتج coverage-summary.json الذي يقرأه ملخّص CI
+      // ليطبع أرقام التغطية الفعلية بدل أرقام مكتوبة يدوياً
+      reporter: ['text', 'json', 'json-summary', 'html'],
       exclude: [
         '**/node_modules/**',
         '**/wailsjs/**',

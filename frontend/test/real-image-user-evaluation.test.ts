@@ -7,7 +7,6 @@ import {
   sortCornerPoints,
   computePerspectiveTransform,
   Point,
-  DetectedDocument,
 } from "../src/components/editor/document-scanner/perspective-transform";
 
 // Simple PNG Decoder (Zero-Dependency via Node.js zlib)

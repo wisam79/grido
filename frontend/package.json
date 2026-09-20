@@ -23,7 +23,7 @@
     "test:visual": "playwright test --update-snapshots",
     "test:all": "npm run typecheck && npm run lint && npm run test && npm run test:e2e:fast",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint src test e2e --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\""
   },
   "lint-staged": {
@@ -31,10 +31,15 @@
       "eslint --report-unused-disable-directives --max-warnings 0",
       "prettier --write"
     ],
+    "test/**/*.{ts,tsx}": [
+      "eslint --report-unused-disable-directives --max-warnings 0",
+      "prettier --write"
+    ],
     "src/**/*.{css,md}": [
       "prettier --write"
     ],
     "e2e/**/*.ts": [
+      "eslint --report-unused-disable-directives --max-warnings 0",
       "prettier --write"
     ],
     "playwright.config.ts": [

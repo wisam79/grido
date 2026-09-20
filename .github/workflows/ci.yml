@@ -57,6 +57,7 @@ jobs:
           fi
 
       - name: Generate Wails v3 Bindings
+        id: generate_bindings
         run: |
           mkdir -p frontend/dist
           echo "<html></html>" > frontend/dist/index.html
@@ -67,27 +68,32 @@ jobs:
         run: npm ci --prefer-offline --no-audit
 
       - name: Typecheck Frontend
+        id: typecheck
         working-directory: ./frontend
         run: npm run typecheck
 
-      - name: Lint Frontend
+      - name: Lint Frontend (src + test + e2e)
+        id: lint
         working-directory: ./frontend
         run: npm run lint
 
       - name: Run Frontend Unit Tests & Coverage
+        id: unit_tests
         working-directory: ./frontend
         run: npm run test:coverage
 
+      # ملخّص صادق: يطبع نتيجة كل خطوة فعلياً (steps.<id>.outcome) وأرقام
+      # التغطية الحقيقية — كان سابقاً جدولاً مكتوباً يدوياً يطبع ✅ مهما كانت النتيجة
       - name: Generate Frontend Step Summary
         if: always()
+        working-directory: ./frontend
         run: |
-          echo "## ⚡ Frontend Quality & Unit Tests Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **TypeScript Typecheck** | ✅ 0 Errors |" >> $GITHUB_STEP_SUMMARY
-          echo "| **ESLint Standard** | ✅ 0 Warnings |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Vitest Unit & Component Tests** | ✅ 67 Files / 469 Tests Passed |" >> $GITHUB_STEP_SUMMARY
+          node scripts/ci-step-summary.mjs \
+            --title "⚡ Frontend Quality & Unit Tests Summary" \
+            --row "TypeScript Typecheck=${{ steps.typecheck.outcome }}" \
+            --row "ESLint (src + test + e2e, 0 warnings)=${{ steps.lint.outcome }}" \
+            --row "Vitest Unit & Component Tests=${{ steps.unit_tests.outcome }}" \
+            --coverage coverage/coverage-summary.json
 
   # ───────────────────────────────────────────────
   # Job 2: Backend Quality & Unit Tests (Linux)
@@ -111,6 +117,13 @@ jobs:
           go-version: '1.25.0'
           cache: true
 
+      # مطلوب لخطوة الملخّص (node scripts/ci-step-summary.mjs) — كانت المشغّلات
+      # تستعمل node المثبّت مسبقاً في الصورة ضمناً، فصار الاعتماد صريحاً
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Cache Go Tools (staticcheck)
         id: cache-staticcheck
         uses: actions/cache@v4
@@ -127,28 +140,31 @@ jobs:
           echo "<html></html>" > frontend/dist/index.html
 
       - name: Go Vet
+        id: go_vet
         run: go vet ./internal/...
 
       - name: Install staticcheck
+        id: install_staticcheck
         if: steps.cache-staticcheck.outputs.cache-hit != 'true'
         run: go install honnef.co/go/tools/cmd/staticcheck@latest
 
       - name: Run staticcheck
+        id: staticcheck
         run: staticcheck ./internal/... .
 
       - name: Run Go Tests
+        id: go_tests
         run: go test -v ./internal/...
 
       - name: Generate Backend Step Summary
         if: always()
+        working-directory: ./frontend
         run: |
-          echo "## 🛡️ Backend Quality & Go Tests Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Go Vet** | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Staticcheck** | ✅ Passed (0 Warnings) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Go Unit & Integration Tests** | ✅ Passed (100%) |" >> $GITHUB_STEP_SUMMARY
+          node scripts/ci-step-summary.mjs \
+            --title "🛡️ Backend Quality & Go Tests Summary" \
+            --row "Go Vet=${{ steps.go_vet.outcome }}" \
+            --row "Staticcheck (0 warnings)=${{ steps.staticcheck.outcome }}" \
+            --row "Go Unit & Integration Tests=${{ steps.go_tests.outcome }}"
 
   # ───────────────────────────────────────────────
   # Job 3: Playwright E2E Tests (Linux - 4 Shards Parallel Matrix)
@@ -201,6 +217,7 @@ jobs:
           fi
 
       - name: Generate Wails v3 Bindings
+        id: generate_bindings
         run: |
           mkdir -p frontend/dist
           echo "<html></html>" > frontend/dist/index.html
@@ -220,11 +237,13 @@ jobs:
         run: npm ci --prefer-offline --no-audit
 
       - name: Install Playwright Browsers
+        id: install_browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
         working-directory: ./frontend
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E Tests (Chromium Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+        id: e2e
         working-directory: ./frontend
         run: npx playwright test --project=chromium --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
@@ -238,16 +257,14 @@ jobs:
 
       - name: Generate E2E Step Summary
         if: always()
+        working-directory: ./frontend
         run: |
-          echo "## 🎭 Playwright E2E Test Results (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Engine** | Chromium Headless |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Shard Partition** | ${{ matrix.shardIndex }} of ${{ matrix.shardTotal }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Wails v3 Bridge** | ✅ Active (43 Methods Intercepted) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Suites** | 21 Spec Files (100% Comprehensive Coverage) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Interactive Drag Performance** | 59.9 FPS (Target >= 20 FPS) |" >> $GITHUB_STEP_SUMMARY
+          node scripts/ci-step-summary.mjs \
+            --title "🎭 Playwright E2E (Chromium Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})" \
+            --note "المحرك: Chromium Headless. محرك الإصدار الحقيقي (WebKit) يُفحص في مهمة WebKit Smoke بمخطط @smoke." \
+            --row "Playwright Chromium Suite=${{ steps.e2e.outcome }}" \
+            --row "Chromium Browsers Installation=${{ steps.install_browsers.outcome }}" \
+            --row "Wails v3 Bridge Mock=${{ steps.generate_bindings.outcome }}"
 
   # ───────────────────────────────────────────────
   # Job 4: Windows Build Verification (Windows)
@@ -302,6 +319,7 @@ jobs:
           }
 
       - name: Build Wails v3 App Binary (Smoke Test)
+        id: build
         shell: powershell
         env:
           CGO_ENABLED: '1'
@@ -311,6 +329,7 @@ jobs:
         run: wails3 task build
 
       - name: Run Windows Native Integration Tests
+        id: native_tests
         shell: powershell
         env:
           CGO_ENABLED: '1'
@@ -318,12 +337,100 @@ jobs:
 
       - name: Generate Windows Build Summary
         if: always()
-        shell: powershell
+        shell: bash
+        working-directory: ./frontend
         run: |
-          "## 🪟 Windows Build Verification Summary" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          "| Metric | Status |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          "| :--- | :--- |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          "| **Compilation** | ✅ Succeeded |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          "| **Target Runtime** | Windows x64 (Wails v3 + CGO) |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          "| **Windows Native Paths & 300 DPI** | ✅ Verified 100% |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          node scripts/ci-step-summary.mjs \
+            --title "🪟 Windows Build Verification Summary" \
+            --note "الهدف: Windows x64 (Wails v3 + CGO) مع اختبارات مسارات ويندوز ودقة 300 DPI." \
+            --row "Compilation (wails3 task build)=${{ steps.build.outcome }}" \
+            --row "Windows Native Integration Tests=${{ steps.native_tests.outcome }}"
+
+  # ───────────────────────────────────────────────
+  # Job 5: WebKit Smoke (محرك الإصدار الحقيقي)
+  #   WebKitGTK (لينكس) و WebView2 (ويندوز) هي محركات الإصدار الفعلية،
+  #   وWebKit أقرب محرك إليها في Playwright — بينما بقية الحزمة تعمل على
+  #   chromium فقط. تُشغَّل مواصفات @smoke فقط (engine-smoke.spec.ts) وهي ضحلة
+  #   ومستقرة ومستقلّة عن وضع الكانفاس: إقلاع وترسيم الكانفاس (سياق 2d)،
+  #   وCtrl+K يفتح لوحة الأدوات وEsc يغلقها، واختيار أداة من الشريط يفتح لوحتها.
+  #   إعلامية حالياً (continue-on-error) حتى تثبت على CI، ثم تُرفع إلى مُعطِّلة.
+  # ───────────────────────────────────────────────
+  webkit-smoke:
+    name: WebKit Smoke (Shipping Engine)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+          cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cache Go Binaries (Wails)
+        uses: actions/cache@v4
+        with:
+          path: ~/go/bin
+          key: ${{ runner.os }}-go-bin-v1
+
+      - name: Add Go Bin to PATH
+        run: echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Install Wails3 CLI
+        run: |
+          if ! command -v wails3 >/dev/null 2>&1; then
+            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.23
+          fi
+
+      - name: Generate Wails v3 Bindings
+        id: generate_bindings
+        run: |
+          mkdir -p frontend/dist
+          echo "<html></html>" > frontend/dist/index.html
+          wails3 generate bindings -ts -clean=true
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Install Playwright WebKit Browser
+        id: install_browsers
+        working-directory: ./frontend
+        run: npx playwright install --with-deps webkit
+
+      - name: Run WebKit Smoke Tests (@smoke)
+        id: webkit
+        working-directory: ./frontend
+        run: npx playwright test --project=webkit --grep @smoke
+
+      - name: Upload WebKit Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-webkit
+          path: frontend/playwright-report/
+          retention-days: 7
+
+      - name: Generate WebKit Step Summary
+        if: always()
+        working-directory: ./frontend
+        run: |
+          node scripts/ci-step-summary.mjs \
+            --title "🧭 WebKit Smoke (Shipping Engine) Summary" \
+            --note "WebKit أقرب محرك إلى WebKitGTK/WebView2 الذي يُشحن به التطبيق. الفحص إعلامي (continue-on-error) حتى يثبت على CI." \
+            --row "Playwright @smoke on WebKit=${{ steps.webkit.outcome }}" \
+            --row "WebKit Browser Installation=${{ steps.install_browsers.outcome }}"

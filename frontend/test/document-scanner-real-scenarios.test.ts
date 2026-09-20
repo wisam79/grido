@@ -1,17 +1,14 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import {
   sortCornerPoints,
-  autoDetectDocumentCorners,
   autoDetectAllDocumentCorners,
   detectDocumentAuto,
   warpPerspective,
-  inferSmartDocumentAspect,
   splitQuadIntoIdCards,
   addManualDocumentQuad,
   rotateCanvas,
   applyMagicColorFilter,
   applyOtsuFilter,
-  applyFilterMode,
   refineCornersSubPixel,
   Point,
   DetectedDocument,
