@@ -212,7 +212,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         <DialogHeader className="border-b border-border/40 pb-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <DownloadSimple className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+              <DownloadSimple className="text-primary w-7 h-7 shrink-0" weight="duotone" />
               <div className="min-w-0">
                 <DialogTitle className="text-base font-bold truncate">تصدير الصورة</DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
@@ -321,7 +321,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           <div className="border-t border-border/40 pt-3 space-y-2.5">
             {(template?.dpi || printSettings.dpi || 300) < 150 && (
               <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-xs text-destructive flex items-start gap-2">
-                <Warning className="shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
+                <Warning className="shrink-0 mt-0.5 w-5 h-5" weight="duotone" />
                 <span className="leading-tight font-medium">
                   الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُفضل 300 DPI للطباعة.
                 </span>
@@ -329,7 +329,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             )}
 
             <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
-              <Warning className="text-amber-500 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
+              <Warning className="text-amber-500 shrink-0 mt-0.5 w-5 h-5" weight="duotone" />
               <span className="leading-tight font-medium">تصدير بنظام الألوان RGB للطباعة الرقمية.</span>
             </div>
 
@@ -388,12 +388,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           <Button onClick={handleExport} disabled={loading} className="h-8 px-5 text-xs font-semibold rounded-md gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs">
             {loading ? (
               <>
-                <Spinner className="w-3.5 h-3.5" size={14} />
+                <Spinner className="w-4 h-4" size={14} />
                 <span>جاري التصدير ...</span>
               </>
             ) : (
               <>
-                <DownloadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                <DownloadSimple className="w-4 h-4 shrink-0" weight="bold" />
                 <span>تصدير</span>
               </>
             )}

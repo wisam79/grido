@@ -280,7 +280,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <DialogTitle className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground truncate">
-                <Printer className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+                <Printer className="text-primary w-7 h-7 shrink-0" weight="duotone" />
                 <span>إعدادات الطباعة</span>
               </DialogTitle>
               <DialogDescription className="text-xs font-medium text-muted-foreground mt-0.5 truncate">
@@ -292,7 +292,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         </DialogHeader>
 
         {/* جسم النافذة الرئيسي */}
-        <div className="flex-1 overflow-hidden p-3.5 flex flex-col gap-3 min-h-0">
+        <div className="flex-1 overflow-hidden p-4 flex flex-col gap-3 min-h-0">
           {/* 🧭 صف الإعدادات وشريط الوضع المفرد (كان مضمّناً هنا) */}
           <PrintSettingsToolbar
             mode={mode}
@@ -320,7 +320,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           {/* مساحة المعاينة التفاعلية المباشرة */}
           <div className="border border-border/50 rounded-xl overflow-hidden bg-print-surface flex flex-col flex-1 shadow-inner relative">
             {/* شريط عنوان وتكبير المعاينة */}
-            <div className="flex items-center justify-between px-3.5 py-2 border-b border-print-header-border bg-print-header backdrop-blur-md select-none z-10">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-print-header-border bg-print-header backdrop-blur-md select-none z-10">
               <span className="text-xs font-bold text-print-header-title flex items-center gap-2">
                 <span className={cn("w-2 h-2 rounded-full", isOverflowing ? "bg-destructive animate-ping" : "bg-primary")} />
                 معاينة الورقة المطبوعة
@@ -425,9 +425,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             disabled={isExporting || !hasContent}
           >
             {isExporting ? (
-              <><Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التصدير ...</span></>
+              <><Spinner className="w-4 h-4" size={14} /> <span>جاري التصدير ...</span></>
             ) : (
-              <><Printer className="w-3.5 h-3.5 shrink-0" weight="bold" /> <span>تصدير وعرض</span></>
+              <><Printer className="w-4 h-4 shrink-0" weight="bold" /> <span>تصدير وعرض</span></>
             )}
           </Button>
         </DialogFooter>

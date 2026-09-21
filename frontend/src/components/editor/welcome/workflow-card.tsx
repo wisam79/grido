@@ -80,7 +80,7 @@ export function WorkflowCard({
         {/* أيقونة المسار */}
         <div
           className={cn(
-            "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200",
+            "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200",
             isSelected
               ? "bg-primary/15 text-primary shadow-xs"
               : "bg-muted/60 text-muted-foreground"

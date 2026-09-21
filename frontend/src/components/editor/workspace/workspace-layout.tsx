@@ -66,7 +66,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
         />
       )}
 
-      {/* 2. درج القوالب الأيسر في الشاشات العريضة (Wide Drawer - 296px) */}
+      {/* 2. درج القوالب الأيسر في الشاشات العريضة (Wide Drawer - 272px) */}
       {isWide && (
         <aside
           aria-label="لوحة القوالب"
@@ -75,11 +75,11 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           className={cn(
             'h-full border-r border-border bg-sidebar/95 backdrop-blur-xl z-20 overflow-hidden fluent-panel-motion transition-all duration-200',
             isLeftDrawerOpen
-              ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
+              ? 'w-[272px] min-w-[272px] max-w-[272px] opacity-100 shadow-fluent-8'
               : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none'
           )}
         >
-          <div dir="rtl" className="h-full w-[296px] flex flex-col overflow-hidden">
+          <div dir="rtl" className="h-full w-[272px] flex flex-col overflow-hidden">
             {templatesContent}
           </div>
         </aside>
@@ -101,13 +101,13 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
 
         {/* الشريط السفلي المثبت */}
         {footerContent && (
-          <footer className="h-10 shrink-0 border-t border-border bg-sidebar px-3 flex items-center justify-center relative z-20 no-print select-none">
+          <footer className="h-9 shrink-0 border-t border-border bg-sidebar px-2 flex items-center justify-center relative z-20 no-print select-none">
             {footerContent}
           </footer>
         )}
       </section>
 
-      {/* 4. لوحة المفتش / اللوح النشط الأيمن (Right Inspector - 296px) */}
+      {/* 4. لوحة المفتش / اللوح النشط الأيمن (Right Inspector - 272px) */}
       {!isCompact && (
         <aside
           aria-label={isStandard && activePanel === 'templates' ? 'لوحة القوالب' : 'لوحة خصائص العنصر'}
@@ -120,11 +120,11 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           className={cn(
             'h-full border-l border-border bg-sidebar/95 backdrop-blur-xl z-20 overflow-hidden fluent-panel-motion transition-all duration-200',
             isRightPanelOpen
-              ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
+              ? 'w-[272px] min-w-[272px] max-w-[272px] opacity-100 shadow-fluent-8'
               : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none'
           )}
         >
-          <div dir="rtl" className="h-full w-[296px] flex flex-col overflow-hidden">
+          <div dir="rtl" className="h-full w-[272px] flex flex-col overflow-hidden">
             {isStandard ? (
               activePanel === 'templates' ? templatesContent : propertiesContent
             ) : (

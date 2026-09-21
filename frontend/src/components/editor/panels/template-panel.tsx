@@ -144,12 +144,12 @@ export const TemplatePanel = React.memo(function TemplatePanel({
 
   return (
     <PanelShell
-      icon={<ActiveToolIcon className="w-4 h-4 text-primary" weight="duotone" />}
+      icon={<ActiveToolIcon className="w-5 h-5 text-primary" weight="duotone" />}
       title={activeTool.title}
       subtitle={activeTool.subtitle}
       onCollapse={onCollapse}
       collapseTitle={`إخفاء ${activeTool.label} (Ctrl+B)`}
-      collapseIcon={<CaretLeft className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all" weight="bold" />}
+      collapseIcon={<CaretLeft className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all" weight="bold" />}
       className="bg-transparent select-none"
     >
       {/* Hidden File Input for Templates Import */}
@@ -183,7 +183,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
       />
 
       {mode === "collage" ? (
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           <CustomCollageCard
             onSelect={handleSelectTemplate}
             activeTemplateId={collageTemplate?.id}

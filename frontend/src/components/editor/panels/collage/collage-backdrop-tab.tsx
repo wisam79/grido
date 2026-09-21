@@ -83,10 +83,10 @@ export function CollageBackdropTab() {
   };
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div className="flex flex-col gap-2.5 font-cairo animate-in fade-in duration-200" dir="rtl">
       {/* لون ورقة الطباعة */}
       <FluentSection
-        icon={<PaintBucket className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<PaintBucket className="w-4 h-4" weight="duotone" />}
         title="خلفية الورقة"
         subtitle={backgroundColor.toUpperCase()}
         collapsible
@@ -124,7 +124,7 @@ export function CollageBackdropTab() {
                 {isActive && (
                   <Check
                     className={cn(
-                      "w-3.5 h-3.5",
+                      "w-4 h-4",
                       swatch.color === "#000000" || swatch.color === "#0B1220"
                         ? "text-white"
                         : "text-foreground"
@@ -240,7 +240,7 @@ export function CollageBackdropTab() {
               }}
               title="تعبئة خلفية كل صورة بلون الورقة"
             >
-              <PaintBucket className="w-3.5 h-3.5 text-primary" weight="bold" />
+              <PaintBucket className="w-4 h-4 text-primary" weight="bold" />
               <span>تطبيق</span>
             </Button>
           }

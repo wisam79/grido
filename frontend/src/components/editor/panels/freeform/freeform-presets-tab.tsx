@@ -79,7 +79,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
       {/* 📐 شريط المقاس النشط المدمج بتصميم Fluent 2 الأنيق */}
       <div className="flex items-center justify-between p-2 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular">
         <div className="flex items-center gap-2 min-w-0">
-          <FrameCorners className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+          <FrameCorners className="w-5 h-5 text-primary shrink-0" weight="duotone" />
           <div className="flex items-baseline gap-1.5 min-w-0">
             <span className="font-bold text-foreground font-mono text-xs truncate">
               {currentW_MM} × {currentH_MM} مم

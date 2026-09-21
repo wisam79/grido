@@ -64,33 +64,50 @@ func main() {
 	backupSvc := service.NewBackupService(projectRepo, licenseRepo)
 	backupHandler := handlers.NewBackupHandler(backupSvc)
 
-	// استعادة أبعاد وموقع النافذة من الجلسة السابقة (الأبعاد الافتراضية المدمجة 960×640)
-	initialWidth := 960
-	initialHeight := 640
+	// استعادة أبعاد وموقع النافذة من الجلسة السابقة.
+	// الحجم الافتراضي 800×600 مدمج ومناسب، ويتقلص تلقائياً مع الشاشات
+	// الصغيرة؛ والاستعادة محصورة داخل مساحة عمل شاشة متصلة (تستثني
+	// شريط المهام) فلا يختفي أي محتوى خارج الشاشة عند تبديل الأجهزة.
+	initialWidth := defaultWindowWidth
+	initialHeight := defaultWindowHeight
 	initialX := 0
 	initialY := 0
 	hasSavedPos := false
 	startMax := false
 
+	if primaryArea, ok := getPrimaryWorkArea(); ok && primaryArea.W > 0 && primaryArea.H > 0 {
+		initialWidth, initialHeight = resolveDefaultWindowSize(primaryArea.W, primaryArea.H)
+		// توسيط صريح داخل مساحة العمل (لا الشاشة الكاملة) حتى لا يقع
+		// أسفل النافذة خلف شريط المهام منذ أول إقلاع
+		initialX, initialY = centerInWorkArea(initialWidth, initialHeight, primaryArea)
+		hasSavedPos = true
+	}
+
 	if state, err := loadWindowState(); err == nil {
 		if state.Width > 0 && state.Height > 0 {
 			// إذا كانت القيمة المحفوظة هي القيمة القديمة الكبيرة 1024×720، يتم تحديثها للقياس المدمج الجديد
 			if state.Width == 1024 && state.Height == 720 {
-				initialWidth = 960
-				initialHeight = 640
+				// يُبقي الموضع المحسوب أعلاه (متكيف مع الشاشة الحالية)
 			} else {
-				initialWidth = state.Width
-				initialHeight = state.Height
+				w, h := sanitizeRestoredSize(state.Width, state.Height)
+				if area, ok := getWorkAreaForPoint(state.X+50, state.Y+50); ok && area.W > 0 && area.H > 0 {
+					initialWidth, initialHeight, initialX, initialY =
+						clampWindowToWorkArea(w, h, state.X, state.Y, []screenWorkArea{area})
+					hasSavedPos = true
+				} else {
+					const maxScreenSize = 50000
+					// ملاحظة: (0,0) موضع صالح (زاوية الشاشة) فلا يُستبعد —
+					// الفحص على وجود النقطة داخل شاشة متصلة يكفي وحده
+					if state.X > -maxScreenSize && state.X < maxScreenSize &&
+						state.Y > -maxScreenSize && state.Y < maxScreenSize &&
+						isPointOnAnyMonitor(state.X+50, state.Y+50) {
+						initialWidth, initialHeight = w, h
+						initialX = state.X
+						initialY = state.Y
+						hasSavedPos = true
+					}
+				}
 			}
-		}
-		const maxScreenSize = 50000
-		if state.X > -maxScreenSize && state.X < maxScreenSize &&
-			state.Y > -maxScreenSize && state.Y < maxScreenSize &&
-			(state.X != 0 || state.Y != 0) &&
-			isPointOnAnyMonitor(state.X+50, state.Y+50) {
-			initialX = state.X
-			initialY = state.Y
-			hasSavedPos = true
 		}
 		startMax = state.Max
 	}
@@ -153,7 +170,11 @@ func main() {
 			UniqueID: "grido-studio-single-instance-lock-v1",
 			OnSecondInstanceLaunch: func(secondInstanceData application.SecondInstanceData) {
 				if mainWindow != nil {
-					mainWindow.UnMinimise()
+					// إلغاء التصغير فقط عند الحاجة — استدعاؤه على نافذة مكبّرة
+					// كان يخرجها من التكبير بدل استعادتها للمقدمة
+					if mainWindow.IsMinimised() {
+						mainWindow.UnMinimise()
+					}
 					mainWindow.Show()
 					mainWindow.Focus()
 				}
@@ -181,22 +202,32 @@ func main() {
 				"--enable-zero-copy",
 				"--ignore-gpu-blocklist",
 			},
+			// 🗂️ عزل ملف WebView2 الشخصي داخل مجلد التطبيق (webview_cache)
+			// بدل المسار الافتراضي — يمنع اختلاط بيانات المتصفح بملفات الإعدادات
+			// ويجعل التنظيف/النسخ الاحتياطي لمجلد واحد كافياً. رموز الجلسات
+			// محفوظة في SQLite وليست في المتصفح، فلا يفقد المستخدم تسجيله.
+			WebviewUserDataPath: getWebviewCacheDir(),
 		},
 	})
 
 	// إعداد خيارات النافذة الرئيسية مع خامة Mica الأصلية وسحب بدون تأخير
 	winOptions := application.WebviewWindowOptions{
+		Name:               "main",
 		Title:              "Grido Studio",
 		Width:              initialWidth,
 		Height:             initialHeight,
-		MinWidth:           840,
-		MinHeight:          560,
+		MinWidth:           720,
+		MinHeight:          540,
 		Frameless:          true,
 		Hidden:             false,
 		ZoomControlEnabled: false,
 		EnableFileDrop:     true,
-		BackgroundType:     application.BackgroundTypeTranslucent,
-		BackgroundColour:   application.NewRGBA(0, 0, 0, 0),
+		// 🖱️ إخفاء قائمة سياق WebView2 الأصلية في الإنتاج — التطبيق يوفر
+		// قوائم سياق مخصصة، والقائمة الأصلية (رجوع/تحديث/فحص) تكسر الانغماس.
+		// تُترك مفعّلة في التطوير لتسهيل فحص العناصر.
+		DefaultContextMenuDisabled: !isDevMode(),
+		BackgroundType:             application.BackgroundTypeTranslucent,
+		BackgroundColour:           application.NewRGBA(0, 0, 0, 0),
 		Windows: application.WindowsWindow{
 			BackdropType:                      application.Mica,
 			DisableFramelessWindowDecorations: false,
@@ -212,6 +243,9 @@ func main() {
 	}
 
 	if hasSavedPos {
+		// ⚠️ حسب توثيق Wails v3: إحداثيات X/Y لا تُطبَّق إلا مع WindowXY —
+		// بدونها تُتجاهل ويُستخدم التوسيط دائماً (كانت الاستعادة تفشل بصمت).
+		winOptions.InitialPosition = application.WindowXY
 		winOptions.X = initialX
 		winOptions.Y = initialY
 	} else {
@@ -220,6 +254,28 @@ func main() {
 
 	mainWindow = wailsApp.Window.NewWithOptions(winOptions)
 	appInstance.desktopSvc.SetMainWindow(mainWindow)
+
+	// 🗂️ أيقونة صينية النظام: استعادة النافذة وخروج سريع
+	SetupSystemTray(wailsApp, mainWindow)
+
+	// 🔄 دفع تغيّرات حالة النافذة لحظياً للواجهة — يغطي التكبير/الاستعادة
+	// عبر النظام (Win+أسهم، السحب للأعلى، Snap) التي لا تمر بأزرار التطبيق،
+	// فتبقى أيقونة زر التكبير متزامنة دون انتظار polling.
+	// (الحفظ هنا أيضاً — لا نعتمد على حدث الإغلاق وحده ضد الإنهاء المفاجئ)
+	mainWindow.OnWindowEvent(events.Common.WindowMaximise, func(_ *application.WindowEvent) {
+		mainWindow.EmitEvent("window:max-state", true)
+		persistWindowState(mainWindow)
+	})
+	mainWindow.OnWindowEvent(events.Common.WindowUnMaximise, func(_ *application.WindowEvent) {
+		mainWindow.EmitEvent("window:max-state", false)
+		persistWindowState(mainWindow)
+	})
+	mainWindow.OnWindowEvent(events.Common.WindowFullscreen, func(_ *application.WindowEvent) {
+		mainWindow.EmitEvent("window:fullscreen-state", true)
+	})
+	mainWindow.OnWindowEvent(events.Common.WindowUnFullscreen, func(_ *application.WindowEvent) {
+		mainWindow.EmitEvent("window:fullscreen-state", false)
+	})
 
 	// 📂 معالجة سحب وإفلات الملفات من نظام التشغيل مباشرة
 	mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {
@@ -242,28 +298,25 @@ func main() {
 		if len(validPaths) == 0 {
 			return
 		}
-		processed, err := appInstance.mediaSvc.ProcessMultipleOpenedFiles(validPaths)
-		if err == nil && len(processed) > 0 {
-			wailsApp.Event.Emit("native-file-drop", map[string]any{
-				"images": processed,
-			})
-		}
+		// ⚡ المعالجة في goroutine — حفظ الصور وقياسها على خيط حدث النافذة
+		// كان يجمّد السحب والإفلات مع الدفعات الكبيرة؛ Emit آمن للتزامن.
+		go func(paths []string) {
+			processed, err := appInstance.mediaSvc.ProcessMultipleOpenedFiles(paths)
+			if err != nil {
+				slog.Warn("Failed to process dropped files", "error", err.Error())
+				return
+			}
+			if len(processed) > 0 {
+				wailsApp.Event.Emit("native-file-drop", map[string]any{
+					"images": processed,
+				})
+			}
+		}(validPaths)
 	})
 
 	// حفظ مقاسات وموضع النافذة عند إغلاقها
 	mainWindow.OnWindowEvent(events.Common.WindowClosing, func(_ *application.WindowEvent) {
-		w, h := mainWindow.Size()
-		x, y := mainWindow.Position()
-		isMax := mainWindow.IsMaximised()
-
-		state := windowState{
-			Width:  w,
-			Height: h,
-			X:      x,
-			Y:      y,
-			Max:    isMax,
-		}
-		_ = saveWindowState(state)
+		persistWindowState(mainWindow)
 	})
 
 	// إيقاف الخدمات وتنظيف الموارد عند إغلاق التطبيق
@@ -511,6 +564,16 @@ func createAssetHandler(app *App) http.Handler {
 				"imageSrc": "/local-image/" + filename,
 			})
 			return
+		}
+
+		// ⚡ تخزين ثابت لحزم الواجهة المبنية: ملفات /assets/* تحمل بصمة
+		// hash في أسمائها من Vite، فهي ثابتة المحتوى (immutable) وآمنة
+		// للتخزين سنة كاملة — يختصر زمن الإقلاع بإلغاء إعادة القراءة.
+		if strings.HasPrefix(r.URL.Path, "/assets/") {
+			if ext := strings.ToLower(filepath.Ext(r.URL.Path)); ext == ".js" || ext == ".css" ||
+				ext == ".woff" || ext == ".woff2" || ext == ".png" || ext == ".svg" {
+				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			}
 		}
 
 		if strings.HasPrefix(r.URL.Path, "/local-image/") {

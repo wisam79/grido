@@ -5,21 +5,6 @@ import { PopoverColorPicker } from "../../shared-controls";
 import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import type { TextTabProps } from "./text-tab-types";
 
-const SHADOW_PRESETS = [
-  { id: "none", label: "بدون", color: "#000000", blur: 0, ox: 0, oy: 0, opacity: 0 },
-  { id: "soft", label: "ناعم", color: "#000000", blur: 10, ox: 0, oy: 3, opacity: 0.35 },
-  { id: "drop", label: "ساقط", color: "#000000", blur: 14, ox: 4, oy: 4, opacity: 0.6 },
-  { id: "neon", label: "توهج", color: "#38bdf8", blur: 22, ox: 0, oy: 0, opacity: 0.9 },
-  { id: "3d", label: "3D", color: "#000000", blur: 2, ox: 3, oy: 3, opacity: 0.85 },
-];
-
-const CURVE_PRESETS = [
-  { label: "0°", value: 0 },
-  { label: "30°", value: 30 },
-  { label: "60°", value: 60 },
-  { label: "-60°", value: -60 },
-  { label: "100°", value: 100 },
-];
 
 const toggleButtonClassName = (active: boolean) =>
   cn(
@@ -38,7 +23,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
     <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
       {/* 🎴 بطاقة 1: الخلفية والشارة */}
       <FluentSection
-        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Palette className="w-5 h-5 text-primary" weight="duotone" />}
         title="الخلفية والشارة"
         open={hasBadge}
         action={
@@ -117,7 +102,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
 
       {/* 🎴 بطاقة 2: الظل والتوهج */}
       <FluentSection
-        icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Sparkle className="w-5 h-5 text-primary" weight="duotone" />}
         title="الظل والتوهج"
         open={hasShadow}
         action={
@@ -156,31 +141,8 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
           </div>
         }
       >
-        {/* أنماط سريعة */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar text-micro">
-          {SHADOW_PRESETS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, {
-                  shadowColor: p.color,
-                  shadowBlur: p.blur,
-                  shadowOffsetX: p.ox,
-                  shadowOffsetY: p.oy,
-                  shadowOpacity: p.opacity,
-                });
-                useEditorStore.getState().pushHistory();
-              }}
-              className="px-2 py-0.5 bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border/50 rounded-md text-muted-foreground text-micro font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
         {hasShadow && (
-          <div className="space-y-1.5 pt-1 animate-in fade-in duration-150">
+          <div className="space-y-1.5 animate-in fade-in duration-150">
             <FluentSliderField
               label="التمويه"
               value={element.shadowBlur ?? 10}
@@ -197,7 +159,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
 
       {/* 🎴 بطاقة 3: تقويس النص */}
       <FluentSection
-        icon={<ArrowCounterClockwise className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<ArrowCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />}
         title="تقويس النص"
         open={hasCurve}
         action={
@@ -219,28 +181,6 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
       >
         {hasCurve && (
           <div className="space-y-2 animate-in fade-in duration-150">
-            {/* زوايا جاهزة */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 custom-scrollbar text-micro">
-              {CURVE_PRESETS.map((cp) => (
-                <button
-                  key={cp.label}
-                  type="button"
-                  onClick={() => {
-                    onUpdate(element.id, { curve: cp.value });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                  className={cn(
-                    "px-1.5 py-0.5 rounded-md border text-micro font-bold transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-                    (element.curve ?? 0) === cp.value
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background hover:bg-primary/10 text-muted-foreground border-border/50"
-                  )}
-                >
-                  {cp.label}
-                </button>
-              ))}
-            </div>
-
             <FluentSliderField
               label="زاوية التقويس"
               value={element.curve ?? 60}

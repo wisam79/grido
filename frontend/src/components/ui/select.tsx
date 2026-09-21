@@ -30,7 +30,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <CaretDown className="size-3.5 opacity-60 shrink-0" weight="bold" />
+      <CaretDown className="size-4 opacity-60 shrink-0" weight="bold" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -98,7 +98,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute right-1.5 flex size-3 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <Check className="size-3.5 text-primary shrink-0" weight="bold" />
+        <Check className="size-4 text-primary shrink-0" weight="bold" />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
@@ -132,7 +132,7 @@ const SelectScrollUpButton = React.forwardRef<
     )}
     {...props}
   >
-    <CaretUp className="size-4 shrink-0" weight="bold" />
+    <CaretUp className="size-5 shrink-0" weight="bold" />
   </SelectPrimitive.ScrollUpButton>
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
@@ -150,7 +150,7 @@ const SelectScrollDownButton = React.forwardRef<
     )}
     {...props}
   >
-    <CaretDown className="size-4 shrink-0" weight="bold" />
+    <CaretDown className="size-5 shrink-0" weight="bold" />
   </SelectPrimitive.ScrollDownButton>
 ))
 SelectScrollDownButton.displayName =

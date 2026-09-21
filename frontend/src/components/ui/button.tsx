@@ -27,12 +27,11 @@ const buttonVariants = cva(
         default: "h-8 px-3 py-1.5 has-[>svg]:px-2.5",
         sm: "h-7 rounded-md gap-1 px-2.5 text-xs has-[>svg]:px-2",
         lg: "h-9 rounded-md px-4 text-xs font-semibold has-[>svg]:px-3",
-        xl: "h-10 rounded-md px-5 text-sm font-semibold has-[>svg]:px-3.5",
+        xl: "h-10 rounded-md px-5 text-sm font-semibold has-[>svg]:px-4",
         "2xl": "h-12 rounded-xl px-6 text-sm font-bold has-[>svg]:px-4",
         icon: "size-8 p-0",
         "icon-sm": "size-7 p-0",
         "icon-lg": "size-9 p-0",
-        "icon-xs": "size-6 p-0",
       },
       shape: {
         rounded: "rounded-md",

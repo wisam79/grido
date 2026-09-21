@@ -163,9 +163,9 @@ export function FreeformPaletteTab() {
   const targetLabel = target === "canvas" ? "خلفية الورقة" : "العنصر المحدد";
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div className="flex flex-col gap-2.5 font-cairo animate-in fade-in duration-200" dir="rtl">
       <FluentSection
-        icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Palette className="w-4 h-4" weight="duotone" />}
         title="وجهة اللون"
         subtitle={`سيُطبَّق على: ${targetLabel}`}
       >
@@ -205,7 +205,7 @@ export function FreeformPaletteTab() {
                   )}
                 >
                   <Star
-                    className="w-3.5 h-3.5"
+                    className="w-4 h-4"
                     weight={favorites.includes(customColor.toLowerCase()) ? "fill" : "regular"}
                   />
                 </button>
@@ -224,7 +224,7 @@ export function FreeformPaletteTab() {
       </FluentSection>
 
       <FluentSection
-        icon={<Sparkle className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Sparkle className="w-4 h-4" weight="duotone" />}
         title="بالِتة الاستوديو"
         subtitle="ثمانية ألوان جاهزة"
       >
@@ -253,7 +253,7 @@ export function FreeformPaletteTab() {
       </FluentSection>
 
       <FluentSection
-        icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Palette className="w-4 h-4" weight="duotone" />}
         title="هويات جاهزة"
         subtitle="انقر لوناً، أو وزّع الهوية على المحدد"
       >
@@ -271,7 +271,7 @@ export function FreeformPaletteTab() {
                     onClick={() => applyColor(color)}
                     aria-label={`${palette.name} ${color}`}
                     title={color}
-                    className="flex-1 h-6 rounded-sm border border-black/10 dark:border-white/15 transition-colors cursor-pointer hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                    className="flex-1 h-7 rounded-md border border-black/10 dark:border-white/15 transition-colors cursor-pointer hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                     style={{ backgroundColor: color }}
                   />
                 ))}
@@ -286,7 +286,7 @@ export function FreeformPaletteTab() {
                 aria-label={`توزيع هوية ${palette.name}`}
                 className="w-7 h-7 shrink-0 text-muted-foreground hover:text-foreground"
               >
-                <ArrowsOutCardinal className="w-3.5 h-3.5" weight="bold" />
+                <ArrowsOutCardinal className="w-4 h-4" weight="bold" />
               </Button>
             </div>
           ))}
@@ -294,7 +294,7 @@ export function FreeformPaletteTab() {
       </FluentSection>
 
       <FluentSection
-        icon={<Eyedropper className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Eyedropper className="w-4 h-4" weight="duotone" />}
         title="ألوان من صور التصميم"
         subtitle={
           imageSources.length > 0
@@ -310,7 +310,7 @@ export function FreeformPaletteTab() {
           disabled={isExtracting || imageSources.length === 0}
           className="w-full justify-center"
         >
-          <Eyedropper className="w-3.5 h-3.5" weight="bold" />
+          <Eyedropper className="w-4 h-4" weight="bold" />
           {isExtracting ? "جاري الاستخراج ..." : "استخراج البالِتة"}
         </Button>
 
@@ -339,14 +339,14 @@ export function FreeformPaletteTab() {
           </div>
         ) : (
           <p className="text-micro text-muted-foreground leading-relaxed mt-2 flex items-start gap-1.5">
-            <Warning className="w-3.5 h-3.5 shrink-0 mt-0.5 text-muted-foreground" weight="duotone" />
+            <Warning className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" weight="duotone" />
             الاستخراج يتم على جهازك من الصور الموجودة في التصميم — لا يُرسل أي شيء للخارج.
           </p>
         )}
       </FluentSection>
 
       <FluentSection
-        icon={<Star className="w-3.5 h-3.5" weight="fill" />}
+        icon={<Star className="w-4 h-4" weight="fill" />}
         title="المفضلة وآخر استخدام"
         subtitle={targetLabel}
         badge={favorites.length}
@@ -369,11 +369,11 @@ export function FreeformPaletteTab() {
       >
         {favorites.length === 0 && recents.length === 0 ? (
           <FluentEmptyState
-            icon={<Star className="w-5 h-5" weight="duotone" />}
+            icon={<Star className="w-6 h-6" weight="duotone" />}
             title="لا ألوان محفوظة بعد"
             description="النجمة على أي لون تحفظه هنا للوصول السريع"
             actionLabel="احفظ اللون المخصص"
-            actionIcon={<Star className="w-3.5 h-3.5" weight="fill" />}
+            actionIcon={<Star className="w-4 h-4" weight="fill" />}
             onAction={() => toggleFavorite(customColor)}
           />
         ) : (

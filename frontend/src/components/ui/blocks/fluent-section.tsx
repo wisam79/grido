@@ -55,7 +55,7 @@ export const FluentSection = React.memo(
       <div
         ref={ref}
         className={cn(
-          "rounded-xl border border-border bg-card p-3 shadow-xs fluent-specular transition-all duration-150",
+          "rounded-xl border border-border bg-card p-2.5 shadow-xs fluent-specular transition-all duration-150",
           className
         )}
         {...props}
@@ -78,7 +78,7 @@ export const FluentSection = React.memo(
           aria-expanded={collapsible ? isOpen : undefined}
           className={cn(
             "flex items-center justify-between gap-2 select-none",
-            isOpen ? "pb-2.5 mb-2.5 border-b border-border/50" : "",
+            isOpen ? "pb-1.5 mb-2 border-b border-border/40" : "",
             collapsible &&
               "cursor-pointer group/sec-header hover:opacity-90 transition-opacity rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             headerClassName
@@ -121,7 +121,7 @@ export const FluentSection = React.memo(
                 <CaretDown
                   weight="bold"
                   className={cn(
-                    "size-3.5 shrink-0 transition-transform duration-200",
+                    "size-4 shrink-0 transition-transform duration-200",
                     !isOpen && "rotate-90 rtl:-rotate-90"
                   )}
                 />

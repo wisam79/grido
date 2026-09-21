@@ -3,7 +3,7 @@ import type Konva from "konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { Spinner } from "@/components/ui/huge-icon";
-import { ArrowClockwise, X } from "@phosphor-icons/react";
+import { ImageSquare } from "@phosphor-icons/react";
 import { OpenFile, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
@@ -14,133 +14,14 @@ import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from "./canvas-
 import { RulerUnit } from "./ruler";
 import { TextEditingOverlay } from "./text-editing-overlay";
 import { CanvasContextMenu } from "./canvas-context-menu";
-import { CanvasQuickBar } from "./canvas-quick-bar";
 import { checkerColor, guideCenter, guideEdge } from "@/lib/canvas/canvas-colors";
 import { useCanvasViewport } from "./use-canvas-viewport";
 import { useUserGuides } from "./use-user-guides";
 import { useImageDrop } from "./use-image-drop";
 import { useRulerMetricsPreview } from "./use-ruler-metrics";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { CanvasBleedGuides } from "./canvas-bleed-guides";
 
-/**
- * شريط الأدوات السريع للخانة المحددة (إزالة/استبدال الصورة).
- * 🛡️ فصل الأداء: كان هذا الكتلة مضمّنة في EditorCanvas تسببت بتحميل مصفوفة
- * slots كاملة على قشرة الكانفس — أي تعديل طفيف على خانة (مثل زوم العجلة)
- * كان يعيد رسم المحرر بأكمله. الآن يُشترك بنفسه بمفاتيحه فقط.
- */
-const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
-  displayW,
-  displayH,
-  printMode,
-  isLoading,
-  setIsLoading,
-}: {
-  displayW: number;
-  displayH: number;
-  printMode: boolean;
-  isLoading: boolean;
-  setIsLoading: (v: boolean) => void;
-}) {
-  // اشتراك بالخانة المحددة فقط (مرجع مستقر) بدل مصفوفة slots الكاملة —
-  // أي updateSlot لخانة أخرى كان يعيد رندر هذا الشريط (مثل زوم العجلة)
-  const selectedSlot = useEditorStore((s) =>
-    s.mode !== "collage" ? null : (s.slots.find((sl) => sl.id === s.selectedId) ?? null)
-  );
-  const updateSlot = useEditorStore((s) => s.updateSlot);
-  const setSlotImage = useEditorStore((s) => s.setSlotImage);
-  const canvasWidth = useEditorStore((s) => s.canvasWidth);
-  const mode = useEditorStore((s) => s.mode);
-  const collageGap = useEditorStore((s) => s.collageGap);
-  const collageMargin = useEditorStore((s) => s.collageMargin);
-  const collageTemplate = useEditorStore((s) => s.collageTemplate);
 
-  if (mode !== "collage" || printMode) return null;
-
-  if (!selectedSlot || !selectedSlot.imageSrc) return null;
-
-  const scale = displayW / canvasWidth;
-  const hasPhysical = collageTemplate?.physicalLayout;
-  const margin = hasPhysical ? 0 : collageMargin * scale;
-  const gap = hasPhysical ? 0 : collageGap * scale;
-
-  const availW = displayW - 2 * margin;
-  const availH = displayH - 2 * margin;
-
-  const left = margin + selectedSlot.x * availW + gap / 2;
-  const top = margin + selectedSlot.y * availH + gap / 2;
-  const width = selectedSlot.w * availW - gap;
-  const height = selectedSlot.h * availH - gap;
-
-  return (
-    <div
-      className="absolute pointer-events-none z-30"
-      style={{
-        left: `${left}px`,
-        top: `${top}px`,
-        width: `${width}px`,
-        height: `${height}px`,
-      }}
-    >
-      {/* شريط الإجراءات السريعة العائم فوق الخلية المحددة */}
-      <div className="absolute top-1.5 end-1.5 flex items-center gap-0.5 bg-card/95 backdrop-blur-xl p-0.5 rounded-lg border border-border/80 dark:border-white/10 shadow-fluent-8 pointer-events-auto transition-all select-none fluent-specular">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              className="w-7 h-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (isLoading) return;
-                try {
-                  setIsLoading(true);
-                  const b64 = await OpenFile();
-                  if (b64) {
-                    const isWailsDesktop = wailsIsDesktop();
-                    let srcToUse = b64;
-                    if (isWailsDesktop && b64.startsWith("data:image/")) {
-                      try {
-                        const localPath = await SaveImageFromBase64(b64);
-                        if (localPath) srcToUse = localPath;
-                      } catch (e) {
-                        console.error("Failed to save image locally:", e);
-                      }
-                    }
-                    setSlotImage(selectedSlot.id, srcToUse);
-                  }
-                } catch (err) {
-                  console.error("Replace image error:", err);
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-            >
-              {isLoading ? <Spinner className="w-3.5 h-3.5" size={14} /> : <ArrowClockwise className="w-3.5 h-3.5 text-primary" weight="bold" />}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">استبدال الصورة</TooltipContent>
-        </Tooltip>
-
-        <div className="w-px h-3 bg-border/60 mx-0.5" />
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              className="w-7 h-7 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center cursor-pointer transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateSlot(selectedSlot.id, { imageSrc: undefined });
-                useEditorStore.getState().pushHistory();
-              }}
-            >
-              <X className="w-3.5 h-3.5" weight="regular" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">إزالة الصورة</TooltipContent>
-        </Tooltip>
-      </div>
-    </div>
-  );
-});
 
 function formatGuideMeasurement(
   relPos: number,
@@ -259,8 +140,8 @@ export const EditorCanvas = React.memo(React.forwardRef<
     handleWorkspaceMouseLeave,
   } = useRulerMetricsPreview(containerRef, innerRef, { showRuler, printMode }, { canvasZoom, mode, aspect });
 
-  const maxW = (containerSize.w - 32) * canvasZoom;
-  const maxH = (containerSize.h - 32) * canvasZoom;
+  const maxW = (containerSize.w - 24) * canvasZoom;
+  const maxH = (containerSize.h - 24) * canvasZoom;
   let displayW = maxW;
   let displayH = displayW / aspect;
   if (displayH > maxH) {
@@ -489,25 +370,28 @@ export const EditorCanvas = React.memo(React.forwardRef<
         />
       )}
 
+      {/* دليل الكانفاس الفارغ في وضع الاستوديو الحر (القاعدتان 2 و 15) */}
+      {mode === "single" && sortedElements.length === 0 && !isLoading && !printMode && (
+        <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center gap-2.5 p-6 text-center select-none z-10 animate-in fade-in duration-300">
+          <div className="w-12 h-12 rounded-2xl bg-muted/50 border border-border/40 flex items-center justify-center text-muted-foreground/60 shadow-2xs">
+            <ImageSquare className="w-6 h-6" weight="duotone" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-bold text-muted-foreground/80 font-cairo">
+              اسحب وأفلت صورة هنا
+            </p>
+            <p className="text-micro text-muted-foreground/60 font-cairo max-w-[200px]">
+              أو اختر أداة من الشريط الجانبي لإضافة نصوص وأشكال
+            </p>
+          </div>
+        </div>
+      )}
+
       <CanvasContextMenu
         contextMenu={contextMenu}
         printMode={printMode}
         onClose={() => setContextMenu(null)}
       />
-
-      {/* الشريط السريع العائم أعلى الكانفاس — كان مكتوباً بالكامل (خانة/تحديد
-          متعدد/عنصر) لكنه غير مربوط، فاختفت إجراءات التحديد من سطح الكانفاس. */}
-      <CanvasQuickBar printMode={printMode} isContextMenuOpen={contextMenu !== null} />
-
-      <SelectedSlotQuickBar
-        displayW={displayW}
-        displayH={displayH}
-        printMode={printMode}
-        isLoading={isLoading}
-        setIsLoading={setIsLoading}
-      />
-
-
 
       {/* 🧭 خطوط المستخدم الإرشادية التفاعلية (User Guidelines) */}
       {!printMode && showUserGuides && userGuides.map((guide) => {
@@ -547,11 +431,13 @@ export const EditorCanvas = React.memo(React.forwardRef<
               ...(lockUserGuides && (isH ? { left: 0, right: 0, height: "16px", marginTop: "-8px", display: "flex", alignItems: "center" } : { top: 0, bottom: 0, width: "16px", marginLeft: "-8px", display: "flex", justifyContent: "center" })),
             }}
           >
+            {/* خط هادئ (70%) يتماسك عند التحويم — كان صلباً بكامل القوة
+                فينافس عناصر التصميم بدل مساندتها بصرياً */}
             <div
               className={`transition-all ${
                 lockUserGuides
                   ? "bg-amber-500/70"
-                  : "bg-primary"
+                  : "bg-primary/70 group-hover:bg-primary"
               } ${
                 isH ? "w-full h-[1px] group-hover:h-[2px]" : "h-full w-[1px] group-hover:w-[2px]"
               }`}
@@ -585,6 +471,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
               width: guide.type === "v" ? "1px" : "100%",
               height: guide.type === "h" ? "1px" : "100%",
               backgroundColor: color,
+              // خطوط الحواف أخف من خط المركز — تظهر أثناء السحب فقط
+              // فلا تطغى على المحتوى المصمم
+              opacity: isCenter ? 1 : 0.55,
             }}
           />
         );
@@ -683,7 +572,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
           onMouseLeave={handleWorkspaceMouseLeave}
         >
           <div
-            className="min-w-full min-h-full flex p-4"
+            className="min-w-full min-h-full flex p-3"
             role="presentation"
             onClick={(e) => {
               if (e.target === e.currentTarget) selectElement(null);

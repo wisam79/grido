@@ -651,11 +651,11 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         dir="rtl"
       >
         {/* ═══ الرأس: أيقونة + عنوان + وصف | محدد الورقة | إغلاق ═══ */}
-        <DialogHeader className="px-6 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
+        <DialogHeader className="px-6 py-4 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                <SquaresFour className="w-5 h-5" weight="duotone" />
+                <SquaresFour className="w-6 h-6" weight="duotone" />
               </div>
               <div className="min-w-0 text-start">
                 <div className="flex items-center gap-2">
@@ -775,7 +775,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                   </>
                 ) : (
                   <>
-                    <FloppyDisk className="w-3.5 h-3.5 text-emerald-500" weight="bold" />
+                    <FloppyDisk className="w-4 h-4 text-emerald-500" weight="bold" />
                     <span>حفظ</span>
                   </>
                 )}
@@ -790,7 +790,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                     onClick={handleExportLayout}
                     disabled={slots.length === 0}
                   >
-                    <DownloadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+                    <DownloadSimple className="w-4 h-4 text-primary" weight="bold" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="font-cairo text-mini">تصدير JSON</TooltipContent>
@@ -804,7 +804,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                     className="h-8 w-8 rounded-md cursor-pointer border-border/60 hover:bg-muted"
                     onClick={() => importInputRef.current?.click()}
                   >
-                    <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+                    <UploadSimple className="w-4 h-4 text-primary" weight="bold" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="font-cairo text-mini">استيراد JSON</TooltipContent>
@@ -854,7 +854,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                 </>
               ) : (
                 <>
-                  <Check className="w-3.5 h-3.5" weight="bold" />
+                  <Check className="w-4 h-4" weight="bold" />
                   <span>تطبيق</span>
                 </>
               )}

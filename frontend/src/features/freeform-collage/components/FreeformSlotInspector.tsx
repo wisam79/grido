@@ -93,7 +93,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
   if (!slot) {
     return (
       <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl bg-card/60 border border-dashed border-border/70 fluent-specular shadow-2xs h-full min-h-[160px] text-muted-foreground select-none gap-1.5">
-        <SlidersHorizontal className="w-6 h-6 opacity-30 text-primary" weight="duotone" />
+        <SlidersHorizontal className="w-7 h-7 opacity-30 text-primary" weight="duotone" />
         <span className="text-xs font-bold text-foreground/75">لا خلية محددة</span>
         <span className="text-micro leading-relaxed text-muted-foreground">
           انقر خلية لضبط المقاس والموقع
@@ -305,7 +305,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={onRotateSlot}
               >
-                <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
+                <ArrowClockwise className="w-4 h-4" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">تدوير 90°</TooltipContent>
@@ -333,7 +333,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={() => onAlignSlot("center-h")}
               >
-                <AlignCenterHorizontal className="w-3.5 h-3.5" weight="bold" />
+                <AlignCenterHorizontal className="w-4 h-4" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">توسيط أفقي</TooltipContent>
@@ -347,7 +347,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={() => onAlignSlot("center-v")}
               >
-                <AlignCenterVertical className="w-3.5 h-3.5" weight="bold" />
+                <AlignCenterVertical className="w-4 h-4" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">توسيط عمودي</TooltipContent>
@@ -363,7 +363,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
                 onClick={onDuplicateSlot}
               >
-                <Copy className="w-3.5 h-3.5" weight="bold" />
+                <Copy className="w-4 h-4" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">تكرار (Ctrl+D)</TooltipContent>
@@ -377,7 +377,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
                 className="h-7 w-7 rounded-md text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                 onClick={onRemoveSlot}
               >
-                <Trash className="w-3.5 h-3.5" weight="bold" />
+                <Trash className="w-4 h-4" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">حذف (Del)</TooltipContent>

@@ -123,15 +123,15 @@ export function FreeformFontsTab() {
   };
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div className="flex flex-col gap-2.5 font-cairo animate-in fade-in duration-200" dir="rtl">
       <FluentSection
-        icon={<MagnifyingGlass className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<MagnifyingGlass className="w-4 h-4" weight="duotone" />}
         title="البحث والتصنيف"
         subtitle={`${ARABIC_FONTS.length} خط عربي متاح`}
       >
         <div className="relative">
           <MagnifyingGlass
-            className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none"
+            className="absolute start-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
             weight="bold"
           />
           <Input
@@ -146,7 +146,7 @@ export function FreeformFontsTab() {
               type="button"
               onClick={() => setSearch("")}
               aria-label="مسح البحث"
-              className="absolute end-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="absolute end-0.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               <X className="w-3 h-3" weight="bold" />
             </button>
@@ -185,7 +185,7 @@ export function FreeformFontsTab() {
 
       {favoriteFonts.length > 0 && (
         <FluentSection
-          icon={<Star className="w-3.5 h-3.5" weight="fill" />}
+          icon={<Star className="w-4 h-4" weight="fill" />}
           title="المفضلة"
           subtitle="انقر للنسخ على المحدد"
           badge={favoriteFonts.length}
@@ -208,7 +208,7 @@ export function FreeformFontsTab() {
       )}
 
       <FluentSection
-        icon={<TextAa className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<TextAa className="w-4 h-4" weight="duotone" />}
         title="كل الخطوط"
         subtitle={
           selectedTexts.length > 0
@@ -219,7 +219,7 @@ export function FreeformFontsTab() {
       >
         {visibleFonts.length === 0 ? (
           <FluentEmptyState
-            icon={<MagnifyingGlass className="w-5 h-5" weight="duotone" />}
+            icon={<MagnifyingGlass className="w-6 h-6" weight="duotone" />}
             title="لا خطوط مطابقة"
             description="جرّب كلمة أخرى أو اختر تصنيفاً مختلفاً"
             actionLabel="مسح الفلاتر"
@@ -263,14 +263,14 @@ export function FreeformFontsTab() {
                     aria-pressed={isFavorite}
                     aria-label={isFavorite ? `إزالة ${font.arabicName} من المفضلة` : `إضافة ${font.arabicName} للمفضلة`}
                     className={cn(
-                      "absolute top-1.5 end-1.5 w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer",
+                      "absolute top-1 end-1 w-7 h-7 rounded-md flex items-center justify-center transition-colors cursor-pointer",
                       "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                       isFavorite
                         ? "text-primary hover:bg-primary/10"
                         : "text-muted-foreground/60 hover:text-foreground hover:bg-muted/70"
                     )}
                   >
-                    <Star className="w-3.5 h-3.5" weight={isFavorite ? "fill" : "regular"} />
+                    <Star className="w-4 h-4" weight={isFavorite ? "fill" : "regular"} />
                   </button>
                 </div>
               );

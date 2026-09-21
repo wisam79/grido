@@ -386,19 +386,19 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
             {
               id: "badges",
               label: "شارات",
-              icon: <Stamp className="w-3.5 h-3.5 shrink-0" weight={activeCategory === "badges" ? "fill" : "regular"} />,
+              icon: <Stamp className="w-4 h-4 shrink-0" weight={activeCategory === "badges" ? "fill" : "regular"} />,
               tooltip: "شارات وأختام",
             },
             {
               id: "shapes",
               label: "أشكال",
-              icon: <Shapes className="w-3.5 h-3.5 shrink-0" weight={activeCategory === "shapes" ? "fill" : "regular"} />,
+              icon: <Shapes className="w-4 h-4 shrink-0" weight={activeCategory === "shapes" ? "fill" : "regular"} />,
               tooltip: "أشكال وتصاميم",
             },
             {
               id: "text",
               label: "نصوص",
-              icon: <TextT className="w-3.5 h-3.5 shrink-0" weight={activeCategory === "text" ? "fill" : "regular"} />,
+              icon: <TextT className="w-4 h-4 shrink-0" weight={activeCategory === "text" ? "fill" : "regular"} />,
               tooltip: "نصوص جاهزة",
             },
           ]}
@@ -415,7 +415,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
             className="w-full h-8 px-2.5 rounded-md text-xs font-semibold bg-card hover:bg-accent text-foreground border border-border/80 hover:border-primary/50 transition-all flex items-center justify-between shadow-2xs cursor-pointer select-none active:scale-[0.98]"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Stamp className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
+              <Stamp className="w-4 h-4 text-primary shrink-0" weight="bold" />
               <span className="truncate">استوديو الملصقات</span>
             </div>
             <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
@@ -439,7 +439,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
           />
 
           {/* شبكة بطاقات الملصقات المتجاوبة بنسب أبعاد مضبوطة وتفاصيل واضحة */}
-          <div className="grid grid-cols-2 gap-2 max-h-[calc(100vh-270px)] overflow-y-auto px-1 custom-scrollbar">
+          <div className="grid grid-cols-2 gap-1.5 max-h-[calc(100vh-270px)] overflow-y-auto px-0.5 custom-scrollbar">
             {displayedStickers.map((tmpl) => {
               const svg = getStickerSvgPreview(tmpl);
               const isBusy = isInserting === tmpl.id;
@@ -451,17 +451,17 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   disabled={isBusy}
                   onClick={() => handleInsertSticker(tmpl)}
                   title={`${tmpl.name} (انقر للإدراج)`}
-                  className="group relative bg-card/70 hover:bg-card border border-border/60 hover:border-primary/50 rounded-xl p-2 transition-all duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
+                  className="group relative bg-card hover:bg-accent/40 border border-border/70 hover:border-primary/50 rounded-lg p-1.5 transition-all duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
                 >
-                  {/* حاوية المعاينة مع خلفية أكريليك ناعمة تُظهر تفاصيل التصميم بوضوح */}
-                  <div className="w-full h-24 rounded-lg bg-background/80 dark:bg-muted/30 border border-border/30 group-hover:border-primary/30 flex items-center justify-center p-2 relative overflow-hidden transition-all">
+                  {/* حاوية المعاينة المدمجة */}
+                  <div className="w-full h-20 rounded-md bg-muted/40 flex items-center justify-center p-1.5 relative overflow-hidden transition-all">
                     {svg ? (
                       <div
                         className="w-full h-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:h-auto transition-transform group-hover:scale-105 duration-200 pointer-events-none drop-shadow-2xs"
                         dangerouslySetInnerHTML={{ __html: sanitizeSvgMarkupCached(svg) }}
                       />
                     ) : (
-                      <Stamp className="w-8 h-8 text-muted-foreground/40" />
+                      <Stamp className="w-6 h-6 text-muted-foreground/40" />
                     )}
 
                     {/* زر + صغير يظهر عند التحويم لإعطاء إيحاء فوري بالإدراج السريع */}
@@ -500,16 +500,16 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
             <span className="text-xs font-bold text-foreground/80">أشكال هندسية وتصاميم</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-1.5">
             {QUICK_SHAPES.map((shape) => (
               <button
                 key={shape.id}
                 type="button"
                 onClick={() => handleAddShape(shape)}
-                className="group flex items-center gap-2.5 p-2 bg-card hover:bg-accent/40 border border-border/60 hover:border-primary/50 rounded-xl transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="group flex items-center gap-2 p-1.5 bg-card hover:bg-accent/40 border border-border/70 hover:border-primary/50 rounded-lg transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
+                  className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
                   style={{ backgroundColor: `${shape.color}15`, color: shape.color }}
                 >
                   {shape.shape === "rect" && <Square className="w-4 h-4" weight="bold" />}
@@ -519,7 +519,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   {shape.id === "heart" && <Heart className="w-4 h-4" weight="fill" />}
                   {shape.id === "shield" && <Shield className="w-4 h-4" weight="fill" />}
                   {shape.id === "diamond" && <Diamond className="w-4 h-4" weight="fill" />}
-                  {shape.id === "line" && <div className="w-4 h-0.5 bg-current rounded-full" />}
+                  {shape.id === "line" && <div className="w-3.5 h-0.5 bg-current rounded-full" />}
                   {shape.id === "hexagon" && <span className="font-bold text-xs">⬡</span>}
                   {shape.id === "arrow" && <ArrowRight className="w-4 h-4" weight="bold" />}
                 </div>
@@ -528,7 +528,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   <span className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
                     {shape.label}
                   </span>
-                  <span className="text-micro text-muted-foreground/80 truncate">إدراج فوري</span>
+                  <span className="text-micro text-muted-foreground/80 truncate">إدراج</span>
                 </div>
               </button>
             ))}

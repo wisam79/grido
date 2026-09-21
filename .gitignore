@@ -47,6 +47,11 @@ opencode.json
 # Third-party build artifacts
 build/windows/installer/CodeFormer-temp/
 
+# Android/Gradle local build output (كاش ومخرجات بناء محلية — لا تُرفع للمستودع)
+build/android/.gradle/
+build/android/build/
+build/android/app/build/
+
 # Wails v3 binary output (BIN_DIR="bin" في Taskfile.yml)
 /bin
 

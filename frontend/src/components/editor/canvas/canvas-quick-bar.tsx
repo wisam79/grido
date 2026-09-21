@@ -215,7 +215,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   // جسم الشريط مشترك بين المسارين (الديناميكي والاحتياطي)
   const barBody = (
-    <div className="bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 shadow-fluent-8 rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-foreground fluent-specular max-w-full overflow-x-auto">
+    <div className="bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 shadow-fluent-8 rounded-xl px-2 py-0.5 flex items-center gap-1 text-foreground fluent-specular max-w-full overflow-x-auto">
 
       {/* وضع الكولاج - الخلية المحددة */}
       {hasSlotSection && selectedSlot && (
@@ -237,7 +237,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
             className="h-7 w-7 p-0 rounded-md hover:bg-muted text-muted-foreground ms-1"
             aria-label="إغلاق الشريط"
           >
-            <X className="w-3.5 h-3.5" weight="regular" />
+            <X className="w-4 h-4" weight="regular" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">إغلاق الشريط</TooltipContent>

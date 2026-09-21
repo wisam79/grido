@@ -62,3 +62,15 @@ export function WindowSnapAssist(): void {
   Window.SnapAssist();
 }
 
+export function WindowToggleFullscreen(): void {
+  Window.ToggleFullscreen();
+}
+
+export function WindowIsFullscreen(): Promise<boolean> {
+  return Window.IsFullscreen();
+}
+
+export function WindowRestore(): void {
+  Window.Restore();
+}
+

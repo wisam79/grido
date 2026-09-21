@@ -521,7 +521,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
         >
           <div className="min-w-0">
             <DialogTitle className="text-sm font-bold flex items-center gap-2">
-              <Sparkle className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+              <Sparkle className="text-primary w-7 h-7 shrink-0" weight="duotone" />
               <span>تعديل القص يدوياً</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -544,7 +544,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "erase" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("erase")}
               >
-                <Eraser className="w-4 h-4 shrink-0" weight={tool === "erase" ? "fill" : "bold"} />
+                <Eraser className="w-5 h-5 shrink-0" weight={tool === "erase" ? "fill" : "bold"} />
                 ممحاة
               </Button>
               <Button
@@ -552,7 +552,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "defringe" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("defringe")}
               >
-                <PaintBucket className="w-4 h-4 shrink-0" weight={tool === "defringe" ? "fill" : "bold"} />
+                <PaintBucket className="w-5 h-5 shrink-0" weight={tool === "defringe" ? "fill" : "bold"} />
                 تشذيب الحواف
               </Button>
               <Button
@@ -560,7 +560,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "restore" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("restore")}
               >
-                <PaintBrush className="w-4 h-4 shrink-0" weight={tool === "restore" ? "fill" : "bold"} />
+                <PaintBrush className="w-5 h-5 shrink-0" weight={tool === "restore" ? "fill" : "bold"} />
                 استرجاع
               </Button>
               <Button
@@ -568,7 +568,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "magic" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("magic")}
               >
-                <Sparkle className="w-4 h-4 shrink-0" weight={tool === "magic" ? "fill" : "bold"} />
+                <Sparkle className="w-5 h-5 shrink-0" weight={tool === "magic" ? "fill" : "bold"} />
                 تحديد ذكي
               </Button>
               <Button
@@ -576,7 +576,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "pan" && "bg-primary text-primary-foreground")}
                 onClick={() => setTool("pan")}
               >
-                <Hand className="w-4 h-4 shrink-0" weight={tool === "pan" ? "fill" : "bold"} />
+                <Hand className="w-5 h-5 shrink-0" weight={tool === "pan" ? "fill" : "bold"} />
                 تحريك
               </Button>
             </div>
@@ -643,7 +643,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                   onClick={() => setScale(s => Math.min(s + 0.25, 5))}
                   title="تكبير"
                 >
-                  <MagnifyingGlassPlus className="text-muted-foreground w-4 h-4 shrink-0" />
+                  <MagnifyingGlassPlus className="text-muted-foreground w-5 h-5 shrink-0" />
                 </Button>
                 <Button 
                   variant="outline" 
@@ -652,7 +652,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                   onClick={() => setScale(s => Math.max(s - 0.25, 0.25))}
                   title="تصغير"
                 >
-                  <MagnifyingGlassMinus className="text-muted-foreground w-4 h-4 shrink-0" />
+                  <MagnifyingGlassMinus className="text-muted-foreground w-5 h-5 shrink-0" />
                 </Button>
               </div>
               <Button 
@@ -661,7 +661,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 onClick={handleUndo}
                 disabled={historyLength <= 1}
               >
-                <ArrowCounterClockwise className="w-3.5 h-3.5 shrink-0" />
+                <ArrowCounterClockwise className="w-4 h-4 shrink-0" />
                 تراجع
               </Button>
             </div>
@@ -773,12 +773,12 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
           <Button onClick={handleSave} disabled={isSaving} className="text-xs font-semibold h-8 px-5 rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5">
             {isSaving ? (
               <>
-                <Spinner className="w-3.5 h-3.5" size={14} />
+                <Spinner className="w-4 h-4" size={14} />
                 <span>جاري الحفظ ...</span>
               </>
             ) : (
               <>
-                <FloppyDisk className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                <FloppyDisk className="w-4 h-4 shrink-0" weight="bold" />
                 <span>حفظ</span>
               </>
             )}

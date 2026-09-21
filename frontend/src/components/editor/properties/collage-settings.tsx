@@ -68,7 +68,7 @@ export function CollageSettings() {
     <div className="flex flex-col gap-3 font-cairo" dir="rtl">
       {/* 🎴 بطاقة 1: المسافات والاستدارة */}
       <FluentSection
-        icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<GridFour className="w-4 h-4" weight="duotone" />}
         title="المسافات والاستدارة"
         collapsible
         defaultOpen={true}
@@ -76,7 +76,7 @@ export function CollageSettings() {
         <div className="flex flex-col gap-2.5">
           <FluentSliderField
             label="التباعد الداخلي"
-            icon={<Rows className="w-3.5 h-3.5" weight="regular" />}
+            icon={<Rows className="w-4 h-4" weight="regular" />}
             value={collageGap}
             min={0}
             max={30}
@@ -87,7 +87,7 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الهوامش الخارجية"
-            icon={<ArrowsOutCardinal className="w-3.5 h-3.5" weight="regular" />}
+            icon={<ArrowsOutCardinal className="w-4 h-4" weight="regular" />}
             value={collageMargin}
             min={0}
             max={100}
@@ -98,7 +98,7 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="استدارة الزوايا"
-            icon={<Square className="w-3.5 h-3.5" weight="regular" />}
+            icon={<Square className="w-4 h-4" weight="regular" />}
             value={collageRadius}
             min={0}
             max={50}
@@ -112,7 +112,7 @@ export function CollageSettings() {
 
       {/* 🎴 بطاقة 2: إطار وحدود الخلايا */}
       <FluentSection
-        icon={<BoundingBox className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<BoundingBox className="w-4 h-4" weight="duotone" />}
         title="إطار الصور"
         collapsible
         defaultOpen={true}
@@ -120,7 +120,7 @@ export function CollageSettings() {
         <div className="space-y-2.5">
           <FluentSliderField
             label="سُمك الإطار"
-            icon={<BoundingBox className="w-3.5 h-3.5" weight="regular" />}
+            icon={<BoundingBox className="w-4 h-4" weight="regular" />}
             value={collageStrokeWidth}
             min={0}
             max={15}
@@ -151,7 +151,7 @@ export function CollageSettings() {
                       onClick={() => { setCollageStrokeColor(hex); commitColorLater(); }}
                       title={label}
                       className={cn(
-                        "w-6 h-6 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-110 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                        "w-7 h-7 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-110 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                         isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-xs"
                       )}
                       style={{ backgroundColor: hex }}
@@ -175,7 +175,7 @@ export function CollageSettings() {
 
       {/* 🎴 بطاقة 3: خطوط القص */}
       <FluentSection
-        icon={<Scissors className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Scissors className="w-4 h-4" weight="duotone" />}
         title="خطوط القص"
         collapsible
         defaultOpen={true}

@@ -147,7 +147,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
         <div className="flex items-center justify-between pb-2 border-b border-border/30 text-xs">
           <div className="flex items-center gap-1.5 font-bold text-foreground">
             <span className="w-5 h-5 rounded-md bg-primary/10 text-primary flex items-center justify-center">
-              <TextAa className="w-3.5 h-3.5" weight="bold" />
+              <TextAa className="w-4 h-4" weight="bold" />
             </span>
             <span>{activeFieldDef?.label ?? activeField.fieldId}</span>
           </div>
@@ -160,7 +160,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
                 className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md cursor-pointer transition-colors"
                 title="استعادة الافتراضي"
               >
-                <ArrowCounterClockwise className="w-3.5 h-3.5" />
+                <ArrowCounterClockwise className="w-4 h-4" />
               </button>
             )}
             <button
@@ -169,7 +169,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
               className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md cursor-pointer transition-colors"
               title="إغلاق"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -196,7 +196,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
                 className="p-0.5 rounded-md hover:bg-muted/60 hover:text-foreground cursor-pointer"
                 title="الحقل السابق (Shift+Tab)"
               >
-                <CaretUp className="w-3.5 h-3.5" />
+                <CaretUp className="w-4 h-4" />
               </button>
               <button
                 type="button"
@@ -204,7 +204,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
                 className="p-0.5 rounded-md hover:bg-muted/60 hover:text-foreground cursor-pointer"
                 title="الحقل التالي (Tab)"
               >
-                <CaretDown className="w-3.5 h-3.5" />
+                <CaretDown className="w-4 h-4" />
               </button>
             </span>
             <span className="ms-1 font-mono">
@@ -217,7 +217,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
             onClick={onClose}
             className="h-7 px-3 text-xs font-bold rounded-md bg-primary text-primary-foreground cursor-pointer gap-1"
           >
-            <Check className="w-3.5 h-3.5" weight="bold" />
+            <Check className="w-4 h-4" weight="bold" />
             تم
           </Button>
         </div>
@@ -247,7 +247,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
           onClick={onClose}
           className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md cursor-pointer"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
@@ -268,7 +268,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
           >
             {activeColor!.currentColor.toLowerCase() === c.toLowerCase() && (
               <Check
-                className={cn("w-3.5 h-3.5 font-bold", c === "#FFFFFF" ? "text-black" : "text-white")}
+                className={cn("w-4 h-4 font-bold", c === "#FFFFFF" ? "text-black" : "text-white")}
                 weight="bold"
               />
             )}

@@ -58,7 +58,7 @@ const Slider = React.forwardRef<
           data-slot="slider-thumb"
           key={index}
           {...thumbAriaProps}
-          className="block size-4 shrink-0 rounded-full bg-background border-2 border-primary shadow-sm shadow-black/20 hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing transition-transform duration-75"
+          className="block size-5 shrink-0 rounded-full bg-background border-2 border-primary shadow-sm shadow-black/20 hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing transition-transform duration-75"
         />
       ))}
     </SliderPrimitive.Root>

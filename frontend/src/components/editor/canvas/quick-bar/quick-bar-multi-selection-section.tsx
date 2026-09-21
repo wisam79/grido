@@ -29,7 +29,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
   return (
     <>
       <div className="flex items-center gap-1 text-xs font-bold px-1.5 text-primary">
-        <Stack className="w-4 h-4" weight="regular" />
+        <Stack className="w-5 h-5" weight="regular" />
         <span>{selectedIds.length} عناصر</span>
       </div>
 
@@ -46,7 +46,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
                 onClick={() => distributeSelectedElements("horizontal")}
                 className="h-7 w-7 p-0 rounded-md hover:bg-accent"
               >
-                <ArrowsHorizontal className="w-4 h-4" weight="bold" />
+                <ArrowsHorizontal className="w-5 h-5" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">توزيع أفقي</TooltipContent>
@@ -60,7 +60,7 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
                 onClick={() => distributeSelectedElements("vertical")}
                 className="h-7 w-7 p-0 rounded-md hover:bg-accent"
               >
-                <ArrowsVertical className="w-4 h-4" weight="bold" />
+                <ArrowsVertical className="w-5 h-5" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">توزيع عمودي</TooltipContent>

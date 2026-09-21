@@ -310,7 +310,7 @@ export function CollagePresetsTab({
             </span>
             <div className="flex items-center gap-1 shrink-0">
               {preset.tag && (
-                <span className="text-micro font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 leading-none">
+                <span className="text-micro font-bold px-1.5 py-0.5 rounded-full bg-muted/80 text-muted-foreground border border-border/50 leading-none">
                   {preset.tag}
                 </span>
               )}
@@ -400,7 +400,7 @@ export function CollagePresetsTab({
     <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo" dir="rtl">
       {/* 🔍 حقل البحث الفوري المدمج وفق Fluent 2 */}
       <div className="relative w-full">
-        <MagnifyingGlass className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <MagnifyingGlass className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           value={searchQuery}
@@ -432,10 +432,10 @@ export function CollagePresetsTab({
             >
               <SelectTrigger className="w-full h-8 px-2.5 text-xs font-bold bg-card border-border/80 rounded-md shadow-2xs hover:bg-muted/40 transition-colors cursor-pointer">
                 <div className="flex items-center gap-2 min-w-0 truncate">
-                  <currentCat.icon className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                  <currentCat.icon className="w-5 h-5 text-primary shrink-0" weight="duotone" />
                   <span className="truncate">{currentCat.label}</span>
                   {currentCat.badgeCount !== undefined && (
-                    <span className="text-micro font-mono font-bold px-1.5 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
+                    <span className="text-micro font-mono font-bold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0">
                       {currentCat.badgeCount}
                     </span>
                   )}
@@ -448,7 +448,7 @@ export function CollagePresetsTab({
                     <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold cursor-pointer py-2">
                       <div className="flex items-center justify-between w-full gap-2 min-w-[170px]">
                         <div className="flex items-center gap-2 min-w-0">
-                          <Icon className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                          <Icon className="w-5 h-5 text-primary shrink-0" weight="duotone" />
                           <span className="truncate">{cat.label}</span>
                         </div>
                         {cat.badgeCount !== undefined && (
@@ -475,12 +475,12 @@ export function CollagePresetsTab({
             options={[
               {
                 id: "list",
-                icon: <List className="w-4 h-4" weight={viewMode === "list" ? "bold" : "regular"} />,
+                icon: <List className="w-5 h-5" weight={viewMode === "list" ? "bold" : "regular"} />,
                 tooltip: "قائمة مفصلة",
               },
               {
                 id: "grid",
-                icon: <SquaresFour className="w-4 h-4" weight={viewMode === "grid" ? "bold" : "regular"} />,
+                icon: <SquaresFour className="w-5 h-5" weight={viewMode === "grid" ? "bold" : "regular"} />,
                 tooltip: "عرض شبكي",
               },
             ]}
@@ -573,7 +573,7 @@ export function CollagePresetsTab({
         savedTemplates.length === 0 ? (
           <div className="py-7 px-4 rounded-xl border border-dashed border-border/70 bg-card/40 flex flex-col items-center text-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-2xs">
-              <FolderSimple className="w-5 h-5" weight="duotone" />
+              <FolderSimple className="w-6 h-6" weight="duotone" />
             </div>
             <div className="space-y-0.5">
               <p className="text-xs font-bold text-foreground">لا توجد قوالب مخصصة محفوظة</p>
@@ -582,8 +582,8 @@ export function CollagePresetsTab({
               </p>
             </div>
             {onImportClick && (
-              <Button type="button" variant="outline" size="default" onClick={onImportClick} className="mt-1">
-                <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+              <Button type="button" variant="outline" size="sm" onClick={onImportClick} className="mt-1">
+                <UploadSimple className="w-4 h-4 text-primary" weight="bold" />
                 <span>استيراد قالب JSON</span>
               </Button>
             )}
@@ -598,13 +598,13 @@ export function CollagePresetsTab({
               <div className="flex items-center gap-1.5">
                 {onImportClick && (
                   <Button type="button" variant="outline" size="sm" onClick={onImportClick} title="استيراد قوالب">
-                    <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+                    <UploadSimple className="w-4 h-4 text-primary" weight="bold" />
                     <span>استيراد</span>
                   </Button>
                 )}
                 {onExportAllClick && (
                   <Button type="button" variant="outline" size="sm" onClick={onExportAllClick} title="تصدير القوالب">
-                    <DownloadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+                    <DownloadSimple className="w-4 h-4 text-primary" weight="bold" />
                     <span>تصدير الكل</span>
                   </Button>
                 )}
@@ -663,7 +663,7 @@ export function CollagePresetsTab({
                         aria-label="حذف القالب"
                         className="shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-destructive/15 hover:text-destructive"
                       >
-                        <Trash className="w-3.5 h-3.5" weight="regular" />
+                        <Trash className="w-4 h-4" weight="regular" />
                       </Button>
                     )}
                   </div>
@@ -674,7 +674,7 @@ export function CollagePresetsTab({
         )
       ) : presetCategory === "all" ? (
         /* 🌐 عرض كافة القوالب مقسمة حسب الفئات في نمط القائمة أو الشبكة */
-        <div className="space-y-3.5">
+        <div className="space-y-2.5">
           {groupedSections.map((section) => {
             const SectionIcon = section.icon;
             return (
@@ -682,7 +682,7 @@ export function CollagePresetsTab({
                 {/* ترويسة القسم الأنيقة */}
                 <div className="flex items-center justify-between text-xs font-bold text-foreground/80 px-1 pt-1 select-none border-b border-border/40 pb-1">
                   <div className="flex items-center gap-1.5">
-                    <SectionIcon className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                    <SectionIcon className="w-4 h-4 text-primary" weight="duotone" />
                     <span>{section.title}</span>
                   </div>
                   <span className="text-micro font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full font-bold" dir="ltr">

@@ -96,7 +96,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
           <div dir="rtl">
             <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <Ruler className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                <Ruler className="w-4 h-4 text-primary shrink-0" weight="regular" />
                 <span>وحدة قياس المسطرة</span>
               </span>
             </DropdownMenuLabel>
@@ -116,7 +116,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                     </div>
                     <span className="text-micro text-muted-foreground font-normal">{u.sub}</span>
                   </div>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />}
+                  {isSelected && <Check className="w-4 h-4 text-primary shrink-0" weight="bold" />}
                 </DropdownMenuItem>
               );
             })}
@@ -133,9 +133,9 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
               >
                 <div className="flex items-center gap-2">
                   {showUserGuides ? (
-                    <EyeSlash className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="fill" />
+                    <EyeSlash className="w-4 h-4 text-muted-foreground shrink-0" weight="fill" />
                   ) : (
-                    <Eye className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="regular" />
+                    <Eye className="w-4 h-4 text-muted-foreground shrink-0" weight="regular" />
                   )}
                   <span>{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
                 </div>
@@ -149,9 +149,9 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                 className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-xs"
               >
                 {lockUserGuides ? (
-                  <LockSimpleOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="regular" />
+                  <LockSimpleOpen className="w-4 h-4 text-muted-foreground shrink-0" weight="regular" />
                 ) : (
-                  <LockSimple className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="fill" />
+                  <LockSimple className="w-4 h-4 text-muted-foreground shrink-0" weight="fill" />
                 )}
                 <span>{lockUserGuides ? "إلغاء قفل الخطوط الإرشادية" : "قفل الخطوط الإرشادية"}</span>
               </DropdownMenuItem>
@@ -162,7 +162,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                 onClick={onClearGuides}
                 className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-destructive hover:bg-destructive/10 text-xs"
               >
-                <Trash className="w-3.5 h-3.5 shrink-0" weight="regular" />
+                <Trash className="w-4 h-4 shrink-0" weight="regular" />
                 <span>مسح كافة الخطوط الإرشادية</span>
               </DropdownMenuItem>
             )}

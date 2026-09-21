@@ -19,11 +19,11 @@ const Toaster = ({ offset = 56, ...props }: ToasterProps) => {
       className="toaster group"
       offset={offset}
       icons={{
-        success: <CheckCircle className="w-4 h-4 text-primary shrink-0" weight="duotone" />,
-        error: <XCircle className="w-4 h-4 text-destructive shrink-0" weight="duotone" />,
-        warning: <WarningCircle className="w-4 h-4 text-amber-500 shrink-0" weight="duotone" />,
-        info: <Info className="w-4 h-4 text-primary shrink-0" weight="duotone" />,
-        loading: <Spinner size={16} className="w-4 h-4 text-primary" />,
+        success: <CheckCircle className="w-5 h-5 text-primary shrink-0" weight="duotone" />,
+        error: <XCircle className="w-5 h-5 text-destructive shrink-0" weight="duotone" />,
+        warning: <WarningCircle className="w-5 h-5 text-amber-500 shrink-0" weight="duotone" />,
+        info: <Info className="w-5 h-5 text-primary shrink-0" weight="duotone" />,
+        loading: <Spinner size={16} className="w-5 h-5 text-primary" />,
       }}
       toastOptions={{
         classNames: {

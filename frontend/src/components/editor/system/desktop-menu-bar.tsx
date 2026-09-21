@@ -40,13 +40,17 @@ import {
   Question,
   Info,
   DeviceMobileCamera,
+  ArrowsOut,
+  Check,
 } from "@phosphor-icons/react";
 import { openDirectoryImageDialog } from "@/lib/io/file-dialog-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 import { toast } from "sonner";
 import { GetMediaStorageStats, CleanUnusedMediaNow } from "../../../../wailsjs/go/main/App";
+import { useWindowControls } from "@/hooks/use-window-controls";
 
 export function DesktopMenuBar() {
+  const { isFullscreen } = useWindowControls();
   const {
     mode,
     setMode,
@@ -181,7 +185,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-file-dialog"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Image className="w-4 h-4 text-muted-foreground" />
+            <Image className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">إدراج صورة</span>
           </DropdownMenuItem>
 
@@ -189,7 +193,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-batch-insert-dialog"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Images className="w-4 h-4 text-muted-foreground" />
+            <Images className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">إدراج دفعة</span>
           </DropdownMenuItem>
 
@@ -197,7 +201,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-phone-bridge"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <DeviceMobileCamera className="w-4 h-4 text-primary" weight="duotone" />
+            <DeviceMobileCamera className="w-5 h-5 text-primary" weight="duotone" />
             <span className="font-medium">كاميرا الهاتف</span>
           </DropdownMenuItem>
 
@@ -206,7 +210,7 @@ export function DesktopMenuBar() {
             onClick={handleOpenDirectory}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <FolderOpen className="w-4 h-4 text-muted-foreground" />
+            <FolderOpen className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">استيراد مجلد</span>
           </DropdownMenuItem>
 
@@ -217,7 +221,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <FloppyDisk className="w-4 h-4 text-primary" weight="duotone" />
+              <FloppyDisk className="w-5 h-5 text-primary" weight="duotone" />
               <span className="font-medium">حفظ المشروع</span>
             </div>
           </DropdownMenuItem>
@@ -226,7 +230,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-projects-dialog", { detail: { tab: "list" } }))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Folders className="w-4 h-4 text-muted-foreground" />
+            <Folders className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">مكتبة المشاريع</span>
           </DropdownMenuItem>
 
@@ -234,7 +238,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-export-dialog"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Export className="w-4 h-4 text-muted-foreground" />
+            <Export className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">تصدير</span>
           </DropdownMenuItem>
 
@@ -242,7 +246,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-print-dialog"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Printer className="w-4 h-4 text-muted-foreground" />
+            <Printer className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">طباعة</span>
           </DropdownMenuItem>
 
@@ -252,7 +256,7 @@ export function DesktopMenuBar() {
             onClick={() => useEditorStore.getState().reset()}
             className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
           >
-            <Broom className="w-4 h-4" />
+            <Broom className="w-5 h-5" />
             <span className="font-medium">مسح مساحة العمل</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -275,7 +279,7 @@ export function DesktopMenuBar() {
             onClick={undo}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ArrowUUpLeft className="w-4 h-4 text-muted-foreground" />
+            <ArrowUUpLeft className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">تراجع</span>
           </DropdownMenuItem>
 
@@ -284,7 +288,7 @@ export function DesktopMenuBar() {
             onClick={redo}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ArrowUUpRight className="w-4 h-4 text-muted-foreground" />
+            <ArrowUUpRight className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">إعادة</span>
           </DropdownMenuItem>
 
@@ -302,7 +306,7 @@ export function DesktopMenuBar() {
             }}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Copy className="w-4 h-4 text-muted-foreground" />
+            <Copy className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">تكرار</span>
           </DropdownMenuItem>
 
@@ -314,7 +318,7 @@ export function DesktopMenuBar() {
             }}
             className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
           >
-            <Trash className="w-4 h-4" />
+            <Trash className="w-5 h-5" />
             <span className="font-medium">حذف</span>
           </DropdownMenuItem>
 
@@ -324,7 +328,7 @@ export function DesktopMenuBar() {
             onClick={selectAllElements}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <SelectionAll className="w-4 h-4 text-muted-foreground" />
+            <SelectionAll className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">تحديد الكل</span>
           </DropdownMenuItem>
 
@@ -353,7 +357,7 @@ export function DesktopMenuBar() {
             onClick={() => setCanvasZoom((z) => stepZoom(z, 1))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <MagnifyingGlassPlus className="w-4 h-4 text-muted-foreground" />
+            <MagnifyingGlassPlus className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">تكبير</span>
           </DropdownMenuItem>
 
@@ -361,7 +365,7 @@ export function DesktopMenuBar() {
             onClick={() => setCanvasZoom((z) => stepZoom(z, -1))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <MagnifyingGlassMinus className="w-4 h-4 text-muted-foreground" />
+            <MagnifyingGlassMinus className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">تصغير</span>
           </DropdownMenuItem>
 
@@ -378,7 +382,7 @@ export function DesktopMenuBar() {
             onClick={() => setShowRuler(!showRuler)}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Ruler className="w-4 h-4 text-muted-foreground" />
+            <Ruler className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">المساطر</span>
           </DropdownMenuItem>
 
@@ -386,7 +390,7 @@ export function DesktopMenuBar() {
             onClick={() => setShowGrid(!showGrid)}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <SquaresFour className="w-4 h-4 text-muted-foreground" />
+            <SquaresFour className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">الشبكة</span>
           </DropdownMenuItem>
 
@@ -394,7 +398,7 @@ export function DesktopMenuBar() {
             onClick={() => setShowUserGuides(!showUserGuides)}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Eye className="w-4 h-4 text-muted-foreground" />
+            <Eye className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">الخطوط الإرشادية</span>
           </DropdownMenuItem>
 
@@ -403,7 +407,7 @@ export function DesktopMenuBar() {
               onClick={clearUserGuides}
               className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
             >
-              <Trash className="w-4 h-4" />
+              <Trash className="w-5 h-5" />
               <span className="font-medium">مسح الخطوط</span>
             </DropdownMenuItem>
           )}
@@ -414,7 +418,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:toggle-right-sidebar"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <SidebarSimple className="w-4 h-4 text-muted-foreground" />
+            <SidebarSimple className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">القوالب</span>
           </DropdownMenuItem>
 
@@ -422,8 +426,24 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:toggle-left-sidebar"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+            <SlidersHorizontal className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">الخصائص</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          {/* ملء شاشة النافذة الأصلية (F11) — وضع التركيز Zen منفصل ويخص الألواح */}
+          <DropdownMenuItem
+            onClick={() => window.dispatchEvent(new CustomEvent("grido:toggle-fullscreen"))}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+          >
+            <ArrowsOut className="w-5 h-5 text-muted-foreground" />
+            <span className="font-medium flex-1">ملء الشاشة</span>
+            {isFullscreen ? (
+              <Check className="w-4 h-4 text-primary" weight="bold" />
+            ) : (
+              <span className="text-micro font-mono text-muted-foreground">F11</span>
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -446,7 +466,7 @@ export function DesktopMenuBar() {
           >
             <div className="flex items-center gap-2.5">
               <SquaresFour
-                className={cn("w-4 h-4", mode === "collage" ? "text-primary" : "text-muted-foreground")}
+                className={cn("w-5 h-5", mode === "collage" ? "text-primary" : "text-muted-foreground")}
                 weight={mode === "collage" ? "fill" : "regular"}
               />
               <span className="font-medium">كولاج شبكي</span>
@@ -462,7 +482,7 @@ export function DesktopMenuBar() {
           >
             <div className="flex items-center gap-2.5">
               <Image
-                className={cn("w-4 h-4", mode === "single" ? "text-primary" : "text-muted-foreground")}
+                className={cn("w-5 h-5", mode === "single" ? "text-primary" : "text-muted-foreground")}
                 weight={mode === "single" ? "fill" : "regular"}
               />
               <span className="font-medium">وضع حر</span>
@@ -478,7 +498,7 @@ export function DesktopMenuBar() {
             onClick={handleToggleOrientation}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <ArrowClockwise className="w-4 h-4 text-muted-foreground" />
+            <ArrowClockwise className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">تدوير الورقة</span>
           </DropdownMenuItem>
 
@@ -486,7 +506,7 @@ export function DesktopMenuBar() {
             onClick={() => setCollageShowCutLines(!collageShowCutLines)}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Scissors className="w-4 h-4 text-muted-foreground" />
+            <Scissors className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">علامات القص</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -509,7 +529,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" weight="duotone" />
+              <ShieldCheck className="w-5 h-5 text-emerald-500" weight="duotone" />
               <span className="font-medium">الترخيص</span>
             </div>
             <span className="text-micro bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold">مرخص</span>
@@ -520,7 +540,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <Sparkle className="w-4 h-4 text-primary" weight="duotone" />
+              <Sparkle className="w-5 h-5 text-primary" weight="duotone" />
               <span className="font-medium">معالجة الدفعات</span>
             </div>
             <span className="text-micro bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">احترافي</span>
@@ -531,7 +551,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
-              <SealCheck className="w-4 h-4 text-primary" weight="duotone" />
+              <SealCheck className="w-5 h-5 text-primary" weight="duotone" />
               <span className="font-medium">استوديو الملصقات</span>
             </div>
             <span className="text-micro bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold">جديد</span>
@@ -544,7 +564,7 @@ export function DesktopMenuBar() {
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 flex items-center justify-between text-muted-foreground hover:text-foreground"
           >
             <div className="flex items-center gap-2.5">
-              <Broom className="w-4 h-4 text-primary" />
+              <Broom className="w-5 h-5 text-primary" />
               <span className="font-medium">تنظيف كاش الوسائط</span>
             </div>
           </DropdownMenuItem>
@@ -567,7 +587,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:open-shortcuts"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Question className="w-4 h-4 text-muted-foreground" />
+            <Question className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">الاختصارات</span>
           </DropdownMenuItem>
 
@@ -575,7 +595,7 @@ export function DesktopMenuBar() {
             onClick={() => window.dispatchEvent(new CustomEvent("grido:check-updates"))}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <Info className="w-4 h-4 text-muted-foreground" />
+            <Info className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">التحديثات</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

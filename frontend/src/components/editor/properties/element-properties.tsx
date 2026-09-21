@@ -48,7 +48,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
                 label: "التنسيق",
                 icon: (
                   <PaintBrush
-                    className="w-3.5 h-3.5 shrink-0 transition-transform"
+                    className="w-4 h-4 shrink-0 transition-transform"
                     weight={activeTab === "style" ? "duotone" : "regular"}
                   />
                 ),
@@ -60,7 +60,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
                 label: "الألوان",
                 icon: (
                   <Palette
-                    className="w-3.5 h-3.5 shrink-0 transition-transform"
+                    className="w-4 h-4 shrink-0 transition-transform"
                     weight={activeTab === "adjust" ? "duotone" : "regular"}
                   />
                 ),
@@ -75,7 +75,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
                 label: "التأثيرات",
                 icon: (
                   <Sparkle
-                    className="w-3.5 h-3.5 shrink-0 transition-transform"
+                    className="w-4 h-4 shrink-0 transition-transform"
                     weight={activeTab === "effects" ? "duotone" : "regular"}
                   />
                 ),
@@ -87,7 +87,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
                 label: "الترتيب",
                 icon: (
                   <ArrowsOutCardinal
-                    className="w-3.5 h-3.5 shrink-0 transition-transform"
+                    className="w-4 h-4 shrink-0 transition-transform"
                     weight={activeTab === "arrange" ? "duotone" : "regular"}
                   />
                 ),

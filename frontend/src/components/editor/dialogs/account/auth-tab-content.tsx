@@ -55,14 +55,14 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
     <form onSubmit={handleVerifyRecovery} className="space-y-3">
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-center gap-2 text-destructive text-xs font-semibold">
-          <Warning className="w-4 h-4 shrink-0" weight="duotone" />
+          <Warning className="w-5 h-5 shrink-0" weight="duotone" />
           <span>{error}</span>
         </div>
       )}
       <div className="space-y-1">
         <Label className="text-xs font-bold text-foreground/90">البريد الإلكتروني</Label>
         <div className="relative">
-          <EnvelopeSimple className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
+          <EnvelopeSimple className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 shrink-0" />
           <Input
             type="email"
             placeholder="name@example.com"
@@ -76,7 +76,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
       <div className="space-y-1">
         <Label className="text-xs font-bold text-foreground/90">كود الاستعادة (OTP)</Label>
         <div className="relative">
-          <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
+          <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 shrink-0" />
           <Input
             type="text"
             placeholder="123456"
@@ -95,7 +95,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
       <div className="space-y-1">
         <Label className="text-xs font-bold text-foreground/90">كلمة المرور الجديدة</Label>
         <div className="relative">
-          <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
+          <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 shrink-0" />
           <Input
             type="password"
             placeholder="••••••••"
@@ -114,7 +114,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
       >
         {loading ? (
           <>
-            <Spinner className="w-4 h-4" size={16} />
+            <Spinner className="w-5 h-5" size={16} />
             <span>جاري الحفظ ...</span>
           </>
         ) : (
@@ -146,12 +146,12 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
       >
         {loadingGoogle ? (
           <>
-            <Spinner className="w-4 h-4 text-primary" size={16} />
+            <Spinner className="w-5 h-5 text-primary" size={16} />
             <span>جاري الدخول عبر Google ...</span>
           </>
         ) : (
           <>
-            <GoogleIcon className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform duration-200" />
+            <GoogleIcon className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform duration-200" />
             <span className="font-semibold text-foreground/90 group-hover:text-foreground">
               متابعة باستخدام Google
             </span>
@@ -168,7 +168,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
       <form onSubmit={handleAuth} className="space-y-3">
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-center gap-2 text-destructive text-xs font-semibold">
-            <Warning className="w-4 h-4 shrink-0" weight="duotone" />
+            <Warning className="w-5 h-5 shrink-0" weight="duotone" />
             <span>{error}</span>
           </div>
         )}
@@ -176,7 +176,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           <div className="space-y-2.5">
             <Label className="text-xs font-bold text-foreground/90">كود التحقق (OTP)</Label>
             <div className="relative">
-              <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
+              <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 shrink-0" />
               <Input
                 type="text"
                 placeholder="123456"
@@ -199,7 +199,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             >
               {loading ? (
                 <>
-                  <Spinner className="w-4 h-4" size={16} />
+                  <Spinner className="w-5 h-5" size={16} />
                   <span>جاري تأكيد الكود ...</span>
                 </>
               ) : (
@@ -216,7 +216,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
               >
                 {resending ? (
                   <span className="flex items-center gap-1">
-                    <Spinner className="w-3.5 h-3.5 inline" size={14} /> جاري الإرسال ...
+                    <Spinner className="w-4 h-4 inline" size={14} /> جاري الإرسال ...
                   </span>
                 ) : resendCooldown > 0 ? (
                   `إعادة الإرسال بعد (${resendCooldown} ث)`
@@ -243,7 +243,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
               <div className="space-y-1">
                 <Label className="text-xs font-bold text-foreground/90">الاسم الكامل</Label>
                 <div className="relative">
-                  <User className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
+                  <User className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 shrink-0" />
                   <Input
                     placeholder="الاسم"
                     className="pr-9 h-9 text-xs rounded-md"
@@ -258,7 +258,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             <div className="space-y-1">
               <Label className="text-xs font-bold text-foreground/90">البريد الإلكتروني</Label>
               <div className="relative">
-                <EnvelopeSimple className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
+                <EnvelopeSimple className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 shrink-0" />
                 <Input
                   type="email"
                   placeholder="name@example.com"
@@ -285,7 +285,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 )}
               </div>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 shrink-0" />
                 <Input
                   type="password"
                   placeholder="••••••••"
@@ -304,7 +304,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             >
               {loading ? (
                 <>
-                  <Spinner className="w-4 h-4" size={16} />
+                  <Spinner className="w-5 h-5" size={16} />
                   <span>{authMode === "login" ? "جاري تسجيل الدخول ..." : "جاري إنشاء الحساب ..."}</span>
                 </>
               ) : authMode === "login" ? (

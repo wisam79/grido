@@ -30,7 +30,7 @@ export function GeneralSettings() {
       <CanvasDimensionsPanel />
 
       <FluentSection
-        icon={<PaintBrush className="w-3.5 h-3.5 text-primary" weight="duotone" />}
+        icon={<PaintBrush className="w-4 h-4 text-primary" weight="duotone" />}
         title="خلفية الورقة"
         collapsible
         defaultOpen={true}

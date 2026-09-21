@@ -104,10 +104,10 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
   };
 
   return (
-    <div className="space-y-3 font-cairo animate-in fade-in duration-150" dir="rtl">
+    <div className="space-y-2.5 font-cairo animate-in fade-in duration-150" dir="rtl">
       {/* 🎛️ شريط أدوات الطبقات السريع المجمع */}
-      <div className="bg-card border border-border p-2 rounded-xl shadow-xs fluent-specular space-y-2">
-        <div className="flex items-center justify-between border-b border-border/40 pb-1.5 px-1">
+      <div className="bg-card border border-border p-1.5 rounded-lg shadow-xs fluent-specular space-y-1.5">
+        <div className="flex items-center justify-between border-b border-border/40 pb-1 px-1">
           <span className="text-xs font-bold text-foreground/80">أدوات الطبقات</span>
           <span className="text-micro text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
             {selectedIds.length > 0 ? `${selectedIds.length} محدد` : `${elements.length} طبقة`}
@@ -122,7 +122,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               onClick={handleToggleAllVisibility}
               disabled={!hasElements}
             >
-              {allHidden ? <EyeSlash className="w-3.5 h-3.5 text-amber-500" /> : <Eye className="w-3.5 h-3.5" />}
+              {allHidden ? <EyeSlash className="w-4 h-4 text-amber-500" /> : <Eye className="w-4 h-4" />}
             </QuickActionBtn>
 
             <QuickActionBtn
@@ -130,7 +130,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               onClick={handleToggleAllLock}
               disabled={!hasElements}
             >
-              {allLocked ? <LockSimple className="w-3.5 h-3.5 text-amber-500" /> : <LockSimpleOpen className="w-3.5 h-3.5" />}
+              {allLocked ? <LockSimple className="w-4 h-4 text-amber-500" /> : <LockSimpleOpen className="w-4 h-4" />}
             </QuickActionBtn>
           </div>
 
@@ -141,7 +141,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               onClick={groupSelectedElements}
               disabled={!hasMultipleSelected}
             >
-              <FolderSimplePlus className="w-3.5 h-3.5" />
+              <FolderSimplePlus className="w-4 h-4" />
             </QuickActionBtn>
 
             <QuickActionBtn
@@ -149,7 +149,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               onClick={ungroupSelectedElements}
               disabled={!hasSelection}
             >
-              <FolderSimpleDashed className="w-3.5 h-3.5" />
+              <FolderSimpleDashed className="w-4 h-4" />
             </QuickActionBtn>
 
             <QuickActionBtn
@@ -157,7 +157,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               onClick={() => duplicateElements(selectedIds)}
               disabled={!hasSelection}
             >
-              <Copy className="w-3.5 h-3.5" />
+              <Copy className="w-4 h-4" />
             </QuickActionBtn>
 
             <QuickActionBtn
@@ -165,7 +165,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               onClick={() => removeElements(selectedIds)}
               disabled={!hasSelection}
             >
-              <Trash className="w-3.5 h-3.5 text-destructive" />
+              <Trash className="w-4 h-4 text-destructive" />
             </QuickActionBtn>
           </div>
         </div>
@@ -174,13 +174,13 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
         <div className="pt-1.5 border-t border-border/40 flex items-center justify-between gap-1">
           <div className="flex items-center gap-0.5">
             <QuickActionBtn content="محاذاة لليمين" onClick={() => alignSelectedElements("right")} disabled={!hasSelection}>
-              <AlignRight className="w-3.5 h-3.5" />
+              <AlignRight className="w-4 h-4" />
             </QuickActionBtn>
             <QuickActionBtn content="توسيط أفقي" onClick={() => alignSelectedElements("center")} disabled={!hasSelection}>
-              <AlignCenterHorizontal className="w-3.5 h-3.5" />
+              <AlignCenterHorizontal className="w-4 h-4" />
             </QuickActionBtn>
             <QuickActionBtn content="محاذاة لليسار" onClick={() => alignSelectedElements("left")} disabled={!hasSelection}>
-              <AlignLeft className="w-3.5 h-3.5" />
+              <AlignLeft className="w-4 h-4" />
             </QuickActionBtn>
           </div>
 
@@ -188,13 +188,13 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
 
           <div className="flex items-center gap-0.5">
             <QuickActionBtn content="محاذاة للأعلى" onClick={() => alignSelectedElements("top")} disabled={!hasSelection}>
-              <AlignTop className="w-3.5 h-3.5" />
+              <AlignTop className="w-4 h-4" />
             </QuickActionBtn>
             <QuickActionBtn content="توسيط عمودي" onClick={() => alignSelectedElements("middle")} disabled={!hasSelection}>
-              <AlignCenterVertical className="w-3.5 h-3.5" />
+              <AlignCenterVertical className="w-4 h-4" />
             </QuickActionBtn>
             <QuickActionBtn content="محاذاة للأسفل" onClick={() => alignSelectedElements("bottom")} disabled={!hasSelection}>
-              <AlignBottom className="w-3.5 h-3.5" />
+              <AlignBottom className="w-4 h-4" />
             </QuickActionBtn>
           </div>
 
@@ -202,10 +202,10 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
 
           <div className="flex items-center gap-0.5">
             <QuickActionBtn content="توزيع أفقي" onClick={() => distributeSelectedElements("horizontal")} disabled={!hasMultipleSelected}>
-              <ArrowsHorizontal className="w-3.5 h-3.5" />
+              <ArrowsHorizontal className="w-4 h-4" />
             </QuickActionBtn>
             <QuickActionBtn content="توزيع عمودي" onClick={() => distributeSelectedElements("vertical")} disabled={!hasMultipleSelected}>
-              <ArrowsVertical className="w-3.5 h-3.5" />
+              <ArrowsVertical className="w-4 h-4" />
             </QuickActionBtn>
           </div>
         </div>

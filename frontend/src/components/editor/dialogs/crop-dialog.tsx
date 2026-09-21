@@ -146,7 +146,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
         {/* هيدر النافذة */}
         <DialogHeader className="pb-2.5 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <Crop className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+            <Crop className="text-primary w-7 h-7 shrink-0" weight="duotone" />
             <div className="min-w-0">
               <DialogTitle className="text-base font-bold text-foreground truncate">
                 قص وتدوير الصورة
@@ -185,7 +185,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             {/* 1. أدوات التكبير والتدوير */}
             <div className="space-y-2">
               <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-                <ArrowClockwise className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" />
+                <ArrowClockwise className="text-primary w-4 h-4 shrink-0" weight="bold" />
                 <span>أدوات التحكم</span>
               </Label>
               
@@ -198,7 +198,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={handleRotate}
                     >
-                      <ArrowClockwise className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" />
+                      <ArrowClockwise className="text-primary w-4 h-4 shrink-0" weight="bold" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">تدوير 90°</TooltipContent>
@@ -212,7 +212,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={() => handleZoom(0.1)}
                     >
-                      <MagnifyingGlassPlus className="text-foreground/80 w-3.5 h-3.5 shrink-0" />
+                      <MagnifyingGlassPlus className="text-foreground/80 w-4 h-4 shrink-0" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">تكبير</TooltipContent>
@@ -226,7 +226,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                       className="h-8 w-full rounded-md hover:bg-accent/60 cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold"
                       onClick={() => handleZoom(-0.1)}
                     >
-                      <MagnifyingGlassMinus className="text-foreground/80 w-3.5 h-3.5 shrink-0" />
+                      <MagnifyingGlassMinus className="text-foreground/80 w-4 h-4 shrink-0" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">تصغير</TooltipContent>
@@ -238,7 +238,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             <div className="space-y-2 bg-muted/20 p-2.5 rounded-xl border border-border/40">
               <div className="flex justify-between items-center">
                 <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1">
-                  <Compass className="text-primary w-3.5 h-3.5 shrink-0" weight="duotone" />
+                  <Compass className="text-primary w-4 h-4 shrink-0" weight="duotone" />
                   <span>استقامة الزاوية</span>
                 </Label>
                 <span className="text-micro font-mono font-bold text-primary">{straightenAngle > 0 ? `+${straightenAngle}°` : `${straightenAngle}°`}</span>
@@ -268,7 +268,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             {/* 2. نسب أبعاد القص */}
             <div className="space-y-2">
               <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-                <Crop className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" /> 
+                <Crop className="text-primary w-4 h-4 shrink-0" weight="bold" /> 
                 <span>نسبة الأبعاد</span>
               </Label>
 
@@ -305,7 +305,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     )}
                     onClick={() => setAspect(templateAspect)}
                   >
-                    <Sparkle className="w-3.5 h-3.5 shrink-0" weight="fill" />
+                    <Sparkle className="w-4 h-4 shrink-0" weight="fill" />
                     <span>أبعاد القالب ({template?.name.split(" · ")[1] || "القياسية"})</span>
                   </Button>
                 )}
@@ -324,7 +324,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   onClick={handleResetCrop}
                   title="إعادة ضبط القص والتدوير"
                 >
-                  <ArrowCounterClockwise className="text-primary w-3.5 h-3.5 shrink-0" />
+                  <ArrowCounterClockwise className="text-primary w-4 h-4 shrink-0" />
                   <span>إعادة ضبط</span>
                 </Button>
 
@@ -336,7 +336,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                     onClick={handleRestoreOriginal}
                     title="استعادة الصورة الأصلية"
                   >
-                    <ArrowCounterClockwise className="w-3.5 h-3.5 shrink-0" />
+                    <ArrowCounterClockwise className="w-4 h-4 shrink-0" />
                     <span>استعادة الأصل</span>
                   </Button>
                 )}
@@ -354,7 +354,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             onClick={handleCrop}
             className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
           >
-            <Check className="w-3.5 h-3.5 shrink-0" weight="bold" />
+            <Check className="w-4 h-4 shrink-0" weight="bold" />
             <span>تطبيق القص</span>
           </Button>
         </DialogFooter>

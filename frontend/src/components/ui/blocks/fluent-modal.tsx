@@ -153,7 +153,7 @@ export const FluentModal = React.memo(function FluentModal({
             >
               {isConfirmLoading ? (
                 <>
-                  <Spinner className="w-3.5 h-3.5 animate-spin" />
+                  <Spinner className="w-4 h-4 animate-spin" />
                   <span>{confirmLoadingText || "يُعالج ..."}</span>
                 </>
               ) : (

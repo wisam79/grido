@@ -302,7 +302,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   return (
     <FluentSection
-      icon={<Crop className="w-3.5 h-3.5 text-primary" weight="duotone" />}
+      icon={<Crop className="w-4 h-4 text-primary" weight="duotone" />}
       title="مساحة العمل"
       subtitle={`${currentDpi} DPI`}
       collapsible
@@ -332,12 +332,12 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 )}
               >
                 <span className="flex items-center gap-1.5 min-w-0">
-                  <FrameCorners className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+                  <FrameCorners className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                   <span className="truncate text-xs font-semibold">
                     {activePreset ? activePreset.name.split(" (")[0] : "مقاس مخصص"}
                   </span>
                 </span>
-                <CaretDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
+                <CaretDown className="w-4 h-4 text-muted-foreground shrink-0" weight="bold" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-64 font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8 max-h-[380px] overflow-y-auto" align="start">
@@ -348,7 +348,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 className={cn("text-xs text-right justify-between font-bold cursor-pointer rounded-md", FOCUS_RING)}
               >
                 <span>مقاس مخصص</span>
-                {activePresetId === "custom" && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                {activePresetId === "custom" && <Check className="w-4 h-4 text-primary" weight="bold" />}
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
@@ -360,7 +360,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   className={cn("text-xs text-right justify-between cursor-pointer rounded-md flex items-center", FOCUS_RING)}
                 >
                   <span>{`${p.name.split(" (")[0].replace(" بوصة", "″")} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                  {activePresetId === p.id && <Check className="w-4 h-4 text-primary" weight="bold" />}
                 </DropdownMenuItem>
               ))}
 
@@ -373,7 +373,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   className={cn("text-xs text-right justify-between cursor-pointer rounded-md flex items-center", FOCUS_RING)}
                 >
                   <span>{`${p.name} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                  {activePresetId === p.id && <Check className="w-4 h-4 text-primary" weight="bold" />}
                 </DropdownMenuItem>
               ))}
 
@@ -386,7 +386,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   className={cn("text-xs text-right justify-between cursor-pointer rounded-md flex items-center", FOCUS_RING)}
                 >
                   <span>{`${p.name} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                  {activePresetId === p.id && <Check className="w-4 h-4 text-primary" weight="bold" />}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -469,9 +469,9 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 )}
               >
                 {lockAspect ? (
-                  <Link className="w-3.5 h-3.5" weight="bold" />
+                  <Link className="w-4 h-4" weight="bold" />
                 ) : (
-                  <LinkBreak className="w-3.5 h-3.5" weight="bold" />
+                  <LinkBreak className="w-4 h-4" weight="bold" />
                 )}
               </button>
 

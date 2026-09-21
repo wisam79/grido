@@ -8,6 +8,7 @@ import {
   ImageSquare,
   Crop,
   ArrowClockwise,
+  ArrowCounterClockwise,
   FlipHorizontal,
   Crosshair,
   GridFour,
@@ -93,7 +94,7 @@ export function SlotMenuSection({
             }
           }}
         >
-          <ImageSquare className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <ImageSquare className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
           <span className="truncate">استبدال الصورة</span>
         </button>
 
@@ -135,7 +136,7 @@ export function SlotMenuSection({
                 });
               }}
             >
-              <Crop className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Crop className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
               <span className="truncate">قص وتدوير</span>
             </button>
 
@@ -151,7 +152,7 @@ export function SlotMenuSection({
                 }
               }}
             >
-              {isRemovingBg ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <Sparkle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
+              {isRemovingBg ? <Spinner className="w-4 h-4 text-primary shrink-0" size={14} /> : <Sparkle className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
               <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية"}</span>
             </button>
 
@@ -167,9 +168,27 @@ export function SlotMenuSection({
                 }
               }}
             >
-              {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
+              {isEnhancing ? <Spinner className="w-4 h-4 text-primary shrink-0" size={14} /> : <MagicWand className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
               <span className="truncate">{isEnhancing ? "جاري الترميم ..." : "ترميم الوجه"}</span>
             </button>
+
+            {slot?.originalImageSrc && (
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className={menuItemClassName}
+                onClick={() => handleActionWithHistory(() => {
+                  updateSlot(slot.id, {
+                    imageSrc: slot.originalImageSrc,
+                    originalImageSrc: undefined,
+                    bgColor: undefined,
+                  });
+                })}
+              >
+                <ArrowCounterClockwise className="w-4 h-4 text-amber-500 shrink-0" weight="regular" />
+                <span className="truncate">استعادة الصورة الأصلية</span>
+              </button>
+            )}
           </>
         )}
 
@@ -179,7 +198,7 @@ export function SlotMenuSection({
           className={menuItemDangerClassName}
           onClick={() => handleActionWithHistory(() => updateSlot(targetId, { imageSrc: undefined, originalImageSrc: undefined }))}
         >
-          <Broom className="w-3.5 h-3.5 text-destructive shrink-0" weight="regular" />
+          <Broom className="w-4 h-4 text-destructive shrink-0" weight="regular" />
           <span className="truncate">إزالة الصورة</span>
         </button>
       </div>
@@ -198,7 +217,7 @@ export function SlotMenuSection({
               className={menuItemClassName}
               onClick={() => handleActionWithHistory(() => updateSlot(targetId, { dragX: 0, dragY: 0, zoom: 1 }))}
             >
-              <Crosshair className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Crosshair className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
               <span className="truncate">توسيط</span>
             </button>
 
@@ -208,7 +227,7 @@ export function SlotMenuSection({
               className={menuItemClassName}
               onClick={() => handleActionWithHistory(() => updateSlot(targetId, { rotation: (((slot.rotation ?? 0) + 90) % 360) }))}
             >
-              <ArrowClockwise className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+              <ArrowClockwise className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
               <span className="truncate">تدوير 90° ({slot.rotation ?? 0}°)</span>
             </button>
 
@@ -218,7 +237,7 @@ export function SlotMenuSection({
               className={menuItemClassName}
               onClick={() => handleActionWithHistory(() => updateSlot(targetId, { flipX: !slot.flipX }))}
             >
-              <FlipHorizontal className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+              <FlipHorizontal className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
               <span className="truncate">قلب أفقي</span>
             </button>
           </div>
@@ -240,7 +259,7 @@ export function SlotMenuSection({
               className={menuItemClassName}
               onClick={() => handleActionWithHistory(() => useEditorStore.getState().fillAllSlots(slot.imageSrc!, targetId))}
             >
-              <GridFour className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <GridFour className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
               <span className="truncate">تعبئة الكل</span>
             </button>
 
@@ -250,7 +269,7 @@ export function SlotMenuSection({
               className={menuItemClassName}
               onClick={() => handleActionWithHistory(() => useEditorStore.getState().fillEmptySlots(slot.imageSrc!, targetId))}
             >
-              <Sparkle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />
+              <Sparkle className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />
               <span className="truncate">تعبئة الفارغ</span>
             </button>
 
@@ -260,7 +279,7 @@ export function SlotMenuSection({
               className={menuItemClassName}
               onClick={() => handleActionWithHistory(() => useEditorStore.getState().fillRowSlots(targetId, slot.imageSrc!))}
             >
-              <Rows className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Rows className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
               <span className="truncate">تعبئة الصف</span>
             </button>
 
@@ -270,7 +289,7 @@ export function SlotMenuSection({
               className={menuItemClassName}
               onClick={() => handleActionWithHistory(() => useEditorStore.getState().fillColumnSlots(targetId, slot.imageSrc!))}
             >
-              <Columns className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Columns className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
               <span className="truncate">تعبئة العمود</span>
             </button>
           </div>

@@ -245,7 +245,7 @@ export function ToolbarFileOps() {
               aria-label="إدراج صورة جديدة"
               className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/80 active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/40"
             >
-              <AddPhotoIcon className="w-4 h-4 text-primary group-hover:scale-105 transition-transform" />
+              <AddPhotoIcon className="w-5 h-5 text-primary group-hover:scale-105 transition-transform" />
               <span>إدراج</span>
             </Button>
           </TooltipBtn>
@@ -259,7 +259,7 @@ export function ToolbarFileOps() {
                   aria-label="خيارات الإدراج"
                   className="h-8 px-1.5 text-muted-foreground hover:text-foreground rounded-s-none rounded-e-md hover:bg-background/80 active:scale-95 transition-all cursor-pointer"
                 >
-                  <CaretDown className="w-3.5 h-3.5 opacity-70" />
+                  <CaretDown className="w-4 h-4 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
             </TooltipBtn>
@@ -272,7 +272,7 @@ export function ToolbarFileOps() {
                 className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
               >
                 <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Stack className="w-4 h-4" weight="duotone" />
+                  <Stack className="w-5 h-5" weight="duotone" />
                 </div>
                 <div className="flex flex-col min-w-0 text-start flex-1">
                   <span className="font-bold text-foreground">دفعة صور</span>
@@ -286,7 +286,7 @@ export function ToolbarFileOps() {
                 className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
               >
                 <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <DeviceMobileCamera className="w-4 h-4" weight="duotone" />
+                  <DeviceMobileCamera className="w-5 h-5" weight="duotone" />
                 </div>
                 <div className="flex flex-col min-w-0 text-start flex-1">
                   <span className="font-bold text-foreground">كاميرا الهاتف</span>
@@ -311,7 +311,7 @@ export function ToolbarFileOps() {
               aria-label="مكتبة المشاريع"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer group"
             >
-              <Folders className="w-4 h-4 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
+              <Folders className="w-5 h-5 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
             </Button>
           </TooltipBtn>
           <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} defaultTab={projectsTab} />
@@ -333,7 +333,7 @@ export function ToolbarFileOps() {
           aria-label="مسح مساحة العمل"
           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer group"
         >
-          <Broom className="w-4 h-4 text-muted-foreground/90 group-hover:text-destructive group-hover:scale-105 transition-all" weight="duotone" />
+          <Broom className="w-5 h-5 text-muted-foreground/90 group-hover:text-destructive group-hover:scale-105 transition-all" weight="duotone" />
         </Button>
       </TooltipBtn>
 

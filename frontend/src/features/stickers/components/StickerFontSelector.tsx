@@ -91,7 +91,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
           title="نوع الخط"
         >
           <div className="flex items-center gap-2 min-w-0 truncate">
-            <TextAa className="w-3.5 h-3.5 text-primary shrink-0" />
+            <TextAa className="w-4 h-4 text-primary shrink-0" />
             <span
               className="text-xs truncate font-bold text-foreground"
               style={{ fontFamily: currentFont.family }}
@@ -116,7 +116,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
             )}
             <CaretDown
               className={cn(
-                "w-3.5 h-3.5 text-muted-foreground transition-transform duration-200",
+                "w-4 h-4 text-muted-foreground transition-transform duration-200",
                 isOpen && "rotate-180 text-primary"
               )}
               weight="bold"
@@ -136,7 +136,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
         {/* مربع البحث */}
         <div className="relative flex items-center">
           <MagnifyingGlass
-            className="w-3.5 h-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
             weight="regular"
           />
           <input
@@ -226,7 +226,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
                         سحابي
                       </span>
                     )}
-                    {isSelected && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                    {isSelected && <Check className="w-4 h-4 text-primary" weight="bold" />}
                   </div>
                 </button>
               );

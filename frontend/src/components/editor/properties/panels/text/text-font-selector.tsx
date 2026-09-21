@@ -210,7 +210,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 <span>سحابي</span>
               </span>
             )}
-            <CaretDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180 text-primary")} weight="bold" />
+            <CaretDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180 text-primary")} weight="bold" />
           </div>
         </button>
       </PopoverTrigger>
@@ -227,7 +227,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         {/* Search Box & Custom Preview Toggle */}
         <div className="space-y-1.5">
           <div className="relative flex items-center">
-            <MagnifyingGlass className="w-3.5 h-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" weight="regular" />
+            <MagnifyingGlass className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" weight="regular" />
             <input
               ref={searchInputRef}
               type="text"
@@ -243,7 +243,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="w-6 h-6 absolute left-2 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                className="w-7 h-7 absolute left-0.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
                 <X className="w-3 h-3" weight="bold" />
               </button>
@@ -252,7 +252,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 type="button"
                 onClick={() => setShowCustomPreviewInput(!showCustomPreviewInput)}
                 className={cn(
-                  "w-6 h-6 absolute left-2 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+                  "w-7 h-7 absolute left-0.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
                   showCustomPreviewInput && "text-primary bg-primary/10"
                 )}
                 title="تخصيص المعاينة"
@@ -390,13 +390,13 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                       title={isFav ? "إزالة من المفضلة" : "إضافة للمفضلة"}
                     >
                       <Star
-                        className="w-3.5 h-3.5"
+                        className="w-4 h-4"
                         weight={isFav ? "fill" : "regular"}
                       />
                     </button>
 
                     {isSelected && (
-                      <CheckCircle className="w-4 h-4 text-primary shrink-0" weight="fill" />
+                      <CheckCircle className="w-5 h-5 text-primary shrink-0" weight="fill" />
                     )}
                   </div>
                 </div>

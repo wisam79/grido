@@ -15,7 +15,6 @@ import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import {
   FluentSection,
-  FluentSettingRow,
   FluentSegmentedControl,
   FluentEmptyState,
 } from "@/components/ui/blocks";
@@ -111,10 +110,10 @@ export function CollageAutofillTab() {
   };
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div className="flex flex-col gap-2.5 font-cairo animate-in fade-in duration-200" dir="rtl">
       {/* مصدر الصور */}
       <FluentSection
-        icon={<Images className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Images className="w-4 h-4" weight="duotone" />}
         title="مصدر الصور"
         subtitle={images.length > 0 ? `${images.length} صورة جاهزة` : "لم تُختَر صور بعد"}
         collapsible
@@ -123,6 +122,8 @@ export function CollageAutofillTab() {
           <Button
             type="button"
             variant="default"
+            size="sm"
+            className="h-8 rounded-md"
             onClick={() => pickImages(false)}
             disabled={isPicking}
             title="اختيار صور متعددة"
@@ -133,6 +134,8 @@ export function CollageAutofillTab() {
           <Button
             type="button"
             variant="outline"
+            size="sm"
+            className="h-8 rounded-md"
             onClick={() => pickImages(true)}
             disabled={isPicking}
             title="استيراد كل صور مجلد"
@@ -168,7 +171,7 @@ export function CollageAutofillTab() {
               title="إفراغ قائمة الصور"
               aria-label="إفراغ قائمة الصور"
             >
-              <Trash className="w-3.5 h-3.5" />
+              <Trash className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -176,15 +179,15 @@ export function CollageAutofillTab() {
 
       {/* طريقة التوزيع */}
       <FluentSection
-        icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<GridFour className="w-4 h-4" weight="duotone" />}
         title="طريقة التوزيع"
         subtitle={`${filledCount} ممتلئة · ${emptyCount} فارغة`}
         collapsible
       >
-        <FluentSettingRow
-          layout="vertical"
-          label="الخانات المستهدفة"
-          control={
+        {/* خيارات التوزيع في صفوف مدمجة (أقل مساحة وأقل خطوات) */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <span className="text-micro font-bold text-muted-foreground">الخانات</span>
             <FluentSegmentedControl<FillMode>
               layoutId="autofill-mode"
               value={mode}
@@ -192,17 +195,13 @@ export function CollageAutofillTab() {
               size="sm"
               className="p-0.5 border-0 h-8"
               options={[
-                { id: "empty", label: "الفارغة فقط" },
-                { id: "all", label: "كل الخانات" },
+                { id: "empty", label: "الفارغة" },
+                { id: "all", label: "الكل" },
               ]}
             />
-          }
-        />
-
-        <FluentSettingRow
-          layout="vertical"
-          label="ترتيب التعبئة"
-          control={
+          </div>
+          <div className="space-y-1">
+            <span className="text-micro font-bold text-muted-foreground">الترتيب</span>
             <FluentSegmentedControl<FillOrder>
               layoutId="autofill-order"
               value={order}
@@ -214,37 +213,38 @@ export function CollageAutofillTab() {
                   id: "row",
                   label: "صفوف",
                   icon: <Rows className="w-4 h-4" weight="duotone" />,
-                  tooltip: "صف بصف من الأعلى",
+                  tooltip: "صف بصف",
                 },
                 {
                   id: "column",
                   label: "أعمدة",
                   icon: <Columns className="w-4 h-4" weight="duotone" />,
-                  tooltip: "عمود بعمود من اليمين",
+                  tooltip: "عمود بعمود",
                 },
               ]}
             />
-          }
-        />
+          </div>
+        </div>
 
-        <FluentSettingRow
-          label="تكرار الصور"
-          description="إن قلت الصور عن الخانات"
-          control={
-            <Switch checked={repeat} onCheckedChange={setRepeat} aria-label="تكرار الصور" />
-          }
-        />
-
-        <FluentSettingRow
-          label="خلط عشوائي"
-          description="ترتيب مختلف في كل مرة"
-          control={
-            <Switch checked={shuffle} onCheckedChange={setShuffle} aria-label="خلط عشوائي" />
-          }
-        />
+        {/* التكرار والخلط في صف أفقي مدمج واحد */}
+        <div className="flex items-center justify-between p-2 rounded-lg bg-muted/40 border border-border/40 text-xs">
+          <div className="flex items-center gap-2 select-none">
+            <Switch id="autofill-repeat-switch" checked={repeat} onCheckedChange={setRepeat} aria-label="تكرار الصور" />
+            <label htmlFor="autofill-repeat-switch" className="font-semibold text-foreground text-xs cursor-pointer">
+              تكرار
+            </label>
+          </div>
+          <div className="w-px h-4 bg-border/60" />
+          <div className="flex items-center gap-2 select-none">
+            <Switch id="autofill-shuffle-switch" checked={shuffle} onCheckedChange={setShuffle} aria-label="خلط عشوائي" />
+            <label htmlFor="autofill-shuffle-switch" className="font-semibold text-foreground text-xs cursor-pointer">
+              خلط عشوائي
+            </label>
+          </div>
+        </div>
 
         <div className="flex items-center gap-2 pt-0.5">
-          <Button type="button" className="flex-1" onClick={distribute} disabled={images.length === 0}>
+          <Button type="button" size="sm" className="flex-1 h-8 rounded-md" onClick={distribute} disabled={images.length === 0}>
             {shuffle ? (
               <Shuffle className="w-4 h-4" weight="bold" />
             ) : (
@@ -256,7 +256,8 @@ export function CollageAutofillTab() {
             <Button
               type="button"
               variant="ghost"
-              size="icon"
+              size="sm"
+              className="h-8 w-8 p-0 rounded-md"
               onClick={() => {
                 clearSlots();
                 toast.success("تم إفراغ الخانات");

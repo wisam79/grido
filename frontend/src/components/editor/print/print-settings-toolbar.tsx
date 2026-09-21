@@ -164,7 +164,7 @@ export function PrintSettingsToolbar({
               >
                 <PageOrientationIcon
                   isLandscape={printSettings.orientation === "landscape"}
-                  className="w-3.5 h-3.5 text-primary"
+                  className="w-4 h-4 text-primary"
                 />
                 <span>{printSettings.orientation === "landscape" ? "أفقي" : "رأسي"}</span>
               </button>
@@ -213,7 +213,7 @@ export function PrintSettingsToolbar({
                   toggleButtonClassName((printSettings.gridAlign || "top-left") === "top-left")
                 )}
               >
-                <ArrowUpLeft className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                <ArrowUpLeft className="w-4 h-4 shrink-0" weight="bold" />
                 <span>أعلى اليسار</span>
               </button>
             </TooltipTrigger>
@@ -230,7 +230,7 @@ export function PrintSettingsToolbar({
                 aria-label="توسيط الشبكة"
                 className={cn("px-2 py-1 flex items-center gap-1", toggleButtonClassName(printSettings.gridAlign === "center"))}
               >
-                <Crosshair className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                <Crosshair className="w-4 h-4 shrink-0" weight="bold" />
                 <span>توسيط</span>
               </button>
             </TooltipTrigger>
@@ -260,7 +260,7 @@ export function PrintSettingsToolbar({
             onCheckedChange={onCutLinesChange}
           />
           <Label htmlFor="print-cut-lines" className="text-xs font-semibold cursor-pointer select-none flex items-center gap-1">
-            <Scissors className="text-primary/80 w-3.5 h-3.5 shrink-0" weight="duotone" />
+            <Scissors className="text-primary/80 w-4 h-4 shrink-0" weight="duotone" />
             <span>خطوط القص</span>
           </Label>
           {cutLinesActive && (
@@ -293,11 +293,11 @@ export function PrintSettingsToolbar({
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost" size="sm"
-                className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
+                className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted flex items-center justify-center"
                 disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) <= 1}
                 onClick={() => setPrintSettings({ copiesPerSheet: Math.max(1, (printSettings.copiesPerSheet ?? 1) - 1) })}
               >
-                <Minus className="w-3 h-3 shrink-0" weight="bold" />
+                <Minus className="w-4 h-4 shrink-0" weight="bold" />
               </Button>
               <span
                 className="text-xs font-mono font-bold w-6 text-center text-foreground"
@@ -307,11 +307,11 @@ export function PrintSettingsToolbar({
               </span>
               <Button
                 variant="ghost" size="sm"
-                className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
+                className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted flex items-center justify-center"
                 disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= maxCopiesPerSheet}
                 onClick={() => setPrintSettings({ copiesPerSheet: (printSettings.copiesPerSheet ?? 1) + 1 })}
               >
-                <Plus className="w-3 h-3 shrink-0" weight="bold" />
+                <Plus className="w-4 h-4 shrink-0" weight="bold" />
               </Button>
             </div>
           </div>
@@ -332,12 +332,12 @@ export function PrintSettingsToolbar({
                       onClick={() => setPrintSettings({ repeatMode: id })}
                       aria-pressed={(printSettings.repeatMode ?? "all") === id}
                       className={cn(
-                        "h-6 w-6 rounded-md flex items-center justify-center",
+                        "h-7 w-7 rounded-md flex items-center justify-center",
                         toggleButtonClassName((printSettings.repeatMode ?? "all") === id)
                       )}
                       aria-label={label}
                     >
-                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      <Icon className="w-4 h-4 shrink-0" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs font-semibold">{label}</TooltipContent>
@@ -352,22 +352,22 @@ export function PrintSettingsToolbar({
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost" size="sm"
-                className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
+                className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted flex items-center justify-center"
                 disabled={(printSettings.gapMM ?? 2) <= 0}
                 onClick={() => setPrintSettings({ gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1) })}
               >
-                <Minus className="w-3 h-3 shrink-0" weight="bold" />
+                <Minus className="w-4 h-4 shrink-0" weight="bold" />
               </Button>
               <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
                 {printSettings.gapMM ?? 2}
               </span>
               <Button
                 variant="ghost" size="sm"
-                className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
+                className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted flex items-center justify-center"
                 disabled={(printSettings.gapMM ?? 2) >= 20}
                 onClick={() => setPrintSettings({ gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1) })}
               >
-                <Plus className="w-3 h-3 shrink-0" weight="bold" />
+                <Plus className="w-4 h-4 shrink-0" weight="bold" />
               </Button>
             </div>
           </div>
@@ -381,7 +381,7 @@ export function PrintSettingsToolbar({
             className="min-h-[34px] rounded-md border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold gap-1.5 cursor-pointer shadow-2xs flex items-center justify-center transition-all"
             title="تعبئة الشيت بأقصى عدد نسخ"
           >
-            <Sparkle className="w-3.5 h-3.5 shrink-0" weight="fill" />
+            <Sparkle className="w-4 h-4 shrink-0" weight="fill" />
             <span>مونتاج تلقائي</span>
           </Button>
         </div>

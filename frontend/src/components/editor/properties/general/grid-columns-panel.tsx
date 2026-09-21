@@ -87,7 +87,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
   return (
     <FluentSection
-      icon={<GridFour className="w-3.5 h-3.5 text-primary" weight="duotone" />}
+      icon={<GridFour className="w-4 h-4 text-primary" weight="duotone" />}
       title="الشبكة والقص"
       collapsible
       defaultOpen={Boolean(showGrid || showColumns || showBleedGuides)}
@@ -105,9 +105,9 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
           onChange={setActiveGridTab}
           size="sm"
           options={[
-            { id: "grid", label: "الشبكة", icon: <GridFour className="w-3.5 h-3.5" weight="regular" /> },
-            { id: "columns", label: "الأعمدة", icon: <Columns className="w-3.5 h-3.5" weight="regular" /> },
-            { id: "bleed", label: "القص", icon: <Crop className="w-3.5 h-3.5" weight="regular" /> },
+            { id: "grid", label: "الشبكة", icon: <GridFour className="w-4 h-4" weight="regular" /> },
+            { id: "columns", label: "الأعمدة", icon: <Columns className="w-4 h-4" weight="regular" /> },
+            { id: "bleed", label: "القص", icon: <Crop className="w-4 h-4" weight="regular" /> },
           ]}
         />
 
@@ -207,7 +207,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   step={5}
                   unit="%"
                   onChange={(val) => setGridOpacity(val / 100)}
-                  icon={<Eye className="w-3.5 h-3.5" weight="regular" />}
+                  icon={<Eye className="w-4 h-4" weight="regular" />}
                 />
 
                 {/* ألوان الشبكة */}
@@ -230,7 +230,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                           title={col.label}
                           onClick={() => setGridColor(col.hex)}
                           className={cn(
-                            "w-5 h-5 rounded-md border border-border/80 transition-all cursor-pointer relative shadow-2xs",
+                            "w-7 h-7 rounded-md border border-border/80 transition-all cursor-pointer relative shadow-2xs",
                             isSelected
                               ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
                               : "hover:scale-105 opacity-80 hover:opacity-100"
@@ -243,7 +243,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                       color={gridColor}
                       onChange={setGridColor}
                       swatchOnly
-                      className="w-5 h-5 rounded-md"
+                      className="w-7 h-7 rounded-md"
                     />
                   </div>
                 </div>
@@ -336,7 +336,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                           title={colorObj.label}
                           onClick={() => setColumnsColor(colorObj.hex)}
                           className={cn(
-                            "w-5 h-5 rounded-md border border-border/80 transition-all cursor-pointer relative shadow-2xs",
+                            "w-7 h-7 rounded-md border border-border/80 transition-all cursor-pointer relative shadow-2xs",
                             isSelected
                               ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
                               : "hover:scale-105 opacity-80 hover:opacity-100"

@@ -65,19 +65,19 @@ export function TextProperties({ element, onUpdate, onNavigateTab, standalone = 
           {
             id: "type",
             label: "الخط",
-            icon: <TextAa className="w-3.5 h-3.5 shrink-0" weight={activeTab === "type" ? "bold" : "regular"} />,
+            icon: <TextAa className="w-4 h-4 shrink-0" weight={activeTab === "type" ? "bold" : "regular"} />,
             tooltip: "الخط والنمط والقياسات",
           },
           {
             id: "color",
             label: "الألوان",
-            icon: <Palette className="w-3.5 h-3.5 shrink-0" weight={activeTab === "color" ? "bold" : "regular"} />,
+            icon: <Palette className="w-4 h-4 shrink-0" weight={activeTab === "color" ? "bold" : "regular"} />,
             tooltip: "ألوان وتعبئة النص والشفافية",
           },
           {
             id: "effects",
             label: "التأثيرات",
-            icon: <Sparkle className="w-3.5 h-3.5 shrink-0" weight={activeTab === "effects" ? "bold" : "regular"} />,
+            icon: <Sparkle className="w-4 h-4 shrink-0" weight={activeTab === "effects" ? "bold" : "regular"} />,
             tooltip: "الظلال، الحدود، الشارة، والتقويس",
             badge: (hasBadge || hasStroke || hasShadow || hasCurve) ? (
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />

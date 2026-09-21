@@ -27,6 +27,7 @@ import { CollagePaperToolsTab } from "./collage/collage-paper-tools-tab";
 import { CollageAutofillTab } from "./collage/collage-autofill-tab";
 import { CollageBackdropTab } from "./collage/collage-backdrop-tab";
 import { CollageArrangeTab } from "./collage/collage-arrange-tab";
+import { CollageLayersTab } from "./collage/collage-layers-tab";
 
 interface CustomCollageCardProps {
   onSelect: (t: CollageTemplate) => void;
@@ -256,7 +257,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     return {
       id: tool.id,
       label: tool.label,
-      icon: <tool.icon className="w-4 h-4 text-primary" weight="duotone" />,
+      icon: <tool.icon className="w-5 h-5 text-primary" weight="duotone" />,
       tooltip: tool.title,
       badge: isInUse ? (
         <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
@@ -330,9 +331,9 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
       {/* 3️⃣ تبويب الكولاج الحر بالملم */}
       {effectiveTab === "freeform" && (
-        <div className="p-3.5 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
+        <div className="p-4 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
           <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shadow-2xs">
-            <MagicWand className="w-5 h-5" weight="duotone" />
+            <MagicWand className="w-6 h-6" weight="duotone" />
           </div>
           <span className="font-bold text-xs text-foreground">كولاج حر</span>
           <div className="flex flex-wrap items-center justify-center gap-1.5 text-micro text-muted-foreground select-none">
@@ -349,7 +350,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             onClick={() => setShowFreeformModal(true)}
             className="w-full h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none mt-1"
           >
-            <MagicWand className="w-3.5 h-3.5" weight="bold" />
+            <MagicWand className="w-4 h-4" weight="bold" />
             <span>فتح المحرر</span>
           </button>
         </div>
@@ -366,6 +367,9 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
       {/* 7️⃣ فرز وترتيب الخانات */}
       {effectiveTab === "arrange" && <CollageArrangeTab />}
+
+      {/* 8️⃣ طبقات الخانات — نظرة عامة وتحديد وإفراغ */}
+      {effectiveTab === "layers" && <CollageLayersTab />}
 
       <FreeformCollageModal open={showFreeformModal} onOpenChange={setShowFreeformModal} />
     </div>

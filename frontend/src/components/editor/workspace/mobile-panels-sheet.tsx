@@ -38,11 +38,11 @@ export const MobilePanelsSheet = React.memo(function MobilePanelsSheet({
           <div className="px-3 pt-2 pb-1 border-b border-border/60 bg-muted/20">
             <TabsList className="w-full grid grid-cols-2 h-9">
               <TabsTrigger value="properties" className="gap-1.5 text-xs font-semibold">
-                <Faders className="w-4 h-4" />
+                <Faders className="w-5 h-5" />
                 <span>الخصائص</span>
               </TabsTrigger>
               <TabsTrigger value="templates" className="gap-1.5 text-xs font-semibold">
-                <SquaresFour className="w-4 h-4" />
+                <SquaresFour className="w-5 h-5" />
                 <span>القوالب</span>
               </TabsTrigger>
             </TabsList>

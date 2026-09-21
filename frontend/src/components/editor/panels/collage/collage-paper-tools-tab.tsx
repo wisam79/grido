@@ -1,10 +1,6 @@
 import {
   Scissors,
-  Ruler,
-  GridFour,
-  Columns,
   Copy,
-  FrameCorners,
 } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
@@ -53,14 +49,6 @@ export function CollagePaperToolsTab() {
     setCollageStrokeColor,
     printSettings,
     setPrintSettings,
-    showGrid,
-    setShowGrid,
-    snapToGrid,
-    setSnapToGrid,
-    showColumns,
-    setShowColumns,
-    showRuler,
-    setShowRuler,
   } = useEditorStore(
     useShallow((state) => ({
       showBleedGuides: state.showBleedGuides,
@@ -79,14 +67,6 @@ export function CollagePaperToolsTab() {
       setCollageStrokeColor: state.setCollageStrokeColor,
       printSettings: state.printSettings,
       setPrintSettings: state.setPrintSettings,
-      showGrid: state.showGrid,
-      setShowGrid: state.setShowGrid,
-      snapToGrid: state.snapToGrid,
-      setSnapToGrid: state.setSnapToGrid,
-      showColumns: state.showColumns,
-      setShowColumns: state.setShowColumns,
-      showRuler: state.showRuler,
-      setShowRuler: state.setShowRuler,
     }))
   );
 
@@ -95,10 +75,10 @@ export function CollagePaperToolsTab() {
   const gapMM = printSettings?.gapMM ?? 0;
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div className="flex flex-col gap-2.5 font-cairo animate-in fade-in duration-200" dir="rtl">
       {/* النزيف وعلامات القص */}
       <FluentSection
-        icon={<Scissors className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Scissors className="w-4 h-4" weight="duotone" />}
         title="النزيف والقص"
         subtitle={`هامش النزيف ${bleedMarginMM} مم`}
         collapsible
@@ -191,7 +171,7 @@ export function CollagePaperToolsTab() {
 
       {/* النسخ والمسافات على الورقة */}
       <FluentSection
-        icon={<Copy className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Copy className="w-4 h-4" weight="duotone" />}
         title="النسخ على الورقة"
         subtitle={`${copiesPerSheet} نسخة`}
         collapsible
@@ -251,58 +231,6 @@ export function CollagePaperToolsTab() {
           unit="مم"
           onChange={(value) => setPrintSettings({ gapMM: value })}
         />
-      </FluentSection>
-
-      {/* الإرشادات البصرية */}
-      <FluentSection
-        icon={<Ruler className="w-3.5 h-3.5" weight="duotone" />}
-        title="الإرشادات"
-        subtitle="ما يظهر على الكانفاس"
-        collapsible
-      >
-        {[
-          {
-            key: "grid",
-            label: "الشبكة",
-            icon: <GridFour className="w-3.5 h-3.5" weight="duotone" />,
-            checked: showGrid,
-            onChange: setShowGrid,
-          },
-          {
-            key: "snap",
-            label: "الالتقاط للشبكة",
-            icon: <FrameCorners className="w-3.5 h-3.5" weight="duotone" />,
-            checked: snapToGrid,
-            onChange: setSnapToGrid,
-          },
-          {
-            key: "columns",
-            label: "أعمدة التقسيم",
-            icon: <Columns className="w-3.5 h-3.5" weight="duotone" />,
-            checked: showColumns,
-            onChange: setShowColumns,
-          },
-          {
-            key: "ruler",
-            label: "المساطر",
-            icon: <Ruler className="w-3.5 h-3.5" weight="duotone" />,
-            checked: showRuler,
-            onChange: setShowRuler,
-          },
-        ].map((guide) => (
-          <FluentSettingRow
-            key={guide.key}
-            icon={guide.icon}
-            label={guide.label}
-            control={
-              <Switch
-                checked={guide.checked}
-                onCheckedChange={guide.onChange}
-                aria-label={guide.label}
-              />
-            }
-          />
-        ))}
       </FluentSection>
     </div>
   );

@@ -8,12 +8,11 @@ import {
   Columns,
   Repeat,
   ArrowsOutCardinal,
-  FrameCorners,
 } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
-import { FluentSection, FluentSettingRow } from "@/components/ui/blocks";
+import { FluentSection } from "@/components/ui/blocks";
 import {
   buildPhysicalGridCells,
   buildStretchGridCells,
@@ -229,7 +228,7 @@ export function CollageArrangeTab() {
       id: "reverse-rows",
       label: "عكس الصفوف",
       hint: "يعكس ترتيب الصور داخل كل صف",
-      icon: <Rows className="w-4 h-4" weight="bold" />,
+      icon: <Rows className="w-5 h-5" weight="bold" />,
       onClick: reverseRows,
       disabled: imageCount < 2,
     },
@@ -237,7 +236,7 @@ export function CollageArrangeTab() {
       id: "reverse-columns",
       label: "عكس الأعمدة",
       hint: "يعكس ترتيب الصور داخل كل عمود",
-      icon: <Columns className="w-4 h-4" weight="bold" />,
+      icon: <Columns className="w-5 h-5" weight="bold" />,
       onClick: reverseColumns,
       disabled: imageCount < 2,
     },
@@ -245,7 +244,7 @@ export function CollageArrangeTab() {
       id: "transpose",
       label: "تبديل الصفوف بالأعمدة",
       hint: "يقلب الشبكة رأسياً — قد يعيد توزيع الصور حسب المقاسات",
-      icon: <ArrowsDownUp className="w-4 h-4" weight="bold" />,
+      icon: <ArrowsDownUp className="w-5 h-5" weight="bold" />,
       onClick: transposeGrid,
       disabled: !collageTemplate,
     },
@@ -284,9 +283,9 @@ export function CollageArrangeTab() {
   ];
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div className="flex flex-col gap-2.5 font-cairo animate-in fade-in duration-200" dir="rtl">
       <FluentSection
-        icon={<ArrowsDownUp className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<ArrowsDownUp className="w-4 h-4" weight="duotone" />}
         title="فرز وترتيب الخانات"
         subtitle={`${grid.rows}×${grid.cols} · ${imageCount} من ${slots.length} صورة`}
         collapsible
@@ -308,23 +307,13 @@ export function CollageArrangeTab() {
               disabled={action.disabled}
               title={action.hint}
               onClick={action.onClick}
-              className="justify-start text-right"
+              className="h-8 justify-start text-right rounded-md"
             >
               <span className="text-primary shrink-0">{action.icon}</span>
               <span className="truncate">{action.label}</span>
             </Button>
           ))}
         </div>
-      </FluentSection>
-
-      <FluentSection
-        icon={<FrameCorners className="w-3.5 h-3.5" weight="duotone" />}
-        title="ملخص الشبكة"
-        subtitle="قراءة سريعة للحالة"
-      >
-        <FluentSettingRow label="عدد الخانات" description="حسب التخطيط الحالي" control={<span className="text-xs font-mono font-bold text-foreground" dir="ltr">{slots.length}</span>} />
-        <FluentSettingRow label="الصور الموضوعة" description="خانات ممتلئة" control={<span className="text-xs font-mono font-bold text-foreground" dir="ltr">{imageCount}</span>} />
-        <FluentSettingRow label="الصفوف × الأعمدة" description="مقروء من إحداثيات الخانات" control={<span className="text-xs font-mono font-bold text-foreground" dir="ltr">{`${grid.rows}×${grid.cols}`}</span>} />
       </FluentSection>
     </div>
   );

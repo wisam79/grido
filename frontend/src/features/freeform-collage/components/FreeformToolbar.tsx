@@ -141,17 +141,17 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
     >
       {/* ── مجموعة 1: المحفوظات والإضافة ── */}
       <ToolBtn onClick={onUndo} disabled={!canUndo} title="تراجع (Ctrl+Z)">
-        <ArrowUUpLeft className="w-3.5 h-3.5" weight="bold" />
+        <ArrowUUpLeft className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={onRedo} disabled={!canRedo} title="إعادة (Ctrl+Y)">
-        <ArrowUUpRight className="w-3.5 h-3.5" weight="bold" />
+        <ArrowUUpRight className="w-4 h-4" weight="bold" />
       </ToolBtn>
 
       <Divider />
 
       {/* إضافة خلية مخصصة */}
       <ToolBtn onClick={onAddSlot} title="إضافة خلية">
-        <Plus className="w-3.5 h-3.5" weight="bold" />
+        <Plus className="w-4 h-4" weight="bold" />
       </ToolBtn>
 
       {/* إدراج مقاس جاهز */}
@@ -164,7 +164,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
                 size="icon"
                 className="h-7 w-7 rounded-md cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                <FilePlus className="w-3.5 h-3.5 text-primary" weight="bold" />
+                <FilePlus className="w-4 h-4 text-primary" weight="bold" />
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
@@ -197,7 +197,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
             size="sm"
             className="h-7 px-2.5 gap-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer font-bold shadow-xs shrink-0"
           >
-            <Lightning className="w-3.5 h-3.5" weight="fill" />
+            <Lightning className="w-4 h-4" weight="fill" />
             <span className="text-mini">تعبئة</span>
             <CaretDown className="w-2.5 h-2.5 opacity-80" weight="bold" />
           </Button>
@@ -294,25 +294,25 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
         <span className="text-micro font-black text-primary leading-none">TL</span>
       </ToolBtn>
       <ToolBtn onClick={() => onAlignSlot("center-h")} disabled={!selectedSlotId} title="توسيط أفقي">
-        <AlignCenterHorizontal className="w-3.5 h-3.5" weight="bold" />
+        <AlignCenterHorizontal className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={() => onAlignSlot("center-v")} disabled={!selectedSlotId} title="توسيط عمودي">
-        <AlignCenterVertical className="w-3.5 h-3.5" weight="bold" />
+        <AlignCenterVertical className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={() => onDistributeSlots("horizontal")} title="توزيع أفقي">
-        <AlignLeft className="w-3.5 h-3.5" weight="bold" />
+        <AlignLeft className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={() => onDistributeSlots("vertical")} title="توزيع عمودي">
-        <AlignTop className="w-3.5 h-3.5" weight="bold" />
+        <AlignTop className="w-4 h-4" weight="bold" />
       </ToolBtn>
 
       <Divider />
 
       <ToolBtn onClick={onSplitVertical} disabled={!selectedSlotId} title="تقسيم صفين">
-        <Rows className="w-3.5 h-3.5" weight="bold" />
+        <Rows className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={onSplitHorizontal} disabled={!selectedSlotId} title="تقسيم عمودين">
-        <Columns className="w-3.5 h-3.5" weight="bold" />
+        <Columns className="w-4 h-4" weight="bold" />
       </ToolBtn>
 
       {/* المحاذاة الجماعية بين الخلايا */}
@@ -329,7 +329,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
                   isMulti && "text-foreground bg-card border border-border/80 dark:border-white/15 shadow-xs font-bold"
                 )}
               >
-                <SquaresFour className="w-3.5 h-3.5" weight="bold" />
+                <SquaresFour className="w-4 h-4" weight="bold" />
                 {isMulti && (
                   <span
                     className="absolute -top-1 -left-1 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-3xs font-black flex items-center justify-center"
@@ -379,34 +379,34 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
 
       {/* ── مجموعة 3: التحرير والعرض ── */}
       <ToolBtn onClick={() => onScaleSelection(1.1)} disabled={!selectedSlotId} title="تكبير 10%">
-        <ArrowsOut className="w-3.5 h-3.5" weight="bold" />
+        <ArrowsOut className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={() => onScaleSelection(1 / 1.1)} disabled={!selectedSlotId} title="تصغير 10%">
-        <ArrowsIn className="w-3.5 h-3.5" weight="bold" />
+        <ArrowsIn className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={onResolveOverlaps} title="إزالة التداخلات">
-        <Broom className="w-3.5 h-3.5" weight="bold" />
+        <Broom className="w-4 h-4" weight="bold" />
       </ToolBtn>
 
       <Divider />
 
       <ToolBtn onClick={onRotateSlot} disabled={!selectedSlotId} title="تدوير 90°">
-        <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
+        <ArrowClockwise className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={onDuplicateSlot} disabled={!selectedSlotId} title="تكرار (Ctrl+D)">
-        <Copy className="w-3.5 h-3.5" weight="bold" />
+        <Copy className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={onRemoveSlot} disabled={!selectedSlotId} title="حذف (Del)" destructive>
-        <Trash className="w-3.5 h-3.5" weight="bold" />
+        <Trash className="w-4 h-4" weight="bold" />
       </ToolBtn>
 
       <Divider />
 
       <ToolBtn onClick={onToggleCutLines} active={showCutLines} title={showCutLines ? "إخفاء الخطوط" : "خطوط القص"}>
-        <Scissors className="w-3.5 h-3.5" weight="bold" />
+        <Scissors className="w-4 h-4" weight="bold" />
       </ToolBtn>
       <ToolBtn onClick={onToggleSnapping} active={enableSnapping} title={enableSnapping ? "تعطيل المغناطيس" : "المغناطيس الذكي"}>
-        <PushPin className="w-3.5 h-3.5" weight="bold" />
+        <PushPin className="w-4 h-4" weight="bold" />
       </ToolBtn>
     </div>
   );

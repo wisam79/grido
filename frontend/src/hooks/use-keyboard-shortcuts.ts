@@ -266,6 +266,13 @@ export function useKeyboardShortcuts() {
     setCanvasZoom(ZOOM_DEFAULT);
   });
 
+  // Toggle OS Fullscreen: F11 — يمنع ملء شاشة المتصفح الافتراضي
+  // ويوجّه الأمر لنافذة التطبيق الأصلية عبر حدث عام
+  useHotkeys("f11", (e) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("grido:toggle-fullscreen"));
+  });
+
   // --- Arrows (Nudging) & Paste via native events ---
   useEffect(() => {
     let nudgeTimeout: ReturnType<typeof setTimeout> | null = null;

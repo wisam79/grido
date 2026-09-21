@@ -11,6 +11,12 @@ import {
   MagicWand,
   Crop,
   ClipboardText,
+  ArrowClockwise,
+  FlipHorizontal,
+  FlipVertical,
+  LockSimple,
+  LockSimpleOpen,
+  Crosshair,
 } from "@phosphor-icons/react";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
@@ -136,7 +142,7 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
                 });
               }}
             >
-              <Crop className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Crop className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
               <span className="truncate">قص وتدوير</span>
             </button>
 
@@ -150,7 +156,7 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
                 onClose();
               }}
             >
-              {isRemovingBg ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <Sparkle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
+              {isRemovingBg ? <Spinner className="w-4 h-4 text-primary shrink-0" size={14} /> : <Sparkle className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
               <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية"}</span>
             </button>
 
@@ -164,8 +170,47 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
                 onClose();
               }}
             >
-              {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
+              {isEnhancing ? <Spinner className="w-4 h-4 text-primary shrink-0" size={14} /> : <MagicWand className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
               <span className="truncate">{isEnhancing ? "جاري الترميم ..." : "ترميم الوجه"}</span>
+            </button>
+
+            <button
+              role="menuitem"
+              tabIndex={-1}
+              className={menuItemClassName}
+              onClick={() => handleAction(() => {
+                updateElement(imgEl.id, { rotation: (((imgEl.rotation ?? 0) + 90) % 360) });
+                pushHistory();
+              })}
+            >
+              <ArrowClockwise className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+              <span className="truncate">تدوير 90° ({imgEl.rotation ?? 0}°)</span>
+            </button>
+
+            <button
+              role="menuitem"
+              tabIndex={-1}
+              className={menuItemClassName}
+              onClick={() => handleAction(() => {
+                updateElement(imgEl.id, { flipX: !imgEl.flipX });
+                pushHistory();
+              })}
+            >
+              <FlipHorizontal className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+              <span className="truncate">قلب أفقي</span>
+            </button>
+
+            <button
+              role="menuitem"
+              tabIndex={-1}
+              className={menuItemClassName}
+              onClick={() => handleAction(() => {
+                updateElement(imgEl.id, { flipY: !imgEl.flipY });
+                pushHistory();
+              })}
+            >
+              <FlipVertical className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+              <span className="truncate">قلب رأسي</span>
             </button>
             </div>
           <div className={menuSeparatorClassName} role="separator" />
@@ -182,10 +227,28 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
           tabIndex={-1}
           className={menuItemClassName}
           onClick={() => handleAction(() => {
+            if (el) {
+              updateElement(targetId, {
+                x: Math.max(0, (1 - el.width) / 2),
+                y: Math.max(0, (1 - el.height) / 2),
+              });
+              pushHistory();
+            }
+          })}
+        >
+          <Crosshair className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <span className="truncate">توسيط في الصفحة</span>
+        </button>
+
+        <button
+          role="menuitem"
+          tabIndex={-1}
+          className={menuItemClassName}
+          onClick={() => handleAction(() => {
             copySelectedElements([targetId]);
           })}
         >
-          <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <Copy className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
           <span className="truncate">نسخ</span>
         </button>
 
@@ -197,7 +260,7 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
             cutSelectedElements([targetId]);
           })}
         >
-          <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <Scissors className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
           <span className="truncate">قص</span>
         </button>
 
@@ -209,7 +272,7 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
             pasteFromClipboardOrStore();
           })}
         >
-          <ClipboardText className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <ClipboardText className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
           <span className="truncate">لصق</span>
         </button>
 
@@ -226,7 +289,7 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
             }
           })}
         >
-          <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <Copy className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
           <span className="truncate">تكرار</span>
         </button>
 
@@ -236,7 +299,7 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
           className={menuItemClassName}
           onClick={() => handleAction(() => bringToFront(targetId))}
         >
-          <ArrowUp className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+          <ArrowUp className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
           <span className="truncate">تقديم للأمام</span>
         </button>
 
@@ -246,8 +309,30 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
           className={menuItemClassName}
           onClick={() => handleAction(() => sendToBack(targetId))}
         >
-          <ArrowDown className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+          <ArrowDown className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
           <span className="truncate">تأخير للخلف</span>
+        </button>
+
+        <button
+          role="menuitem"
+          tabIndex={-1}
+          className={menuItemClassName}
+          onClick={() => handleAction(() => {
+            updateElement(targetId, { locked: !el?.locked });
+            pushHistory();
+          })}
+        >
+          {el?.locked ? (
+            <>
+              <LockSimpleOpen className="w-4 h-4 text-amber-500 shrink-0" weight="regular" />
+              <span className="truncate">فك القفل</span>
+            </>
+          ) : (
+            <>
+              <LockSimple className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <span className="truncate">قفل العنصر</span>
+            </>
+          )}
         </button>
 
         <div className={menuSeparatorClassName} role="separator" />
@@ -271,7 +356,7 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
             }
           })}
         >
-          <Trash className="w-3.5 h-3.5 text-destructive shrink-0" weight="regular" />
+          <Trash className="w-4 h-4 text-destructive shrink-0" weight="regular" />
           <span className="truncate font-bold">حذف</span>
         </button>
       </div>

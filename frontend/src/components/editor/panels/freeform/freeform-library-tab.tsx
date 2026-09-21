@@ -271,17 +271,17 @@ export function FreeformLibraryTab() {
     favoriteFonts.length + favoriteColors.length + favoriteShapes.length + favoriteTextPresets.length;
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div className="flex flex-col gap-2.5 font-cairo animate-in fade-in duration-200" dir="rtl">
       {/* آخر استخدام — أنواع مختلفة (أشكال/نصوص/خطوط/ألوان) في شريط واحد */}
       <FluentSection
-        icon={<ClockCounterClockwise className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<ClockCounterClockwise className="w-4 h-4" weight="duotone" />}
         title="آخر استخدام"
         subtitle="أحدث ما أضفته أو طبّقته"
         badge={recentEntries.length}
       >
         {recentEntries.length === 0 ? (
           <FluentEmptyState
-            icon={<ClockCounterClockwise className="w-5 h-5" weight="duotone" />}
+            icon={<ClockCounterClockwise className="w-6 h-6" weight="duotone" />}
             title="لا سجل استخدام بعد"
             description="كل عنصر تضيفه من هذه اللوحة أو من أدوات الخطوط والألوان يظهر هنا"
           />
@@ -310,7 +310,7 @@ export function FreeformLibraryTab() {
 
       {/* عناصر سريعة: أشكال ونصوص جاهزة مع تثبيت المفضلة في الأعلى */}
       <FluentSection
-        icon={<Shapes className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Shapes className="w-4 h-4" weight="duotone" />}
         title="عناصر سريعة"
         subtitle={favorites.length > 0 ? `${favorites.length} مفضلة مثبّتة في الأعلى` : "انقر للنجمة لتثبيت الأكثر استخداماً"}
         badge={allItems.length}
@@ -351,14 +351,14 @@ export function FreeformLibraryTab() {
                   aria-pressed={isFavorite}
                   aria-label={isFavorite ? `إزالة ${item.label} من المفضلة` : `إضافة ${item.label} للمفضلة`}
                   className={cn(
-                    "absolute top-1.5 end-1.5 w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer",
+                    "absolute top-1 end-1 w-7 h-7 rounded-md flex items-center justify-center transition-colors cursor-pointer",
                     "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                     isFavorite
                       ? "text-primary hover:bg-primary/10"
                       : "text-muted-foreground/60 hover:text-foreground hover:bg-muted/70"
                   )}
                 >
-                  <Star className="w-3.5 h-3.5" weight={isFavorite ? "fill" : "regular"} />
+                  <Star className="w-4 h-4" weight={isFavorite ? "fill" : "regular"} />
                 </button>
               </div>
             );
@@ -368,7 +368,7 @@ export function FreeformLibraryTab() {
 
       {/* الخطوط المفضلة */}
       <FluentSection
-        icon={<TextAa className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<TextAa className="w-4 h-4" weight="duotone" />}
         title="الخطوط المفضلة"
         subtitle={
           selectedTexts.length > 0
@@ -379,7 +379,7 @@ export function FreeformLibraryTab() {
       >
         {favoriteFontOptions.length === 0 ? (
           <FluentEmptyState
-            icon={<TextAa className="w-5 h-5" weight="duotone" />}
+            icon={<TextAa className="w-6 h-6" weight="duotone" />}
             title="لا خطوط مفضلة"
             description="نجّم أياً من الخطوط في «مكتبة الخطوط» ليظهر هنا"
           />
@@ -403,7 +403,7 @@ export function FreeformLibraryTab() {
 
       {/* الألوان المفضلة + آخر استخدام */}
       <FluentSection
-        icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<Palette className="w-4 h-4" weight="duotone" />}
         title="الألوان المحفوظة"
         subtitle={colorTarget === "canvas" ? "تُطبَّق على خلفية الورقة" : "تُطبَّق على العناصر المحددة"}
         badge={favoriteColors.length}
@@ -434,7 +434,7 @@ export function FreeformLibraryTab() {
         {favoriteColors.length === 0 ? (
           <div className="mt-2">
             <FluentEmptyState
-              icon={<Palette className="w-5 h-5" weight="duotone" />}
+              icon={<Palette className="w-6 h-6" weight="duotone" />}
               title="لا ألوان محفوظة"
               description="نجّم أي لون في «الألوان والهوية» ليصل هنا"
             />

@@ -103,7 +103,7 @@ function RailToolButton({
           )}
 
           {/* الأيقونة فوق الإطار بلا z-index سالب — يرتفع فوق الشرائح بقيمته الصريحة */}
-          <tool.icon className="w-5 h-5 relative z-10" weight={isActive ? 'fill' : 'regular'} />
+          <tool.icon className="w-6 h-6 relative z-10" weight={isActive ? 'fill' : 'regular'} />
 
           {showBadge && (
             <span
@@ -297,7 +297,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
       </nav>
 
       {/* أسفل الشريط: لوحة كل الأدوات + وضع التركيز (لا تمرّ هاتان أبداً) */}
-      <div className="flex flex-col items-center gap-1.5 w-full px-1.5 shrink-0">
+      <div className="flex flex-col items-center gap-1 w-full px-1 shrink-0">
         <div
           role="separator"
           aria-orientation="horizontal"
@@ -321,7 +321,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
                   )}
                 >
-                  <SquaresFour className="w-5 h-5" weight={isLauncherOpen ? 'fill' : 'regular'} />
+                  <SquaresFour className="w-6 h-6" weight={isLauncherOpen ? 'fill' : 'regular'} />
                 </Button>
               </PopoverTrigger>
             </TooltipTrigger>
@@ -370,7 +370,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                               : 'bg-muted/70 text-muted-foreground'
                           )}
                         >
-                          <tool.icon className="w-4 h-4" weight="duotone" />
+                          <tool.icon className="w-5 h-5" weight="duotone" />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block font-bold truncate">{tool.title}</span>
@@ -437,9 +437,9 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
               )}
             >
               {isZenMode ? (
-                <ArrowsInSimple className="w-5 h-5 text-primary" />
+                <ArrowsInSimple className="w-6 h-6 text-primary" />
               ) : (
-                <ArrowsOutSimple className="w-5 h-5" />
+                <ArrowsOutSimple className="w-6 h-6" />
               )}
             </Button>
           </TooltipTrigger>

@@ -73,7 +73,7 @@ function SheetContent({
       >
         {children}
         <SheetPrimitive.Close className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 opacity-70 transition-all hover:opacity-100 hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none cursor-pointer">
-          <X className="size-4 shrink-0" weight="bold" />
+          <X className="size-5 shrink-0" weight="bold" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>

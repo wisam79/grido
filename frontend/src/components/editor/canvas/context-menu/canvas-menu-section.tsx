@@ -3,14 +3,19 @@ import {
   ImageSquare,
   ClipboardText,
   Stack,
+  CornersOut,
+  Export,
+  Printer,
 } from "@phosphor-icons/react";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
+import { ZOOM_DEFAULT } from "@/lib/canvas/zoom";
 import {
   menuItemClassName,
   menuSectionLabelClassName,
+  menuSeparatorClassName,
 } from "./menu-item-styles";
 
 /**
@@ -52,7 +57,7 @@ export function CanvasMenuSection({
             }
           })}
         >
-          <ImageSquare className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <ImageSquare className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
           <span className="truncate">إدراج صورة</span>
         </button>
 
@@ -64,7 +69,7 @@ export function CanvasMenuSection({
             pasteFromClipboardOrStore();
           })}
         >
-          <ClipboardText className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <ClipboardText className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
           <span className="truncate">
             لصق {clipboardCount > 0 ? `(${clipboardCount})` : ""}
           </span>
@@ -79,10 +84,48 @@ export function CanvasMenuSection({
               useEditorStore.getState().selectAllElements();
             })}
           >
-            <Stack className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+            <Stack className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
             <span className="truncate">تحديد الكل</span>
           </button>
         )}
+
+        <div className={menuSeparatorClassName} role="separator" />
+
+        <button
+          role="menuitem"
+          tabIndex={-1}
+          className={menuItemClassName}
+          onClick={() => handleAction(() => {
+            useEditorStore.getState().setCanvasZoom(ZOOM_DEFAULT);
+          })}
+        >
+          <CornersOut className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <span className="truncate">ملاءمة الشاشة (100%)</span>
+        </button>
+
+        <button
+          role="menuitem"
+          tabIndex={-1}
+          className={menuItemClassName}
+          onClick={() => handleAction(() => {
+            window.dispatchEvent(new CustomEvent("grido:open-export-dialog"));
+          })}
+        >
+          <Export className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+          <span className="truncate">تصدير الصورة...</span>
+        </button>
+
+        <button
+          role="menuitem"
+          tabIndex={-1}
+          className={menuItemClassName}
+          onClick={() => handleAction(() => {
+            window.dispatchEvent(new CustomEvent("grido:open-print-dialog"));
+          })}
+        >
+          <Printer className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <span className="truncate">طباعة المستند...</span>
+        </button>
       </div>
     </div>
   );

@@ -275,7 +275,7 @@ export const QuickColorPalette = React.memo(function QuickColorPalette({
                 {isCurrent && (
                   <Check
                     className={cn(
-                      "w-3.5 h-3.5 z-10 drop-shadow-xs",
+                      "w-4 h-4 z-10 drop-shadow-xs",
                       c.color.toLowerCase() === "#ffffff" ? "text-slate-900" : "text-white"
                     )}
                     weight="bold"
@@ -359,7 +359,7 @@ export function ColorWheelPicker({
   const displayColor = isTransparent ? "#FFFFFF" : color;
 
   return (
-    <div className="p-3.5 bg-popover/98 backdrop-blur-2xl rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-24 fluent-specular animate-in fade-in duration-150 flex flex-col gap-3 w-72 select-none" dir="rtl">
+    <div className="p-4 bg-popover/98 backdrop-blur-2xl rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-24 fluent-specular animate-in fade-in duration-150 flex flex-col gap-3 w-72 select-none" dir="rtl">
       <div className="custom-color-picker w-full rounded-xl overflow-hidden shadow-inner border border-border/40">
         <HexColorPicker
           color={isTransparent ? "#ffffff" : color}
@@ -386,7 +386,7 @@ export function ColorWheelPicker({
           )}
           title="خلفية شفافة"
         >
-          <Palette className={cn("w-4 h-4", isTransparent ? "text-primary" : "text-muted-foreground")} weight={isTransparent ? "fill" : "regular"} />
+          <Palette className={cn("w-5 h-5", isTransparent ? "text-primary" : "text-muted-foreground")} weight={isTransparent ? "fill" : "regular"} />
         </button>
 
         {hasEyeDropper && (
@@ -396,7 +396,7 @@ export function ColorWheelPicker({
             className="w-8 h-8 rounded-lg border border-border/60 bg-input/80 hover:bg-accent text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             title="قطارة الشاشة"
           >
-            <Eyedropper className="w-4 h-4" weight="regular" />
+            <Eyedropper className="w-5 h-5" weight="regular" />
           </button>
         )}
 
@@ -415,7 +415,7 @@ export function ColorWheelPicker({
             className="text-muted-foreground/50 hover:text-foreground transition-colors p-0.5"
             title="نسخ اللون"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" /> : <Copy className="w-3.5 h-3.5" weight="regular" />}
+            {copied ? <Check className="w-4 h-4 text-emerald-500" weight="bold" /> : <Copy className="w-4 h-4" weight="regular" />}
           </button>
           <div
             className="w-4 h-4 rounded-md border border-black/15 dark:border-white/20 shadow-2xs shrink-0 relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
@@ -463,7 +463,7 @@ export function ColorWheelPicker({
                 {isActive && (
                   <Check
                     className={cn(
-                      "w-3.5 h-3.5 z-10 drop-shadow-xs",
+                      "w-4 h-4 z-10 drop-shadow-xs",
                       bg.value === "#FFFFFF" || bg.value === "#F4F4F5" || bg.value === "#E4E4E7" || bg.value === "#F5F5F4"
                         ? "text-slate-900"
                         : "text-white"
@@ -594,7 +594,7 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
           />
           {isTransparent && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-              <Check className="w-3.5 h-3.5 text-slate-900 drop-shadow-xs" weight="bold" />
+              <Check className="w-4 h-4 text-slate-900 drop-shadow-xs" weight="bold" />
             </div>
           )}
         </button>
@@ -623,7 +623,7 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
               {isSelected && (
                 <Check
                   className={cn(
-                    "w-3.5 h-3.5 z-10 drop-shadow-xs",
+                    "w-4 h-4 z-10 drop-shadow-xs",
                     isLight ? "text-slate-900" : "text-white"
                   )}
                   weight="bold"
@@ -645,7 +645,7 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
           )}
           label={
             <div className={cn("flex items-center gap-1.5 text-xs font-semibold text-foreground/90", compact && "text-micro gap-1")}>
-              <PaintBrush className="text-primary shrink-0 w-3.5 h-3.5" weight="duotone" />
+              <PaintBrush className="text-primary shrink-0 w-4 h-4" weight="duotone" />
               <span>لون مخصص</span>
             </div>
           }
@@ -663,7 +663,7 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
                 )}
                 aria-label="قطارة الألوان"
               >
-                <Eyedropper className={cn(compact ? "w-3.5 h-3.5" : "w-4 h-4")} weight="duotone" />
+                <Eyedropper className={cn(compact ? "w-4 h-4" : "w-5 h-5")} weight="duotone" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top">قطارة الشاشة</TooltipContent>
@@ -678,7 +678,7 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
         <div className="pt-1 border-t border-border/30">
           <div className="flex items-center justify-between gap-2 py-2">
             <span className="text-xs text-foreground/90 font-semibold flex items-center gap-1.5">
-              <Drop className={cn("w-4 h-4", isGradientActive ? "text-primary" : "text-muted-foreground")} weight="duotone" />
+              <Drop className={cn("w-5 h-5", isGradientActive ? "text-primary" : "text-muted-foreground")} weight="duotone" />
               <span>تعبئة متدرجة</span>
             </span>
             <button

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * PanelShell - غلاف موحد للألواح الجانبية (عمود القوالب / عمود الخصائص)
  * وفق نظام Fluent 2 وأفضل ممارسات محررات التصميم الحديثة:
  *
- * 1. رأس لاصق بارتفاع h-12 (معيار Command/App Bars) يثبت هوية اللوح
+ * 1. رأس لاصق بارتفاع h-10 مضغوط يثبت هوية اللوح
  *    اثناء التمرير ويحافظ على سياق المستخدم.
  * 2. شارة ايقونة داخل حاوية primary/10 (Icon-Driven UI).
  * 3. زر طي داخلي لقابلية الاكتشاف مع Tooltip و aria-label.
@@ -61,8 +61,8 @@ export const PanelShell = React.memo(function PanelShell({
   return (
     <div className={cn("flex flex-col h-full min-h-0", className)}>
       {/* الرأس */}
-      <div className="shrink-0 flex items-center gap-2.5 px-3.5 h-12 select-none">
-        <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0 flex items-center justify-center shadow-2xs fluent-specular">
+      <div className="shrink-0 flex items-center gap-2 px-2.5 h-9 select-none">
+        <div className="p-1 rounded-md bg-primary/10 text-primary shrink-0 flex items-center justify-center shadow-2xs fluent-specular">
           {icon}
         </div>
         <div className="min-w-0 flex-1 leading-tight">
@@ -85,9 +85,9 @@ export const PanelShell = React.memo(function PanelShell({
                 type="button"
                 onClick={onCollapse}
                 aria-label={collapseTitle}
-                className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
+                className="shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
               >
-                {collapseIcon || <SidebarSimple className="w-4 h-4" weight="regular" />}
+                {collapseIcon || <SidebarSimple className="w-5 h-5" weight="regular" />}
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="font-cairo text-xs font-semibold">
@@ -105,7 +105,7 @@ export const PanelShell = React.memo(function PanelShell({
           <div className="absolute inset-x-0 top-0 h-2 pointer-events-none z-10 bg-gradient-to-b from-background/70 to-transparent panel-scroll-hint" />
         )}
         <ScrollArea className="h-full">
-          <div className={cn("p-3 pb-8 font-cairo", bodyClassName)}>
+          <div className={cn("px-2.5 pt-2.5 pb-4 font-cairo", bodyClassName)}>
             {children}
           </div>
         </ScrollArea>

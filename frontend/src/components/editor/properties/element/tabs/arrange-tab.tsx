@@ -56,7 +56,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
     <div className="space-y-3 font-cairo">
       {/* بطاقة 1: الموضع والمحاذاة السريعة */}
       <FluentSection
-        icon={<ArrowsOutCardinal className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<ArrowsOutCardinal className="w-5 h-5 text-primary" weight="duotone" />}
         title="الموضع والمحاذاة"
         collapsible
         defaultOpen={true}
@@ -71,7 +71,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
                 onClick={() => alignSelectedElements("left")}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
-                <AlignLeftIcon className="w-4 h-4" />
+                <AlignLeftIcon className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
@@ -87,7 +87,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
                 onClick={() => alignSelectedElements("center")}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
-                <AlignCenterHorizontalIcon className="w-4 h-4" />
+                <AlignCenterHorizontalIcon className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
@@ -103,7 +103,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
                 onClick={() => alignSelectedElements("right")}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
-                <AlignRightIcon className="w-4 h-4" />
+                <AlignRightIcon className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
@@ -121,7 +121,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
                 onClick={() => alignSelectedElements("top")}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
-                <AlignTopIcon className="w-4 h-4" />
+                <AlignTopIcon className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
@@ -137,7 +137,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
                 onClick={() => alignSelectedElements("middle")}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
-                <AlignCenterVerticalIcon className="w-4 h-4" />
+                <AlignCenterVerticalIcon className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
@@ -153,7 +153,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
                 onClick={() => alignSelectedElements("bottom")}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
-                <AlignBottomIcon className="w-4 h-4" />
+                <AlignBottomIcon className="w-5 h-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
@@ -264,14 +264,14 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
 
       {/* بطاقة 2: التدوير والقلب */}
       <FluentSection
-        icon={<ArrowClockwise className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<ArrowClockwise className="w-5 h-5 text-primary" weight="duotone" />}
         title="التدوير والقلب"
         collapsible
         defaultOpen={true}
       >
         <FluentSliderField
           label="التدوير"
-          icon={<ArrowClockwise className="w-3.5 h-3.5" weight="regular" />}
+          icon={<ArrowClockwise className="w-4 h-4" weight="regular" />}
           value={(((element.rotation % 360) + 540) % 360) - 180}
           min={-180}
           max={180}
@@ -297,7 +297,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
             title="تدوير 90°"
             className="h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
-            <ArrowClockwise className="w-3.5 h-3.5 text-muted-foreground" weight="regular" />
+            <ArrowClockwise className="w-4 h-4 text-muted-foreground" weight="regular" />
           </Button>
           <Button
             variant="outline"
@@ -310,7 +310,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
             )}
           >
             <FlipHorizontal
-              className={cn("w-3.5 h-3.5", element.flipX ? "text-primary" : "text-muted-foreground")}
+              className={cn("w-4 h-4", element.flipX ? "text-primary" : "text-muted-foreground")}
               weight={element.flipX ? "fill" : "regular"}
             />
           </Button>
@@ -325,7 +325,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
             )}
           >
             <FlipVertical
-              className={cn("w-3.5 h-3.5", element.flipY ? "text-primary" : "text-muted-foreground")}
+              className={cn("w-4 h-4", element.flipY ? "text-primary" : "text-muted-foreground")}
               weight={element.flipY ? "fill" : "regular"}
             />
           </Button>

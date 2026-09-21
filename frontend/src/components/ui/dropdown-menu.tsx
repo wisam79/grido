@@ -66,7 +66,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   >
     <span className="pointer-events-none absolute left-1.5 flex size-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="size-3.5 text-primary shrink-0" weight="bold" />
+        <Check className="size-4 text-primary shrink-0" weight="bold" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -163,7 +163,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <CaretRight className="ml-auto size-3.5 shrink-0 rtl:rotate-180" weight="bold" />
+    <CaretRight className="ml-auto size-4 shrink-0 rtl:rotate-180" weight="bold" />
   </DropdownMenuPrimitive.SubTrigger>
 ))
 DropdownMenuSubTrigger.displayName =

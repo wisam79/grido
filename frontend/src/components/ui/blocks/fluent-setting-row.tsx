@@ -45,7 +45,7 @@ export const FluentSettingRow = React.memo(
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       aria-label="المزيد"
                     >
-                      <Question className="size-3.5 shrink-0" weight="bold" />
+                      <Question className="size-4 shrink-0" weight="bold" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-cairo">
@@ -85,7 +85,7 @@ export const FluentSettingRow = React.memo(
                       className="text-muted-foreground/70 hover:text-foreground cursor-pointer inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       aria-label="المزيد"
                     >
-                      <Question className="size-3.5 shrink-0" weight="bold" />
+                      <Question className="size-4 shrink-0" weight="bold" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-cairo">

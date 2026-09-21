@@ -103,7 +103,7 @@ const SortableLayerItem = React.memo(
             className="cursor-grab active:cursor-grabbing hover:bg-input p-1 rounded text-muted-foreground/60 hover:text-foreground transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <DotsSixVertical className="w-3.5 h-3.5" weight="bold" />
+            <DotsSixVertical className="w-4 h-4" weight="bold" />
           </div>
 
           {/* معاينة مصغرة للصورة أو أيقونة النوع */}
@@ -118,9 +118,9 @@ const SortableLayerItem = React.memo(
             </div>
           ) : (
             <span className="shrink-0 text-muted-foreground/80 w-6 h-6 rounded bg-muted/40 flex items-center justify-center border border-border/40">
-              {el.type === "image" && <Image className="w-3.5 h-3.5" weight="regular" />}
-              {el.type === "text" && <TextAa className="w-3.5 h-3.5" weight="bold" />}
-              {el.type === "shape" && <Shapes className="w-3.5 h-3.5" weight="regular" />}
+              {el.type === "image" && <Image className="w-4 h-4" weight="regular" />}
+              {el.type === "text" && <TextAa className="w-4 h-4" weight="bold" />}
+              {el.type === "shape" && <Shapes className="w-4 h-4" weight="regular" />}
             </span>
           )}
 
@@ -152,7 +152,7 @@ const SortableLayerItem = React.memo(
               className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${isLocked ? "text-primary" : "text-muted-foreground/50 hover:text-foreground"}`}
               onClick={(e) => toggleLock(el, e)}
             >
-              {isLocked ? <LockSimple className="w-3.5 h-3.5" weight="fill" /> : <LockSimpleOpen className="w-3.5 h-3.5" weight="regular" />}
+              {isLocked ? <LockSimple className="w-4 h-4" weight="fill" /> : <LockSimpleOpen className="w-4 h-4" weight="regular" />}
             </Button>
           </TooltipBtn>
           <TooltipBtn content={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}>
@@ -163,7 +163,7 @@ const SortableLayerItem = React.memo(
               className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${!isVisible ? "text-muted-foreground/40" : "text-muted-foreground hover:text-foreground"}`}
               onClick={(e) => toggleVisibility(el, e)}
             >
-              {isVisible ? <Eye className="w-3.5 h-3.5" weight="regular" /> : <EyeSlash className="w-3.5 h-3.5" weight="regular" />}
+              {isVisible ? <Eye className="w-4 h-4" weight="regular" /> : <EyeSlash className="w-4 h-4" weight="regular" />}
             </Button>
           </TooltipBtn>
            <TooltipBtn content="تكرار الطبقة">
@@ -174,7 +174,7 @@ const SortableLayerItem = React.memo(
               className="w-7 h-7 rounded-md hover:bg-input text-muted-foreground/50 hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
               onClick={(e) => duplicateLayer(el.id, e)}
             >
-              <Copy className="w-3.5 h-3.5" weight="regular" />
+              <Copy className="w-4 h-4" weight="regular" />
             </Button>
           </TooltipBtn>
            <TooltipBtn content="حذف الطبقة">
@@ -185,7 +185,7 @@ const SortableLayerItem = React.memo(
               className="w-7 h-7 rounded-md hover:bg-destructive/10 text-muted-foreground/50 hover:text-destructive transition-colors focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:outline-none"
               onClick={(e) => deleteLayer(el.id, e)}
             >
-              <Trash className="w-3.5 h-3.5" weight="regular" />
+              <Trash className="w-4 h-4" weight="regular" />
             </Button>
           </TooltipBtn>
         </div>
@@ -267,7 +267,7 @@ export function LayersList() {
     return (
       <div className="bg-input/40 border border-dashed border-border rounded-xl p-5 text-center select-none flex flex-col items-center justify-center space-y-2 animate-in fade-in duration-300">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-xs">
-          <Stack className="w-4 h-4 opacity-80" weight="duotone" />
+          <Stack className="w-5 h-5 opacity-80" weight="duotone" />
         </div>
         <div className="space-y-1">
           <p className="text-xs font-bold text-foreground/80">لا توجد عناصر</p>
@@ -320,9 +320,9 @@ export function LayersList() {
         className="flex items-center justify-between w-full text-start cursor-pointer select-none"
       >
         <div className="flex items-center gap-1.5">
-          <CaretDown className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !expanded && "-rotate-90")} weight="bold" />
+          <CaretDown className={cn("w-5 h-5 transition-transform duration-200 text-muted-foreground", !expanded && "-rotate-90")} weight="bold" />
           <span className="text-sm font-bold text-foreground/90 cursor-pointer flex items-center gap-1.5">
-            <Stack className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+            <Stack className="w-5 h-5 text-primary shrink-0" weight="duotone" />
             الطبقات ({elements.length})
           </span>
         </div>

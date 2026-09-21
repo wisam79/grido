@@ -171,7 +171,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                 onClick={onResetDefaults}
                 className="w-7 h-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-md hover:bg-muted/50 shrink-0"
               >
-                <ArrowCounterClockwise className="w-3.5 h-3.5" />
+                <ArrowCounterClockwise className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
@@ -190,12 +190,12 @@ export const StickerProperties = React.memo(function StickerProperties({
             {
               id: "design",
               label: "التصميم",
-              icon: <SlidersHorizontal className="w-3.5 h-3.5" weight={activeTab === "design" ? "bold" : "regular"} />,
+              icon: <SlidersHorizontal className="w-4 h-4" weight={activeTab === "design" ? "bold" : "regular"} />,
             },
             {
               id: "sheet",
               label: "الشيت",
-              icon: <Printer className="w-3.5 h-3.5" weight={activeTab === "sheet" ? "bold" : "regular"} />,
+              icon: <Printer className="w-4 h-4" weight={activeTab === "sheet" ? "bold" : "regular"} />,
               badge: (
                 <span className="text-2xs font-mono px-1 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
                   {gridConfig.rows * gridConfig.cols}
@@ -205,7 +205,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             {
               id: "presets",
               label: "قوالبي",
-              icon: <BookmarkSimple className="w-3.5 h-3.5" weight={activeTab === "presets" ? "bold" : "regular"} />,
+              icon: <BookmarkSimple className="w-4 h-4" weight={activeTab === "presets" ? "bold" : "regular"} />,
               badge: templatePresets.length > 0 ? (
                 <span className="text-2xs font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
                   {templatePresets.length}
@@ -223,7 +223,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             {/* 1. النصوص */}
             {template.fields.length > 0 && (
               <FluentSection
-                icon={<TextT className="w-3.5 h-3.5" weight="duotone" />}
+                icon={<TextT className="w-4 h-4" weight="duotone" />}
                 title="النصوص"
                 collapsible
                 defaultOpen
@@ -268,7 +268,7 @@ export const StickerProperties = React.memo(function StickerProperties({
 
             {/* 2. الألوان */}
             <FluentSection
-              icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
+              icon={<Palette className="w-4 h-4" weight="duotone" />}
               title="الألوان"
               collapsible
               defaultOpen
@@ -373,7 +373,7 @@ export const StickerProperties = React.memo(function StickerProperties({
 
             {/* 3. المظهر */}
             <FluentSection
-              icon={<Sparkle className="w-3.5 h-3.5" weight="duotone" />}
+              icon={<Sparkle className="w-4 h-4" weight="duotone" />}
               title="المظهر"
               collapsible
               defaultOpen
@@ -414,7 +414,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               {/* Die-cut Cutline Toggle */}
               <div className="h-8 flex items-center justify-between px-2.5 rounded-md bg-card/40 border border-border/30 hover:border-border/60 transition-colors">
                 <div className="flex items-center gap-1.5">
-                  <Scissors className="w-3.5 h-3.5 text-destructive" />
+                  <Scissors className="w-4 h-4 text-destructive" />
                   <span className="text-xs font-semibold text-foreground/85">إطار القص</span>
                 </div>
                 <Switch
@@ -526,7 +526,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             {/* حفظ التخصيص الحالي */}
             <div className="p-3 rounded-xl bg-card/60 border border-border/40 space-y-2.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                <FloppyDisk className="w-4 h-4 text-primary" weight="duotone" />
+                <FloppyDisk className="w-5 h-5 text-primary" weight="duotone" />
                 <span>حفظ التخصيص</span>
               </div>
               <p className="text-mini text-muted-foreground leading-relaxed">
@@ -549,7 +549,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                   onClick={handleSavePreset}
                   className="h-8 px-3 rounded-md text-xs font-bold gap-1 cursor-pointer shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  <Plus className="w-3.5 h-3.5" weight="bold" />
+                  <Plus className="w-4 h-4" weight="bold" />
                   <span>حفظ</span>
                 </Button>
               </div>
@@ -617,7 +617,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer"
                             title="حذف"
                           >
-                            <Trash className="w-3.5 h-3.5" />
+                            <Trash className="w-4 h-4" />
                           </Button>
 
                           <Button
@@ -626,7 +626,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                             onClick={() => handleApplyPreset(preset)}
                             className="h-7 px-3 text-xs font-bold rounded-md cursor-pointer bg-primary/15 text-primary hover:bg-primary hover:text-primary-foreground transition-all gap-1"
                           >
-                            <Check className="w-3.5 h-3.5" weight="bold" />
+                            <Check className="w-4 h-4" weight="bold" />
                             <span>تطبيق</span>
                           </Button>
                         </div>

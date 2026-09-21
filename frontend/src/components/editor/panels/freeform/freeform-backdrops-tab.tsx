@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { GridNine, PaintBucket, SquaresFour, ArrowLineDown } from "@phosphor-icons/react";
+import { GridNine, PaintBucket, ArrowLineDown } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   FluentFilterChips,
   FluentSection,
@@ -126,9 +125,9 @@ export function FreeformBackdropsTab() {
   };
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div className="flex flex-col gap-2.5 font-cairo animate-in fade-in duration-200" dir="rtl">
       <FluentSection
-        icon={<PaintBucket className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<PaintBucket className="w-4 h-4" weight="duotone" />}
         title="خلفية الورقة"
         subtitle={`الحالي: ${backgroundColor}`}
       >
@@ -172,7 +171,7 @@ export function FreeformBackdropsTab() {
       </FluentSection>
 
       <FluentSection
-        icon={<GridNine className="w-3.5 h-3.5" weight="duotone" />}
+        icon={<GridNine className="w-4 h-4" weight="duotone" />}
         title="تدرجات جاهزة"
         subtitle={
           gradientTarget === "backdrop"
@@ -230,34 +229,6 @@ export function FreeformBackdropsTab() {
           الخلفية الكاملة تُضاف كعنصر مستطيل يغطي الورقة ويُرسَل خلف كل العناصر، فيمكن تعديله
           أو حذفه لاحقاً من لوحة الطبقات.
         </p>
-      </FluentSection>
-
-      <FluentSection
-        icon={<SquaresFour className="w-3.5 h-3.5" weight="duotone" />}
-        title="قوالب خلفية سريعة"
-        subtitle="خلفية متدرجة بضغطة واحدة"
-      >
-        <div className="flex flex-wrap gap-1.5">
-          {GRADIENT_PRESETS.slice(0, 6).map((preset) => (
-            <Button
-              key={`quick-${preset.id}`}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setGradientTarget("backdrop");
-                applyGradient(preset, true);
-              }}
-              className="justify-start"
-            >
-              <span
-                className="w-4 h-4 rounded-sm border border-black/10 dark:border-white/15 shrink-0"
-                style={{ background: formatGradientCss(preset.stops, "linear", 135) }}
-              />
-              <span className="truncate">{preset.name}</span>
-            </Button>
-          ))}
-        </div>
       </FluentSection>
     </div>
   );

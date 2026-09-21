@@ -116,7 +116,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
     <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
       {/* 🎴 بطاقة 1: نوع الخط والقياسات */}
       <FluentSection
-        icon={<TextAa className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<TextAa className="w-5 h-5 text-primary" weight="duotone" />}
         title="نوع وحجم الخط"
         collapsible
         defaultOpen={true}
@@ -138,7 +138,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   className="h-7 px-1.5 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                   title={`نمط ${preset.label}`}
                 >
-                  <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                  <Icon className="w-4 h-4 shrink-0" weight="bold" />
                   <span className="truncate">{preset.label}</span>
                 </button>
               );
@@ -158,7 +158,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   className="h-7 px-2 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                   title={`نمط ${preset.label}`}
                 >
-                  <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                  <Icon className="w-4 h-4 shrink-0" weight="bold" />
                   <span className="truncate">{preset.label}</span>
                 </button>
               );
@@ -194,7 +194,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   </option>
                 ))}
               </select>
-              <CaretDown className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
+              <CaretDown className="w-4 h-4 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
             </div>
           </div>
 
@@ -226,7 +226,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   </option>
                 ))}
               </select>
-              <CaretDown className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
+              <CaretDown className="w-4 h-4 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
             </div>
           </div>
         </div>
@@ -246,7 +246,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
         {/* لون النص السريع مع إمكانية الانتقال للاستوديو الكامل */}
         <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg border border-border/40">
           <span className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
+            <Palette className="w-4 h-4 text-primary" weight="duotone" />
             <span>لون النص</span>
           </span>
           <div className="flex items-center gap-2">
@@ -273,7 +273,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
       {/* 🎴 بطاقة 2: التنسيق والمحاذاة */}
       <FluentSection
-        icon={<Article className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Article className="w-5 h-5 text-primary" weight="duotone" />}
         title="التنسيق والمحاذاة"
       >
         {/* الصف 1: التنسيقات والمحاذاة */}
@@ -290,7 +290,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               className={toggleButtonClassName(isBold)}
               title="عريض (B)"
             >
-              <TextB className="w-4 h-4" weight={isBold ? "bold" : "regular"} />
+              <TextB className="w-5 h-5" weight={isBold ? "bold" : "regular"} />
             </button>
 
             <button
@@ -302,7 +302,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               className={toggleButtonClassName(isItalic)}
               title="مائل (I)"
             >
-              <TextItalic className="w-4 h-4" weight={isItalic ? "bold" : "regular"} />
+              <TextItalic className="w-5 h-5" weight={isItalic ? "bold" : "regular"} />
             </button>
 
             <button
@@ -314,7 +314,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               className={toggleButtonClassName(isUnderline)}
               title="تسطير (U)"
             >
-              <TextUnderline className="w-4 h-4" weight={isUnderline ? "bold" : "regular"} />
+              <TextUnderline className="w-5 h-5" weight={isUnderline ? "bold" : "regular"} />
             </button>
 
             <button
@@ -326,7 +326,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               className={toggleButtonClassName(isLineThrough)}
               title="شطب (S)"
             >
-              <TextStrikethrough className="w-4 h-4" weight={isLineThrough ? "bold" : "regular"} />
+              <TextStrikethrough className="w-5 h-5" weight={isLineThrough ? "bold" : "regular"} />
             </button>
           </div>
 
@@ -342,7 +342,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               className={toggleButtonClassName(textAlign === "right")}
               title="يمين"
             >
-              <TextAlignRight className="w-4 h-4" weight={textAlign === "right" ? "bold" : "regular"} />
+              <TextAlignRight className="w-5 h-5" weight={textAlign === "right" ? "bold" : "regular"} />
             </button>
 
             <button
@@ -354,7 +354,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               className={toggleButtonClassName(textAlign === "center")}
               title="توسيط"
             >
-              <TextAlignCenter className="w-4 h-4" weight={textAlign === "center" ? "bold" : "regular"} />
+              <TextAlignCenter className="w-5 h-5" weight={textAlign === "center" ? "bold" : "regular"} />
             </button>
 
             <button
@@ -366,7 +366,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               className={toggleButtonClassName(textAlign === "left")}
               title="يسار"
             >
-              <TextAlignLeft className="w-4 h-4" weight={textAlign === "left" ? "bold" : "regular"} />
+              <TextAlignLeft className="w-5 h-5" weight={textAlign === "left" ? "bold" : "regular"} />
             </button>
           </div>
         </div>
@@ -435,7 +435,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
       {/* 🎴 بطاقة 3: التباعد والمسافات */}
       <FluentSection
-        icon={<ArrowsInLineVertical className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<ArrowsInLineVertical className="w-5 h-5 text-primary" weight="duotone" />}
         title="التباعد والمسافات"
       >
         <div className="grid grid-cols-2 gap-2">

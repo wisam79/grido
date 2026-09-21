@@ -51,7 +51,7 @@ export function useWorkspacePanels() {
   // Load initial preferences
   const [activePanel, setActivePanelState] = useState<WorkspacePanel>(() => {
     const saved = getStoredPreferences().lastActivePanel;
-    // Default to properties inspector on desktop
+    // الجزء الأيمن يظل متاحاً دائماً كلوحة خصائص أساسية (Properties Inspector)
     return saved !== undefined ? saved : 'properties';
   });
 

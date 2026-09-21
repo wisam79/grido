@@ -116,7 +116,7 @@ export const GradientPicker = ({
       {fillType === "solid" ? (
         <div className="flex items-center justify-between gap-2 bg-background/50 p-2 rounded-xl border border-border/40 shadow-2xs w-full">
           <span className="text-xs text-foreground/90 font-semibold flex items-center gap-1.5 shrink-0">
-            <Palette className="w-4 h-4 text-primary" weight="duotone" />
+            <Palette className="w-5 h-5 text-primary" weight="duotone" />
             <span>لون التعبئة</span>
           </span>
           <PopoverColorPicker color={color} onChange={onChangeSolidColor} swatchOnly className="w-8 h-8" />
@@ -138,7 +138,7 @@ export const GradientPicker = ({
               {/* بداية التدرج */}
               <div className="flex-1 flex items-center justify-between bg-muted/40 hover:bg-muted/70 px-2.5 py-1.5 rounded-lg border border-border/40 transition-colors min-w-0">
                 <span className="text-micro font-bold text-muted-foreground">البداية</span>
-                <PopoverColorPicker color={stop1} onChange={handleStop1Change} swatchOnly className="w-6 h-6 rounded-md shadow-2xs border border-white/10" />
+                <PopoverColorPicker color={stop1} onChange={handleStop1Change} swatchOnly className="w-7 h-7 rounded-md shadow-2xs border border-white/10" />
               </div>
 
               {/* زر عكس التدرج الأنيق */}
@@ -150,7 +150,7 @@ export const GradientPicker = ({
                     className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground border border-border/50 hover:border-primary/40 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
                     title="عكس الألوان"
                   >
-                    <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
+                    <ArrowsLeftRight className="w-4 h-4" weight="bold" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs font-cairo">عكس الألوان</TooltipContent>
@@ -159,7 +159,7 @@ export const GradientPicker = ({
               {/* نهاية التدرج */}
               <div className="flex-1 flex items-center justify-between bg-muted/40 hover:bg-muted/70 px-2.5 py-1.5 rounded-lg border border-border/40 transition-colors min-w-0">
                 <span className="text-micro font-bold text-muted-foreground">النهاية</span>
-                <PopoverColorPicker color={stop2} onChange={handleStop2Change} swatchOnly className="w-6 h-6 rounded-md shadow-2xs border border-white/10" />
+                <PopoverColorPicker color={stop2} onChange={handleStop2Change} swatchOnly className="w-7 h-7 rounded-md shadow-2xs border border-white/10" />
               </div>
             </div>
           </div>
@@ -212,7 +212,7 @@ export const GradientPicker = ({
           <div className="space-y-2 pt-1 border-t border-border/40 w-full max-w-full overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-mini font-bold text-foreground flex items-center gap-1">
-                <Sparkle className="w-3.5 h-3.5 text-amber-500" weight="duotone" />
+                <Sparkle className="w-4 h-4 text-amber-500" weight="duotone" />
                 <span>تدرجات جاهزة</span>
               </span>
               <span className="text-micro text-muted-foreground font-semibold tabular-nums">({filteredPresets.length})</span>

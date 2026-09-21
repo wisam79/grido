@@ -57,16 +57,16 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             <button
               type="button"
               onClick={(e) => e.stopPropagation()}
-              className="absolute top-2.5 end-2.5 z-10 w-6 h-6 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="absolute top-2.5 end-2.5 z-10 w-7 h-7 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
               title="حذف القالب"
             >
-              <Trash className="w-3.5 h-3.5" weight="regular" />
+              <Trash className="w-4 h-4" weight="regular" />
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent className="font-cairo text-start rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl fluent-specular" dir="rtl" onClick={(e) => e.stopPropagation()}>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-start">
-                <Trash className="w-5 h-5 text-destructive" weight="duotone" />
+                <Trash className="w-6 h-6 text-destructive" weight="duotone" />
                 <span>حذف القالب</span>
               </AlertDialogTitle>
               <AlertDialogDescription className="text-start">
@@ -104,7 +104,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             >
               <Image
                 className={cn(
-                  "w-4 h-4 transition-transform duration-300 group-hover:scale-110",
+                  "w-5 h-5 transition-transform duration-300 group-hover:scale-110",
                   isActive ? "text-primary" : "text-muted-foreground/45 group-hover:text-primary/75"
                 )}
                 weight="regular"

@@ -52,7 +52,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
             onClick={onOpenFileForSlot}
             className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
           >
-            <ImageSquare className="w-4 h-4" weight="regular" />
+            <ImageSquare className="w-5 h-5" weight="regular" />
             <span>تغيير</span>
           </Button>
         </TooltipTrigger>
@@ -69,7 +69,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                 onClick={() => fillAllSlots(slot.imageSrc!, slot.id)}
                 className="h-7 px-2 gap-1 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
               >
-                <GridFour className="w-4 h-4" weight="regular" />
+                <GridFour className="w-5 h-5" weight="regular" />
                 <span>كل الورقة</span>
               </Button>
             </TooltipTrigger>
@@ -84,7 +84,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                 onClick={() => fillRowSlots(slot.id, slot.imageSrc!)}
                 className="h-7 px-2 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
               >
-                <Rows className="w-4 h-4" weight="regular" />
+                <Rows className="w-5 h-5" weight="regular" />
                 <span>الصف</span>
               </Button>
             </TooltipTrigger>
@@ -99,7 +99,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                 onClick={() => fillColumnSlots(slot.id, slot.imageSrc!)}
                 className="h-7 px-2 rounded-md hover:bg-primary/10 hover:text-primary text-xs font-bold"
               >
-                <Columns className="w-4 h-4" weight="regular" />
+                <Columns className="w-5 h-5" weight="regular" />
                 <span>العمود</span>
               </Button>
             </TooltipTrigger>
@@ -116,7 +116,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                 onClick={() => rotateSlot(slot.id, 90)}
                 className="h-7 w-7 p-0 rounded-md hover:bg-accent"
               >
-                <ArrowClockwise className="w-4 h-4" weight="bold" />
+                <ArrowClockwise className="w-5 h-5" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
@@ -130,7 +130,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                 onClick={() => flipSlotX(slot.id)}
                 className="h-7 w-7 p-0 rounded-md hover:bg-accent"
               >
-                <FlipHorizontal className="w-4 h-4" weight="bold" />
+                <FlipHorizontal className="w-5 h-5" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">قلب أفقي</TooltipContent>
@@ -154,7 +154,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                     }}
                     className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                   >
-                    <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
+                    <ArrowCounterClockwise className="w-5 h-5" weight="regular" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">استعادة الصورة الأصلية</TooltipContent>
@@ -176,7 +176,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                     }}
                     className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
                   >
-                    <Eye className="w-4 h-4" weight="regular" />
+                    <Eye className="w-5 h-5" weight="regular" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">اضغط مطولاً للمعاينة</TooltipContent>
@@ -195,7 +195,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                 }}
                 className="h-7 w-7 p-0 rounded-md text-destructive hover:bg-destructive/10"
               >
-                <Broom className="w-4 h-4" weight="regular" />
+                <Broom className="w-5 h-5" weight="regular" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">تفريغ هذه الخلية</TooltipContent>

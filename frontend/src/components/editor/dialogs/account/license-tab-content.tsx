@@ -60,11 +60,11 @@ export function LicenseTabContent({
   };
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-4">
       {user && (user.plan === "pro" || user.plan === "enterprise") ? (
         <div className="bg-emerald-500/5 border border-emerald-500/20 dark:border-emerald-500/30 rounded-xl p-4 text-center space-y-2.5 fluent-specular">
           <div className="inline-flex p-2.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-500/30 shadow-2xs">
-            <ShieldCheck className="w-6 h-6 shrink-0" weight="duotone" />
+            <ShieldCheck className="w-7 h-7 shrink-0" weight="duotone" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground">النسخة مفعلة بنجاح</h3>
@@ -91,10 +91,10 @@ export function LicenseTabContent({
           )}
         </div>
       ) : (
-        <form onSubmit={handleActivate} className="space-y-3.5">
+        <form onSubmit={handleActivate} className="space-y-4">
           {error && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-center gap-2 text-destructive text-xs font-semibold">
-              <Warning className="w-4 h-4 shrink-0" weight="duotone" />
+              <Warning className="w-5 h-5 shrink-0" weight="duotone" />
               <span>{error}</span>
             </div>
           )}
@@ -120,7 +120,7 @@ export function LicenseTabContent({
               </button>
             </div>
             <div className="relative">
-              <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
+              <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 shrink-0" />
               <Input
                 placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
                 className="pr-9 h-9 text-xs font-mono uppercase rounded-md tracking-wider"
@@ -138,7 +138,7 @@ export function LicenseTabContent({
           >
             {loading ? (
               <>
-                <Spinner className="w-4 h-4" size={16} />
+                <Spinner className="w-5 h-5" size={16} />
                 <span>جاري تفعيل الترخيص ...</span>
               </>
             ) : (
@@ -164,7 +164,7 @@ export function LicenseTabContent({
           }}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer font-medium"
         >
-          <DownloadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
+          <DownloadSimple className="w-4 h-4 shrink-0" weight="bold" />
           <span>السجلات</span>
         </button>
 
@@ -175,7 +175,7 @@ export function LicenseTabContent({
           className="flex items-center gap-1 text-xs text-primary hover:underline font-bold"
         >
           <span>شراء ترخيص</span>
-          <ArrowSquareOut className="w-3.5 h-3.5 shrink-0" weight="bold" />
+          <ArrowSquareOut className="w-4 h-4 shrink-0" weight="bold" />
         </a>
       </div>
     </div>

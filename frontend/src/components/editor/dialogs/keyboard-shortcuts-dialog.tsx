@@ -95,6 +95,7 @@ export function KeyboardShortcutsDialog() {
         { label: "الخطوط الإرشادية", keys: ["Ctrl", ";"] },
         { label: "القوالب", keys: ["Ctrl", "B"] },
         { label: "الخصائص", keys: ["Ctrl", "Shift", "B"] },
+        { label: "ملء الشاشة", keys: ["F11"] },
       ],
     },
     {
@@ -117,10 +118,10 @@ export function KeyboardShortcutsDialog() {
         dir="rtl"
       >
         {/* رأس النافذة الثابت */}
-        <DialogHeader className="px-5 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
+        <DialogHeader className="px-5 py-4 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-2">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <Keyboard className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+              <Keyboard className="text-primary w-7 h-7 shrink-0" weight="duotone" />
               <span>اختصارات لوحة المفاتيح</span>
             </DialogTitle>
             <DialogCloseButton />
@@ -132,7 +133,7 @@ export function KeyboardShortcutsDialog() {
           {categories.map((cat, catIdx) => (
             <div key={catIdx} className="space-y-2">
               <div className="text-xs font-extrabold text-primary flex items-center gap-1.5 px-0.5">
-                <Sparkle className="opacity-70 w-3.5 h-3.5 shrink-0" weight="duotone" />
+                <Sparkle className="opacity-70 w-4 h-4 shrink-0" weight="duotone" />
                 <span>{cat.title}</span>
               </div>
               <div className="bg-muted/30 rounded-xl border border-border/40 p-2 space-y-1">
@@ -150,8 +151,8 @@ export function KeyboardShortcutsDialog() {
                           >
                             {key === "الأسهم" ? (
                               <div className="flex items-center gap-0.5">
-                                <ArrowUp className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                                <ArrowDown className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                                <ArrowUp className="w-4 h-4 shrink-0" weight="bold" />
+                                <ArrowDown className="w-4 h-4 shrink-0" weight="bold" />
                               </div>
                             ) : (
                               key

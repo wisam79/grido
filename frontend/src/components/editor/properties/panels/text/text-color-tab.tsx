@@ -18,7 +18,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
     <div className="space-y-3 animate-in fade-in duration-150 font-cairo">
       {/* 🎴 بطاقة 1: تعبئة ولون النص */}
       <FluentSection
-        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Palette className="w-5 h-5 text-primary" weight="duotone" />}
         title="تعبئة النص"
         collapsible
         defaultOpen={true}
@@ -80,7 +80,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
 
       {/* 🎴 بطاقة 2: إطار وحدود النص (Stroke) */}
       <FluentSection
-        icon={<BoundingBox className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<BoundingBox className="w-5 h-5 text-primary" weight="duotone" />}
         title="إطار وحدود النص"
         open={hasStroke}
         action={
@@ -93,7 +93,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
                   useEditorStore.getState().pushHistory();
                 }}
                 swatchOnly
-                className="w-6 h-6 rounded-md shadow-2xs border border-white/10"
+                className="w-7 h-7 rounded-md shadow-2xs border border-white/10"
               />
             )}
             <button
@@ -167,7 +167,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
       {/* 🎴 بطاقة 3: ألوان الشارة والخلفية إن وُجدت */}
       {hasBadge && (
         <FluentSection
-          icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
+          icon={<Sparkle className="w-5 h-5 text-primary" weight="duotone" />}
           title="ألوان الخلفية والشارة"
         >
           <div className="flex items-center justify-between gap-2">
@@ -200,7 +200,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
 
       {/* 🎴 بطاقة 4: الشفافية */}
       <FluentSection
-        icon={<Eye className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Eye className="w-5 h-5 text-primary" weight="duotone" />}
         title="الشفافية"
         action={
           <span className="text-micro font-bold font-mono px-2 py-0.5 rounded-md bg-muted/60 border border-border/50 text-foreground/90 tabular-nums select-none" dir="ltr">

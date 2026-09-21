@@ -41,7 +41,8 @@ export type CollageTab =
   | "paper"
   | "autofill"
   | "backdrop"
-  | "arrange";
+  | "arrange"
+  | "layers";
 
 export type FreeformTab =
   | "layers"
@@ -138,6 +139,17 @@ export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
     icon: Shuffle,
     testId: "rail-collage-arrange",
   },
+  // في نهاية القائمة عمداً — إلحاقه يحافظ على اختصارات Alt+الأرقام
+  // القائمة للأدوات السابقة دون إزاحة
+  {
+    id: "layers",
+    label: "طبقات الخانات",
+    title: "طبقات الخانات",
+    subtitle: "تحديد وإفراغ الخانات",
+    group: "تنسيق الخانات",
+    icon: Stack,
+    testId: "rail-collage-layers",
+  },
 ];
 
 export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
@@ -230,8 +242,8 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
    المتقدمة غير الضرورية لإنتاج صور الهوية الفوري.
    ═══════════════════════════════════════════════════════════════ */
 
-/** أدوات "فرز وترتيب" و "كولاج حر بالملم" لا يحتاجها مسار الإنتاج السريع */
-const QUICK_EXCLUDED_IDS: ReadonlySet<string> = new Set(["freeform", "arrange"]);
+/** أدوات "فرز وترتيب" و "كولاج حر بالملم" و "طبقات الخانات" لا يحتاجها مسار الإنتاج السريع */
+const QUICK_EXCLUDED_IDS: ReadonlySet<string> = new Set(["freeform", "arrange", "layers"]);
 
 export const QUICK_COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] =
   COLLAGE_TOOLS.filter((tool) => !QUICK_EXCLUDED_IDS.has(tool.id));

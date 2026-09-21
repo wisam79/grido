@@ -128,7 +128,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <DeviceMobileCamera className="w-5 h-5" weight="duotone" />
+                <DeviceMobileCamera className="w-6 h-6" weight="duotone" />
               </div>
               <div className="min-w-0">
                 <DialogTitle className="text-base font-bold text-foreground truncate">
@@ -163,7 +163,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                 onClick={initBridge}
                 className="h-8 rounded-md text-xs mt-2 gap-1.5"
               >
-                <ArrowClockwise className="w-3.5 h-3.5" />
+                <ArrowClockwise className="w-4 h-4" />
                 إعادة المحاولة
               </Button>
             </div>
@@ -186,7 +186,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
               {/* Status and Network Info */}
               <div className="w-full flex flex-col gap-2.5">
-                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -195,15 +195,15 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                     <span className="font-semibold text-foreground">الجسر متصل ويعمل</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <WifiHigh className="w-3.5 h-3.5 text-primary" weight="bold" />
+                    <WifiHigh className="w-4 h-4 text-primary" weight="bold" />
                     <span className="font-mono text-xs">{bridgeInfo.ip}:{bridgeInfo.port}</span>
                   </div>
                 </div>
 
                 {/* Received Photos Counter */}
-                <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-primary/5 border border-primary/20 text-xs">
+                <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-primary/5 border border-primary/20 text-xs">
                   <div className="flex items-center gap-2 text-primary font-medium">
-                    <ImageIcon className="w-4 h-4" weight="duotone" />
+                    <ImageIcon className="w-5 h-5" weight="duotone" />
                     <span>الصور المستلمة:</span>
                   </div>
                   <span className="font-bold text-foreground text-sm font-mono bg-background/80 px-2 py-0.5 rounded-md border border-border/40">
@@ -239,12 +239,12 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                 >
                   {copied ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <Check className="w-4 h-4 text-emerald-500" />
                       <span>تم النسخ</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-4 h-4" />
                       <span>نسخ</span>
                     </>
                   )}
@@ -263,7 +263,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
             disabled={isLoading}
             className="h-8 rounded-md text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
           >
-            <ArrowClockwise className="w-3.5 h-3.5" />
+            <ArrowClockwise className="w-4 h-4" />
             إعادة تعيين الجلسة
           </Button>
 

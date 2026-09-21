@@ -106,11 +106,11 @@ export function AccountLicenseModal() {
         dir="rtl"
       >
         {/* 🔹 1. رأس النافذة المتناسق مع زر الإغلاق المدمج */}
-        <DialogHeader className="text-start border-b border-border/40 pb-3.5 space-y-0">
+        <DialogHeader className="text-start border-b border-border/40 pb-4 space-y-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-xs shrink-0">
-                <ShieldCheck className="w-5 h-5" weight="duotone" />
+                <ShieldCheck className="w-6 h-6" weight="duotone" />
               </div>
               <div className="min-w-0">
                 <DialogTitle className="text-base font-bold text-foreground tracking-tight truncate">
@@ -154,7 +154,7 @@ export function AccountLicenseModal() {
 
         {/* 🔹 2. بطاقة الملف الشخصي للمستخدم المسجل (Profile Bento Hero) */}
         {user && user.token && (
-          <div className="bg-muted/40 dark:bg-muted/20 border border-border/60 dark:border-white/10 p-3 rounded-xl flex items-center justify-between mt-3.5 fluent-specular">
+          <div className="bg-muted/40 dark:bg-muted/20 border border-border/60 dark:border-white/10 p-3 rounded-xl flex items-center justify-between mt-4 fluent-specular">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold text-xs flex items-center justify-center shrink-0">
                 {(user.name || user.email || "U").charAt(0).toUpperCase()}
@@ -195,7 +195,7 @@ export function AccountLicenseModal() {
                 className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-7 px-2 cursor-pointer rounded-md font-semibold shrink-0"
                 onClick={() => setShowLogoutConfirm(true)}
               >
-                <SignOut className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                <SignOut className="w-4 h-4 shrink-0" weight="bold" />
                 <span>خروج</span>
               </Button>
             )}
@@ -203,7 +203,7 @@ export function AccountLicenseModal() {
         )}
 
         {/* 🔹 3. هيكل التبويبات والمحتوى الأساسي (Tabs & Core Deck) */}
-        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "auth" | "license")} className="w-full mt-3.5">
+        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "auth" | "license")} className="w-full mt-4">
           <FluentSegmentedControl<"auth" | "license">
             layoutId="account-license-modal-tabs"
             value={activeTab}
@@ -213,25 +213,25 @@ export function AccountLicenseModal() {
               {
                 id: "auth",
                 label: "الحساب",
-                icon: <User className="w-3.5 h-3.5" weight="bold" />,
+                icon: <User className="w-4 h-4" weight="bold" />,
                 tooltip: "دخول أو إنشاء حساب",
               },
               {
                 id: "license",
                 label: "الترخيص",
-                icon: <Key className="w-3.5 h-3.5" weight="bold" />,
+                icon: <Key className="w-4 h-4" weight="bold" />,
                 tooltip: "مفتاح الترخيص",
               },
             ]}
           />
 
           {/* 🔑 تبويب الدخول/التسجيل */}
-          <TabsContent value="auth" className="mt-3.5 space-y-3.5 animate-in fade-in-50 duration-150">
+          <TabsContent value="auth" className="mt-4 space-y-4 animate-in fade-in-50 duration-150">
             <AuthTabContent forms={forms} />
           </TabsContent>
 
           {/* 🏷️ تبويب تفعيل الترخيص */}
-          <TabsContent value="license" className="mt-3.5 space-y-3.5 animate-in fade-in-50 duration-150">
+          <TabsContent value="license" className="mt-4 space-y-4 animate-in fade-in-50 duration-150">
             {/* key يعيد تركيب النموذج عند كل فتح — يصفّر حالات التحميل العالقة إن أُغلقت النافذة أثناء طلب جارٍ */}
             <LicenseTabContent
               key={String(accountModalOpen)}

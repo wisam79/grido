@@ -59,7 +59,7 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     expect(box!.width).toBeGreaterThan(800);
   });
 
-  test('Toolbar Contract: Zero horizontal scroll and functional More menu at 1024px', async ({ page }) => {
+  test('Toolbar Contract: Zero horizontal scroll and single primary action at 1024px', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/');
     await waitForAppReady(page);
@@ -71,12 +71,12 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     const isOverflowing = await toolbar.evaluate((el) => el.scrollWidth > el.clientWidth);
     expect(isOverflowing).toBe(false);
 
-    // Verification: More ("المزيد") menu opens correctly with dropdown items
-    const moreBtn = page.getByRole('button', { name: /المزيد من الخيارات|المزيد/ }).first();
-    if (await moreBtn.isVisible()) {
-      await moreBtn.click();
-      await expect(page.getByText('خيارات المستند')).toBeVisible();
-    }
+    // Verification: end actions stay visible without a duplicate "More" menu,
+    // and Export is the single solid primary action
+    await expect(page.getByTestId('toolbar-save')).toBeVisible();
+    await expect(page.getByTestId('toolbar-print')).toBeVisible();
+    await expect(page.getByTestId('toolbar-export')).toBeVisible();
+    await expect(page.getByTestId('toolbar-more')).toHaveCount(0);
   });
 
   test('Canvas is clean and unobstructed without intrusive overlay cards', async ({ page }) => {

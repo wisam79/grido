@@ -27,48 +27,48 @@ export const CATEGORY_ITEMS: StickerCategoryItem[] = [
   {
     id: "all",
     title: "الكل",
-    icon: <SquaresFour className="w-4 h-4" />,
+    icon: <SquaresFour className="w-5 h-5" />,
   },
   {
     id: "frames",
     title: "إطارات وبراويز",
-    icon: <FrameCorners className="w-4 h-4" weight="duotone" />,
+    icon: <FrameCorners className="w-5 h-5" weight="duotone" />,
     categories: ["frames"],
   },
   {
     id: "commercial",
     title: "تجاري",
-    icon: <Sparkle className="w-4 h-4" weight="duotone" />,
+    icon: <Sparkle className="w-5 h-5" weight="duotone" />,
     categories: ["badges", "retail"],
   },
   {
     id: "packaging",
     title: "شحن وتغليف",
-    icon: <Package className="w-4 h-4" weight="duotone" />,
+    icon: <Package className="w-5 h-5" weight="duotone" />,
     categories: ["shipping", "packaging"],
   },
   {
     id: "codes",
     title: "رموز وتواصل",
-    icon: <Barcode className="w-4 h-4" weight="duotone" />,
+    icon: <Barcode className="w-5 h-5" weight="duotone" />,
     categories: ["barcodes", "social"],
   },
   {
     id: "stores",
     title: "كافيه ومتاجر",
-    icon: <Coffee className="w-4 h-4" weight="duotone" />,
+    icon: <Coffee className="w-5 h-5" weight="duotone" />,
     categories: ["cafe", "beauty"],
   },
   {
     id: "occasions",
     title: "مناسبات",
-    icon: <Heart className="w-4 h-4" weight="duotone" />,
+    icon: <Heart className="w-5 h-5" weight="duotone" />,
     categories: ["greeting", "kids", "seasonal"],
   },
   {
     id: "safety",
     title: "سلامة",
-    icon: <Warning className="w-4 h-4" weight="duotone" />,
+    icon: <Warning className="w-5 h-5" weight="duotone" />,
     categories: ["safety"],
   },
 ];
@@ -80,10 +80,10 @@ export interface StickerShapeFilterItem {
 }
 
 export const SHAPE_ITEMS: StickerShapeFilterItem[] = [
-  { id: "all", label: "الكل", icon: <SquaresFour className="w-3.5 h-3.5" /> },
-  { id: "circle", label: "دائري", icon: <Circle className="w-3.5 h-3.5" /> },
-  { id: "rect", label: "مستطيل", icon: <Rectangle className="w-3.5 h-3.5" /> },
-  { id: "square", label: "مربع", icon: <Square className="w-3.5 h-3.5" /> },
+  { id: "all", label: "الكل", icon: <SquaresFour className="w-4 h-4" /> },
+  { id: "circle", label: "دائري", icon: <Circle className="w-4 h-4" /> },
+  { id: "rect", label: "مستطيل", icon: <Rectangle className="w-4 h-4" /> },
+  { id: "square", label: "مربع", icon: <Square className="w-4 h-4" /> },
 ];
 
 export interface StickerCuratedPalette {

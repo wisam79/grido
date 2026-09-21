@@ -9,7 +9,7 @@ export function PhotoTypeMiniature({ type, active }: { type: string; active: boo
       active ? "border-primary/80 bg-primary/10 shadow-[0_0_8px_rgba(59,130,246,0.15)]" : "border-border/60 bg-muted/20"
     )}>
       {type === "stretch" ? (
-        <GridFour className={cn("w-3.5 h-3.5 transition-colors", active ? "text-primary" : "text-muted-foreground/60")} weight="regular" />
+        <GridFour className={cn("w-4 h-4 transition-colors", active ? "text-primary" : "text-muted-foreground/60")} weight="regular" />
       ) : (
         <div className={cn(
           "rounded-sm border border-dashed transition-all duration-200",

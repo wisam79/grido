@@ -49,7 +49,7 @@ export const FluentIconButton = React.memo(
         {...props}
       >
         {loading ? (
-          <Spinner size={14} className="w-3.5 h-3.5" />
+          <Spinner size={14} className="w-4 h-4" />
         ) : (
           icon && <span className="shrink-0">{icon}</span>
         )}

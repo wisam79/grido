@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { 
   Toolbar, 
@@ -132,10 +132,34 @@ export default function App() {
   const {
     isMaximized,
     isFocused,
+    isFullscreen,
     handleMinimize,
     handleMaximize,
     handleClose,
+    handleToggleFullscreen,
   } = useWindowControls();
+
+  // الدبل-كليك على شريط العنوان يقلب التكبير — لكن فقط عند النقر على
+  // المنطقة الفارغة القابلة للسحب، لا على الأزرار والتبويبات والقوائم
+  // (نقرة مزدوجة على زر كانت تقلب التكبير مرتين = لا شيء يحدث ظاهرياً)
+  const handleTitlebarDoubleClick = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest?.('button, a, input, select, textarea, [role="tab"], [role="button"], [role="menuitem"], .title-bar-controls')) {
+      return;
+    }
+    handleMaximize();
+  };
+
+  // 🖥️ تبديل ملء الشاشة عبر حدث عام (F11 / قائمة عرض) — ref لتفادي stale closure
+  const handleToggleFullscreenRef = useRef(handleToggleFullscreen);
+  useEffect(() => {
+    handleToggleFullscreenRef.current = handleToggleFullscreen;
+  });
+  useEffect(() => {
+    const onToggleFullscreen = () => handleToggleFullscreenRef.current();
+    window.addEventListener("grido:toggle-fullscreen", onToggleFullscreen);
+    return () => window.removeEventListener("grido:toggle-fullscreen", onToggleFullscreen);
+  }, []);
 
   useKeyboardShortcuts();
   useAutoSave();
@@ -303,7 +327,7 @@ export default function App() {
   // ─── شاشة الترحيب: تظهر مرة واحدة فقط عند أول استخدام ──────────────────
   if (!isInitializing && isLicenseActive && workflowMode === null) {
     return (
-      <PhosphorProvider weight="regular" size={18}>
+      <PhosphorProvider weight="regular" size={20}>
         <TooltipProvider delayDuration={650} skipDelayDuration={150}>
           <WelcomeScreen onSelect={setWorkflowMode} />
           <SonnerToaster position="top-center" duration={1500} offset={16} closeButton />
@@ -347,12 +371,13 @@ export default function App() {
 
   if (!isLicenseActive) {
     return (
-      <PhosphorProvider weight="regular" size={18}>
+      <PhosphorProvider weight="regular" size={20}>
         <TooltipProvider delayDuration={650} skipDelayDuration={150}>
           <LicenseLockScreen
             theme={theme}
             onToggleTheme={toggleTheme}
             isMaximized={isMaximized}
+            isFullscreen={isFullscreen}
             isFocused={isFocused}
             onMinimize={handleMinimize}
             onMaximize={handleMaximize}
@@ -370,7 +395,7 @@ export default function App() {
   }
 
   return (
-    <PhosphorProvider weight="regular" size={18}>
+    <PhosphorProvider weight="regular" size={20}>
       <TooltipProvider delayDuration={650} skipDelayDuration={150}>
         <div 
           className={cn(
@@ -378,7 +403,10 @@ export default function App() {
           )}
           dir="rtl"
         >
-      {!isMaximized && <WindowResizeHandles />}
+      {/* مقابض تغيير الحجم مخصصة للنافذة العادية فقط — في التكبير/ملء
+          الشاشة تُخفيها (كانت تظهر في ملء الشاشة وتسمح بتغيير حجم ممنوع
+          وتغطي المحتوى عند الحواف) */}
+      {!isMaximized && !isFullscreen && <WindowResizeHandles />}
       {/* الرأس الموحد للنافذة بتصميم Fluent 2 Acrylic */}
       <ErrorBoundary>
       <header
@@ -387,11 +415,12 @@ export default function App() {
           !isFocused && "opacity-75"
         )}
         dir="ltr"
-        onDoubleClick={handleMaximize}
+        onDoubleClick={handleTitlebarDoubleClick}
       >
-        <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2">
+        {/* h-12 (48px) هو معيار Fluent لشريط الأوامر — كان h-14 فيبتلع 8px من الكانفاس بلا وظيفة */}
+        <div className="flex items-center justify-between gap-2 ps-2.5 pe-0 py-0 h-12 relative">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
               <h1 className="text-xs font-black text-foreground tracking-wider font-mono flex items-center gap-1.5">
                 <span>GRIDO</span>
@@ -402,10 +431,13 @@ export default function App() {
             {workflowMode && (
               <Tooltip>
                 <TooltipTrigger asChild>
+                  {/* title-bar-controls: الزر تفاعلي داخل منطقة سحب — بدونه
+                      كان النقر يبدأ سحب النافذة بدل تفعيل الزر */}
                   <button
                     type="button"
                     onClick={resetWorkflow}
                     className={cn(
+                      "title-bar-controls",
                       "hidden sm:flex items-center gap-1 h-5 px-2 rounded-full text-micro font-bold tracking-wide transition-all cursor-pointer",
                       "border border-border/60 bg-muted/40 hover:bg-muted/80 hover:border-border text-muted-foreground hover:text-foreground",
                       "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
@@ -422,14 +454,16 @@ export default function App() {
               </Tooltip>
             )}
             <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
-            <div className="hidden sm:flex items-center title-bar-controls" dir="rtl">
+            <div className="hidden sm:flex items-center min-w-0 title-bar-controls" dir="rtl">
               <DesktopMenuBar />
             </div>
           </div>
 
-          {/* وضع العمل — مبدّل الأوضاع القياسي وفق Fluent 2 */}
+          {/* وضع العمل — مبدّل الأوضاع القياسي وفق Fluent 2.
+              يظهر من lg فصاعداً فقط: بين md وlg كان يتموضع فوق القوائم
+              والأزرار الجانبية في النوافذ المتوسطة (تداخل بصري ونقرات خاطئة) */}
           <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 title-bar-controls hidden md:block"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 title-bar-controls hidden lg:block"
             dir="rtl"
           >
             <div
@@ -463,7 +497,7 @@ export default function App() {
                   />
                 )}
                 <SquaresFour
-                  className={cn("w-3.5 h-3.5 shrink-0 transition-colors", mode === "collage" ? "text-primary" : "text-muted-foreground")}
+                  className={cn("w-4 h-4 shrink-0 transition-colors", mode === "collage" ? "text-primary" : "text-muted-foreground")}
                   weight={mode === "collage" ? "fill" : "regular"}
                 />
                 <span>كولاج</span>
@@ -495,7 +529,7 @@ export default function App() {
                   />
                 )}
                 <Image
-                  className={cn("w-3.5 h-3.5 shrink-0 transition-colors", mode === "single" ? "text-primary" : "text-muted-foreground")}
+                  className={cn("w-4 h-4 shrink-0 transition-colors", mode === "single" ? "text-primary" : "text-muted-foreground")}
                   weight={mode === "single" ? "fill" : "regular"}
                 />
                 <span>تعديل حر</span>
@@ -503,7 +537,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 h-full title-bar-controls">
+          <div className="flex items-center gap-1 h-full shrink-0 title-bar-controls">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -514,9 +548,9 @@ export default function App() {
                   aria-label="الحساب والتراخيص"
                 >
                   {isLicenseActive ? (
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" weight="duotone" />
+                    <ShieldCheck className="w-5 h-5 text-emerald-500" weight="duotone" />
                   ) : (
-                    <User className="w-4 h-4 text-muted-foreground" />
+                    <User className="w-5 h-5 text-muted-foreground" />
                   )}
                   {user?.plan === "trial" && (
                     <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
@@ -541,11 +575,11 @@ export default function App() {
                   }
                 >
                   {themeMode === "system" ? (
-                    <Desktop className="w-4 h-4 text-primary" weight="duotone" />
+                    <Desktop className="w-5 h-5 text-primary" weight="duotone" />
                   ) : themeMode === "dark" ? (
-                    <Moon className="w-4 h-4" />
+                    <Moon className="w-5 h-5" />
                   ) : (
-                    <Sun className="w-4 h-4" />
+                    <Sun className="w-5 h-5" />
                   )}
                 </Button>
               </TooltipTrigger>
@@ -573,7 +607,7 @@ export default function App() {
                   )}
                   aria-label={isTemplatesOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}
                 >
-                  <SidebarSimple className="w-4 h-4" weight={isTemplatesOpen ? "fill" : "regular"} />
+                  <SidebarSimple className="w-5 h-5" weight={isTemplatesOpen ? "fill" : "regular"} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
@@ -590,7 +624,7 @@ export default function App() {
               className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
               onClick={() => panelsHook.openPanel("templates")}
             >
-              <SidebarSimple className="w-4 h-4" />
+              <SidebarSimple className="w-5 h-5" />
               <span className="text-xs font-semibold">{mode === "collage" ? "القوالب" : "التصميم"}</span>
             </Button>
 

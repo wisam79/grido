@@ -318,7 +318,7 @@ export function DocumentScannerDialog({
           >
             {/* Top Floating Status Badge */}
             <div className="absolute top-3 inset-x-0 mx-auto w-fit z-20 pointer-events-none">
-              <div className="px-3.5 py-1 rounded-full bg-card/90 dark:bg-card/80 border border-border/70 text-xs font-semibold text-foreground shadow-fluent-8 backdrop-blur-md flex items-center gap-2">
+              <div className="px-4 py-1 rounded-full bg-card/90 dark:bg-card/80 border border-border/70 text-xs font-semibold text-foreground shadow-fluent-8 backdrop-blur-md flex items-center gap-2">
                 {isDetecting ? (
                   <>
                     <ArrowClockwise size={13} weight="bold" className="text-primary shrink-0 animate-spin" />
@@ -435,7 +435,7 @@ export function DocumentScannerDialog({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="rounded-md h-8 px-3.5 text-xs font-semibold cursor-pointer border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               disabled={processor.isExporting}
             >
               إلغاء
@@ -445,7 +445,7 @@ export function DocumentScannerDialog({
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-md h-8 px-3.5 text-xs font-bold gap-1.5 cursor-pointer border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-xs transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-xs transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 onClick={() =>
                   processor.handleApplySelected(
                     detectedDocs.filter((d) => selectedDocIds.includes(d.id)),
@@ -455,7 +455,7 @@ export function DocumentScannerDialog({
                 }
                 disabled={processor.isExporting}
               >
-                {processor.isExporting ? <Spinner className="w-3.5 h-3.5 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
+                {processor.isExporting ? <Spinner className="w-4 h-4 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
                 <span>{processor.isExporting ? "جاري الإدراج ..." : `إدراج (${selectedDocIds.length})`}</span>
               </Button>
             )}
@@ -466,7 +466,7 @@ export function DocumentScannerDialog({
               title={cornersReady ? undefined : "حدّد أركان المستند أولاً"}
               className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98] disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
-              {processor.isExporting ? <Spinner className="w-3.5 h-3.5 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
+              {processor.isExporting ? <Spinner className="w-4 h-4 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
               <span>{processor.isExporting ? "جاري الإدراج ..." : detectedDocs.length > 1 ? "إدراج النشط" : "تطبيق"}</span>
             </Button>
           </div>

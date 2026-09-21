@@ -14,8 +14,9 @@ export function WindowResizeHandles() {
   // تنظيف السحب النشط — يمنع تسجيل معالجات متزامنة تتقاتل على نفس النافذة (إصلاح Bug#22)
   const activeDragCleanupRef = useRef<(() => void) | null>(null);
 
-  const minWidth = 900;
-  const minHeight = 600;
+  // مطابقة للحدود الأصلية في Go (MinWidth/MinHeight)
+  const minWidth = 720;
+  const minHeight = 540;
 
   const handleMouseDown = (
     e: React.MouseEvent<HTMLDivElement>,
@@ -32,6 +33,30 @@ export function WindowResizeHandles() {
     // المعالجات تُربط بشكل متزامن فوراً — الربط بعد نداء IPC كان يفقد mouseup
     // إذا أفلت المستخدم بسرعة فيستمر تغيير الحجم مع حركة المؤشر (سحب عالق)
     let startState: StartState | null = null;
+
+    // دمج تحديثات IPC عبر requestAnimationFrame — إرسال SetSize/SetPosition
+    // مع كل حدث mousemove كان يُغرق الجسر بعشرات النداءات في الإطار الواحد
+    // فيتقطع تغيير الحجم؛ نُبقي أحدث حالة فقط ونُرسلها مرة واحدة لكل إطار.
+    let pendingFrame: { w: number; h: number; x: number; y: number; size: boolean; pos: boolean } | null = null;
+    let rafId: number | null = null;
+    const flushPending = () => {
+      rafId = null;
+      const p = pendingFrame;
+      pendingFrame = null;
+      if (!p) return;
+      try {
+        if (p.size && p.pos) {
+          WindowSetSize(p.w, p.h);
+          WindowSetPosition(p.x, p.y);
+        } else if (p.size) {
+          WindowSetSize(p.w, p.h);
+        } else if (p.pos) {
+          WindowSetPosition(p.x, p.y);
+        }
+      } catch {
+        // non-desktop environment
+      }
+    };
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!startState) return; // IPC لم يُكمل بعد — نتجاهل حتى تجهز الحالة
@@ -83,17 +108,21 @@ export function WindowResizeHandles() {
         }
       }
 
-      if (sizeChanged && posChanged) {
-        WindowSetSize(newWidth, newHeight);
-        WindowSetPosition(newX, newY);
-      } else if (sizeChanged) {
-        WindowSetSize(newWidth, newHeight);
-      } else if (posChanged) {
-        WindowSetPosition(newX, newY);
+      if (!sizeChanged && !posChanged) return;
+      pendingFrame = { w: newWidth, h: newHeight, x: newX, y: newY, size: sizeChanged, pos: posChanged };
+      if (rafId === null && typeof requestAnimationFrame === "function") {
+        rafId = requestAnimationFrame(flushPending);
+      } else if (typeof requestAnimationFrame !== "function") {
+        flushPending();
       }
     };
 
     const cleanup = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      pendingFrame = null;
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
       window.removeEventListener("blur", cleanup);
@@ -131,50 +160,50 @@ export function WindowResizeHandles() {
     <>
       {/* Top Border */}
       <div
-        className="fixed left-2 right-2 top-0 bg-transparent select-none"
+        className="fixed left-2 right-2 top-0 bg-transparent select-none touch-none"
         style={{ height: borderSize, cursor: "n-resize", zIndex: 9999 }}
         onMouseDown={(e) => handleMouseDown(e, "n")}
       />
       {/* Bottom Border */}
       <div
-        className="fixed left-2 right-2 bottom-0 bg-transparent select-none"
+        className="fixed left-2 right-2 bottom-0 bg-transparent select-none touch-none"
         style={{ height: borderSize, cursor: "s-resize", zIndex: 9999 }}
         onMouseDown={(e) => handleMouseDown(e, "s")}
       />
       {/* Left Border */}
       <div
-        className="fixed top-2 bottom-2 left-0 bg-transparent select-none"
+        className="fixed top-2 bottom-2 left-0 bg-transparent select-none touch-none"
         style={{ width: borderSize, cursor: "w-resize", zIndex: 9999 }}
         onMouseDown={(e) => handleMouseDown(e, "w")}
       />
       {/* Right Border */}
       <div
-        className="fixed top-2 bottom-2 right-0 bg-transparent select-none"
+        className="fixed top-2 bottom-2 right-0 bg-transparent select-none touch-none"
         style={{ width: borderSize, cursor: "e-resize", zIndex: 9999 }}
         onMouseDown={(e) => handleMouseDown(e, "e")}
       />
 
       {/* Top Left Corner */}
       <div
-        className="fixed top-0 left-0 bg-transparent select-none"
+        className="fixed top-0 left-0 bg-transparent select-none touch-none"
         style={{ width: borderSize * 2, height: borderSize * 2, cursor: "nwse-resize", zIndex: 9999 }}
         onMouseDown={(e) => handleMouseDown(e, "nw")}
       />
       {/* Top Right Corner */}
       <div
-        className="fixed top-0 right-0 bg-transparent select-none"
+        className="fixed top-0 right-0 bg-transparent select-none touch-none"
         style={{ width: borderSize * 2, height: borderSize * 2, cursor: "nesw-resize", zIndex: 9999 }}
         onMouseDown={(e) => handleMouseDown(e, "ne")}
       />
       {/* Bottom Left Corner */}
       <div
-        className="fixed bottom-0 left-0 bg-transparent select-none"
+        className="fixed bottom-0 left-0 bg-transparent select-none touch-none"
         style={{ width: borderSize * 2, height: borderSize * 2, cursor: "nesw-resize", zIndex: 9999 }}
         onMouseDown={(e) => handleMouseDown(e, "sw")}
       />
       {/* Bottom Right Corner */}
       <div
-        className="fixed bottom-0 right-0 bg-transparent select-none"
+        className="fixed bottom-0 right-0 bg-transparent select-none touch-none"
         style={{ width: borderSize * 2, height: borderSize * 2, cursor: "nwse-resize", zIndex: 9999 }}
         onMouseDown={(e) => handleMouseDown(e, "se")}
       />

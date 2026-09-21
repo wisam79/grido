@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { WindowSnapAssist } from "../../../../wailsjs/runtime/runtime";
 
 /**
@@ -34,13 +34,40 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
     }
   }, []);
 
+  // تنظيف مؤقت Snap Assist عند إلغاء التركيب — بدونه قد ينبثق تخطيط
+  // التقسيم بعد اختفاء الزر (تنقل سريع بين الشاشات)
+  useEffect(() => {
+    return () => {
+      if (snapTimerRef.current) {
+        clearTimeout(snapTimerRef.current);
+        snapTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // النقر يلغي Snap Assist المجدول — التحويم الطويل ثم النقر كان
+  // يفتح قائمة التقسيم ويقلب التكبير معاً في إجراءين متضاربين
+  const handleMaximizeClick = useCallback(() => {
+    if (snapTimerRef.current) {
+      clearTimeout(snapTimerRef.current);
+      snapTimerRef.current = null;
+    }
+    onMaximize();
+  }, [onMaximize]);
+
   return (
-    <div className="inline-flex items-stretch h-full select-none title-bar-controls z-50" dir="ltr">
+    // إيقاف الدبل-كليك هنا — وإلا تسرّب للهيدر الأب فيقلب التكبير مرتين
+    // (رجوع للحالة الأصلية) عند النقر المزدوج السريع على زر التكبير
+    <div
+      className="inline-flex items-stretch h-full select-none title-bar-controls z-50"
+      dir="ltr"
+      onDoubleClick={(e) => e.stopPropagation()}
+    >
       {/* زر التصغير Minimize */}
       <button
         type="button"
         onClick={onMinimize}
-        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus:outline-none"
+        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/70"
         title="تصغير"
         aria-label="تصغير"
       >
@@ -52,7 +79,7 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
       {/* زر التكبير / الاستعادة مع دعم Snap Assist */}
       <button
         type="button"
-        onClick={onMaximize}
+        onClick={handleMaximizeClick}
         onMouseEnter={handleMaximizeMouseEnter}
         onMouseLeave={handleMaximizeMouseLeave}
         onContextMenu={(e) => {
@@ -63,7 +90,7 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
             // fallback
           }
         }}
-        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus:outline-none"
+        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/70"
         title={isMaximized ? "استعادة (انقر باليمين لتقسيم الشاشة)" : "تكبير (انقر باليمين لتقسيم الشاشة)"}
         aria-label={isMaximized ? "استعادة" : "تكبير"}
       >
@@ -85,7 +112,7 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
       <button
         type="button"
         onClick={onClose}
-        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-white hover:bg-[#c42b1c] active:bg-[#b22517] transition-colors focus:outline-none"
+        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-white hover:bg-[#c42b1c] active:bg-[#b22517] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/70"
         title="إغلاق"
         aria-label="إغلاق"
       >

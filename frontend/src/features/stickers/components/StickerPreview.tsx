@@ -321,7 +321,7 @@ export const StickerPreview = React.memo(function StickerPreview({
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="absolute top-3 start-3 z-10 flex items-center justify-center w-7 h-7 bg-card/85 backdrop-blur-md rounded-full border border-border/30 text-primary cursor-help shadow-2xs">
-              <CursorClick className="w-3.5 h-3.5" weight="bold" />
+              <CursorClick className="w-4 h-4" weight="bold" />
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-xs font-cairo font-medium">
@@ -425,7 +425,7 @@ export const StickerPreview = React.memo(function StickerPreview({
             className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
             title="تصغير"
           >
-            <MagnifyingGlassMinus className="w-3.5 h-3.5" />
+            <MagnifyingGlassMinus className="w-4 h-4" />
           </button>
           <span
             className="w-11 text-center text-mini font-mono font-bold text-foreground select-none"
@@ -444,7 +444,7 @@ export const StickerPreview = React.memo(function StickerPreview({
             className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
             title="تكبير"
           >
-            <MagnifyingGlassPlus className="w-3.5 h-3.5" />
+            <MagnifyingGlassPlus className="w-4 h-4" />
           </button>
           <button
             type="button"

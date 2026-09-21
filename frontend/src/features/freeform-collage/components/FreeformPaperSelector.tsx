@@ -80,7 +80,7 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
         className
       )}
     >
-      <Ruler className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+      <Ruler className="w-4 h-4 text-primary shrink-0" weight="duotone" />
 
       <Select
         value={currentPresetId}

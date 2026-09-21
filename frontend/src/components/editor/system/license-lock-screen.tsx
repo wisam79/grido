@@ -16,6 +16,7 @@ interface LicenseLockScreenProps {
   theme: "light" | "dark";
   onToggleTheme: () => void;
   isMaximized: boolean;
+  isFullscreen?: boolean;
   isFocused: boolean;
   onMinimize: () => void;
   onMaximize: () => void;
@@ -30,6 +31,7 @@ export function LicenseLockScreen({
   theme,
   onToggleTheme,
   isMaximized,
+  isFullscreen = false,
   isFocused,
   onMinimize,
   onMaximize,
@@ -47,23 +49,32 @@ export function LicenseLockScreen({
       className="h-screen flex flex-col overflow-hidden font-cairo bg-background select-none"
       dir="rtl"
     >
-        {!isMaximized && <WindowResizeHandles />}
+        {!isMaximized && !isFullscreen && <WindowResizeHandles />}
         {/* الرأس الموحد للنافذة */}
         <header
           className={`border-b bg-card/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 fluent-specular ${
             !isFocused ? "opacity-75" : ""
           }`}
-          onDoubleClick={onMaximize}
+          onDoubleClick={(e) => {
+            // تجاهل الدبل-كليك على الأزرار — يخص منطقة السحب الفارغة فقط
+            const target = e.target as HTMLElement | null;
+            if (target?.closest?.('button, a, input, select, textarea, .title-bar-controls')) {
+              return;
+            }
+            onMaximize();
+          }}
         >
-          <div className="flex items-center justify-between px-4 py-1.5 relative">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-destructive shrink-0 animate-pulse" />
-              <h1 className="text-xs font-bold text-foreground/80">
-                Grido Studio | تفعيل الترخيص
+          {/* h-12 ثابت كالرئيسي: أزرار النافذة h-full كانت تنهار لمنطقة
+              النقر (10px) مع أب تلقائي الارتفاع — النسبة من indefinite = auto */}
+          <div className="flex items-center justify-between ps-2.5 pe-0 h-12 relative">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-destructive shrink-0 animate-pulse" />
+              <h1 className="text-xs font-black text-foreground tracking-wider font-mono">
+                GRIDO <span className="text-muted-foreground font-bold">| تفعيل الترخيص</span>
               </h1>
             </div>
 
-            <div className="flex items-center gap-2 title-bar-controls">
+            <div className="flex items-center gap-1 h-full shrink-0 title-bar-controls">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -72,7 +83,7 @@ export function LicenseLockScreen({
                     onClick={onToggleTheme}
                     className="gap-1.5 h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted"
                   >
-                    {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+                    {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
@@ -141,7 +152,7 @@ export function LicenseLockScreen({
                   </button>
                 </div>
                 <div className="relative">
-                  <Key className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-4 h-4" />
+                  <Key className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 w-5 h-5" />
                   <input
                     id="license-key-input"
                     type="text"
@@ -157,7 +168,7 @@ export function LicenseLockScreen({
               <Button type="submit" className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs cursor-pointer shadow-xs gap-1.5 rounded-md" disabled={lockLoading}>
                 {lockLoading ? (
                   <>
-                    <Spinner className="w-3.5 h-3.5" size={14} />
+                    <Spinner className="w-4 h-4" size={14} />
                     <span>جاري التفعيل ...</span>
                   </>
                 ) : (

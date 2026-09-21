@@ -43,7 +43,7 @@ function FormattedReleaseNotes({ notes }: { notes: string }) {
               key={idx}
               className="text-foreground font-bold text-xs pt-1 first:pt-0 flex items-center gap-1.5 border-b border-border/40 pb-1"
             >
-              <Tag className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+              <Tag className="w-4 h-4 text-primary shrink-0" weight="duotone" />
               <span>{cleanTitle}</span>
             </div>
           );
@@ -163,7 +163,7 @@ export function UpdateNotifier() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shadow-xs shrink-0">
-                <Sparkle className="w-5 h-5" weight="duotone" />
+                <Sparkle className="w-6 h-6" weight="duotone" />
               </div>
               <div className="flex flex-col min-w-0">
                 <DialogTitle className="text-sm font-bold text-foreground truncate">
@@ -189,7 +189,7 @@ export function UpdateNotifier() {
             </div>
 
             <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 border border-primary/20 text-primary shrink-0">
-              <ArrowLeft className="w-3.5 h-3.5" weight="bold" />
+              <ArrowLeft className="w-4 h-4" weight="bold" />
             </div>
 
             <div className="flex flex-col items-end gap-0.5">
@@ -205,7 +205,7 @@ export function UpdateNotifier() {
           {updateInfo.release_notes && !isDownloading && (
             <div className="space-y-1.5">
               <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <CheckCircle className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                <CheckCircle className="w-4 h-4 text-primary" weight="duotone" />
                 <span>مميزات التحديث:</span>
               </span>
               <div className="bg-muted/30 dark:bg-muted/10 rounded-xl p-3 max-h-36 overflow-y-auto border border-border/60 fluent-specular">
@@ -216,10 +216,10 @@ export function UpdateNotifier() {
 
           {/* 3. شريط تقدم التحميل التفاعلي */}
           {isDownloading && (
-            <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 space-y-2.5 animate-in fade-in duration-200">
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2.5 animate-in fade-in duration-200">
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-foreground flex items-center gap-2">
-                  <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
+                  <Spinner className="w-4 h-4 text-primary shrink-0" size={14} />
                   <span>
                     {progress >= 100
                       ? "جاري تطبيق التحديث ..."
@@ -245,7 +245,7 @@ export function UpdateNotifier() {
           {/* 4. رسالة الخطأ في حال الفشل مع زر التحميل اليدوي */}
           {error && (
             <div className="p-3 text-xs text-destructive bg-destructive/10 rounded-xl border border-destructive/20 font-medium flex items-start gap-2">
-              <WarningCircle className="w-4 h-4 shrink-0 mt-0.5" weight="fill" />
+              <WarningCircle className="w-5 h-5 shrink-0 mt-0.5" weight="fill" />
               <span>{error}</span>
             </div>
           )}
@@ -260,7 +260,7 @@ export function UpdateNotifier() {
                   onClick={handleStartUpdate}
                   className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm fluent-hover-lift cursor-pointer"
                 >
-                  <DownloadSimple className="w-4 h-4" weight="bold" />
+                  <DownloadSimple className="w-5 h-5" weight="bold" />
                   تثبيت التحديث
                 </Button>
               ) : (
@@ -277,7 +277,7 @@ export function UpdateNotifier() {
                   }}
                   className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm cursor-pointer"
                 >
-                  <Globe className="w-4 h-4" weight="bold" />
+                  <Globe className="w-5 h-5" weight="bold" />
                   تحميل من الموقع
                 </Button>
               )}
@@ -291,7 +291,7 @@ export function UpdateNotifier() {
             </>
           ) : (
             <div className="flex items-center justify-center w-full py-1 text-xs text-muted-foreground gap-2 font-medium">
-              <Spinner className="w-4 h-4 text-primary" size={16} />
+              <Spinner className="w-5 h-5 text-primary" size={16} />
               <span>
                 {progress >= 100
                   ? "جاري تطبيق التحديث ..."

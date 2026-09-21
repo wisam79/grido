@@ -92,7 +92,7 @@ export function FluentFilterChips<T extends string = string>({
               />
             )}
 
-            {opt.icon && <span className="shrink-0 [&>svg]:size-3.5">{opt.icon}</span>}
+            {opt.icon && <span className="shrink-0 [&>svg]:size-4">{opt.icon}</span>}
             <span className="truncate whitespace-nowrap select-none">{opt.label}</span>
             {opt.count !== undefined && (
               <span

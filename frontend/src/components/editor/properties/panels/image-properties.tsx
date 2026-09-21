@@ -53,47 +53,136 @@ export function ImageAdjustProperties({
   const currentOpacity = Math.round((element.opacity ?? 1) * 100);
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200 font-cairo">
-      {/* بطاقة 1: تعديل الألوان */}
+    <div className="space-y-2.5 animate-in fade-in duration-200 font-cairo">
+      {/* بطاقة 1: خلفية الصورة */}
       <FluentSection
-        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Palette className="w-5 h-5 text-primary" weight="duotone" />}
+        title="خلفية الصورة"
+      >
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {[
+            { id: "trans", label: "شفاف", val: "transparent" },
+            { id: "white", label: "أبيض", val: "#ffffff" },
+            { id: "blue", label: "أزرق رسمي", val: "#1d4ed8" },
+            { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
+            { id: "gray", label: "رمادي", val: "#e5e7eb" },
+          ].map((colorItem) => {
+            const currBg = element.bgColor || "transparent";
+            const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
+            return (
+              <Tooltip key={colorItem.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onUpdate(element.id, { bgColor: colorItem.val });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className={cn(
+                      "w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+                      isActive && "ring-2 ring-primary ring-offset-1 border-primary"
+                    )}
+                    style={{
+                      backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
+                      backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
+                      backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
+                      backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
+                    }}
+                  >
+                    {isActive && (
+                      <Check className={cn("w-4 h-4", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} weight="bold" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{colorItem.label}</TooltipContent>
+              </Tooltip>
+            );
+          })}
+
+          <PopoverColorPicker
+            color={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
+            onChange={(val) => {
+              onUpdate(element.id, { bgColor: val });
+              useEditorStore.getState().pushHistory();
+            }}
+            swatchOnly
+            className="w-7 h-7"
+          />
+        </div>
+      </FluentSection>
+
+      {/* بطاقة 2: المرشحات اللونية (القاعدتان 10 و 13 - استوديو الألوان الموحد) */}
+      <FluentSection
+        icon={<FadersHorizontal className="w-5 h-5 text-primary" weight="duotone" />}
+        title="المرشحات"
+        collapsible
+        defaultOpen={true}
+        action={
+          element.filter ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onUpdate(element.id, { filter: undefined });
+                useEditorStore.getState().pushHistory();
+              }}
+              className="text-micro text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              إزالة المرشح
+            </Button>
+          ) : undefined
+        }
+      >
+        <div className="grid grid-cols-4 gap-1.5">
+          {IMAGE_FILTERS.map((filter) => {
+            const isActive = element.filter === filter.id;
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { filter: filter.id });
+                  useEditorStore.getState().pushHistory();
+                }}
+                aria-pressed={isActive}
+                aria-label={filter.name}
+                title={filter.name}
+                className={cn(
+                  "flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer",
+                  "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                  isActive
+                    ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
+                    : "border-border/60 bg-card hover:bg-accent text-muted-foreground"
+                )}
+              >
+                <span className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
+                  <img
+                    src={element.imageSrc}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    style={{ filter: filter.css }}
+                  />
+                </span>
+                <span className="text-micro leading-tight truncate max-w-full text-center">
+                  {filter.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </FluentSection>
+
+      {/* بطاقة 2: تعديل الألوان */}
+      <FluentSection
+        icon={<Palette className="w-5 h-5 text-primary" weight="duotone" />}
         title="تعديل الألوان"
         collapsible
         defaultOpen={true}
       >
-        {/* قوالب تدرج لوني سريعة للاستوديوهات */}
-        <div className="space-y-1.5 pb-2 border-b border-border/20">
-          <span className="text-micro font-bold text-muted-foreground block">قوالب الاستوديو</span>
-          <div className="grid grid-cols-2 gap-1.5">
-            {[
-              { label: "استوديو دافئ", b: 104, c: 106, s: 108 },
-              { label: "جواز سفر حيوي", b: 108, c: 115, s: 118 },
-              { label: "إشراق ناعم", b: 110, c: 95, s: 102 },
-              { label: "أبيض وأسود", b: 105, c: 120, s: 0 },
-            ].map((preset) => (
-              <Button
-                key={preset.label}
-                variant="outline"
-                size="sm"
-                className="h-7 text-micro font-semibold rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                onClick={() => {
-                  onUpdate(element.id, {
-                    brightness: preset.b,
-                    contrast: preset.c,
-                    saturation: preset.s,
-                  });
-                  useEditorStore.getState().pushHistory();
-                }}
-              >
-                {preset.label}
-              </Button>
-            ))}
-          </div>
-        </div>
 
         <FluentSliderField
           label="السطوع"
-          icon={<Sun className="w-4 h-4" weight="regular" />}
+          icon={<Sun className="w-5 h-5" weight="regular" />}
           value={element.brightness ?? 100}
           min={0}
           max={200}
@@ -106,7 +195,7 @@ export function ImageAdjustProperties({
         />
         <FluentSliderField
           label="التباين"
-          icon={<CircleHalfTilt className="w-4 h-4" weight="regular" />}
+          icon={<CircleHalfTilt className="w-5 h-5" weight="regular" />}
           value={element.contrast ?? 100}
           min={0}
           max={200}
@@ -119,7 +208,7 @@ export function ImageAdjustProperties({
         />
         <FluentSliderField
           label="التشبع"
-          icon={<Drop className="w-4 h-4" weight="regular" />}
+          icon={<Drop className="w-5 h-5" weight="regular" />}
           value={element.saturation ?? 100}
           min={0}
           max={200}
@@ -132,7 +221,7 @@ export function ImageAdjustProperties({
         />
         <FluentSliderField
           label="الضبابية"
-          icon={<EyeSlash className="w-4 h-4" weight="regular" />}
+          icon={<EyeSlash className="w-5 h-5" weight="regular" />}
           value={element.blur ?? 0}
           min={0}
           max={20}
@@ -160,7 +249,7 @@ export function ImageAdjustProperties({
               useEditorStore.getState().pushHistory();
             }}
           >
-            <ArrowClockwise className="w-3.5 h-3.5" weight="regular" />
+            <ArrowClockwise className="w-4 h-4" weight="regular" />
             <span>إعادة تعيين الألوان</span>
           </Button>
         )}
@@ -168,12 +257,12 @@ export function ImageAdjustProperties({
 
       {/* بطاقة 2: الشفافية العامة */}
       <FluentSection
-        icon={<Eye className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Eye className="w-5 h-5 text-primary" weight="duotone" />}
         title="الشفافية"
       >
         <FluentSliderField
           label="شفافية الصورة"
-          icon={<Eye className="w-4 h-4" weight="regular" />}
+          icon={<Eye className="w-5 h-5" weight="regular" />}
           value={currentOpacity}
           min={0}
           max={100}
@@ -326,71 +415,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
   return (
     <div className="space-y-2.5 font-cairo animate-in fade-in duration-200">
-      {/* 🎴 بطاقة 0: المرشحات — كانت الواجهة الوحيدة لها مكتوبة في مجموعة أدوات
-          الشريط العلوي وغير مربوطة، فبقي الكانفاس يرسم المرشح بلا طريقة لاختياره. */}
-      <FluentSection
-        icon={<FadersHorizontal className="w-4 h-4 text-primary" weight="duotone" />}
-        title="المرشحات"
-        collapsible
-        defaultOpen={true}
-        action={
-          element.filter ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                onUpdate(element.id, { filter: undefined });
-                useEditorStore.getState().pushHistory();
-              }}
-              className="text-micro text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              إزالة المرشح
-            </Button>
-          ) : undefined
-        }
-      >
-        <div className="grid grid-cols-4 gap-1.5">
-          {IMAGE_FILTERS.map((filter) => {
-            const isActive = element.filter === filter.id;
-            return (
-              <button
-                key={filter.id}
-                type="button"
-                onClick={() => {
-                  onUpdate(element.id, { filter: filter.id });
-                  useEditorStore.getState().pushHistory();
-                }}
-                aria-pressed={isActive}
-                aria-label={filter.name}
-                title={filter.name}
-                className={cn(
-                  "flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer",
-                  "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                  isActive
-                    ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
-                    : "border-border/60 bg-card hover:bg-accent text-muted-foreground"
-                )}
-              >
-                <span className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
-                  <img
-                    src={element.imageSrc}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    style={{ filter: filter.css }}
-                  />
-                </span>
-                <span className="text-micro leading-tight truncate max-w-full text-center">
-                  {filter.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </FluentSection>
-
       {/* 🎴 بطاقة 1: شبكة أدوات الذكاء الاصطناعي الفاخرة (2x2 Grid) */}
       <FluentSection
-        icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Sparkle className="w-5 h-5 text-primary" weight="duotone" />}
         title="أدوات الذكاء الاصطناعي"
         collapsible
         defaultOpen={true}
@@ -409,9 +436,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
               >
                 {isRemovingBg ? (
-                  <Spinner className="w-4 h-4 shrink-0" size={16} />
+                  <Spinner className="w-5 h-5 shrink-0" size={16} />
                 ) : (
-                  <Sparkle className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                  <Sparkle className="w-5 h-5 text-primary shrink-0" weight="duotone" />
                 )}
                 <span className="text-xs font-bold">{isRemovingBg ? "إلغاء" : "عزل الخلفية"}</span>
               </Button>
@@ -435,9 +462,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 onClick={() => handleEnhance(element)}
               >
                 {isEnhancing ? (
-                  <Spinner className="w-4 h-4 text-primary shrink-0" size={16} />
+                  <Spinner className="w-5 h-5 text-primary shrink-0" size={16} />
                 ) : (
-                  <MagicWand className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                  <MagicWand className="w-5 h-5 text-primary shrink-0" weight="duotone" />
                 )}
                 <span className="text-xs font-bold">{isEnhancing ? "جاري الترميم ..." : "ترميم الوجه"}</span>
               </Button>
@@ -460,9 +487,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
               >
                 {isFraming ? (
-                  <X className="w-4 h-4 text-destructive-foreground shrink-0" weight="bold" />
+                  <X className="w-5 h-5 text-destructive-foreground shrink-0" weight="bold" />
                 ) : (
-                  <UserFocus className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                  <UserFocus className="w-5 h-5 text-primary shrink-0" weight="duotone" />
                 )}
                 <span className="text-xs font-bold">{isFraming ? "إلغاء" : "تأطير الوجه"}</span>
               </Button>
@@ -481,7 +508,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]"
                 onClick={() => setScannerOpen(true)}
               >
-                <Scan className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                <Scan className="w-5 h-5 text-primary shrink-0" weight="duotone" />
                 <span className="text-xs font-bold">مسح المستند</span>
               </Button>
             </TooltipTrigger>
@@ -538,67 +565,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
       </FluentSection>
 
-      {/* 🎴 بطاقة 2: خلفية الصورة */}
+      {/* 🎴 بطاقة 2: أدوات الصورة والقص */}
       <FluentSection
-        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
-        title="خلفية الصورة"
-      >
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {[
-            { id: "trans", label: "شفاف", val: "transparent" },
-            { id: "white", label: "أبيض", val: "#ffffff" },
-            { id: "blue", label: "أزرق رسمي", val: "#1d4ed8" },
-            { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
-            { id: "gray", label: "رمادي", val: "#e5e7eb" },
-          ].map((colorItem) => {
-            const currBg = element.bgColor || "transparent";
-            const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
-            return (
-              <Tooltip key={colorItem.id}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onUpdate(element.id, { bgColor: colorItem.val });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                    className={cn(
-                      "w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-                      isActive && "ring-2 ring-primary ring-offset-1 border-primary"
-                    )}
-                    style={{
-                      backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
-                      backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
-                      backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
-                      backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
-                    }}
-                  >
-                    {isActive && (
-                      <Check className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} weight="bold" />
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">{colorItem.label}</TooltipContent>
-              </Tooltip>
-            );
-          })}
-
-          {/* Custom Color Input */}
-          <PopoverColorPicker
-            color={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
-            onChange={(val) => {
-              onUpdate(element.id, { bgColor: val });
-              useEditorStore.getState().pushHistory();
-            }}
-            swatchOnly
-            className="w-7 h-7"
-          />
-        </div>
-      </FluentSection>
-
-      {/* 🎴 بطاقة 3: أدوات الصورة والقص */}
-      <FluentSection
-        icon={<Crop className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Crop className="w-5 h-5 text-primary" weight="duotone" />}
         title="الصورة والقص"
       >
         <div className="grid grid-cols-2 gap-1.5">
@@ -610,7 +579,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={() => setCropOpen(true)}
               >
-                <Crop className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" weight="regular" />
+                <Crop className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" weight="regular" />
                 <span>قص وتدوير</span>
               </Button>
             </TooltipTrigger>
@@ -625,7 +594,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={handleOpenFile}
               >
-                <ImageSquare className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" weight="regular" />
+                <ImageSquare className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" weight="regular" />
                 <span>تبديل الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -651,7 +620,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 }}
                 title="استعادة الصورة الأصلية"
               >
-                <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
+                <ArrowCounterClockwise className="w-5 h-5" weight="regular" />
                 <span>استعادة الأصل</span>
               </Button>
 
@@ -679,7 +648,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 }}
                 title="اضغط مطولاً للمقارنة"
               >
-                <Eye className="w-4 h-4" weight="regular" />
+                <Eye className="w-5 h-5" weight="regular" />
                 <span>مقارنة الأصل</span>
               </Button>
             </div>
@@ -690,7 +659,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               onClick={() => setRefineOpen(true)}
               title="تعديل العزل يدوياً"
             >
-              <PaintBrush className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+              <PaintBrush className="w-4 h-4 text-primary shrink-0" weight="regular" />
               <span>تعديل العزل يدوياً</span>
             </Button>
           </div>
@@ -699,12 +668,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
       {/* 🎴 بطاقة 4: استدارة الحواف */}
       <FluentSection
-        icon={<Square className="w-4 h-4 text-primary" weight="duotone" />}
+        icon={<Square className="w-5 h-5 text-primary" weight="duotone" />}
         title="استدارة الحواف"
       >
         <FluentSliderField
           label="استدارة الزوايا"
-          icon={<Square className="w-4 h-4" weight="regular" />}
+          icon={<Square className="w-5 h-5" weight="regular" />}
           value={element.cornerRadius || 0}
           min={0}
           max={200}

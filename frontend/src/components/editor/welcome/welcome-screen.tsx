@@ -4,40 +4,7 @@ import { Button } from "@/components/ui/button";
 import { WorkflowCard } from "./workflow-card";
 import type { WorkflowMode } from "@/lib/store";
 
-// ─── الأيقونات (SVG مدمج لتجنب الاعتمادية) ──────────────────────────────
-
-function QuickIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="9" rx="1.5" />
-      <rect x="14" y="3" width="7" height="5" rx="1.5" />
-      <rect x="14" y="12" width="7" height="9" rx="1.5" />
-      <rect x="3" y="16" width="7" height="5" rx="1.5" />
-    </svg>
-  );
-}
-
-function StudioIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-      <path d="M2 17l10 5 10-5" />
-      <path d="M2 12l10 5 10-5" />
-    </svg>
-  );
-}
-
-function BatchIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  );
-}
+import { Lightning, PaintBrush, Stack } from "@phosphor-icons/react";
 
 // ─── بيانات المسارات ──────────────────────────────────────────────────────
 
@@ -47,7 +14,7 @@ const WORKFLOW_DEFINITIONS = [
     title: "إنتاج سريع",
     subtitle: "صور هوية، جوازات سفر، وطباعة فورية",
     description: "الأنسب لاستوديوهات التصوير ومحلات الطباعة. افتح صورة، اختر قالباً جاهزاً، واطبع خلال دقيقة.",
-    icon: <QuickIcon />,
+    icon: <Lightning className="w-6 h-6" weight="duotone" />,
     badge: "الأكثر استخداماً",
     badgeVariant: "primary" as const,
     features: [
@@ -63,7 +30,7 @@ const WORKFLOW_DEFINITIONS = [
     title: "استوديو التصميم",
     subtitle: "كولاج حر، ملصقات، وتصميم إبداعي",
     description: "للمصممين الذين يريدون التحكم الكامل. أضف نصوصاً وأشكالاً وملصقات وأنشئ تصاميم احترافية.",
-    icon: <StudioIcon />,
+    icon: <PaintBrush className="w-6 h-6" weight="duotone" />,
     badge: "متقدم",
     badgeVariant: "amber" as const,
     features: [
@@ -79,7 +46,7 @@ const WORKFLOW_DEFINITIONS = [
     title: "معالجة دفعية",
     subtitle: "قص وعزل وطباعة بالجملة",
     description: "لمن يتعامل مع عشرات الصور يومياً. أدرج صوراً متعددة دفعة واحدة ومعالجتها وطباعتها تلقائياً.",
-    icon: <BatchIcon />,
+    icon: <Stack className="w-6 h-6" weight="duotone" />,
     badge: "متخصص",
     badgeVariant: "emerald" as const,
     features: [

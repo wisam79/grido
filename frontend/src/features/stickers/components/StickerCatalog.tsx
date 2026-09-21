@@ -307,7 +307,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
         <div className="flex items-center justify-between gap-3 mt-2.5">
           {/* Search Field */}
           <div className="relative flex-1 max-w-xs">
-            <MagnifyingGlass className="absolute start-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 pointer-events-none" />
+            <MagnifyingGlass className="absolute start-2.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/70 pointer-events-none" />
             <Input
               ref={searchInputRef}
               type="search"
@@ -330,7 +330,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                 aria-label="مسح"
                 className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-md cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>

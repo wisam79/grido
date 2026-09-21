@@ -338,7 +338,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
               /* Gallery Header */
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                  <SealCheck className="w-4 h-4 text-primary" weight="duotone" />
+                  <SealCheck className="w-5 h-5 text-primary" weight="duotone" />
                 </div>
                 <div className="flex items-center gap-2 min-w-0">
                   <DialogTitle className="text-sm font-bold text-foreground truncate">
@@ -363,7 +363,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   className="h-8 px-2 text-xs font-bold gap-1 rounded-md hover:bg-muted text-foreground cursor-pointer shrink-0 border border-border/40 hover:border-border/70"
                   title="العودة للمعرض"
                 >
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-5 h-5" />
                   <span>المعرض</span>
                 </Button>
 
@@ -440,7 +440,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
             /* Gallery Footer */
             <>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                <SealCheck className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                <SealCheck className="w-5 h-5 text-primary shrink-0" weight="duotone" />
                 <span className="text-foreground font-bold truncate">{selectedTemplate.name}</span>
                 <span className="text-border/60">•</span>
                 <span className="text-mini"><span className="font-mono">{templateMm.width}×{templateMm.height}</span> مم</span>
@@ -452,7 +452,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   variant="outline"
                   size="sm"
                   onClick={() => onOpenChange(false)}
-                  className="h-8 px-3.5 text-xs font-semibold rounded-md cursor-pointer"
+                  className="h-8 px-4 text-xs font-semibold rounded-md cursor-pointer"
                 >
                   إلغاء
                 </Button>
@@ -464,7 +464,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all"
                 >
                   <span>تخصيص</span>
-                  <Sparkle className="w-3.5 h-3.5" weight="bold" />
+                  <Sparkle className="w-4 h-4" weight="bold" />
                 </Button>
               </div>
             </>
@@ -484,9 +484,9 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                       className="h-8 px-2.5 text-xs font-semibold gap-1.5 rounded-md hover:bg-muted cursor-pointer text-muted-foreground hover:text-foreground shrink-0 border-border/60"
                     >
                       {busyExport ? (
-                        <Spinner className="w-3.5 h-3.5 animate-spin" />
+                        <Spinner className="w-4 h-4 animate-spin" />
                       ) : (
-                        <DownloadSimple className="w-3.5 h-3.5" />
+                        <DownloadSimple className="w-4 h-4" />
                       )}
                       <span>{busyExport ? "يصدّر ..." : "تصدير"}</span>
                       {!busyExport && <CaretDown className="w-3 h-3 text-muted-foreground" />}
@@ -494,19 +494,19 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-44 text-xs font-cairo">
                     <DropdownMenuItem onClick={handleDownloadPng} className="cursor-pointer gap-2">
-                      <FilePng className="w-4 h-4 text-primary" weight="duotone" />
+                      <FilePng className="w-5 h-5 text-primary" weight="duotone" />
                       <span>صورة PNG</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleDownloadSvg} className="cursor-pointer gap-2">
-                      <FileSvg className="w-4 h-4 text-emerald-500" weight="duotone" />
+                      <FileSvg className="w-5 h-5 text-emerald-500" weight="duotone" />
                       <span>ملف SVG</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleCopyImage} className="cursor-pointer gap-2">
-                      <Copy className="w-4 h-4 text-amber-500" weight="duotone" />
+                      <Copy className="w-5 h-5 text-amber-500" weight="duotone" />
                       <span>نسخ صورة</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleCopySvgCode} className="cursor-pointer gap-2">
-                      <Code className="w-4 h-4 text-indigo-500" weight="duotone" />
+                      <Code className="w-5 h-5 text-indigo-500" weight="duotone" />
                       <span>نسخ SVG</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -524,12 +524,12 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                 >
                   {isGeneratingSheet ? (
                     <>
-                      <Spinner className="w-3.5 h-3.5 animate-spin" />
+                      <Spinner className="w-4 h-4 animate-spin" />
                       <span>يولّد ...</span>
                     </>
                   ) : (
                     <>
-                      <GridFour className="w-3.5 h-3.5 text-primary" weight="bold" />
+                      <GridFour className="w-4 h-4 text-primary" weight="bold" />
                       <span>شيت ({gridConfig.rows * gridConfig.cols})</span>
                     </>
                   )}
@@ -544,7 +544,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   size="sm"
                   onClick={() => onOpenChange(false)}
                   disabled={isInserting || isGeneratingSheet || busyExport}
-                  className="h-8 px-3.5 text-xs font-semibold rounded-md cursor-pointer"
+                  className="h-8 px-4 text-xs font-semibold rounded-md cursor-pointer"
                 >
                   إلغاء
                 </Button>
@@ -558,12 +558,12 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                 >
                   {isInserting ? (
                     <>
-                      <Spinner className="w-3.5 h-3.5 animate-spin" />
+                      <Spinner className="w-4 h-4 animate-spin" />
                       <span>يُدرج ...</span>
                     </>
                   ) : (
                     <>
-                      <Plus className="w-3.5 h-3.5" weight="bold" />
+                      <Plus className="w-4 h-4" weight="bold" />
                       <span>إدراج</span>
                     </>
                   )}

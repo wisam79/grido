@@ -308,7 +308,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <DialogTitle className="flex items-center gap-2 text-foreground font-cairo text-base font-bold">
-                  <FolderOpen className="text-primary w-6 h-6 shrink-0" weight="duotone" />
+                  <FolderOpen className="text-primary w-7 h-7 shrink-0" weight="duotone" />
                   <span>مكتبة المشاريع</span>
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -335,19 +335,19 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                 {
                   id: "save",
                   label: "حفظ",
-                  icon: <FloppyDisk className="w-3.5 h-3.5 shrink-0" />,
+                  icon: <FloppyDisk className="w-4 h-4 shrink-0" />,
                   tooltip: "حفظ المشروع الحالي",
                 },
                 {
                   id: "list",
                   label: "المشاريع",
-                  icon: <FolderOpen className="w-3.5 h-3.5 shrink-0" />,
+                  icon: <FolderOpen className="w-4 h-4 shrink-0" />,
                   tooltip: "المشاريع المحفوظة",
                 },
                 {
                   id: "backup",
                   label: "النسخ",
-                  icon: <Database className="w-3.5 h-3.5 shrink-0" />,
+                  icon: <Database className="w-4 h-4 shrink-0" />,
                   tooltip: "النسخ الاحتياطي",
                 },
               ]}
@@ -368,12 +368,12 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
               <Button className="w-full h-8 gap-2 mt-2 rounded-md font-semibold text-xs shadow-xs" onClick={handleSave} disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <Spinner className="w-3.5 h-3.5" size={14} />
+                    <Spinner className="w-4 h-4" size={14} />
                     <span>جاري الحفظ ...</span>
                   </>
                 ) : (
                   <>
-                    <FloppyDisk className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                    <FloppyDisk className="w-4 h-4 shrink-0" weight="bold" />
                     <span>حفظ المشروع</span>
                   </>
                 )}
@@ -384,7 +384,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
               {/* شريط البحث والفرز */}
               <div className="flex gap-2 items-center">
                 <div className="relative flex-1">
-                  <MagnifyingGlass className="absolute right-2.5 top-2 text-muted-foreground w-4 h-4 shrink-0" />
+                  <MagnifyingGlass className="absolute right-2.5 top-2 text-muted-foreground w-5 h-5 shrink-0" />
                   <Input
                     placeholder="بحث في المشاريع..."
                     className="pr-8 h-8 text-xs rounded-md"
@@ -399,7 +399,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("date") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="ترتيب بالتاريخ"
                   >
-                    <Calendar className="w-3.5 h-3.5 shrink-0" weight={sortBy.startsWith("date") ? "bold" : "regular"} />
+                    <Calendar className="w-4 h-4 shrink-0" weight={sortBy.startsWith("date") ? "bold" : "regular"} />
                   </button>
                   <button 
                     type="button"
@@ -407,7 +407,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                     className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("name") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     title="ترتيب أبجدي"
                   >
-                    <ArrowsDownUp className="w-3.5 h-3.5 shrink-0" weight={sortBy.startsWith("name") ? "bold" : "regular"} />
+                    <ArrowsDownUp className="w-4 h-4 shrink-0" weight={sortBy.startsWith("name") ? "bold" : "regular"} />
                   </button>
                 </div>
               </div>
@@ -465,7 +465,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                           className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
                           title={isPinned ? "إلغاء التثبيت" : "تثبيت في الأعلى"}
                         >
-                          {isPinned ? <PushPinSlash className="w-3.5 h-3.5 shrink-0" /> : <PushPin className="w-3.5 h-3.5 shrink-0" />}
+                          {isPinned ? <PushPinSlash className="w-4 h-4 shrink-0" /> : <PushPin className="w-4 h-4 shrink-0" />}
                         </Button>
                         <Button
                           variant="ghost"
@@ -473,7 +473,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                           onClick={(e) => handleDelete(project.id, e)}
                           className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
-                          <Trash className="w-3.5 h-3.5 shrink-0" />
+                          <Trash className="w-4 h-4 shrink-0" />
                         </Button>
                       </div>
                     </div>
@@ -497,12 +497,12 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                   >
                     {backupActionLoading ? (
                       <>
-                        <Spinner className="w-3.5 h-3.5" size={14} />
+                        <Spinner className="w-4 h-4" size={14} />
                         <span>جاري التصدير ...</span>
                       </>
                     ) : (
                       <>
-                        <DownloadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                        <DownloadSimple className="w-4 h-4 shrink-0" weight="bold" />
                         <span>تصدير JSON</span>
                       </>
                     )}
@@ -516,7 +516,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                   </div>
                   <label className="cursor-pointer">
                     <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
-                      <UploadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                      <UploadSimple className="w-4 h-4 shrink-0" weight="bold" />
                       <span>رفع ملف</span>
                     </span>
                     <input
@@ -541,7 +541,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                     disabled={backupActionLoading}
                     className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
                   >
-                    <Trash className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                    <Trash className="w-4 h-4 shrink-0" weight="bold" />
                     <span>حذف الكل</span>
                   </Button>
                 </div>
@@ -575,7 +575,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
-                  <UploadSimple className="text-primary w-4 h-4 shrink-0" weight="duotone" />
+                  <UploadSimple className="text-primary w-5 h-5 shrink-0" weight="duotone" />
                   <span>استيراد المشاريع</span>
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -616,7 +616,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
               <Button onClick={handleConfirmImport} disabled={backupActionLoading} className="h-8 px-4 text-xs font-semibold rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground">
                 {backupActionLoading ? (
                   <>
-                    <Spinner className="w-3.5 h-3.5" size={14} />
+                    <Spinner className="w-4 h-4" size={14} />
                     <span>جاري الاستيراد ...</span>
                   </>
                 ) : (
@@ -633,7 +633,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
         <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-start flex items-center gap-2 text-destructive text-sm font-bold">
-              <Warning className="w-4 h-4 shrink-0" weight="duotone" />
+              <Warning className="w-5 h-5 shrink-0" weight="duotone" />
               <span>تهيئة مكتبة المشاريع</span>
             </AlertDialogTitle>
             <AlertDialogDescription className="font-cairo text-start text-xs">
