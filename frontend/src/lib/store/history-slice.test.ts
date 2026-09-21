@@ -15,6 +15,9 @@ describe('history-slice', () => {
       ...createHistorySlice(set, get, api),
       elements: [],
       slots: DEFAULT_COLLAGE_STATE.slots,
+      // كل حقل يقارَن بالمرجع في isSameSnapshot يجب أن يطابق الحالة الابتدائية
+      // الفعلية وإلا فشل الـ dedupe في الدفعة الأولى (قالب الكولاج = COLLAGE_TEMPLATES[0])
+      collageTemplate: DEFAULT_COLLAGE_STATE.collageTemplate,
       editingTextId: null,
       backgroundColor: '#FFFFFF',
       canvasWidth: 2480,

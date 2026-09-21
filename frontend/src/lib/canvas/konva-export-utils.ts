@@ -43,11 +43,15 @@ export async function withHiddenOverlays<T>(
   const transformers = stage.find("Transformer") as unknown as KonvaNodeLike[];
   const gridLayers = stage.find(".grid-layer") as unknown as KonvaNodeLike[];
   const columnsLayers = stage.find(".columns-layer") as unknown as KonvaNodeLike[];
+  // 🔲 لبنات الخلايا الفارغة إشارة واجهة لا محتوى مطبوع/مصدَّر: إخفاؤها يجعل
+  // التقاط الطباعة يطابق مسار التصدير (الذي لا يرسم أي بديل للخلايا الفارغة)
+  const slotPlaceholders = stage.find(".slot-placeholder") as unknown as KonvaNodeLike[];
 
   try {
     for (const tr of transformers) tr.hide();
     for (const gl of gridLayers) gl.hide();
     for (const cl of columnsLayers) cl.hide();
+    for (const ph of slotPlaceholders) ph.hide();
 
     stage.batchDraw();
 
@@ -56,6 +60,7 @@ export async function withHiddenOverlays<T>(
     for (const tr of transformers) tr.show();
     for (const gl of gridLayers) gl.show();
     for (const cl of columnsLayers) cl.show();
+    for (const ph of slotPlaceholders) ph.show();
 
     stage.batchDraw();
   }

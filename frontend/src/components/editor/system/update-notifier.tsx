@@ -271,7 +271,8 @@ export function UpdateNotifier() {
                     if (typeof BrowserOpenURL === "function") {
                       BrowserOpenURL(url);
                     } else {
-                      window.open(url, "_blank");
+                      // noopener/noreferrer: لا يُمنح الموقع المفتوح مرجع نافذة التطبيق
+                      window.open(url, "_blank", "noopener,noreferrer");
                     }
                   }}
                   className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm cursor-pointer"

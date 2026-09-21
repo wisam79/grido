@@ -29,17 +29,25 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
   }
 
   // 2. محاولة فك الأبعاد السريعة عبر createImageBitmap (الأداء الأقصى في المتصفح مع مراعاة EXIF)
-  try {
-    const res = await fetch(src);
-    const blob = await res.blob();
-    const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
-    if (bitmap && bitmap.width > 0 && bitmap.height > 0) {
-      const aspect = bitmap.width / bitmap.height;
-      bitmap.close();
-      return aspect;
+  // فقط للمصادر الموجودة في الذاكرة/المشتقة من blob: أي مصدر شبكي أو ملفي كامل
+  // كان يُنزَّل بالكامل ويُنسخ في الذاكرة لمجرد قراءة الأبعاد (ذروة لا مبرر لها).
+  const isInMemorySource = src.startsWith("data:") || src.startsWith("blob:");
+  if (isInMemorySource) {
+    try {
+      const res = await fetch(src);
+      const blob = await res.blob();
+      const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+      try {
+        if (bitmap && bitmap.width > 0 && bitmap.height > 0) {
+          return bitmap.width / bitmap.height;
+        }
+      } finally {
+        // إغلاق دائماً (بما فيه مسار القياس الصفري) — كان يتسرب قبل السقوط
+        bitmap?.close?.();
+      }
+    } catch {
+      // Continue to standard Image fallback
     }
-  } catch {
-    // Continue to standard Image fallback
   }
 
   // 3. المسار القياسي الاحتياطي عبر HTMLImageElement مع EXIF check

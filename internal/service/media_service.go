@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/binary"
@@ -434,14 +435,48 @@ func (s *MediaService) ProcessMultipleOpenedFiles(filePaths []string) ([]string,
 	return loaded, nil
 }
 
+// isOpaqueBinaryContent: تنسيقات صور لا يميّزها net/http (TIFF/AVIF/HEIC/JXL…)
+// تُكتشف كبايتات غير معروفة. نسمح بها اعتماداً على النوع المُعلن لأنها بيانات
+// ثنائية لا تُنفَّذ — رفضها كان يمنع حفظ صور مشروعة من الحافظة.
+func isOpaqueBinaryContent(detected string) bool {
+	return detected == "application/octet-stream"
+}
+
 func (s *MediaService) SaveImageFromBase64(base64Data string) (string, error) {
 	decoded, mimeType, err := s.DecodeBase64Image(base64Data)
 	if err != nil {
 		return "", err
 	}
 
+	// 🛡️ لا نثق بنوع MIME المُعلن من العميل: نتحقق من المحتوى الفعلي. بدونه كان
+	// يمكن كتابة أي محتوى (نص/HTML/JS) في مجلد الوسائط الذي يخدمه مخدّم الأصول.
+	detected := http.DetectContentType(decoded)
+	declared := strings.ToLower(strings.TrimSpace(mimeType))
+	isDetectedImage := strings.HasPrefix(detected, "image/")
+
+	head := decoded
+	if len(head) > 512 {
+		head = head[:512]
+	}
+	// SVG مشروع: يكتشفه net/http كنص/xml — نقبله فقط إن كان وسم SVG فعلياً
+	looksLikeSvg := strings.Contains(declared, "svg") &&
+		(bytes.Contains(head, []byte("<svg")) || bytes.Contains(head, []byte("<SVG")) ||
+			bytes.Contains(head, []byte("<?xml")))
+
+	switch {
+	case !strings.HasPrefix(declared, "image/"):
+		return "", fmt.Errorf("refusing to store non-image payload (declared %q)", mimeType)
+	case !isDetectedImage && !looksLikeSvg && !isOpaqueBinaryContent(detected):
+		// نص/HTML/JSON مُعلَن كصورة — لا يُكتب على القرص بامتداد صورة
+		return "", fmt.Errorf("refusing to store %q content declared as %q", detected, mimeType)
+	}
+
 	mediaDir := s.GetMediaDir()
+	// الامتداد من المحتوى المكتشف لا من ادعاء العميل (منع حقن الامتدادات)
 	ext := s.GetExtensionFromMime(mimeType)
+	if isDetectedImage {
+		ext = s.GetExtensionFromMime(detected)
+	}
 	newName := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
 	newPath := filepath.Join(mediaDir, newName)
 

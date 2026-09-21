@@ -24,6 +24,8 @@ export function serializeEditorState(state: EditorState, embeddedAssets?: Record
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,
     backgroundColor: state.backgroundColor,
+    backgroundGradientColor2: state.backgroundGradientColor2 ?? null,
+    backgroundGradientAngle: state.backgroundGradientAngle ?? 135,
     elements: state.elements,
     slots: state.slots,
     template: state.template,
@@ -118,8 +120,20 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
 	const elements = parseSafely(dbProj.elements, []);
 	const slots = parseSafely(dbProj.slots, []);
 	const template = parseSafely(dbProj.template, null);
-	const collageTemplate = parseSafely(dbProj.collageTemplate, null);
-	const printSettings = parseSafely(dbProj.printSettings, undefined);
+	const collageTemplate = parseSafely(dbProj.collageTemplate, null);  const printSettings = parseSafely(dbProj.printSettings, undefined);
+
+  // 🎨 التدرج: العمود الجديد في قاعدة البيانات يبدأ بصفر للمشاريع المحفوظة قبل
+  // إضافته، والصفر زاوية صالحة (0° أفقية) — فلا يمكن تمييز «لم تُحفظ قط» من
+  // «محفوظة كصفر». لذلك لا نُصدّر زاوية إلا مع وجود لون ثانٍ فعلي، فيبقى 135
+  // هو الافتراضي عند تفعيل التدرج لاحقاً بدل أن يُقرأ صفر موهوم.
+  const gradientColor2 =
+    typeof dbProj.backgroundGradientColor2 === "string" && dbProj.backgroundGradientColor2
+      ? dbProj.backgroundGradientColor2
+      : null;
+  const gradientAngle =
+    gradientColor2 && typeof dbProj.backgroundGradientAngle === "number" && isFinite(dbProj.backgroundGradientAngle)
+      ? dbProj.backgroundGradientAngle
+      : undefined;
 
   const projectFile: ProjectFileV1 = {
     version: CURRENT_PROJECT_VERSION,
@@ -128,6 +142,8 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     canvasWidth: dbProj.canvasWidth,
     canvasHeight: dbProj.canvasHeight,
     backgroundColor: dbProj.backgroundColor,
+    backgroundGradientColor2: gradientColor2,
+    backgroundGradientAngle: gradientAngle,
     elements,
     slots,
     template,
@@ -172,6 +188,8 @@ export function projectFileToDomainProject(
     canvasWidth: file.canvasWidth,
     canvasHeight: file.canvasHeight,
     backgroundColor: file.backgroundColor,
+    backgroundGradientColor2: file.backgroundGradientColor2 ?? "",
+    backgroundGradientAngle: file.backgroundGradientAngle ?? 135,
     elements: JSON.stringify(file.elements),
     slots: JSON.stringify(file.slots),
     template: file.template ? JSON.stringify(file.template) : "",

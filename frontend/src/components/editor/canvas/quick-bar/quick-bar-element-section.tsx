@@ -1,5 +1,6 @@
 import React from "react";
 import { ArrowUp, ArrowDown, ArrowClockwise, FlipHorizontal, ArrowCounterClockwise, Eye } from "@phosphor-icons/react";
+import { QuickBarGroup } from "./quick-bar-group";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
@@ -35,33 +36,36 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
 
   return (
     <>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => bringToFront(element.id)}
-            className="h-7 w-7 p-0 rounded-md hover:bg-accent"
-          >
-            <ArrowUp className="w-4 h-4" weight="bold" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">إحضار للأمام</TooltipContent>
-      </Tooltip>
+      {/* مجموعة ترتيب الطبقة (أمام/خلف) — مفصولة بصرياً عن التحويلات */}
+      <QuickBarGroup>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => bringToFront(element.id)}
+              className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+            >
+              <ArrowUp className="w-4 h-4" weight="bold" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">إحضار للأمام</TooltipContent>
+        </Tooltip>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => sendToBack(element.id)}
-            className="h-7 w-7 p-0 rounded-md hover:bg-accent"
-          >
-            <ArrowDown className="w-4 h-4" weight="bold" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">إرسال للخلف</TooltipContent>
-      </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => sendToBack(element.id)}
+              className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+            >
+              <ArrowDown className="w-4 h-4" weight="bold" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">إرسال للخلف</TooltipContent>
+        </Tooltip>
+      </QuickBarGroup>
 
       <Tooltip>
         <TooltipTrigger asChild>
@@ -105,14 +109,9 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
         <TooltipContent side="bottom">قلب أفقي</TooltipContent>
       </Tooltip>
 
-      {element.type === "image" && element.imageSrc && (
+      {element.type === "image" && element.imageSrc && element.originalImageSrc && (
         <>
-          {element.originalImageSrc && (
-            <Separator orientation="vertical" className="h-4 bg-border/40" />
-          )}
-
-          {element.originalImageSrc && (
-            <>
+          <Separator orientation="vertical" className="h-4 bg-border/40" />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -156,8 +155,6 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                 </TooltipTrigger>
                 <TooltipContent side="bottom">اضغط مطولاً للمعاينة</TooltipContent>
               </Tooltip>
-            </>
-          )}
         </>
       )}
     </>

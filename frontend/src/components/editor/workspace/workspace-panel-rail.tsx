@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
 import {
   Command,
   CommandInput,
@@ -98,7 +97,7 @@ function RailToolButton({
           {isActive && (
             <motion.span
               layoutId={pillLayoutId}
-              className="absolute inset-0 bg-primary/15 dark:bg-primary/20 rounded-md border border-primary/25 shadow-inner"
+              className="absolute inset-0 bg-gradient-to-b from-primary/20 to-primary/10 dark:from-primary/25 dark:to-primary/15 rounded-md border border-primary/30 shadow-inner"
               transition={{ type: 'spring', stiffness: 500, damping: 35 }}
             />
           )}
@@ -107,18 +106,23 @@ function RailToolButton({
           <tool.icon className="w-5 h-5 relative z-10" weight={isActive ? 'fill' : 'regular'} />
 
           {showBadge && (
-            <span className="absolute -top-1 -right-1 min-w-[15px] h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-2xs font-mono font-bold flex items-center justify-center leading-none pointer-events-none shadow-xs z-10">
+            <span
+              className="absolute -top-1 -right-1 min-w-[15px] h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-2xs font-mono font-bold flex items-center justify-center leading-none pointer-events-none shadow-xs z-20"
+              aria-hidden="true"
+            >
               {badgeCount > 99 ? '99+' : badgeCount}
             </span>
           )}
 
+          {/* نبض «قيد الاستخدام» — نقطة خضراء صغيرة بأسفل يمين الزر */}
           {isInUse && (
             <span
-              className="absolute end-1 top-1 w-2 h-2 rounded-full bg-primary ring-2 ring-background animate-pulse pointer-events-none z-10"
+              className="absolute bottom-1 end-1 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-background pointer-events-none z-20"
               aria-hidden="true"
             />
           )}
 
+          {/* المؤشر الجانبي النشط — شريط رقيق داخل حافة الشريط */}
           {isActive && (
             <span
               className="absolute -start-1.5 top-1/2 -translate-y-1/2 w-0.75 h-4 bg-primary rounded-e-full shadow-xs z-10"
@@ -251,20 +255,31 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
       data-testid="workspace-panel-rail"
       aria-label="شريط الأدوات والألواح"
       className={cn(
-        'w-12 shrink-0 h-full flex flex-col items-center justify-between py-2 border-r border-border/80 bg-sidebar/95 backdrop-blur-xl z-20 select-none font-cairo shadow-2xs fluent-specular overflow-hidden',
+        'w-12 shrink-0 h-full flex flex-col items-center justify-between py-2 border-r border-border/80 bg-sidebar/95 backdrop-blur-xl z-20 select-none font-cairo shadow-2xs fluent-specular overflow-hidden relative',
         className
       )}
     >
+      {/* خط ضوئي رقيق على الحافة اليمنى — لمسة Fluent عميقة */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 end-0 w-px bg-gradient-to-b from-transparent via-border/60 to-transparent"
+      />
       {/* أدوات الوضع الحالي (كولاج / تعديل حر) — مقسّمة إلى مجموعات بفواصل رقيقة.
           min-h-0 ضروري ليصبح التمرير فعلياً داخل flex column بدل أن يتجاوز
           المحتوى ارتفاع الشريط ويدفع الأزرار المثبّتة خارجه. */}
       <nav
         aria-label={toolsHeading}
-        className="flex flex-col items-center gap-1 w-full px-1.5 flex-1 min-h-0 overflow-y-auto scrollbar-none"
+        className="flex flex-col items-center gap-1 w-full px-1.5 py-1 flex-1 min-h-0 overflow-y-auto scrollbar-none"
       >
         {groups.map((group, groupIndex) => (
           <React.Fragment key={group.name}>
-            {groupIndex > 0 && <Separator className="w-5 bg-border/60 my-0.5 shrink-0" />}
+            {groupIndex > 0 && (
+              <div
+                role="separator"
+                aria-orientation="horizontal"
+                className="w-6 h-px my-0.5 shrink-0 bg-gradient-to-l from-transparent via-border to-transparent"
+              />
+            )}
             {group.tools.map((tool) => (
               <RailToolButton
                 key={tool.id}
@@ -283,7 +298,11 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
 
       {/* أسفل الشريط: لوحة كل الأدوات + وضع التركيز (لا تمرّ هاتان أبداً) */}
       <div className="flex flex-col items-center gap-1.5 w-full px-1.5 shrink-0">
-        <Separator className="w-5 bg-border/60 my-0.5" />
+        <div
+          role="separator"
+          aria-orientation="horizontal"
+          className="w-6 h-px my-0.5 bg-gradient-to-l from-transparent via-border to-transparent"
+        />
 
         <Popover open={isLauncherOpen} onOpenChange={setIsLauncherOpen}>
           <Tooltip>

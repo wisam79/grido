@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"log/slog"
 	"math"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/fogleman/gg"
@@ -21,32 +23,52 @@ import (
 // وتركيب كانفاس الوضع الحر.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// parseHexPair يقرأ خانتين سادس-عشرية — يفشل صراحةً بدل إنتاج أصفار صامتة
+func parseHexPair(s string) (uint8, bool) {
+	v, err := strconv.ParseUint(s, 16, 32)
+	if err != nil {
+		return 0, false
+	}
+	return uint8(v), true
+}
+
+// parseColor يفهم #RGB/#RGBA/#RRGGBB/#RRGGBBAA و"transparent".
+// ⚠️ كان يستخدم fmt.Sscanf الذي يفشل صامتاً (فيبقى اللون أسود = أصفار) أو
+// يُسقط المدخل الغريب إلى أبيض بلا أي أثر — الآن يفشل بصوت مسموع وسلوك ثابت.
 func parseColor(hex string) color.Color {
-	hex = strings.TrimSpace(strings.TrimPrefix(hex, "#"))
-	if strings.ToLower(hex) == "transparent" {
+	raw := strings.TrimSpace(hex)
+	if strings.EqualFold(raw, "transparent") {
 		return color.Transparent
 	}
-	if len(hex) == 3 {
-		var r, g, b uint8
-		fmt.Sscanf(hex, "%1x%1x%1x", &r, &g, &b)
-		return color.RGBA{R: r * 17, G: g * 17, B: b * 17, A: 255}
+	trimmed := strings.TrimPrefix(raw, "#")
+
+	// الصيغة المختصرة: كل خانة تُكرَّر ("f" ← "ff") قبل القراءة
+	if len(trimmed) == 3 || len(trimmed) == 4 {
+		expanded := make([]byte, 0, len(trimmed)*2)
+		for i := 0; i < len(trimmed); i++ {
+			expanded = append(expanded, trimmed[i], trimmed[i])
+		}
+		trimmed = string(expanded)
 	}
-	if len(hex) == 4 {
-		var r, g, b, a uint8
-		fmt.Sscanf(hex, "%1x%1x%1x%1x", &r, &g, &b, &a)
-		return color.RGBA{R: r * 17, G: g * 17, B: b * 17, A: a * 17}
+
+	if len(trimmed) != 6 && len(trimmed) != 8 {
+		slog.Warn("parseColor: unrecognized color format, using white", "color", raw)
+		return color.White
 	}
-	if len(hex) == 6 {
-		var r, g, b uint8
-		fmt.Sscanf(hex, "%02x%02x%02x", &r, &g, &b)
-		return color.RGBA{R: r, G: g, B: b, A: 255}
+
+	r, okR := parseHexPair(trimmed[0:2])
+	g, okG := parseHexPair(trimmed[2:4])
+	b, okB := parseHexPair(trimmed[4:6])
+	a := uint8(255)
+	okA := true
+	if len(trimmed) == 8 {
+		a, okA = parseHexPair(trimmed[6:8])
 	}
-	if len(hex) == 8 {
-		var r, g, b, a uint8
-		fmt.Sscanf(hex, "%02x%02x%02x%02x", &r, &g, &b, &a)
-		return color.RGBA{R: r, G: g, B: b, A: a}
+	if !okR || !okG || !okB || !okA {
+		slog.Warn("parseColor: malformed hex color, using white", "color", raw)
+		return color.White
 	}
-	return color.White
+	return color.RGBA{R: r, G: g, B: b, A: a}
 }
 
 func mmToPx(mm float64, dpi int) float64 {
@@ -88,6 +110,16 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 		y1 := mmToPx(line.Y1, req.DPI)
 		x2 := mmToPx(line.X2, req.DPI)
 		y2 := mmToPx(line.Y2, req.DPI)
+
+		// 🛡️ حماية من الإحداثيات غير المنتهية/NaN فقط: تمرير قيمة واحدة تالفة إلى
+		// gg يُفسد مسار الرسم بأكمله (فتختفي **كل** خطوط القص لا خط واحد).
+		// ⚠️ الخط الخارج عن الورقة يبقى يُسحب إلى الحافة عمداً (سلوك موثَّق، واختبار
+		// TestPrintService_CutLineEdgeVisibility يشترط ظهور خط 298mm على ورقة 297mm
+		// على حافة الورقة) — الإسقاط كان سيجعل الورقة بلا خط نهاية طباعة بلا تفسير.
+		if math.IsNaN(x1) || math.IsNaN(y1) || math.IsNaN(x2) || math.IsNaN(y2) ||
+			math.IsInf(x1, 0) || math.IsInf(y1, 0) || math.IsInf(x2, 0) || math.IsInf(y2, 0) {
+			continue
+		}
 
 		// الإزاحة داخل نطاق البكسل القابل للرسم والطباعة بدون التقطع الكسري عند الحافة السفلية/الجانبية
 		if x1 <= 0.5 {
@@ -258,8 +290,11 @@ func (s *PrintService) composeCanvas(
 			drawX = xPx + (wPx-float64(processedImg.Bounds().Dx()))/2
 			drawY = yPx + (hPx-float64(processedImg.Bounds().Dy()))/2
 		}
-
 		dc.Push()
+		// ⚠️ في سياق التركيب (composeCanvas) تُفسَّر X/Y/W/H/CornerRadiusMM بكسل
+		// الكانفاس لا بالمليمتر (خلافاً لمسار drawItemImage الذي يستقبل عناصر
+		// موضوعة على الورقة بالمليمتر) — لذا الضرب في scaleX هو التحويل الصحيح
+		// هنا، واستخدام mmToPx كان سيكبّر نصف القطر بمعامل مم/بكسل.
 		rPx := item.CornerRadiusMM * scaleX
 		if rPx > 0 {
 			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
@@ -284,6 +319,7 @@ func (s *PrintService) composeCanvas(
 		dc.Pop()
 
 		if item.BorderWidthMM > 0 && item.BorderColor != "" {
+			// بكسل كانفاس في هذا السياق (سطر واحد مع نصف القطر أعلاه)
 			bPx := item.BorderWidthMM * scaleX
 			dc.SetHexColor(item.BorderColor)
 			dc.SetLineWidth(bPx)

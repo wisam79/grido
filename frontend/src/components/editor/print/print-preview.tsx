@@ -2,6 +2,7 @@ import { memo, useCallback, useState, type ReactElement } from "react";
 import { buildCSSFilter, cn } from "@/lib/utils";
 import { calculatePrintCutLines } from "@/lib/print/cut-lines-utils";
 import { computeBlockPosition, computeSlotRectMM } from "@/lib/print/print-layout-math";
+import { formatGradientCss } from "@/components/editor/properties/gradient-utils";
 import type { CanvasSlot } from "@/lib/store/types";
 import type { SheetGrid } from "@/lib/print/print-layout-math";
 
@@ -17,6 +18,10 @@ interface SheetPreviewProps {
   cutLineStyle?: "dashed" | "dotted" | "solid" | "cropmarks";
   mode: "single" | "collage";
   backgroundColor: string;
+  /** 🎨 لون نهاية تدرج خلفية الورقة — غيابه يعني تعبئة مصمتة */
+  backgroundGradientColor2?: string | null;
+  /** زاوية التدرج بالدرجات (0° = يسار→يمين مع عقارب الساعة) */
+  backgroundGradientAngle?: number;
   previewImageSrc: string;
   paperWidthMM?: number;
   paperHeightMM?: number;
@@ -184,6 +189,8 @@ export function SheetPreview({
   cutLineStyle = "dashed",
   mode,
   backgroundColor,
+  backgroundGradientColor2,
+  backgroundGradientAngle = 135,
   previewImageSrc,
   paperWidthMM = 210,
   paperHeightMM = 297,
@@ -199,6 +206,19 @@ export function SheetPreview({
   scaleFactor = 1.5,
 }: SheetPreviewProps) {
   const sf = scaleFactor * zoom;
+
+  // 🎨 خلفية الورقة: نفس هندسة تدرج الكانفاس حول المركز، بتحويل الزاوية إلى
+  // زاوية CSS (canvasAngleToCss داخل formatGradientCss) — بدونها تُعرض الورقة
+  // في المعاينة بلون مصمت بينما المطبوع متدرج (أو باتجاه عمودي على الصحيح).
+  const hasPaperGradient = Boolean(
+    backgroundGradientColor2 &&
+      backgroundColor &&
+      backgroundColor !== "transparent" &&
+      backgroundGradientColor2 !== "transparent"
+  );
+  const paperBackground = hasPaperGradient
+    ? formatGradientCss([0, backgroundColor, 1, backgroundGradientColor2 as string], "linear", backgroundGradientAngle)
+    : backgroundColor || "#FFFFFF";
   // الأبعاد الطبيعية للصور بعد تحميلها (naturalWidth/Height) — تُستخدم لتحويل
   // سحب dragX/dragY شبكة البكسل إلى إزاحة نقل (%) مطابقة لمنطق Konva/التصدير
   const [naturalSizes, setNaturalSizes] = useState<Record<string, { w: number; h: number }>>({});
@@ -340,7 +360,7 @@ export function SheetPreview({
       <div 
         className="w-full h-full relative overflow-hidden"
         style={{
-          backgroundColor: backgroundColor || "#FFFFFF",
+          background: paperBackground,
           boxSizing: "border-box",
         }}
       >
@@ -405,7 +425,7 @@ export function SheetPreview({
           top: `${top_pct}%`,
           width: `${width_pct}%`,
           height: `${height_pct}%`,
-          backgroundColor: backgroundColor || "#FFFFFF",
+          background: paperBackground,
           boxSizing: "border-box",
         }}
       >
@@ -428,7 +448,7 @@ export function SheetPreview({
     <div 
       className="relative w-full h-full overflow-hidden"
       style={{
-        backgroundColor: backgroundColor || "#FFFFFF",
+        background: paperBackground,
         boxSizing: "border-box",
       }}
     >

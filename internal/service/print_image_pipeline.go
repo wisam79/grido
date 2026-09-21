@@ -291,16 +291,24 @@ func putSharedRaw(cacheKey, filePath string, img image.Image) {
 
 // computeImageCacheKey يحسب مفتاح كاش للصورة (مع تجنب Hash كامل لـ Base64 الضخمة)
 func computeImageCacheKey(filePath string) string {
-	if strings.HasPrefix(filePath, "data:image/") {
-		if len(filePath) > 1024 {
-			h := sha256.New()
-			h.Write([]byte(filePath[:512]))
-			h.Write([]byte(filePath[len(filePath)-512:]))
-			return fmt.Sprintf("b64_%x_len%d", h.Sum(nil), len(filePath))
-		}
+	if !strings.HasPrefix(filePath, "data:image/") {
+		return filePath
+	}
+
+	// 🔎 المفتاح كان يقتطع المدخل (أول 512 + آخر 512 بايت + الطول فقط)، فيمكن أن
+		// يتصادم مفتاحان لصورتين مختلفتين بنفس الطول ونفس الطرفين → تُطبع الصورة
+		// الخطأ من الكاش. الآن ثلاث عينات (بداية/منتصف/نهاية) + الطول.
+	const sampleSize = 2048
+	if len(filePath) <= sampleSize*3 {
 		return fmt.Sprintf("b64_%x", sha256.Sum256([]byte(filePath)))
 	}
-	return filePath
+
+	h := sha256.New()
+	h.Write([]byte(filePath[:sampleSize]))
+	middle := len(filePath)/2 - sampleSize/2
+	h.Write([]byte(filePath[middle : middle+sampleSize]))
+	h.Write([]byte(filePath[len(filePath)-sampleSize:]))
+	return fmt.Sprintf("b64_%x_len%d", h.Sum(nil), len(filePath))
 }
 
 // loadRawImage يفتح الصورة من ملف أو Base64 مع كاش LRU ومنع تكرار التحميل الجاري (In-Flight Deduplication) عبر singleflight

@@ -7,6 +7,7 @@ import { computeSheetGrid, computeSlotRectMM } from "@/lib/print/print-layout-ma
 import { assertExportablePixels, CanvasTooLargeError } from "@/lib/export/export-limits";
 import { VECTOR_SHAPES } from "@/lib/io/svg-paths";
 import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
+import { gradientPixelPoints } from "@/lib/canvas/gradient-geometry";
 import { ensureTextStrokeFilter } from "@/lib/canvas/text-stroke-filter";
 import {
   gradientStart,
@@ -355,6 +356,8 @@ export async function exportCanvas(
     canvasWidth,
     canvasHeight,
     backgroundColor,
+    backgroundGradientColor2,
+    backgroundGradientAngle,
     elements,
     slots,
   } = useEditorStore.getState();
@@ -414,7 +417,21 @@ export async function exportCanvas(
   if (!ctx) return null;
 
   if (format === "jpg" || backgroundColor !== "transparent") {
-    ctx.fillStyle = backgroundColor === "transparent" ? previewWhite() : backgroundColor;
+    // 🎨 تدرج الخلفية: نفس هندسة Konva (0° يسار→يمين مع عقارب الساعة، حول المركز)
+    const hasGradient =
+      Boolean(backgroundGradientColor2) &&
+      backgroundColor !== "transparent" &&
+      backgroundGradientColor2 !== "transparent";
+    if (hasGradient) {
+      // نفس دالة المرسم (gradient-geometry) → امتداد واتجاه متطابقان بين المعاينة والناتج
+      const { start, end } = gradientPixelPoints(backgroundGradientAngle ?? 135, canvasWidth, canvasHeight);
+      const grad = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+      grad.addColorStop(0, backgroundColor);
+      grad.addColorStop(1, backgroundGradientColor2 as string);
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = backgroundColor === "transparent" ? previewWhite() : backgroundColor;
+    }
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   }
 
@@ -673,6 +690,13 @@ export async function exportCanvas(
           rawText = rawText.replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d, 10)]);
         }
 
+        // #1 — تطبيق textTransform قبل الرسم (uppercase/lowercase/capitalize)
+        const textTransform = el.textTransform || "none";
+        if (textTransform === "uppercase") rawText = rawText.toUpperCase();
+        else if (textTransform === "lowercase") rawText = rawText.toLowerCase();
+        else if (textTransform === "capitalize")
+          rawText = rawText.replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+
         const fontStyle = el.fontStyle === "italic" ? "italic " : "";
         const fontFamily = el.fontFamily || "Cairo, Tajawal, sans-serif";
         const isCurved = typeof el.curve === "number" && el.curve !== 0;
@@ -686,7 +710,7 @@ export async function exportCanvas(
             height: h,
             fontSize,
             fontFamily,
-            fontWeight: el.fontWeight || 700,
+            fontWeight: el.fontWeight || 400,       // #6 — موحَّد مع المعاينة
             fontStyle: el.fontStyle || "normal",
             color: el.color || TEXT_COLOR_DEFAULT,
             stroke: el.strokeWidth ? (el.stroke || TEXT_COLOR_DEFAULT) : undefined,
@@ -696,11 +720,18 @@ export async function exportCanvas(
             letterSpacing: el.letterSpacing || 0,
           });
         } else {
-          ctx.font = `${fontStyle}${el.fontWeight || 700} ${fontSize}px ${fontFamily}`;
+          ctx.font = `${fontStyle}${el.fontWeight || 400} ${fontSize}px ${fontFamily}`;  // #6
           ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.color || TEXT_COLOR_DEFAULT;
           ctx.textAlign = (el.textAlign as CanvasTextAlign) || "center";
           ctx.textBaseline = "middle";
-          ctx.direction = "rtl";
+          // #5 — كشف تلقائي للاتجاه بدلاً من RTL الثابت الذي يكسر اللاتيني
+          const _isArabicBlock = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(rawText.slice(0, 30));
+          ctx.direction = ((el as unknown as Record<string, unknown>).direction as CanvasDirection | undefined)
+            ?? (_isArabicBlock ? "rtl" : "ltr");
+          // #2 — letterSpacing: متاح في Chromium/Electron (بيئة Wails)
+          if (el.letterSpacing) {
+            (ctx as unknown as Record<string, unknown>).letterSpacing = `${el.letterSpacing}px`;
+          }
 
           if (el.shadowColor && ((el.shadowBlur ?? 0) > 0 || (el.shadowOpacity ?? 0) > 0)) {
             ctx.shadowColor = el.shadowColor;

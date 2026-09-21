@@ -83,7 +83,11 @@ export function calculatePrintCutLines(params: CalculateCutLinesParams): CutLine
       const block = computeBlockPosition(i, grid);
 
       for (const slot of slots) {
-        if (!slot.imageSrc && (slot.w <= 0 || slot.h <= 0)) continue;
+        // الحارس كان `!slot.imageSrc && (w<=0 || h<=0)` — أي ميت عملياً: الخلية
+        // الفارغة بلا صورة وبأبعاد صحيحة كانت تمر دائماً (وهو المطلوب، لأن خطوط
+        // القص تخص الشبكة لا الصور)، بينما خلية بأبعاد صفرية ومعها صورة كانت
+        // تُحسب فتشوّه مواضع الخطوط. الشرط الصحيح: تجاهل الأبعاد غير الصالحة فقط.
+        if (slot.w <= 0 || slot.h <= 0) continue;
         const rect = computeSlotRectMM(
           block,
           { x: slot.x, y: slot.y, w: slot.w, h: slot.h },

@@ -404,6 +404,28 @@
     background: var(--muted-foreground);
   }
 
+  /* إزالة أسهم الحقول الرقمية الأصلية (Spin Buttons) — تظهر بشكل بدائي في
+     WebView2 وتكسر تناسق الحقول المصممة؛ الرفع/الخفض يتم بلوحة المفاتيح
+     أو أزرار الحقل المصممة خصيصاً. */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  /* الأرقام الجدولية لكل القراءات الرقمية الدقيقة (أبعاد، زوم، إحداثيات)
+     — تعمل مع أي عائلة خط تدعم الميزة دون خطوط مونو أجنبية. للحاويات النصية
+     العادية استخدم أداة Tailwind `tabular-nums` مباشرة. */
+  input[type="number"],
+  input[inputmode="numeric"],
+  input[inputmode="decimal"] {
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Fluent 2: احترام وضع تقليل الحركة (prefers-reduced-motion) */
   @media (prefers-reduced-motion: reduce) {
     *,

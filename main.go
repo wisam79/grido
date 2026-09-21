@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -275,6 +276,22 @@ func main() {
 func createAssetHandler(app *App) http.Handler {
 	fileServer := application.AssetFileServerFS(assets)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 🛡️ حماية مسارات /api المحلية من CSRF وإعادة ربط DNS:
+		// هذه المسارات تُنفّذ كتابة ملفات (Media/Exports) وقد تُظهر حوارات نظام،
+		// وكانت تقبل أي طلب بلا فحص أصل — أي صفحة ويب في متصفح المستخدم تستطيع
+		// إرسال POST متجاوز للأصل (بدون preflight) وتستفيد من امتيازات التطبيق.
+		// نسمح فقط بطلب بلا Origin (أدوات محلية/اختبارات) أو بأصل يطابق مضيف الخدمة.
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			if origin := strings.TrimSpace(r.Header.Get("Origin")); origin != "" {
+				parsedOrigin, parseErr := url.Parse(origin)
+				if parseErr != nil || !strings.EqualFold(parsedOrigin.Host, r.Host) {
+					slog.Warn("Blocked cross-origin API request", "path", r.URL.Path, "origin", origin)
+					http.Error(w, "Forbidden: cross-origin API access", http.StatusForbidden)
+					return
+				}
+			}
+		}
+
 		if r.Method == http.MethodPost && r.URL.Path == "/api/apply-mask" {
 			src := r.URL.Query().Get("src")
 			wStr := r.URL.Query().Get("w")

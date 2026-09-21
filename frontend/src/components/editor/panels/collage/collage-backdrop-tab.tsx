@@ -9,7 +9,7 @@ import {
   FluentSettingRow,
   FluentSliderField,
 } from "@/components/ui/blocks";
-import { PopoverColorPicker } from "@/components/editor/properties/shared-controls";
+import { PopoverColorPicker, StudioCanvasColorDeck } from "@/components/editor/properties/shared-controls";
 
 /* ═══════════════════════════════════════════════════════════════
    خلفية وحدود الشبكة — لون ورقة الطباعة، المسافات بين الخانات،
@@ -41,6 +41,10 @@ export function CollageBackdropTab() {
   const {
     backgroundColor,
     setBackgroundColor,
+    backgroundGradientColor2,
+    setBackgroundGradientColor2,
+    backgroundGradientAngle,
+    setBackgroundGradientAngle,
     collageGap,
     setCollageGap,
     collageMargin,
@@ -55,6 +59,10 @@ export function CollageBackdropTab() {
     useShallow((state) => ({
       backgroundColor: state.backgroundColor,
       setBackgroundColor: state.setBackgroundColor,
+      backgroundGradientColor2: state.backgroundGradientColor2,
+      setBackgroundGradientColor2: state.setBackgroundGradientColor2,
+      backgroundGradientAngle: state.backgroundGradientAngle,
+      setBackgroundGradientAngle: state.setBackgroundGradientAngle,
       collageGap: state.collageGap,
       setCollageGap: state.setCollageGap,
       collageMargin: state.collageMargin,
@@ -83,6 +91,16 @@ export function CollageBackdropTab() {
         subtitle={backgroundColor.toUpperCase()}
         collapsible
       >
+        {/* 🎨 تدرج الخلفية: نفس لوحة الاستوديو مع قسم التدرج */}
+        <StudioCanvasColorDeck
+          color={backgroundColor}
+          onChange={setBackgroundColor}
+          gradientColor2={backgroundGradientColor2}
+          onChangeGradientColor2={setBackgroundGradientColor2}
+          gradientAngle={backgroundGradientAngle}
+          onChangeGradientAngle={setBackgroundGradientAngle}
+        />
+
         <div className="grid grid-cols-8 gap-1">
           {PAPER_SWATCHES.map((swatch) => {
             const isActive = backgroundColor.toLowerCase() === swatch.color.toLowerCase();

@@ -43,6 +43,8 @@ export interface SingleCompositionInput {
   canvasWidthMM: number;
   canvasHeightMM: number;
   backgroundColor: string;
+  /** لون نهاية تدرج الخلفية — وجوده يجعل المسار السريع غير مؤهل (Go يرسم ألواناً مصمتة فقط) */
+  backgroundGradientColor2?: string | null;
 }
 
 export interface SingleCompositionResult {
@@ -75,6 +77,11 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
 
   if (typeof backgroundColor !== "string" || !/^#[0-9a-fA-F]{6}$/.test(backgroundColor)) {
     return fail("خلفية الكانفاس ليست لوناً صلباً");
+  }
+  // تدرج الخلفية يُلتقط بدقة عبر مسار التقاط Konva — المسار السريع في Go
+  // يرسم خلفية مصمتة فقط فلا يجوز تمرير التدرج إليه
+  if (input.backgroundGradientColor2) {
+    return fail("خلفية الكانفاس متدرجة (المسار السريع يدعم الألوان المصمتة فقط)");
   }
 
   const visible = elements.filter((el) => el.visible !== false);

@@ -13,12 +13,20 @@ export interface CoreSlice {
   canvasWidth: number;
   canvasHeight: number;
   backgroundColor: string;
+  /** لون نهاية تدرج خلفية الورقة — undefined يعني تعبئة مصمتة (لون واحد فقط) */
+  backgroundGradientColor2?: string | null;
+  /** زاوية التدرج الخطي بالدرجات (0° = يسار→يمين، مع عقارب الساعة) */
+  backgroundGradientAngle: number;
   lastEditedImage: string | null;
   lastEditedImageAspect: number | null;
 
   setMode: (mode: EditorMode) => void;
   setCanvasSize: (w: number, h: number) => void;
   setBackgroundColor: (c: string) => void;
+  /** تعيين لون نهاية تدرج الخلفية — null يزيل التدرج ويعيد التعبئة المصمتة */
+  setBackgroundGradientColor2: (c: string | null) => void;
+  /** تعيين زاوية تدرج الخلفية (0-360) */
+  setBackgroundGradientAngle: (deg: number) => void;
   setLastEditedImage: (src: string | null) => void;
   setLastEditedImageAspect: (aspect: number | null) => void;
   reset: () => void;
@@ -33,6 +41,8 @@ export const DEFAULT_CORE_STATE = {
   canvasWidth: 2480,
   canvasHeight: 3508,
   backgroundColor: "#FFFFFF",
+  backgroundGradientColor2: null as string | null,
+  backgroundGradientAngle: 135,
   lastEditedImage: null as string | null,
   lastEditedImageAspect: null as number | null,
   canvasZoom: 1,
@@ -259,6 +269,13 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
   // الدفع يتم عند الإغلاق (PopoverColorPicker) أو بتأجيل من ColorWheelPicker المباشر (إصلاح Bug#2)
   setBackgroundColor: (c) => { set({ backgroundColor: c }); },
 
+  // نفس سياسة اللون الأساسي: بلا pushHistory أثناء السحب الحي، والدفع عند الإغلاق/التغيير من الم_picker
+  setBackgroundGradientColor2: (c) => { set({ backgroundGradientColor2: c }); },
+  setBackgroundGradientAngle: (deg) => {
+    const angle = ((Math.round(deg) % 360) + 360) % 360;
+    set({ backgroundGradientAngle: angle });
+  },
+
   setLastEditedImage: (src) => {
     if (src) invalidateImageCache(src);
     set({ lastEditedImage: src });
@@ -276,6 +293,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       canvasWidth: 2480,
       canvasHeight: 3508,
       backgroundColor: "#FFFFFF",
+      backgroundGradientColor2: null,
+      backgroundGradientAngle: 135,
       lastEditedImage: null,
       lastEditedImageAspect: null,
       clipboardElements: [],
@@ -411,6 +430,19 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       canvasWidth: validWidth,
       canvasHeight: validHeight,
       backgroundColor: project.backgroundColor || "#FFFFFF",
+      backgroundGradientColor2:
+        typeof project.backgroundGradientColor2 === "string" && project.backgroundGradientColor2.length > 0
+          ? project.backgroundGradientColor2
+          : null,
+      // 🎨 الزاوية تُقرأ فقط مع وجود لون ثانٍ: المشاريع القديمة/غير المتدرجة تحمل
+      // 0 في هذا الحقل (وهو زاوية صالحة، فلا يمكن تمييزها عن «محفوظة 0°) —
+      // فنُبقي 135 الافتراضي حتى لا يبدأ التدرج بزاوية أفقية غير مقصودة.
+      backgroundGradientAngle:
+        typeof project.backgroundGradientColor2 === "string" && project.backgroundGradientColor2.length > 0
+          ? (typeof project.backgroundGradientAngle === "number" && isFinite(project.backgroundGradientAngle)
+              ? ((Math.round(project.backgroundGradientAngle) % 360) + 360) % 360
+              : 135)
+          : 135,
       lastEditedImage: null,
       lastEditedImageAspect: null,
       clipboardElements: [],

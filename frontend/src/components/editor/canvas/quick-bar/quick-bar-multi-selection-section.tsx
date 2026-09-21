@@ -38,8 +38,6 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
       {/* التوزيع المتساوي (عند تحديد 3 عناصر أو أكثر) */}
       {selectedIds.length >= 3 && (
         <>
-          <Separator orientation="vertical" className="h-4 bg-border/40" />
-
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

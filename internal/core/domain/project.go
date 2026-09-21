@@ -11,6 +11,9 @@ type Project struct {
 	CanvasWidth         int       `json:"canvasWidth"`
 	CanvasHeight        int       `json:"canvasHeight"`
 	BackgroundColor     string    `json:"backgroundColor"`
+	// تدرج خلفية الورقة: لون النهاية (فراغ = تعبئة مصمتة) والزاوية بالدرجات.
+	BackgroundGradientColor2 string `json:"backgroundGradientColor2"`
+	BackgroundGradientAngle  int    `json:"backgroundGradientAngle"`
 	Elements            JSONText  `gorm:"type:text" json:"elements"` // JSON string representation of elements
 	Slots               JSONText  `gorm:"type:text" json:"slots"`    // JSON string representation of slots
 	Template            JSONText  `gorm:"type:text" json:"template"` // JSON string

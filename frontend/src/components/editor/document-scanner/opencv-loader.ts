@@ -122,9 +122,14 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
       if (targetObj) {
         await new Promise<void>((resolve, reject) => {
           let settled = false;
+          let probeActive = true; // #8 — للإيقاف الفوري للحلقة
+          let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
           const finish = () => {
             if (settled) return;
             settled = true;
+            probeActive = false;
+            if (timeoutHandle !== null) clearTimeout(timeoutHandle); // #8 — إلغاء المؤقت
             resolve();
           };
           if (typeof targetObj === "object") {
@@ -135,7 +140,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
             gModule.onRuntimeInitialized = finish;
           }
           const probe = () => {
-            if (settled) return;
+            if (!probeActive) return; // #8 — يوقف الحلقة بعد settled أو timeout
             const gCv = getGlobal().cv || targetObj;
             if (hasMatConstructor(gCv)) {
               cvRuntime = gCv;
@@ -145,7 +150,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
             setTimeout(probe, 50);
           };
           probe();
-          setTimeout(() => {
+          timeoutHandle = setTimeout(() => {
             if (!settled) reject(new Error("OpenCV WASM init timeout"));
           }, LOAD_TIMEOUT_MS);
         });

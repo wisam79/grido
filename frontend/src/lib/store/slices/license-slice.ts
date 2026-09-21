@@ -87,7 +87,8 @@ async function loadAiLogs(): Promise<AiUsageRecord[]> {
       const parsed = JSON.parse(legacy);
       const migrated = Array.isArray(parsed) ? parsed : DEFAULT_AI_LOGS;
       if (migrated.length > 0) {
-        void persistAiLogs(migrated);
+        // #17 — انتظار اكتمال الحفظ قبل مسح localStorage لمنع فقدان السجلات عند الإقلاع المبكر
+        await persistAiLogs(migrated);
       }
       localStorage.removeItem(AI_LOGS_STORAGE_KEY);
       return migrated;
@@ -301,7 +302,8 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     } catch (err) {
       console.error("Failed to execute backend Logout:", err);
     } finally {
-      set({ user: null, licenseLoading: false });
+      // #18 — مسح سجلات AI من الذاكرة عند الخروج لمنع تسريبها للجلسة التالية
+      set({ user: null, licenseLoading: false, aiUsageLogs: [] });
     }
   },
 

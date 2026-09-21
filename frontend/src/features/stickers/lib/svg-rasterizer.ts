@@ -20,16 +20,19 @@ export function escapeXml(unsafe: string): string {
 async function ensureFontsReady(fontFamilies?: string[]): Promise<void> {
   if (typeof document === "undefined" || !document.fonts) return;
 
-  const loads = (fontFamilies ?? [])
-    .map((raw) => {
-      const clean = raw.split(",")[0].trim().replace(/['"]/g, "");
-      if (!clean || ["sans-serif", "serif", "cursive", "monospace"].includes(clean.toLowerCase())) {
-        return null;
-      }
-      // نطلب أثقل وزن مستخدم في الملصقات — الصف السفلي يُحمّل ضمنياً عند اللزوم
-      return document.fonts.load(`900 64px "${clean}"`, "أبجد 123 ABC").catch(() => null);
-    })
-    .filter(Boolean);
+  // #10 — تحميل أوزان متعددة (400, 700, 900) بدلاً من 900 فقط
+  // الملصقات تستخدم أوزاناً مختلفة — بيئة <img src=SVG> لا تنتظر WebFonts
+  const WEIGHTS_TO_LOAD = [400, 700, 900];
+
+  const loads = (fontFamilies ?? []).flatMap((raw) => {
+    const clean = raw.split(",")[0].trim().replace(/['"]/g, "");
+    if (!clean || ["sans-serif", "serif", "cursive", "monospace"].includes(clean.toLowerCase())) {
+      return [];
+    }
+    return WEIGHTS_TO_LOAD.map((w) =>
+      document.fonts.load(`${w} 64px "${clean}"`, "أبجد 123 ABC").catch(() => null)
+    );
+  }).filter(Boolean);
 
   await Promise.all(loads);
   await document.fonts.ready;

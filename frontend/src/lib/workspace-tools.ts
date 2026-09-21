@@ -3,21 +3,21 @@ import type { WorkflowMode } from "@/lib/store/slices/workflow-slice";
 import type { EditorMode } from "@/lib/store/types";
 import {
   Stack,
-  Stamp,
+  Sticker,
   Shapes,
   TextT,
   FrameCorners,
   GridFour,
   SquaresFour,
   MagicWand,
-  Scissors,
+  Ruler,
   Images,
-  PaintBucket,
-  ArrowsDownUp,
+  PaintRoller,
+  Shuffle,
   TextAa,
-  Palette,
+  Swatches,
   GridNine,
-  Star,
+  BookmarkSimple,
 } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
 import {
@@ -108,7 +108,7 @@ export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
     title: "الورق والقص",
     subtitle: "النزيف وعلامات القص والنسخ",
     group: "جاهزية الطباعة",
-    icon: Scissors,
+    icon: Ruler,
     testId: "rail-collage-paper",
   },
   {
@@ -126,7 +126,7 @@ export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
     title: "خلفية وحدود الشبكة",
     subtitle: "اللون والمسافات والإطار",
     group: "تنسيق الخانات",
-    icon: PaintBucket,
+    icon: PaintRoller,
     testId: "rail-collage-backdrop",
   },
   {
@@ -135,7 +135,7 @@ export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
     title: "فرز وترتيب الخانات",
     subtitle: "قلب وخلط وتوزيع الصور",
     group: "تنسيق الخانات",
-    icon: ArrowsDownUp,
+    icon: Shuffle,
     testId: "rail-collage-arrange",
   },
 ];
@@ -157,7 +157,7 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     title: "الملصقات والشارات",
     subtitle: "أختام وشارات جاهزة",
     group: "بناء التصميم",
-    icon: Stamp,
+    icon: Sticker,
     testId: "rail-studio-stickers",
   },
   {
@@ -202,7 +202,7 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     title: "الألوان والهوية",
     subtitle: "بالِتة وألوان مستخرجة",
     group: "المقاسات والهوية",
-    icon: Palette,
+    icon: Swatches,
     testId: "rail-studio-palette",
   },
   {
@@ -220,7 +220,7 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     title: "المفضلة وآخر استخدام",
     subtitle: "وصول سريع لما تستخدمه",
     group: "الوصول السريع",
-    icon: Star,
+    icon: BookmarkSimple,
     testId: "rail-studio-library",
   },
 ];

@@ -85,12 +85,23 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   const loadTemplates = useCallback(async () => {
     try {
       const templates = await GetCustomTemplates();
-      const mapped = (templates || []).map((t) => ({
-        id: "collage-user-" + t.id,
-        name: t.name,
-        slots: t.slots,
-        cells: typeof t.cells === "string" ? JSON.parse(t.cells) : t.cells,
-      }));
+      const mapped = (templates || []).flatMap((t) => {
+        // #11 — try/catch مستقل لكل عنصر لمنع قالب تالف من إسقاط القائمة كلها
+        let parsedCells: NormalizedCell[] | null = null;
+        try {
+          const raw = typeof t.cells === "string" ? JSON.parse(t.cells) : t.cells;
+          if (Array.isArray(raw)) parsedCells = raw as NormalizedCell[];
+        } catch {
+          console.warn(`Template "${t.name}" has corrupt cells JSON — excluded from list`);
+        }
+        if (parsedCells === null) return []; // استبعاد القوالب ذات البيانات التالفة
+        return [{
+          id: "collage-user-" + t.id,
+          name: t.name,
+          slots: t.slots,
+          cells: parsedCells,
+        }];
+      });
       setSavedTemplates(mapped);
     } catch (e) {
       console.error("Failed to load user templates", e);

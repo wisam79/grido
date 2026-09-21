@@ -7,6 +7,21 @@ import { deserializeProjectFile, serializeEditorState } from "@/lib/io/project-s
 import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from "../../wailsjs/go/main/App";
 import { toast } from "sonner";
 
+/**
+ * هل مساحة العمل ما زالت كما وُلدت (لا عناصر، لا صور خانات، لا مشروع محمّل،
+ * لا خطوة تراجع)؟ يُستخدم لمنع مسودة قديمة من طمس عمل بدأه المستخدم.
+ */
+function isPristineWorkspace(): boolean {
+  const s = useEditorStore.getState();
+  return (
+    s.projectId === null &&
+    s.elements.length === 0 &&
+    (s.slots?.every((slot) => !slot.imageSrc) ?? true) &&
+    s.historyIndex === 0 &&
+    s.history.length <= 1
+  );
+}
+
 export function useAutoSave() {
   // 1. استرجاع مسودة المشروع التلقائية عند تشغيل التطبيق
   useEffect(() => {
@@ -16,6 +31,16 @@ export function useAutoSave() {
         if (saved) {
           try {
             const parsed = deserializeProjectFile(JSON.parse(saved));
+            // 
+            // 🛡️ حارس قِدم: التحميل غير متزامن — إن كان المستخدم قد بدأ التحرير
+            // أو فتح مشروعاً/أعاد الضبط قبل وصول المسودة، فلا يحق لنا استبدال
+            // حالته الحالية (كانت المسودة تطمس العمل الجديد بصمت).
+            if (!isPristineWorkspace()) {
+              toast.info("تم تجاهل مسودة سابقة لأن العمل بدأ بالفعل", {
+                action: { label: "حذف المسودة", onClick: () => { ClearAutoSave(); } },
+              });
+              return;
+            }
             useEditorStore.getState().loadProject(parsed);
             toast.info("تم استعادة مسودة العمل السابقة تلقائياً", {
               action: {
@@ -107,12 +132,15 @@ export function useAutoSave() {
 
     const getDeps = (state: EditorStoreSnapshot) => [
       state.elements, state.slots, state.mode, state.canvasWidth, state.canvasHeight, state.backgroundColor,
+      // 🎨 التدرج يُسلسل مع المشروع — بدون مراقبته لا تُحفظ تغييرات التدرج وحده
+      state.backgroundGradientColor2, state.backgroundGradientAngle,
       state.template, state.collageTemplate, state.printSettings,
       state.showGrid, state.gridSize, state.gridColor, state.gridOpacity, state.gridSubdivisions,
       state.gridType, state.snapToGrid, // كانتا غير مراقبتين رغم أنهما تُسلسلان مع المشروع
       state.showColumns, state.columnsCount, state.columnsColor, state.columnsMargin, state.columnsGutter,
       state.collageGap, state.collageMargin, state.collageRadius, state.collageStrokeWidth, state.collageStrokeColor,
-      state.collageShowCutLines
+      // كانتا غير مراقبتين رغم أنهما تُسلسلان مع المشروع (نفس صنف إصلاح gridType/snapToGrid)
+      state.collageShowCutLines, state.collageShowEndCutLine
       // ملاحظة: showRuler تفضيل واجهة وليست بيانات مشروع (لا تُسلسل) — لذا استُبعدت من المراقبة
     ];
 
