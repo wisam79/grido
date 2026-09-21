@@ -64,9 +64,9 @@ func main() {
 	backupSvc := service.NewBackupService(projectRepo, licenseRepo)
 	backupHandler := handlers.NewBackupHandler(backupSvc)
 
-	// استعادة أبعاد وموقع النافذة من الجلسة السابقة
-	initialWidth := 1024
-	initialHeight := 720
+	// استعادة أبعاد وموقع النافذة من الجلسة السابقة (الأبعاد الافتراضية المدمجة 960×640)
+	initialWidth := 960
+	initialHeight := 640
 	initialX := 0
 	initialY := 0
 	hasSavedPos := false
@@ -74,8 +74,14 @@ func main() {
 
 	if state, err := loadWindowState(); err == nil {
 		if state.Width > 0 && state.Height > 0 {
-			initialWidth = state.Width
-			initialHeight = state.Height
+			// إذا كانت القيمة المحفوظة هي القيمة القديمة الكبيرة 1024×720، يتم تحديثها للقياس المدمج الجديد
+			if state.Width == 1024 && state.Height == 720 {
+				initialWidth = 960
+				initialHeight = 640
+			} else {
+				initialWidth = state.Width
+				initialHeight = state.Height
+			}
 		}
 		const maxScreenSize = 50000
 		if state.X > -maxScreenSize && state.X < maxScreenSize &&
@@ -183,8 +189,8 @@ func main() {
 		Title:              "Grido Studio",
 		Width:              initialWidth,
 		Height:             initialHeight,
-		MinWidth:           900,
-		MinHeight:          600,
+		MinWidth:           840,
+		MinHeight:          560,
 		Frameless:          true,
 		Hidden:             false,
 		ZoomControlEnabled: false,
