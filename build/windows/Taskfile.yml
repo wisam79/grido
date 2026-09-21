@@ -57,7 +57,7 @@ tasks:
       - cmd: rm -f *.syso
         platforms: [linux, darwin]
     vars:
-      APP_VERSION: '{{.APP_VERSION | default "v1.4.0"}}'
+      APP_VERSION: '{{.APP_VERSION | default "v1.4.1"}}'
       SUPABASE_URL: '{{.SUPABASE_URL | default ""}}'
       SUPABASE_ANON_KEY: '{{.SUPABASE_ANON_KEY | default ""}}'
       MODAL_AI_KEY: '{{.MODAL_AI_KEY | default .GRIDO_AI_SECRET_KEY | default ""}}'
