@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v1.5.0] - 2026-09-22
+
+### Added (Icon-Driven UI Consistency)
+
+- **طبقة الأيقونات المركزية Fluent:** استبدال حزمة `@phosphor-icons/react` بطبقة أيقونات داخلية موحدة `@/components/ui/icons` مبنية فوق `@fluentui/react-icons` مع مزود `FluentIconProvider` و `weight="regular"` (ملف `icons.tsx` مولّد آلياً) — إزالة استيرادات Phosphor من كل الواجهة.
+- **تقسيم شريط الأدوات موضوعياً:** بدل `toolbar-items.tsx` الضخم، مكوّنات متخصصة (`toolbar-add-text.tsx`, `toolbar-add-shapes.tsx`, `toolbar-add-tools.tsx`, `toolbar-ai-tools.tsx`, `toolbar-image-filters.tsx`, `toolbar-history-tools.tsx`, `toolbar-selection-tools.tsx`).
+
+### Fixed
+
+- **توحيد سلوك الواجهة:** تنسيق متسق للـ Tooltips، التكبير (Zoom)، وحدات القياس، وتحميل الصور عبر الأداة والكانفاس.
+- **اختبارات المتجر:** كسر دورة الاستيراد في الـ Store وتحديث توقع الحجم الافتراضي للشبكة.
+
+### Build & Tooling
+
+- **مزامنة أمثلة Wails v3 مع نسخة الـ SDK:** تحديث التوثيقات والمهارات لتطابق تواقيع `v3.0.0-beta.23` الفعلية (`SingleInstanceOptions`, `Event.Emit`, `WindowRuntimeReady`, `Screen.GetAll`, `Clipboard.Text/SetText`, `SendNotification/OnNotificationResponse`).
+- **السكريبت الحاكم للمثبت NSIS:** اعتماد `build/windows/installer/project.nsi` كمصدر وحيد للمثبت، `OutFile "..\nsis\GridoStudio-installer.exe"` المطابق لمسار التوقيع والنشر، وبيانات الإصدار (`INFO_PRODUCTVERSION`) تُعرَّف فيه صراحة.
+
+---
+
 ## [v1.4.1] - 2026-09-21
 
 ### Fixed & Improved (Quality Audit & Window Compactness)

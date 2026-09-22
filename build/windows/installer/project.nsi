@@ -8,6 +8,10 @@
 !define INFO_COMPANYNAME "Grido Studio"
 !define PRODUCT_EXECUTABLE "GridoStudio.exe"
 
+# Product metadata (source of truth — must mirror the git tag / build.ps1)
+!define INFO_PROJECTNAME "GridoStudio"
+!define INFO_PRODUCTVERSION "1.5.0"
+
 !include "wails_tools.nsh"
 
 # Version information
