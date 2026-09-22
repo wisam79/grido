@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
+import { toErrorMessage } from "@/lib/wails-error";
 
 /**
  * 🧭 منطق مصادقة الحساب: دخول/تسجيل/OTP/استعادة كلمة المرور/Google OAuth،
@@ -56,7 +57,7 @@ export function useAuthForms(onAuthenticated: () => void) {
       toast.success("تم تسجيل الدخول بنجاح!");
       onAuthenticated();
     } catch (err) {
-      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشلت عملية تسجيل الدخول عبر Google.");
+      const errMsg = toErrorMessage(err, "فشلت عملية تسجيل الدخول عبر Google.");
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -74,7 +75,7 @@ export function useAuthForms(onAuthenticated: () => void) {
       toast.success("تم إعادة إرسال كود التحقق بنجاح إلى بريدك الإلكتروني.");
       setResendCooldown(60);
     } catch (err) {
-      const errMsg = typeof err === "string" ? err : ((err as Error)?.message || "فشل إعادة إرسال رمز التحقق.");
+      const errMsg = toErrorMessage(err, "فشل إعادة إرسال رمز التحقق.");
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -113,7 +114,7 @@ export function useAuthForms(onAuthenticated: () => void) {
         }
       }
     } catch (err) {
-      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشلت العملية، تحقق من البيانات المدخلة.");
+      const errMsg = toErrorMessage(err, "فشلت العملية، تحقق من البيانات المدخلة.");
 
       if (errMsg.includes("تأكيد") || errMsg.includes("Email not confirmed") || errMsg.includes("pending_otp")) {
         setShowOtp(true);
@@ -149,7 +150,7 @@ export function useAuthForms(onAuthenticated: () => void) {
       setShowRecoveryOtp(true);
       toast.success("تم إرسال كود استعادة كلمة المرور (OTP) إلى بريدك الإلكتروني.");
     } catch (err) {
-      const errMsg = typeof err === "string" ? err : ((err as Error)?.message || "فشل إرسال كود استعادة كلمة المرور.");
+      const errMsg = toErrorMessage(err, "فشل إرسال كود استعادة كلمة المرور.");
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -179,7 +180,7 @@ export function useAuthForms(onAuthenticated: () => void) {
       setNewPassword("");
       onAuthenticated();
     } catch (err) {
-      const errMsg = typeof err === "string" ? err : ((err as Error)?.message || "فشل تعيين كلمة المرور الجديدة. تحقق من كود الاستعادة والبيانات.");
+      const errMsg = toErrorMessage(err, "فشل تعيين كلمة المرور الجديدة. تحقق من كود الاستعادة والبيانات.");
       setError(errMsg);
       toast.error(errMsg);
     } finally {

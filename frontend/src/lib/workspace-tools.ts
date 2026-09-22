@@ -20,13 +20,8 @@ import {
   BookmarkSimple,
 } from "@phosphor-icons/react";
 import { useEditorStore } from "@/lib/editor-store";
-import {
-  ZOOM_DEFAULT,
-  canZoomIn,
-  canZoomOut,
-  isDefaultZoom,
-  stepZoom,
-} from "@/lib/canvas/zoom";
+import { canZoomIn, canZoomOut, isDefaultZoom } from "@/lib/canvas/zoom";
+import { fitZoomStore, resetZoomStore, zoomInStore, zoomOutStore } from "@/hooks/use-canvas-zoom";
 
 /* ═══════════════════════════════════════════════════════════════
    سجل أدوات الشريط الجانبي — مصدر حقيقة واحد للأوضاع الثلاثة:
@@ -579,11 +574,10 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
     group: "عرض الكانفاس",
     shortcut: "Ctrl++",
     getSnapshot: (input = readStateCommandInput()) => {
-      const { setCanvasZoom } = useEditorStore.getState();
       return {
         subtitle: `الحالي ${percent(input.canvasZoom)}`,
         disabled: !canZoomIn(input.canvasZoom),
-        run: () => setCanvasZoom(stepZoom(input.canvasZoom, 1)),
+        run: zoomInStore,
       };
     },
   },
@@ -593,11 +587,10 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
     group: "عرض الكانفاس",
     shortcut: "Ctrl+-",
     getSnapshot: (input = readStateCommandInput()) => {
-      const { setCanvasZoom } = useEditorStore.getState();
       return {
         subtitle: `الحالي ${percent(input.canvasZoom)}`,
         disabled: !canZoomOut(input.canvasZoom),
-        run: () => setCanvasZoom(stepZoom(input.canvasZoom, -1)),
+        run: zoomOutStore,
       };
     },
   },
@@ -605,16 +598,26 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
     id: "zoom-reset",
     title: "إعادة الضبط إلى 100%",
     group: "عرض الكانفاس",
-    shortcut: "Ctrl+0",
+    shortcut: "Ctrl+1",
     getSnapshot: (input = readStateCommandInput()) => {
-      const { setCanvasZoom } = useEditorStore.getState();
       const isAt100 = isDefaultZoom(input.canvasZoom);
       return {
         subtitle: isAt100 ? "أنت عند 100%" : `الحالي ${percent(input.canvasZoom)}`,
         disabled: isAt100,
-        run: () => setCanvasZoom(ZOOM_DEFAULT),
+        run: resetZoomStore,
       };
     },
+  },
+  {
+    id: "zoom-fit",
+    title: "ملاءمة الورقة للشاشة",
+    group: "عرض الكانفاس",
+    shortcut: "Ctrl+0",
+    getSnapshot: (input = readStateCommandInput()) => ({
+      subtitle: `الحالي ${percent(input.canvasZoom)}`,
+      disabled: false,
+      run: fitZoomStore,
+    }),
   },
 ];
 

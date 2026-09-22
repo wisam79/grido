@@ -74,7 +74,9 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
 
   return (
     <div
-      className="absolute z-50 pointer-events-auto font-cairo"
+      // R7/R10: طبقة التحرير فوق الأدلة (60) ودون القوائم (1000) — مطابقة Konva text-node:
+      // عربي → wordSpacing، لاتيني → letterSpacing، نفس fontFamily لمنع انحراف WYSIWYG.
+      className="absolute z-(--z-canvas-guides) pointer-events-auto font-cairo"
       style={{
         left: `${leftPx}px`,
         top: `${topPx}px`,

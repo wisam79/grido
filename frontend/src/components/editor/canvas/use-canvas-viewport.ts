@@ -116,11 +116,29 @@ export function useCanvasViewport(
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
+    // R6: ملاءمة الورقة للشاشة (Fit) — حدث منفصل عن 100% الحقيقي.
+    const handleFit = () => {
+      const container = containerRef.current;
+      const inner = innerRef.current;
+      if (!container || !inner) return;
+      const currentZoom = useEditorStore.getState().canvasZoom;
+      const baseW = inner.scrollWidth / Math.max(currentZoom, 0.01);
+      const baseH = inner.scrollHeight / Math.max(currentZoom, 0.01);
+      if (!baseW || !baseH) return;
+      const fit = Math.min(
+        (container.clientWidth - 48) / baseW,
+        (container.clientHeight - 48) / baseH
+      );
+      setCanvasZoom(clampZoomRaw(fit));
+    };
+    window.addEventListener("grido:fit-canvas-to-screen", handleFit);
+
     return () => {
       node.removeEventListener("wheel", handleWheel);
       node.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("grido:fit-canvas-to-screen", handleFit);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       if (rafId !== null) cancelAnimationFrame(rafId);

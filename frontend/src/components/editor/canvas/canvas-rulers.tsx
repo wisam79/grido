@@ -77,7 +77,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="flex h-[20px] w-full bg-ruler-surface border-b border-ruler-border z-20 shrink-0 select-none shadow-2xs" dir="ltr">
+    <div className="flex h-[20px] w-full bg-ruler-surface border-b border-ruler-border z-(--z-ruler) shrink-0 select-none shadow-2xs" dir="ltr">
       {/* 🧭 مربع الزاوية القياسي بنمط Figma / Photoshop (Unit & Origin Box) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -85,7 +85,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
             type="button"
             title="انقر لتغيير وحدة القياس أو إدارة الخطوط الإرشادية (Ctrl+R)"
             aria-label="خيارات وحدة قياس المسطرة"
-            className="w-[20px] h-[20px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-30 cursor-pointer transition-all group active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
+            className="w-[20px] h-[20px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-(--z-ruler) cursor-pointer transition-all group active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
           >
             <span className="text-3xs font-bold text-primary font-mono leading-none tracking-tighter uppercase">
               {rulerUnit}

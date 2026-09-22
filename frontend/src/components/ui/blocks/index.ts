@@ -6,3 +6,6 @@ export * from "./fluent-empty-state";
 export * from "./fluent-icon-button";
 export * from "./fluent-modal";
 export * from "./fluent-filter-chips";
+export * from "./fluent-kbd";
+export * from "./fluent-tooltip";
+export * from "./fluent-capsule-button";

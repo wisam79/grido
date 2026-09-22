@@ -7,7 +7,10 @@ import { cn } from "@/lib/utils"
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, defaultValue, value, min = 0, max = 100, dir = "ltr", "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, ...props }, ref) => {
+>(({ className, defaultValue, value, min = 0, max = 100, dir, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, ...props }, ref) => {
+  // R37 + RTL: عدم فرض ltr — يرث اتجاه الواجهة (rtl) تلقائياً.
+  // القيم الرقمية نفسها تبقى LTR عبر tabular-nums في CSS، لكن اتجاه
+  // الحركة (يمين=زيادة) يجب أن يتبع RTL مثل بقية الواجهة.
   const _values = React.useMemo(
     () =>
       Array.isArray(value)

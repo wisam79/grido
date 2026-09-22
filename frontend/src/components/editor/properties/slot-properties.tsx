@@ -21,18 +21,14 @@ import {
   Sun,
   MagnifyingGlassPlus,
 } from "@phosphor-icons/react";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { toast } from "sonner";
 import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { PopoverColorPicker } from "./shared-controls";
-import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
+import { FluentSection, FluentSliderField, FluentTooltip } from "@/components/ui/blocks";
+import { pxToMm } from "@/lib/canvas/units";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import { Switch } from "@/components/ui/switch";
@@ -143,8 +139,8 @@ export const SlotProperties = React.memo(function SlotProperties({
   };
 
   const dpi = printSettings.dpi || 300;
-  const widthMM = Math.round((slot.w * canvasWidth / dpi) * 25.4);
-  const heightMM = Math.round((slot.h * canvasHeight / dpi) * 25.4);
+  const widthMM = Math.round(pxToMm(slot.w * canvasWidth, dpi));
+  const heightMM = Math.round(pxToMm(slot.h * canvasHeight, dpi));
 
   const renderAutoFillToggle = () => (
     <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
@@ -251,82 +247,70 @@ export const SlotProperties = React.memo(function SlotProperties({
         title="تحويل وتدوير"
       >
         <div className="flex items-center gap-1.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
-                  slot.flipX && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
-                )}
-                onClick={() => {
-                  onUpdate(slot.id, { flipX: !slot.flipX });
-                  useEditorStore.getState().pushHistory();
-                }}
-              >
-                <FlipHorizontal className={cn("w-4 h-4", slot.flipX ? "text-primary" : "text-muted-foreground")} weight={slot.flipX ? "fill" : "regular"} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">قلب أفقي</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="قلب أفقي" side="top">
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
+                slot.flipX && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
+              )}
+              onClick={() => {
+                onUpdate(slot.id, { flipX: !slot.flipX });
+                useEditorStore.getState().pushHistory();
+              }}
+            >
+              <FlipHorizontal className={cn("w-4 h-4", slot.flipX ? "text-primary" : "text-muted-foreground")} weight={slot.flipX ? "fill" : "regular"} />
+            </Button>
+          </FluentTooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
-                  slot.flipY && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
-                )}
-                onClick={() => {
-                  onUpdate(slot.id, { flipY: !slot.flipY });
-                  useEditorStore.getState().pushHistory();
-                }}
-              >
-                <FlipVertical className={cn("w-4 h-4", slot.flipY ? "text-primary" : "text-muted-foreground")} weight={slot.flipY ? "fill" : "regular"} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">قلب عمودي</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="قلب عمودي" side="top">
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
+                slot.flipY && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
+              )}
+              onClick={() => {
+                onUpdate(slot.id, { flipY: !slot.flipY });
+                useEditorStore.getState().pushHistory();
+              }}
+            >
+              <FlipVertical className={cn("w-4 h-4", slot.flipY ? "text-primary" : "text-muted-foreground")} weight={slot.flipY ? "fill" : "regular"} />
+            </Button>
+          </FluentTooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent"
-                onClick={() => {
-                  const currentRotation = slot.rotation ?? 0;
-                  const newRotation = (currentRotation + 90) % 360;
-                  onUpdate(slot.id, { rotation: newRotation });
-                  useEditorStore.getState().pushHistory();
-                }}
-              >
-                <ArrowClockwise className="w-4 h-4" weight="regular" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">تدوير 90°</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="تدوير 90°" side="top">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent"
+              onClick={() => {
+                const currentRotation = slot.rotation ?? 0;
+                const newRotation = (currentRotation + 90) % 360;
+                onUpdate(slot.id, { rotation: newRotation });
+                useEditorStore.getState().pushHistory();
+              }}
+            >
+              <ArrowClockwise className="w-4 h-4" weight="regular" />
+            </Button>
+          </FluentTooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!slot.flipX && !slot.flipY && !(slot.rotation ?? 0)}
-                className="h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent disabled:opacity-40"
-                onClick={() => {
-                  onUpdate(slot.id, { flipX: false, flipY: false, rotation: 0 });
-                  useEditorStore.getState().pushHistory();
-                }}
-              >
-                <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">إعادة تعيين الاتجاه</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="إعادة تعيين الاتجاه" side="top">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!slot.flipX && !slot.flipY && !(slot.rotation ?? 0)}
+              className="h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent disabled:opacity-40"
+              onClick={() => {
+                onUpdate(slot.id, { flipX: false, flipY: false, rotation: 0 });
+                useEditorStore.getState().pushHistory();
+              }}
+            >
+              <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
+            </Button>
+          </FluentTooltip>
         </div>
       </FluentSection>
 
@@ -372,102 +356,84 @@ export const SlotProperties = React.memo(function SlotProperties({
       >
         <div className="space-y-2.5">
           <div className="grid grid-cols-4 gap-1.5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
-                  onClick={handleFillRow}
-                >
-                  <Rows className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
-                  <span>الصف</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تعبئة الصف</TooltipContent>
-            </Tooltip>
+            <FluentTooltip content="تعبئة الصف" side="top">
+              <Button
+                variant="outline"
+                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                onClick={handleFillRow}
+              >
+                <Rows className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                <span>الصف</span>
+              </Button>
+            </FluentTooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
-                  onClick={handleFillColumn}
-                >
-                  <Columns className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
-                  <span>العمود</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تعبئة العمود</TooltipContent>
-            </Tooltip>
+            <FluentTooltip content="تعبئة العمود" side="top">
+              <Button
+                variant="outline"
+                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                onClick={handleFillColumn}
+              >
+                <Columns className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                <span>العمود</span>
+              </Button>
+            </FluentTooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
-                  onClick={() => {
-                    if (slot.imageSrc) {
-                      fillEmptySlots(slot.imageSrc, slot.id);
-                    }
-                  }}
-                >
-                  <Sparkle className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
-                  <span>الفارغة</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تعبئة الفارغة</TooltipContent>
-            </Tooltip>
+            <FluentTooltip content="تعبئة الفارغة" side="top">
+              <Button
+                variant="outline"
+                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                onClick={() => {
+                  if (slot.imageSrc) {
+                    fillEmptySlots(slot.imageSrc, slot.id);
+                  }
+                }}
+              >
+                <Sparkle className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                <span>الفارغة</span>
+              </Button>
+            </FluentTooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
-                  onClick={handleFillAll}
-                >
-                  <GridFour className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
-                  <span>الكل</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تعبئة الكل</TooltipContent>
-            </Tooltip>
+            <FluentTooltip content="تعبئة الكل" side="top">
+              <Button
+                variant="outline"
+                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                onClick={handleFillAll}
+              >
+                <GridFour className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
+                <span>الكل</span>
+              </Button>
+            </FluentTooltip>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 flex-1 rounded-md text-xs font-semibold border-border/80 hover:bg-accent gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
-                  onClick={() => {
-                    onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                >
-                  <Crosshair className="w-3.5 h-3.5 text-primary" weight="regular" />
-                  <span>توسيط الصورة</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">تصفير الإزاحة وتوسيط الصورة</TooltipContent>
-            </Tooltip>
+            <FluentTooltip content="تصفير الإزاحة وتوسيط الصورة" side="top">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 flex-1 rounded-md text-xs font-semibold border-border/80 hover:bg-accent gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                onClick={() => {
+                  onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
+                  useEditorStore.getState().pushHistory();
+                }}
+              >
+                <Crosshair className="w-3.5 h-3.5 text-primary" weight="regular" />
+                <span>توسيط الصورة</span>
+              </Button>
+            </FluentTooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-2.5 rounded-md text-xs font-semibold border-border/80 hover:bg-destructive/10 hover:border-destructive/40 text-destructive cursor-pointer"
-                  onClick={() => {
-                    onUpdate(slot.id, { imageSrc: undefined });
-                    useEditorStore.getState().pushHistory();
-                  }}
-                >
-                  <Trash className="w-3.5 h-3.5" weight="regular" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">إفراغ الخلية</TooltipContent>
-            </Tooltip>
+            <FluentTooltip content="إفراغ الخلية" side="top">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2.5 rounded-md text-xs font-semibold border-border/80 hover:bg-destructive/10 hover:border-destructive/40 text-destructive cursor-pointer"
+                onClick={() => {
+                  onUpdate(slot.id, { imageSrc: undefined });
+                  useEditorStore.getState().pushHistory();
+                }}
+              >
+                <Trash className="w-3.5 h-3.5" weight="regular" />
+              </Button>
+            </FluentTooltip>
           </div>
 
           {renderAutoFillToggle()}

@@ -6,7 +6,7 @@ import { getToolsForWorkflow } from "@/lib/workspace-tools";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
-import { ZOOM_DEFAULT, stepZoom } from "@/lib/canvas/zoom";
+import { fitZoomStore, resetZoomStore, zoomInStore, zoomOutStore } from "@/hooks/use-canvas-zoom";
 
 export function useKeyboardShortcuts() {
   // --- Shortcuts via react-hotkeys-hook ---
@@ -248,22 +248,25 @@ export function useKeyboardShortcuts() {
   // Zoom In: Ctrl+= or Ctrl++ or Cmd+= / Cmd++
   useHotkeys("mod+=, mod+plus, mod+numpad_add, mod+shift+=", (e) => {
     e.preventDefault();
-    const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
-    setCanvasZoom(stepZoom(canvasZoom, 1));
+    zoomInStore();
   });
 
   // Zoom Out: Ctrl+- or Ctrl+_ or Cmd+- / Cmd+_
   useHotkeys("mod+-, mod+underscore, mod+numpad_subtract", (e) => {
     e.preventDefault();
-    const { canvasZoom, setCanvasZoom } = useEditorStore.getState();
-    setCanvasZoom(stepZoom(canvasZoom, -1));
+    zoomOutStore();
   });
 
-  // Reset Zoom / Fit to 100%: Ctrl+0 or Cmd+0
+  // Fit to screen: Ctrl+0 or Cmd+0 (منفصل عن 100% الحقيقي)
   useHotkeys("mod+0, mod+numpad_0", (e) => {
     e.preventDefault();
-    const { setCanvasZoom } = useEditorStore.getState();
-    setCanvasZoom(ZOOM_DEFAULT);
+    fitZoomStore();
+  });
+
+  // True 100%: Ctrl+1 or Cmd+1
+  useHotkeys("mod+1, mod+numpad_1", (e) => {
+    e.preventDefault();
+    resetZoomStore();
   });
 
   // --- Arrows (Nudging) & Paste via native events ---

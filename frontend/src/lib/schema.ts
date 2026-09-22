@@ -203,7 +203,7 @@ export const ProjectSchema = z.object({
   
   // إعدادات شبكة الإرشاد
   showGrid: z.boolean().optional().default(false),
-  gridSize: z.number().optional().default(50),
+  gridSize: z.number().optional().default(48),
   gridColor: z.string().optional().default("#000000"),
   gridOpacity: z.number().optional().default(0.15),
   gridSubdivisions: z.number().optional().default(5),

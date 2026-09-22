@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-import { ZOOM_DEFAULT, stepZoom } from "@/lib/canvas/zoom";
+import { fitZoomStore, resetZoomStore, zoomInStore, zoomOutStore } from "@/hooks/use-canvas-zoom";
 import {
   Image,
   Images,
@@ -68,7 +68,6 @@ export function DesktopMenuBar() {
     setShowGrid,
     collageShowCutLines,
     setCollageShowCutLines,
-    setCanvasZoom,
     canvasWidth,
     canvasHeight,
     setCanvasSize,
@@ -100,8 +99,6 @@ export function DesktopMenuBar() {
       setShowGrid: state.setShowGrid,
       collageShowCutLines: state.collageShowCutLines,
       setCollageShowCutLines: state.setCollageShowCutLines,
-      canvasZoom: state.canvasZoom,
-      setCanvasZoom: state.setCanvasZoom,
       canvasWidth: state.canvasWidth,
       canvasHeight: state.canvasHeight,
       setCanvasSize: state.setCanvasSize,
@@ -350,7 +347,7 @@ export function DesktopMenuBar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16">
           <DropdownMenuItem
-            onClick={() => setCanvasZoom((z) => stepZoom(z, 1))}
+            onClick={zoomInStore}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <MagnifyingGlassPlus className="w-4 h-4 text-muted-foreground" />
@@ -358,7 +355,7 @@ export function DesktopMenuBar() {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => setCanvasZoom((z) => stepZoom(z, -1))}
+            onClick={zoomOutStore}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <MagnifyingGlassMinus className="w-4 h-4 text-muted-foreground" />
@@ -366,10 +363,17 @@ export function DesktopMenuBar() {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => setCanvasZoom(ZOOM_DEFAULT)}
+            onClick={resetZoomStore}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
             <span className="font-medium">الحجم الفعلي</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={fitZoomStore}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+          >
+            <span className="font-medium">ملاءمة الورقة للشاشة</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

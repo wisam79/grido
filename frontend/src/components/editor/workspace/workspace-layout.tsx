@@ -73,7 +73,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           data-testid="workspace-panel-templates"
           data-collapsed={!isLeftDrawerOpen}
           className={cn(
-            'h-full border-r border-border bg-sidebar/95 backdrop-blur-xl z-20 overflow-hidden fluent-panel-motion transition-all duration-200',
+            'h-full border-r border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion transition-all duration-200',
             isLeftDrawerOpen
               ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
               : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none'
@@ -88,7 +88,8 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
       {/* 3. منطقة الكانفس الرئيسية (الوسط - مضمونة بأقصى مساحة ممكنة) */}
       <section
         data-testid="workspace-canvas-shell"
-        className="flex-1 flex flex-col min-w-0 bg-background relative z-10 overflow-hidden h-full"
+        data-layout="canvas-center"
+        className="flex-1 flex flex-col min-w-0 bg-background relative z-(--z-canvas-overlay) overflow-hidden h-full"
       >
         {/* حاوية العناصر العائمة داخل الكانفاس: `overflow-hidden` هنا هو ما يمنع
             شريط التحديد السريع من الطفو على الشريط الجانبي/الأدوات */}
@@ -101,7 +102,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
 
         {/* الشريط السفلي المثبت */}
         {footerContent && (
-          <footer className="h-10 shrink-0 border-t border-border bg-sidebar px-3 flex items-center justify-center relative z-20 no-print select-none">
+          <footer className="h-10 shrink-0 border-t border-border bg-sidebar px-3 flex items-center justify-center relative z-(--z-panel) no-print select-none">
             {footerContent}
           </footer>
         )}
@@ -118,7 +119,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           }
           data-collapsed={!isRightPanelOpen}
           className={cn(
-            'h-full border-l border-border bg-sidebar/95 backdrop-blur-xl z-20 overflow-hidden fluent-panel-motion transition-all duration-200',
+            'h-full border-l border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion transition-all duration-200',
             isRightPanelOpen
               ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
               : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none'

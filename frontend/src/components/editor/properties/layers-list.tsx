@@ -25,20 +25,7 @@ import {
   SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-
-function TooltipBtn({ content, children }: { content: string; children: React.ReactElement }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        {React.cloneElement(children, { "aria-label": content })}
-      </TooltipTrigger>
-      <TooltipContent side="top">
-        {content}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
+import { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
 
 interface SortableLayerItemProps {
   el: CanvasElement;
@@ -144,7 +131,7 @@ const SortableLayerItem = React.memo(
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-           <TooltipBtn content={isLocked ? "فك القفل" : "قفل الطبقة"}>
+            <TooltipBtn content={isLocked ? "فك القفل" : "قفل الطبقة"} side="top">
             <Button
               variant="ghost"
               size="icon"
@@ -155,7 +142,7 @@ const SortableLayerItem = React.memo(
               {isLocked ? <LockSimple className="w-3.5 h-3.5" weight="fill" /> : <LockSimpleOpen className="w-3.5 h-3.5" weight="regular" />}
             </Button>
           </TooltipBtn>
-          <TooltipBtn content={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}>
+          <TooltipBtn content={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"} side="top">
             <Button
               variant="ghost"
               size="icon"
@@ -166,7 +153,7 @@ const SortableLayerItem = React.memo(
               {isVisible ? <Eye className="w-3.5 h-3.5" weight="regular" /> : <EyeSlash className="w-3.5 h-3.5" weight="regular" />}
             </Button>
           </TooltipBtn>
-           <TooltipBtn content="تكرار الطبقة">
+           <TooltipBtn content="تكرار الطبقة" side="top">
             <Button
               variant="ghost"
               size="icon"
@@ -177,7 +164,7 @@ const SortableLayerItem = React.memo(
               <Copy className="w-3.5 h-3.5" weight="regular" />
             </Button>
           </TooltipBtn>
-           <TooltipBtn content="حذف الطبقة">
+           <TooltipBtn content="حذف الطبقة" side="top">
             <Button
               variant="ghost"
               size="icon"

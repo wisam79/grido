@@ -3,7 +3,7 @@ import type { FreeformSlot, PhotoPresetType, SlotAlignment } from "../types";
 import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from "../lib/freeform-math";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { FluentTooltip } from "@/components/ui/blocks";
 import {
   ArrowClockwise,
   LockSimple,
@@ -297,91 +297,73 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
       {/* الإجراءات السريعة */}
       <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-border/40">
         <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
-                onClick={onRotateSlot}
-              >
-                <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">تدوير 90°</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="تدوير 90°" side="top">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
+              onClick={onRotateSlot}
+            >
+              <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
+            </Button>
+          </FluentTooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
-                onClick={() => onAlignSlot("top-left")}
-              >
-                <span className="text-micro font-black text-primary leading-none">TL</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">زاوية القص</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="زاوية القص" side="top">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
+              onClick={() => onAlignSlot("top-left")}
+            >
+              <span className="text-micro font-black text-primary leading-none">TL</span>
+            </Button>
+          </FluentTooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
-                onClick={() => onAlignSlot("center-h")}
-              >
-                <AlignCenterHorizontal className="w-3.5 h-3.5" weight="bold" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">توسيط أفقي</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="توسيط أفقي" side="top">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
+              onClick={() => onAlignSlot("center-h")}
+            >
+              <AlignCenterHorizontal className="w-3.5 h-3.5" weight="bold" />
+            </Button>
+          </FluentTooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
-                onClick={() => onAlignSlot("center-v")}
-              >
-                <AlignCenterVertical className="w-3.5 h-3.5" weight="bold" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">توسيط عمودي</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="توسيط عمودي" side="top">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
+              onClick={() => onAlignSlot("center-v")}
+            >
+              <AlignCenterVertical className="w-3.5 h-3.5" weight="bold" />
+            </Button>
+          </FluentTooltip>
         </div>
 
         <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
-                onClick={onDuplicateSlot}
-              >
-                <Copy className="w-3.5 h-3.5" weight="bold" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">تكرار (Ctrl+D)</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="تكرار (Ctrl+D)" side="top">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-md cursor-pointer hover:bg-accent/60"
+              onClick={onDuplicateSlot}
+            >
+              <Copy className="w-3.5 h-3.5" weight="bold" />
+            </Button>
+          </FluentTooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-md text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-                onClick={onRemoveSlot}
-              >
-                <Trash className="w-3.5 h-3.5" weight="bold" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">حذف (Del)</TooltipContent>
-          </Tooltip>
+          <FluentTooltip content="حذف (Del)" side="top">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-md text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+              onClick={onRemoveSlot}
+            >
+              <Trash className="w-3.5 h-3.5" weight="bold" />
+            </Button>
+          </FluentTooltip>
         </div>
       </div>
     </div>

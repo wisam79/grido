@@ -85,7 +85,7 @@ export function migrateProject(raw: unknown): ProjectFileV1 {
     version,
     // Provide sensible defaults for missing fields if necessary
     showGrid: record.showGrid ?? false,
-    gridSize: record.gridSize ?? 50,
+    gridSize: record.gridSize ?? 48,
     collageGap: record.collageGap ?? 0,
     collageMargin: record.collageMargin ?? 0,
     collageRadius: record.collageRadius ?? 0,
@@ -152,7 +152,7 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     
     // The following properties will be mapped safely
     showGrid: dbProj.showGrid ?? false,
-    gridSize: dbProj.gridSize ?? 50,
+    gridSize: dbProj.gridSize ?? 48,
     gridColor: dbProj.gridColor ?? "#000000",
     gridOpacity: dbProj.gridOpacity ?? 0.15,
     gridSubdivisions: dbProj.gridSubdivisions ?? 5,
@@ -196,7 +196,7 @@ export function projectFileToDomainProject(
     collageTemplate: file.collageTemplate ? JSON.stringify(file.collageTemplate) : "",
     printSettings: file.printSettings ? JSON.stringify(file.printSettings) : "",
     showGrid: file.showGrid ?? false,
-    gridSize: file.gridSize ?? 50,
+    gridSize: file.gridSize ?? 48,
     gridColor: file.gridColor ?? "#000000",
     gridOpacity: file.gridOpacity ?? 0.15,
     gridSubdivisions: file.gridSubdivisions ?? 5,

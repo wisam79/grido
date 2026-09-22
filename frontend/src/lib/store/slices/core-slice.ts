@@ -6,6 +6,7 @@ import { DEFAULT_PRINT_SETTINGS } from "./print-slice";
 import { DEFAULT_HISTORY_ENTRY_EXTRAS } from "./history-slice";
 import { invalidateImageCache } from "@/hooks/use-async-image";
 import { uid } from "../../utils";
+import { canvasMm, findPaperByMm } from "../../canvas/units";
 
 export interface CoreSlice {
   projectId: string | null;
@@ -238,11 +239,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     }
 
     const currentDpi = get().printSettings?.dpi || 300;
-    const wMM = Math.round((w / currentDpi) * 25.4);
-    const hMM = Math.round((h / currentDpi) * 25.4);
-    const matchedPaper = PAPER_SIZES.find(
-      (p) => (p.widthMM === wMM && p.heightMM === hMM) || (p.widthMM === hMM && p.heightMM === wMM)
-    );
+    const { wMM, hMM } = canvasMm(w, h, currentDpi);
+    const matchedPaper = findPaperByMm(wMM, hMM, PAPER_SIZES);
     const isLandscape = w > h;
 
     set({
@@ -312,7 +310,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       collageStrokeWidth: 0,
       collageStrokeColor: "#000000",
       showGrid: false,
-      gridSize: 50,
+      gridSize: 48,
       gridColor: "#000000",
       gridOpacity: 0.15,
       gridSubdivisions: 5,
@@ -485,7 +483,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       }],
       historyIndex: 0,
       showGrid: project.showGrid ?? false,
-      gridSize: project.gridSize ?? 50,
+      gridSize: project.gridSize ?? 48,
       gridColor: project.gridColor ?? "#000000",
       gridOpacity: project.gridOpacity ?? 0.15,
       gridSubdivisions: project.gridSubdivisions ?? 5,

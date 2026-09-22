@@ -2,6 +2,7 @@ import { StateCreator } from "zustand";
 import * as LicenseHandler from "../../../../wailsjs/go/handlers/LicenseHandler";
 import * as App from "../../../../wailsjs/go/main/App";
 import { domain } from "../../../../wailsjs/go/models";
+import { toErrorMessage } from "@/lib/wails-error";
 
 export type UserProfile = domain.UserProfile;
 
@@ -190,7 +191,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل إنشاء الحساب");
+      const msg = toErrorMessage(err, "فشل إنشاء الحساب");
       throw new Error(msg);
     }
   },
@@ -204,7 +205,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "رمز التحقق غير صحيح");
+      const msg = toErrorMessage(err, "رمز التحقق غير صحيح");
       throw new Error(msg);
     }
   },
@@ -218,7 +219,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل إعادة إرسال رمز التحقق");
+      const msg = toErrorMessage(err, "فشل إعادة إرسال رمز التحقق");
       throw new Error(msg);
     }
   },
@@ -232,7 +233,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "بريد إلكتروني أو كلمة مرور غير صحيحة");
+      const msg = toErrorMessage(err, "بريد إلكتروني أو كلمة مرور غير صحيحة");
       throw new Error(msg);
     }
   },
@@ -246,7 +247,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل تسجيل الدخول بواسطة Google");
+      const msg = toErrorMessage(err, "فشل تسجيل الدخول بواسطة Google");
       throw new Error(msg);
     }
   },
@@ -260,7 +261,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "مفتاح تفعيل غير صالحة أو مستخدم سابقاً");
+      const msg = toErrorMessage(err, "مفتاح تفعيل غير صالحة أو مستخدم سابقاً");
       throw new Error(msg);
     }
   },
@@ -270,7 +271,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     try {
       await LicenseHandler.ResetPassword(email);
     } catch (err: unknown) {
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل إرسال رابط إعادة تعيين كلمة المرور");
+      const msg = toErrorMessage(err, "فشل إرسال رابط إعادة تعيين كلمة المرور");
       throw new Error(msg);
     } finally {
       set({ licenseLoading: false });
@@ -286,7 +287,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل تعيين كلمة المرور الجديدة");
+      const msg = toErrorMessage(err, "فشل تعيين كلمة المرور الجديدة");
       throw new Error(msg);
     }
   },

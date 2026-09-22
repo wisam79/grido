@@ -2,33 +2,7 @@ import { StateCreator } from "zustand";
 import { CanvasElement, CanvasSlot, PhotoTemplate, CollageTemplate, PrintSettings, HistoryEntry } from "../types";
 import { uid } from "../../utils";
 import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
-
-// قياس نسبة أبعاد الصورة — لاستبدال قُصَّ الصور عند تغيّر الأبعاد
-export function measureImageAspect(src: string): Promise<number> {
-  return new Promise((resolve) => {
-    if (!src) {
-      resolve(NaN);
-      return;
-    }
-    const img = new Image();
-    // ⏱️ مهلة: صورة تتعطّل أو لا تُكمل التحميل كانت تُبقي الوعيد معلّقاً للأبد
-    // (النداءات fire-and-forget) فيبقى الاقتصاص غير مُعاد ضبطه بلا أي مسار فشل
-    const timer = setTimeout(() => {
-      img.onload = null;
-      img.onerror = null;
-      resolve(NaN);
-    }, 10_000);
-    const settle = (value: number) => {
-      clearTimeout(timer);
-      img.onload = null;
-      img.onerror = null;
-      resolve(value);
-    };
-    img.onload = () => settle(img.width > 0 && img.height > 0 ? img.width / img.height : NaN);
-    img.onerror = () => settle(NaN);
-    img.src = src;
-  });
-}
+import { measureImageAspect } from "../../canvas/load-image";
 
 export interface CollageSlice {
   template: PhotoTemplate | null;

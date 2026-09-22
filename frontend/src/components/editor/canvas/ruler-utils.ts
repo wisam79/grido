@@ -1,4 +1,6 @@
-export type RulerUnit = "mm" | "cm" | "in" | "px";
+// النوع القانوني في lib/canvas/units — يُعاد تصديره هنا للتوافقية
+import type { RulerUnit } from "@/lib/canvas/units";
+export type { RulerUnit };
 
 /**
  * حساب التدريج والخطوات التكيفية الذكية لمختلف الوحدات ومستويات الزوم (من 10% إلى 500%+)

@@ -1,7 +1,9 @@
 import { StateCreator } from "zustand";
 import { EditorState } from "../index";
 
-export type RulerUnit = "mm" | "cm" | "in" | "px";
+// النوع القانوني في lib/canvas/units — يُعاد تصديره هنا للتوافقية مع المستوردين الحاليين
+import type { RulerUnit } from "../../canvas/units";
+export type { RulerUnit };
 
 export interface UserGuide {
   id: string;
@@ -60,7 +62,8 @@ export interface GridSlice {
 
 export const DEFAULT_GRID_STATE = {
   showGrid: false,
-  gridSize: 50,
+  // R4: مضاعفات 4px — كان 50 مخالفاً
+  gridSize: 48,
   gridColor: "#000000",
   gridOpacity: 0.15,
   gridSubdivisions: 5,
