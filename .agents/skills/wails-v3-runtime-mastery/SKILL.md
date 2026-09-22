@@ -66,7 +66,7 @@ func main() {
 
 ### 1.2 دورة حياة النافذة في Wails v3
 ```go
-mainWindow.OnWindowEvent(events.Common.WindowCreated, func(_ *application.WindowEvent) {
+mainWindow.OnWindowEvent(events.Common.WindowRuntimeReady, func(_ *application.WindowEvent) {
     // معادل OnDomReady — الواجهة جاهزة
 })
 
@@ -81,17 +81,17 @@ mainWindow.OnWindowEvent(events.Common.WindowClosing, func(e *application.Window
 ### 1.3 قفل المثيل الفردي (Single Instance Lock)
 ```go
 app := application.New(application.Options{
-    SingleInstanceLock: &options.SingleInstanceLock{
-        UniqueId: "grido-studio-single-instance-lock-v1",
-        OnSecondInstanceLaunch: func(data options.SecondInstanceData) {
+    SingleInstance: &application.SingleInstanceOptions{
+        UniqueID: "grido-studio-single-instance-lock-v1",
+        OnSecondInstanceLaunch: func(secondInstanceData application.SecondInstanceData) {
             if win, ok := application.Get().Window.GetByName("main"); ok {
                 win.UnMinimise()
                 win.Show()
                 win.Focus()
             }
-            for _, arg := range data.Args {
+            for _, arg := range secondInstanceData.Args {
                 if isImageFile(arg) {
-                    application.Get().EmitEvent("file-opened", arg)
+                    application.Get().Event.Emit("file-opened", arg)
                 }
             }
         },
@@ -179,11 +179,14 @@ Windows: application.WindowsWindow{
 ### 3.3 السحب والإفلات الأصلي (Native File Drag & Drop)
 ```go
 mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {
-    files := e.Context().DroppedFiles()
-    x, y := e.Context().CursorPosition()
+    ctx := e.Context()
+    if ctx == nil {
+        return
+    }
+    files := ctx.DroppedFiles() // سياق أحداث النافذة لا يوفر إحداثيات المؤشر
     processed, _ := app.mediaSvc.ProcessMultipleOpenedFiles(files)
     mainWindow.EmitEvent("native-file-drop", map[string]any{
-        "x": x, "y": y, "images": processed,
+        "images": processed,
     })
 })
 ```
@@ -192,16 +195,13 @@ mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.W
 ```go
 import "github.com/wailsapp/wails/v3/pkg/services/notifications"
 
-notificationSvc.Send(&notifications.NotificationOptions{
+// استخدم SendNotificationWithActions مع فئة مسجلة مسبقاً (RegisterNotificationCategory)
+// لربط الأزرار، واستقبل النقرات عبر OnNotificationResponse (انظر التنفيذ الفعلي في
+// internal/service/desktop_windows.go و app.go)
+notifSvc.SendNotificationWithActions(notifications.NotificationOptions{
     Title: "اكتمل التصدير",
     Body:  fmt.Sprintf("تم تصدير %d صورة بنجاح.", count),
-    Actions: []notifications.NotificationAction{
-        {Identifier: "OPEN_FOLDER", Label: "فتح مجلد الحفظ"},
-    },
-}, func(response *notifications.NotificationResponse) {
-    if response.ActionIdentifier == "OPEN_FOLDER" {
-        application.Get().Browser.OpenURL(exportDir)
-    }
+    CategoryID: "EXPORT_DONE", // فئة مسجلة عبر RegisterNotificationCategory
 })
 ```
 
@@ -228,12 +228,12 @@ func SetupSystemTray(app *application.App) {
 ### 3.6 الشاشات المتعددة والحافظة
 ```go
 // الشاشات
-screens, _ := application.Get().GetScreens()
+screens := application.Get().Screen.GetAll()
 // screen.Size.Width, screen.Size.Height, screen.IsPrimary
 
 // الحافظة
-text, _ := application.Get().Clipboard().Text()
-application.Get().Clipboard().SetText("نص منسوخ")
+text, _ := application.Get().Clipboard.Text() // تعيد (string, bool)
+application.Get().Clipboard.SetText("نص منسوخ")
 ```
 
 ---

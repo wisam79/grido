@@ -14,7 +14,7 @@ description: دليل تصميم الواجهات وتجربة المستخدم 
 1. **الاعتماد على الأيقونات (Icon-Driven UI):**
    - بدلاً من الجمل الطويلة والعديدة، اعمد دائماً لاستخدام أيقونات بسيطة واضحة وموحدة مع تغليفها بـ `Tooltip` توضيحي عند التمرير.
    - **حزمة الأيقونات الرسمية:**
-     - تطبيق سطح المكتب (`frontend/`): يعتمد حصرياً على **`@phosphor-icons/react`** مع مزود `PhosphorProvider` و `weight="regular"`.
+     - تطبيق سطح المكتب (`frontend/`): يعتمد حصرياً على حزمة الأيقونات الداخلية `@/components/ui/icons` المبنية فوق **`@fluentui/react-icons`** (طبقة مولدة مركزية بأسلوب Phosphor: `createIcon({ R, F })` + مزود `FluentIconProvider` و `weight="regular"`). **حزمة `@phosphor-icons/react` غير مثبتة في المشروع ويُمنع استيرادها**؛ أسماء الأيقونات تُكتب بأسلوب Phosphor (`Check`, `Sparkle`, `MagicWand`...) وتُستورد من `@/components/ui/icons` حصراً. ملف `icons.tsx` مولّد آلياً (`/* GENERATED FILE */`) — لا يُعدَّل يدوياً.
      - موقع الويب ولوحة الإدارة (`admin-web/`): يعتمد على `lucide-react`.
    - مثال (تطبيق سطح المكتب): استخدم أيقونة `<Wand className="w-4 h-4" />` لإزالة الخلفية مع Tooltip "إزالة الخلفية بالذكاء الاصطناعي".
 
@@ -51,8 +51,8 @@ description: دليل تصميم الواجهات وتجربة المستخدم 
 عند بناء أو تعديل أي نافذة حوار (Dialog / Modal) في التطبيق، اتبع الهيكل القياسي التالي (حيث يوضع زر الإغلاق إجبارياً داخل شريط العنوان `DialogHeader`):
 
 ```tsx
-import { Sparkle, Check } from "@phosphor-icons/react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogCloseButton } from "@/components/ui/dialog";
+import { Sparkle, Check } from "@/components/ui/icons";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogCloseButton } from "@/components/ui/dialog"; // الأيقونات من @/components/ui/icons
 
 <Dialog open={open} onOpenChange={onOpenChange}>
   <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[700px] border border-border/60 bg-background/95 backdrop-blur-2xl rounded-2xl shadow-2xl p-5 sm:p-6" dir="rtl">

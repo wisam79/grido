@@ -29,9 +29,9 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
   - [autosave_service.go](file:///c:/projects/grido/internal/service/autosave_service.go): الحفظ الذري الدوري لملفات المشاريع على القرص (`f.Sync()` + `os.Rename`).
   - [updater.go](file:///c:/projects/grido/internal/service/updater.go): التحقق من التحديثات السحابية ومطابقة بصمة SHA-256 والتحديث الصامت.
   - [logger.go](file:///c:/projects/grido/internal/service/logger.go): نظام التدوين والتسجيل الموحد (Lumberjack) وتصدير السجلات.
-  - ملفات إضافية: `project_service.go` (حفظ وتحميل المشاريع)، `backup_service.go` (النسخ الاحتياطي والاستيراد)، `phone_bridge_service.go` (جسر الهاتف)، `image_processor.go` (المعالجة الثنائية)، `http_retry.go` (إعادة المحاولة مع Backoff)، `zip.go` (أرشفة النسخ الاحتياطي).
+  - ملفات إضافية: `project_service.go` (حفظ وتحميل المشاريع)، `backup_service.go` (النسخ الاحتياطي والاستيراد)، `phone_bridge_service.go` (جسر الهاتف)، `image_processor.go` (المعالجة الثنائية)، `http_retry.go` (إعادة المحاولة مع Backoff)، `zip.go` (أرشفة النسخ الاحتياطي)، `desktop_*.go` (خدمات سطح المكتب والإشعارات).
 - **`internal/repository/`**: حفظ البيانات المحلية في ملفات ومربعات SQLite / JSON.
-- **`internal/utils/`**: الأدوات المساعدة: `GetAppDir()`, `OpenBrowser()`, `GetDeviceID()`.
+- **`internal/utils/`**: الأدوات المساعدة: `GetAppDir()` (مع تجاوز `GRIDO_APP_DIR`)، `GetDeviceID()`، وفتح المجلدات عبر `DesktopService.OpenFolder` في `internal/service/desktop_*.go`.
 
 ---
 
@@ -46,19 +46,20 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
     - `slices/history-slice.ts`: التراجع والإعادة (Undo/Redo) بنسخ سطحي محفّز وسقف 30 لقطة.
     - `slices/license-slice.ts`: مصادقة المستخدم، التراخيص، الحصص اليومية، والدخول عبر جوجل.
     - `slices/print-slice.ts`: إعدادات الطباعة، الهوامش، النزيف (Bleed)، وتوزيع النسخ وخطوط القص.
-  - **`print/`**: محركات الطباعة والقص (`print-layout-math.ts`, `cut-lines-utils.ts`, `single-print-composition.ts`).
-  - **`canvas/`**: هندسة الكانفاس والمحاذاة والتصدير (`snap-utils.ts`, `stage-context.tsx`, `render-quality.ts`, `konva-export-utils.ts`).
+    - `slices/workflow-slice.ts`: حالة الوضع التشغيلي (`WorkflowMode`) وشاشة الترحيب — إجمالي الشِرائح ثماني تُدمج في `useEditorStore` (مرة عبر `src/lib/editor-store.ts` الأحدث).
+  - **`print/`**: محركات الطباعة والقص (`print-layout-math.ts`, `cut-lines-utils.ts` + اختباراته، `single-print-composition.ts`).
+  - **`canvas/`**: هندسة الكانفاس والمحاذاة والتصدير (`snap-utils.ts`, `stage-context.tsx`, `render-quality.ts`, `konva-export-utils.ts`, `text-stroke-filter.ts` لفلتر التمدد الشكلي، `zoom.ts`...).
   - **`filters/`**: فلاتر الصور وتأطير الوجوه الذكي (`custom-filters.ts`, `konva-filters.ts`, `face-frame-utils.ts`).
-  - **`io/`**: خدمات الملفات والحافظة والخطوط والمشاريع (`file-dialog-utils.ts`, `clipboard-utils.ts`, `project-serializer.ts`, `fonts.ts`).
-  - **`templates/`**: قوالب الهوية والكولاج وشبكات الطباعة القياسية.
+  - **`io/`**: خدمات الملفات والحافظة والخطوط والمشاريع (`file-dialog-utils.ts`, `clipboard-utils.ts`, `project-serializer.ts`, `fonts.ts`, `exif-utils.ts`, `svg-paths.ts`).
+  - **`templates/`**: قوالب الهوية والكولاج وشبكات الطباعة القياسية (`photo-templates.ts`, `collage-templates.ts`, `text-presets.ts`, `grid-utils.ts`, `constants.ts`).
 - **`src/components/editor/`**: مكونات المحرر المنظمة هرمياً:
-  - **`dialogs/`**: النوافذ المنبثقة (`print-dialog.tsx`, `export-dialog.tsx`, `crop-dialog.tsx`, `refine-bg-dialog.tsx`, `projects-dialog.tsx`, `account-license-modal.tsx`, `keyboard-shortcuts-dialog.tsx`).
+  - **`dialogs/`**: النوافذ المنبثقة (`print-dialog.tsx`, `export-dialog.tsx`, `crop-dialog.tsx`, `refine-bg-dialog.tsx`, `projects-dialog.tsx`, `account-license-modal.tsx`, `keyboard-shortcuts-dialog.tsx`, `barcode-dialog.tsx`, `batch-insert-dialog.tsx`, `phone-bridge-dialog.tsx`, `account/`...).
   - **`panels/`**: الألواح الجانبية وبطاقات القوالب (`template-panel.tsx`, `properties-panel.tsx`, `layers-panel.tsx`, `collage-template-card.tsx`, `custom-collage-card.tsx`, `photo-type-miniature.tsx`).
-  - **`toolbar/`**: شريط الأدوات وعمليات الملفات (`toolbar.tsx`, `toolbar-items.tsx`, `toolbar-file-ops.tsx`).
-  - **`system/`**: خدمات النظام ونوافذ ويندوز (`update-notifier.tsx`, `window-resize-handles.tsx`).
-  - **`canvas/`**: مساحة العمل والكانفاس (`editor-canvas.tsx`, `context-menu.tsx`, `canvas-rulers.tsx`, `canvas-quick-bar.tsx`, `text-editing-overlay.tsx`).
-  - **`properties/`**: لوحات التحكم بالخصائص والألوان والتأثيرات (`element-properties.tsx`, `slot-properties.tsx`, `collage-settings.tsx`, `gradient-picker.tsx`, `shared-controls.tsx`).
-  - **`konva/`**: محرك الرسم بـ Konva (`konva-canvas.tsx`, `konva-grid.tsx`, عقد العناصر `elements/`).
+  - **`toolbar/`**: شريط الأدوات وعمليات الملفات مقسمة موضوعياً (`toolbar.tsx`, `toolbar-items.tsx`, `toolbar-file-ops.tsx`, `toolbar-add-text.tsx`, `toolbar-add-shapes.tsx`, `toolbar-add-tools.tsx`, `toolbar-ai-tools.tsx`, `toolbar-image-filters.tsx`, `toolbar-history-tools.tsx`, `toolbar-selection-tools.tsx`).
+  - **`system/`**: خدمات النظام ونوافذ ويندوز (`update-notifier.tsx`, `window-resize-handles.tsx`, `window-controls.tsx`, `desktop-menu-bar.tsx`, `license-lock-screen.tsx`, `use-phone-bridge.ts`).
+  - **`canvas/`**: مساحة العمل والكانفاس (`editor-canvas.tsx`, `canvas-context-menu.tsx`, `context-menu/`, `canvas-rulers.tsx`, `ruler.tsx`, `canvas-quick-bar.tsx`, `quick-bar/`, `text-editing-overlay.tsx`, `use-image-drop.ts`...).
+  - **`properties/`**: لوحات التحكم بالخصائص والألوان والتأثيرات (`element-properties.tsx`, `slot-properties.tsx`, `collage-settings.tsx`, `gradient-picker.tsx`, `element/`, `general/`, `panels/`, `shared-controls.tsx`).
+  - **`konva/`**: محرك الرسم بـ Konva (`konva-canvas.tsx`, `layers/` — خلفية/كولاج/فردي — و`elements/` عقد العناصر: `image-node`, `text-node`, `shape-node`, `collage-image`, `editor-transformer`, `magic-ai-scanner`...).
 - **`frontend/bindings/`**: الربطات الأصلية المولدة تلقائياً بواسطة Wails v3 عبر أمر `wails3 generate bindings -ts -clean=true` (مستثناة من Git).
 - **`frontend/wailsjs/`**: **جسور يدوية متتبعة في Git** تعيد التصدير من `frontend/bindings/` لضمان توافقية الاستيرادات وسهولة الصيانة (مثل `wailsjs/go/main/App.ts` → `bindings/grido/app`).
 

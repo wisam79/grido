@@ -57,7 +57,7 @@ tasks:
       - cmd: rm -f *.syso
         platforms: [linux, darwin]
     vars:
-      APP_VERSION: '{{.APP_VERSION | default "v1.4.1"}}'
+      APP_VERSION: '{{.APP_VERSION | default "v1.5.0"}}'
       SUPABASE_URL: '{{.SUPABASE_URL | default ""}}'
       SUPABASE_ANON_KEY: '{{.SUPABASE_ANON_KEY | default ""}}'
       MODAL_AI_KEY: '{{.MODAL_AI_KEY | default .GRIDO_AI_SECRET_KEY | default ""}}'
@@ -118,8 +118,8 @@ tasks:
       ARCH: '{{.ARCH | default ARCH}}'
 
   create:nsis:installer:
-    summary: Creates an NSIS installer
-    dir: build/windows/nsis
+    summary: Creates an NSIS installer (Grido custom script — comply with AGENTS.md NSIS invariants)
+    dir: build/windows/installer
     deps:
       - task: build
     preconditions:
@@ -127,11 +127,13 @@ tasks:
         msg: "INSTALL_SCOPE must be 'user' or 'machine', got '{{.INSTALL_SCOPE}}'"
     cmds:
       # Create the Microsoft WebView2 bootstrapper if it doesn't exist
-      - wails3 generate webview2bootstrapper -dir "{{.ROOT_DIR}}/build/windows/nsis"
+      - wails3 generate webview2bootstrapper -dir "{{.ROOT_DIR}}/build/windows/installer"
       - |
         {{if eq OS "windows"}}
+        copy /Y "{{.ROOT_DIR}}\build\windows\nsis\wails_tools.nsh" "{{.ROOT_DIR}}\build\windows\installer\wails_tools.nsh"
         makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}\{{.BIN_DIR}}\{{.APP_NAME}}.exe" project.nsi
         {{else}}
+        cp "{{.ROOT_DIR}}/build/windows/nsis/wails_tools.nsh" "{{.ROOT_DIR}}/build/windows/installer/wails_tools.nsh"
         makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}/{{.BIN_DIR}}/{{.APP_NAME}}.exe" project.nsi
         {{end}}
     vars:

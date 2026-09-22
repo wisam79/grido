@@ -50,8 +50,8 @@ func (a *App) ShowOrCreateAuxiliaryWindow(name, title, route string, w, h int) *
 
 ```typescript
 // في النافذة الرئيسية (Sender):
-// بث الأحداث عبر جسر wailsjs/runtime الموحد (EventsEmit)
-import { EventsEmit } from "@/wailsjs/runtime/runtime";
+// بث الأحداث عبر جسر wailsjs/runtime الموحد (EventsEmit) — الواجهة لا تستورد @wailsio/runtime مباشرة
+import { EventsEmit } from "../wailsjs/runtime/runtime";
 
 export function syncCanvasToAuxiliary(windowName: string, state: Partial<CanvasState>) {
   EventsEmit(`sync:canvas:${windowName}`, state);

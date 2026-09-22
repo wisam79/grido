@@ -41,7 +41,11 @@ wails3 task package
    - يُمنع استخدام `ExecWait 'taskkill ...'` لتفادي ظهور نافذة CMD سوداء للمستخدم.
    - استخدم دائماً: `nsExec::ExecToStack 'taskkill /F /IM "GridoStudio.exe" /T'`.
 
-3. **حفظ الترميز بـ UTF-8 BOM:**
+3. **السكريبت الحاكم للمثبت (Source of Truth):**
+   - سكريبت NSIS الحاكم الوحيد هو `build/windows/installer/project.nsi` مع `OutFile "..\nsis\..."` المُخرج إلى المسار المستهلك (`build/windows/nsis/GridoStudio-installer.exe`) في التوقيع والنشر. قالب `build/windows/nsis/project.nsi` مخلفات Wails الافتراضية — يُمنع بناء المثبت منه أو تعديله.
+   - مهمة `create:nsis:installer` مُنسّقة على المجلد الحاكم (`dir: build/windows/installer`) مع توليد `webview2bootstrapper` ونسخ `wails_tools.nsh` المولَّد داخل المجلد نفسه قبل `makensis`.
+
+4. **حفظ الترميز بـ UTF-8 BOM:**
    - ملف `project.nsi` يجب أن يُحفظ بترميز `UTF-8 with BOM` لتفادي أخطاء الـ Bad text encoding مع النصوص العربية.
 
 ---

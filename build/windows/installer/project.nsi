@@ -68,7 +68,7 @@ LangString DESC_CreateDesktopShortcut ${LANG_ENGLISH} "Create Desktop Shortcut"
 
 # Product Details
 Name "${INFO_PRODUCTNAME}"
-OutFile "..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe"
+OutFile "..\nsis\GridoStudio-installer.exe" # Resolves to build/windows/nsis/GridoStudio-installer.exe (consumed by sign task & release.yml)
 InstallDir "$PROGRAMFILES64\${INFO_PRODUCTNAME}"
 InstallDirRegKey HKLM "Software\${INFO_PRODUCTNAME}" "Install_Dir"
 ShowInstDetails show
