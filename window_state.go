@@ -17,6 +17,20 @@ type windowState struct {
 	Max    bool `json:"max"`
 }
 
+// المقاسات الافتراضية للنافذة — الافتراضي الحالي 1280×800، وما قبله كان
+// يُفتح في الوضع المدمج (أصغر من نقطة انكسار الواجهة 1024).
+const (
+	defaultWindowWidth  = 1280
+	defaultWindowHeight = 800
+)
+
+// isLegacyDefaultWindowSize يميّز المقاسات الافتراضية القديمة عن مقاس اختاره
+// المستخدم بنفسه: المحفوظات 960×640 (الافتراضي الأقدم) و 1024×720 تُرقّى
+// مرة واحدة إلى الافتراضي الجديد، وأي مقاس آخر يُحترم كما هو.
+func isLegacyDefaultWindowSize(width, height int) bool {
+	return (width == 960 && height == 640) || (width == 1024 && height == 720)
+}
+
 func getWindowStatePath() string {
 	appDir := utils.GetAppDir()
 	return filepath.Join(appDir, "window.json")

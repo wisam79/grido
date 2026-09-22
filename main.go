@@ -64,9 +64,11 @@ func main() {
 	backupSvc := service.NewBackupService(projectRepo, licenseRepo)
 	backupHandler := handlers.NewBackupHandler(backupSvc)
 
-	// استعادة أبعاد وموقع النافذة من الجلسة السابقة (الأبعاد الافتراضية المدمجة 960×640)
-	initialWidth := 960
-	initialHeight := 640
+	// استعادة أبعاد وموقع النافذة من الجلسة السابقة.
+	// الافتراضي 1280×800: كان 960×640 — وهو أصغر من نقطة انكسار الواجهة
+	// (1024) فيفتح التطبيق في الوضع المدمج بلا ألواح جانبية إطلاقاً.
+	initialWidth := defaultWindowWidth
+	initialHeight := defaultWindowHeight
 	initialX := 0
 	initialY := 0
 	hasSavedPos := false
@@ -74,10 +76,12 @@ func main() {
 
 	if state, err := loadWindowState(); err == nil {
 		if state.Width > 0 && state.Height > 0 {
-			// إذا كانت القيمة المحفوظة هي القيمة القديمة الكبيرة 1024×720، يتم تحديثها للقياس المدمج الجديد
-			if state.Width == 1024 && state.Height == 720 {
-				initialWidth = 960
-				initialHeight = 640
+			// المقاسات الافتراضية القديمة (960×640 و 1024×720) تُرقّى مرة واحدة
+			// للافتراضي الجديد — وإلا بقي المستخدمون الحاليون على مقاس يخفي الألواح.
+			// أي مقاس اختاره المستخدم بنفسه يبقى كما هو.
+			if isLegacyDefaultWindowSize(state.Width, state.Height) {
+				initialWidth = defaultWindowWidth
+				initialHeight = defaultWindowHeight
 			} else {
 				initialWidth = state.Width
 				initialHeight = state.Height
