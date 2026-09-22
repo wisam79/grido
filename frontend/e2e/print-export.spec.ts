@@ -104,9 +104,42 @@ test.describe('Print & Export Workflows E2E', () => {
 
     const exportBtn = printModal.getByRole('button', { name: /تصدير وعرض/ });
     await expect(exportBtn).toBeEnabled();
+
+    // مراقب race-free: الـ iframe تُزال ذاتياً بعد الطباعة (afterprint/مهلة 8s)
+    // فالتقاط لحظة إنشائها عبر MutationObserver بدل انتظار عنصر عابر
+    await page.evaluate(() => {
+      (window as unknown as { __printFrames: (string | null)[] }).__printFrames = [];
+      new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of Array.from(mutation.addedNodes)) {
+            if (node instanceof HTMLIFrameElement) {
+              (window as unknown as { __printFrames: (string | null)[] }).__printFrames.push(
+                node.getAttribute('aria-hidden')
+              );
+            }
+          }
+        }
+      }).observe(document.body, { childList: true });
+    });
+
     await exportBtn.click();
 
-    // نافذة الطباعة المخفية تُنشأ بعد المعاينة والتصدير
-    await expect(page.locator('iframe[aria-hidden="true"]')).toHaveCount(1, { timeout: 15000 });
+    // العملية تتم للنهاية: الحوار يُغلق بعد نجاح التصدير
+    await expect(printModal).not.toBeVisible({ timeout: 15000 });
+
+    // نافذة الطباعة المخفية أُنشئت بعد المعاينة والتصدير (aria-hidden="true")
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () => (window as unknown as { __printFrames: (string | null)[] }).__printFrames?.length ?? 0
+          ),
+        { timeout: 15000 }
+      )
+      .toBe(1);
+    const frameFlag = await page.evaluate(
+      () => (window as unknown as { __printFrames: (string | null)[] }).__printFrames[0]
+    );
+    expect(frameFlag).toBe('true');
   });
 });
