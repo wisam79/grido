@@ -10,7 +10,7 @@
 
 # Product metadata (source of truth — must mirror the git tag / build.ps1)
 !define INFO_PROJECTNAME "GridoStudio"
-!define INFO_PRODUCTVERSION "1.5.1"
+!define INFO_PRODUCTVERSION "1.5.2"
 !define INFO_COPYRIGHT "© 2026 Grido Studio"
 
 !include "wails_tools.nsh"
