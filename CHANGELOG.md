@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **هوية التطبيق وبيانات EXE بعد الترقية لـ Wails v3:** كانت `build/appicon.png` ما تزال شعار Wails الافتراضي "W" فيُعاد توليد `windows/icon.ico` منه كل بناء، و`windows/info.json` و`wails.exe.manifest` بقيم القالب (`My Company`/`0.1.0`) فخرج `GridoStudio.exe` بلا بيانات إصدار. أُعيدت الهوية من `frontend/public/favicon.png`، وزُامنت `build/config.yml` (`1.5.1`) وأُعيد توليد الأصول رسمياً عبر `wails3 update build-assets`، مع حارس CI يفشل البناء عند فراغ بيانات EXE.
+- **فشل CI في خطوة التحقق من بيانات EXE (`Verify EXE Branding Metadata`):** كان `build/windows/info.json` يستخدم مفتاح جدول النصوص المحايد `"0000"` ويفتقد المفتاح النصي `FileVersion`، فيُكتب داخل الـ syso مورِد إصدار بترجمة محايدة (lang=0x0000) لا يعتبرها `System.Diagnostics.FileVersionInfo` (وكذلك خصائص الملف في Explorer) قراءة ناجحة، فيعيد المحاولة بصفحات ترميز بديلة (`040904E4`/`04090000`) **تمسح كل القيم** وتظهر بيانات المنتج/الشركة/الإصدار فارغة رغم وجودها فعلياً في الملف الثنائي. الآن يستخدم الملف مفتاح LCID قياسي `"0409"` (en-US) مع المفاتيح الكاملة `FileVersion` و`ProductVersion` و`OriginalFilename` و`InternalName` و`fixed.product_version`، وصارت رسالة فحص الـ CI تسمّي هذا الشرط صراحةً، ووُثّق الثابت في `.agents/AGENTS.md`.
+
 
 ---
 

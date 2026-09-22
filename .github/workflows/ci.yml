@@ -328,6 +328,10 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: wails3 task build
 
+      # قراءة الميتاداتا هنا تمر بنفس مسار Windows/.NET: الترجمة (lang+codepage) ثم
+      # جدول نصوص مطابق لها. لذلك يفشل هذا الفحص إذا عاد `build/windows/info.json`
+      # لمفتاح محايد (0000) أو فقد المفتاح النصي `FileVersion` — وهو ما يفعله
+      # `wails3 update build-assets` عند إعادة توليد الأصول.
       - name: Verify EXE Branding Metadata
         id: branding
         shell: powershell
@@ -335,10 +339,13 @@ jobs:
           $exe = 'bin\GridoStudio.exe'
           if (-not (Test-Path $exe)) { throw "Binary not found at $exe" }
           $v = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exe)
-          foreach ($f in @('ProductName','CompanyName','FileDescription','FileVersion')) {
-            if ([string]::IsNullOrWhiteSpace($v.$f)) { throw "EXE metadata '$f' is empty - check build/appicon.png, build/config.yml, windows/info.json and generate:syso" }
+          $required = @('ProductName','CompanyName','FileDescription','FileVersion')
+          $missing = @($required | Where-Object { [string]::IsNullOrWhiteSpace($v.$_) })
+          if ($missing.Count -gt 0) {
+            $hint = 'Windows resolves version strings only when build/windows/info.json uses an LCID table key (e.g. "0409", never the neutral "0000") AND declares the string key "FileVersion"; otherwise .NET/Explorer retry with fallback codepages that wipe every value.'
+            throw ("EXE metadata empty: {0} - {1}" -f ($missing -join ', '), $hint)
           }
-          Write-Host "Product='$($v.ProductName)' Company='$($v.CompanyName)' Version='$($v.FileVersion)'"
+          Write-Host "Product='$($v.ProductName)' Company='$($v.CompanyName)' Version='$($v.FileVersion)' Description='$($v.FileDescription)' Language='$($v.Language)'"
 
       - name: Run Windows Native Integration Tests
         id: native_tests
