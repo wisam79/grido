@@ -30,10 +30,11 @@ func writeCompositionDummyImage(t *testing.T, dir, name string, w, h int) string
 	return imgPath
 }
 
-// TestPrintService_InvalidCompositionFallsBack — اختبار متكامل لمسار الإصلاح:
+// TestPrintService_InvalidCompositionFallsBack — اختبار انحدار لحادثة إنتاجية
+// (سبتمبر 2026): فشل الطباعة بخطأ "invalid canvas composition dimensions" عند
+// وصول تركيب بأبعاد صفرية من الواجهة — مقدس (Rule 6): لا يُحذف أبداً.
 // تركيب كانفاس بأبعاد غير صالحة (صفر/سالب/NaN/Inf) يجب تجاوزه مع تحذير وإكمال
-// ورقة الطباعة من العناصر المباشرة، بدل فشل الطلب كاملاً بخطأ
-// "invalid canvas composition dimensions".
+// ورقة الطباعة من العناصر المباشرة، بدل فشل الطلب كاملاً.
 func TestPrintService_InvalidCompositionFallsBack(t *testing.T) {
 	cases := []struct {
 		name    string

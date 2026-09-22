@@ -205,6 +205,8 @@ func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi i
 // composeCanvas يرسم محتوى كانفاس الوضع الحر (خلفية + صور) بدقة الطباعة.
 // العناصر تُفسَّر في فضاء الكانفاس (px): X/Y/W/H و CornerRadiusMM بالبكسل —
 // يرسل الواجهة عناصر صالحة فقط (بلا دوران/شفافية/ظلال) مطابقة لعرض Konva.
+// عقد الإرجاع: صورة مركبة، أو (nil, nil) عند غياب التركيب أو أبعاد غير صالحة
+// (تُسجَّل تحذيراً وتُتجاوز — المتصل يرسم الخلايا الفارغة أو يتخطاها).
 func (s *PrintService) composeCanvas(
 	req domain.PrintRequest,
 	imgCache *imageCache,

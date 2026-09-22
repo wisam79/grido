@@ -47,58 +47,37 @@ func TestParseColor_InvalidFallsBackWhite(t *testing.T) {
 	}
 }
 
-// 3. هندسة عنصر NaN/Inf تُرفض قبل الرسم
-func TestValidatePrintRequest_NaNItemGeometryRejected(t *testing.T) {
-	svc := NewPrintService()
-	req := domain.PrintRequest{
-		PaperWidthMM: 100, PaperHeightMM: 100, DPI: 150,
-		Items: []domain.PrintItem{{ImageSrc: "x", X: math.NaN(), Y: 10, W: 50, H: 50}},
-	}
-	_, _, err := svc.GeneratePrintSheet(req)
-	if err == nil || !strings.Contains(err.Error(), "NaN or Inf") {
-		t.Fatalf("expected NaN geometry rejection, got: %v", err)
-	}
-}
-
-// 4. منطقة اقتصاص متناقضة (عرض دون ارتفاع) تُرفض
-func TestValidatePrintRequest_ContradictoryCropRejected(t *testing.T) {
-	svc := NewPrintService()
-	req := domain.PrintRequest{
-		PaperWidthMM: 100, PaperHeightMM: 100, DPI: 150,
-		Items: []domain.PrintItem{{ImageSrc: "x", X: 10, Y: 10, W: 50, H: 50, CropW: 10, CropH: 0}},
-	}
-	_, _, err := svc.GeneratePrintSheet(req)
-	if err == nil || !strings.Contains(err.Error(), "invalid crop region") {
-		t.Fatalf("expected crop region rejection, got: %v", err)
-	}
-}
-
-// 5. عنصر يتجاوز الورقة فوق التسامح يُرفض
-func TestValidatePrintRequest_OversizedItemRejected(t *testing.T) {
-	svc := NewPrintService()
-	req := domain.PrintRequest{
-		PaperWidthMM: 210, PaperHeightMM: 297, DPI: 150,
-		Items: []domain.PrintItem{{ImageSrc: "x", X: 0, Y: 0, W: 300, H: 100}},
-	}
-	_, _, err := svc.GeneratePrintSheet(req)
-	if err == nil || !strings.Contains(err.Error(), "invalid item geometry") {
-		t.Fatalf("expected oversized item rejection, got: %v", err)
-	}
-}
-
-// 6. أكثر من 1000 عنصر يُرفض قبل تخصيص أي ذاكرة
-func TestValidatePrintRequest_TooManyItemsRejected(t *testing.T) {
-	svc := NewPrintService()
-	items := make([]domain.PrintItem, 0, 1001)
+// 3-6. مدخلات غير صالحة تُرفض قبل تخصيص أي ذاكرة أو رسم — جدول واحد
+// (نفس الهيكل، يختلف المدخل والرسالة المتوقعة فقط)
+func TestValidatePrintRequest_RejectsInvalidInput(t *testing.T) {
+	oversized := make([]domain.PrintItem, 0, 1001)
 	for i := 0; i < 1001; i++ {
-		items = append(items, domain.PrintItem{})
+		oversized = append(oversized, domain.PrintItem{})
 	}
-	req := domain.PrintRequest{
-		PaperWidthMM: 100, PaperHeightMM: 100, DPI: 150, Items: items,
+	cases := []struct {
+		name    string
+		paperW  float64
+		paperH  float64
+		items   []domain.PrintItem
+		wantErr string
+	}{
+		{"NaN geometry", 100, 100, []domain.PrintItem{{ImageSrc: "x", X: math.NaN(), Y: 10, W: 50, H: 50}}, "NaN or Inf"},
+		{"contradictory crop", 100, 100, []domain.PrintItem{{ImageSrc: "x", X: 10, Y: 10, W: 50, H: 50, CropW: 10, CropH: 0}}, "invalid crop region"},
+		{"oversized item", 210, 297, []domain.PrintItem{{ImageSrc: "x", X: 0, Y: 0, W: 300, H: 100}}, "invalid item geometry"},
+		{"too many items", 100, 100, oversized, "too many items"},
 	}
-	_, _, err := svc.GeneratePrintSheet(req)
-	if err == nil || !strings.Contains(err.Error(), "too many items") {
-		t.Fatalf("expected too-many-items rejection, got: %v", err)
+
+	svc := NewPrintService()
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := domain.PrintRequest{
+				PaperWidthMM: tc.paperW, PaperHeightMM: tc.paperH, DPI: 150, Items: tc.items,
+			}
+			_, _, err := svc.GeneratePrintSheet(req)
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("expected %q rejection, got: %v", tc.wantErr, err)
+			}
+		})
 	}
 }
 
