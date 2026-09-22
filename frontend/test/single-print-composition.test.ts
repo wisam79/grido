@@ -133,6 +133,27 @@ describe("buildSingleComposition", () => {
     expect(result.eligible).toBe(true);
     expect(result.composition!.items).toHaveLength(0);
   });
+
+  it("falls back to capture for gradient backgrounds (solid colors only)", () => {
+    const result = buildSingleComposition({
+      ...base,
+      backgroundGradientColor2: "#000000",
+      elements: [imageElement()],
+    });
+
+    expect(result.eligible).toBe(false);
+    expect(result.composition).toBeUndefined();
+    expect(result.reason).toContain("متدرجة");
+  });
+
+  it("produces an empty composition for an empty canvas (solid fast path)", () => {
+    const result = buildSingleComposition({ ...base, elements: [] });
+
+    expect(result.eligible).toBe(true);
+    expect(result.composition).toBeDefined();
+    expect(result.composition!.items).toHaveLength(0);
+    expect(result.composition!.backgroundColor).toBe("#FFFFFF");
+  });
 });
 
 describe("buildSingleComposition canvas dimension guards", () => {

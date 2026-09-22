@@ -168,3 +168,62 @@ describe("calculatePrintCutLines", () => {
     expect(lines).toEqual([]);
   });
 });
+
+describe("calculatePrintCutLines hardening", () => {
+  const gridFor = (copies: number, cols: number) =>
+    computeSheetGrid({
+      cols,
+      actualCopies: copies,
+      imageWidthMM: 80,
+      imageHeightMM: 60,
+      gapMM: 5,
+      effectiveMarginMM: 10,
+      availableWidthMM: 190,
+      availableHeightMM: 277,
+    });
+
+  const baseParams = {
+    mode: "single" as const,
+    imageWidthMM: 80,
+    imageHeightMM: 60,
+    gapMM: 5,
+    paperWidth: 210,
+    paperHeight: 297,
+  };
+
+  it("includes the bottom end line by default when showEndCutLine is undefined", () => {
+    const lines = calculatePrintCutLines({ ...baseParams, actualCopies: 1, grid: gridFor(1, 1) });
+    const bottom = lines.find((l) => l.isBottomEnd);
+    expect(bottom).toBeDefined();
+    expect(Math.abs((bottom?.y1 ?? -1) - (bottom?.y2 ?? -2))).toBeLessThan(0.01);
+  });
+
+  it("frames a 3-copy row with 4 vertical grid lines plus a bottom end", () => {
+    const lines = calculatePrintCutLines({ ...baseParams, actualCopies: 3, grid: gridFor(3, 3) });
+    const vertical = lines.filter((l) => Math.abs(l.x1 - l.x2) < 0.01);
+    expect(vertical.length).toBe(4);
+    expect(lines.find((l) => l.isBottomEnd)).toBeDefined();
+  });
+
+  it("still frames a single copy when gapMM is 0", () => {
+    const lines = calculatePrintCutLines({
+      ...baseParams,
+      actualCopies: 1,
+      gapMM: 0,
+      grid: computeSheetGrid({
+        cols: 1,
+        actualCopies: 1,
+        imageWidthMM: 80,
+        imageHeightMM: 60,
+        gapMM: 0,
+        effectiveMarginMM: 10,
+        availableWidthMM: 190,
+        availableHeightMM: 277,
+      }),
+    });
+    expect(lines.length).toBeGreaterThanOrEqual(4);
+    for (const l of lines) {
+      expect([l.x1, l.y1, l.x2, l.y2].every(Number.isFinite)).toBe(true);
+    }
+  });
+});

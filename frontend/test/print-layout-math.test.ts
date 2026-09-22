@@ -381,4 +381,44 @@ describe("calculateOptimalSheetImposition", () => {
   });
 });
 
+describe("print layout hardening", () => {
+  it("anchors bottom-right alignment to margin plus remaining space", () => {
+    const grid = computeSheetGrid({
+      cols: 2,
+      actualCopies: 2,
+      imageWidthMM: 80,
+      imageHeightMM: 60,
+      gapMM: 5,
+      effectiveMarginMM: 10,
+      availableWidthMM: 190,
+      availableHeightMM: 277,
+      align: "bottom-right",
+    });
+    // gridWidth = 2*80+5 = 165 → offsetX = 10 + (190-165) = 35
+    // gridHeight = 60 → offsetY = 10 + (277-60) = 227
+    expect(grid.offsetX).toBe(35);
+    expect(grid.offsetY).toBe(227);
+  });
+
+  it("wraps block positions to later rows past the first row", () => {
+    const grid = {
+      safeCols: 2,
+      actualRows: 3,
+      gridWidth: 165,
+      gridHeight: 190,
+      offsetX: 10,
+      offsetY: 10,
+      cellWidth: 85,
+      cellHeight: 65,
+    };
+    const pos = computeBlockPosition(4, grid);
+    expect(pos).toMatchObject({ col: 0, row: 2, xMM: 10, yMM: 140 });
+  });
+
+  it("returns 0 aspect when the canvas height is degenerate", () => {
+    expect(computeSlotAspect({ w: 0.5, h: 0.5 }, 1240, 0)).toBe(0);
+    expect(computeSlotAspect({ w: 0.5, h: 0.5 }, 1240, -3)).toBe(0);
+  });
+});
+
 

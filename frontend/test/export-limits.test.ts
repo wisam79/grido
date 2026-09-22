@@ -136,4 +136,21 @@ describe("export-limits — 50MP explicit guard", () => {
     expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("50 ميجابكسل"));
     expect(toast.error).not.toHaveBeenCalledWith("تعذر تصدير الصورة");
   });
+
+  it("assertExportablePixels ignores degenerate dimensions instead of throwing", () => {
+    expect(() => assertExportablePixels(0, 100)).not.toThrow();
+    expect(() => assertExportablePixels(100, 0)).not.toThrow();
+    expect(() => assertExportablePixels(-5, 100)).not.toThrow();
+    expect(() => assertExportablePixels(Number.NaN, 100)).not.toThrow();
+    expect(() => assertExportablePixels(2480, 3508)).not.toThrow();
+  });
+
+  it("CanvasTooLargeError carries dimensions for explicit messaging", () => {
+    const err = new CanvasTooLargeError(10000, 6000);
+    expect(err.name).toBe("CanvasTooLargeError");
+    expect(err.width).toBe(10000);
+    expect(err.height).toBe(6000);
+    expect(err.pixelCount).toBe(60_000_000);
+    expect(err.message).toContain("10000×6000");
+  });
 });
