@@ -10,7 +10,14 @@ import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-import { fitZoomStore, resetZoomStore, zoomInStore, zoomOutStore } from "@/hooks/use-canvas-zoom";
+import {
+  autoFitZoomStore,
+  fitWidthZoomStore,
+  fitZoomStore,
+  resetZoomStore,
+  zoomInStore,
+  zoomOutStore,
+} from "@/hooks/use-canvas-zoom";
 import {
   Image,
   Images,
@@ -366,14 +373,30 @@ export function DesktopMenuBar() {
             onClick={resetZoomStore}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <span className="font-medium">الحجم الفعلي</span>
+            <span className="font-medium">إعادة الملاءمة إلى 100%</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
             onClick={fitZoomStore}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
           >
-            <span className="font-medium">ملاءمة الورقة للشاشة</span>
+            <span className="font-medium">ملاءمة الكل</span>
+            <span className="ms-auto text-micro font-mono text-muted-foreground/70">Ctrl+0</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={fitWidthZoomStore}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+          >
+            <span className="font-medium">ملاءمة العرض</span>
+            <span className="ms-auto text-micro font-mono text-muted-foreground/70">Ctrl+Shift+0</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={autoFitZoomStore}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+          >
+            <span className="font-medium">ملاءمة تلقائية</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

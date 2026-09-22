@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo, useCallback } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import type Konva from "konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
@@ -15,6 +15,8 @@ import { TextEditingOverlay } from "./text-editing-overlay";
 import { CanvasContextMenu } from "./canvas-context-menu";
 import { CanvasQuickBar } from "./canvas-quick-bar";
 import { checkerColor, guideCenter, guideEdge } from "@/lib/canvas/canvas-colors";
+import { computeCanvasDisplay } from "@/lib/canvas/fit";
+import { publishCanvasFitStatus } from "@/lib/ui/canvas-fit-status";
 import { useCanvasViewport } from "./use-canvas-viewport";
 import { useUserGuides } from "./use-user-guides";
 import { useImageDrop } from "./use-image-drop";
@@ -219,6 +221,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
   const selectedIds = useEditorStore((s) => s.selectedIds);
   const collageMargin = useEditorStore((s) => s.collageMargin);
   const slots = useEditorStore((s) => s.slots);
+  const canvasFitMode = useEditorStore((s) => s.canvasFitMode);
 
   // 🧭 منطق الزوم والتحريك (كان مضمّناً في هذا الملف)
   useCanvasViewport(containerRef, innerRef);
@@ -234,22 +237,26 @@ export const EditorCanvas = React.memo(React.forwardRef<
     handleWorkspaceMouseLeave,
   } = useRulerMetricsPreview(containerRef, innerRef, { showRuler, printMode }, { canvasZoom, mode, aspect });
 
-  const maxW = (containerSize.w - 32) * canvasZoom;
-  const maxH = (containerSize.h - 32) * canvasZoom;
-  let displayW = maxW;
-  let displayH = displayW / aspect;
-  if (displayH > maxH) {
-    displayH = maxH;
-    displayW = displayH * aspect;
-  }
-  const minDim = 100 * canvasZoom;
-  if (displayW < minDim || displayH < minDim) {
-    const minScale = Math.max(minDim / (displayW || 1), minDim / (displayH || 1));
-    displayW *= minScale;
-    displayH *= minScale;
-  }
-  displayW = Math.round(displayW);
-  displayH = Math.round(displayH);
+  // 🧭 أبعاد الورقة المعروضة — منطق الملاءمة كله في lib/canvas/fit.ts
+  // (كان الحساب مضمّناً هنا ويلائم على الارتفاع دائماً فيُهدر ~60% من عرض
+  //  منطقة العمل على ورقة رأسية؛ وصار الوضع اختيارياً: كامل/عرض/تلقائي)
+  const {
+    displayW,
+    displayH,
+    resolved: resolvedFitMode,
+    leftoverRatio,
+  } = computeCanvasDisplay({
+    containerW: containerSize.w,
+    containerH: containerSize.h,
+    aspect,
+    zoom: canvasZoom,
+    fitMode: canvasFitMode,
+  });
+
+  // يُنشر الوضع الفعّل ونسبة الفراغ لشريط العرض في التذييل (خارج شجرة الكانفاس)
+  useEffect(() => {
+    publishCanvasFitStatus({ resolved: resolvedFitMode, leftoverRatio });
+  }, [resolvedFitMode, leftoverRatio]);
 
   // 🧭 الخطوط الإرشادية (كانت مضمّنة في هذا الملف)
   const {
@@ -421,6 +428,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       <div
         ref={innerRef}
         id="canvas-area"
+        data-fit-mode={resolvedFitMode}
         className="relative w-full h-full rounded-md overflow-hidden border border-black/10 dark:border-black/50 dark:ring-1 dark:ring-white/12 transition-shadow duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.6)] fluent-specular"
         style={{
           width: displayW,

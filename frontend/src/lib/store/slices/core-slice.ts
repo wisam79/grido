@@ -7,6 +7,7 @@ import { DEFAULT_HISTORY_ENTRY_EXTRAS } from "./history-slice";
 import { invalidateImageCache } from "@/hooks/use-async-image";
 import { uid } from "../../utils";
 import { canvasMm, findPaperByMm } from "../../canvas/units";
+import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from "../../canvas/fit";
 
 export interface CoreSlice {
   projectId: string | null;
@@ -34,6 +35,9 @@ export interface CoreSlice {
   loadProject: (project: ProjectFileV1, projectId?: string | null) => void;
   canvasZoom: number;
   setCanvasZoom: (zoom: number | ((prev: number) => number)) => void;
+  /** وضع ملاءمة الورقة — تفضيل عرض محفوظ محلياً، لا يُصدَّر في ملف المشروع */
+  canvasFitMode: CanvasFitMode;
+  setCanvasFitMode: (mode: CanvasFitMode) => void;
 }
 
 export const DEFAULT_CORE_STATE = {
@@ -47,6 +51,7 @@ export const DEFAULT_CORE_STATE = {
   lastEditedImage: null as string | null,
   lastEditedImageAspect: null as number | null,
   canvasZoom: 1,
+  canvasFitMode: "auto" as CanvasFitMode,
 };
 
 type CoreSliceCross = CoreSlice & {
@@ -87,6 +92,8 @@ type CoreSliceCross = CoreSlice & {
 
 export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = (set, get) => ({
   ...DEFAULT_CORE_STATE,
+  // تفضيل عرض محفوظ محلياً (مثل حجم الألواح) — يُقرأ مرة واحدة عند إنشاء المتجر
+  canvasFitMode: readStoredFitMode(),
 
   setMode: (mode) => {
     set((s) => {
@@ -282,6 +289,11 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
   setCanvasZoom: (zoom) => set((state) => ({
     canvasZoom: typeof zoom === "function" ? zoom(state.canvasZoom) : zoom
   })),
+
+  setCanvasFitMode: (mode) => {
+    writeStoredFitMode(mode);
+    set({ canvasFitMode: mode });
+  },
 
   reset: () => {
     const freshSlots = generateInitialSlots();

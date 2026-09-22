@@ -21,7 +21,15 @@ import {
 } from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { canZoomIn, canZoomOut, isDefaultZoom } from "@/lib/canvas/zoom";
-import { fitZoomStore, resetZoomStore, zoomInStore, zoomOutStore } from "@/hooks/use-canvas-zoom";
+import {
+  autoFitZoomStore,
+  fitWidthZoomStore,
+  fitZoomStore,
+  resetZoomStore,
+  zoomInStore,
+  zoomOutStore,
+} from "@/hooks/use-canvas-zoom";
+import { CANVAS_FIT_LABELS, type CanvasFitMode } from "@/lib/canvas/fit";
 
 /* ═══════════════════════════════════════════════════════════════
    سجل أدوات الشريط الجانبي — مصدر حقيقة واحد للأوضاع الثلاثة:
@@ -464,6 +472,7 @@ export interface StateCommandInput {
   historyIndex: number;
   historyLength: number;
   canvasZoom: number;
+  canvasFitMode: CanvasFitMode;
   showRuler: boolean;
   showGrid: boolean;
 }
@@ -476,6 +485,7 @@ export function selectStateCommandInput(
     historyIndex: state.historyIndex,
     historyLength: state.history.length,
     canvasZoom: state.canvasZoom,
+    canvasFitMode: state.canvasFitMode,
     showRuler: state.showRuler,
     showGrid: state.showGrid,
   };
@@ -610,13 +620,35 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
   },
   {
     id: "zoom-fit",
-    title: "ملاءمة الورقة للشاشة",
+    title: "ملاءمة الكل",
     group: "عرض الكانفاس",
     shortcut: "Ctrl+0",
     getSnapshot: (input = readStateCommandInput()) => ({
-      subtitle: `الحالي ${percent(input.canvasZoom)}`,
+      subtitle: input.canvasFitMode === "height" ? "الورقة كاملة على الشاشة" : "الورقة كاملة بلا تمرير",
       disabled: false,
       run: fitZoomStore,
+    }),
+  },
+  {
+    id: "zoom-fit-width",
+    title: "ملاءمة العرض",
+    group: "عرض الكانفاس",
+    shortcut: "Ctrl+Shift+0",
+    getSnapshot: (input = readStateCommandInput()) => ({
+      subtitle: "تملأ عرض منطقة العمل ويُمرَّر الباقي",
+      disabled: input.canvasFitMode === "width",
+      run: fitWidthZoomStore,
+    }),
+  },
+  {
+    id: "zoom-fit-auto",
+    title: CANVAS_FIT_LABELS.auto,
+    group: "عرض الكانفاس",
+    shortcut: "Ctrl+Alt+0",
+    getSnapshot: (input = readStateCommandInput()) => ({
+      subtitle: "يختار الوضع الأنسب لهندسة النافذة",
+      disabled: input.canvasFitMode === "auto",
+      run: autoFitZoomStore,
     }),
   },
 ];

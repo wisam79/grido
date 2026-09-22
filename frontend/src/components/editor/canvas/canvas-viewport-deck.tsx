@@ -13,7 +13,22 @@ import {
   ArrowsOut,
   FileText,
   Keyboard,
+  Check,
+  CaretDown,
 } from "@/components/ui/icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  CANVAS_FIT_LABELS,
+  type CanvasFitMode,
+} from "@/lib/canvas/fit";
+import { useCanvasFitStatus } from "@/lib/ui/canvas-fit-status";
 import { PageOrientationIcon } from "@/components/ui/image-icons";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { FluentCapsuleButton } from "@/components/ui/blocks/fluent-capsule-button";
@@ -51,7 +66,27 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
   } = useGridControls();
   const { collageShowCutLines, setCollageShowCutLines } = useCollageViewFlags();
   const setCanvasSize = useEditorStore((s) => s.setCanvasSize);
-  const { percentLabel, zoomIn, zoomOut, resetZoom, fitZoom } = useCanvasZoom();
+  const canvasFitMode = useEditorStore((s) => s.canvasFitMode);
+  const resolvedFit = useCanvasFitStatus((s) => s.resolved);
+  const fitLeftoverRatio = useCanvasFitStatus((s) => s.leftoverRatio);
+  const {
+    percentLabel,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    fitZoom,
+    fitWidthZoom,
+    autoFitZoom,
+  } = useCanvasZoom();
+
+  // أوضاع الملاءمة في قائمة واحدة — الفعل يعيّن الوضع ويرجع الزوم لـ 100%
+  const fitModeActions: { mode: CanvasFitMode; run: () => void; hint: string }[] = [
+    { mode: "auto", run: autoFitZoom, hint: "يختار الأنسب لهندسة النافذة" },
+    { mode: "height", run: fitZoom, hint: "الورقة كاملة على الشاشة" },
+    { mode: "width", run: fitWidthZoom, hint: "تملأ العرض ويُمرَّر الباقي" },
+  ];
+  const leftoverPercent = Math.round(fitLeftoverRatio * 100);
+  const fitStatusLabel = resolvedFit === "width" ? "عرض" : "الكل";
 
   const isLandscape = canvasWidth > canvasHeight;
 
@@ -184,7 +219,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             testId="canvas-zoom-out"
           />
 
-          {/* نسبة الزوم الرقمية */}
+          {/* نسبة الزوم الرقمية — مضاعف فوق أساس الملاءمة (ليس مقياس طباعة) */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -198,7 +233,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
-                <span>المقياس الفعلي (100%)</span>
+                <span>مضاعف الملاءمة (100% = حجم الملاءمة)</span>
                 <FluentKbd keys="Ctrl+1" />
               </div>
             </TooltipContent>
@@ -214,23 +249,101 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             testId="canvas-zoom-in"
           />
 
-          {/* زر الحجم الفعلي 100% */}
+          {/* إرجاع المضاعف إلى 100% — بلا تغيير في أساس الملاءمة */}
           <FluentCapsuleButton
             icon={<ArrowsOut className="w-4 h-4" weight="regular" />}
-            label="الحجم الفعلي 100%"
-            tooltip="الحجم الفعلي 100%"
+            label="إعادة الملاءمة إلى 100%"
+            tooltip="إعادة المضاعف إلى 100% (حجم الملاءمة)"
             shortcut="Ctrl+1"
             onClick={resetZoom}
           />
 
-          {/* زر ملاءمة الورقة للشاشة (Fit) — منفصل عن 100% */}
-          <FluentCapsuleButton
-            icon={<FileText className="w-4 h-4" weight="regular" />}
-            label="ملاءمة الورقة للشاشة"
-            tooltip="ملاءمة الورقة للشاشة"
-            shortcut="Ctrl+0"
-            onClick={fitZoom}
-          />
+          {/* ملاءمة الورقة: نقرة = ملاءمة الكل، والسهم يفتح بقية الأوضاع */}
+          <div className="flex items-center" dir="rtl">
+            <FluentCapsuleButton
+              icon={
+                <FileText
+                  className="w-4 h-4"
+                  weight={resolvedFit === "height" ? "duotone" : "regular"}
+                />
+              }
+              label="ملاءمة الكل"
+              tooltip={`ملاءمة الكل (${CANVAS_FIT_LABELS.height}) — الورقة كاملة على الشاشة`}
+              shortcut="Ctrl+0"
+              active={resolvedFit === "height"}
+              onClick={fitZoom}
+              testId="canvas-fit-all"
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  data-testid="canvas-fit-menu"
+                  aria-label="أوضاع ملاءمة الورقة"
+                  className="h-7 w-5 flex items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                >
+                  <CaretDown className="w-3 h-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-64 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
+              >
+                <div dir="rtl">
+                  <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+                    <span>ملاءمة الورقة</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {fitModeActions.map((item) => (
+                    <DropdownMenuItem
+                      key={item.mode}
+                      data-testid={`canvas-fit-${item.mode}`}
+                      onClick={item.run}
+                      className="flex items-center justify-between cursor-pointer py-1.5 font-semibold group"
+                    >
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs">{CANVAS_FIT_LABELS[item.mode]}</span>
+                        <span className="text-micro text-muted-foreground font-normal">{item.hint}</span>
+                      </div>
+                      {canvasFitMode === item.mode && (
+                        <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* مؤشر الوضع الفعّال + كمية الفراغ التي يعالجها الوضع الآخر */}
+            {resolvedFit && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    data-testid="canvas-fit-status"
+                    data-fit-mode={resolvedFit}
+                    className="h-7 flex items-center px-1.5 text-micro font-bold text-muted-foreground/90 select-none cursor-default"
+                  >
+                    {fitStatusLabel}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  sideOffset={8}
+                  align="center"
+                  className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8"
+                >
+                  <span>
+                    {resolvedFit === "width"
+                      ? `ملاءمة العرض — تُمرَّر الورقة رأسياً (الفراغ الجانبي ${leftoverPercent}% في وضع الكل)`
+                      : leftoverPercent > 20
+                        ? `ملاءمة الكل — الفراغ الجانبي ${leftoverPercent}% من العرض، جرّب ملاءمة العرض`
+                        : "ملاءمة الكل — الورقة تملأ منطقة العمل"}
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
 
           <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
 

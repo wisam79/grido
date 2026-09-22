@@ -12,6 +12,14 @@ import {
  * canvas-viewport-deck + desktop-menu-bar + use-keyboard-shortcuts +
  * workspace-tools). دوال الـ store تعمل خارج المكونات (اختصارات/أوامر)،
  * والـ hook للمكونات مع تسمية النسبة وحالة الحدود للتعطيل.
+ *
+ * أفعال الملاءمة الثلاثة تعيّن الوضع + تُرجع مضاعف الزوم إلى 100%:
+ * قاعدة الملاءمة هي التي تعيّن الحجم الأساسي، والزوم مضاعف فوقها، فإرجاعه
+ * إلى 100% يجعل الملاءمة معناها الحقيقي «الورقة كاملة/عرض كامل».
+ *
+ * ملاحظة على الأسماء: `fitZoomStore` تعني «ملاءمة الكل» (الورقة كاملة على
+ * الشاشة) وهي نفس دلالة Ctrl+0 القديمة، لكنها الآن تعمل بلا الحدث
+ * `grido:fit-canvas-to-screen` — فتغيير وضع الملاءمة يمرّ من متجر واحد.
  */
 
 export function zoomInStore(): void {
@@ -26,8 +34,25 @@ export function resetZoomStore(): void {
   useEditorStore.getState().setCanvasZoom(ZOOM_DEFAULT);
 }
 
+/** ملاءمة الكل — الورقة كاملة داخل منطقة العمل (بلا تمرير) */
 export function fitZoomStore(): void {
-  window.dispatchEvent(new CustomEvent("grido:fit-canvas-to-screen"));
+  const { setCanvasFitMode, setCanvasZoom } = useEditorStore.getState();
+  setCanvasFitMode("height");
+  setCanvasZoom(ZOOM_DEFAULT);
+}
+
+/** ملاءمة العرض — الورقة تملأ عرض منطقة العمل ويُمرَّر الباقي رأسياً */
+export function fitWidthZoomStore(): void {
+  const { setCanvasFitMode, setCanvasZoom } = useEditorStore.getState();
+  setCanvasFitMode("width");
+  setCanvasZoom(ZOOM_DEFAULT);
+}
+
+/** ملاءمة تلقائية — يختار المحرر الوضع الأنسب لهندسة النافذة */
+export function autoFitZoomStore(): void {
+  const { setCanvasFitMode, setCanvasZoom } = useEditorStore.getState();
+  setCanvasFitMode("auto");
+  setCanvasZoom(ZOOM_DEFAULT);
 }
 
 export function useCanvasZoom() {
@@ -39,6 +64,8 @@ export function useCanvasZoom() {
     zoomOut: zoomOutStore,
     resetZoom: resetZoomStore,
     fitZoom: fitZoomStore,
+    fitWidthZoom: fitWidthZoomStore,
+    autoFitZoom: autoFitZoomStore,
     canZoomIn: canZoomIn(zoom),
     canZoomOut: canZoomOut(zoom),
     isDefaultZoom: isDefaultZoom(zoom),

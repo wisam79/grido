@@ -88,4 +88,64 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     const emptyState = page.getByTestId('canvas-empty-state');
     await expect(emptyState).not.toBeVisible();
   });
+
+  test('Fit Contract (1920px): الورقة الرأسية تملأ عرض مساحة العمل بدل هامش ميت', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('/');
+    await waitForAppReady(page);
+
+    // الورقة الافتراضية A4 رأسية: الفراغ الجانبي في ملاءمة الارتفاع أكبر من
+    // الورقة نفسها، فالوضع التلقائي يختار ملاءمة العرض ويعرضه المؤشر في الشريط
+    const canvasArea = page.locator('#canvas-area');
+    await expect(canvasArea).toHaveAttribute('data-fit-mode', 'width');
+    // مؤشر الوضع الفعّال في شريط العرض يقف على «عرض»
+    const fitStatus = page.getByTestId('canvas-fit-status');
+    await expect(fitStatus).toHaveAttribute('data-fit-mode', 'width');
+    await expect(fitStatus).toHaveText('عرض');
+
+    const areaBox = await canvasArea.boundingBox();
+    const shellBox = await page.getByTestId('workspace-canvas-shell').boundingBox();
+    expect(areaBox).toBeTruthy();
+    expect(shellBox).toBeTruthy();
+    // كانت الورقة تشغل ~40% من عرض المساحة — الآن تملأ معظمه
+    expect(areaBox!.width / shellBox!.width).toBeGreaterThan(0.85);
+
+    // و«ملاءمة الكل» تعيد الورقة كاملة بلا تمرير (مخروج آمن بنقرة واحدة)
+    await page.getByTestId('canvas-fit-all').click();
+    await expect(canvasArea).toHaveAttribute('data-fit-mode', 'height');
+
+    const fullBox = await canvasArea.boundingBox();
+    expect(fullBox!.width / areaBox!.width).toBeLessThan(0.6);
+    expect(fullBox!.height).toBeLessThan(shellBox!.height);
+  });
+
+  test('Fit Contract (1280px): ملاءمة العرض اختيار صريح من القائمة وتُحفظ كتفضيل', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await waitForAppReady(page);
+
+    const canvasArea = page.locator('#canvas-area');
+
+    // «ملاءمة الكل» صريحة ودائمة: الورقة كاملة داخل الإطار بلا تمرير
+    await page.getByTestId('canvas-fit-all').click();
+    await expect(canvasArea).toHaveAttribute('data-fit-mode', 'height');
+    await expect(page.getByTestId('canvas-fit-status')).toHaveText('الكل');
+    const fullBox = await canvasArea.boundingBox();
+
+    // ومن القائمة: الأوضاع الثلاثة ظاهرة بعناوينها العربية
+    await page.getByTestId('canvas-fit-menu').click();
+    await expect(page.getByTestId('canvas-fit-auto')).toContainText('ملاءمة تلقائية');
+    await expect(page.getByTestId('canvas-fit-height')).toContainText('ملاءمة الكل');
+
+    // وملاءمة العرض تُوسّع الرأسية بشكل واضح
+    await page.getByTestId('canvas-fit-width').click();
+    await expect(canvasArea).toHaveAttribute('data-fit-mode', 'width');
+
+    const wideBox = await canvasArea.boundingBox();
+    expect(wideBox!.width).toBeGreaterThan(fullBox!.width * 1.5);
+
+    // تفضيل عرض محفوظ محلياً — لا يُصدَّر مع ملف المشروع
+    const stored = await page.evaluate(() => localStorage.getItem('grido_canvas_fit_mode_v1'));
+    expect(stored).toBe('width');
+  });
 });

@@ -210,6 +210,7 @@ describe("أوامر الحالة الحية (WORKSPACE_STATE_COMMANDS)", () => 
       historyIndex: state.historyIndex,
       historyLength: state.history.length,
       canvasZoom: 2,
+      canvasFitMode: state.canvasFitMode,
       showRuler: true,
       showGrid: true,
     });
@@ -230,7 +231,14 @@ describe("أوامر الحالة الحية (WORKSPACE_STATE_COMMANDS)", () => 
     useEditorStore.setState({ showRuler: false, showGrid: false });
     const rulers = WORKSPACE_STATE_COMMANDS.find((c) => c.id === "toggle-rulers")!;
     const grid = WORKSPACE_STATE_COMMANDS.find((c) => c.id === "toggle-grid")!;
-    const input = { historyIndex: 0, historyLength: 1, canvasZoom: 1, showRuler: true, showGrid: true };
+    const input = {
+      historyIndex: 0,
+      historyLength: 1,
+      canvasZoom: 1,
+      canvasFitMode: "auto" as const,
+      showRuler: true,
+      showGrid: true,
+    };
 
     expect(rulers.getSnapshot(input).subtitle).toBe("ظاهرة الآن — للإخفاء");
     expect(grid.getSnapshot(input).subtitle).toBe("ظاهرة الآن — للإخفاء");

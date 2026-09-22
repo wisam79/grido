@@ -6,7 +6,14 @@ import { getToolsForWorkflow } from "@/lib/workspace-tools";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
-import { fitZoomStore, resetZoomStore, zoomInStore, zoomOutStore } from "@/hooks/use-canvas-zoom";
+import {
+  autoFitZoomStore,
+  fitWidthZoomStore,
+  fitZoomStore,
+  resetZoomStore,
+  zoomInStore,
+  zoomOutStore,
+} from "@/hooks/use-canvas-zoom";
 
 export function useKeyboardShortcuts() {
   // --- Shortcuts via react-hotkeys-hook ---
@@ -257,10 +264,22 @@ export function useKeyboardShortcuts() {
     zoomOutStore();
   });
 
-  // Fit to screen: Ctrl+0 or Cmd+0 (منفصل عن 100% الحقيقي)
+  // Fit all: Ctrl+0 — الورقة كاملة على الشاشة (منفصل عن 100% الحقيقي)
   useHotkeys("mod+0, mod+numpad_0", (e) => {
     e.preventDefault();
     fitZoomStore();
+  });
+
+  // Fit width: Ctrl+Shift+0 — تملأ عرض منطقة العمل ويُمرَّر الباقي رأسياً
+  useHotkeys("shift+mod+0, shift+mod+numpad_0", (e) => {
+    e.preventDefault();
+    fitWidthZoomStore();
+  });
+
+  // Fit auto: Ctrl+Alt+0 — يختار الوضع الأنسب لهندسة النافذة
+  useHotkeys("alt+mod+0, alt+mod+numpad_0", (e) => {
+    e.preventDefault();
+    autoFitZoomStore();
   });
 
   // True 100%: Ctrl+1 or Cmd+1

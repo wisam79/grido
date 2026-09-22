@@ -80,4 +80,19 @@ describe('CoreSlice Unit Tests', () => {
     useEditorStore.getState().setCanvasZoom((prev) => prev * 2);
     expect(useEditorStore.getState().canvasZoom).toBe(3);
   });
+
+  it('يحفظ وضع الملاءمة كتفضيل عرض ويبقى بعد reset (ليس جزءاً من المستند)', () => {
+    localStorage.removeItem('grido_canvas_fit_mode_v1');
+
+    useEditorStore.getState().setCanvasFitMode('width');
+    expect(useEditorStore.getState().canvasFitMode).toBe('width');
+    expect(localStorage.getItem('grido_canvas_fit_mode_v1')).toBe('width');
+
+    // reset يعيد بيانات المستند فقط — تفضيل العرض يبقى كما اختاره المستخدم
+    useEditorStore.getState().reset();
+    expect(useEditorStore.getState().canvasFitMode).toBe('width');
+
+    useEditorStore.getState().setCanvasFitMode('auto');
+    expect(useEditorStore.getState().canvasFitMode).toBe('auto');
+  });
 });
