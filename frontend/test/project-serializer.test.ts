@@ -73,7 +73,7 @@ describe("project-serializer - Project Serialization and Migration Tests", () =>
     expect(migrated.version).toBe(1);
     expect(migrated.mode).toBe("single");
     expect(migrated.showGrid).toBe(false); // Sensible default provided
-    expect(migrated.gridSize).toBe(50); // Sensible default provided
+    expect(migrated.gridSize).toBe(48); // Sensible default provided (4px grid)
   });
 
   it("should validate and deserialize valid projects", () => {

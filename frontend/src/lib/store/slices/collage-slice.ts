@@ -2,7 +2,7 @@ import { StateCreator } from "zustand";
 import { CanvasElement, CanvasSlot, PhotoTemplate, CollageTemplate, PrintSettings, HistoryEntry } from "../types";
 import { uid } from "../../utils";
 import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
-import { measureImageAspect } from "../../canvas/load-image";
+import { measureImageAspect } from "../../canvas/measure-image";
 
 export interface CollageSlice {
   template: PhotoTemplate | null;
