@@ -9,7 +9,7 @@ import { Separator } from '../src/components/ui/separator';
 import { Switch } from '../src/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../src/components/ui/tabs';
 import { HugeIcon, Spinner } from '../src/components/ui/huge-icon';
-import { Sparkle } from '@phosphor-icons/react';
+import { Sparkle } from '@/components/ui/icons';
 
 describe('UI Components Unit Tests', () => {
   it('renders Button component and handles click events', () => {

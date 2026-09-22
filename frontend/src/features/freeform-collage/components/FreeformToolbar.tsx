@@ -25,7 +25,7 @@ import {
   SquaresFour,
   Ruler,
   ArrowsOutCardinal,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import type { PhotoPresetType, SlotAlignment, DistributionAxis, AutoPackStrategy } from "../types";
 import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from "../lib/freeform-math";
 import { cn } from "@/lib/utils";

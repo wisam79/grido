@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TextAa, Palette, Sparkle } from "@phosphor-icons/react";
+import { TextAa, Palette, Sparkle } from "@/components/ui/icons";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
 
 // Sub-components

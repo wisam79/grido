@@ -16,7 +16,7 @@ import {
   Trash,
   Copy,
   DotsSixVertical,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 
 /* ────────────────────────────────────────────────────────
  * لوحة الطبقات الاحترافية (Layers Panel)

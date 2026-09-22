@@ -1,6 +1,6 @@
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
-import { Palette, Eye, Sparkle, BoundingBox } from "@phosphor-icons/react";
+import { Palette, Eye, Sparkle, BoundingBox } from "@/components/ui/icons";
 import { GradientPicker } from "../../gradient-picker";
 import { gradientAngleFromPoints, gradientPointsFromAngle } from "../../gradient-utils";
 import { PopoverColorPicker, QuickColorPalette } from "../../shared-controls";

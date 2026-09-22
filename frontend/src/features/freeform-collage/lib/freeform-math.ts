@@ -8,7 +8,7 @@ import type {
   DistributionAxis,
   AutoPackStrategy,
 } from "../types";
-import { SquaresFour } from "@phosphor-icons/react";
+import { SquaresFour } from "@/components/ui/icons";
 import type { CollageTemplate } from "@/lib/templates";
 import { clamp } from "@/lib/clamp";
 export { PHOTO_PRESET_LABELS } from "./mixed-presets";

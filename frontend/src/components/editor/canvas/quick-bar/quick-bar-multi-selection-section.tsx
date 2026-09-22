@@ -1,5 +1,5 @@
 import React from "react";
-import { Stack, ArrowsHorizontal, ArrowsVertical } from "@phosphor-icons/react";
+import { Stack, ArrowsHorizontal, ArrowsVertical } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";

@@ -16,7 +16,7 @@ import {
   Key,
   User,
   SignOut,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";

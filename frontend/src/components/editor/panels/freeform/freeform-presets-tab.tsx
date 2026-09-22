@@ -9,7 +9,7 @@ import {
   Check,
   FrameCorners,
   ArrowsClockwise,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { CANVAS_SIZE_PRESETS, CanvasSizePreset } from "./freeform-panel-constants";
 import { cn } from "@/lib/utils";
 import { FluentFilterChips } from "@/components/ui/blocks";

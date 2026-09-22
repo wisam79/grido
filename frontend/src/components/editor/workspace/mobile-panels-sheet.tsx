@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { SquaresFour, Faders } from '@phosphor-icons/react';
+import { SquaresFour, Faders } from '@/components/ui/icons';
 
 interface MobilePanelsSheetProps {
   open: boolean;

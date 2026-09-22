@@ -15,7 +15,7 @@ import {
   Copy,
   DotsSixVertical,
   CaretDown,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import {

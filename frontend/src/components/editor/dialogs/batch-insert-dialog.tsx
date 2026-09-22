@@ -22,7 +22,7 @@ import {
   Check,
   Minus,
   Stack,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { openImageFileDialog, openDirectoryImageDialog } from "@/lib/io/file-dialog-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 import { useEditorStore } from "@/lib/editor-store";

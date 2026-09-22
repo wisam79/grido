@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LockSimple, Key, Moon, Sun } from "@phosphor-icons/react";
+import { LockSimple, Key, Moon, Sun } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/huge-icon";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";

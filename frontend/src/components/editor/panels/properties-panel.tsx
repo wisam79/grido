@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import type { CanvasElement } from "@/lib/store/types";
 import { GeneralSettings } from "../properties/general-settings";
@@ -6,9 +6,10 @@ import { ElementProperties } from "../properties/element-properties";
 import { SlotProperties } from "../properties/slot-properties";
 import { CollageSettings } from "../properties/collage-settings";
 import { PanelShell } from "./panel-shell";
-import { SlidersHorizontal, FileText, CaretRight, Image as ImageIcon, TextAa, Shapes, SquaresFour } from "@phosphor-icons/react";
+import { SlidersHorizontal, FileText, CaretRight, Image as ImageIcon, TextAa, Shapes, SquaresFour } from "@/components/ui/icons";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSegmentedControl } from "@/components/ui/blocks";
+import { PAPER_BACKGROUND_EVENTS } from "@/lib/ui/paper-background";
 
 export interface PropertiesPanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
@@ -33,6 +34,17 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({ onCollapse 
   })));
 
   const [generalTab, setGeneralTab] = useState<"collage" | "canvas">("collage");
+
+  // 🎯 انتقال موحّد إلى أداة خلفية الورقة: إلغاء التحديد (لأن الإعدادات العامة
+  // ومنها الورقة تظهر فقط بلا تحديد) ثم تحويل تبويب الإعدادات إلى «الورقة»
+  useEffect(() => {
+    const focusPaperBackground = () => {
+      useEditorStore.getState().selectElement(null);
+      setGeneralTab("canvas");
+    };
+    window.addEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
+    return () => window.removeEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
+  }, []);
 
   const activeElementId = selectedId || (selectedIds.length > 0 ? selectedIds[0] : null);
   const selectedElement = mode === "single" ? elements.find((e) => e.id === activeElementId) : undefined;

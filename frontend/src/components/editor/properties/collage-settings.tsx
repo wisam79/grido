@@ -5,7 +5,7 @@ import {
   Scissors,
   Rows,
   GridFour,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { Switch } from "@/components/ui/switch";
 import { useShallow } from "zustand/react/shallow";

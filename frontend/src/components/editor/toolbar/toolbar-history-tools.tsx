@@ -1,7 +1,7 @@
 import React from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
-import { ArrowUUpLeft, ArrowUUpRight } from "@phosphor-icons/react";
+import { ArrowUUpLeft, ArrowUUpRight } from "@/components/ui/icons";
 import { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
 
 /** التراجع/الإعادة. */

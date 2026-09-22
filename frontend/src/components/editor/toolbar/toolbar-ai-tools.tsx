@@ -7,7 +7,7 @@ import {
   PaintBrush,
   UserSquare,
   MagicWand,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { useShallow } from "zustand/react/shallow";
 import { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
 import { cn } from "@/lib/utils";

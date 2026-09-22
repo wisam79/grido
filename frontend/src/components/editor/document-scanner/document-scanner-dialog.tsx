@@ -17,7 +17,7 @@ import {
   Eye,
   ArrowCounterClockwise,
   FileText,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import {
   Point,
@@ -314,7 +314,7 @@ export function DocumentScannerDialog({
           {/* Canvas Main Container */}
           <div
             ref={containerRef as React.RefObject<HTMLDivElement>}
-            className="flex-1 bg-zinc-950/90 dark:bg-black/85 rounded-2xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/50 relative shadow-inner p-2 select-none"
+            className="flex-1 bg-canvas-stage dark:bg-black/85 rounded-2xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/50 relative shadow-inner p-2 select-none"
           >
             {/* Top Floating Status Badge */}
             <div className="absolute top-3 inset-x-0 mx-auto w-fit z-20 pointer-events-none">

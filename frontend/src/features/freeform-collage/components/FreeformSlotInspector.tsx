@@ -17,7 +17,7 @@ import {
   SlidersHorizontal,
   CaretDown,
   ArrowsOut,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/huge-icon";
-import { Warning, Key, ShieldCheck, DownloadSimple, ArrowSquareOut } from "@phosphor-icons/react";
+import { Warning, Key, ShieldCheck, DownloadSimple, ArrowSquareOut } from "@/components/ui/icons";
 import { ExportSupportLogs } from "../../../../../wailsjs/go/main/App";
 import { toast } from "sonner";
 import { toErrorMessage } from "@/lib/wails-error";

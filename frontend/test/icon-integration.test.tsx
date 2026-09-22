@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
-import React from "react";
+import * as React from "react";
 import { render } from "@testing-library/react";
-import {
-  PhosphorProvider,
-} from "@/components/ui/phosphor-provider";
+import { FluentIconProvider } from "@/components/ui/fluent-icon-provider";
 import {
   Sparkle,
   Eye,
@@ -13,27 +11,26 @@ import {
   Scan,
   TextT,
   Image,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 
-describe("Phosphor Icons Integration & Multi-Weight System", () => {
-  it("renders PhosphorProvider and passes default context", () => {
+describe("Fluent Icon Layer Integration & Multi-Weight System", () => {
+  it("renders FluentIconProvider and passes default context", () => {
     const { container } = render(
-      <PhosphorProvider weight="regular" size={20}>
+      <FluentIconProvider weight="regular" size={20}>
         <div data-testid="icon-wrapper">
           <Sparkle data-testid="sparkle-icon" />
         </div>
-      </PhosphorProvider>
+      </FluentIconProvider>
     );
 
     const svg = container.querySelector("svg");
     expect(svg).not.toBeNull();
-    expect(svg?.getAttribute("width")).toBe("20");
-    expect(svg?.getAttribute("height")).toBe("20");
+    expect(svg?.getAttribute("data-fui-icon")).not.toBeNull();
   });
 
-  it("renders all 6 weights: thin, light, regular, bold, fill, duotone", () => {
+  it("renders all 6 weights mapped onto Fluent variants (thin/light/regular -> Regular, bold/fill/duotone -> Filled)", () => {
     const { container } = render(
-      <PhosphorProvider>
+      <FluentIconProvider>
         <div className="icon-grid">
           <Stack data-testid="thin-icon" weight="thin" />
           <LockSimpleOpen data-testid="light-icon" weight="light" />
@@ -42,16 +39,19 @@ describe("Phosphor Icons Integration & Multi-Weight System", () => {
           <LockSimple data-testid="fill-icon" weight="fill" />
           <Scan data-testid="duotone-icon" weight="duotone" />
         </div>
-      </PhosphorProvider>
+      </FluentIconProvider>
     );
 
     const svgs = container.querySelectorAll("svg");
     expect(svgs.length).toBe(6);
+    for (const testId of ["thin-icon", "light-icon", "regular-icon", "bold-icon", "fill-icon", "duotone-icon"]) {
+      expect(container.querySelector(`[data-testid="${testId}"]`)).not.toBeNull();
+    }
   });
 
-  it("supports dynamic stateful weight switching (regular <-> fill, regular <-> bold)", () => {
+  it("supports dynamic stateful weight switching (regular <-> fill)", () => {
     const StatefulToggle = ({ isLocked, isSelected }: { isLocked: boolean; isSelected: boolean }) => (
-      <PhosphorProvider>
+      <FluentIconProvider>
         <div>
           {isLocked ? (
             <LockSimple data-testid="lock-active" weight="fill" />
@@ -60,7 +60,7 @@ describe("Phosphor Icons Integration & Multi-Weight System", () => {
           )}
           <Eye data-testid="visibility-toggle" weight={isSelected ? "bold" : "regular"} />
         </div>
-      </PhosphorProvider>
+      </FluentIconProvider>
     );
 
     const { rerender, getByTestId, queryByTestId } = render(

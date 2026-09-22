@@ -10,7 +10,7 @@ import {
   FluentIconButton,
 } from '../src/components/ui/blocks';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { Gear, Sparkle, Folder } from '@phosphor-icons/react';
+import { Gear, Sparkle, Folder } from '@/components/ui/icons';
 
 describe('Fluent 2 UI Blocks Component Suite', () => {
   describe('FluentSection', () => {

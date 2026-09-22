@@ -19,7 +19,7 @@ import {
   CheckSquareOffset,
   Circle,
   SquaresFour,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { DetectedDocument, DocumentAspectType, ScannerFilterMode, DetectionMode } from "../core";

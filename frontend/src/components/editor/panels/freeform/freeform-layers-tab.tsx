@@ -20,7 +20,7 @@ import {
   AlignBottom,
   ArrowsHorizontal,
   ArrowsVertical,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { LayersList } from "../../properties/layers-list";
 
 interface QuickActionBtnProps {

@@ -20,7 +20,7 @@ import {
   Columns,
   Sun,
   MagnifyingGlassPlus,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { toast } from "sonner";

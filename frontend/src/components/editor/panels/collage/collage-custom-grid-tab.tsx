@@ -14,7 +14,7 @@ import {
   Scissors,
   Check,
   CheckCircle,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { PhotoGridType, GridAlignment, getGridLimits, getPhotoDimensions } from "./collage-grid-math";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

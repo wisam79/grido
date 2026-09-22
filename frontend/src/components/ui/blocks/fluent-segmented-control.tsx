@@ -37,11 +37,41 @@ export function FluentSegmentedControl<T extends string = string>({
 }: FluentSegmentedControlProps<T>) {
   const autoId = React.useId();
   const effectiveLayoutId = layoutId || `fluent-segmented-${autoId}`;
+  const tablistId = `${effectiveLayoutId}-tablist`;
+
+  /** تنقل لوحة المفاتيح بين التبويبات وفق نمط WAI-ARIA Tabs (أسهم → تغيير فوري للقيمة) */
+  const handleTablistKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (!target.matches('[role="tab"]')) return;
+    const enabled = options.filter((o) => !o.disabled);
+    if (enabled.length < 2) return;
+    const idx = enabled.findIndex((o) => o.id === (target as HTMLElement).dataset.tab);
+    const isRtl = dir === "rtl";
+    let next = -1;
+    const nextKey = isRtl ? "ArrowLeft" : "ArrowRight";
+    const prevKey = isRtl ? "ArrowRight" : "ArrowLeft";
+    if (e.key === nextKey) next = (idx + 1 + enabled.length) % enabled.length;
+    else if (e.key === prevKey) next = (idx - 1 + enabled.length) % enabled.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = enabled.length - 1;
+    if (next >= 0) {
+      e.preventDefault();
+      onChange(enabled[next].id);
+      const container = e.currentTarget;
+      requestAnimationFrame(() => {
+        const tab = container.querySelector<HTMLButtonElement>(`[data-tab="${enabled[next].id}"]`);
+        tab?.focus();
+      });
+    }
+  };
 
   return (
     <div
       role="tablist"
+      id={tablistId}
+      tabIndex={-1}
       aria-orientation={stacked ? "vertical" : "horizontal"}
+      onKeyDown={handleTablistKeyDown}
       className={cn(
         "flex items-center gap-1 bg-muted/70 dark:bg-black/40 p-1 rounded-xl border border-border/70 dark:border-white/10 select-none shadow-inner fluent-specular min-w-0 max-w-full",
         fullWidth ? "w-full" : "w-fit inline-flex",
@@ -76,6 +106,7 @@ export function FluentSegmentedControl<T extends string = string>({
             aria-label={accessibleLabel}
             title={titleText}
             disabled={opt.disabled}
+            tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(opt.id)}
             className={cn(
               "relative flex items-center justify-center font-cairo cursor-pointer rounded-md transition-colors duration-150 z-10 select-none min-w-0 overflow-hidden",

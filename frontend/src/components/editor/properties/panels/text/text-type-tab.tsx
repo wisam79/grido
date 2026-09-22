@@ -20,7 +20,7 @@ import {
   ArrowsHorizontal,
   Palette,
   TextAa,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { PopoverColorPicker } from "../../shared-controls";
 import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import { TextFontSelector } from "./text-font-selector";

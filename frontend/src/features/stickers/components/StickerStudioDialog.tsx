@@ -11,7 +11,7 @@ import {
   ArrowRight,
   Sparkle,
   Code,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import {
   Dialog,
   DialogContent,

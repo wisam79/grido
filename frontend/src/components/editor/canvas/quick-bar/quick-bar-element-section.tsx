@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowUp, ArrowDown, ArrowClockwise, FlipHorizontal, ArrowCounterClockwise, Eye } from "@phosphor-icons/react";
+import { ArrowUp, ArrowDown, ArrowClockwise, FlipHorizontal, ArrowCounterClockwise, Eye } from "@/components/ui/icons";
 import { QuickBarGroup } from "./quick-bar-group";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";

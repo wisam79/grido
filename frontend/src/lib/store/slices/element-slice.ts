@@ -37,6 +37,12 @@ export interface ElementSlice {
   addTextElement: (text?: string) => void;
   addTextPreset: (preset: TextPresetType) => void;
   addShapeElement: (shape: ShapeElement["shape"], svgPath?: string) => void;
+  /**
+   * مستطيل خلفية كامل يغطي الورقة ويُوضع خلف كل العناصر — بإنشاء واحد
+   * وإدخال واحد في السجل. (addShapeElement ثم updateElement كانا يتركان
+   * لقطة وسيطة بمستطيل صغير في منتصف الورقة يظهر عند التراجع)
+   */
+  addBackdropRect: (patch?: Partial<CanvasElement>) => string;
   updateElement: (id: string, patch: Partial<CanvasElement>) => void;
   updateElements: (patches: { id: string; patch: Partial<CanvasElement> }[]) => void;
   removeElement: (id: string) => void;
@@ -372,6 +378,39 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     };
     set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
     get().pushHistory();
+  },
+
+  addBackdropRect: (patch = {}) => {
+    const id = uid();
+    const state = get();
+    // دائماً خلف كل العناصر: أدنى zIndex ناقص خطوة الترتيب المعتادة
+    const minZ = Math.min(0, ...state.elements.map((el: CanvasElement) => el.zIndex));
+
+    const backdrop: CanvasElement = {
+      id,
+      type: "shape",
+      shape: "rect",
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+      rotation: 0,
+      opacity: 1,
+      zIndex: minZ - 10,
+      radius: 0,
+      fill: "#3b82f6",
+      stroke: "transparent",
+      strokeWidth: 0,
+      ...patch,
+    } as ShapeElement;
+
+    set((s) => ({
+      elements: [...s.elements, backdrop],
+      selectedId: id,
+      selectedIds: [id],
+    }));
+    get().pushHistory();
+    return id;
   },
 
   updateElement: (id, patch) => {

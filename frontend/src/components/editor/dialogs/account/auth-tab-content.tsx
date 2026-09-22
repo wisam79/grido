@@ -8,7 +8,7 @@ import {
   Key,
   Lock,
   User,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { GoogleIcon } from "@/components/ui/image-icons";
 import type { useAuthForms } from "./use-auth-forms";
 

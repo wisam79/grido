@@ -22,7 +22,7 @@ import {
   Check,
   Sparkle,
   Compass,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import {

@@ -20,7 +20,7 @@ import {
   Columns,
   Rows,
   Sparkle,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { PageOrientationIcon } from "@/components/ui/image-icons";
 import { PAPER_SIZES } from "@/lib/templates/constants";
 import type { PrintSettings } from "@/lib/store/types";
@@ -270,7 +270,7 @@ export function PrintSettingsToolbar({
             >
               <SelectTrigger
                 aria-label="نمط خطوط القص"
-                className="h-6 w-[84px] px-2 py-0 text-mini font-semibold bg-background border-border/50 shadow-none focus:ring-1 focus:ring-primary/40"
+                className="h-7 w-[88px] px-2 py-0 text-mini font-semibold bg-background border-border/50 shadow-none focus:ring-1 focus:ring-primary/40"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -293,7 +293,7 @@ export function PrintSettingsToolbar({
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost" size="sm"
-                className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
+                className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
                 disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) <= 1}
                 onClick={() => setPrintSettings({ copiesPerSheet: Math.max(1, (printSettings.copiesPerSheet ?? 1) - 1) })}
               >
@@ -307,7 +307,7 @@ export function PrintSettingsToolbar({
               </span>
               <Button
                 variant="ghost" size="sm"
-                className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
+                className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
                 disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= maxCopiesPerSheet}
                 onClick={() => setPrintSettings({ copiesPerSheet: (printSettings.copiesPerSheet ?? 1) + 1 })}
               >
@@ -332,7 +332,7 @@ export function PrintSettingsToolbar({
                       onClick={() => setPrintSettings({ repeatMode: id })}
                       aria-pressed={(printSettings.repeatMode ?? "all") === id}
                       className={cn(
-                        "h-6 w-6 rounded-md flex items-center justify-center",
+                        "h-7 w-7 rounded-md flex items-center justify-center",
                         toggleButtonClassName((printSettings.repeatMode ?? "all") === id)
                       )}
                       aria-label={label}
@@ -352,7 +352,7 @@ export function PrintSettingsToolbar({
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost" size="sm"
-                className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
+                className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
                 disabled={(printSettings.gapMM ?? 2) <= 0}
                 onClick={() => setPrintSettings({ gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1) })}
               >
@@ -363,7 +363,7 @@ export function PrintSettingsToolbar({
               </span>
               <Button
                 variant="ghost" size="sm"
-                className="h-6 w-6 p-0 rounded-md cursor-pointer hover:bg-muted"
+                className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
                 disabled={(printSettings.gapMM ?? 2) >= 20}
                 onClick={() => setPrintSettings({ gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1) })}
               >

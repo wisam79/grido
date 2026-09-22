@@ -17,7 +17,7 @@ import {
   WarningCircle,
   Globe,
   Tag,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { toast } from "sonner";
 import { CheckForUpdate, DownloadAndInstallUpdate } from "../../../../wailsjs/go/main/App";
 import { service } from "../../../../wailsjs/go/models";

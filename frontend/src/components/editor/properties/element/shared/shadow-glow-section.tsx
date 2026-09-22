@@ -1,5 +1,5 @@
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { Sparkle, Eye, Drop, ArrowsLeftRight, ArrowsDownUp } from "@phosphor-icons/react";
+import { Sparkle, Eye, Drop, ArrowsLeftRight, ArrowsDownUp } from "@/components/ui/icons";
 import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import { PopoverColorPicker } from "../../shared-controls";
 

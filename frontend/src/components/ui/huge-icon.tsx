@@ -1,6 +1,6 @@
 import * as React from "react";
-import { type IconProps } from "@phosphor-icons/react";
-import { CircleNotch } from "@phosphor-icons/react";
+import { type IconProps } from "@/components/ui/icons";
+import { CircleNotch } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 type IconComponentProps = IconProps & React.SVGProps<SVGSVGElement> & Record<string, unknown>;

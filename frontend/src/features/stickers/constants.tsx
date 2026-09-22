@@ -11,7 +11,7 @@ import {
   Heart,
   Coffee,
   FrameCorners,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { ARABIC_FONTS } from "@/lib/io/fonts";
 import { StickerCategory, StickerCategoryGroupId, StickerShape } from "./types";
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Star, Palette, Eyedropper, Warning, Sparkle, ArrowsOutCardinal } from "@phosphor-icons/react";
+import { Star, Palette, Eyedropper, Warning, Sparkle, ArrowsOutCardinal } from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";

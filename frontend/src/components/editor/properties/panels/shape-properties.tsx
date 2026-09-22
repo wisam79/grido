@@ -9,7 +9,7 @@ import {
   LineSegment,
   Star,
   Polygon,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { PopoverColorPicker, QuickColorPalette } from "../shared-controls";
 import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import { Button } from "@/components/ui/button";

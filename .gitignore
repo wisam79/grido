@@ -49,6 +49,8 @@ build/windows/installer/CodeFormer-temp/
 
 # Wails v3 binary output (BIN_DIR="bin" في Taskfile.yml)
 /bin
+build/android/.gradle/
+build/android/build/
 
 # Stale local tool artifacts (كانت مُتتبَّعة بالخطأ)
 frontend/lint-results.txt

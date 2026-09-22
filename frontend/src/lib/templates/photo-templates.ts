@@ -4,7 +4,7 @@ import {
   AirplaneTilt,
   Image,
   GridFour,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import type { PhotoTemplate, TemplateCategory } from "./types";
 
 export const PHOTO_TEMPLATES: PhotoTemplate[] = [

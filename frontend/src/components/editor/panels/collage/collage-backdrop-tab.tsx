@@ -1,32 +1,22 @@
 import React from "react";
-import { PaintBucket, Check } from "@phosphor-icons/react";
+import { PaintBucket } from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   FluentSection,
   FluentSettingRow,
   FluentSliderField,
 } from "@/components/ui/blocks";
-import { PopoverColorPicker, StudioCanvasColorDeck } from "@/components/editor/properties/shared-controls";
+import {
+  PaperBackgroundSummary,
+  PopoverColorPicker,
+} from "@/components/editor/properties/shared-controls";
 
 /* ═══════════════════════════════════════════════════════════════
    خلفية وحدود الشبكة — لون ورقة الطباعة، المسافات بين الخانات،
    استدارة الزوايا، ولون الخلفية داخل كل خانة (يظهر مع الصور الشفافة).
    ═══════════════════════════════════════════════════════════════ */
-
-/** ألوان ورق جاهزة — بيضاء/عاجية/رمادية + هوية الاستوديو */
-const PAPER_SWATCHES: { color: string; label: string }[] = [
-  { color: "#FFFFFF", label: "أبيض" },
-  { color: "#F8FAFC", label: "أبيض مائل للرمادي" },
-  { color: "#FDF6EC", label: "عاجي" },
-  { color: "#EFF6FF", label: "أزرق فاتح" },
-  { color: "#F1F5F9", label: "رمادي فاتح" },
-  { color: "#0B1220", label: "كحلي داكن" },
-  { color: "#000000", label: "أسود" },
-  { color: "#2563EB", label: "أزرق الهوية" },
-];
 
 const SLOT_SWATCHES: { color: string; label: string }[] = [
   { color: "#FFFFFF", label: "أبيض" },
@@ -40,11 +30,6 @@ const SLOT_SWATCHES: { color: string; label: string }[] = [
 export function CollageBackdropTab() {
   const {
     backgroundColor,
-    setBackgroundColor,
-    backgroundGradientColor2,
-    setBackgroundGradientColor2,
-    backgroundGradientAngle,
-    setBackgroundGradientAngle,
     collageGap,
     setCollageGap,
     collageMargin,
@@ -58,11 +43,6 @@ export function CollageBackdropTab() {
   } = useEditorStore(
     useShallow((state) => ({
       backgroundColor: state.backgroundColor,
-      setBackgroundColor: state.setBackgroundColor,
-      backgroundGradientColor2: state.backgroundGradientColor2,
-      setBackgroundGradientColor2: state.setBackgroundGradientColor2,
-      backgroundGradientAngle: state.backgroundGradientAngle,
-      setBackgroundGradientAngle: state.setBackgroundGradientAngle,
       collageGap: state.collageGap,
       setCollageGap: state.setCollageGap,
       collageMargin: state.collageMargin,
@@ -84,72 +64,9 @@ export function CollageBackdropTab() {
 
   return (
     <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
-      {/* لون ورقة الطباعة */}
-      <FluentSection
-        icon={<PaintBucket className="w-3.5 h-3.5" weight="duotone" />}
-        title="خلفية الورقة"
-        subtitle={backgroundColor.toUpperCase()}
-        collapsible
-      >
-        {/* 🎨 تدرج الخلفية: نفس لوحة الاستوديو مع قسم التدرج */}
-        <StudioCanvasColorDeck
-          color={backgroundColor}
-          onChange={setBackgroundColor}
-          gradientColor2={backgroundGradientColor2}
-          onChangeGradientColor2={setBackgroundGradientColor2}
-          gradientAngle={backgroundGradientAngle}
-          onChangeGradientAngle={setBackgroundGradientAngle}
-        />
-
-        <div className="grid grid-cols-8 gap-1">
-          {PAPER_SWATCHES.map((swatch) => {
-            const isActive = backgroundColor.toLowerCase() === swatch.color.toLowerCase();
-            return (
-              <button
-                key={swatch.color}
-                type="button"
-                title={swatch.label}
-                aria-label={`خلفية الورقة ${swatch.label}`}
-                aria-pressed={isActive}
-                onClick={() => setBackgroundColor(swatch.color)}
-                style={{ backgroundColor: swatch.color }}
-                className={cn(
-                  "h-7 w-full rounded-md border transition-colors cursor-pointer flex items-center justify-center",
-                  isActive
-                    ? "border-primary ring-2 ring-primary/30"
-                    : "border-border/70 hover:border-primary/50",
-                  "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                )}
-              >
-                {isActive && (
-                  <Check
-                    className={cn(
-                      "w-3.5 h-3.5",
-                      swatch.color === "#000000" || swatch.color === "#0B1220"
-                        ? "text-white"
-                        : "text-foreground"
-                    )}
-                    weight="bold"
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        <FluentSettingRow
-          label="لون مخصص"
-          description="أي لون من لوحة الألوان"
-          control={
-            <PopoverColorPicker
-              color={backgroundColor}
-              onChange={setBackgroundColor}
-              swatchOnly
-              label="لون خلفية الورقة"
-            />
-          }
-        />
-      </FluentSection>
+      {/* لون ورقة الطباعة — بطاقة حالة تنقل إلى أداة الورقة الوحيدة في
+          لوحة الخصائص (كانت الأداة نفسها مكرّرة هنا وفي تبويب الخلفيات) */}
+      <PaperBackgroundSummary />
 
       {/* المسافات والزوايا */}
       <FluentSection

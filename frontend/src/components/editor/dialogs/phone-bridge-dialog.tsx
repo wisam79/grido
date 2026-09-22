@@ -17,7 +17,7 @@ import {
   WifiHigh,
   Image as ImageIcon,
   WarningCircle,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { toErrorMessage } from "@/lib/wails-error";

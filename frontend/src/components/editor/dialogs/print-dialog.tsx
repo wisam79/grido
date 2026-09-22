@@ -20,7 +20,7 @@ import {
   Printer,
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { SheetPreview } from "../print/print-preview";
 import { useShallow } from "zustand/react/shallow";
 import { PrintSettingsToolbar } from "../print/print-settings-toolbar";

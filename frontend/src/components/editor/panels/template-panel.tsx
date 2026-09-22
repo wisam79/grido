@@ -17,7 +17,7 @@ import type { NormalizedCell } from "./collage/collage-grid-math";
 import { toErrorMessage } from "@/lib/wails-error";
 import { CustomCollageCard } from "./custom-collage-card";
 import { PanelShell } from "./panel-shell";
-import { CaretLeft } from "@phosphor-icons/react";
+import { CaretLeft } from "@/components/ui/icons";
 import { getCollageTool, getStudioTool } from "@/lib/workspace-tools";
 import { useShallow } from "zustand/react/shallow";
 import { FreeformStudioPanel } from "./freeform";

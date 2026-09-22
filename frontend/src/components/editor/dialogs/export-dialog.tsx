@@ -16,7 +16,7 @@ import { Spinner } from "@/components/ui/huge-icon";
 import {
   DownloadSimple,
   Warning,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { exportCanvas, downloadBlob, exportSlotCanvas, applyBleedAndCropMarks, CanvasTooLargeError } from "@/lib/export";
 import { SelectExportDirectory, SetTaskbarProgress, SendNotification, OpenFolder } from "../../../../wailsjs/go/main/App";
 import { useEditorStore } from "@/lib/editor-store";

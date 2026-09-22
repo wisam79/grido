@@ -6,7 +6,7 @@ import {
   FlipHorizontal,
   FlipVertical,
   ArrowsOutCardinal,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import {
   AlignLeftIcon,
   AlignCenterHorizontalIcon,

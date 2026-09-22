@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Copy, Link, LinkBreak, Trash, CaretDown } from "@phosphor-icons/react";
+import { Copy, Link, LinkBreak, Trash, CaretDown } from "@/components/ui/icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

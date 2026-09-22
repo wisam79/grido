@@ -9,11 +9,15 @@ import {
   PaintBrush,
   Copy,
   Drop,
-} from "@phosphor-icons/react";
+  SlidersHorizontal,
+  XCircle,
+} from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/lib/editor-store";
 import { previewWhite, checkerColor, STUDIO_PALETTE } from "@/lib/canvas/canvas-colors";
 import { GradientPicker } from "./gradient-picker";
+import { formatGradientCss } from "./gradient-utils";
+import { openPaperBackgroundTool } from "@/lib/ui/paper-background";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { BACKGROUND_COLORS } from "@/lib/templates";
 
@@ -671,9 +675,10 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
         )}
       </div>
 
-      {/* 🎨 تدرج الخلفية — مكوّن GradientPicker الموحد الجاهز (نفس محرر
-          تعبئة الأشكال والنصوص): مبدّل نوع + محرر stops + عكس + زاوية
-          سلايدر وزوايا سريعة + معارض تدرجات جاهزة مصنفة. */}
+      {/* 🎨 تدرج خلفية الورقة — محرر اللونين والزاوية من مكوّن GradientPicker
+          الموحّد، بلا مبدّل نوع التعبئة (الورقة خطية دائماً) وبلا معرض التدرجات
+          الجاهزة (المعرض الوحيد يعيش في تبويب الخلفيات) — فلا تتكرر أداة واحدة
+          ولا يظهر عنصر تحكم بلا أثر. */}
       {hasGradientProps && (
         <div className="pt-1 border-t border-border/30">
           <div className="flex items-center justify-between gap-2 py-2">
@@ -712,10 +717,147 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
               angle={gradientAngle ?? 135}
               onChangeAngle={(deg) => onChangeGradientAngle?.(deg)}
               onCommitAngle={() => useEditorStore.getState().pushHistory()}
+              showFillType={false}
+              showPresets={false}
             />
           )}
         </div>
       )}
+    </div>
+  );
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   خلفية الورقة بين اللوحات
+
+   أداة التعديل (StudioCanvasColorDeck) موجودة في مكان واحد فقط: قسم
+   «خلفية الورقة» في لوحة الخصائص. بقية اللوحات تعرض هذه البطاقة: حالة
+   مختصرة + زر ينقل إلى الأداة، فلا تتكرر الأداة نفسها في أكثر من لوحة.
+   ═══════════════════════════════════════════════════════════════ */
+
+/** لوح شفافية خفيف يظهر تحت لون الورقة عند اختيار «شفاف» */
+const PAPER_CHECKER =
+  "linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%)";
+
+export interface PaperBackgroundSummaryProps {
+  /** شرائح حالة إضافية خاصة باللوحة المستضيفة (مثل عدد الخلفيات الكاملة) */
+  extraStatus?: React.ReactNode;
+  /** إجراءات إضافية تُعرض يسار البطاقة */
+  actions?: React.ReactNode;
+  className?: string;
+}
+
+export const PaperBackgroundSummary = React.memo(function PaperBackgroundSummary({
+  extraStatus,
+  actions,
+  className,
+}: PaperBackgroundSummaryProps) {
+  const backgroundColor = useEditorStore((state) => state.backgroundColor);
+  const backgroundGradientColor2 = useEditorStore((state) => state.backgroundGradientColor2);
+  const backgroundGradientAngle = useEditorStore((state) => state.backgroundGradientAngle);
+
+  const gradientActive = Boolean(backgroundGradientColor2);
+  const angle = backgroundGradientAngle ?? 135;
+
+  /** خلفية الورقة كما ستُطبع: مصمتة أو متدرجة بنفس زاوية الكانفاس */
+  const paperBackground = gradientActive
+    ? formatGradientCss(
+        [0, backgroundColor || "#FFFFFF", 1, backgroundGradientColor2 as string],
+        "linear",
+        angle
+      )
+    : backgroundColor || "#FFFFFF";
+
+  const removePaperGradient = () => {
+    useEditorStore.getState().setBackgroundGradientColor2(null);
+    useEditorStore.getState().pushHistory();
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 shadow-xs fluent-specular select-none font-cairo",
+        className
+      )}
+      dir="rtl"
+    >
+      {/* مصغّرة الورقة الحقيقية: اللون/التدرج + مخيّلة خانات المحتوى */}
+      <div
+        className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md border border-black/10 dark:border-white/15 shadow-2xs"
+        style={{ backgroundImage: PAPER_CHECKER, backgroundSize: "6px 6px" }}
+        aria-hidden="true"
+      >
+        <span className="absolute inset-0" style={{ background: paperBackground }} />
+        <span className="absolute inset-1 grid grid-cols-2 grid-rows-2 gap-0.5 opacity-70">
+          {[0, 1, 2, 3].map((cell) => (
+            <span
+              key={cell}
+              className="rounded-[2px] border border-black/10 bg-black/[0.07] dark:border-white/10 dark:bg-white/10"
+            />
+          ))}
+        </span>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold text-foreground">خلفية الورقة</p>
+        <p className="mt-0.5 truncate text-micro font-mono text-muted-foreground" dir="ltr">
+          {gradientActive
+            ? `${(backgroundColor || "#FFFFFF").toUpperCase()} → ${backgroundGradientColor2?.toUpperCase()} · ${angle}°`
+            : (backgroundColor || "#FFFFFF").toUpperCase()}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-1">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-micro font-bold leading-none",
+              gradientActive
+                ? "border-primary/25 bg-primary/10 text-primary"
+                : "border-border/60 bg-muted/60 text-muted-foreground"
+            )}
+          >
+            <Drop className="w-2.5 h-2.5" weight="bold" />
+            {gradientActive ? "تدرج مطبَّق" : "لون مصمت"}
+          </span>
+          {extraStatus}
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1">
+        {gradientActive && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={removePaperGradient}
+                aria-label="إزالة تدرج الورقة"
+                className="w-7 h-7 flex items-center justify-center rounded-md border border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+              >
+                <XCircle className="w-3.5 h-3.5" weight="duotone" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs font-cairo font-medium">
+              إزالة تدرج الورقة والرجوع للون المصمت
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {actions}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={openPaperBackgroundTool}
+              aria-label="تعديل خلفية الورقة"
+              className="w-7 h-7 flex items-center justify-center rounded-md border border-border/60 bg-muted/40 text-muted-foreground hover:text-primary hover:bg-primary/10 hover:border-primary/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" weight="bold" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs font-cairo font-medium">
+            تعديل خلفية الورقة — أداة الورقة في لوحة الخصائص
+          </TooltipContent>
+        </Tooltip>
+      </div>
     </div>
   );
 });

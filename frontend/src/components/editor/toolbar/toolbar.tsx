@@ -6,7 +6,7 @@ import {
   Export,
   DotsThreeVertical,
   Folders,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { PrintIcon } from "@/components/ui/print-icon";
 import { ToolbarFileOps } from "./toolbar-file-ops";
 import {

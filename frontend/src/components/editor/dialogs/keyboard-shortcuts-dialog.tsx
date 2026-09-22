@@ -11,7 +11,7 @@ import {
   ArrowUp,
   ArrowDown,
   Sparkle,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { Separator } from "@/components/ui/separator";
 
 interface ShortcutItem {

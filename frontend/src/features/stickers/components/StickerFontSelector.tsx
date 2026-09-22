@@ -5,7 +5,7 @@ import {
   CaretDown,
   Check,
   Cloud,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from "@/lib/io/fonts";
 import { cn } from "@/lib/utils";

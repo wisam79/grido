@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { WarningOctagon } from "@phosphor-icons/react";
+import { WarningOctagon } from "@/components/ui/icons";
 import { LogFrontendError } from "../../wailsjs/go/main/App";
 
 interface Props {

@@ -16,7 +16,7 @@ import {
   LockSimple,
   LockSimpleOpen,
   Ruler,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 
 export interface ViewportFixedRulersProps {
   showRuler: boolean;

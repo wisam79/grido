@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { TextAa, X, Check, ArrowCounterClockwise, CaretUp, CaretDown } from "@phosphor-icons/react";
+import { TextAa, X, Check, ArrowCounterClockwise, CaretUp, CaretDown } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

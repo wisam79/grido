@@ -3,7 +3,7 @@ import {
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
   CursorClick,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn, sanitizeSvgMarkupCached } from "@/lib/utils";
 import { StickerTemplate, StickerParams, MockupBackground } from "../types";

@@ -1,4 +1,4 @@
-import type { Icon } from "@phosphor-icons/react";
+import type { Icon } from "@/components/ui/icons";
 import type { WorkflowMode } from "@/lib/store/slices/workflow-slice";
 import type { EditorMode } from "@/lib/store/types";
 import {
@@ -18,7 +18,7 @@ import {
   Swatches,
   GridNine,
   BookmarkSimple,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { canZoomIn, canZoomOut, isDefaultZoom } from "@/lib/canvas/zoom";
 import { fitZoomStore, resetZoomStore, zoomInStore, zoomOutStore } from "@/hooks/use-canvas-zoom";
@@ -204,7 +204,7 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     id: "backdrops",
     label: "الخلفيات والأنماط",
     title: "الخلفيات والأنماط",
-    subtitle: "تدرجات وأنماط متكررة",
+    subtitle: "لون الورقة والتدرجات الجاهزة",
     group: "المقاسات والهوية",
     icon: GridNine,
     testId: "rail-studio-backdrops",

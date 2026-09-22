@@ -37,7 +37,7 @@ import {
   ArrowsDownUp,
   PushPin,
   PushPinSlash,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import {
   AlertDialog,
   AlertDialogAction,

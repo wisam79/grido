@@ -11,7 +11,7 @@ import {
   MagicWand,
   Crop,
   ClipboardText,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
 import { wailsIsDesktop } from "@/lib/wails-env";

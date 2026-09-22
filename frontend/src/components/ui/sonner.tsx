@@ -5,7 +5,7 @@ import {
   XCircle,
   WarningCircle,
   Info,
-} from "@phosphor-icons/react"
+} from "@/components/ui/icons"
 import { Spinner } from "@/components/ui/huge-icon"
 
 const Toaster = ({ offset = 56, ...props }: ToasterProps) => {

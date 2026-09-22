@@ -1,6 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
-import { GridFour } from "@phosphor-icons/react";
+import { GridFour } from "@/components/ui/icons";
 
 export function PhotoTypeMiniature({ type, active }: { type: string; active: boolean }) {
   return (

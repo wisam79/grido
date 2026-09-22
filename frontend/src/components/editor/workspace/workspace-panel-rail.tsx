@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
-import { ArrowsOutSimple, ArrowsInSimple, SquaresFour } from '@phosphor-icons/react';
+import { ArrowsOutSimple, ArrowsInSimple, SquaresFour } from '@/components/ui/icons';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -87,45 +87,48 @@ function RailToolButton({
           aria-label={tool.label}
           aria-pressed={isActive}
           className={cn(
-            'h-8 w-8 rounded-md transition-colors duration-150 cursor-pointer relative',
+            'group h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer relative',
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
             isActive
-              ? 'text-primary font-bold shadow-xs'
+              ? 'text-primary'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
           )}
         >
-          {isActive && (
+          {/* حبة النشط — Fluent 2 مسطحة: تعبئة زرقاء هادئة وحدود رقيقة بلا تدرج */}
+          {            isActive && (
             <motion.span
               layoutId={pillLayoutId}
-              className="absolute inset-0 bg-gradient-to-b from-primary/20 to-primary/10 dark:from-primary/25 dark:to-primary/15 rounded-md border border-primary/30 shadow-inner"
+              className="absolute inset-0 bg-primary/10 dark:bg-primary/15 rounded-lg border border-primary/25"
               transition={{ type: 'spring', stiffness: 500, damping: 35 }}
             />
           )}
 
           {/* الأيقونة فوق الإطار بلا z-index سالب — يرتفع فوق الشرائح بقيمته الصريحة */}
-          <tool.icon className="w-5 h-5 relative z-10" weight={isActive ? 'fill' : 'regular'} />
+          <tool.icon className="size-[18px] relative z-10" weight={isActive ? 'duotone' : 'regular'} />
 
           {showBadge && (
             <span
-              className="absolute -top-1 -right-1 min-w-[15px] h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-2xs font-mono font-bold flex items-center justify-center leading-none pointer-events-none shadow-xs z-20"
+              className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-2xs font-bold tabular-nums flex items-center justify-center leading-none pointer-events-none ring-2 ring-sidebar z-20"
               aria-hidden="true"
             >
               {badgeCount > 99 ? '99+' : badgeCount}
             </span>
           )}
 
-          {/* نبض «قيد الاستخدام» — نقطة خضراء صغيرة بأسفل يمين الزر */}
+          {/* نقطة «مطبَّق على الكانفاس» — أسفل يمين الزر */}
           {isInUse && (
             <span
-              className="absolute bottom-1 end-1 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-background pointer-events-none z-20"
+              className="absolute bottom-1 end-1 w-1.5 h-1.5 rounded-full bg-success ring-2 ring-sidebar pointer-events-none z-20"
               aria-hidden="true"
             />
           )}
 
-          {/* المؤشر الجانبي النشط — شريط رقيق داخل حافة الشريط */}
+          {/* المؤشر الجانبي النشط — شريط رقيق ينتقل بسلاسة بين التبويبات */}
           {isActive && (
-            <span
-              className="absolute -start-1.5 top-1/2 -translate-y-1/2 w-0.75 h-4 bg-primary rounded-e-full shadow-xs z-10"
+            <motion.span
+              layoutId={`${pillLayoutId}-bar`}
+              className="absolute -start-1.5 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-e-full z-10"
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               aria-hidden="true"
             />
           )}
@@ -269,7 +272,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
           المحتوى ارتفاع الشريط ويدفع الأزرار المثبّتة خارجه. */}
       <nav
         aria-label={toolsHeading}
-        className="flex flex-col items-center gap-1 w-full px-1.5 py-1 flex-1 min-h-0 overflow-y-auto scrollbar-none"
+        className="flex flex-col items-center gap-1.5 w-full px-1.5 py-1 flex-1 min-h-0 overflow-y-auto scrollbar-none"
       >
         {groups.map((group, groupIndex) => (
           <React.Fragment key={group.name}>
@@ -277,7 +280,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
               <div
                 role="separator"
                 aria-orientation="horizontal"
-                className="w-6 h-px my-0.5 shrink-0 bg-gradient-to-l from-transparent via-border to-transparent"
+                className="w-7 h-px my-1.5 shrink-0 bg-gradient-to-l from-transparent via-border to-transparent"
               />
             )}
             {group.tools.map((tool) => (
@@ -301,7 +304,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
         <div
           role="separator"
           aria-orientation="horizontal"
-          className="w-6 h-px my-0.5 bg-gradient-to-l from-transparent via-border to-transparent"
+          className="w-7 h-px my-1.5 bg-gradient-to-l from-transparent via-border to-transparent"
         />
 
         <Popover open={isLauncherOpen} onOpenChange={setIsLauncherOpen}>
@@ -314,14 +317,17 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                   data-testid="rail-tool-launcher"
                   aria-label="كل الأدوات"
                   className={cn(
-                    'h-8 w-8 rounded-md transition-colors duration-150 cursor-pointer',
+                    'h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isLauncherOpen
-                      ? 'text-primary bg-primary/15 font-bold shadow-xs'
+                      ? 'text-primary bg-primary/10 border border-primary/25'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
                   )}
                 >
-                  <SquaresFour className="w-5 h-5" weight={isLauncherOpen ? 'fill' : 'regular'} />
+                  <SquaresFour
+                    className="size-[18px]"
+                    weight={isLauncherOpen ? 'duotone' : 'regular'}
+                  />
                 </Button>
               </PopoverTrigger>
             </TooltipTrigger>
@@ -429,17 +435,17 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
               data-testid="rail-zen-mode"
               aria-label={isZenMode ? 'استعادة الألواح' : 'وضع التركيز'}
               className={cn(
-                'h-8 w-8 rounded-md transition-colors duration-150 cursor-pointer',
+                'h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                 isZenMode
-                  ? 'text-primary bg-primary/15 font-bold shadow-xs'
+                  ? 'text-primary bg-primary/10 border border-primary/25'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
               )}
             >
               {isZenMode ? (
-                <ArrowsInSimple className="w-5 h-5 text-primary" />
+                <ArrowsInSimple className="size-[18px] text-primary" weight="duotone" />
               ) : (
-                <ArrowsOutSimple className="w-5 h-5" />
+                <ArrowsOutSimple className="size-[18px]" />
               )}
             </Button>
           </TooltipTrigger>

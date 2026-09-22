@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { CollageTemplate } from "@/lib/templates";
-import { Trash, Image } from "@phosphor-icons/react";
+import { Trash, Image } from "@/components/ui/icons";
 import {
   AlertDialog,
   AlertDialogAction,

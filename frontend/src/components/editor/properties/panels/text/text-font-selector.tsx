@@ -10,7 +10,7 @@ import {
   Sparkle,
   Cloud,
   CheckCircle,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 // #12 — استخدام readStoredList/writeStoredList لضمان قراءة string[] فقط وسقف 60
@@ -243,7 +243,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="w-6 h-6 absolute left-2 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                className="w-7 h-7 absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
                 <X className="w-3 h-3" weight="bold" />
               </button>
@@ -252,7 +252,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 type="button"
                 onClick={() => setShowCustomPreviewInput(!showCustomPreviewInput)}
                 className={cn(
-                  "w-6 h-6 absolute left-2 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+                  "w-7 h-7 absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
                   showCustomPreviewInput && "text-primary bg-primary/10"
                 )}
                 title="تخصيص المعاينة"
@@ -276,7 +276,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 <button
                   type="button"
                   onClick={() => setPreviewText("")}
-                  className="w-5 h-5 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                  className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                   title="إعادة ضبط"
                 >
                   <X className="w-2.5 h-2.5" weight="bold" />

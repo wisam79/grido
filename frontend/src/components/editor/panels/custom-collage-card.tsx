@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { toast } from "sonner";
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
-import { GridFour, MagicWand } from "@phosphor-icons/react";
+import { GridFour, MagicWand } from "@/components/ui/icons";
 import { getCollageToolsForWorkflow, type CollageTab } from "@/lib/workspace-tools";
 import { CollageTemplate } from "@/lib/templates";
 import { FreeformCollageModal } from "@/features/freeform-collage";

@@ -1,6 +1,6 @@
 import { CanvasElement } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
-import { Sparkle, LockSimple } from "@phosphor-icons/react";
+import { Sparkle, LockSimple } from "@/components/ui/icons";
 
 export interface ElementHeaderBadgeProps {
   element: CanvasElement;

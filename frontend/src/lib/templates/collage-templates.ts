@@ -1,4 +1,4 @@
-import { SquaresFour, GridFour } from "@phosphor-icons/react";
+import { SquaresFour, GridFour } from "@/components/ui/icons";
 import type { CollageTemplate } from './types';
 
 export const COLLAGE_TEMPLATES: CollageTemplate[] = [

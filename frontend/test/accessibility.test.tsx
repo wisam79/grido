@@ -11,7 +11,7 @@ import {
   FluentIconButton,
 } from '../src/components/ui/blocks';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { Gear, Sparkle, Folder } from '@phosphor-icons/react';
+import { Gear, Sparkle, Folder } from '@/components/ui/icons';
 
 /**
  * اختبارات الوصول (a11y) — تفعيل بنية jest-axe الموجودة مسبقاً في setup.ts.

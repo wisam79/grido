@@ -19,7 +19,7 @@ import {
   FrameCorners,
   Note,
   type Icon,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { GridFour, Columns, Crop, Eye } from "@phosphor-icons/react";
+import { GridFour, Columns, Crop, Eye } from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { cn } from "@/lib/utils";
 import {

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/huge-icon";
-import { SquaresFour, Check, FloppyDisk, DownloadSimple, UploadSimple } from "@phosphor-icons/react";
+import { SquaresFour, Check, FloppyDisk, DownloadSimple, UploadSimple } from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {

@@ -27,7 +27,7 @@ import { useOperationStatusStore } from "@/lib/ui/operation-status";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Spinner } from "@/components/ui/huge-icon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PhosphorProvider } from "@/components/ui/phosphor-provider";
+import { FluentIconProvider } from "@/components/ui/fluent-icon-provider";
 import {
   SquaresFour,
   Image,
@@ -38,7 +38,7 @@ import {
   SidebarSimple,
   User,
   ArrowsCounterClockwise,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import type { WorkflowMode } from "@/lib/store";
 import { useTheme } from "@/hooks/use-theme";
 import { useWindowControls } from "@/hooks/use-window-controls";
@@ -55,6 +55,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { usePhoneBridgeListener } from "@/components/editor/system/use-phone-bridge";
+import { PAPER_BACKGROUND_EVENTS } from "@/lib/ui/paper-background";
 
 /** هيكل تحميل بسيط يُعرض أثناء تفكيك الحوارات الكسولة (تصدير/طباعة) */
 function DialogLazyFallback() {
@@ -95,7 +96,7 @@ export default function App() {
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
 
-  const { togglePanel, toggleZenMode, selectCollageTab, selectStudioTab } = panelsHook;
+  const { togglePanel, openPanel, toggleZenMode, selectCollageTab, selectStudioTab } = panelsHook;
 
   useEffect(() => {
     const handleToggleRight = () => togglePanel("templates");
@@ -113,12 +114,15 @@ export default function App() {
         selectStudioTab(detail.tab);
       }
     };
+    // 🎯 انتقال موحّد إلى أداة خلفية الورقة الوحيدة (لوحة الخصائص)
+    const handleOpenPropertiesPanel = () => openPanel("properties");
 
     window.addEventListener("grido:toggle-right-sidebar", handleToggleRight);
     window.addEventListener("grido:toggle-left-sidebar", handleToggleLeft);
     window.addEventListener("grido:toggle-zen-mode", handleToggleZen);
     window.addEventListener("grido:select-collage-tab", handleSelectCollageTab);
     window.addEventListener("grido:select-studio-tab", handleSelectStudioTab);
+    window.addEventListener(PAPER_BACKGROUND_EVENTS.openPanel, handleOpenPropertiesPanel);
 
     return () => {
       window.removeEventListener("grido:toggle-right-sidebar", handleToggleRight);
@@ -126,8 +130,9 @@ export default function App() {
       window.removeEventListener("grido:toggle-zen-mode", handleToggleZen);
       window.removeEventListener("grido:select-collage-tab", handleSelectCollageTab);
       window.removeEventListener("grido:select-studio-tab", handleSelectStudioTab);
+      window.removeEventListener(PAPER_BACKGROUND_EVENTS.openPanel, handleOpenPropertiesPanel);
     };
-  }, [togglePanel, toggleZenMode, selectCollageTab, selectStudioTab]);
+  }, [togglePanel, openPanel, toggleZenMode, selectCollageTab, selectStudioTab]);
 
 
   const {
@@ -280,12 +285,12 @@ export default function App() {
   // ─── شاشة الترحيب: تظهر مرة واحدة فقط عند أول استخدام ──────────────────
   if (!isInitializing && isLicenseActive && workflowMode === null) {
     return (
-      <PhosphorProvider weight="regular" size={18}>
+      <FluentIconProvider weight="regular" size={18}>
         <TooltipProvider delayDuration={650} skipDelayDuration={150}>
           <WelcomeScreen onSelect={setWorkflowMode} />
           <SonnerToaster position="top-center" duration={1500} offset={16} closeButton />
         </TooltipProvider>
-      </PhosphorProvider>
+      </FluentIconProvider>
     );
   }
 
@@ -324,7 +329,7 @@ export default function App() {
 
   if (!isLicenseActive) {
     return (
-      <PhosphorProvider weight="regular" size={18}>
+      <FluentIconProvider weight="regular" size={18}>
         <TooltipProvider delayDuration={650} skipDelayDuration={150}>
           <LicenseLockScreen
             theme={theme}
@@ -342,12 +347,12 @@ export default function App() {
           <AccountLicenseModal />
           <UpdateNotifier />
         </TooltipProvider>
-      </PhosphorProvider>
+      </FluentIconProvider>
     );
   }
 
   return (
-    <PhosphorProvider weight="regular" size={18}>
+    <FluentIconProvider weight="regular" size={18}>
       <TooltipProvider delayDuration={650} skipDelayDuration={150}>
         <div 
           className={cn(
@@ -385,7 +390,7 @@ export default function App() {
                     className={cn(
                       "hidden sm:flex items-center gap-1 h-5 px-2 rounded-full text-micro font-bold tracking-wide transition-all cursor-pointer",
                       "border border-border/60 bg-muted/40 hover:bg-muted/80 hover:border-border text-muted-foreground hover:text-foreground",
-                      "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     )}
                     aria-label="تبديل مسار العمل"
                   >
@@ -420,7 +425,6 @@ export default function App() {
                 role="tab"
                 id="mode-tab-collage"
                 aria-selected={mode === "collage"}
-                aria-controls="mode-panel"
                 data-testid="mode-tab-collage"
                 title="وضع الكولاج (Ctrl+Alt+1)"
                 onClick={() => setMode("collage")}
@@ -452,7 +456,6 @@ export default function App() {
                 role="tab"
                 id="mode-tab-single"
                 aria-selected={mode === "single"}
-                aria-controls="mode-panel"
                 data-testid="mode-tab-single"
                 title="وضع التعديل الحر (Ctrl+Alt+2)"
                 onClick={() => setMode("single")}
@@ -684,6 +687,6 @@ export default function App() {
       <KeyboardShortcutsDialog />
     </div>
     </TooltipProvider>
-    </PhosphorProvider>
+    </FluentIconProvider>
   );
 }

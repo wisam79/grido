@@ -13,7 +13,7 @@ import {
   GridFour,
   Columns,
   Rows,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
 import type { CanvasSlot } from "@/lib/store/types";

@@ -3,7 +3,7 @@ import {
   ImageSquare,
   ClipboardText,
   Stack,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";

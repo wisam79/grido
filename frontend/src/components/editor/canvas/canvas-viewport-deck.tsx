@@ -13,7 +13,7 @@ import {
   ArrowsOut,
   FileText,
   Keyboard,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { PageOrientationIcon } from "@/components/ui/image-icons";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { FluentCapsuleButton } from "@/components/ui/blocks/fluent-capsule-button";
@@ -88,7 +88,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 type="button"
                 onClick={handleToggleOrientation}
                 aria-label={isLandscape ? "تبديل الاتجاه إلى رأسي" : "تبديل الاتجاه إلى أفقي"}
-                className="w-6 h-6 rounded-md bg-muted/70 hover:bg-primary/15 text-muted-foreground hover:text-primary border border-border/60 hover:border-primary/30 transition-all cursor-pointer flex items-center justify-center active:scale-95 group shadow-2xs"
+                className="w-7 h-7 rounded-md bg-muted/70 hover:bg-primary/15 text-muted-foreground hover:text-primary border border-border/60 hover:border-primary/30 transition-all cursor-pointer flex items-center justify-center active:scale-95 group shadow-2xs"
               >
                 <PageOrientationIcon
                   isLandscape={isLandscape}

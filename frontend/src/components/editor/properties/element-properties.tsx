@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { PaintBrush, Palette, Sparkle, ArrowsOutCardinal } from "@phosphor-icons/react";
+import { PaintBrush, Palette, Sparkle, ArrowsOutCardinal } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { FluentSegmentedControl } from "@/components/ui/blocks";

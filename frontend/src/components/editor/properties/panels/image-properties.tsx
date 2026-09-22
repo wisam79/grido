@@ -23,7 +23,7 @@ import {
   Scan,
   Square,
   FadersHorizontal,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
 import { IMAGE_FILTERS } from "@/lib/templates";
 import { cn } from "@/lib/utils";

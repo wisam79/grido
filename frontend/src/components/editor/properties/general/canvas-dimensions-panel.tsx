@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { CaretDown, Check, Crop, FrameCorners, Link, LinkBreak } from "@phosphor-icons/react";
+import { CaretDown, Check, Crop, FrameCorners, Link, LinkBreak } from "@/components/ui/icons";
 import { useEditorStore } from "@/lib/editor-store";
 import { PAPER_SIZES, CARD_AND_LABEL_SIZES } from "@/lib/templates";
 import { cn } from "@/lib/utils";

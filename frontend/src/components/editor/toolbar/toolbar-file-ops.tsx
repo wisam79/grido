@@ -10,7 +10,7 @@ import {
   Broom,
   DeviceMobileCamera,
   CaretDown,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

@@ -1,7 +1,7 @@
 import React from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
-import { FadersHorizontal } from "@phosphor-icons/react";
+import { FadersHorizontal } from "@/components/ui/icons";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { IMAGE_FILTERS } from "@/lib/templates";
 import { useShallow } from "zustand/react/shallow";

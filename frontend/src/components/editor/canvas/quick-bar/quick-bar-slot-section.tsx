@@ -1,5 +1,5 @@
 import React from "react";
-import { ImageSquare, GridFour, Rows, Columns, ArrowClockwise, FlipHorizontal, ArrowCounterClockwise, Eye, Broom } from "@phosphor-icons/react";
+import { ImageSquare, GridFour, Rows, Columns, ArrowClockwise, FlipHorizontal, ArrowCounterClockwise, Eye, Broom } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";

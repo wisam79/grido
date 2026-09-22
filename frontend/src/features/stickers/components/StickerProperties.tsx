@@ -12,7 +12,7 @@ import {
   Trash,
   Check,
   Plus,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

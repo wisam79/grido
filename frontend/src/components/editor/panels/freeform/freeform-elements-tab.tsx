@@ -18,7 +18,7 @@ import {
   ArrowRight,
   Calendar,
   Camera,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import {
   QUICK_SHAPES,
   QUICK_TEXT_PRESETS,
@@ -100,6 +100,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case "gold-luxury":
       return (
         <div className="w-full h-full px-2 rounded-lg bg-gradient-to-br from-amber-950/40 via-slate-900 to-amber-950/30 border border-amber-500/30 flex items-center justify-center text-center overflow-hidden">
+          {/* token-exception: خلفية معاينة "ذهبي فاخر" — ألوان محتوى التصميم تُعرض كما ستُطبع وليست ألوان واجهة */}
           <span
             className="text-xs font-black font-cairo tracking-wide truncate"
             style={{
@@ -117,6 +118,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case "neon-glow":
       return (
         <div className="w-full h-full px-2 rounded-lg bg-slate-950 border border-sky-500/40 flex items-center justify-center text-center overflow-hidden">
+          {/* token-exception: خلفية معاينة "توهج نيون" — ألوان محتوى التصميم تُعرض كما ستُطبع وليست ألوان واجهة */}
           <span
             className="text-xs font-black tracking-wider truncate text-sky-400 font-sans"
             style={{

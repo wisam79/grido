@@ -12,7 +12,7 @@ import {
   List,
   MagnifyingGlass,
   X,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { CollageTemplate, COLLAGE_TEMPLATES } from "@/lib/templates";
 import {
   CollagePresetCategory,
@@ -413,7 +413,7 @@ export function CollagePresetsTab({
           <button
             type="button"
             onClick={() => setSearchQuery("")}
-            className="absolute left-2 top-1/2 -translate-y-1/2 size-6 rounded-full bg-muted hover:bg-muted-foreground/20 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 size-7 rounded-full bg-muted hover:bg-muted-foreground/20 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="مسح البحث"
           >
             <X className="w-2.5 h-2.5" weight="bold" />

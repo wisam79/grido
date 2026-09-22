@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { SealCheck } from "@phosphor-icons/react";
+import { SealCheck } from "@/components/ui/icons";
 import { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
 import { AddTextDropdown } from "./toolbar-add-text";
 import { AddShapesDropdown } from "./toolbar-add-shapes";

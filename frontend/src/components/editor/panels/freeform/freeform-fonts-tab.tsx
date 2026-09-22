@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { MagnifyingGlass, Star, TextAa, X } from "@phosphor-icons/react";
+import { MagnifyingGlass, Star, TextAa, X } from "@/components/ui/icons";
 import {
   ARABIC_FONTS,
   FONT_CATEGORIES,

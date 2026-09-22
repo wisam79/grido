@@ -1,6 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
-import { Check, X } from "@phosphor-icons/react";
+import { Check, X } from "@/components/ui/icons";
 import { DetectedDocument } from "../core";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 

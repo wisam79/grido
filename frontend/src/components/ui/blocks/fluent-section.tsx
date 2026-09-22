@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { CaretDown } from "@phosphor-icons/react";
+import { CaretDown } from "@/components/ui/icons";
 
 export interface FluentSectionProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {

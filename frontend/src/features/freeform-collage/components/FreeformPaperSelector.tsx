@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Ruler } from "@phosphor-icons/react";
+import { Ruler } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 import { COMMON_PAPER_PRESETS } from "./freeform-paper-presets";

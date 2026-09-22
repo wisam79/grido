@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { PopoverColorPicker } from "./shared-controls";
 import { FluentSegmentedControl, FluentSliderField } from "@/components/ui/blocks";
-import { Check, ArrowsLeftRight, Sparkle, Palette } from "@phosphor-icons/react";
+import { Check, ArrowsLeftRight, Sparkle, Palette } from "@/components/ui/icons";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   formatGradientCss,
@@ -20,6 +20,16 @@ export interface GradientPickerProps {
   angle?: number;
   onChangeAngle?: (deg: number) => void;
   onCommitAngle?: (deg: number) => void;
+  /**
+   * إخفاء مبدّل نوع التعبئة (مصمت/خطي/دائري) — للأسطح التي لا تعرف إلا
+   * التدرج الخطي (خلفية الورقة) فلا يُعرض مبدّل بلا أثر.
+   */
+  showFillType?: boolean;
+  /**
+   * إخفاء معرض التدرجات الجاهزة داخل المنتقي — يبقى معرض واحد فقط في
+   * التطبيق (مكتبة تبويب الخلفيات) فلا يتكرر نفس المعرض في لوحتين.
+   */
+  showPresets?: boolean;
 }
 
 const PRESET_CATEGORIES = [
@@ -48,6 +58,8 @@ export const GradientPicker = ({
   angle = 135,
   onChangeAngle,
   onCommitAngle,
+  showFillType = true,
+  showPresets = true,
 }: GradientPickerProps) => {
   const [activeCategory, setActiveCategory] = useState<string>("luxury");
 
@@ -101,17 +113,19 @@ export const GradientPicker = ({
   return (
     <div className="space-y-2.5 font-cairo w-full max-w-full overflow-hidden" dir="rtl">
       {/* محول نوع التعبئة القياسي بأسلوب Fluent 2 الموحد */}
-      <FluentSegmentedControl<"solid" | "linear" | "radial">
-        layoutId="gradient-fill-type"
-        value={fillType}
-        onChange={onChangeType}
-        size="sm"
-        options={[
-          { id: "solid", label: "مصمت" },
-          { id: "linear", label: "خطي" },
-          { id: "radial", label: "دائري" },
-        ]}
-      />
+      {showFillType && (
+        <FluentSegmentedControl<"solid" | "linear" | "radial">
+          layoutId="gradient-fill-type"
+          value={fillType}
+          onChange={onChangeType}
+          size="sm"
+          options={[
+            { id: "solid", label: "مصمت" },
+            { id: "linear", label: "خطي" },
+            { id: "radial", label: "دائري" },
+          ]}
+        />
+      )}
 
       {fillType === "solid" ? (
         <div className="flex items-center justify-between gap-2 bg-background/50 p-2 rounded-xl border border-border/40 shadow-2xs w-full">
@@ -209,6 +223,7 @@ export const GradientPicker = ({
           )}
 
           {/* 🎨 معرض التدرجات الجاهزة المصنفة */}
+          {showPresets && (
           <div className="space-y-2 pt-1 border-t border-border/40 w-full max-w-full overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-mini font-bold text-foreground flex items-center gap-1">
@@ -270,6 +285,7 @@ export const GradientPicker = ({
               })}
             </div>
           </div>
+          )}
         </div>
       )}
     </div>

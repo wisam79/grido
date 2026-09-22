@@ -16,7 +16,7 @@ import {
   ArrowCounterClockwise,
   FloppyDisk,
   PaintBucket,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { toast } from "sonner";
 import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
 import { cn } from "@/lib/utils";
