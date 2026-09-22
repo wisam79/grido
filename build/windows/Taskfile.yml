@@ -130,10 +130,8 @@ tasks:
       - wails3 generate webview2bootstrapper -dir "{{.ROOT_DIR}}/build/windows/installer"
       - |
         {{if eq OS "windows"}}
-        copy /Y "{{.ROOT_DIR}}\build\windows\nsis\wails_tools.nsh" "{{.ROOT_DIR}}\build\windows\installer\wails_tools.nsh"
         makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}\{{.BIN_DIR}}\{{.APP_NAME}}.exe" project.nsi
         {{else}}
-        cp "{{.ROOT_DIR}}/build/windows/nsis/wails_tools.nsh" "{{.ROOT_DIR}}/build/windows/installer/wails_tools.nsh"
         makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}/{{.BIN_DIR}}/{{.APP_NAME}}.exe" project.nsi
         {{end}}
     vars:

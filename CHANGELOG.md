@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **مزامنة أمثلة Wails v3 مع نسخة الـ SDK:** تحديث التوثيقات والمهارات لتطابق تواقيع `v3.0.0-beta.23` الفعلية (`SingleInstanceOptions`, `Event.Emit`, `WindowRuntimeReady`, `Screen.GetAll`, `Clipboard.Text/SetText`, `SendNotification/OnNotificationResponse`).
 - **السكريبت الحاكم للمثبت NSIS:** اعتماد `build/windows/installer/project.nsi` كمصدر وحيد للمثبت، `OutFile "..\nsis\GridoStudio-installer.exe"` المطابق لمسار التوقيع والنشر، وبيانات الإصدار (`INFO_PRODUCTVERSION`) تُعرَّف فيه صراحة.
+- **إصلاح فشل CI لمهمة `create:nsis:installer`:** إلغاء خطوة نسخ `wails_tools.nsh` التي كانت تستدعي أمر `copy /Y` (أمر مدمج في cmd غير متاح كبرنامج تحت go-task على Windows CI)؛ سكربت `build/windows/installer/wails_tools.nsh` (نسخة Wails الرسمية) أصبح المرجع الوحيد.
 
 ---
 

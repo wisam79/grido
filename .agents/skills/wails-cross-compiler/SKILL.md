@@ -43,7 +43,7 @@ wails3 task package
 
 3. **السكريبت الحاكم للمثبت (Source of Truth):**
    - سكريبت NSIS الحاكم الوحيد هو `build/windows/installer/project.nsi` مع `OutFile "..\nsis\..."` المُخرج إلى المسار المستهلك (`build/windows/nsis/GridoStudio-installer.exe`) في التوقيع والنشر. قالب `build/windows/nsis/project.nsi` مخلفات Wails الافتراضية — يُمنع بناء المثبت منه أو تعديله.
-   - مهمة `create:nsis:installer` مُنسّقة على المجلد الحاكم (`dir: build/windows/installer`) مع توليد `webview2bootstrapper` ونسخ `wails_tools.nsh` المولَّد داخل المجلد نفسه قبل `makensis`.
+   - مهمة `create:nsis:installer` مُنسّقة على المجلد الحاكم (`dir: build/windows/installer`) مع توليد `webview2bootstrapper` في جذر المجلد قبل `makensis`؛ وسكربت `wails_tools.nsh` المعتمَد هو نسخة `build/windows/installer/wails_tools.nsh` (نسخة Wails الرسمية) — يُمنع إضافة أي خطوة نسخ لسكربت `wails_tools.nsh` (أمر `copy`/`cp` ليس برنامجاً قابلاً للتنفيذ تحت go-task على Windows CI).
 
 4. **حفظ الترميز بـ UTF-8 BOM:**
    - ملف `project.nsi` يجب أن يُحفظ بترميز `UTF-8 with BOM` لتفادي أخطاء الـ Bad text encoding مع النصوص العربية.
