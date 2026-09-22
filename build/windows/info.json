@@ -1,15 +1,15 @@
 {
 	"fixed": {
-		"file_version": "0.1.0"
+		"file_version": "1.5.1"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "0.1.0",
-			"CompanyName": "My Company",
-			"FileDescription": "A sample application",
-			"LegalCopyright": "© 2026, My Company",
-			"ProductName": "My Product",
-			"Comments": "This is a comment"
+			"ProductVersion": "1.5.1",
+			"CompanyName": "Grido",
+			"FileDescription": "Professional Photo & Collage Studio",
+			"LegalCopyright": "(c) 2026, Grido",
+			"ProductName": "Grido Studio",
+			"Comments": "Grido Studio Photo & Collage Editor"
 		}
 	}
 }

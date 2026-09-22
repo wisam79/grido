@@ -328,6 +328,18 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: wails3 task build
 
+      - name: Verify EXE Branding Metadata
+        id: branding
+        shell: powershell
+        run: |
+          $exe = 'bin\GridoStudio.exe'
+          if (-not (Test-Path $exe)) { throw "Binary not found at $exe" }
+          $v = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exe)
+          foreach ($f in @('ProductName','CompanyName','FileDescription','FileVersion')) {
+            if ([string]::IsNullOrWhiteSpace($v.$f)) { throw "EXE metadata '$f' is empty - check build/appicon.png, build/config.yml, windows/info.json and generate:syso" }
+          }
+          Write-Host "Product='$($v.ProductName)' Company='$($v.CompanyName)' Version='$($v.FileVersion)'"
+
       - name: Run Windows Native Integration Tests
         id: native_tests
         shell: powershell
@@ -344,6 +356,7 @@ jobs:
             --title "🪟 Windows Build Verification Summary" \
             --note "الهدف: Windows x64 (Wails v3 + CGO) مع اختبارات مسارات ويندوز ودقة 300 DPI." \
             --row "Compilation (wails3 task build)=${{ steps.build.outcome }}" \
+            --row "EXE Branding Metadata=${{ steps.branding.outcome }}" \
             --row "Windows Native Integration Tests=${{ steps.native_tests.outcome }}"
 
   # ───────────────────────────────────────────────

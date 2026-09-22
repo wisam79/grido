@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **هوية التطبيق وبيانات EXE بعد الترقية لـ Wails v3:** كانت `build/appicon.png` ما تزال شعار Wails الافتراضي "W" فيُعاد توليد `windows/icon.ico` منه كل بناء، و`windows/info.json` و`wails.exe.manifest` بقيم القالب (`My Company`/`0.1.0`) فخرج `GridoStudio.exe` بلا بيانات إصدار. أُعيدت الهوية من `frontend/public/favicon.png`، وزُامنت `build/config.yml` (`1.5.1`) وأُعيد توليد الأصول رسمياً عبر `wails3 update build-assets`، مع حارس CI يفشل البناء عند فراغ بيانات EXE.
+
 ---
 
 ## [v1.5.1] - 2026-09-22
