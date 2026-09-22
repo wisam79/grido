@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [v1.5.1] - 2026-09-22
+
 ### Fixed
 
 - **تجاوز تركيب الكانفاس غير الصالح بدل فشل الطباعة:** كان `composeCanvas` يُفشل الورقة كاملة بخطأ `invalid canvas composition dimensions` عند أبعاد صفرية/NaN من الواجهة؛ الآن يُسجَّل تحذير ويُتجاوز التركيب مع إكمال الورقة، وحارس أبعاد في `buildSingleComposition` يحوّل للالتقاط الاحتياطي.
