@@ -103,3 +103,71 @@ func TestPrintHandler_PrintNative_Invalid(t *testing.T) {
 	}
 }
 
+// TestPrintHandler_InvalidCompositionFallsBack — تكامل عبر مسار IPC الكامل
+// (المعالج ← الخدمة ← التصدير): تركيب بأبعاد صفرية يُتجاوز وتنجح الورقة
+// من العناصر المباشرة بدل إرجاع Success=false.
+func TestPrintHandler_InvalidCompositionFallsBack(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "print_handler_comp_fallback_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	dummyImgPath := filepath.Join(tempDir, "photo.png")
+	dummyImg := image.NewRGBA(image.Rect(0, 0, 80, 80))
+	for x := 0; x < 80; x++ {
+		for y := 0; y < 80; y++ {
+			dummyImg.Set(x, y, color.RGBA{R: 200, G: 100, B: 50, A: 255})
+		}
+	}
+	if err := imaging.Save(dummyImg, dummyImgPath); err != nil {
+		t.Fatalf("failed to save dummy image: %v", err)
+	}
+
+	svc := service.NewPrintService()
+	handler := NewPrintHandler(svc)
+
+	req := domain.PrintRequest{
+		PaperWidthMM:    100.0,
+		PaperHeightMM:   100.0,
+		DPI:             150,
+		BackgroundColor: "#FFFFFF",
+		ExportFormat:    "png",
+		Items: []domain.PrintItem{
+			{
+				ImageSrc:   dummyImgPath,
+				X:          15,
+				Y:          15,
+				W:          40,
+				H:          40,
+				Brightness: 100,
+				Contrast:   100,
+				Saturation: 100,
+			},
+		},
+		Composition: &domain.CanvasComposition{
+			CanvasWidthPx:   0,
+			CanvasHeightPx:  0,
+			CanvasWidthMM:   0,
+			CanvasHeightMM:  0,
+			BackgroundColor: "#00FF00",
+			Items: []domain.PrintItem{
+				{ImageSrc: dummyImgPath, X: 0, Y: 0, W: 10, H: 10},
+			},
+		},
+	}
+
+	res := handler.ExportPrintSheet(req)
+	if !res.Success {
+		t.Fatalf("expected ExportPrintSheet to fall back and succeed, got error: %s", res.Error)
+	}
+	if res.FilePath == "" {
+		t.Fatal("expected non-empty FilePath in PrintResult")
+	}
+	defer os.Remove(res.FilePath)
+
+	if _, err := os.Stat(res.FilePath); os.IsNotExist(err) {
+		t.Fatalf("generated print file does not exist: %s", res.FilePath)
+	}
+}
+

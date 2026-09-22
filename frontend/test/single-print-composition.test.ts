@@ -134,3 +134,27 @@ describe("buildSingleComposition", () => {
     expect(result.composition!.items).toHaveLength(0);
   });
 });
+
+describe("buildSingleComposition canvas dimension guards", () => {
+  it.each([
+    ["zero canvas width", { canvasWidth: 0 }],
+    ["zero canvas height", { canvasHeight: 0 }],
+    ["negative canvas width", { canvasWidth: -10 }],
+    ["NaN canvas height", { canvasHeight: Number.NaN }],
+    ["zero width in millimeters", { canvasWidthMM: 0 }],
+    ["negative height in millimeters", { canvasHeightMM: -1 }],
+    ["NaN width in millimeters", { canvasWidthMM: Number.NaN }],
+    ["infinite height in millimeters", { canvasHeightMM: Number.POSITIVE_INFINITY }],
+  ])("falls back to capture for %s", (_name, overrides) => {
+    const result = buildSingleComposition({ ...base, ...overrides, elements: [imageElement()] });
+    expect(result.eligible).toBe(false);
+    expect(result.composition).toBeUndefined();
+    expect(result.reason).toContain("أبعاد الكانفاس");
+  });
+
+  it("keeps a valid composition eligible (regression guard)", () => {
+    const result = buildSingleComposition({ ...base, elements: [imageElement()] });
+    expect(result.eligible).toBe(true);
+    expect(result.composition).toBeDefined();
+  });
+});
