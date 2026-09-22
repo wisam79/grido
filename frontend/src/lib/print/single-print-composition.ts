@@ -75,6 +75,13 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
 
   const fail = (reason: string): SingleCompositionResult => ({ eligible: false, reason });
 
+  if (!Number.isFinite(canvasWidth) || !Number.isFinite(canvasHeight) || canvasWidth <= 0 || canvasHeight <= 0) {
+    return fail("أبعاد الكانفاس غير صالحة");
+  }
+  if (!Number.isFinite(canvasWidthMM) || !Number.isFinite(canvasHeightMM) || canvasWidthMM <= 0 || canvasHeightMM <= 0) {
+    return fail("أبعاد الكانفاس بالمليمتر غير صالحة");
+  }
+
   if (typeof backgroundColor !== "string" || !/^#[0-9a-fA-F]{6}$/.test(backgroundColor)) {
     return fail("خلفية الكانفاس ليست لوناً صلباً");
   }

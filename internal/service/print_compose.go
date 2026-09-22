@@ -216,8 +216,14 @@ func (s *PrintService) composeCanvas(
 
 	outW := int(math.Round(mmToPx(comp.CanvasWidthMM, req.DPI)))
 	outH := int(math.Round(mmToPx(comp.CanvasHeightMM, req.DPI)))
-	if outW <= 0 || outH <= 0 || comp.CanvasWidthPx <= 0 || comp.CanvasHeightPx <= 0 {
-		return nil, fmt.Errorf("invalid canvas composition dimensions")
+	if outW <= 0 || outH <= 0 || comp.CanvasWidthPx <= 0 || comp.CanvasHeightPx <= 0 ||
+		math.IsNaN(comp.CanvasWidthMM) || math.IsNaN(comp.CanvasHeightMM) ||
+		math.IsInf(comp.CanvasWidthMM, 0) || math.IsInf(comp.CanvasHeightMM, 0) {
+		slog.Warn("print_compose: invalid composition dimensions, skipping composition",
+			"canvasWidthPx", comp.CanvasWidthPx, "canvasHeightPx", comp.CanvasHeightPx,
+			"canvasWidthMM", comp.CanvasWidthMM, "canvasHeightMM", comp.CanvasHeightMM,
+			"dpi", req.DPI, "outW", outW, "outH", outH)
+		return nil, nil
 	}
 	if len(comp.Items) > 100 {
 		return nil, fmt.Errorf("too many composition items: %d (max limit is 100)", len(comp.Items))
